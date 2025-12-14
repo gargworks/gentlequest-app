@@ -8,6 +8,7 @@ import socket
 import re
 import logging
 import json
+import html
 import random
 import redis
 import requests
@@ -1104,6 +1105,44 @@ def _register_routes(app: Flask) -> None:
         else:
             return _get_fallback_html(app)
 
+    @app.route("/privacy", methods=["GET"])
+    @app.route("/privacy/", methods=["GET"])
+    def privacy_policy():
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        policy_path = os.path.join(
+            base_dir, "ai_buddy_web", "assets", "legal", "privacy.md"
+        )
+        policy_text = ""
+        try:
+            with open(policy_path, "r", encoding="utf-8") as f:
+                policy_text = f.read()
+        except Exception:
+            policy_text = "# Privacy Policy\n\nPrivacy policy is temporarily unavailable.\n"
+
+        escaped = html.escape(policy_text)
+        page = f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Privacy Policy – GentleQuest</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #ffffff; color: #111827; }}
+    .container {{ max-width: 900px; margin: 0 auto; padding: 24px; }}
+    h1 {{ font-size: 28px; margin: 0 0 16px; }}
+    pre {{ white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; }}
+  </style>
+</head>
+<body>
+  <div class=\"container\">
+    <h1>Privacy Policy</h1>
+    <pre>{escaped}</pre>
+  </div>
+</body>
+</html>
+"""
+        return Response(page, content_type="text/html; charset=utf-8")
+
     @app.route("/<path:filename>")
     def serve_static(filename):
         """Serve static files for Flutter web app"""
@@ -1760,6 +1799,30 @@ def _is_failure_response(text: str) -> bool:
     return any(m in t for m in markers)
 
 
+def _is_quota_or_rate_limit_error(text: str) -> bool:
+    """Detect when a provider error clearly indicates quota / rate limits.
+
+    This inspects the final error text from a provider chain, so it matches both
+    raw provider messages and wrapped forms like "Error generating response: ...".
+    """
+    if not text:
+        return False
+    t = str(text).strip().lower()
+    if not t:
+        return False
+    tokens = (
+        "quota exceeded",
+        "quota",
+        "rate limit",
+        "ratelimit",
+        "resource_exhausted",
+        "resource exhausted",
+        "429",
+        "limit: 0",
+    )
+    return any(tok in t for tok in tokens)
+
+
 def _parse_csv_env(val: str) -> List[str]:
     try:
         return [p.strip() for p in (val or "").split(",") if p.strip()]
@@ -1841,8 +1904,17 @@ def _get_ai_response_with_failover(
         except Exception as _e:
             last_err_text = f"Error generating response: {_e}"
             continue
+
+    # All providers failed. If the last error clearly looks like a quota or
+    # rate-limit issue (for example Gemini free-tier 429s), surface a
+    # user-friendly "daily limit" style message instead of a vague failure.
+    fallback = last_err_text
+    if _is_quota_or_rate_limit_error(last_err_text or ""):
+        fallback = (
+            "Today's AI chat limit has been reached. Please try again tomorrow."
+        )
     return (
-        last_err_text
+        fallback
         or "I'm having trouble connecting to my AI services. Please try again in a moment."
     ), (chain[-1] if chain else "unknown")
 
