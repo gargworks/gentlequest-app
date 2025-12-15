@@ -1,9 +1,11 @@
 from __future__ import annotations
 import json
+import os
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+import google.generativeai as genai
 from flask import Flask, jsonify, request
 from sqlalchemy import text
 
@@ -12,6 +14,43 @@ from models import db
 SEED_PATH = "data/community_seed.json"
 
 SAFE_REACTION_KINDS = {"relate", "helped", "strength"}
+
+_MODERATION_PROMPT = """You are a content moderator for a mental health support community for teens.
+Analyze this post and respond with ONLY one word: ALLOW, CRISIS, or REJECT.
+
+Rules:
+- ALLOW: Supportive, relatable, or neutral mental health content (feelings, coping, encouragement)
+- CRISIS: Contains self-harm, suicide ideation, or immediate danger signals
+- REJECT: Hate speech, harassment, spam, gibberish, or inappropriate content
+
+Post to analyze:
+\"\"\"
+{body}
+\"\"\"
+
+Respond with exactly one word: ALLOW, CRISIS, or REJECT"""
+
+
+def _moderate_post(body: str) -> Tuple[str, Optional[str]]:
+    """AI moderation check. Returns (decision, reason) where decision is 'allow', 'crisis', or 'reject'."""
+    api_key = os.getenv("GEMINI_API_KEY", "").split(",")[0].strip()
+    if not api_key:
+        return ("allow", None)
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        resp = model.generate_content(
+            _MODERATION_PROMPT.format(body=body[:500]),
+            generation_config={"max_output_tokens": 10, "temperature": 0},
+        )
+        raw = (resp.text or "").strip().upper()
+        if "CRISIS" in raw:
+            return ("crisis", "This post may indicate a crisis. Please reach out to a trusted adult or crisis line.")
+        if "REJECT" in raw:
+            return ("reject", "This post doesn't meet community guidelines. Please share supportive content.")
+        return ("allow", None)
+    except Exception:
+        return ("allow", None)
 
 
 def _dialect() -> str:
@@ -285,19 +324,28 @@ def register_community_routes(app: Flask) -> None:
                 except Exception:
                     before_id = None
 
-            q = "SELECT id, topic, body_redacted, created_at, reactions_relate, reactions_helped, reactions_strength FROM community_posts"
+            q = (
+                "SELECT p.id, p.topic, p.body_redacted, p.created_at, "
+                "(SELECT COUNT(DISTINCT COALESCE(NULLIF(r.user_hash, ''), CAST(r.id AS TEXT))) FROM community_reactions r "
+                " WHERE r.post_id = p.id AND r.kind = 'relate') AS reactions_relate, "
+                "(SELECT COUNT(DISTINCT COALESCE(NULLIF(r.user_hash, ''), CAST(r.id AS TEXT))) FROM community_reactions r "
+                " WHERE r.post_id = p.id AND r.kind = 'helped') AS reactions_helped, "
+                "(SELECT COUNT(DISTINCT COALESCE(NULLIF(r.user_hash, ''), CAST(r.id AS TEXT))) FROM community_reactions r "
+                " WHERE r.post_id = p.id AND r.kind = 'strength') AS reactions_strength "
+                "FROM community_posts p"
+            )
             params: Dict[str, Any] = {}
             where_clauses: List[str] = []
             # Always exclude hidden posts
-            where_clauses.append("COALESCE(is_hidden, FALSE) = FALSE")
+            where_clauses.append("COALESCE(p.is_hidden, FALSE) = FALSE")
             if topic:
-                where_clauses.append("topic = :topic")
+                where_clauses.append("p.topic = :topic")
                 params["topic"] = topic
 
             # Apply keyset cursor: fetch items strictly older than (created_at, id)
             if before_created_at is not None and before_id is not None:
                 where_clauses.append(
-                    "(created_at < :bts OR (created_at = :bts AND id < :bid))"
+                    "(p.created_at < :bts OR (p.created_at = :bts AND p.id < :bid))"
                 )
                 params["bts"] = before_created_at
                 params["bid"] = before_id
@@ -305,7 +353,7 @@ def register_community_routes(app: Flask) -> None:
             if where_clauses:
                 q += " WHERE " + " AND ".join(where_clauses)
 
-            q += " ORDER BY created_at DESC, id DESC LIMIT :limit"
+            q += " ORDER BY p.created_at DESC, p.id DESC LIMIT :limit"
             params["limit"] = limit
 
             rows = db.session.execute(text(q), params).fetchall()
@@ -356,6 +404,41 @@ def register_community_routes(app: Flask) -> None:
             return bool(token) and expected and token == expected
         except Exception:
             return False
+
+    def _reaction_counts(post_id: int) -> Dict[str, int]:
+        try:
+            out: Dict[str, int] = {}
+            for k in ("relate", "helped", "strength"):
+                n = db.session.execute(
+                    text(
+                        "SELECT COUNT(DISTINCT COALESCE(NULLIF(user_hash, ''), CAST(id AS TEXT))) "
+                        "FROM community_reactions "
+                        "WHERE post_id = :pid AND kind = :kind"
+                    ),
+                    {"pid": post_id, "kind": k},
+                ).scalar()
+                out[k] = int(n or 0)
+            return out
+        except Exception:
+            return {"relate": 0, "helped": 0, "strength": 0}
+
+    def _sync_post_counters(post_id: int, reactions: Dict[str, int]) -> None:
+        try:
+            db.session.execute(
+                text(
+                    "UPDATE community_posts "
+                    "SET reactions_relate = :r, reactions_helped = :h, reactions_strength = :s "
+                    "WHERE id = :pid"
+                ),
+                {
+                    "pid": post_id,
+                    "r": int(reactions.get("relate", 0)),
+                    "h": int(reactions.get("helped", 0)),
+                    "s": int(reactions.get("strength", 0)),
+                },
+            )
+        except Exception:
+            pass
 
     @app.route("/api/community/reports", methods=["GET"])
     def community_reports_list():
@@ -464,7 +547,26 @@ def register_community_routes(app: Flask) -> None:
 
             # Optional user hash from session header (no PII)
             sid = (request.headers.get("X-Session-ID") or "").strip()
-            user_hash = sid[:12] if sid else None
+            if not sid:
+                return jsonify({"error": "Missing session"}), 400
+            user_hash = sid[:12]
+
+            exists = db.session.execute(
+                text(
+                    "SELECT 1 FROM community_reactions "
+                    "WHERE post_id = :pid AND kind = :kind AND user_hash = :uh "
+                    "LIMIT 1"
+                ),
+                {"pid": post_id, "kind": kind, "uh": user_hash},
+            ).first()
+            if exists is not None:
+                reactions = _reaction_counts(int(post_id))
+                _sync_post_counters(int(post_id), reactions)
+                db.session.commit()
+                return (
+                    jsonify({"ok": True, "already_reacted": True, "reactions": reactions}),
+                    409,
+                )
 
             # Insert reaction
             db.session.execute(
@@ -477,19 +579,13 @@ def register_community_routes(app: Flask) -> None:
                 {"post_id": post_id, "kind": kind, "user_hash": user_hash},
             )
 
-            # Increment aggregate counter on post
-            col = {
-                "relate": "reactions_relate",
-                "helped": "reactions_helped",
-                "strength": "reactions_strength",
-            }[kind]
-            db.session.execute(
-                text(f"UPDATE community_posts SET {col} = {col} + 1 WHERE id = :pid"),
-                {"pid": post_id},
-            )
-
+            reactions = _reaction_counts(int(post_id))
+            _sync_post_counters(int(post_id), reactions)
             db.session.commit()
-            return jsonify({"ok": True}), 201
+            return (
+                jsonify({"ok": True, "already_reacted": False, "reactions": reactions}),
+                201,
+            )
         except Exception as e:
             try:
                 db.session.rollback()
@@ -518,7 +614,26 @@ def register_community_routes(app: Flask) -> None:
 
             # Optional user hash from session header (no PII)
             sid = (request.headers.get("X-Session-ID") or "").strip()
-            user_hash = sid[:12] if sid else None
+            if not sid:
+                return jsonify({"error": "Missing session"}), 400
+            user_hash = sid[:12]
+
+            exists = db.session.execute(
+                text(
+                    "SELECT 1 FROM community_reactions "
+                    "WHERE post_id = :pid AND kind = :kind AND user_hash = :uh "
+                    "LIMIT 1"
+                ),
+                {"pid": post_id, "kind": kind, "uh": user_hash},
+            ).first()
+            if exists is not None:
+                reactions = _reaction_counts(int(post_id))
+                _sync_post_counters(int(post_id), reactions)
+                db.session.commit()
+                return (
+                    jsonify({"ok": True, "already_reacted": True, "reactions": reactions}),
+                    409,
+                )
 
             # Insert reaction
             db.session.execute(
@@ -531,19 +646,13 @@ def register_community_routes(app: Flask) -> None:
                 {"post_id": post_id, "kind": kind, "user_hash": user_hash},
             )
 
-            # Increment aggregate counter on post
-            col = {
-                "relate": "reactions_relate",
-                "helped": "reactions_helped",
-                "strength": "reactions_strength",
-            }[kind]
-            db.session.execute(
-                text(f"UPDATE community_posts SET {col} = {col} + 1 WHERE id = :pid"),
-                {"pid": post_id},
-            )
-
+            reactions = _reaction_counts(int(post_id))
+            _sync_post_counters(int(post_id), reactions)
             db.session.commit()
-            return jsonify({"ok": True}), 201
+            return (
+                jsonify({"ok": True, "already_reacted": False, "reactions": reactions}),
+                201,
+            )
         except Exception as e:
             try:
                 db.session.rollback()
@@ -644,6 +753,25 @@ def register_community_routes(app: Flask) -> None:
                 return jsonify({"error": "Body too long"}), 400
 
             body = _pii_redact(body_raw)
+
+            decision, reason = _moderate_post(body)
+            if decision == "crisis":
+                return (
+                    jsonify({
+                        "error": reason or "Please reach out to a trusted adult or crisis resource.",
+                        "moderation": "crisis",
+                    }),
+                    422,
+                )
+            if decision == "reject":
+                return (
+                    jsonify({
+                        "error": reason or "This post doesn't meet community guidelines.",
+                        "moderation": "rejected",
+                    }),
+                    422,
+                )
+
             d = _dialect()
             created_at: Optional[datetime] = None
             new_id: Optional[int] = None

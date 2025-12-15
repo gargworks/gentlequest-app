@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +17,8 @@ class MoodTrackerWidget extends StatefulWidget {
 
 class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
   ViewMode _mode = ViewMode.daily; // default to Daily trend (aggregated)
-  static const bool _enableCheckinsExpand = false; // feature toggle (hidden for now)
+  static const bool _enableCheckinsExpand =
+      false; // feature toggle (hidden for now)
   bool _showLatestDayDetails = false;
 
   @override
@@ -83,12 +85,14 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.error.withOpacity(0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).colorScheme.error.withOpacity(0.35)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.error.withOpacity(0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.warning_amber_outlined, color: Theme.of(context).colorScheme.error),
+          Icon(Icons.warning_amber_outlined,
+              color: Theme.of(context).colorScheme.error),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -167,7 +171,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 final moodLevel = index + 1;
                 final entry = MoodEntry(moodLevel: moodLevel);
                 return IconButton(
-                  onPressed: () => _showMoodDialog(context, moodProvider, moodLevel),
+                  onPressed: () =>
+                      _showMoodDialog(context, moodProvider, moodLevel),
                   icon: Text(
                     entry.moodEmoji,
                     style: const TextStyle(fontSize: 32),
@@ -199,8 +204,12 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
         selectedColor: Theme.of(context).colorScheme.primary,
         fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
         children: const [
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), child: Text('Daily')),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), child: Text('All')),
+          Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Daily')),
+          Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('All')),
         ],
       ),
     );
@@ -215,9 +224,13 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     final count = map[lastDay]?.length ?? 0;
     if (count <= 1) return const SizedBox.shrink();
     final locale = Localizations.localeOf(context);
-    final dateLocale = (locale.countryCode?.toUpperCase() == 'IN') ? 'en_GB' : locale.toLanguageTag();
-    final label = '$count check-ins on ${DateFormat.MMMd(dateLocale).format(lastDay)}';
-    final dayEntries = List<MoodEntry>.from(map[lastDay] ?? const <MoodEntry>[])..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final dateLocale = (locale.countryCode?.toUpperCase() == 'IN')
+        ? 'en_GB'
+        : locale.toLanguageTag();
+    final label =
+        '$count check-ins on ${DateFormat.MMMd(dateLocale).format(lastDay)}';
+    final dayEntries = List<MoodEntry>.from(map[lastDay] ?? const <MoodEntry>[])
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,21 +246,25 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 _showLatestDayDetails = !_showLatestDayDetails;
               });
             },
-            child: Text(_showLatestDayDetails ? 'Hide check-ins' : 'View check-ins'),
+            child: Text(
+                _showLatestDayDetails ? 'Hide check-ins' : 'View check-ins'),
           ),
         if (_enableCheckinsExpand && _showLatestDayDetails)
           Card(
             elevation: 1.0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0)),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
               child: Column(
                 children: dayEntries.map((e) {
                   final t = e.timestamp.toLocal();
                   return ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    leading: Text(e.moodEmoji, style: const TextStyle(fontSize: 20)),
+                    leading:
+                        Text(e.moodEmoji, style: const TextStyle(fontSize: 20)),
                     title: Text(DateFormat('HH:mm').format(t)),
                     subtitle: (e.note != null && e.note!.trim().isNotEmpty)
                         ? Text(e.note!.trim())
@@ -261,12 +278,15 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     );
   }
 
-  Widget _buildMoodChart(BuildContext context, MoodProvider moodProvider, ViewMode mode) {
+  Widget _buildMoodChart(
+      BuildContext context, MoodProvider moodProvider, ViewMode mode) {
     // Prepare data and labels based on selected mode
     List<String> labels = <String>[];
     List<FlSpot> spots = <FlSpot>[];
     final locale = Localizations.localeOf(context);
-    final dateLocale = (locale.countryCode?.toUpperCase() == 'IN') ? 'en_GB' : locale.toLanguageTag();
+    final dateLocale = (locale.countryCode?.toUpperCase() == 'IN')
+        ? 'en_GB'
+        : locale.toLanguageTag();
 
     if (mode == ViewMode.daily) {
       final map = moodProvider.moodEntriesByDate;
@@ -288,15 +308,20 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       final first = entries.first.timestamp.toLocal();
       final sameDay = entries.every((e) {
         final t = e.timestamp.toLocal();
-        return t.year == first.year && t.month == first.month && t.day == first.day;
+        return t.year == first.year &&
+            t.month == first.month &&
+            t.day == first.day;
       });
       labels = entries
           .map((e) => sameDay
               ? DateFormat('HH:mm').format(e.timestamp.toLocal())
               : DateFormat.MMMd(dateLocale).format(e.timestamp.toLocal()))
           .toList();
-      spots = entries.asMap().entries
-          .map((entry) => FlSpot(entry.key.toDouble(), entry.value.moodLevel.toDouble()))
+      spots = entries
+          .asMap()
+          .entries
+          .map((entry) =>
+              FlSpot(entry.key.toDouble(), entry.value.moodLevel.toDouble()))
           .toList();
     }
 
@@ -324,7 +349,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                     reservedSize: 40,
                     getTitlesWidget: (value, meta) {
                       if (value < 1 || value > 5) return const Text('');
-                      return Text(MoodEntry(moodLevel: value.toInt()).moodEmoji);
+                      return Text(
+                          MoodEntry(moodLevel: value.toInt()).moodEmoji);
                     },
                   ),
                 ),
@@ -365,7 +391,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   dotData: const FlDotData(show: true),
                   belowBarData: BarAreaData(
                     show: spots.length > 1,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   ),
                 ),
               ],
@@ -436,8 +463,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontFamily: 'Inter', // Match chat screen font family
-          ),
+                fontFamily: 'Inter', // Match chat screen font family
+              ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -448,8 +475,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
         Text(
           value,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontFamily: 'Inter', // Match chat screen font family
-          ),
+                fontFamily: 'Inter', // Match chat screen font family
+              ),
         ),
       ],
     );
@@ -465,7 +492,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
         title: Row(
           children: [
             Text(
@@ -498,6 +526,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           ),
           FilledButton(
             onPressed: () {
+              HapticFeedback.heavyImpact();
               moodProvider.addMoodEntry(
                 moodLevel,
                 note: noteController.text.trim(),
@@ -510,4 +539,4 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       ),
     );
   }
-} 
+}

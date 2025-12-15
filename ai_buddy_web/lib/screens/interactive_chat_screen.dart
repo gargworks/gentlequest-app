@@ -20,7 +20,8 @@ import '../widgets/crisis_resources.dart';
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
   final ValueNotifier<int>? reselect;
-  const InteractiveChatScreen({super.key, this.showBottomNav = true, this.reselect});
+  const InteractiveChatScreen(
+      {super.key, this.showBottomNav = true, this.reselect});
 
   @override
   State<InteractiveChatScreen> createState() => _InteractiveChatScreenState();
@@ -33,7 +34,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   double _lastBottomInset = 0.0;
   final GlobalKey _inputBarKey = GlobalKey();
   double _inputBarHeight = 0.0;
-  
+
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
   // Global in-flight guard to prevent duplicate Safety & Legal sheet
@@ -99,7 +100,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     _scrollToBottom();
   }
 
-  Future<void> _showAllCrisisResourcesSheet(List<Map<String, dynamic>> numbers) async {
+  Future<void> _showAllCrisisResourcesSheet(
+      List<Map<String, dynamic>> numbers) async {
     if (numbers.isEmpty) return;
     await showModalBottomSheet(
       context: context,
@@ -110,7 +112,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
         return SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            padding:
+                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +134,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     itemBuilder: (ctx, i) {
                       final n = numbers[i];
                       final name = (n['name'] ?? '').toString();
-                      final number = ((n['number'] ?? n['phone']) ?? '').toString().trim();
+                      final number =
+                          ((n['number'] ?? n['phone']) ?? '').toString().trim();
                       final textInstr = (n['text'] ?? '').toString().trim();
                       return ListTile(
                         dense: false,
@@ -139,7 +143,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ? name
                             : (number.isNotEmpty
                                 ? number
-                                : (textInstr.isNotEmpty ? textInstr : 'Resource'))),
+                                : (textInstr.isNotEmpty
+                                    ? textInstr
+                                    : 'Resource'))),
                         subtitle: number.isNotEmpty
                             ? Text(number)
                             : (textInstr.isNotEmpty ? Text(textInstr) : null),
@@ -153,12 +159,17 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                 onPressed: () async {
                                   final uri = Uri(scheme: 'tel', path: number);
                                   if (await canLaunchUrl(uri)) {
-                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    await launchUrl(uri,
+                                        mode: LaunchMode.externalApplication);
                                   } else {
-                                    await Clipboard.setData(ClipboardData(text: number));
+                                    await Clipboard.setData(
+                                        ClipboardData(text: number));
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Call not supported. Number copied to clipboard.')),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Call not supported. Number copied to clipboard.')),
                                       );
                                     }
                                   }
@@ -174,7 +185,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   if (s.toLowerCase().startsWith('text ')) {
                                     s = s.substring(5).trim();
                                   }
-                                  final reg = RegExp(r'^(.+?)\s+to\s+(\d+)$', caseSensitive: false);
+                                  final reg = RegExp(r'^(.+?)\s+to\s+(\d+)$',
+                                      caseSensitive: false);
                                   final m = reg.firstMatch(s);
                                   if (m != null) {
                                     final body = m.group(1)!.trim();
@@ -185,20 +197,29 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       queryParameters: {'body': body},
                                     );
                                     if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                      await launchUrl(uri,
+                                          mode: LaunchMode.externalApplication);
                                     } else {
-                                      await Clipboard.setData(ClipboardData(text: textInstr));
+                                      await Clipboard.setData(
+                                          ClipboardData(text: textInstr));
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('SMS not supported. Instructions copied to clipboard.')),
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'SMS not supported. Instructions copied to clipboard.')),
                                         );
                                       }
                                     }
                                   } else {
-                                    await Clipboard.setData(ClipboardData(text: textInstr));
+                                    await Clipboard.setData(
+                                        ClipboardData(text: textInstr));
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Instructions copied to clipboard.')),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Instructions copied to clipboard.')),
                                       );
                                     }
                                   }
@@ -208,12 +229,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                               icon: const Icon(Icons.copy_rounded),
                               tooltip: 'Copy',
                               onPressed: () async {
-                                final toCopy = number.isNotEmpty ? number : (textInstr.isNotEmpty ? textInstr : name);
+                                final toCopy = number.isNotEmpty
+                                    ? number
+                                    : (textInstr.isNotEmpty ? textInstr : name);
                                 if (toCopy.trim().isEmpty) return;
-                                await Clipboard.setData(ClipboardData(text: toCopy.trim()));
+                                await Clipboard.setData(
+                                    ClipboardData(text: toCopy.trim()));
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Copied to clipboard.')),
+                                    const SnackBar(
+                                        content: Text('Copied to clipboard.')),
                                   );
                                 }
                               },
@@ -260,7 +285,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       Expanded(
                         child: Text(
                           'Need help now?',
-                          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       IconButton(
@@ -273,7 +299,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'If you are in immediate danger, call your local emergency number.',
-                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: Colors.black54),
                   ),
                   const SizedBox(height: 12),
                   const CrisisResourcesWidget(riskLevel: RiskLevel.high),
@@ -335,6 +362,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
+    HapticFeedback.mediumImpact();
+
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     final messageText = _messageController.text.trim();
     _messageController.clear();
@@ -392,7 +421,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     return KeyboardDismissibleScaffold(
       safeTop: false,
       safeBottom: false,
-      bottomNavigationBar: widget.showBottomNav ? const AppBottomNav(current: AppTab.talk) : null,
+      bottomNavigationBar: widget.showBottomNav
+          ? const AppBottomNav(current: AppTab.talk)
+          : null,
       body: PopScope(
         canPop: !_inputFocus.hasFocus,
         onPopInvokedWithResult: (didPop, result) {
@@ -413,7 +444,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Header
                 Container(
                   color: appTheme.whiteCustom,
-                  padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
                   child: SafeArea(
                     top: true,
                     bottom: false,
@@ -422,9 +454,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         Builder(
                           builder: (ctx) {
                             final route = ModalRoute.of(ctx);
-                            final isModal = route is PageRoute && route.fullscreenDialog == true;
+                            final isModal = route is PageRoute &&
+                                route.fullscreenDialog == true;
                             // Show back button only when keyboard is open; keep layout stable otherwise
-                            return KeyboardAwareBackButton(isModal: isModal, size: 44.h);
+                            return KeyboardAwareBackButton(
+                                isModal: isModal, size: 44.h);
                           },
                         ),
                         Expanded(
@@ -482,7 +516,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Ephemeral top disclaimer (first few sessions only)
                 Builder(builder: (ctx) {
                   final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
-                  if (!_showTopDisclaimer || isKb) return const SizedBox.shrink();
+                  if (!_showTopDisclaimer || isKb)
+                    return const SizedBox.shrink();
                   return Semantics(
                     label: 'Wellness disclaimer',
                     child: Container(
@@ -492,14 +527,20 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.info_outline, size: 18.0, color: Colors.black54),
+                          const Icon(Icons.info_outline,
+                              size: 18.0, color: Colors.black54),
                           SizedBox(width: 8.h),
                           Expanded(
                             child: Text.rich(
                               TextSpan(
-                                style: const TextStyle(fontSize: 12.0, color: Colors.black87, height: 1.2),
+                                style: const TextStyle(
+                                    fontSize: 12.0,
+                                    color: Colors.black87,
+                                    height: 1.2),
                                 children: const [
-                                  TextSpan(text: 'Not medical care. For crisis, call local emergency.'),
+                                  TextSpan(
+                                      text:
+                                          'Not medical care. For crisis, call local emergency.'),
                                 ],
                               ),
                               maxLines: 1,
@@ -509,7 +550,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           IconButton(
                             tooltip: 'Dismiss',
                             icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => _dismissTopDisclaimer(increment: true),
+                            onPressed: () =>
+                                _dismissTopDisclaimer(increment: true),
                           ),
                         ],
                       ),
@@ -521,20 +563,27 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   child: Consumer<ChatProvider>(
                     builder: (context, chatProvider, child) {
                       // Always keep view pinned to bottom on updates (new msgs/typing)
-                      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-                      final count = chatProvider.messages.length + (chatProvider.isTyping ? 1 : 0);
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => _scrollToBottom());
+                      final count = chatProvider.messages.length +
+                          (chatProvider.isTyping ? 1 : 0);
                       return ListView.builder(
                         controller: _scrollController,
-                        padding: EdgeInsets.fromLTRB(16.h, 16.h, 16.h, _inputBarHeight + 8.h),
-                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                        padding: EdgeInsets.fromLTRB(
+                            16.h, 16.h, 16.h, _inputBarHeight + 8.h),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.manual,
                         itemCount: count,
                         itemBuilder: (context, index) {
-                          final isTypingRow = chatProvider.isTyping && index == chatProvider.messages.length;
+                          final isTypingRow = chatProvider.isTyping &&
+                              index == chatProvider.messages.length;
                           if (isTypingRow) {
                             return _buildTypingBubble();
                           }
                           final message = chatProvider.messages[index];
-                          final isLast = index == chatProvider.messages.length - 1 && !chatProvider.isTyping;
+                          final isLast =
+                              index == chatProvider.messages.length - 1 &&
+                                  !chatProvider.isTyping;
                           return _buildMessageBubble(message, isLast: isLast);
                         },
                       );
@@ -542,91 +591,94 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   ),
                 ),
                 // Input Area
-              Container(
-                key: _inputBarKey,
-                color: appTheme.whiteCustom,
-                padding: EdgeInsets.fromLTRB(16.h, 4.h, 0.h, 16.h),
-                child: SafeArea(
-                  top: false,
-                  bottom: true,
-                  left: false,
-                  right: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: appTheme.colorFFF3F4,
-                                borderRadius: BorderRadius.circular(24.h),
-                              ),
-                              child: TextField(
-                                controller: _messageController,
-                                focusNode: _inputFocus,
-                                decoration: InputDecoration(
-                                  hintText: 'Type your message...',
-                                  hintStyle: TextStyle(
-                                    fontSize: 16.0, // iOS standard input text size
-                                    color: Colors.grey[600],
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16.h,
-                                    vertical: 10.h,
-                                  ),
+                Container(
+                  key: _inputBarKey,
+                  color: appTheme.whiteCustom,
+                  padding: EdgeInsets.fromLTRB(16.h, 4.h, 0.h, 16.h),
+                  child: SafeArea(
+                    top: false,
+                    bottom: true,
+                    left: false,
+                    right: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: appTheme.colorFFF3F4,
+                                  borderRadius: BorderRadius.circular(24.h),
                                 ),
-                                style: TextStyle(
-                                  fontSize: 16.0, // iOS standard input text size
-                                  color: Colors.black87,
-                                ),
-                                onSubmitted: (_) {
-                                  // Match the send button exactly: send without dismissing the keyboard
-                                  _sendMessage();
-                                  // Reassert focus to keep iOS keyboard open
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (mounted) _inputFocus.requestFocus();
-                                  });
-                                },
-                                // Prevent the default editing-complete behavior from unfocusing on iOS
-                                onEditingComplete: () {},
-                                textInputAction: TextInputAction.send,
-                                keyboardType: TextInputType.multiline,
-                                maxLines: null,
-                                minLines: 1,
-                              ),
-                            ), // end Container
-                          ), // end Expanded
-                          SizedBox(width: 8.h),
-                          SizedBox(
-                            width: 74.h,
-                            child: Center(
-                              child: GestureDetector(
-                                onTap: _sendMessage,
-                                child: Container(
-                                  padding: EdgeInsets.all(10.h),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
-                                    shape: BoxShape.circle,
+                                child: TextField(
+                                  controller: _messageController,
+                                  focusNode: _inputFocus,
+                                  decoration: InputDecoration(
+                                    hintText: 'Type your message...',
+                                    hintStyle: TextStyle(
+                                      fontSize:
+                                          16.0, // iOS standard input text size
+                                      color: Colors.grey[600],
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16.h,
+                                      vertical: 10.h,
+                                    ),
                                   ),
-                                  child: Icon(
-                                    Icons.send,
-                                    color: Colors.white,
-                                    size: 32.h,
+                                  style: TextStyle(
+                                    fontSize:
+                                        16.0, // iOS standard input text size
+                                    color: Colors.black87,
+                                  ),
+                                  onSubmitted: (_) {
+                                    // Match the send button exactly: send without dismissing the keyboard
+                                    _sendMessage();
+                                    // Reassert focus to keep iOS keyboard open
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      if (mounted) _inputFocus.requestFocus();
+                                    });
+                                  },
+                                  // Prevent the default editing-complete behavior from unfocusing on iOS
+                                  onEditingComplete: () {},
+                                  textInputAction: TextInputAction.send,
+                                  keyboardType: TextInputType.multiline,
+                                  maxLines: null,
+                                  minLines: 1,
+                                ),
+                              ), // end Container
+                            ), // end Expanded
+                            SizedBox(width: 8.h),
+                            SizedBox(
+                              width: 74.h,
+                              child: Center(
+                                child: GestureDetector(
+                                  onTap: _sendMessage,
+                                  child: Container(
+                                    padding: EdgeInsets.all(10.h),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                      size: 32.h,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ],
         ),
       ),
@@ -636,129 +688,144 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   Widget _buildMessageBubble(Message message, {bool isLast = false}) {
     // Guard: Do not render empty assistant messages (prevents blank bubble on web)
     if (!message.isUser && message.content.trim().isEmpty) {
-      if (kDebugMode) debugPrint('[UI] Skipping empty assistant message bubble');
+      if (kDebugMode)
+        debugPrint('[UI] Skipping empty assistant message bubble');
       return const SizedBox.shrink();
     }
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
     return AnimatedSize(
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 120),
+      duration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 120),
       curve: Curves.easeOutCubic,
       alignment: Alignment.topCenter,
       child: Container(
-      margin: EdgeInsets.only(bottom: isLast ? 4.h : 16.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!message.isUser) ...[
-            StatusAvatar(
-              name: ProfileConfig.aiName,
-              imageAsset: ProfileConfig.aiAvatarAsset,
-              size: 52.h,
-              status: PresenceStatus.online,
-              showStatus: true,
-            ),
-            SizedBox(width: 12.h),
-          ],
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: message.isUser ? Colors.green.shade100 : appTheme.whiteCustom,
-                borderRadius: BorderRadius.circular(16.h),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4.h,
-                    offset: Offset(0, 2.h),
-                  ),
-                ],
+        margin: EdgeInsets.only(bottom: isLast ? 4.h : 16.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment:
+              message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            if (!message.isUser) ...[
+              StatusAvatar(
+                name: ProfileConfig.aiName,
+                imageAsset: ProfileConfig.aiAvatarAsset,
+                size: 52.h,
+                status: PresenceStatus.online,
+                showStatus: true,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.w400,
-                      color: appTheme.colorFF1F29,
-                      height: 1.4,
+              SizedBox(width: 12.h),
+            ],
+            Flexible(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: message.isUser
+                      ? Colors.green.shade100
+                      : appTheme.whiteCustom,
+                  borderRadius: BorderRadius.circular(16.h),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4.h,
+                      offset: Offset(0, 2.h),
                     ),
-                  ),
-                  // Hidden: do not render internal crisis debug content in UI
-                  if (!message.isUser && (message.crisisNumbers != null && message.crisisNumbers!.isNotEmpty)) ...[
-                    SizedBox(height: 6.h),
-                    Wrap(
-                      spacing: 8.h,
-                      runSpacing: 4.h,
-                      children: [
-                        for (final n in message.crisisNumbers!.take(3))
-                          _CrisisChip(
-                            name: (n['name'] ?? '').toString(),
-                            phone: ((n['number'] ?? n['phone']) ?? '').toString(),
-                            textInstr: (n['text'] ?? '').toString(),
-                          ),
-                        if (message.crisisNumbers!.length > 3)
-                          Semantics(
-                            button: true,
-                            label: 'More crisis resources',
-                            child: GestureDetector(
-                              onTap: () => _showAllCrisisResourcesSheet(message.crisisNumbers!),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10.h, vertical: 6.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.blueGrey.shade50,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: Colors.blueGrey.shade200),
-                                ),
-                                child: const Text(
-                                  'More…',
-                                  style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.content,
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w400,
+                        color: appTheme.colorFF1F29,
+                        height: 1.4,
+                      ),
+                    ),
+                    // Hidden: do not render internal crisis debug content in UI
+                    if (!message.isUser &&
+                        (message.crisisNumbers != null &&
+                            message.crisisNumbers!.isNotEmpty)) ...[
+                      SizedBox(height: 6.h),
+                      Wrap(
+                        spacing: 8.h,
+                        runSpacing: 4.h,
+                        children: [
+                          for (final n in message.crisisNumbers!.take(3))
+                            _CrisisChip(
+                              name: (n['name'] ?? '').toString(),
+                              phone: ((n['number'] ?? n['phone']) ?? '')
+                                  .toString(),
+                              textInstr: (n['text'] ?? '').toString(),
+                            ),
+                          if (message.crisisNumbers!.length > 3)
+                            Semantics(
+                              button: true,
+                              label: 'More crisis resources',
+                              child: GestureDetector(
+                                onTap: () => _showAllCrisisResourcesSheet(
+                                    message.crisisNumbers!),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10.h, vertical: 6.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueGrey.shade50,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                        color: Colors.blueGrey.shade200),
+                                  ),
+                                  child: const Text(
+                                    'More…',
+                                    style: TextStyle(
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87),
+                                  ),
                                 ),
                               ),
                             ),
+                        ],
+                      ),
+                      SizedBox(height: 6.h),
+                      Semantics(
+                        label: 'Safety note',
+                        child: Text(
+                          'These resources are informational and not a substitute for professional care. If you\'re in immediate danger, call your local emergency number.',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            color: Colors.black54,
+                            height: 1.3,
                           ),
-                      ],
-                    ),
-                    SizedBox(height: 6.h),
-                    Semantics(
-                      label: 'Safety note',
-                      child: Text(
-                        'These resources are informational and not a substitute for professional care. If you\'re in immediate danger, call your local emergency number.',
-                        style: TextStyle(
-                          fontSize: 11.0,
-                          color: Colors.black54,
-                          height: 1.3,
                         ),
                       ),
-                    ),
+                    ],
+                    // Hidden: do not render debug footer in UI
                   ],
-                  // Hidden: do not render debug footer in UI
-                ],
+                ),
               ),
             ),
-          ),
-          if (message.isUser) ...[
-            SizedBox(width: 12.h),
-            StatusAvatar(
-              name: ProfileConfig.userName,
-              imageAsset: ProfileConfig.userAvatarAsset,
-              size: 52.h,
-              status: PresenceStatus.none,
-              showStatus: false,
-            ),
+            if (message.isUser) ...[
+              SizedBox(width: 12.h),
+              StatusAvatar(
+                name: ProfileConfig.userName,
+                imageAsset: ProfileConfig.userAvatarAsset,
+                size: 52.h,
+                status: PresenceStatus.none,
+                showStatus: false,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildTypingBubble() {
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
     return AnimatedSize(
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 120),
+      duration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 120),
       curve: Curves.easeOutCubic,
       alignment: Alignment.topCenter,
       child: Container(
@@ -805,15 +872,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     _inputFocus.dispose();
     super.dispose();
   }
-
 }
 
 // Risk pill removed from UI; actionable chips remain.
 
 class _CrisisChip extends StatelessWidget {
-  const _CrisisChip({required this.name, required this.phone, this.textInstr = ''});
+  const _CrisisChip(
+      {required this.name, required this.phone, this.textInstr = ''});
   final String name;
-  final String phone; // may be empty when only text instructions exist (e.g., "HOME to 741741")
+  final String
+      phone; // may be empty when only text instructions exist (e.g., "HOME to 741741")
   final String textInstr;
 
   Future<void> _onTap(BuildContext context) async {
@@ -830,7 +898,9 @@ class _CrisisChip extends StatelessWidget {
             await Clipboard.setData(ClipboardData(text: p));
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Couldn\'t open dialer. Number copied to clipboard.')),
+                const SnackBar(
+                    content: Text(
+                        'Couldn\'t open dialer. Number copied to clipboard.')),
               );
             }
           }
@@ -838,7 +908,9 @@ class _CrisisChip extends StatelessWidget {
           await Clipboard.setData(ClipboardData(text: p));
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Call not supported. Number copied to clipboard.')),
+              const SnackBar(
+                  content:
+                      Text('Call not supported. Number copied to clipboard.')),
             );
           }
         }
@@ -847,7 +919,8 @@ class _CrisisChip extends StatelessWidget {
         await Clipboard.setData(ClipboardData(text: p));
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Number copied to clipboard. Dial manually.')),
+            const SnackBar(
+                content: Text('Number copied to clipboard. Dial manually.')),
           );
         }
       }
@@ -864,16 +937,20 @@ class _CrisisChip extends StatelessWidget {
       if (m != null) {
         final body = m.group(1)!.trim();
         final to = m.group(2)!.trim();
-        final sms = Uri(scheme: 'sms', path: to, queryParameters: {'body': body});
+        final sms =
+            Uri(scheme: 'sms', path: to, queryParameters: {'body': body});
         try {
           final can = await canLaunchUrl(sms);
           if (can) {
-            final ok = await launchUrl(sms, mode: LaunchMode.externalApplication);
+            final ok =
+                await launchUrl(sms, mode: LaunchMode.externalApplication);
             if (!ok) {
               await Clipboard.setData(ClipboardData(text: t));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Couldn\'t open SMS. Instructions copied.')),
+                  const SnackBar(
+                      content:
+                          Text('Couldn\'t open SMS. Instructions copied.')),
                 );
               }
             }
@@ -881,7 +958,8 @@ class _CrisisChip extends StatelessWidget {
             await Clipboard.setData(ClipboardData(text: t));
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('SMS not supported. Instructions copied.')),
+                const SnackBar(
+                    content: Text('SMS not supported. Instructions copied.')),
               );
             }
           }
@@ -890,7 +968,8 @@ class _CrisisChip extends StatelessWidget {
           await Clipboard.setData(ClipboardData(text: t));
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Instructions copied to clipboard.')),
+              const SnackBar(
+                  content: Text('Instructions copied to clipboard.')),
             );
           }
         }
@@ -935,7 +1014,9 @@ class _CrisisChip extends StatelessWidget {
         onTap: (hasPhone || hasText) ? () => _onTap(context) : null,
         onLongPress: (hasPhone || hasText)
             ? () async {
-                final toCopy = hasPhone ? phone.trim() : (hasText ? textInstr.trim() : name.trim());
+                final toCopy = hasPhone
+                    ? phone.trim()
+                    : (hasText ? textInstr.trim() : name.trim());
                 await Clipboard.setData(ClipboardData(text: toCopy));
                 if (kDebugMode) debugPrint('Copied crisis info: $toCopy');
                 if (context.mounted) {
@@ -958,7 +1039,10 @@ class _CrisisChip extends StatelessWidget {
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w500, color: Colors.black87),
+                style: const TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87),
               ),
             ),
           ),
@@ -974,8 +1058,11 @@ class _TypingDots extends StatefulWidget {
   State<_TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat();
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1000))
+    ..repeat();
   @override
   void dispose() {
     _c.dispose();
@@ -1012,6 +1099,7 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
           final t = (_c.value + (i * 0.2)) % 1.0;
           return (0.5 + 0.5 * math.sin(2 * math.pi * t)).clamp(0.0, 1.0);
         }
+
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {

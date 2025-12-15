@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-11-17T03:49:49.316033",
+  "score": "14.2/30",
+  "percentage": 47.333333333333336,
+  "status": "NEEDS WORK",
+  "results": {
+    "ai_optimization": {
+      "module_import": true,
+      "cache_rate": 50.0,
+      "provider_selection": true,
+      "score": "3/5 for this section"
+    },
+    "clinical_crisis": {
+      "module_import": true,
+      "multi_modal": true,
+      "score": "2/5"
+    },
+    "revenue": {
+      "module_import": true,
+      "dynamic_pricing": 29.99,
+      "insurance_billing": true,
+      "metrics": {
+        "mrr": 0,
+        "arr": 0,
+        "ltv": 0,
+        "cac": 0,
+        "churn_rate": 0,
+        "arpu": 0
+      },
+      "score": "5.199999999999999/5"
+    },
+    "scaling": {
+      "module_import": true,
+      "score": "1/5"
+    },
+    "security": {
+      "module_import": true,
+      "score": "1/5"
+    },
+    "integration": {
+      "enterprise_status": {
+        "environment": "production",
+        "features": {
+          "ai_optimization": true,
+          "clinical_detection": true,
+          "distributed_scale": false,
+          "revenue_system": true,
+          "security_encryption": true
+        },
+        "status": "active",
+        "timestamp": "2025-11-16T22:19:47.596566+00:00",
+        "version": "2.0.0"
+      },
+      "score": "2/5"
+    }
+  }
+}

@@ -71,6 +71,8 @@ class ChatProvider extends ChangeNotifier {
     final userMessage = Message(content: content, isUser: true);
     _messages.add(userMessage);
     _isTyping = true;
+    _isSending =
+        false; // Reset debounce immediately so user can queue more messages
     notifyListeners();
 
     try {

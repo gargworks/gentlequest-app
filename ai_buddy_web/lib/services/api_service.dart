@@ -190,7 +190,8 @@ class ApiService {
   }
 
   /// Community: fetch curated feed (read-only Phase 0)
-  Future<List<CommunityPost>> getCommunityFeed({String? topic, int limit = 20}) async {
+  Future<List<CommunityPost>> getCommunityFeed(
+      {String? topic, int limit = 20}) async {
     final page = await getCommunityFeedPage(topic: topic, limit: limit);
     return page.items;
   }
@@ -215,7 +216,8 @@ class ApiService {
           params['before_id'] = cursor['before_id'];
         }
       }
-      final response = await _dio.get('/api/community/feed', queryParameters: params);
+      final response =
+          await _dio.get('/api/community/feed', queryParameters: params);
       final data = response.data as Map<String, dynamic>;
       final List<dynamic> items = (data['items'] as List<dynamic>? ?? const []);
       final nextCursor = data['next_cursor'] == null
@@ -231,18 +233,29 @@ class ApiService {
   }
 
   /// Community: add a reaction to a post
-  Future<void> addCommunityReaction({required int postId, required String kind}) async {
+  Future<Map<String, dynamic>> addCommunityReaction(
+      {required int postId, required String kind}) async {
     return _retryOperation(() async {
       await _getSessionId();
-      await _dio.post('/api/community/reaction', data: {
-        'post_id': postId,
-        'kind': kind,
-      });
+      try {
+        final response = await _dio.post('/api/community/reaction', data: {
+          'post_id': postId,
+          'kind': kind,
+        });
+        return Map<String, dynamic>.from(response.data as Map);
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        if (status == 409 && e.response?.data is Map) {
+          return Map<String, dynamic>.from(e.response!.data as Map);
+        }
+        rethrow;
+      }
     });
   }
 
   /// Community: report a post
-  Future<void> reportCommunityPost({required int postId, required String reason, String? notes}) async {
+  Future<void> reportCommunityPost(
+      {required int postId, required String reason, String? notes}) async {
     return _retryOperation(() async {
       await _getSessionId();
       await _dio.post('/api/community/report', data: {
@@ -255,16 +268,25 @@ class ApiService {
   }
 
   /// Community: create a post
-  Future<CommunityPost> createCommunityPost({required String body, String? topic}) async {
+  Future<CommunityPost> createCommunityPost(
+      {required String body, String? topic}) async {
     return _retryOperation(() async {
       await _getSessionId();
       final payload = <String, dynamic>{'body': body.trim()};
       if (topic != null && topic.trim().isNotEmpty) {
         payload['topic'] = topic.trim();
       }
-      final response = await _dio.post('/api/community/post', data: payload);
-      final data = response.data as Map<String, dynamic>;
-      return CommunityPost.fromJson(Map<String, dynamic>.from(data));
+      try {
+        final response = await _dio.post('/api/community/post', data: payload);
+        final data = response.data as Map<String, dynamic>;
+        return CommunityPost.fromJson(Map<String, dynamic>.from(data));
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 422 && e.response?.data is Map) {
+          final msg = (e.response!.data as Map)['error'] as String?;
+          throw Exception(msg ?? 'Post was not allowed');
+        }
+        rethrow;
+      }
     });
   }
 
@@ -389,9 +411,8 @@ class ApiService {
 
       if (data['crisis_numbers'] != null) {
         final numbersList = data['crisis_numbers'] as List<dynamic>;
-        crisisNumbers = numbersList
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
+        crisisNumbers =
+            numbersList.map((item) => Map<String, dynamic>.from(item)).toList();
         if (kDebugMode) debugPrint('🔍 DEBUG: Crisis numbers: $crisisNumbers');
       } else {
         if (kDebugMode) {
@@ -520,11 +541,13 @@ class ApiService {
         // If rate-limited, honor Retry-After header when provided
         final status = e.response?.statusCode;
         if (status == 429) {
-          final headers = e.response?.headers.map ?? const <String, List<String>>{};
+          final headers =
+              e.response?.headers.map ?? const <String, List<String>>{};
           final retryVals = headers.entries
               .firstWhere(
                 (kv) => kv.key.toLowerCase() == 'retry-after',
-                orElse: () => const MapEntry<String, List<String>>('', <String>[]),
+                orElse: () =>
+                    const MapEntry<String, List<String>>('', <String>[]),
               )
               .value;
           Duration wait = const Duration(seconds: 1);
@@ -570,7 +593,8 @@ class ApiService {
         } else if (statusCode == 403) {
           message += 'Access denied.';
         } else if (statusCode == 429) {
-          message += 'Service is busy (rate limit). Please wait a minute and try again.';
+          message +=
+              'Service is busy (rate limit). Please wait a minute and try again.';
         } else if (statusCode == 404) {
           message += 'Service not found.';
         } else if (statusCode == 500) {

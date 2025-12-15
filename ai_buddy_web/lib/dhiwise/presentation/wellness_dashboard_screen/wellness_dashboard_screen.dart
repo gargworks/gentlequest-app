@@ -42,10 +42,12 @@ const Curve kRingCurve = Curves.easeOutCubic;
 class WellnessDashboardScreen extends StatefulWidget {
   final bool showBottomNav;
   final ValueNotifier<int>? reselect;
-  WellnessDashboardScreen({Key? key, this.showBottomNav = true, this.reselect}) : super(key: key);
+  WellnessDashboardScreen({Key? key, this.showBottomNav = true, this.reselect})
+      : super(key: key);
 
   @override
-  State<WellnessDashboardScreen> createState() => _WellnessDashboardScreenState();
+  State<WellnessDashboardScreen> createState() =>
+      _WellnessDashboardScreenState();
 }
 
 // Painter for progress ring
@@ -54,7 +56,8 @@ class _RingPainter extends CustomPainter {
   final double progress; // 0..1
   final Color color;
 
-  _RingPainter({required this.center, required this.progress, required this.color});
+  _RingPainter(
+      {required this.center, required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -77,6 +80,7 @@ class _RingPainter extends CustomPainter {
     final sweep = (2 * 3.1415926535) * progress.clamp(0.0, 1.0);
     canvas.drawArc(rect, -3.1415926535 / 2, sweep, false, fg);
   }
+
   @override
   bool shouldRepaint(covariant _RingPainter oldDelegate) {
     return oldDelegate.center != center ||
@@ -166,7 +170,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   AnimationController? _timerPillAnim;
   // Auto-complete timer for the active quest (cancelable replacement for Future.delayed)
   Timer? _autoCompleteTimer;
-  
+
   // Main scroll controller (for re-tap scroll-to-top)
   final ScrollController _scrollController = ScrollController();
 
@@ -174,7 +178,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   int _tabIndex = 0;
   // Explore filter state
   String _exploreFilter = 'All';
-  List<String> _exploreCats = ['Mindfulness', 'Activity', 'Social', 'Learning', 'Challenge']; // curated MECE categories
+  List<String> _exploreCats = [
+    'Mindfulness',
+    'Activity',
+    'Social',
+    'Learning',
+    'Challenge'
+  ]; // curated MECE categories
   final Map<String, GlobalKey> _exploreCardKeys = <String, GlobalKey>{};
   // Track which Explore quests we've logged an impression for (to avoid duplicates)
   final Set<String> _impressedExplore = <String>{};
@@ -240,10 +250,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       alreadyDone = engine.isCompletedToday(questId);
     } catch (_) {}
 
-    try { await engine.markImpression(questId); } catch (_) {}
-    try { await engine.markStart(questId); } catch (_) {}
-    if (kDebugMode) { try { debugPrint('[QuickCheckin][Submitted] questId=$questId'); } catch (_) {} }
-    try { await engine.markComplete(questId); } catch (_) {}
+    try {
+      await engine.markImpression(questId);
+    } catch (_) {}
+    try {
+      await engine.markStart(questId);
+    } catch (_) {}
+    if (kDebugMode) {
+      try {
+        debugPrint('[QuickCheckin][Submitted] questId=$questId');
+      } catch (_) {}
+    }
+    HapticFeedback.heavyImpact();
+    try {
+      await engine.markComplete(questId);
+    } catch (_) {}
     // Determine if XP was newly awarded now (award occurs only if not already done today)
     bool awarded = false;
     try {
@@ -280,7 +301,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     // Sync providers: lifetime XP + today progress
     try {
       final lifetimeXp = engine.computeLifetimeXp();
-      if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+      if (mounted)
+        context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
     } catch (_) {}
     await _refreshToday();
     // Also refresh Explore to sync Discover tab cards and categories immediately
@@ -317,12 +339,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       } catch (_) {}
     }
     // Legacy 'today' support (List<Map>)
-    final todayAlt = (_todayData?['today'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+    final todayAlt =
+        (_todayData?['today'] as List?)?.cast<Map<String, dynamic>>() ??
+            const [];
     for (final m in todayAlt) {
       if (m['quest_id'] == questId) {
         final d = m['duration_min'];
         if (d == null) return null;
-        try { return (d as num).toInt(); } catch (_) { return null; }
+        try {
+          return (d as num).toInt();
+        } catch (_) {
+          return null;
+        }
       }
     }
     // No hardcoded fallbacks: single source of truth is engine/JSON
@@ -358,15 +386,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Week 0 QuestsEngine (minimal glue, no UI changes)
   QuestsEngine? _questsEngine;
-  Map<String, dynamic>? _todayData; // {'todayItems': List<Quest>, 'progress': {stepsLeft, xpEarned}}
+  Map<String, dynamic>?
+      _todayData; // {'todayItems': List<Quest>, 'progress': {stepsLeft, xpEarned}}
 
   // RouteObserver subscription guard
   bool _routeSubscribed = false;
   // IDs for the 4 displayed cards (derived from todayItems; UI copy remains static)
   String? _qTask1Id; // preferred: Focus reset variant
   String? _qTask2Id; // preferred: Study sprint variant
-  String? _qResId;   // a RESOURCE item
-  String? _qTipId;   // a TIP item
+  String? _qResId; // a RESOURCE item
+  String? _qTipId; // a TIP item
 
   // Persist reminder prefs
   static const _prefsReminderOn = 'wellness.reminder_on_v1';
@@ -400,7 +429,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Subtle check ripple behind a card center
   void _showCheckRipple(GlobalKey sourceKey) {
     // Respect reduce-motion: skip decorative animation
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) return;
     final startGlobal = _globalCenterOf(sourceKey);
     // Use screen-scoped overlay to avoid leaking into other tabs/screens
@@ -410,7 +440,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (overlayBox == null || !overlayBox.attached) return;
     final start = overlayBox.globalToLocal(startGlobal);
     final size = overlayBox.size;
-    final controller = AnimationController(vsync: this, duration: kRippleDuration);
+    final controller =
+        AnimationController(vsync: this, duration: kRippleDuration);
     final fade = CurvedAnimation(parent: controller, curve: kRippleCurve);
     final radius = Tween<double>(begin: 0, end: kRippleEndRadius)
         .animate(CurvedAnimation(parent: controller, curve: Curves.easeOut));
@@ -436,8 +467,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       );
     });
     overlayState.insert(entry);
-    controller.addListener(() { entry.markNeedsBuild(); });
-    controller.addStatusListener((s) { if (s == AnimationStatus.completed) { entry.remove(); controller.dispose(); } });
+    controller.addListener(() {
+      entry.markNeedsBuild();
+    });
+    controller.addStatusListener((s) {
+      if (s == AnimationStatus.completed) {
+        entry.remove();
+        controller.dispose();
+      }
+    });
     controller.forward();
   }
 
@@ -482,7 +520,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (kDebugMode && _debugSelectorTest) {
       // Lightweight selector assertions (determinism and variety)
       // ignore: invalid_use_of_visible_for_testing_member
-      assert(() { engine.debugRunSelectorChecks(); return true; }());
+      assert(() {
+        engine.debugRunSelectorChecks();
+        return true;
+      }());
     }
     final data = await engine.getTodayData();
     if (!mounted) return;
@@ -491,7 +532,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       _todayData = data;
       _computeDisplayedQuestIds();
       // Sync local completion flags from engine's persisted map
-      final comp = (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
+      final comp =
+          (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
       _task1Done = _qTask1Id != null ? (comp[_qTask1Id] ?? false) : false;
       _task2Done = _qTask2Id != null ? (comp[_qTask2Id] ?? false) : false;
       // Keep curated Explore categories (MECE); no dynamic override
@@ -499,10 +541,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (kDebugMode) {
       try {
         final items = (data['todayItems'] as List?) ?? const [];
-        final ids = items.map((e) => e is Quest ? e.id : (e is Map ? e['quest_id'] : '?')).toList();
-        final comp = (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-        final prog = (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
-        debugPrint('[Quests][INIT] todayItems=${ids.join(', ')} comp=${comp.toString()} progress=${prog.toString()}');
+        final ids = items
+            .map((e) => e is Quest ? e.id : (e is Map ? e['quest_id'] : '?'))
+            .toList();
+        final comp =
+            (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
+        final prog =
+            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
+        debugPrint(
+            '[Quests][INIT] todayItems=${ids.join(', ')} comp=${comp.toString()} progress=${prog.toString()}');
       } catch (_) {}
     }
 
@@ -511,7 +558,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (progress != null && mounted) {
       final stepsLeft = (progress['stepsLeft'] ?? 0) as int;
       final xpEarned = (progress['xpEarned'] ?? 0) as int;
-      context.read<ProgressProvider>().updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
+      context
+          .read<ProgressProvider>()
+          .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
       // Also push lifetime XP for Explore header (backward compatible)
       try {
         final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
@@ -528,7 +577,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       _todayData = data;
       _computeDisplayedQuestIds();
       // Sync local completion flags from engine's persisted map
-      final comp = (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
+      final comp =
+          (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
       _task1Done = _qTask1Id != null ? (comp[_qTask1Id] ?? false) : false;
       _task2Done = _qTask2Id != null ? (comp[_qTask2Id] ?? false) : false;
     });
@@ -536,7 +586,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (progress != null) {
       final stepsLeft = (progress['stepsLeft'] ?? 0) as int;
       final xpEarned = (progress['xpEarned'] ?? 0) as int;
-      context.read<ProgressProvider>().updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
+      context
+          .read<ProgressProvider>()
+          .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
       // Keep lifetime XP in sync
       try {
         final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
@@ -545,13 +597,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
     if (kDebugMode) {
       try {
-        final comp = (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-        final prog = (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
-        debugPrint('[Quests][REFRESH] comp=${comp.toString()} progress=${prog.toString()}');
+        final comp =
+            (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
+        final prog =
+            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
+        debugPrint(
+            '[Quests][REFRESH] comp=${comp.toString()} progress=${prog.toString()}');
       } catch (_) {}
     }
   }
-  
+
   // Refresh Explore: reload catalog and update curated categories while preserving current filter
   Future<void> _refreshExplore() async {
     if (_questsEngine == null) {
@@ -569,19 +624,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       }
     });
     if (kDebugMode) {
-      try { debugPrint('[Explore][REFRESH] curated_cats=${_exploreCats.join(', ')}'); } catch (_) {}
+      try {
+        debugPrint(
+            '[Explore][REFRESH] curated_cats=${_exploreCats.join(', ')}');
+      } catch (_) {}
     }
   }
 
   // Choose IDs from today's items to back the 4 static cards.
   void _computeDisplayedQuestIds() {
-    final items = (_todayData?['todayItems'] as List?)?.cast<dynamic>() ?? const [];
+    final items =
+        (_todayData?['todayItems'] as List?)?.cast<dynamic>() ?? const [];
     // Helper to extract fields safely from either Quest or Map
     String? idOf(dynamic j) {
       if (j is Quest) return j.id;
       if (j is Map<String, dynamic>) return j['quest_id'] as String?;
       return null;
     }
+
     bool isTag(dynamic j, QuestTag tag) {
       if (j is Quest) return j.tag == tag;
       if (j is Map<String, dynamic>) {
@@ -603,6 +663,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       }
       return false;
     }
+
     String titleOf(dynamic j) {
       if (j is Quest) return j.title;
       if (j is Map<String, dynamic>) return (j['title']?.toString() ?? '');
@@ -617,22 +678,26 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     );
     dynamic sprintCandidate = tasks.firstWhere(
       (e) => titleOf(e).toLowerCase().contains('study'),
-      orElse: () => tasks.length > 1 ? tasks[1] : (tasks.isNotEmpty ? tasks.first : null),
+      orElse: () =>
+          tasks.length > 1 ? tasks[1] : (tasks.isNotEmpty ? tasks.first : null),
     );
     _qTask1Id = idOf(focusCandidate);
     // Ensure task2 is different from task1 when possible
-    final t2 = (idOf(sprintCandidate) != null && idOf(sprintCandidate) != _qTask1Id)
-        ? sprintCandidate
-        : (tasks.firstWhere(
-              (e) => idOf(e) != null && idOf(e) != _qTask1Id,
-              orElse: () => null,
-            ));
+    final t2 =
+        (idOf(sprintCandidate) != null && idOf(sprintCandidate) != _qTask1Id)
+            ? sprintCandidate
+            : (tasks.firstWhere(
+                (e) => idOf(e) != null && idOf(e) != _qTask1Id,
+                orElse: () => null,
+              ));
     _qTask2Id = idOf(t2);
 
     // Pools for non-task cards
     final resources = items.where((e) => isTag(e, QuestTag.resource)).toList();
     final tips = items.where((e) => isTag(e, QuestTag.tip)).toList();
-    final checks = items.where((e) => isTag(e, QuestTag.checkin) || isTag(e, QuestTag.progress)).toList();
+    final checks = items
+        .where((e) => isTag(e, QuestTag.checkin) || isTag(e, QuestTag.progress))
+        .toList();
 
     // Pick one RESOURCE (preferred), else TIP, else CHECK/PROGRESS
     dynamic resPick;
@@ -667,20 +732,23 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
     _qTipId = idOf(tipPick);
 
-  // Debug: note when only one TASK is present today
-  if (kDebugMode && (_qTask1Id != null && _qTask2Id == null)) {
-    try {
-      debugPrint('[QA][Quests] only_one_task=true task1=$_qTask1Id task2=null');
-    } catch (_) {}
+    // Debug: note when only one TASK is present today
+    if (kDebugMode && (_qTask1Id != null && _qTask2Id == null)) {
+      try {
+        debugPrint(
+            '[QA][Quests] only_one_task=true task1=$_qTask1Id task2=null');
+      } catch (_) {}
+    }
   }
-}
 
   void _scheduleMidnightRefresh() {
     _midnightTimer?.cancel();
     final now = DateTime.now();
-    final nextMidnight = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final nextMidnight =
+        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
     final ms = nextMidnight.difference(now).inMilliseconds;
-    _midnightTimer = Timer(Duration(milliseconds: ms.clamp(1000, 86400000)), () async {
+    _midnightTimer =
+        Timer(Duration(milliseconds: ms.clamp(1000, 86400000)), () async {
       await _refreshToday();
       _rescheduleReminder('midnight');
       _scheduleMidnightRefresh();
@@ -702,9 +770,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     _midnightTimer?.cancel();
     _reminderTimer?.cancel();
     // Cancel level-up flash timer
-    try { _levelUpTimer?.cancel(); } catch (_) {}
+    try {
+      _levelUpTimer?.cancel();
+    } catch (_) {}
     // Remove lifecycle observer
-    try { WidgetsBinding.instance.removeObserver(this); } catch (_) {}
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (_) {}
     widget.reselect?.removeListener(_onReselect);
     _scrollController.dispose();
     _pulseController.dispose();
@@ -727,13 +799,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   bool _isTomorrowLabel(TimeOfDay t) {
     final now = DateTime.now();
-    final todayTarget = DateTime(now.year, now.month, now.day, t.hour, t.minute);
-    return todayTarget.isBefore(now); // if passed today, it's effectively tomorrow
+    final todayTarget =
+        DateTime(now.year, now.month, now.day, t.hour, t.minute);
+    return todayTarget
+        .isBefore(now); // if passed today, it's effectively tomorrow
   }
 
   bool _isReminderNear() {
     final now = DateTime.now();
-    var target = DateTime(now.year, now.month, now.day, _reminderTime.hour, _reminderTime.minute);
+    var target = DateTime(
+        now.year, now.month, now.day, _reminderTime.hour, _reminderTime.minute);
     if (target.isBefore(now)) {
       target = target.add(const Duration(days: 1));
     }
@@ -745,7 +820,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void _cancelReminderTimer({String from = 'unspecified'}) {
     if (_reminderTimer != null) {
       if (kDebugMode) {
-        try { debugPrint('[Reminder][cancel] from=$from'); } catch (_) {}
+        try {
+          debugPrint('[Reminder][cancel] from=$from');
+        } catch (_) {}
       }
     }
     _reminderTimer?.cancel();
@@ -767,17 +844,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
     _cancelReminderTimer(from: from);
     final now = DateTime.now();
-    DateTime target = DateTime(now.year, now.month, now.day, _reminderTime.hour, _reminderTime.minute);
+    DateTime target = DateTime(
+        now.year, now.month, now.day, _reminderTime.hour, _reminderTime.minute);
     if (!target.isAfter(now)) {
       target = target.add(const Duration(days: 1));
     }
     _reminderTargetAt = target;
     final delay = target.difference(now);
     // Clamp delay to reasonable bounds (>=1s, <= 2 days)
-    final Duration clamped = Duration(milliseconds: delay.inMilliseconds.clamp(1000, 172800000));
+    final Duration clamped =
+        Duration(milliseconds: delay.inMilliseconds.clamp(1000, 172800000));
     if (kDebugMode) {
       try {
-        debugPrint('[Reminder][schedule] from=$from target=${target.toIso8601String()} delay=${clamped.inSeconds}s');
+        debugPrint(
+            '[Reminder][schedule] from=$from target=${target.toIso8601String()} delay=${clamped.inSeconds}s');
       } catch (_) {}
     }
     _reminderTimer = Timer(clamped, _onReminderFired);
@@ -787,7 +867,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       NotificationService.scheduleOneShot(
         target: target,
         title: 'Daily check‑in',
-        body: 'Time for your quick check‑in. Take 2 minutes to reflect and log your mood.',
+        body:
+            'Time for your quick check‑in. Take 2 minutes to reflect and log your mood.',
         debugTag: 'daily_reminder',
       );
     } catch (_) {}
@@ -807,7 +888,11 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final now = DateTime.now();
     // Haptic + sound feedback
     HapticFeedback.mediumImpact();
-    try { SystemSound.play(SystemSoundType.alert); } catch (_) { SystemSound.play(SystemSoundType.click); }
+    try {
+      SystemSound.play(SystemSoundType.alert);
+    } catch (_) {
+      SystemSound.play(SystemSoundType.click);
+    }
     // Microinteractions to draw attention
     _showCheckRipple(_reminderToggleKey);
     _showTimerRing(_reminderTimeKey);
@@ -824,7 +909,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             onPressed: () {
               // Bring user focus to Today tab if not already
               if (_tabIndex != 0) {
-                setState(() { _tabIndex = 0; });
+                setState(() {
+                  _tabIndex = 0;
+                });
               }
             },
           ),
@@ -851,12 +938,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (kDebugMode) {
-      try { debugPrint('[Lifecycle] state=$state'); } catch (_) {}
+      try {
+        debugPrint('[Lifecycle] state=$state');
+      } catch (_) {}
     }
     if (state == AppLifecycleState.resumed) {
       // If we missed the target while backgrounded, fire immediately within grace window
       final now = DateTime.now();
-      DateTime target = DateTime(now.year, now.month, now.day, _reminderTime.hour, _reminderTime.minute);
+      DateTime target = DateTime(now.year, now.month, now.day,
+          _reminderTime.hour, _reminderTime.minute);
       if (!target.isAfter(now)) {
         // Today target has passed
         final diff = now.difference(target).inMinutes;
@@ -869,7 +959,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         }
       }
       _rescheduleReminder('resume');
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       // Cancel active timer to avoid stale callback while backgrounded
       _cancelReminderTimer(from: 'pause');
     }
@@ -898,14 +989,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (!mounted) return;
     if (kDebugMode) debugPrint('[Reminder][selftest] start');
     // 1) Toggle ripple: flip OFF then ON with ripple
-    setState(() { _reminderOn = !_reminderOn; });
-    if (kDebugMode) debugPrint('[Reminder][selftest] toggle -> ${_reminderOn ? 'ON' : 'OFF'}');
+    setState(() {
+      _reminderOn = !_reminderOn;
+    });
+    if (kDebugMode)
+      debugPrint(
+          '[Reminder][selftest] toggle -> ${_reminderOn ? 'ON' : 'OFF'}');
     HapticFeedback.lightImpact();
     SystemSound.play(SystemSoundType.click);
     _showCheckRipple(_reminderToggleKey);
     await Future<void>.delayed(const Duration(milliseconds: 420));
     if (!mounted) return;
-    setState(() { _reminderOn = true; });
+    setState(() {
+      _reminderOn = true;
+    });
     if (kDebugMode) debugPrint('[Reminder][selftest] toggle -> ON');
     HapticFeedback.lightImpact();
     SystemSound.play(SystemSoundType.click);
@@ -917,8 +1014,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       hour: _reminderTime.hour,
       minute: (_reminderTime.minute + 1) % 60,
     ));
-    setState(() { _reminderTime = nextMinute; });
-    if (kDebugMode) debugPrint('[Reminder][selftest] time -> ${_reminderTime.format(context)}');
+    setState(() {
+      _reminderTime = nextMinute;
+    });
+    if (kDebugMode)
+      debugPrint(
+          '[Reminder][selftest] time -> ${_reminderTime.format(context)}');
     HapticFeedback.selectionClick();
     SystemSound.play(SystemSoundType.click);
     _showTimerRing(_reminderTimeKey);
@@ -935,7 +1036,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (!widget.showBottomNav) {
       _tabIndex = 0; // Default to Today (0) when embedded; 1 = Explore
     }
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _pulseController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat(reverse: true);
     _startMicrocopyRotation();
     // Initialize asynchronously: reminder prefs, quests data, and midnight refresh
     Future.microtask(() async {
@@ -988,7 +1091,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void didPushNext() {
     // Another route pushed on top (e.g., switching tabs or opening sheet)
     if (kDebugMode) {
-      try { debugPrint('[Pill][ROUTE] didPushNext -> remove pill'); } catch (_) {}
+      try {
+        debugPrint('[Pill][ROUTE] didPushNext -> remove pill');
+      } catch (_) {}
     }
     _removeTimerPill();
   }
@@ -997,7 +1102,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void didPopNext() {
     // A subsequent route popped, revealing this one
     if (kDebugMode) {
-      try { debugPrint('[Pill][ROUTE] didPopNext'); } catch (_) {}
+      try {
+        debugPrint('[Pill][ROUTE] didPopNext');
+      } catch (_) {}
     }
     // No-op: pill is only created explicitly while on this screen
   }
@@ -1005,7 +1112,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Handle bottom tab reselect: scroll to top if scrolled, otherwise refresh
   void _onReselect() {
     if (!mounted) return;
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (_scrollController.hasClients) {
       final offset = _scrollController.offset;
       const threshold = 64.0;
@@ -1013,7 +1121,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         if (reduceMotion) {
           _scrollController.jumpTo(0);
         } else {
-          _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+          _scrollController.animateTo(0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut);
         }
         return;
       }
@@ -1030,13 +1140,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void didPop() {
     // This route popped: ensure complete cleanup
     if (kDebugMode) {
-      try { debugPrint('[Pill][ROUTE] didPop -> remove pill'); } catch (_) {}
+      try {
+        debugPrint('[Pill][ROUTE] didPop -> remove pill');
+      } catch (_) {}
     }
     _removeTimerPill();
   }
 
   // Start a floating timer pill anchored near the given card.
-  void _startTimerPill({required GlobalKey cardKey, required String questId, required Duration total}) {
+  void _startTimerPill(
+      {required GlobalKey cardKey,
+      required String questId,
+      required Duration total}) {
     _removeTimerPill();
     // Only show pill when this screen is visible.
     // If used standalone (showBottomNav=true), require route '/wellness-dashboard' and current.
@@ -1045,7 +1160,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final routeName = route?.settings.name;
     final isCurrent = route?.isCurrent ?? true;
     // Consider visible when current; do not strictly require a named route (can be null under builders)
-    final bool allow = isCurrent && (!widget.showBottomNav || routeName == '/wellness-dashboard' || routeName == null);
+    final bool allow = isCurrent &&
+        (!widget.showBottomNav ||
+            routeName == '/wellness-dashboard' ||
+            routeName == null);
     // Also require we're on the Today tab to avoid showing on Explore/programmatic switches
     if (!allow || _tabIndex != 0) {
       _removeTimerPill(forQuestId: questId);
@@ -1053,15 +1171,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
     if (kDebugMode) {
       try {
-        debugPrint('[Pill][START] questId=$questId total=${total.inMinutes}m route=${routeName ?? 'null'} isCurrent=$isCurrent');
+        debugPrint(
+            '[Pill][START] questId=$questId total=${total.inMinutes}m route=${routeName ?? 'null'} isCurrent=$isCurrent');
       } catch (_) {}
     }
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     // Use screen-scoped overlay so the pill is owned by this screen
     final overlay = Overlay.of(context);
     final overlayBox = overlay.context.findRenderObject() as RenderBox?;
     final centerGlobal = _globalCenterOf(cardKey);
-    if (overlayBox == null || !overlayBox.attached || centerGlobal == null) return;
+    if (overlayBox == null || !overlayBox.attached || centerGlobal == null)
+      return;
     final centerLocal = overlayBox.globalToLocal(centerGlobal);
     _timerPillQuestId = questId;
     _timerPillEndAt = DateTime.now().add(total);
@@ -1069,12 +1190,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     _timerPillAnim?.dispose();
     _timerPillAnim = null;
     if (!reduceMotion) {
-      _timerPillAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
+      _timerPillAnim = AnimationController(
+          vsync: this, duration: const Duration(milliseconds: 1400))
         ..repeat(reverse: true);
     }
     final Animation<double> scaleAnim = _timerPillAnim == null
         ? const AlwaysStoppedAnimation<double>(1.0)
-        : Tween<double>(begin: 0.98, end: 1.02).animate(CurvedAnimation(parent: _timerPillAnim!, curve: Curves.easeInOut));
+        : Tween<double>(begin: 0.98, end: 1.02).animate(
+            CurvedAnimation(parent: _timerPillAnim!, curve: Curves.easeInOut));
 
     String _fmt(Duration d) {
       final s = d.inSeconds.clamp(0, 24 * 3600);
@@ -1085,11 +1208,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     _timerPillEntry = OverlayEntry(builder: (_) {
       final now = DateTime.now();
-      final remaining = _timerPillEndAt != null ? _timerPillEndAt!.difference(now) : Duration.zero;
+      final remaining = _timerPillEndAt != null
+          ? _timerPillEndAt!.difference(now)
+          : Duration.zero;
       final txt = _fmt(remaining);
       // Position slightly to the right of the card center
-      final left = (centerLocal.dx + 64).clamp(8.0, (overlayBox.size.width - 140).toDouble());
-      final top = (centerLocal.dy - 16).clamp(8.0, (overlayBox.size.height - 40).toDouble());
+      final left = (centerLocal.dx + 64)
+          .clamp(8.0, (overlayBox.size.width - 140).toDouble());
+      final top = (centerLocal.dy - 16)
+          .clamp(8.0, (overlayBox.size.height - 40).toDouble());
       return Positioned(
         left: left,
         top: top,
@@ -1097,7 +1224,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           ignoring: true,
           child: AnimatedBuilder(
             animation: scaleAnim,
-            builder: (context, child) => Transform.scale(scale: scaleAnim.value, child: child),
+            builder: (context, child) =>
+                Transform.scale(scale: scaleAnim.value, child: child),
             child: Builder(builder: (ctx) {
               final scheme = Theme.of(ctx).colorScheme;
               final scaffoldBg = Theme.of(ctx).scaffoldBackgroundColor;
@@ -1107,27 +1235,32 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 double dr = (a.r - b.r).abs();
                 double dg = (a.g - b.g).abs();
                 double db = (a.b - b.b).abs();
-                return (dr + dg + db) < 0.12; // ~30/255 threshold for normalized channels
+                return (dr + dg + db) <
+                    0.12; // ~30/255 threshold for normalized channels
               }
+
               if (similar(bg, scaffoldBg)) {
                 bg = scheme.primaryContainer;
                 if (similar(bg, scaffoldBg)) {
                   bg = scheme.secondary;
                 }
               }
-              final fg = ThemeData.estimateBrightnessForColor(bg) == Brightness.dark
-                  ? Colors.white
-                  : Colors.black87;
+              final fg =
+                  ThemeData.estimateBrightnessForColor(bg) == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87;
               return Material(
                 color: bg,
                 shape: const StadiumBorder(),
                 elevation: 3,
                 shadowColor: Colors.black.withOpacity(0.2),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Text(
                     txt,
-                    style: TextStyleHelper.instance.titleMediumInter.copyWith(color: fg, fontWeight: FontWeight.w700),
+                    style: TextStyleHelper.instance.titleMediumInter
+                        .copyWith(color: fg, fontWeight: FontWeight.w700),
                   ),
                 ),
               );
@@ -1142,12 +1275,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       final route = ModalRoute.of(context);
       final currentName = route?.settings.name;
       final isCurrent = route?.isCurrent ?? true;
-      final bool stillVisible = isCurrent; // route name can be null when built via builder
+      final bool stillVisible =
+          isCurrent; // route name can be null when built via builder
       final bool onToday = _tabIndex == 0;
       if (!stillVisible || !onToday) {
         if (kDebugMode) {
           try {
-            debugPrint('[Pill][CLEANUP] route_or_tab_changed current=${currentName ?? 'null'} isCurrent=$isCurrent tab=$_tabIndex questId=$questId');
+            debugPrint(
+                '[Pill][CLEANUP] route_or_tab_changed current=${currentName ?? 'null'} isCurrent=$isCurrent tab=$_tabIndex questId=$questId');
           } catch (_) {}
         }
         _removeTimerPill(forQuestId: questId);
@@ -1164,15 +1299,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   }
 
   void _removeTimerPill({String? forQuestId}) {
-    if (forQuestId != null && _timerPillQuestId != null && _timerPillQuestId != forQuestId) return;
+    if (forQuestId != null &&
+        _timerPillQuestId != null &&
+        _timerPillQuestId != forQuestId) return;
     if (kDebugMode) {
       try {
-        debugPrint('[Pill][REMOVE] questId=${forQuestId ?? _timerPillQuestId ?? 'null'} hadTicker=${(_timerPillTicker != null)} hadEntry=${(_timerPillEntry != null)}');
+        debugPrint(
+            '[Pill][REMOVE] questId=${forQuestId ?? _timerPillQuestId ?? 'null'} hadTicker=${(_timerPillTicker != null)} hadEntry=${(_timerPillEntry != null)}');
       } catch (_) {}
     }
     // Cancel any scheduled auto-complete to avoid firing after navigation/cancel
     if (_autoCompleteTimer != null) {
-      try { if (kDebugMode) debugPrint('[Pill][AUTO] cancel questId=${forQuestId ?? _timerPillQuestId ?? 'null'}'); } catch (_) {}
+      try {
+        if (kDebugMode)
+          debugPrint(
+              '[Pill][AUTO] cancel questId=${forQuestId ?? _timerPillQuestId ?? 'null'}');
+      } catch (_) {}
     }
     _autoCompleteTimer?.cancel();
     _autoCompleteTimer = null;
@@ -1217,7 +1359,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             children: [
               Text(title, style: TextStyleHelper.instance.headline21Inter),
               const SizedBox(height: 8),
-              Text('Estimated ${durationMin} min', style: TextStyleHelper.instance.titleMediumInter.copyWith(color: const Color(0xFF6B7280))),
+              Text('Estimated ${durationMin} min',
+                  style: TextStyleHelper.instance.titleMediumInter
+                      .copyWith(color: const Color(0xFF6B7280))),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -1230,7 +1374,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     HapticFeedback.lightImpact();
                     SystemSound.play(SystemSoundType.click);
                     _showTimerRing(cardKey);
-                    _startTimerPill(cardKey: cardKey, questId: questId, total: Duration(minutes: durationMin));
+                    _startTimerPill(
+                        cardKey: cardKey,
+                        questId: questId,
+                        total: Duration(minutes: durationMin));
                     // Telemetry: quest_progress at timer start
                     try {
                       logAnalyticsEvent('quest_progress', metadata: {
@@ -1245,12 +1392,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       });
                     } catch (_) {}
                     // Auto-complete disabled: require explicit user action to complete
-                    try { if (kDebugMode) debugPrint('[Pill][AUTO] disabled (require explicit completion) questId=$questId'); } catch (_) {}
+                    try {
+                      if (kDebugMode)
+                        debugPrint(
+                            '[Pill][AUTO] disabled (require explicit completion) questId=$questId');
+                    } catch (_) {}
                     _autoCompleteTimer?.cancel();
                     _autoCompleteTimer = null;
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Timer started for $durationMin min')),
+                        SnackBar(
+                            content:
+                                Text('Timer started for $durationMin min')),
                       );
                     }
                   },
@@ -1267,14 +1420,19 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     try {
                       await _questsEngine?.markStart(questId);
                       if (kDebugMode) {
-                        try { debugPrint('[TimerSheet][Complete] questId=$questId'); } catch (_) {}
+                        try {
+                          debugPrint('[TimerSheet][Complete] questId=$questId');
+                        } catch (_) {}
                       }
                       await _questsEngine?.markComplete(questId);
                       // Sync lifetime XP immediately
                       try {
-                        final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
+                        final lifetimeXp =
+                            _questsEngine?.computeLifetimeXp() ?? 0;
                         if (mounted) {
-                          context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                          context
+                              .read<ProgressProvider>()
+                              .updateLifetimeXp(lifetimeXp);
                         }
                       } catch (_) {}
                       // XP chip pop is handled by first-use logic on initial tap to avoid duplicates
@@ -1303,12 +1461,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                             action: SnackBarAction(
                               label: 'Undo',
                               onPressed: () async {
-                                try { await _questsEngine?.uncompleteToday(questId); } catch (_) {}
+                                try {
+                                  await _questsEngine?.uncompleteToday(questId);
+                                } catch (_) {}
                                 // Sync lifetime XP after undo
                                 try {
-                                  final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
+                                  final lifetimeXp =
+                                      _questsEngine?.computeLifetimeXp() ?? 0;
                                   if (mounted) {
-                                    context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                                    context
+                                        .read<ProgressProvider>()
+                                        .updateLifetimeXp(lifetimeXp);
                                   }
                                 } catch (_) {}
                                 await _refreshToday();
@@ -1367,7 +1530,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             children: [
               Text(title, style: TextStyleHelper.instance.headline21Inter),
               const SizedBox(height: 8),
-              Text('Mark complete for today?', style: TextStyleHelper.instance.titleMediumInter.copyWith(color: const Color(0xFF6B7280))),
+              Text('Mark complete for today?',
+                  style: TextStyleHelper.instance.titleMediumInter
+                      .copyWith(color: const Color(0xFF6B7280))),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -1375,21 +1540,31 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.of(ctx).pop();
-                        HapticFeedback.lightImpact();
+                        HapticFeedback.heavyImpact();
                         SystemSound.play(SystemSoundType.click);
                         bool alreadyDone = false;
-                        try { alreadyDone = engine.isCompletedToday(questId); } catch (_) {}
-                        try { await engine.markComplete(questId); } catch (_) {}
+                        try {
+                          alreadyDone = engine.isCompletedToday(questId);
+                        } catch (_) {}
+                        try {
+                          await engine.markComplete(questId);
+                        } catch (_) {}
                         // Sync lifetime XP
                         try {
                           final lifetimeXp = engine.computeLifetimeXp();
-                          if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                          if (mounted)
+                            context
+                                .read<ProgressProvider>()
+                                .updateLifetimeXp(lifetimeXp);
                         } catch (_) {}
                         // Visual feedback
-                        try { _showCheckRipple(cardKey); } catch (_) {}
+                        try {
+                          _showCheckRipple(cardKey);
+                        } catch (_) {}
                         // Telemetry: only on first award
                         try {
-                          final awarded = !alreadyDone && engine.isCompletedToday(questId);
+                          final awarded =
+                              !alreadyDone && engine.isCompletedToday(questId);
                           if (awarded) {
                             logAnalyticsEvent('quest_complete', metadata: {
                               'quest_id': questId,
@@ -1416,11 +1591,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               action: SnackBarAction(
                                 label: 'Undo',
                                 onPressed: () async {
-                                  try { await engine.uncompleteToday(questId); } catch (_) {}
+                                  try {
+                                    await engine.uncompleteToday(questId);
+                                  } catch (_) {}
                                   // Sync lifetime XP after undo
                                   try {
-                                    final lifetimeXp = engine.computeLifetimeXp();
-                                    if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                                    final lifetimeXp =
+                                        engine.computeLifetimeXp();
+                                    if (mounted)
+                                      context
+                                          .read<ProgressProvider>()
+                                          .updateLifetimeXp(lifetimeXp);
                                   } catch (_) {}
                                   await _refreshToday();
                                   await _refreshExplore();
@@ -1454,7 +1635,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Short timer ring microinteraction centered on a card
   void _showTimerRing(GlobalKey sourceKey) {
     // Respect reduce-motion: skip decorative animation
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) return;
     final startGlobal = _globalCenterOf(sourceKey);
     // Use screen-scoped overlay so ring belongs to this screen
@@ -1490,7 +1672,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       );
     });
     overlayState.insert(entry);
-    controller.addListener(() { entry.markNeedsBuild(); });
+    controller.addListener(() {
+      entry.markNeedsBuild();
+    });
     controller.forward().whenComplete(() {
       entry.remove();
       controller.dispose();
@@ -1514,7 +1698,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     // Clamp and fallback for small screens or offscreen targets
     final size = overlayBox.size;
-    bool endOff = end.dx.isNaN || end.dy.isNaN || end.dx < 0 || end.dy < 0 || end.dx > size.width || end.dy > size.height;
+    bool endOff = end.dx.isNaN ||
+        end.dy.isNaN ||
+        end.dx < 0 ||
+        end.dy < 0 ||
+        end.dx > size.width ||
+        end.dy > size.height;
     if (endOff) {
       // simple upward pop if XP card is not visible
       end = start.translate(0, -80);
@@ -1524,7 +1713,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
 
     // Respect reduce-motion: show a lightweight toast instead of animated chip
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1537,11 +1727,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
 
     // Animation polish: snappier ease + minor timing tweak
-    final controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 380));
+    final controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 380));
     final position = Tween<Offset>(begin: start, end: end)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(controller);
-    final fade = CurvedAnimation(parent: controller, curve: const Interval(0.0, 0.8, curve: Curves.easeOut));
+    final fade = CurvedAnimation(
+        parent: controller,
+        curve: const Interval(0.0, 0.8, curve: Curves.easeOut));
     final scale = Tween<double>(begin: 0.92, end: 1.06)
         .chain(CurveTween(curve: Curves.fastOutSlowIn))
         .animate(controller);
@@ -1565,7 +1758,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             child: Transform.scale(
               scale: scale.value,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: primary,
                   borderRadius: BorderRadius.circular(14),
@@ -1581,7 +1775,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.white, size: 16),
+                    const Icon(Icons.star_rounded,
+                        color: Colors.white, size: 16),
                     const SizedBox(width: 6),
                     Text(
                       '+$amount XP',
@@ -1617,7 +1812,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       return KeyboardDismissibleScaffold(
         safeTop: false,
         safeBottom: false,
-        bottomNavigationBar: widget.showBottomNav ? const AppBottomNav(current: AppTab.quest) : null,
+        bottomNavigationBar: widget.showBottomNav
+            ? const AppBottomNav(current: AppTab.quest)
+            : null,
         body: Column(
           children: [
             // Sticky header outside the scroll view (matches Mood Tracker)
@@ -1634,7 +1831,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   ),
                   SingleChildScrollView(
                     controller: _scrollController,
-                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom),
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewPadding.bottom),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1678,7 +1876,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   builder: (ctx) {
                     final canPop = Navigator.of(ctx).canPop();
                     final route = ModalRoute.of(ctx);
-                    final isModal = route is PageRoute && route.fullscreenDialog == true;
+                    final isModal =
+                        route is PageRoute && route.fullscreenDialog == true;
                     if (canPop) {
                       return AppBackButton(isModal: isModal);
                     }
@@ -1689,9 +1888,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   child: GestureDetector(
                     onLongPress: () async {
                       if (!kDebugMode) return;
-                      try { HapticFeedback.selectionClick(); } catch (_) {}
-                      if (kDebugMode) { try { debugPrint('[Debug][Quests] Reset via header long-press'); } catch (_) {} }
-                      try { await QuestsEngine.debugResetAll(); } catch (_) {}
+                      try {
+                        HapticFeedback.selectionClick();
+                      } catch (_) {}
+                      if (kDebugMode) {
+                        try {
+                          debugPrint(
+                              '[Debug][Quests] Reset via header long-press');
+                        } catch (_) {}
+                      }
+                      try {
+                        await QuestsEngine.debugResetAll();
+                      } catch (_) {}
                       try {
                         await _refreshToday();
                         await _refreshExplore();
@@ -1700,7 +1908,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         try {
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Quests reset (debug)')),
+                            const SnackBar(
+                                content: Text('Quests reset (debug)')),
                           );
                         } catch (_) {}
                       }
@@ -1764,7 +1973,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     } else if (e is Map<String, dynamic>) {
                       final t = (e['tag'] ?? '').toString().toUpperCase();
                       if (t == 'CHECK-IN' || t == 'CHECKIN') {
-                        questId = (e['quest_id'] as String?) ?? (e['id'] as String?);
+                        questId =
+                            (e['quest_id'] as String?) ?? (e['id'] as String?);
                         break;
                       }
                     }
@@ -1780,7 +1990,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       } else if (e is Map<String, dynamic>) {
                         final t = (e['tag'] ?? '').toString().toUpperCase();
                         if (t == 'PROGRESS') {
-                          questId = (e['quest_id'] as String?) ?? (e['id'] as String?);
+                          questId = (e['quest_id'] as String?) ??
+                              (e['id'] as String?);
                           break;
                         }
                       }
@@ -1789,14 +2000,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 }
               } catch (_) {}
               // Fallback to known ids if not present in today's list
-              questId ??= (engine?.listAll().any((q) => q.id == 'checkin_quick_v2') == true)
-                  ? 'checkin_quick_v2'
-                  : 'checkin_quick_v1';
+              questId ??=
+                  (engine?.listAll().any((q) => q.id == 'checkin_quick_v2') ==
+                          true)
+                      ? 'checkin_quick_v2'
+                      : 'checkin_quick_v1';
 
               bool isDone = false;
-              try { if (engine != null && questId != null) { isDone = engine.isCompletedToday(questId); } } catch (_) {}
+              try {
+                if (engine != null && questId != null) {
+                  isDone = engine.isCompletedToday(questId);
+                }
+              } catch (_) {}
 
-              final Color bg = isDone ? const Color(0xFFE6EAF0) : Theme.of(context).colorScheme.primary;
+              final Color bg = isDone
+                  ? const Color(0xFFE6EAF0)
+                  : Theme.of(context).colorScheme.primary;
               final Color fg = isDone ? const Color(0xFF8C9CAA) : Colors.white;
 
               return CustomButton(
@@ -1806,20 +2025,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   textColor: fg,
                   borderColor: Colors.transparent,
                   showBorder: false,
-                  padding: EdgeInsets.symmetric(horizontal: 48.h, vertical: 24.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 48.h, vertical: 24.h),
                   borderRadius: 37.h,
-                  textStyle: TextStyleHelper.instance.headline25BoldInter.copyWith(
-                      fontFamily: CoreTextStyles
-                          .TextStyleHelper.instance.headline24Bold.fontFamily),
+                  textStyle: TextStyleHelper.instance.headline25BoldInter
+                      .copyWith(
+                          fontFamily: CoreTextStyles.TextStyleHelper.instance
+                              .headline24Bold.fontFamily),
                   onPressed: isDone
                       ? null
                       : () async {
                           HapticFeedback.selectionClick();
-                          await Future<void>.delayed(const Duration(milliseconds: 220));
+                          await Future<void>.delayed(
+                              const Duration(milliseconds: 220));
                           if (!mounted) return;
                           showDialog(
                             context: context,
-                            barrierDismissible: false, // keep user on quest screen; use X to close
+                            barrierDismissible:
+                                false, // keep user on quest screen; use X to close
                             builder: (ctx) => AssessmentSplash(
                               onSubmitted: () {
                                 // Fire-and-forget on explicit submission only.
@@ -1844,23 +2067,27 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final int stepsLeft = hasEngineData
         ? pp.stepsLeft
         : (_baseSteps - completedLocal).clamp(0, _baseSteps);
-    final int xpEarned = hasEngineData
-        ? pp.xpEarned
-        : (_baseXp + (completedLocal * 10));
-    final int streak = (_questsEngine != null) ? _questsEngine!.computeFriendlyDailyStreak() : 0;
-    final int recordStreak = (_questsEngine != null) ? _questsEngine!.computeRecordDailyStreak() : 0;
+    final int xpEarned =
+        hasEngineData ? pp.xpEarned : (_baseXp + (completedLocal * 10));
+    final int streak = (_questsEngine != null)
+        ? _questsEngine!.computeFriendlyDailyStreak()
+        : 0;
+    final int recordStreak =
+        (_questsEngine != null) ? _questsEngine!.computeRecordDailyStreak() : 0;
     // Responsive label and pluralization
     final double _w = MediaQuery.of(context).size.width;
     final bool _narrow = _w < 420;
     final String _dayWord = streak == 1 ? 'day' : 'days';
     final String _recordLabel = _narrow ? 'record' : 'record';
     // Only show record when it's strictly greater than current streak
-    final String _streakRecordLabel = (recordStreak > streak) ? '($_recordLabel $recordStreak)' : '';
+    final String _streakRecordLabel =
+        (recordStreak > streak) ? '($_recordLabel $recordStreak)' : '';
     // Lifetime XP -> Level and progress
     final int lifetimeXp = pp.lifetimeXp;
     const int _xpPerLevel = 100;
     final int level = (lifetimeXp ~/ _xpPerLevel) + 1; // Level 1 at 0..99 XP
-    final double levelProgress = ((lifetimeXp % _xpPerLevel) / _xpPerLevel).clamp(0.0, 1.0);
+    final double levelProgress =
+        ((lifetimeXp % _xpPerLevel) / _xpPerLevel).clamp(0.0, 1.0);
     // Hide Total XP pill when lifetime equals today's XP (first-day clean UI)
     final bool showTotalPill = lifetimeXp > xpEarned;
     // Persist previous progress for smooth animation
@@ -1884,11 +2111,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           );
         } catch (_) {}
         // Trigger a brief flash glow on the knob
-        setState(() { _levelUpFlash = true; });
-        try { _levelUpTimer?.cancel(); } catch (_) {}
+        setState(() {
+          _levelUpFlash = true;
+        });
+        try {
+          _levelUpTimer?.cancel();
+        } catch (_) {}
         _levelUpTimer = Timer(const Duration(milliseconds: 800), () {
           if (!mounted) return;
-          setState(() { _levelUpFlash = false; });
+          setState(() {
+            _levelUpFlash = false;
+          });
         });
       });
       _lastLevelShown = level;
@@ -1900,7 +2133,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         children: [
           Text('Your Progress',
               style: TextStyleHelper.instance.display31BoldInter.copyWith(
-                  fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                  fontFamily: CoreTextStyles
+                      .TextStyleHelper.instance.headline24Bold.fontFamily,
                   color: Color(0xFF444D5C))),
           SizedBox(height: 28.h),
           Row(children: [
@@ -1912,7 +2146,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     backgroundColor: Color(0xFFE0F2E9),
                     valueWidget: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                      transitionBuilder: (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
                       child: Column(
                         key: ValueKey<int>(streak),
                         mainAxisSize: MainAxisSize.min,
@@ -1925,8 +2160,11 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               maxLines: 1,
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyleHelper.instance.headline28BoldInter.copyWith(
-                                fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                              style: TextStyleHelper
+                                  .instance.headline28BoldInter
+                                  .copyWith(
+                                fontFamily: CoreTextStyles.TextStyleHelper
+                                    .instance.headline24Bold.fontFamily,
                                 color: const Color(0xFF4E5965),
                               ),
                             ),
@@ -1934,8 +2172,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           SizedBox(height: 18.h),
                         ],
                       ),
-                    )))
-,
+                    ))),
             SizedBox(width: 24.h),
             Expanded(
                 child: Container(
@@ -1947,37 +2184,45 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   backgroundColor: Color(0xFFE8E7F8),
                   valueWidget: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
-                    transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                    transitionBuilder: (child, anim) =>
+                        ScaleTransition(scale: anim, child: child),
                     child: Column(
                       key: ValueKey<int>(lifetimeXp),
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'Level $level',
-                          style: TextStyleHelper.instance.headline28BoldInter.copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                          style: TextStyleHelper.instance.headline28BoldInter
+                              .copyWith(
+                            fontFamily: CoreTextStyles.TextStyleHelper.instance
+                                .headline24Bold.fontFamily,
                             color: const Color(0xFF4E5965),
                           ),
                         ),
                         SizedBox(height: 6.h),
                         if (showTotalPill)
                           Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12.h),
-                            ),
-                            child: Text(
-                              'Total ${lifetimeXp} XP',
-                              style: TextStyleHelper.instance.titleSmallInter.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF4E5965),
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.h, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12.h),
+                              ),
+                              child: Text(
+                                'Total ${lifetimeXp} XP',
+                                style: TextStyleHelper.instance.titleSmallInter
+                                    .copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF4E5965),
+                                ),
                               ),
                             ),
                           ),
-                        ),
                         SizedBox(height: 8.h),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6.h),
@@ -1988,15 +2233,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                 Container(
                                   width: double.infinity,
                                   height: double.infinity,
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.18),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.18),
                                 ),
                                 // Animated fill + knob
                                 TweenAnimationBuilder<double>(
-                                  tween: Tween<double>(begin: _prevLevelProgress, end: levelProgress),
+                                  tween: Tween<double>(
+                                      begin: _prevLevelProgress,
+                                      end: levelProgress),
                                   duration: const Duration(milliseconds: 450),
                                   curve: Curves.easeOut,
                                   builder: (context, value, _) {
-                                    final primary = Theme.of(context).colorScheme.primary;
+                                    final primary =
+                                        Theme.of(context).colorScheme.primary;
                                     final bool nearLevelUp = value >= 0.92;
                                     final bool flash = _levelUpFlash;
                                     return Stack(children: [
@@ -2015,7 +2266,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                         ),
                                       ),
                                       Align(
-                                        alignment: Alignment((value * 2) - 1.0, 0),
+                                        alignment:
+                                            Alignment((value * 2) - 1.0, 0),
                                         child: Container(
                                           width: 14.h,
                                           height: 14.h,
@@ -2023,16 +2275,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                             color: Colors.white,
                                             shape: BoxShape.circle,
                                             boxShadow: [
-                                              const BoxShadow(color: Color(0x1A000000), blurRadius: 4, offset: Offset(0, 2)),
+                                              const BoxShadow(
+                                                  color: Color(0x1A000000),
+                                                  blurRadius: 4,
+                                                  offset: Offset(0, 2)),
                                               if (nearLevelUp)
                                                 BoxShadow(
-                                                  color: primary.withOpacity(0.30),
+                                                  color:
+                                                      primary.withOpacity(0.30),
                                                   blurRadius: 14,
                                                   spreadRadius: 1.0,
                                                 ),
                                               if (flash)
                                                 BoxShadow(
-                                                  color: primary.withOpacity(0.55),
+                                                  color:
+                                                      primary.withOpacity(0.55),
                                                   blurRadius: 22,
                                                   spreadRadius: 2.0,
                                                 ),
@@ -2072,24 +2329,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   Widget _buildRecommendationsSection() {
     // Determine daily completion state for RESOURCE and TIP to show subtle status
-    final comp = (_todayData?['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
+    final comp =
+        (_todayData?['completedToday'] as Map?)?.cast<String, bool>() ??
+            const {};
     final bool resDone = _qResId != null ? (comp[_qResId!] ?? false) : false;
     final bool tipDone = _qTipId != null ? (comp[_qTipId!] ?? false) : false;
     // Pull durations for tasks from today's selection for accurate display
     final int? _task1Dur = _durationFor(_qTask1Id);
     final int? _task2Dur = _durationFor(_qTask2Id);
-  return Padding(
+    return Padding(
         padding: EdgeInsets.symmetric(horizontal: 70.h).copyWith(bottom: 32.h),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Today\'s Recommendations',
               style: TextStyleHelper.instance.display32BoldInter.copyWith(
-                  fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                  fontFamily: CoreTextStyles
+                      .TextStyleHelper.instance.headline24Bold.fontFamily,
                   color: Color(0xFF4A5261))),
           SizedBox(height: 8.h),
           Text(
             'Estimated time: 10 min',
             style: TextStyleHelper.instance.headline21Inter.copyWith(
-                fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                fontFamily: CoreTextStyles
+                    .TextStyleHelper.instance.headline24Bold.fontFamily,
                 color: Color(0xFF8C9CAA)),
           ),
           SizedBox(height: 20.h),
@@ -2097,7 +2358,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           RecommendationCardWidget(
               containerKey: _task1CardKey,
               category: 'TASK',
-              title: _task1Dur != null ? 'Focus reset (${_task1Dur} min)' : 'Focus reset',
+              title: _task1Dur != null
+                  ? 'Focus reset (${_task1Dur} min)'
+                  : 'Focus reset',
               subtitle: (_task1Done && _task2Done)
                   ? 'All steps complete 🎉'
                   : 'Quick breathing + desk tidy',
@@ -2116,20 +2379,27 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 if (questId == null) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Focus task not available today')),);
+                      const SnackBar(
+                          content: Text('Focus task not available today')),
+                    );
                   }
                   return;
                 }
                 final dur = _durationFor(questId);
                 if (dur != null && dur > 0) {
-                  await _openTimerSheet(questId: questId, cardKey: _task1CardKey, title: 'Focus reset', durationMin: dur);
+                  await _openTimerSheet(
+                      questId: questId,
+                      cardKey: _task1CardKey,
+                      title: 'Focus reset',
+                      durationMin: dur);
                   return;
                 }
-                 if (mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(content: Text('Focus duration missing')),);
-                 }
-                 return;
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Focus duration missing')),
+                  );
+                }
+                return;
               }),
           SizedBox(height: 24.h),
           // Card 2 (TASK) - show only when a second TASK exists today
@@ -2137,7 +2407,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             RecommendationCardWidget(
                 containerKey: _task2CardKey,
                 category: 'TASK',
-                title: _task2Dur != null ? 'Study sprint (${_task2Dur} min)' : 'Study sprint',
+                title: _task2Dur != null
+                    ? 'Study sprint (${_task2Dur} min)'
+                    : 'Study sprint',
                 subtitle: 'Timer + no‑phone rule',
                 imagePath: 'assets/images/quests/task_study.svg',
                 doneImagePath: 'assets/images/quests/task_study_done.svg',
@@ -2152,18 +2424,26 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   if (questId == null) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Study sprint not available today')),);
+                        const SnackBar(
+                            content: Text('Study sprint not available today')),
+                      );
                     }
                     return;
                   }
                   final dur = _durationFor(questId);
                   if (dur != null && dur > 0) {
-                    await _openTimerSheet(questId: questId, cardKey: _task2CardKey, title: 'Study sprint', durationMin: dur);
+                    await _openTimerSheet(
+                        questId: questId,
+                        cardKey: _task2CardKey,
+                        title: 'Study sprint',
+                        durationMin: dur);
                     return;
                   }
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Study sprint duration missing')),);
+                      const SnackBar(
+                          content: Text('Study sprint duration missing')),
+                    );
                   }
                   return;
                 }),
@@ -2175,7 +2455,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               title: 'Calm music',
               subtitle: 'Lo‑fi playlist',
               imagePath: 'assets/images/quests/resource_headphone_match_v8.svg',
-              doneImagePath: 'assets/images/quests/resource_headphone_match_v8_done.svg',
+              doneImagePath:
+                  'assets/images/quests/resource_headphone_match_v8_done.svg',
               completed: resDone,
               onTap: () async {
                 HapticFeedback.lightImpact();
@@ -2189,16 +2470,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 if (questId == null || engine == null) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Calm music not available today')),
+                      const SnackBar(
+                          content: Text('Calm music not available today')),
                     );
                   }
                   return;
                 }
                 bool isDone = false;
-                try { isDone = engine.isCompletedToday(questId); } catch (_) {}
+                try {
+                  isDone = engine.isCompletedToday(questId);
+                } catch (_) {}
                 if (!isDone) {
                   // Completing: optional soft XP pop only on first use per day
-                  if (_enableSoftXpPop && await _isFirstUseToday(_prefsResPopDate)) {
+                  if (_enableSoftXpPop &&
+                      await _isFirstUseToday(_prefsResPopDate)) {
                     _showXpChipPop(_resCardKey, amount: 5);
                     await _markUsedToday(_prefsResPopDate);
                   }
@@ -2207,18 +2492,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     await engine.markStart(questId);
                   } catch (_) {}
                   bool alreadyDone = false;
-                  try { alreadyDone = engine.isCompletedToday(questId); } catch (_) {}
-                  try { await engine.markComplete(questId); } catch (_) {}
+                  try {
+                    alreadyDone = engine.isCompletedToday(questId);
+                  } catch (_) {}
+                  try {
+                    await engine.markComplete(questId);
+                  } catch (_) {}
                   // Sync lifetime XP immediately
                   try {
                     final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                    if (mounted)
+                      context
+                          .read<ProgressProvider>()
+                          .updateLifetimeXp(lifetimeXp);
                   } catch (_) {}
                   // Visual feedback
-                  try { _showCheckRipple(_resCardKey); } catch (_) {}
+                  try {
+                    _showCheckRipple(_resCardKey);
+                  } catch (_) {}
                   // Telemetry: only on first award
                   try {
-                    final awarded = !alreadyDone && engine.isCompletedToday(questId);
+                    final awarded =
+                        !alreadyDone && engine.isCompletedToday(questId);
                     if (awarded) {
                       logAnalyticsEvent('quest_complete', metadata: {
                         'quest_id': questId,
@@ -2235,17 +2530,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   } catch (_) {}
                 } else {
                   // Un-completing (toggle off)
-                  try { await engine.uncompleteToday(questId); } catch (_) {}
+                  try {
+                    await engine.uncompleteToday(questId);
+                  } catch (_) {}
                   // Sync lifetime XP after undo
                   try {
                     final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                    if (mounted)
+                      context
+                          .read<ProgressProvider>()
+                          .updateLifetimeXp(lifetimeXp);
                   } catch (_) {}
                   if (mounted) {
                     final messenger = ScaffoldMessenger.of(context);
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
-                      const SnackBar(duration: Duration(milliseconds: 1200), content: Text('Marked undone')),
+                      const SnackBar(
+                          duration: Duration(milliseconds: 1200),
+                          content: Text('Marked undone')),
                     );
                   }
                   try {
@@ -2291,10 +2593,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   return;
                 }
                 bool isDone = false;
-                try { isDone = engine.isCompletedToday(questId); } catch (_) {}
+                try {
+                  isDone = engine.isCompletedToday(questId);
+                } catch (_) {}
                 if (!isDone) {
                   // Completing: optional soft XP pop only on first use per day
-                  if (_enableSoftXpPop && await _isFirstUseToday(_prefsTipPopDate)) {
+                  if (_enableSoftXpPop &&
+                      await _isFirstUseToday(_prefsTipPopDate)) {
                     _showXpChipPop(_tipCardKey, amount: 5);
                     await _markUsedToday(_prefsTipPopDate);
                   }
@@ -2303,18 +2608,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     await engine.markStart(questId);
                   } catch (_) {}
                   bool alreadyDone = false;
-                  try { alreadyDone = engine.isCompletedToday(questId); } catch (_) {}
-                  try { await engine.markComplete(questId); } catch (_) {}
+                  try {
+                    alreadyDone = engine.isCompletedToday(questId);
+                  } catch (_) {}
+                  try {
+                    await engine.markComplete(questId);
+                  } catch (_) {}
                   // Sync lifetime XP immediately
                   try {
                     final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                    if (mounted)
+                      context
+                          .read<ProgressProvider>()
+                          .updateLifetimeXp(lifetimeXp);
                   } catch (_) {}
                   // Visual feedback
-                  try { _showCheckRipple(_tipCardKey); } catch (_) {}
+                  try {
+                    _showCheckRipple(_tipCardKey);
+                  } catch (_) {}
                   // Telemetry: only on first award
                   try {
-                    final awarded = !alreadyDone && engine.isCompletedToday(questId);
+                    final awarded =
+                        !alreadyDone && engine.isCompletedToday(questId);
                     if (awarded) {
                       logAnalyticsEvent('quest_complete', metadata: {
                         'quest_id': questId,
@@ -2331,17 +2646,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   } catch (_) {}
                 } else {
                   // Un-completing (toggle off)
-                  try { await engine.uncompleteToday(questId); } catch (_) {}
+                  try {
+                    await engine.uncompleteToday(questId);
+                  } catch (_) {}
                   // Sync lifetime XP after undo
                   try {
                     final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+                    if (mounted)
+                      context
+                          .read<ProgressProvider>()
+                          .updateLifetimeXp(lifetimeXp);
                   } catch (_) {}
                   if (mounted) {
                     final messenger = ScaffoldMessenger.of(context);
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
-                      const SnackBar(duration: Duration(milliseconds: 1200), content: Text('Marked undone')),
+                      const SnackBar(
+                          duration: Duration(milliseconds: 1200),
+                          content: Text('Marked undone')),
                     );
                   }
                   try {
@@ -2362,7 +2684,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           SizedBox(height: 24.h),
           // Card 5 (REMINDER) - themed toggle + change time
           Builder(
-              builder: (context) {
+            builder: (context) {
               final near = _isReminderNear();
               final now = DateTime.now();
               // Fire telemetry on transition into near state (release + debug)
@@ -2384,10 +2706,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               _lastReminderNear = near;
               // Keep debug prints throttled
               if (kDebugMode) {
-                final shouldLog = (_lastReminderLogAt == DateTime.fromMillisecondsSinceEpoch(0)) ||
-                    (now.difference(_lastReminderLogAt).inSeconds >= 60) || becameNear;
+                final shouldLog = (_lastReminderLogAt ==
+                        DateTime.fromMillisecondsSinceEpoch(0)) ||
+                    (now.difference(_lastReminderLogAt).inSeconds >= 60) ||
+                    becameNear;
                 if (shouldLog) {
-                  debugPrint('[Reminder][near] now=$near on=$_reminderOn time=${_reminderTime.format(context)}');
+                  debugPrint(
+                      '[Reminder][near] now=$near on=$_reminderOn time=${_reminderTime.format(context)}');
                   _lastReminderLogAt = now;
                 }
               }
@@ -2399,13 +2724,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               final primary = Theme.of(context).colorScheme.primary;
               final borderBase = const Color(0xFFF4F5F7);
               final borderColor = near
-                  ? Color.lerp(borderBase, primary, 0.6 + 0.4 * _pulseController.value)!
+                  ? Color.lerp(
+                      borderBase, primary, 0.6 + 0.4 * _pulseController.value)!
                   : borderBase;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeInOut,
                 decoration: BoxDecoration(
-                  color: _reminderOn ? const Color(0xFFF4F1FF) : const Color(0xFFFEFEFE),
+                  color: _reminderOn
+                      ? const Color(0xFFF4F1FF)
+                      : const Color(0xFFFEFEFE),
                   border: Border.all(color: borderColor),
                   borderRadius: BorderRadius.circular(29.h),
                   boxShadow: _reminderOn
@@ -2432,8 +2760,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                             children: [
                               Text(
                                 'REMINDER',
-                                style: TextStyleHelper.instance.title19BoldInter.copyWith(
-                                  fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                                style: TextStyleHelper.instance.title19BoldInter
+                                    .copyWith(
+                                  fontFamily: CoreTextStyles.TextStyleHelper
+                                      .instance.headline24Bold.fontFamily,
                                   color: const Color(0xFF8E98A7),
                                 ),
                               ),
@@ -2447,7 +2777,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                   // Apply scheduling change immediately
                                   _rescheduleReminder('toggle');
                                   if (kDebugMode) {
-                                    debugPrint('[Reminder][toggle] on=$_reminderOn');
+                                    debugPrint(
+                                        '[Reminder][toggle] on=$_reminderOn');
                                   }
                                   // Microinteraction: subtle ripple on toggle change
                                   HapticFeedback.lightImpact();
@@ -2456,14 +2787,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                   // Telemetry: quest_reminder_toggle
                                   final qid = _qTask1Id ?? _qTask2Id;
                                   try {
-                                    logAnalyticsEvent('quest_reminder_toggle', metadata: {
-                                      if (qid != null) 'quest_id': qid,
-                                      'surface': 'wellness_dashboard',
-                                      'variant': 'today',
-                                      'tag': _reminderOn ? 'toggle_on' : 'toggle_off',
-                                      'ts': DateTime.now().millisecondsSinceEpoch,
-                                      'ui': 'reminder_toggle',
-                                    });
+                                    logAnalyticsEvent('quest_reminder_toggle',
+                                        metadata: {
+                                          if (qid != null) 'quest_id': qid,
+                                          'surface': 'wellness_dashboard',
+                                          'variant': 'today',
+                                          'tag': _reminderOn
+                                              ? 'toggle_on'
+                                              : 'toggle_off',
+                                          'ts': DateTime.now()
+                                              .millisecondsSinceEpoch,
+                                          'ui': 'reminder_toggle',
+                                        });
                                   } catch (_) {}
                                 },
                                 child: Container(
@@ -2473,14 +2808,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                     curve: Curves.easeOutCubic,
                                     width: 56.h,
                                     height: 30.h,
-                                    padding: EdgeInsets.symmetric(horizontal: 4.h, vertical: 4.h),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 4.h, vertical: 4.h),
                                     decoration: BoxDecoration(
-                                      color: _reminderOn ? Theme.of(context).colorScheme.primary : const Color(0xFFE6EAF0),
+                                      color: _reminderOn
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : const Color(0xFFE6EAF0),
                                       borderRadius: BorderRadius.circular(20.h),
                                       boxShadow: _reminderOn
                                           ? [
                                               BoxShadow(
-                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.35),
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    .withOpacity(0.35),
                                                 blurRadius: 14,
                                                 spreadRadius: 1,
                                                 offset: const Offset(0, 3),
@@ -2489,19 +2832,29 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                           : [],
                                     ),
                                     child: AnimatedAlign(
-                                      duration: const Duration(milliseconds: 220),
+                                      duration:
+                                          const Duration(milliseconds: 220),
                                       curve: Curves.easeOutCubic,
-                                      alignment: _reminderOn ? Alignment.centerRight : Alignment.centerLeft,
+                                      alignment: _reminderOn
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
                                       child: AnimatedScale(
-                                        duration: const Duration(milliseconds: 160),
+                                        duration:
+                                            const Duration(milliseconds: 160),
                                         curve: Curves.easeOutBack,
                                         scale: _reminderOn ? 1.0 : 0.96,
                                         child: Container(
                                           width: 22.h,
                                           height: 22.h,
-                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                          decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle),
                                           child: _reminderOn
-                                              ? Icon(Icons.check, size: 16.h, color: Theme.of(context).colorScheme.primary)
+                                              ? Icon(Icons.check,
+                                                  size: 16.h,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)
                                               : null,
                                         ),
                                       ),
@@ -2521,18 +2874,35 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                       child: Text(
                                         _formatReminderTime(_reminderTime),
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyleHelper.instance.headline26BoldInter.copyWith(
-                                          fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
-                                          color: _reminderOn ? const Color(0xFF4C5664) : const Color(0xFFB8C0CC),
+                                        style: TextStyleHelper
+                                            .instance.headline26BoldInter
+                                            .copyWith(
+                                          fontFamily: CoreTextStyles
+                                              .TextStyleHelper
+                                              .instance
+                                              .headline24Bold
+                                              .fontFamily,
+                                          color: _reminderOn
+                                              ? const Color(0xFF4C5664)
+                                              : const Color(0xFFB8C0CC),
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: _isTomorrowLabel(_reminderTime) ? 8.h : 0),
+                                    SizedBox(
+                                        width: _isTomorrowLabel(_reminderTime)
+                                            ? 8.h
+                                            : 0),
                                     _isTomorrowLabel(_reminderTime)
                                         ? Text(
                                             'tomorrow',
-                                            style: TextStyleHelper.instance.headline21Inter.copyWith(
-                                              fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                                            style: TextStyleHelper
+                                                .instance.headline21Inter
+                                                .copyWith(
+                                              fontFamily: CoreTextStyles
+                                                  .TextStyleHelper
+                                                  .instance
+                                                  .headline24Bold
+                                                  .fontFamily,
                                               color: const Color(0xFF8E98A7),
                                             ),
                                           )
@@ -2549,7 +2919,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                           context: context,
                                           initialTime: _reminderTime,
                                           builder: (context, child) {
-                                            return Theme(data: Theme.of(context), child: child!);
+                                            return Theme(
+                                                data: Theme.of(context),
+                                                child: child!);
                                           },
                                         );
                                         if (!mounted) return;
@@ -2562,41 +2934,57 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                           // Reschedule to new time immediately
                                           _rescheduleReminder('time_changed');
                                           if (kDebugMode) {
-                                            debugPrint('[Reminder][timeChanged] to=${_formatReminderTime(_reminderTime)}');
+                                            debugPrint(
+                                                '[Reminder][timeChanged] to=${_formatReminderTime(_reminderTime)}');
                                           }
                                           // Microinteraction: confirmation ring + haptics
                                           HapticFeedback.selectionClick();
-                                          SystemSound.play(SystemSoundType.click);
+                                          SystemSound.play(
+                                              SystemSoundType.click);
                                           _showTimerRing(_reminderTimeKey);
                                           // Telemetry: quest_reminder_toggle (time changed)
                                           final qid = _qTask1Id ?? _qTask2Id;
                                           try {
-                                            logAnalyticsEvent('quest_reminder_toggle', metadata: {
-                                              if (qid != null) 'quest_id': qid,
-                                              'surface': 'wellness_dashboard',
-                                              'variant': 'today',
-                                              'tag': 'time_changed',
-                                              'ts': DateTime.now().millisecondsSinceEpoch,
-                                              'ui': 'reminder_time',
-                                            });
+                                            logAnalyticsEvent(
+                                                'quest_reminder_toggle',
+                                                metadata: {
+                                                  if (qid != null)
+                                                    'quest_id': qid,
+                                                  'surface':
+                                                      'wellness_dashboard',
+                                                  'variant': 'today',
+                                                  'tag': 'time_changed',
+                                                  'ts': DateTime.now()
+                                                      .millisecondsSinceEpoch,
+                                                  'ui': 'reminder_time',
+                                                });
                                           } catch (_) {}
                                         }
                                       }
                                     : null,
                                 style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 0),
-                                  minimumSize: Size(0, 30.h), // match toggle height
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 12.h, vertical: 0),
+                                  minimumSize:
+                                      Size(0, 30.h), // match toggle height
                                   side: BorderSide(
-                                    color: _reminderOn ? Theme.of(context).colorScheme.primary : const Color(0xFFB8C0CC),
+                                    color: _reminderOn
+                                        ? Theme.of(context).colorScheme.primary
+                                        : const Color(0xFFB8C0CC),
                                   ),
-                                  foregroundColor: _reminderOn ? Theme.of(context).colorScheme.primary : const Color(0xFFB8C0CC),
+                                  foregroundColor: _reminderOn
+                                      ? Theme.of(context).colorScheme.primary
+                                      : const Color(0xFFB8C0CC),
                                   shape: const StadiumBorder(),
                                 ),
                                 icon: Icon(Icons.edit, size: 18.h),
                                 label: Text(
                                   'Change',
-                                  style: TextStyleHelper.instance.headline21Inter.copyWith(
-                                    fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                                  style: TextStyleHelper
+                                      .instance.headline21Inter
+                                      .copyWith(
+                                    fontFamily: CoreTextStyles.TextStyleHelper
+                                        .instance.headline24Bold.fontFamily,
                                     fontSize: 12.h,
                                   ),
                                 ),
@@ -2607,22 +2995,26 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             child: Text(
-                              _reminderOn ? _microcopy[_microIndex] : 'Nudge me to finish the quest',
-                              key: ValueKey(_microIndex.toString() + _reminderOn.toString()),
-                              style: TextStyleHelper.instance.headline21Inter.copyWith(
-                                fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                              _reminderOn
+                                  ? _microcopy[_microIndex]
+                                  : 'Nudge me to finish the quest',
+                              key: ValueKey(_microIndex.toString() +
+                                  _reminderOn.toString()),
+                              style: TextStyleHelper.instance.headline21Inter
+                                  .copyWith(
+                                fontFamily: CoreTextStyles.TextStyleHelper
+                                    .instance.headline24Bold.fontFamily,
                                 color: const Color(0xFFA8B1BF),
                               ),
                             ),
                           ),
-                          
                         ],
                       ),
                     ),
                     // Removed right-side image to give space for time + tomorrow label
-                    ],
-                  ),
-                );
+                  ],
+                ),
+              );
             },
           ),
         ]));
@@ -2632,9 +3024,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   String _titleCase(String input) {
     if (input.isEmpty) return input;
     final normalized = input.replaceAll('_', ' ').replaceAll('-', ' ');
-    final parts = normalized.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final parts =
+        normalized.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     return parts
-        .map((w) => w.substring(0, 1).toUpperCase() + (w.length > 1 ? w.substring(1).toLowerCase() : ''))
+        .map((w) =>
+            w.substring(0, 1).toUpperCase() +
+            (w.length > 1 ? w.substring(1).toLowerCase() : ''))
         .join(' ');
   }
 
@@ -2659,11 +3054,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         questTag = meta.tag.name;
         questCategory = (meta.category ?? '').toLowerCase();
       } catch (_) {}
-      if (kDebugMode) { try { debugPrint('[Explore][Meta] questId='+questId+' quest_tag='+questTag+' category='+questCategory); } catch (_) {} }
-      if (kDebugMode) { try { debugPrint('[Explore][Tap] questId=$questId -> impression/start'); } catch (_) {} }
+      if (kDebugMode) {
+        try {
+          debugPrint('[Explore][Meta] questId=' +
+              questId +
+              ' quest_tag=' +
+              questTag +
+              ' category=' +
+              questCategory);
+        } catch (_) {}
+      }
+      if (kDebugMode) {
+        try {
+          debugPrint('[Explore][Tap] questId=$questId -> impression/start');
+        } catch (_) {}
+      }
       await engine.markImpression(questId);
       await engine.markStart(questId);
-      if (kDebugMode) { try { debugPrint('[Explore][Award] tryAwardExplore questId=$questId'); } catch (_) {} }
+      if (kDebugMode) {
+        try {
+          debugPrint('[Explore][Award] tryAwardExplore questId=$questId');
+        } catch (_) {}
+      }
       final awarded = await engine.tryAwardExplore(questId);
 
       // Immediate UI refresh so energy pill decrements without delay
@@ -2678,7 +3090,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           reason = 'no_energy';
         }
       }
-      if (kDebugMode) { try { debugPrint('[Explore][Result] questId=$questId awarded=$awarded reason=$reason energy_left=${engine.exploreEnergyLeft()}'); } catch (_) {} }
+      if (kDebugMode) {
+        try {
+          debugPrint(
+              '[Explore][Result] questId=$questId awarded=$awarded reason=$reason energy_left=${engine.exploreEnergyLeft()}');
+        } catch (_) {}
+      }
 
       // Telemetry: quest_complete with success + reason
       try {
@@ -2706,7 +3123,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       if (awarded) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(duration: Duration(milliseconds: 1400), content: Text('XP awarded')),
+          const SnackBar(
+              duration: Duration(milliseconds: 1400),
+              content: Text('XP awarded')),
         );
       } else {
         final msg = (reason == 'no_energy')
@@ -2715,30 +3134,39 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 ? 'Already counted today'
                 : 'No XP awarded';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(duration: const Duration(milliseconds: 1400), content: Text(msg)),
+          SnackBar(
+              duration: const Duration(milliseconds: 1400), content: Text(msg)),
         );
       }
 
       // Sync lifetime XP and refresh energy pill
       try {
         final lifetimeXp = engine.computeLifetimeXp();
-        if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+        if (mounted)
+          context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
       } catch (_) {}
       // Sync Today tab progress (steps/xp) after Explore award
       try {
         final data = await engine.getTodayData();
-        final prog = (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
+        final prog =
+            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
         final stepsLeft = (prog['stepsLeft'] ?? 0) as int;
         final xpEarned = (prog['xpEarned'] ?? 0) as int;
         if (mounted) {
-          context.read<ProgressProvider>()
+          context
+              .read<ProgressProvider>()
               .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
         }
         // Also update lifetime XP immediately for Explore header
         try {
           final lifetimeXp = engine.computeLifetimeXp();
-          if (mounted) context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
-          if (kDebugMode) { try { debugPrint('[Explore][XP] lifetimeXp='+lifetimeXp.toString()); } catch (_) {} }
+          if (mounted)
+            context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
+          if (kDebugMode) {
+            try {
+              debugPrint('[Explore][XP] lifetimeXp=' + lifetimeXp.toString());
+            } catch (_) {}
+          }
         } catch (_) {}
       } catch (_) {}
       if (mounted) setState(() {});
@@ -2758,9 +3186,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           if (_tabIndex == index) return;
           HapticFeedback.selectionClick();
           SystemSound.play(SystemSoundType.click);
-          if (kDebugMode) { try { debugPrint('[Tabs] switch to index=$index -> clearing pill'); } catch (_) {} }
+          if (kDebugMode) {
+            try {
+              debugPrint('[Tabs] switch to index=$index -> clearing pill');
+            } catch (_) {}
+          }
           _removeTimerPill();
-          setState(() { _tabIndex = index; });
+          setState(() {
+            _tabIndex = index;
+          });
           // Telemetry: log Explore tab view
           if (index == 1) {
             try {
@@ -2796,7 +3230,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             child: Text(
               label,
               style: TextStyleHelper.instance.headline21Inter.copyWith(
-                fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                fontFamily: CoreTextStyles
+                    .TextStyleHelper.instance.headline24Bold.fontFamily,
                 color: selected ? Colors.white : const Color(0xFF47505E),
                 fontWeight: FontWeight.w700,
               ),
@@ -2846,14 +3281,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final double hp = _w >= 900 ? 70.h : 16.h;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: hp).copyWith(top: 48.h, bottom: 32.h),
+      padding: EdgeInsets.symmetric(horizontal: hp)
+          .copyWith(top: 48.h, bottom: 32.h),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Category chips + compact metrics on the same row
         Builder(builder: (context) {
           final int energyLeft = _questsEngine?.exploreEnergyLeft() ?? 0;
           const int energyLimit = QuestsEngine.exploreDailyLimit;
           final bool energyEmpty = energyLeft <= 0;
-          final Color energyFg = energyEmpty ? const Color(0xFF8C9CAA) : Theme.of(context).colorScheme.primary;
+          final Color energyFg = energyEmpty
+              ? const Color(0xFF8C9CAA)
+              : Theme.of(context).colorScheme.primary;
           // Tighten spacing for very narrow widths
           final double chipHPad = _narrow ? 8.h : 10.h;
           final double chipVPad = _narrow ? 4.h : 6.h;
@@ -2874,16 +3312,25 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     return ChoiceChip(
                       label: Text(cat),
                       selected: selected,
-                      onSelected: (_) { setState(() { _exploreFilter = cat; }); },
-                      labelStyle: TextStyleHelper.instance.headline21Inter.copyWith(
-                        fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
-                        color: selected ? Colors.white : const Color(0xFF47505E),
+                      onSelected: (_) {
+                        setState(() {
+                          _exploreFilter = cat;
+                        });
+                      },
+                      labelStyle:
+                          TextStyleHelper.instance.headline21Inter.copyWith(
+                        fontFamily: CoreTextStyles
+                            .TextStyleHelper.instance.headline24Bold.fontFamily,
+                        color:
+                            selected ? Colors.white : const Color(0xFF47505E),
                       ),
                       selectedColor: Theme.of(context).colorScheme.primary,
                       backgroundColor: Colors.white,
-                      shape: const StadiumBorder(side: BorderSide(color: Color(0xFFE0E6EE))),
+                      shape: const StadiumBorder(
+                          side: BorderSide(color: Color(0xFFE0E6EE))),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: EdgeInsets.symmetric(horizontal: chipHPad, vertical: chipVPad),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: chipHPad, vertical: chipVPad),
                     );
                   }).toList(),
                 ),
@@ -2905,7 +3352,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
                       // Energy: flash + 3/3
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: chipHPad, vertical: chipVPad),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: chipHPad, vertical: chipVPad),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(18.h),
@@ -2918,9 +3366,11 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                             ),
                           ],
                         ),
-                        constraints: BoxConstraints(minHeight: _narrow ? 30.h : 34.h),
+                        constraints:
+                            BoxConstraints(minHeight: _narrow ? 30.h : 34.h),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.flash_on_outlined, size: iconSize, color: energyFg),
+                          Icon(Icons.flash_on_outlined,
+                              size: iconSize, color: energyFg),
                           SizedBox(width: iconGap),
                           Flexible(
                             child: Text(
@@ -2928,14 +3378,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               maxLines: 1,
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyleHelper.instance.titleMediumInter.copyWith(color: energyFg, fontWeight: FontWeight.w700),
+                              style: TextStyleHelper.instance.titleMediumInter
+                                  .copyWith(
+                                      color: energyFg,
+                                      fontWeight: FontWeight.w700),
                             ),
                           ),
                         ]),
                       ),
                       // Streak: flame + 2d
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: chipHPad, vertical: chipVPad),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: chipHPad, vertical: chipVPad),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(18.h),
@@ -2952,7 +3406,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           minHeight: _narrow ? 30.h : 34.h,
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.local_fire_department_outlined, size: iconSize, color: Theme.of(context).colorScheme.primary),
+                          Icon(Icons.local_fire_department_outlined,
+                              size: iconSize,
+                              color: Theme.of(context).colorScheme.primary),
                           SizedBox(width: iconGap),
                           Flexible(
                             child: Text(
@@ -2960,7 +3416,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               maxLines: 1,
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyleHelper.instance.titleMediumInter.copyWith(color: const Color(0xFF47505E), fontWeight: FontWeight.w700),
+                              style: TextStyleHelper.instance.titleMediumInter
+                                  .copyWith(
+                                      color: const Color(0xFF47505E),
+                                      fontWeight: FontWeight.w700),
                             ),
                           ),
                         ]),
@@ -2968,13 +3427,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       // XP: star + "+today" (chip flexes to content; wraps with others when needed)
                       Container(
                         key: _xpCardKey,
-                        padding: EdgeInsets.symmetric(horizontal: chipHPad, vertical: chipVPad),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: chipHPad, vertical: chipVPad),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(18.h),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(_xpAlpha),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(_xpAlpha),
                               blurRadius: _xpBlur,
                               offset: const Offset(0, 6),
                             ),
@@ -2984,7 +3447,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           minHeight: _narrow ? 30.h : 34.h,
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.star_rounded, color: Colors.white, size: iconSize),
+                          Icon(Icons.star_rounded,
+                              color: Colors.white, size: iconSize),
                           SizedBox(width: iconGap),
                           Flexible(
                             child: Text(
@@ -2992,7 +3456,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               maxLines: 1,
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyleHelper.instance.titleMediumInter.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                              style: TextStyleHelper.instance.titleMediumInter
+                                  .copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700),
                             ),
                           ),
                         ]),
@@ -3021,7 +3488,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 'Loading quests…',
                 textAlign: TextAlign.center,
                 style: TextStyleHelper.instance.headline21Inter.copyWith(
-                  fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                  fontFamily: CoreTextStyles
+                      .TextStyleHelper.instance.headline24Bold.fontFamily,
                   color: const Color(0xFF8C9CAA),
                 ),
               ),
@@ -3039,7 +3507,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           WidgetsBinding.instance.addPostFrameCallback((_) {
             for (final q in items) {
               if (_impressedExplore.add(q.id)) {
-                try { engine.markImpression(q.id); } catch (_) {}
+                try {
+                  engine.markImpression(q.id);
+                } catch (_) {}
                 try {
                   logAnalyticsEvent('quest_view', metadata: {
                     'quest_id': q.id,
@@ -3067,7 +3537,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 'No quests available',
                 textAlign: TextAlign.center,
                 style: TextStyleHelper.instance.headline21Inter.copyWith(
-                  fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                  fontFamily: CoreTextStyles
+                      .TextStyleHelper.instance.headline24Bold.fontFamily,
                   color: const Color(0xFF8C9CAA),
                 ),
               ),
@@ -3152,12 +3623,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               bool doneToday = false;
               if (engine != null) {
                 try {
-                  doneToday = engine.isCompletedToday(q.id) || (otherVariant != null && engine.isCompletedToday(otherVariant));
+                  doneToday = engine.isCompletedToday(q.id) ||
+                      (otherVariant != null &&
+                          engine.isCompletedToday(otherVariant));
                 } catch (_) {}
               }
               // Also consider session-only completions so UI updates instantly after tap
               if (!doneToday) {
-                doneToday = _exploreCompletedToday.contains(q.id) || (otherVariant != null && _exploreCompletedToday.contains(otherVariant));
+                doneToday = _exploreCompletedToday.contains(q.id) ||
+                    (otherVariant != null &&
+                        _exploreCompletedToday.contains(otherVariant));
               }
               final double? progress = doneToday ? 1.0 : null;
 
@@ -3190,5 +3665,4 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       ]),
     );
   }
-
 }

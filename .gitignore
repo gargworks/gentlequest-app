@@ -61,6 +61,9 @@ jspm_packages/
 #Miscellaneous
 full_project.md
 
+# Local private documents (not committed, accessible to Windsurf)
+.local/
+
 # Archive and debug files
 archive/
 

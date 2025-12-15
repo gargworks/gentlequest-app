@@ -12,6 +12,7 @@ class CommunityProvider extends ChangeNotifier {
   bool _hasLoaded = false;
   String? _selectedTopic; // null => All
   final List<CommunityPost> _posts = [];
+  final Set<String> _myReactions = {};
   DateTime? _lastPostAt; // client-side cooldown anchor
   Map<String, dynamic>? _nextCursor;
   bool _hasMore = true;
@@ -59,8 +60,10 @@ class CommunityProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _selectedTopic = (topic != null && topic.trim().isNotEmpty) ? topic.trim() : null;
-      final page = await _api.getCommunityFeedPage(topic: _selectedTopic, limit: 20);
+      _selectedTopic =
+          (topic != null && topic.trim().isNotEmpty) ? topic.trim() : null;
+      final page =
+          await _api.getCommunityFeedPage(topic: _selectedTopic, limit: 20);
       _posts
         ..clear()
         ..addAll(page.items);
@@ -115,10 +118,11 @@ class CommunityProvider extends ChangeNotifier {
       return null;
     }
     try {
-      final created = await _api.createCommunityPost(body: trimmed, topic: topic);
-      // Insert optimistically at top if current filter matches
+      final created =
+          await _api.createCommunityPost(body: trimmed, topic: topic);
       final matchesFilter = (_selectedTopic == null) ||
-          (_selectedTopic != null && created.topic.toLowerCase() == _selectedTopic!.toLowerCase());
+          (_selectedTopic != null &&
+              created.topic.toLowerCase() == _selectedTopic!.toLowerCase());
       if (matchesFilter) {
         _posts.insert(0, created);
         _hasLoaded = true;
@@ -128,26 +132,49 @@ class CommunityProvider extends ChangeNotifier {
       _error = null;
       return created;
     } catch (e) {
-      _error = 'Failed to create post';
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      _error = msg.isNotEmpty ? msg : 'Failed to create post';
       notifyListeners();
       return null;
     }
   }
 
+  bool hasReacted(int postId, String kind) =>
+      _myReactions.contains('$postId:$kind');
+
   Future<void> react(int postId, String kind) async {
+    final key = '$postId:$kind';
+    if (_myReactions.contains(key)) return;
     try {
-      await _api.addCommunityReaction(postId: postId, kind: kind);
+      final res = await _api.addCommunityReaction(postId: postId, kind: kind);
+      final already = (res['already_reacted'] == true);
+      _myReactions.add(key);
+      final reactions = res['reactions'];
       final idx = _posts.indexWhere((p) => p.id == postId);
       if (idx != -1) {
         final p = _posts[idx];
+        int relate = p.relate;
+        int helped = p.helped;
+        int strength = p.strength;
+
+        if (reactions is Map) {
+          final m = Map<String, dynamic>.from(reactions);
+          relate = (m['relate'] as int?) ?? relate;
+          helped = (m['helped'] as int?) ?? helped;
+          strength = (m['strength'] as int?) ?? strength;
+        } else if (!already) {
+          relate = relate + (kind == 'relate' ? 1 : 0);
+          helped = helped + (kind == 'helped' ? 1 : 0);
+          strength = strength + (kind == 'strength' ? 1 : 0);
+        }
         _posts[idx] = CommunityPost(
           id: p.id,
           topic: p.topic,
           body: p.body,
           createdAt: p.createdAt,
-          relate: p.relate + (kind == 'relate' ? 1 : 0),
-          helped: p.helped + (kind == 'helped' ? 1 : 0),
-          strength: p.strength + (kind == 'strength' ? 1 : 0),
+          relate: relate,
+          helped: helped,
+          strength: strength,
         );
         notifyListeners();
       }
@@ -158,7 +185,8 @@ class CommunityProvider extends ChangeNotifier {
 
   Future<void> report(int postId, String reason, {String? notes}) async {
     try {
-      await _api.reportCommunityPost(postId: postId, reason: reason, notes: notes);
+      await _api.reportCommunityPost(
+          postId: postId, reason: reason, notes: notes);
     } catch (e) {
       // Handle error silently
     }

@@ -804,26 +804,34 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    _ReactionChip(
-                                      icon: Icons.favorite_border,
-                                      label: 'I relate',
-                                      count: p.relate,
-                                      onTap: () {
-                                        context
-                                            .read<CommunityProvider>()
-                                            .react(p.id, 'relate');
-                                        logAnalyticsEvent(
-                                            'community_reaction_add',
-                                            metadata: {
-                                              'post_id': p.id,
-                                              'kind': 'relate',
-                                              'topic': p.topic,
-                                              'surface': 'community_tab',
-                                              'ts': DateTime.now()
-                                                  .millisecondsSinceEpoch,
-                                            });
-                                      },
-                                    ),
+                                    Builder(builder: (ctx) {
+                                      final cp = ctx.watch<CommunityProvider>();
+                                      final reacted =
+                                          cp.hasReacted(p.id, 'relate');
+                                      return _ReactionChip(
+                                        icon: Icons.favorite_border,
+                                        selectedIcon: Icons.favorite,
+                                        label: 'I relate',
+                                        count: p.relate,
+                                        selected: reacted,
+                                        onTap: reacted
+                                            ? () {}
+                                            : () {
+                                                cp.react(p.id, 'relate');
+                                                logAnalyticsEvent(
+                                                    'community_reaction_add',
+                                                    metadata: {
+                                                      'post_id': p.id,
+                                                      'kind': 'relate',
+                                                      'topic': p.topic,
+                                                      'surface':
+                                                          'community_tab',
+                                                      'ts': DateTime.now()
+                                                          .millisecondsSinceEpoch,
+                                                    });
+                                              },
+                                      );
+                                    }),
                                     const SizedBox(width: 8),
                                     PopupMenuButton<String>(
                                       tooltip: 'More actions',
@@ -893,14 +901,18 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
 class _ReactionChip extends StatefulWidget {
   final IconData icon;
+  final IconData? selectedIcon;
   final String label;
   final int count;
+  final bool selected;
   final VoidCallback onTap;
 
   const _ReactionChip({
     required this.icon,
+    this.selectedIcon,
     required this.label,
     required this.count,
+    this.selected = false,
     required this.onTap,
   });
 
@@ -949,13 +961,17 @@ class _ReactionChipState extends State<_ReactionChip> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: _isFocused
-                    ? color.primary.withOpacity(0.1)
-                    : color.primary.withOpacity(0.05),
+                color: widget.selected
+                    ? color.primary.withOpacity(0.15)
+                    : (_isFocused
+                        ? color.primary.withOpacity(0.1)
+                        : color.primary.withOpacity(0.05)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _isFocused ? color.primary : const Color(0xFFE0E6EE),
-                  width: _isFocused ? 2.0 : 1.0,
+                  color: widget.selected
+                      ? color.primary
+                      : (_isFocused ? color.primary : const Color(0xFFE0E6EE)),
+                  width: (widget.selected || _isFocused) ? 2.0 : 1.0,
                 ),
                 boxShadow: _isFocused
                     ? [
@@ -970,7 +986,13 @@ class _ReactionChipState extends State<_ReactionChip> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(widget.icon, size: 16, color: color.primary),
+                  Icon(
+                    widget.selected
+                        ? (widget.selectedIcon ?? widget.icon)
+                        : widget.icon,
+                    size: 16,
+                    color: color.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     widget.label,
