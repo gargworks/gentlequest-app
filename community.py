@@ -2,6 +2,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import requests
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -10,6 +11,20 @@ from flask import Flask, jsonify, request
 from sqlalchemy import text
 
 from models import db
+
+
+def _send_moderation_alert(post_id: int, body: str, report_count: int) -> None:
+    """Send Slack/webhook alert when a post is auto-hidden."""
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL") or os.getenv("MODERATION_WEBHOOK_URL")
+    if not webhook_url:
+        return
+    try:
+        payload = {
+            "text": f"🚨 *Community Post Auto-Hidden*\n• Post ID: {post_id}\n• Reports: {report_count} unique IPs\n• Preview: {body[:100]}..."
+        }
+        requests.post(webhook_url, json=payload, timeout=5)
+    except Exception:
+        pass  # Don't fail the request if alert fails
 
 SEED_PATH = "data/community_seed.json"
 
@@ -721,10 +736,18 @@ def register_community_routes(app: Flask) -> None:
                     {"tid": target_id},
                 ).scalar() or 0
                 if unique_ips >= 3:
-                    db.session.execute(
-                        text("UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid AND is_curated = FALSE"),
+                    # Get post body for alert before hiding
+                    post_body = db.session.execute(
+                        text("SELECT body_redacted FROM community_posts WHERE id = :pid AND is_curated = FALSE"),
                         {"pid": target_id},
-                    )
+                    ).scalar()
+                    if post_body:
+                        db.session.execute(
+                            text("UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid AND is_curated = FALSE"),
+                            {"pid": target_id},
+                        )
+                        # Send alert after hiding
+                        _send_moderation_alert(target_id, post_body, unique_ips)
 
             db.session.commit()
             return jsonify({"ok": True}), 201
