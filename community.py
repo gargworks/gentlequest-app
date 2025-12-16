@@ -863,7 +863,7 @@ def register_community_routes(app: Flask) -> None:
                 app.logger.error(f"Community post error: {e}")
             except Exception:
                 pass
-            return jsonify({"error": "Failed to create post"}), 500
+            return jsonify({"error": f"Failed to create post: {str(e)[:200]}"}), 500
 
     @app.route("/api/community/post/<int:post_id>", methods=["DELETE"])
     @app.limiter.limit(limits_post)
