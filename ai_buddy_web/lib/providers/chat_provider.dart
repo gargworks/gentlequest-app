@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 import '../services/api_service.dart';
 
@@ -15,21 +17,101 @@ class ChatProvider extends ChangeNotifier {
   final List<StreamSubscription<Map<String, dynamic>>> _subscriptions = [];
   final List<void Function()> _closers = [];
 
+  // Warm greeting variations for personality
+  static const List<String> _greetings = [
+    "Hey there! How are you doing today? I'm here if you want to chat about anything. 🙂",
+    "Hi! Ready when you are. No pressure, just here to listen. 🌱",
+    "Hey! What's on your mind today? I'm all ears. 💭",
+    "Hello! This is your space to think out loud. How can I help? ✨",
+    "Hi there! How's your day going? I'm here whenever you need me. 🌟",
+  ];
+
+  // Welcome back messages based on time away
+  static const List<String> _welcomeBackMessages = [
+    "Welcome back! 👋 Good to see you again.",
+    "Hey, you're back! 🌟 How have you been?",
+    "Welcome back! I missed our chats. 💜",
+  ];
+
+  static const String _lastVisitKey = 'chat_last_visit';
+
+  Future<String> _getGreetingWithContext() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastVisitMs = prefs.getInt(_lastVisitKey);
+      final now = DateTime.now();
+
+      // Save current visit time
+      await prefs.setInt(_lastVisitKey, now.millisecondsSinceEpoch);
+
+      if (lastVisitMs != null) {
+        final lastVisit = DateTime.fromMillisecondsSinceEpoch(lastVisitMs);
+        final hoursSinceLastVisit = now.difference(lastVisit).inHours;
+
+        // If more than 24 hours, show welcome back
+        if (hoursSinceLastVisit >= 24) {
+          final days = (hoursSinceLastVisit / 24).floor();
+          if (days >= 7) {
+            return "Hey, it's been a while! 🌱 Glad you're back. No pressure, I'm here whenever you need me.";
+          } else if (days >= 3) {
+            return "Welcome back! 💜 It's been a few days. How are you doing?";
+          } else {
+            return _welcomeBackMessages[
+                Random().nextInt(_welcomeBackMessages.length)];
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking last visit: $e');
+    }
+
+    // Default to time-aware greeting for frequent users
+    return _getRandomGreeting();
+  }
+
+  String _getRandomGreeting() {
+    final hour = DateTime.now().hour;
+    // Time-aware greetings
+    if (hour >= 5 && hour < 12) {
+      return "Good morning! ☀️ How are you feeling today?";
+    } else if (hour >= 22 || hour < 5) {
+      return "Hey, night owl! 🌙 What's on your mind?";
+    }
+    // Random from list for other times
+    return _greetings[Random().nextInt(_greetings.length)];
+  }
+
   ChatProvider() : _apiService = ApiService() {
     // Pre-insert a greeting immediately for instant UI; hydrate history in background
     if (_messages.isEmpty && !_hasShownGreeting) {
       _messages.add(
         Message(
-          content:
-              "Hey there! How are you doing today? I'm here if you want to chat about anything. 🙂",
+          content: _getRandomGreeting(), // Sync fallback
           isUser: false,
           type: MessageType.text,
         ),
       );
       _hasShownGreeting = true;
       notifyListeners();
+      // Update greeting with context asynchronously
+      _updateGreetingWithContext();
     }
     _loadChatHistory();
+  }
+
+  Future<void> _updateGreetingWithContext() async {
+    final contextualGreeting = await _getGreetingWithContext();
+    if (_messages.isNotEmpty && !_messages.first.isUser) {
+      // Only update if it's different from the sync greeting
+      if (_messages.first.content != contextualGreeting) {
+        _messages[0] = Message(
+          content: contextualGreeting,
+          isUser: false,
+          type: MessageType.text,
+        );
+        notifyListeners();
+      }
+    }
   }
 
   List<Message> get messages => List.unmodifiable(_messages);

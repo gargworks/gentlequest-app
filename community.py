@@ -183,6 +183,13 @@ def _ensure_tables() -> None:
                     )
                 except Exception:
                     pass
+                # Add reporter_ip to community_reports for deduplication
+                try:
+                    db.session.execute(
+                        text("ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS reporter_ip VARCHAR(45)")
+                    )
+                except Exception:
+                    pass
         finally:
             db.session.commit()
     except Exception:
@@ -686,15 +693,39 @@ def register_community_routes(app: Flask) -> None:
             if target_type not in {"post"} or not target_id or not reason:
                 return jsonify({"error": "Invalid report"}), 400
 
+            # Get reporter IP for deduplication
+            reporter_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+            if reporter_ip:
+                reporter_ip = reporter_ip.split(",")[0].strip()[:45]
+
             db.session.execute(
                 text(
                     """
-                INSERT INTO community_reports (target_type, target_id, reason, notes)
-                VALUES (:tt, :tid, :reason, :notes)
+                INSERT INTO community_reports (target_type, target_id, reason, notes, reporter_ip)
+                VALUES (:tt, :tid, :reason, :notes, :ip)
                 """
                 ),
-                {"tt": target_type, "tid": target_id, "reason": reason, "notes": notes},
+                {"tt": target_type, "tid": target_id, "reason": reason, "notes": notes, "ip": reporter_ip},
             )
+
+            # Auto-hide post if 3+ unique IPs reported it
+            if target_type == "post":
+                unique_ips = db.session.execute(
+                    text(
+                        """
+                    SELECT COUNT(DISTINCT reporter_ip) as cnt
+                    FROM community_reports
+                    WHERE target_type = 'post' AND target_id = :tid AND reporter_ip IS NOT NULL
+                    """
+                    ),
+                    {"tid": target_id},
+                ).scalar() or 0
+                if unique_ips >= 3:
+                    db.session.execute(
+                        text("UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid AND is_curated = FALSE"),
+                        {"pid": target_id},
+                    )
+
             db.session.commit()
             return jsonify({"ok": True}), 201
         except Exception as e:
