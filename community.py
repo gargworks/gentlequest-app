@@ -778,6 +778,9 @@ def register_community_routes(app: Flask) -> None:
                     422,
                 )
 
+            sid = (request.headers.get("X-Session-ID") or "").strip()
+            author_hash = sid[:12] if sid else None
+
             d = _dialect()
             created_at: Optional[datetime] = None
             new_id: Optional[int] = None
@@ -786,11 +789,11 @@ def register_community_routes(app: Flask) -> None:
                 db.session.execute(
                     text(
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated)
-                    VALUES (:topic, :body, :is_curated)
+                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
+                    VALUES (:topic, :body, :is_curated, :author_hash)
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False},
+                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
                 )
                 new_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
                 created_at = db.session.execute(
@@ -801,12 +804,12 @@ def register_community_routes(app: Flask) -> None:
                 res = db.session.execute(
                     text(
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated)
-                    VALUES (:topic, :body, :is_curated)
+                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
+                    VALUES (:topic, :body, :is_curated, :author_hash)
                     RETURNING id, created_at
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False},
+                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
                 )
                 row = res.first()
                 if row is not None:

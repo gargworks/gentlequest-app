@@ -855,7 +855,21 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     ),
                   ],
                 ),
-                child: const _TypingDots(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Thinking',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14.h,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    SizedBox(width: 6.h),
+                    const _TypingDots(),
+                  ],
+                ),
               ),
             ),
           ],

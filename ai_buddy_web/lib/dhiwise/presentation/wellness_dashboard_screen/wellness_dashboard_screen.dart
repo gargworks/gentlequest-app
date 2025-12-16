@@ -1457,7 +1457,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         messenger.showSnackBar(
                           SnackBar(
                             duration: const Duration(seconds: 5),
-                            content: Text('$title marked complete'),
+                            content:
+                                Text('Nice work! Every small step counts ✨'),
                             action: SnackBarAction(
                               label: 'Undo',
                               onPressed: () async {
@@ -1587,7 +1588,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           messenger.showSnackBar(
                             SnackBar(
                               duration: const Duration(seconds: 5),
-                              content: Text('$title marked complete'),
+                              content: Text(
+                                  'Done! You showed up for yourself today 💪'),
                               action: SnackBarAction(
                                 label: 'Undo',
                                 onPressed: () async {
