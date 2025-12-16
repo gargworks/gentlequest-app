@@ -18,7 +18,8 @@ class LegalScreen extends StatelessWidget {
           builder: (ctx) {
             final canPop = Navigator.of(ctx).canPop();
             final route = ModalRoute.of(ctx);
-            final isModal = route is PageRoute && route.fullscreenDialog == true;
+            final isModal =
+                route is PageRoute && route.fullscreenDialog == true;
             if (canPop) {
               return AppBackButton(isModal: isModal);
             }
@@ -33,7 +34,7 @@ class LegalScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Failed to load document'));
+            return Center(child: Text('Couldn\'t load this right now'));
           }
           final data = snapshot.data ?? '# Document unavailable';
           return Markdown(

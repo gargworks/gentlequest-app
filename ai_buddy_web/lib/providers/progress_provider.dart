@@ -44,10 +44,10 @@ class ProgressProvider extends ChangeNotifier {
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
       _error = null;
     } catch (e) {
-      _error = 'Failed to load progress';
+      _error = 'Couldn\'t load your progress right now.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-} 
+}

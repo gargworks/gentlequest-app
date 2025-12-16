@@ -17,10 +17,10 @@ class TaskProvider extends ChangeNotifier {
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
       _error = null;
     } catch (e) {
-      _error = 'Failed to load tasks';
+      _error = 'Couldn\'t load tasks right now.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-} 
+}

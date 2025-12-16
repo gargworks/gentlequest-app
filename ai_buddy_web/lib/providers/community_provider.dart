@@ -73,7 +73,7 @@ class CommunityProvider extends ChangeNotifier {
       _hasLoaded = true;
       _loadMoreError = false;
     } catch (e) {
-      _error = 'Failed to load community feed';
+      _error = 'Couldn\'t load the community right now.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -135,7 +135,7 @@ class CommunityProvider extends ChangeNotifier {
       return created;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
-      _error = msg.isNotEmpty ? msg : 'Failed to create post';
+      _error = msg.isNotEmpty ? msg : 'Couldn\'t share that. Let\'s try again.';
       notifyListeners();
       return null;
     }
@@ -205,7 +205,7 @@ class CommunityProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = 'Failed to delete post';
+      _error = 'Couldn\'t delete that right now.';
       notifyListeners();
       return false;
     }

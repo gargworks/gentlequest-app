@@ -53,7 +53,7 @@ class ChatProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ Error loading chat history: $e');
-      _error = 'Failed to load chat history';
+      _error = 'Couldn\'t load our conversation. Let\'s try again.';
     } finally {
       _isLoading = false;
       notifyListeners();

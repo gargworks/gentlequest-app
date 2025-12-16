@@ -377,7 +377,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     chatProvider.sendMessage(messageText).catchError((e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sending message: $e')),
+        SnackBar(content: Text('Hmm, couldn\'t send that. Let\'s try again.')),
       );
     });
   }

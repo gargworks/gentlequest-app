@@ -17,7 +17,7 @@ class LoadingFooter extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Failed to load more posts',
+                  'Couldn\'t load more right now',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -31,7 +31,7 @@ class LoadingFooter extends StatelessWidget {
             ),
           );
         }
-        
+
         if (!cp.hasMore) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 24.0),
@@ -46,7 +46,7 @@ class LoadingFooter extends StatelessWidget {
             ),
           );
         }
-        
+
         return const Padding(
           padding: EdgeInsets.all(16.0),
           child: Center(

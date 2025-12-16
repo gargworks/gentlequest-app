@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:confetti/confetti.dart';
 
 import '../../core/app_export.dart';
 import '../../widgets/custom_button.dart';
@@ -161,6 +162,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   bool _enableSoftXpPop = true; // enabled per user approval
   // Reminder microinteraction anchors
   // (duplicates removed; declared once above)
+
+  // Confetti controller for celebrations
+  late ConfettiController _confettiController;
 
   // Timer pill overlay state
   OverlayEntry? _timerPillEntry;
@@ -757,6 +761,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   @override
   void dispose() {
+    // Dispose confetti controller
+    _confettiController.dispose();
     // Unsubscribe from route observer
     try {
       final route = ModalRoute.of(context);
@@ -1030,6 +1036,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   @override
   void initState() {
     super.initState();
+    // Initialize confetti controller
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 2));
     // Observe app lifecycle for reminder scheduling
     WidgetsBinding.instance.addObserver(this);
     // When embedded inside HomeShell (no bottom nav), start on Today tab by default
@@ -1452,6 +1461,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       } catch (_) {}
                       await _refreshToday();
                       if (mounted) {
+                        // Trigger confetti celebration
+                        _confettiController.play();
                         final messenger = ScaffoldMessenger.of(context);
                         messenger.hideCurrentSnackBar();
                         messenger.showSnackBar(
@@ -1583,6 +1594,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         await _refreshToday();
                         await _refreshExplore();
                         if (mounted) {
+                          // Trigger confetti celebration
+                          _confettiController.play();
                           final messenger = ScaffoldMessenger.of(context);
                           messenger.hideCurrentSnackBar();
                           messenger.showSnackBar(
@@ -1817,42 +1830,64 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         bottomNavigationBar: widget.showBottomNav
             ? const AppBottomNav(current: AppTab.quest)
             : null,
-        body: Column(
+        body: Stack(
           children: [
-            // Sticky header outside the scroll view (matches Mood Tracker)
-            _buildHeader(),
-            // Scrollable content below header
-            Expanded(
-              child: Stack(
-                children: [
-                  // Plain themed background (no image)
-                  Container(
-                    height: MediaQuery.of(context).size.height,
-                    width: MediaQuery.of(context).size.width,
-                    color: Theme.of(context).scaffoldBackgroundColor,
+            Column(
+              children: [
+                // Sticky header outside the scroll view (matches Mood Tracker)
+                _buildHeader(),
+                // Scrollable content below header
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Plain themed background (no image)
+                      Container(
+                        height: MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                      ),
+                      SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).viewPadding.bottom),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Segmented tabs at top of scrollable content
+                            _buildTabSwitcher(),
+                            // Sections (conditional by tab)
+                            if (_tabIndex == 0) ...[
+                              _buildMoodCheckInSection(),
+                              _buildProgressSection(),
+                              _buildRecommendationsSection(),
+                            ] else ...[
+                              _buildExploreSection(),
+                            ],
+                            SizedBox(height: 24.h),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SingleChildScrollView(
-                    controller: _scrollController,
-                    padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewPadding.bottom),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Segmented tabs at top of scrollable content
-                        _buildTabSwitcher(),
-                        // Sections (conditional by tab)
-                        if (_tabIndex == 0) ...[
-                          _buildMoodCheckInSection(),
-                          _buildProgressSection(),
-                          _buildRecommendationsSection(),
-                        ] else ...[
-                          _buildExploreSection(),
-                        ],
-                        SizedBox(height: 24.h),
-                      ],
-                    ),
-                  ),
+                ),
+              ],
+            ),
+            // Confetti celebration overlay
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Color(0xFF667EEA), // Primary purple
+                  Color(0xFFFF6B6B), // Coral
+                  Color(0xFF4ECDC4), // Teal
+                  Color(0xFFFFE66D), // Yellow
+                  Color(0xFF95E1D3), // Mint
                 ],
+                numberOfParticles: 30,
+                gravity: 0.2,
               ),
             ),
           ],

@@ -17,10 +17,10 @@ class AssessmentProvider extends ChangeNotifier {
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
       _error = null;
     } catch (e) {
-      _error = 'Failed to submit assessment';
+      _error = 'Couldn\'t save that. Let\'s try again.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-} 
+}

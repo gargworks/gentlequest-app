@@ -56,7 +56,7 @@ class MoodProvider extends ChangeNotifier {
       await _saveCachedMoodHistory();
     } catch (e) {
       // Backend unavailable; keep current list and surface a friendly error
-      _error = 'Failed to load mood history';
+      _error = 'Couldn\'t load your mood history right now.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -201,7 +201,7 @@ class MoodProvider extends ChangeNotifier {
       postOk = true;
     } catch (_) {
       // Only set error if the POST itself fails
-      _error = 'Failed to sync with server';
+      _error = 'Saved locally! We\'ll sync when you\'re back online.';
       // Enqueue payload for background retry and schedule drain
       final payload = {
         'mood_level': moodLevel,
