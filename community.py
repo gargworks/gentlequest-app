@@ -14,7 +14,22 @@ from models import db
 
 
 def _send_moderation_alert(post_id: int, body: str, report_count: int) -> None:
-    """Send Slack/webhook alert when a post is auto-hidden."""
+    """Send Telegram/Slack alert when a post is auto-hidden."""
+    # Try Telegram first
+    tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    tg_chat = os.getenv("TELEGRAM_CHAT_ID")
+    if tg_token and tg_chat:
+        try:
+            msg = f"🚨 *Community Post Auto-Hidden*\n• Post ID: {post_id}\n• Reports: {report_count} unique IPs\n• Preview: {body[:100]}..."
+            requests.post(
+                f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                json={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"},
+                timeout=5
+            )
+            return
+        except Exception:
+            pass
+    # Fallback to Slack/webhook
     webhook_url = os.getenv("SLACK_WEBHOOK_URL") or os.getenv("MODERATION_WEBHOOK_URL")
     if not webhook_url:
         return
@@ -24,7 +39,7 @@ def _send_moderation_alert(post_id: int, body: str, report_count: int) -> None:
         }
         requests.post(webhook_url, json=payload, timeout=5)
     except Exception:
-        pass  # Don't fail the request if alert fails
+        pass
 
 SEED_PATH = "data/community_seed.json"
 
