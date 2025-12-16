@@ -778,9 +778,6 @@ def register_community_routes(app: Flask) -> None:
                     422,
                 )
 
-            sid = (request.headers.get("X-Session-ID") or "").strip()
-            author_hash = sid[:12] if sid else None
-
             d = _dialect()
             created_at: Optional[datetime] = None
             new_id: Optional[int] = None
@@ -789,42 +786,28 @@ def register_community_routes(app: Flask) -> None:
                 db.session.execute(
                     text(
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
-                    VALUES (:topic, :body, :is_curated, :author_hash)
+                    INSERT INTO community_posts (topic, body_redacted, is_curated)
+                    VALUES (:topic, :body, :is_curated)
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
+                    {"topic": topic or "general", "body": body, "is_curated": False},
                 )
-                # Fetch last inserted id and created_at
                 new_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
                 created_at = db.session.execute(
                     text("SELECT created_at FROM community_posts WHERE id = :id"),
                     {"id": new_id},
                 ).scalar()
             else:
-                try:
-                    res = db.session.execute(
-                        text(
-                            """
-                        INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
-                        VALUES (:topic, :body, :is_curated, :author_hash)
-                        RETURNING id, created_at
+                res = db.session.execute(
+                    text(
                         """
-                        ),
-                        {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
-                    )
-                except Exception:
-                    db.session.rollback()
-                    res = db.session.execute(
-                        text(
-                            """
-                        INSERT INTO community_posts (topic, body_redacted, is_curated)
-                        VALUES (:topic, :body, :is_curated)
-                        RETURNING id, created_at
-                        """
-                        ),
-                        {"topic": topic or "general", "body": body, "is_curated": False},
-                    )
+                    INSERT INTO community_posts (topic, body_redacted, is_curated)
+                    VALUES (:topic, :body, :is_curated)
+                    RETURNING id, created_at
+                    """
+                    ),
+                    {"topic": topic or "general", "body": body, "is_curated": False},
+                )
                 row = res.first()
                 if row is not None:
                     new_id = row.id
@@ -863,7 +846,7 @@ def register_community_routes(app: Flask) -> None:
                 app.logger.error(f"Community post error: {e}")
             except Exception:
                 pass
-            return jsonify({"error": f"Failed to create post: {str(e)[:200]}"}), 500
+            return jsonify({"error": "Failed to create post"}), 500
 
     @app.route("/api/community/post/<int:post_id>", methods=["DELETE"])
     @app.limiter.limit(limits_post)

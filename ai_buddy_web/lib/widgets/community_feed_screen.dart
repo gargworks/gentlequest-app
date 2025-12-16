@@ -669,9 +669,32 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   );
                 }
                 if (cp.posts.isEmpty) {
-                  return const Center(
-                    child: Text(
-                        'No posts yet. Gentle reflections will appear here.'),
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.people_outline,
+                              size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Be the first to share',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700]),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Your words might help someone else. 💜',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
                 return RefreshIndicator(

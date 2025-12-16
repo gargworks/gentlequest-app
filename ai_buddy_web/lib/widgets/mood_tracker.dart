@@ -132,12 +132,12 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'No mood entries yet',
+                  'Your feelings matter',
                   style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Log today's mood to see your trend",
+                  "Start tracking to discover patterns over time 🌱",
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
                     fontFamily: 'Inter',
