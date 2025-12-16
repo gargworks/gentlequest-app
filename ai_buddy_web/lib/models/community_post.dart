@@ -24,7 +24,7 @@ class CommunityPost {
       topic: (json['topic'] as String? ?? 'general').trim(),
       body: (json['body'] as String? ?? '').trim(),
       createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'] as String)?.toUtc()
           : null,
       relate: (reactions['relate'] as int?) ?? 0,
       helped: (reactions['helped'] as int?) ?? 0,

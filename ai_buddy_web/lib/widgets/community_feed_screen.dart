@@ -169,15 +169,21 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   }
 
   String _relativeTime(DateTime dt) {
+    // Server returns UTC, convert to local for comparison
+    final localDt = dt.isUtc ? dt.toLocal() : dt;
     final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'just now';
+    final diff = now.difference(localDt);
+    // Handle negative diff (clock skew or future dates)
+    if (diff.isNegative || diff.inMinutes < 1) return 'just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
-    final weeks = (diff.inDays / 7).floor();
-    if (weeks < 4) return '${weeks}w ago';
+    if (diff.inDays < 30) {
+      final weeks = (diff.inDays / 7).floor();
+      return '${weeks}w ago';
+    }
     final months = (diff.inDays / 30).floor();
+    if (months < 1) return '4w ago';
     return '${months}mo ago';
   }
 
