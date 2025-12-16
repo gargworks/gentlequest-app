@@ -802,16 +802,29 @@ def register_community_routes(app: Flask) -> None:
                     {"id": new_id},
                 ).scalar()
             else:
-                res = db.session.execute(
-                    text(
+                try:
+                    res = db.session.execute(
+                        text(
+                            """
+                        INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
+                        VALUES (:topic, :body, :is_curated, :author_hash)
+                        RETURNING id, created_at
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
-                    VALUES (:topic, :body, :is_curated, :author_hash)
-                    RETURNING id, created_at
-                    """
-                    ),
-                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
-                )
+                        ),
+                        {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
+                    )
+                except Exception:
+                    db.session.rollback()
+                    res = db.session.execute(
+                        text(
+                            """
+                        INSERT INTO community_posts (topic, body_redacted, is_curated)
+                        VALUES (:topic, :body, :is_curated)
+                        RETURNING id, created_at
+                        """
+                        ),
+                        {"topic": topic or "general", "body": body, "is_curated": False},
+                    )
                 row = res.first()
                 if row is not None:
                     new_id = row.id
