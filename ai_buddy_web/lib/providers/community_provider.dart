@@ -13,6 +13,7 @@ class CommunityProvider extends ChangeNotifier {
   String? _selectedTopic; // null => All
   final List<CommunityPost> _posts = [];
   final Set<String> _myReactions = {};
+  final Set<int> _myPostIds = {};
   DateTime? _lastPostAt; // client-side cooldown anchor
   Map<String, dynamic>? _nextCursor;
   bool _hasMore = true;
@@ -128,6 +129,7 @@ class CommunityProvider extends ChangeNotifier {
         _hasLoaded = true;
         notifyListeners();
       }
+      _myPostIds.add(created.id);
       _lastPostAt = DateTime.now();
       _error = null;
       return created;
@@ -141,6 +143,8 @@ class CommunityProvider extends ChangeNotifier {
 
   bool hasReacted(int postId, String kind) =>
       _myReactions.contains('$postId:$kind');
+
+  bool isMyPost(int postId) => _myPostIds.contains(postId);
 
   Future<void> react(int postId, String kind) async {
     final key = '$postId:$kind';
@@ -189,6 +193,21 @@ class CommunityProvider extends ChangeNotifier {
           postId: postId, reason: reason, notes: notes);
     } catch (e) {
       // Handle error silently
+    }
+  }
+
+  Future<bool> deletePost(int postId) async {
+    if (!_myPostIds.contains(postId)) return false;
+    try {
+      await _api.deleteCommunityPost(postId: postId);
+      _posts.removeWhere((p) => p.id == postId);
+      _myPostIds.remove(postId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to delete post';
+      notifyListeners();
+      return false;
     }
   }
 }

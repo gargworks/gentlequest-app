@@ -154,26 +154,32 @@ def _ensure_tables() -> None:
                 """
                 )
             )
-        # Attempt to add is_hidden column for sqlite if missing
+        # Attempt to add is_hidden and author_hash columns if missing
         try:
             d = _dialect()
             if d == "sqlite":
-                # SQLite: naive attempt to add column; ignore if exists
                 try:
                     db.session.execute(
-                        text(
-                            "ALTER TABLE community_posts ADD COLUMN is_hidden INTEGER DEFAULT 0"
-                        )
+                        text("ALTER TABLE community_posts ADD COLUMN is_hidden INTEGER DEFAULT 0")
+                    )
+                except Exception:
+                    pass
+                try:
+                    db.session.execute(
+                        text("ALTER TABLE community_posts ADD COLUMN author_hash TEXT")
                     )
                 except Exception:
                     pass
             elif d not in {"unknown"}:
-                # Postgres: ensure column exists (IF NOT EXISTS is supported)
                 try:
                     db.session.execute(
-                        text(
-                            "ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE"
-                        )
+                        text("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE")
+                    )
+                except Exception:
+                    pass
+                try:
+                    db.session.execute(
+                        text("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS author_hash VARCHAR(64)")
                     )
                 except Exception:
                     pass
@@ -772,6 +778,9 @@ def register_community_routes(app: Flask) -> None:
                     422,
                 )
 
+            sid = (request.headers.get("X-Session-ID") or "").strip()
+            author_hash = sid[:12] if sid else None
+
             d = _dialect()
             created_at: Optional[datetime] = None
             new_id: Optional[int] = None
@@ -780,11 +789,11 @@ def register_community_routes(app: Flask) -> None:
                 db.session.execute(
                     text(
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated)
-                    VALUES (:topic, :body, :is_curated)
+                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
+                    VALUES (:topic, :body, :is_curated, :author_hash)
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False},
+                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
                 )
                 # Fetch last inserted id and created_at
                 new_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
@@ -796,12 +805,12 @@ def register_community_routes(app: Flask) -> None:
                 res = db.session.execute(
                     text(
                         """
-                    INSERT INTO community_posts (topic, body_redacted, is_curated)
-                    VALUES (:topic, :body, :is_curated)
+                    INSERT INTO community_posts (topic, body_redacted, is_curated, author_hash)
+                    VALUES (:topic, :body, :is_curated, :author_hash)
                     RETURNING id, created_at
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False},
+                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
                 )
                 row = res.first()
                 if row is not None:
@@ -842,3 +851,48 @@ def register_community_routes(app: Flask) -> None:
             except Exception:
                 pass
             return jsonify({"error": "Failed to create post"}), 500
+
+    @app.route("/api/community/post/<int:post_id>", methods=["DELETE"])
+    @app.limiter.limit(limits_post)
+    def community_delete_post(post_id: int):
+        """Delete own post (soft delete via is_hidden)."""
+        if not _enabled():
+            return jsonify({"error": "Community disabled"}), 403
+        try:
+            sid = (request.headers.get("X-Session-ID") or "").strip()
+            if not sid:
+                return jsonify({"error": "Missing session"}), 400
+            user_hash = sid[:12]
+
+            row = db.session.execute(
+                text("SELECT author_hash, is_curated FROM community_posts WHERE id = :pid"),
+                {"pid": post_id},
+            ).first()
+
+            if row is None:
+                return jsonify({"error": "Post not found"}), 404
+
+            author_hash = row.author_hash if hasattr(row, "author_hash") else None
+            is_curated = row.is_curated if hasattr(row, "is_curated") else True
+
+            if is_curated:
+                return jsonify({"error": "Cannot delete curated posts"}), 403
+            if not author_hash or author_hash != user_hash:
+                return jsonify({"error": "You can only delete your own posts"}), 403
+
+            db.session.execute(
+                text("UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid"),
+                {"pid": post_id},
+            )
+            db.session.commit()
+            return jsonify({"ok": True, "deleted": True}), 200
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            try:
+                app.logger.error(f"Community delete error: {e}")
+            except Exception:
+                pass
+            return jsonify({"error": "Failed to delete post"}), 500

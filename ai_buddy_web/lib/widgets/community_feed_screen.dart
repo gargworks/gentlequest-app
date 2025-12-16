@@ -755,20 +755,61 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                       ],
                                     ),
                                     const Spacer(),
-                                    PopupMenuButton<String>(
-                                      tooltip: 'More',
-                                      icon: const Icon(Icons.more_horiz,
-                                          size: 20, color: Colors.black54),
-                                      onSelected: (v) {
-                                        if (v == 'report')
-                                          _showReportDialog(postId: p.id);
-                                      },
-                                      itemBuilder: (ctx) => const [
-                                        PopupMenuItem<String>(
-                                            value: 'report',
-                                            child: Text('Report')),
-                                      ],
-                                    ),
+                                    Builder(builder: (ctx) {
+                                      final cp = ctx.watch<CommunityProvider>();
+                                      final isOwn = cp.isMyPost(p.id);
+                                      return PopupMenuButton<String>(
+                                        tooltip: 'More',
+                                        icon: const Icon(Icons.more_horiz,
+                                            size: 20, color: Colors.black54),
+                                        onSelected: (v) async {
+                                          if (v == 'report') {
+                                            _showReportDialog(postId: p.id);
+                                          } else if (v == 'delete') {
+                                            final confirm =
+                                                await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title:
+                                                    const Text('Delete post?'),
+                                                content: const Text(
+                                                    'This cannot be undone.'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, true),
+                                                    child: const Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.red)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true && mounted) {
+                                              await cp.deletePost(p.id);
+                                            }
+                                          }
+                                        },
+                                        itemBuilder: (ctx) => [
+                                          if (isOwn)
+                                            const PopupMenuItem<String>(
+                                                value: 'delete',
+                                                child: Text('Delete',
+                                                    style: TextStyle(
+                                                        color: Colors.red))),
+                                          const PopupMenuItem<String>(
+                                              value: 'report',
+                                              child: Text('Report')),
+                                        ],
+                                      );
+                                    }),
                                   ],
                                 ),
                                 const SizedBox(height: 8),

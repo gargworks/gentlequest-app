@@ -267,6 +267,14 @@ class ApiService {
     });
   }
 
+  /// Community: delete own post
+  Future<void> deleteCommunityPost({required int postId}) async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      await _dio.delete('/api/community/post/$postId');
+    });
+  }
+
   /// Community: create a post
   Future<CommunityPost> createCommunityPost(
       {required String body, String? topic}) async {
