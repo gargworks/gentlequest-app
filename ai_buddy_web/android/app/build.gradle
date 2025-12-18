@@ -56,7 +56,7 @@ def appId = project.hasProperty('APP_ID') ? APP_ID : 'app.gentlequest.www'
 
 android {
     namespace 'com.example.ai_buddy_web'
-    compileSdkVersion 35
+    compileSdkVersion 36
 
     defaultConfig {
         applicationId appId
