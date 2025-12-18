@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../widgets/app_bottom_nav.dart';
+import 'home_tab_deeplink.dart';
 import '../screens/interactive_chat_screen.dart';
 import '../screens/mood_tracker_screen.dart';
 import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
@@ -14,7 +15,6 @@ import '../widgets/help_entrypoint.dart';
 
 // Global deep-link controller for switching HomeShell tabs from anywhere
 // e.g., when handling a notification tap.
-final ValueNotifier<AppTab> homeTabDeepLink = ValueNotifier<AppTab>(AppTab.talk);
 
 class HomeShell extends StatefulWidget {
   final AppTab initialTab;
@@ -49,12 +49,17 @@ class _HomeShellState extends State<HomeShell> {
   void _onDeepLinkTab() {
     final target = homeTabDeepLink.value;
     if (kDebugMode) {
-      try { debugPrint('[HomeShell] deepLink request -> $target (current=$_current)'); } catch (_) {}
+      try {
+        debugPrint(
+            '[HomeShell] deepLink request -> $target (current=$_current)');
+      } catch (_) {}
     }
     if (_current != target) {
       setState(() => _current = target);
       if (kDebugMode) {
-        try { debugPrint('[HomeShell] switched to $target'); } catch (_) {}
+        try {
+          debugPrint('[HomeShell] switched to $target');
+        } catch (_) {}
       }
     } else {
       // If already on the tab, pop to its root and trigger reselect behavior
@@ -101,7 +106,7 @@ class _HomeShellState extends State<HomeShell> {
         return _communityNavKey.currentState;
     }
   }
-  
+
   Future<void> _showHelpSheet() async {
     await showModalBottomSheet(
       context: context,
@@ -129,7 +134,8 @@ class _HomeShellState extends State<HomeShell> {
                       Expanded(
                         child: Text(
                           'Need help now?',
-                          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       IconButton(
@@ -142,7 +148,8 @@ class _HomeShellState extends State<HomeShell> {
                   const SizedBox(height: 8),
                   Text(
                     'If you are in immediate danger, call your local emergency number.',
-                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: Colors.black54),
                   ),
                   const SizedBox(height: 12),
                   const CrisisResourcesWidget(riskLevel: RiskLevel.high),
@@ -245,7 +252,12 @@ class _HomeShellState extends State<HomeShell> {
         ),
         bottomNavigationBar: AppBottomNav(
           current: _current,
-          onTap: (tab) => setState(() => _current = tab),
+          onTap: (tab) {
+            setState(() => _current = tab);
+            if (tab == AppTab.talk) {
+              _talkReselect.value++;
+            }
+          },
           onReselect: (tab) {
             // Pop to root of the tab, then trigger reselect action
             final nav = _navFor(tab);
@@ -274,6 +286,4 @@ class _HomeShellState extends State<HomeShell> {
     homeTabDeepLink.removeListener(_onDeepLinkTab);
     super.dispose();
   }
-
 }
-

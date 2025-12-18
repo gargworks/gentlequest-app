@@ -203,6 +203,13 @@ class MoodProvider extends ChangeNotifier {
       };
       await _apiService.addMoodEntry(payload);
       postOk = true;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final now = DateTime.now();
+        final dateKey =
+            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        await prefs.setBool('daily_mood_logged_$dateKey', true);
+      } catch (_) {}
     } catch (_) {
       // Only set error if the POST itself fails
       _error = 'Saved locally! We\'ll sync when you\'re back online.';

@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../navigation/home_tab_deeplink.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import '../theme/theme_helper.dart';
@@ -13,6 +14,7 @@ import '../widgets/status_avatar.dart';
 import '../config/profile_config.dart';
 import '../core/utils/size_utils.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/assessment_splash.dart';
 import '../widgets/keyboard_dismissible_scaffold.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
@@ -34,6 +36,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   double _lastBottomInset = 0.0;
   final GlobalKey _inputBarKey = GlobalKey();
   double _inputBarHeight = 0.0;
+
+  bool _todayCheckinDone = false;
+  bool _todayMoodLogged = false;
+  bool _todayFlagsLoaded = false;
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -63,6 +69,40 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     } catch (e) {
       if (kDebugMode) debugPrint('Safety & Legal ack check failed: $e');
     }
+  }
+
+  String _todayDateKey() {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _loadTodayFlags() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dateKey = _todayDateKey();
+      final checkin = prefs.getBool('daily_checkin_done_$dateKey') ?? false;
+      final mood = prefs.getBool('daily_mood_logged_$dateKey') ?? false;
+      if (!mounted) return;
+      setState(() {
+        _todayCheckinDone = checkin;
+        _todayMoodLogged = mood;
+        _todayFlagsLoaded = true;
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Today flags read failed: $e');
+      if (!mounted) return;
+      setState(() => _todayFlagsLoaded = true);
+    }
+  }
+
+  Future<void> _openQuickCheckin() async {
+    _inputFocus.unfocus();
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AssessmentSplash(),
+    );
+    await _loadTodayFlags();
   }
 
   Future<void> _loadDisclaimerPrefs() async {
@@ -98,6 +138,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _onReselect() {
     // On re-tap, bring the latest messages into view
     _scrollToBottom();
+    _loadTodayFlags();
   }
 
   Future<void> _showAllCrisisResourcesSheet(
@@ -340,6 +381,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _ensureLegalAck();
       // Load disclaimer cadence and decide whether to show top notice
       _loadDisclaimerPrefs();
+      _loadTodayFlags();
+    });
+    _inputFocus.addListener(() {
+      if (!mounted) return;
+      setState(() {});
     });
     // Listen for tab reselect events
     widget.reselect?.addListener(_onReselect);
@@ -565,8 +611,28 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       // Always keep view pinned to bottom on updates (new msgs/typing)
                       WidgetsBinding.instance
                           .addPostFrameCallback((_) => _scrollToBottom());
-                      final count = chatProvider.messages.length +
-                          (chatProvider.isTyping ? 1 : 0);
+
+                      // Detect empty conversation: only greeting, no user messages
+                      final hasUserMessages =
+                          chatProvider.messages.any((m) => m.isUser);
+                      final hasAnySuggestion =
+                          !_todayCheckinDone || !_todayMoodLogged;
+                      final hideSuggestions = _inputFocus.hasFocus;
+                      final showSuggestions = !hasUserMessages &&
+                          chatProvider.messages.length <= 1 &&
+                          !chatProvider.isTyping &&
+                          _todayFlagsLoaded &&
+                          hasAnySuggestion &&
+                          !hideSuggestions;
+
+                      // Normal chat with optional suggestion chips after greeting
+                      final msgCount = chatProvider.messages.length;
+                      final hasTyping = chatProvider.isTyping;
+                      // Items: messages + (suggestions row if empty) + (typing if active)
+                      final extraRows =
+                          (showSuggestions ? 1 : 0) + (hasTyping ? 1 : 0);
+                      final count = msgCount + extraRows;
+
                       return ListView.builder(
                         controller: _scrollController,
                         padding: EdgeInsets.fromLTRB(
@@ -575,15 +641,19 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ScrollViewKeyboardDismissBehavior.manual,
                         itemCount: count,
                         itemBuilder: (context, index) {
-                          final isTypingRow = chatProvider.isTyping &&
-                              index == chatProvider.messages.length;
-                          if (isTypingRow) {
+                          // Suggestion chips row (after greeting, before typing)
+                          if (showSuggestions && index == msgCount) {
+                            return _buildSuggestionChips();
+                          }
+                          // Typing indicator row
+                          final typingIndex =
+                              msgCount + (showSuggestions ? 1 : 0);
+                          if (hasTyping && index == typingIndex) {
                             return _buildTypingBubble();
                           }
+                          // Normal message
                           final message = chatProvider.messages[index];
-                          final isLast =
-                              index == chatProvider.messages.length - 1 &&
-                                  !chatProvider.isTyping;
+                          final isLast = index == msgCount - 1 && !hasTyping;
                           return _buildMessageBubble(message, isLast: isLast);
                         },
                       );
@@ -816,6 +886,63 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Simple smart-reply style suggestion chips - minimal, native to chat
+  Widget _buildSuggestionChips() {
+    late final String label;
+    late final VoidCallback onTap;
+
+    if (!_todayCheckinDone) {
+      label = 'Quick check-in';
+      onTap = _openQuickCheckin;
+    } else if (!_todayMoodLogged) {
+      label = 'Log mood';
+      onTap = () {
+        _inputFocus.unfocus();
+        homeTabDeepLink.value = AppTab.mood;
+      };
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(top: 6.h, bottom: 16.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 64.h),
+          Flexible(child: _buildChip(label, onTap)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, VoidCallback onTap) {
+    return Material(
+      color: Colors.grey.shade50,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: Colors.grey.shade200,
+          width: 1.0,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.h, vertical: 8.h),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.0,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
         ),
       ),
     );

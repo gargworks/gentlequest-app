@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../providers/progress_provider.dart';
 
@@ -104,6 +105,14 @@ class _SelfAssessmentWidgetState extends State<SelfAssessmentWidget> {
           : 0;
       final bool alreadyCompletedToday =
           response['already_completed_today'] == true;
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final now = DateTime.now();
+        final dateKey =
+            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        await prefs.setBool('daily_checkin_done_$dateKey', true);
+      } catch (_) {}
 
       // Apply XP to progress provider
       if (xpAwarded > 0 && mounted) {
