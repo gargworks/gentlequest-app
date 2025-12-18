@@ -2554,6 +2554,63 @@ def _register_additional_routes(app: Flask) -> None:
             db.session.rollback()
             return jsonify({"error": "Failed to add mood entry"}), 500
 
+    @app.route("/api/mood_pulse", methods=["GET"])
+    @app.limiter.limit("60 per minute")
+    def mood_pulse():
+        """Get anonymous aggregate mood stats for today - 'You Are Not Alone' feature"""
+        try:
+            # Get today's start in UTC
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Count mood entries by level for today (across ALL users, anonymous)
+            result = db.session.execute(
+                text("""
+                    SELECT mood_level, COUNT(*) as count
+                    FROM mood_entries
+                    WHERE timestamp >= :today_start
+                    GROUP BY mood_level
+                """),
+                {"today_start": today_start}
+            ).fetchall()
+            
+            # Build distribution
+            distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            total = 0
+            for row in result:
+                level = row.mood_level
+                count = row.count
+                if 1 <= level <= 5:
+                    distribution[level] = count
+                    total += count
+            
+            # Calculate percentages
+            percentages = {}
+            for level in range(1, 6):
+                if total > 0:
+                    percentages[level] = round((distribution[level] / total) * 100)
+                else:
+                    percentages[level] = 0
+            
+            # Friendly messages based on mood level
+            solidarity_messages = {
+                1: "You're not alone. Others are having a tough day too.",
+                2: "Many people feel this way sometimes. You're not alone.",
+                3: "Lots of us are feeling okay today. You're in good company.",
+                4: "Others are feeling good too! The positive energy is spreading.",
+                5: "You're part of the happiness today! Keep shining.",
+            }
+            
+            return jsonify({
+                "total_checkins_today": total,
+                "distribution": distribution,
+                "percentages": percentages,
+                "solidarity_messages": solidarity_messages,
+            })
+            
+        except Exception as e:
+            app.logger.error(f"Mood pulse error: {e}")
+            return jsonify({"error": "Failed to get mood pulse"}), 500
+
     @app.route("/api/crisis_detection", methods=["POST"])
     @app.limiter.limit("10 per minute")
     def crisis_detection():

@@ -12,6 +12,10 @@ class MoodProvider extends ChangeNotifier {
   static const String _cacheKey = 'mood_history_cache_v1';
   static const String _queueKey = 'mood_pending_queue_v1';
 
+  // "You Are Not Alone" pulse data
+  Map<String, dynamic>? _latestPulse;
+  int? _lastMoodLevel;
+
   // Pending mood submissions to retry in background
   final List<Map<String, dynamic>> _pendingQueue = <Map<String, dynamic>>[];
   bool _retryInProgress = false;
@@ -223,6 +227,14 @@ class MoodProvider extends ChangeNotifier {
       } catch (_) {
         // Silent: keep optimistic entries and cached state; next reload() will reconcile
       }
+
+      // Phase 4: Fetch "You Are Not Alone" pulse data
+      try {
+        _latestPulse = await _apiService.getMoodPulse();
+        _lastMoodLevel = moodLevel;
+      } catch (_) {
+        // Silent: pulse is optional enhancement
+      }
     }
 
     _isLoading = false;
@@ -236,6 +248,16 @@ class MoodProvider extends ChangeNotifier {
   /// For tests: observe queue length
   @visibleForTesting
   int get pendingQueueLength => _pendingQueue.length;
+
+  // "You Are Not Alone" pulse getters
+  Map<String, dynamic>? get latestPulse => _latestPulse;
+  int? get lastMoodLevel => _lastMoodLevel;
+
+  void clearPulse() {
+    _latestPulse = null;
+    _lastMoodLevel = null;
+    notifyListeners();
+  }
 
   double get averageMood {
     if (_moodEntries.isEmpty) return 0;

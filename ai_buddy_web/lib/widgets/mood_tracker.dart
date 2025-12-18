@@ -40,6 +40,11 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               ],
               _buildMoodInput(context, moodProvider),
               const SizedBox(height: 16),
+              // "You Are Not Alone" pulse card
+              if (moodProvider.latestPulse != null) ...[
+                _buildPulseCard(context, moodProvider),
+                const SizedBox(height: 16),
+              ],
               // Toggle between Daily (aggregated) and All check-ins
               if (hasEntries) ...[
                 _buildViewToggle(context),
@@ -108,6 +113,64 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             child: const Text('Retry'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPulseCard(BuildContext context, MoodProvider moodProvider) {
+    final pulse = moodProvider.latestPulse;
+    final moodLevel = moodProvider.lastMoodLevel;
+    if (pulse == null || moodLevel == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final percentages = pulse['percentages'] as Map<String, dynamic>?;
+    final messages = pulse['solidarity_messages'] as Map<String, dynamic>?;
+    final total = pulse['total_checkins_today'] as int? ?? 0;
+
+    final pct = percentages?['$moodLevel'] ?? 0;
+    final message = messages?['$moodLevel'] ?? "You're not alone.";
+
+    return Card(
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.people_outline, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => moodProvider.clearPulse(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (total > 1)
+              Text(
+                '$pct% of $total check-ins today felt the same way',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                  fontFamily: 'Inter',
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

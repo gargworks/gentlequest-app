@@ -500,6 +500,16 @@ class ApiService {
     });
   }
 
+  /// Get mood pulse - anonymous aggregate stats for "You Are Not Alone" feature
+  Future<Map<String, dynamic>> getMoodPulse() async {
+    return _retryOperation(() async {
+      await _getSessionId();
+
+      final response = await _dio.get('/api/mood_pulse');
+      return response.data as Map<String, dynamic>;
+    });
+  }
+
   /// Get user-friendly error message from DioException
   String getErrorMessage(DioException e) {
     switch (e.type) {
