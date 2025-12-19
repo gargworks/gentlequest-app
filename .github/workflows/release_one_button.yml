@@ -18,6 +18,22 @@ on:
         description: "Unified build number for both platforms (optional). Defaults to run number if empty."
         required: false
         default: ""
+      android_upload:
+        description: "Android: upload to Play after build?"
+        required: false
+        default: "true"
+      android_preflight:
+        description: "Android: run format/analyze/tests before build?"
+        required: false
+        default: "false"
+      ios_upload:
+        description: "iOS: upload to TestFlight after build?"
+        required: false
+        default: "true"
+      ios_preflight:
+        description: "iOS: run format/analyze/tests before build?"
+        required: false
+        default: "false"
 
 jobs:
   android:
@@ -30,8 +46,8 @@ jobs:
       track: internal
       build_number: ${{ inputs.build_number }}
       release_notes: ${{ inputs.release_notes }}
-      upload: 'true'
-      preflight: 'false'
+      upload: ${{ inputs.android_upload }}
+      preflight: ${{ inputs.android_preflight }}
       environment: beta
       sentry_upload: 'false'
       sentry_org: ''
@@ -49,8 +65,8 @@ jobs:
       export_method: app-store
       build_number: ${{ inputs.build_number }}
       release_notes: ${{ inputs.release_notes }}
-      upload: 'true'
-      preflight: 'false'
+      upload: ${{ inputs.ios_upload }}
+      preflight: ${{ inputs.ios_preflight }}
       environment: beta
       sentry_upload: 'false'
       sentry_org: ''
