@@ -24,7 +24,8 @@ class StatusAvatar extends StatelessWidget {
     final parts = name.trim().split(RegExp(r"\s+"));
     final first = parts.isNotEmpty ? parts.first : '';
     final last = parts.length > 1 ? parts.last : '';
-    final init = (first.isNotEmpty ? first[0] : '') + (last.isNotEmpty ? last[0] : '');
+    final init =
+        (first.isNotEmpty ? first[0] : '') + (last.isNotEmpty ? last[0] : '');
     return init.toUpperCase();
   }
 
@@ -77,7 +78,8 @@ class StatusAvatar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: status.color(),
                     shape: BoxShape.circle,
-                    border: Border.all(color: surface, width: (size * 0.03).clamp(1.5, 3.0)),
+                    border: Border.all(
+                        color: surface, width: (size * 0.03).clamp(1.5, 3.0)),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x1F000000),

@@ -25,8 +25,8 @@ class Message {
     this.resources,
     this.crisisMsg,
     this.crisisNumbers,
-  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-       timestamp = timestamp ?? DateTime.now();
+  })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        timestamp = timestamp ?? DateTime.now();
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(

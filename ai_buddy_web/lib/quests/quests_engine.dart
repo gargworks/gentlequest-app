@@ -89,43 +89,43 @@ class Quest {
   });
 
   factory Quest.fromJson(Map<String, dynamic> j) => Quest(
-    id: j['quest_id'] as String,
-    tag: _tagFromString(j['tag'] as String),
-    title: j['title'] as String,
-    subtitle: j['subtitle'] as String,
-    durationMin: j['duration_min'] == null
-        ? null
-        : (j['duration_min'] as num).toInt(),
-    url: j['url'] as String?,
-    checklist: (j['checklist'] is List)
-        ? (j['checklist'] as List).map((e) => e.toString()).toList()
-        : const <String>[],
-    timerSuggested: j['timer_suggested'] == true,
-    active: j['active'] == true,
-    category: j['category'] as String?,
-    points: j['points'] == null ? null : (j['points'] as num).toInt(),
-    streakGroup: j['streak_group'] as String?,
-    recurrence: j['recurrence'] as String?,
-    hideInExplore:
-        (j['hide_in_explore'] == true) || (j['hideInExplore'] == true),
-  );
+        id: j['quest_id'] as String,
+        tag: _tagFromString(j['tag'] as String),
+        title: j['title'] as String,
+        subtitle: j['subtitle'] as String,
+        durationMin: j['duration_min'] == null
+            ? null
+            : (j['duration_min'] as num).toInt(),
+        url: j['url'] as String?,
+        checklist: (j['checklist'] is List)
+            ? (j['checklist'] as List).map((e) => e.toString()).toList()
+            : const <String>[],
+        timerSuggested: j['timer_suggested'] == true,
+        active: j['active'] == true,
+        category: j['category'] as String?,
+        points: j['points'] == null ? null : (j['points'] as num).toInt(),
+        streakGroup: j['streak_group'] as String?,
+        recurrence: j['recurrence'] as String?,
+        hideInExplore:
+            (j['hide_in_explore'] == true) || (j['hideInExplore'] == true),
+      );
 
   Map<String, dynamic> toJson() => {
-    'quest_id': id,
-    'tag': _tagToString(tag),
-    'title': title,
-    'subtitle': subtitle,
-    'duration_min': durationMin,
-    'url': url,
-    'checklist': checklist,
-    'timer_suggested': timerSuggested,
-    'active': active,
-    'category': category,
-    'points': points,
-    'streak_group': streakGroup,
-    'recurrence': recurrence,
-    'hide_in_explore': hideInExplore,
-  };
+        'quest_id': id,
+        'tag': _tagToString(tag),
+        'title': title,
+        'subtitle': subtitle,
+        'duration_min': durationMin,
+        'url': url,
+        'checklist': checklist,
+        'timer_suggested': timerSuggested,
+        'active': active,
+        'category': category,
+        'points': points,
+        'streak_group': streakGroup,
+        'recurrence': recurrence,
+        'hide_in_explore': hideInExplore,
+      };
 }
 
 class TodayProgressSummary {
@@ -194,9 +194,8 @@ class QuestsEngine {
     if (cached != null) {
       try {
         final List list = jsonDecode(cached) as List;
-        _catalog = list
-            .map((e) => Quest.fromJson(e as Map<String, dynamic>))
-            .toList();
+        _catalog =
+            list.map((e) => Quest.fromJson(e as Map<String, dynamic>)).toList();
         if (kDebugMode && _debugVerbose) {
           debugPrint(
             '[QuestsEngine] Catalog loaded from cache: ${_catalog.length} items',
@@ -220,9 +219,8 @@ class QuestsEngine {
     // Fallback to embedded if empty
     if (_catalog.isEmpty) {
       final List list = jsonDecode(_embeddedFallbackJson) as List;
-      _catalog = list
-          .map((e) => Quest.fromJson(e as Map<String, dynamic>))
-          .toList();
+      _catalog =
+          list.map((e) => Quest.fromJson(e as Map<String, dynamic>)).toList();
       await prefs.setString(
         _prefsCatalogKey,
         jsonEncode(_catalog.map((e) => e.toJson()).toList()),
@@ -365,13 +363,10 @@ class QuestsEngine {
     }
 
     // Record today’s task IDs for repetition control
-    final existing =
-        (_history[todayKey] as Map?)?.cast<String, dynamic>() ??
+    final existing = (_history[todayKey] as Map?)?.cast<String, dynamic>() ??
         <String, dynamic>{};
-    existing['tasks'] = picked
-        .where((q) => q.tag == QuestTag.task)
-        .map((q) => q.id)
-        .toList();
+    existing['tasks'] =
+        picked.where((q) => q.tag == QuestTag.task).map((q) => q.id).toList();
     _history[todayKey] = existing;
     _persistHistory();
 
@@ -430,8 +425,7 @@ class QuestsEngine {
 
     // Track per-day completion history to support streaks and Explore filters
     final dayKey = _dateKey(now);
-    final entry =
-        (_history[dayKey] as Map?)?.cast<String, dynamic>() ??
+    final entry = (_history[dayKey] as Map?)?.cast<String, dynamic>() ??
         <String, dynamic>{};
     final dynamic completedAny = entry['completed'];
     final List<String> completed = (completedAny is List)
@@ -465,8 +459,7 @@ class QuestsEngine {
       await _persistTelemetry();
       // Remove from per-day completion history
       final dayKey = _dateKey(now);
-      final entry =
-          (_history[dayKey] as Map?)?.cast<String, dynamic>() ??
+      final entry = (_history[dayKey] as Map?)?.cast<String, dynamic>() ??
           <String, dynamic>{};
       final dynamic completedAny = entry['completed'];
       final List<String> completed = (completedAny is List)
@@ -544,9 +537,8 @@ class QuestsEngine {
     final tasks = today.where((q) => q.tag == QuestTag.task).toList();
 
     Quest? focusCandidate;
-    final focusMatches = tasks
-        .where((q) => titleOf(q).toLowerCase().contains('focus'))
-        .toList();
+    final focusMatches =
+        tasks.where((q) => titleOf(q).toLowerCase().contains('focus')).toList();
     if (focusMatches.isNotEmpty) {
       focusCandidate = focusMatches.first;
     } else if (tasks.isNotEmpty) {
@@ -554,9 +546,8 @@ class QuestsEngine {
     }
 
     Quest? sprintCandidate;
-    final sprintMatches = tasks
-        .where((q) => titleOf(q).toLowerCase().contains('study'))
-        .toList();
+    final sprintMatches =
+        tasks.where((q) => titleOf(q).toLowerCase().contains('study')).toList();
     if (sprintMatches.isNotEmpty) {
       // Prefer a sprint distinct from focus pick
       sprintCandidate = sprintMatches.firstWhere(
@@ -637,9 +628,8 @@ class QuestsEngine {
     // Compute stepsLeft against the same 4-card selection shown on Today
     final Set<String> displayed = _selectDisplayedCardIds(today);
     for (final id in displayed) {
-      final lastIso =
-          (_telemetry[id] as Map<String, dynamic>?)?['last_completed_at']
-              as String?;
+      final lastIso = (_telemetry[id]
+          as Map<String, dynamic>?)?['last_completed_at'] as String?;
       final doneToday = _isIsoSameDay(lastIso, now);
       if (!doneToday) stepsLeft += 1;
     }
@@ -693,9 +683,9 @@ class QuestsEngine {
 
   /// Quests ever completed at least once (based on telemetry 'completes')
   List<Quest> listCompletedEver() => _catalog.where((q) {
-    final c = (_telemetry[q.id]?['completes']);
-    return (c is int) && c > 0;
-  }).toList();
+        final c = (_telemetry[q.id]?['completes']);
+        return (c is int) && c > 0;
+      }).toList();
 
   /// Quests filtered by category (case-insensitive). Null/empty categories are ignored.
   List<Quest> listByCategory(String category) {
@@ -729,9 +719,8 @@ class QuestsEngine {
     final now = _now();
     int xp = 0;
     for (final q in _catalog) {
-      final lastIso =
-          (_telemetry[q.id] as Map<String, dynamic>?)?['last_completed_at']
-              as String?;
+      final lastIso = (_telemetry[q.id]
+          as Map<String, dynamic>?)?['last_completed_at'] as String?;
       if (_isIsoSameDay(lastIso, now)) {
         xp += _xpForQuest(q);
       }
@@ -760,9 +749,9 @@ class QuestsEngine {
   /// Returns true if XP was awarded (and energy consumed), false otherwise.
   Future<bool> tryAwardExplore(
     String questId, {
-      int? elapsedMs,
-      int limit = exploreDailyLimit,
-    }) async {
+    int? elapsedMs,
+    int limit = exploreDailyLimit,
+  }) async {
     // Do not double-award same quest on the same day
     if (isCompletedToday(questId)) {
       if (kDebugMode && _debugVerbose) {
@@ -877,7 +866,8 @@ class QuestsEngine {
 
     // Otherwise, compute streak ending yesterday
     int streak = 0;
-    for (int i = 1; i <= days; i++) { // start from yesterday
+    for (int i = 1; i <= days; i++) {
+      // start from yesterday
       final key = _dateKey(now.subtract(Duration(days: i)));
       final entry =
           (_history[key] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -905,7 +895,8 @@ class QuestsEngine {
     // Iterate oldest -> newest to build contiguous segments
     for (int i = days - 1; i >= 0; i--) {
       final key = _dateKey(now.subtract(Duration(days: i)));
-      final entry = (_history[key] as Map?)?.cast<String, dynamic>() ?? const {};
+      final entry =
+          (_history[key] as Map?)?.cast<String, dynamic>() ?? const {};
       final dynamic completedAny = entry['completed'];
       final List<String> completed = (completedAny is List)
           ? completedAny.map((e) => e.toString()).toList()
@@ -922,9 +913,8 @@ class QuestsEngine {
 
   /// Whether the given quest has been completed today.
   bool isCompletedToday(String questId) {
-    final lastIso =
-        (_telemetry[questId] as Map<String, dynamic>?)?['last_completed_at']
-            as String?;
+    final lastIso = (_telemetry[questId]
+        as Map<String, dynamic>?)?['last_completed_at'] as String?;
     return _isIsoSameDay(lastIso, _now());
   }
 

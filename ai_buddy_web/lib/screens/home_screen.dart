@@ -40,7 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.mood), label: 'Mood'),
-          BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'Assess'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.psychology), label: 'Assess'),
           BottomNavigationBarItem(icon: Icon(Icons.task_alt), label: 'Tasks'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
         ],

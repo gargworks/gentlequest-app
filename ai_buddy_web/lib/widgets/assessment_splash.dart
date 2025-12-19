@@ -35,55 +35,60 @@ class AssessmentSplash extends StatelessWidget {
                   mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  // Header
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Quick check-in',
-                          style: TextStyleHelper.instance.headline24Bold.copyWith(
-                            color: const Color(0xFF555F6D),
-                            fontFamily: core_text_styles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                    // Header
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Quick check-in',
+                            style: TextStyleHelper.instance.headline24Bold
+                                .copyWith(
+                              color: const Color(0xFF555F6D),
+                              fontFamily: core_text_styles.TextStyleHelper
+                                  .instance.headline24Bold.fontFamily,
+                            ),
                           ),
                         ),
+                        // Close button (X) standardized via AppBackButton
+                        AppBackButton(
+                          isModal: true,
+                          onPressed: () {
+                            Navigator.of(context).maybePop();
+                            // For QA/telemetry: ensure close without submit is visible in logs
+                            try {
+                              debugPrint('[QuickCheckin][ClosedWithoutSubmit]');
+                            } catch (_) {}
+                            onClosed?.call();
+                          },
+                          iconColor: const Color(0xFF8C9CAA),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Takes about 2 minutes',
+                      style: TextStyleHelper.instance.headline21Inter.copyWith(
+                        color: const Color(0xFF8C9CAA),
+                        fontFamily: core_text_styles
+                            .TextStyleHelper.instance.headline24Bold.fontFamily,
                       ),
-                      // Close button (X) standardized via AppBackButton
-                      AppBackButton(
-                        isModal: true,
-                        onPressed: () {
-                          Navigator.of(context).maybePop();
-                          // For QA/telemetry: ensure close without submit is visible in logs
-                          try { debugPrint('[QuickCheckin][ClosedWithoutSubmit]'); } catch (_) {}
-                          onClosed?.call();
-                        },
-                        iconColor: const Color(0xFF8C9CAA),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Takes about 2 minutes',
-                    style: TextStyleHelper.instance.headline21Inter.copyWith(
-                      color: const Color(0xFF8C9CAA),
-                      fontFamily: core_text_styles.TextStyleHelper.instance.headline24Bold.fontFamily,
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  // Body: existing self assessment widget (API-integrated)
-                  // Use Expanded so the body takes remaining space and scrolls within, avoiding overflow
-                  Expanded(
-                    child: SelfAssessmentWidget(
-                      onAssessmentSubmitted: () {
-                        // Close on successful submit
-                        Navigator.of(context).maybePop();
-                        onSubmitted?.call();
-                      },
+                    // Body: existing self assessment widget (API-integrated)
+                    // Use Expanded so the body takes remaining space and scrolls within, avoiding overflow
+                    Expanded(
+                      child: SelfAssessmentWidget(
+                        onAssessmentSubmitted: () {
+                          // Close on successful submit
+                          Navigator.of(context).maybePop();
+                          onSubmitted?.call();
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
             ),
           );
         },

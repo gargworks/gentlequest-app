@@ -5,8 +5,7 @@ class ApiConfig {
   static const String localUrl = 'http://localhost:5055';
 
   // Production (Render)
-  static const String productionUrl =
-      'https://gentlequest.onrender.com';
+  static const String productionUrl = 'https://gentlequest.onrender.com';
 
   // Get the appropriate URL based on environment
   static String get baseUrl {

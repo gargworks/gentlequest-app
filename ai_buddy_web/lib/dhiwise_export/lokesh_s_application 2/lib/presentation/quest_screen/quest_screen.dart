@@ -19,7 +19,7 @@ class QuestScreen extends StatelessWidget {
               width: SizeUtils.width,
               fit: BoxFit.cover,
             ),
-            
+
             // Main Content
             SingleChildScrollView(
               child: Padding(
@@ -30,12 +30,12 @@ class QuestScreen extends StatelessWidget {
                     // Header
                     _buildHeaderSection(),
                     SizedBox(height: 24.v),
-                    
+
                     // Active Quests Section
                     _buildSectionTitle('Active Quests'),
                     SizedBox(height: 16.v),
                     _buildActiveQuests(),
-                    
+
                     // Available Quests Section
                     SizedBox(height: 24.v),
                     _buildSectionTitle('Available Quests'),

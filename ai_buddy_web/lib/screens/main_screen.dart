@@ -42,7 +42,8 @@ class _MainScreenState extends State<MainScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => dhiwise_sizer.Sizer(
-                    builder: (context, orientation, deviceType) => WellnessDashboardScreen(),
+                    builder: (context, orientation, deviceType) =>
+                        WellnessDashboardScreen(),
                   ),
                 ),
               );

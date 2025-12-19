@@ -17,18 +17,19 @@ class QuestScreen extends StatelessWidget {
               width: MediaQuery.of(context).size.width,
               fit: BoxFit.cover,
             ),
-            
+
             // Main Content
             SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header
                     _buildHeaderSection(),
                     const SizedBox(height: 24),
-                    
+
                     // Active Quests Section
                     const Text(
                       'Active Quests',
@@ -40,7 +41,7 @@ class QuestScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _buildActiveQuests(),
-                    
+
                     // Available Quests Section
                     const SizedBox(height: 24),
                     const Text(
@@ -99,8 +100,6 @@ class QuestScreen extends StatelessWidget {
       ],
     );
   }
-
-
 
   // Active Quests List
   Widget _buildActiveQuests() {

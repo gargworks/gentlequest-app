@@ -66,19 +66,16 @@ Future<String> runMinQuestTests({DateTime? now}) async {
     // Same-day determinism
     final sameDayA = await engine.getTodayData(date: d1);
     final sameDayB = await engine.getTodayData(date: d1);
-    final idsA = (sameDayA['todayItems'] as List<Quest>)
-        .map((e) => e.id)
-        .toList();
-    final idsB = (sameDayB['todayItems'] as List<Quest>)
-        .map((e) => e.id)
-        .toList();
+    final idsA =
+        (sameDayA['todayItems'] as List<Quest>).map((e) => e.id).toList();
+    final idsB =
+        (sameDayB['todayItems'] as List<Quest>).map((e) => e.id).toList();
     final deterministicSameDay = listEquals(idsA, idsB);
 
     // Next-day selection available and typically different
     final nextDay = await engine.getTodayData(date: d2);
-    final idsNext = (nextDay['todayItems'] as List<Quest>)
-        .map((e) => e.id)
-        .toList();
+    final idsNext =
+        (nextDay['todayItems'] as List<Quest>).map((e) => e.id).toList();
     final sizeOk = idsNext.length >= 5;
     // It's possible, though unlikely, that ids are equal day-to-day. Don't fail hard on that.
     passMidnight = deterministicSameDay && sizeOk;

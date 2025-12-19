@@ -11,7 +11,8 @@ class MoodEntry {
     DateTime? timestamp,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         timestamp = timestamp ?? DateTime.now(),
-        assert(moodLevel >= 1 && moodLevel <= 5, 'Mood level must be between 1 and 5');
+        assert(moodLevel >= 1 && moodLevel <= 5,
+            'Mood level must be between 1 and 5');
 
   factory MoodEntry.fromJson(Map<String, dynamic> json) {
     return MoodEntry(
@@ -66,4 +67,4 @@ class MoodEntry {
         return 'Unknown';
     }
   }
-} 
+}

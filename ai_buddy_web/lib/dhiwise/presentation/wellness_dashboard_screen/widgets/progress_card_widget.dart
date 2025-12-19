@@ -76,17 +76,20 @@ class _ProgressCardWidgetState extends State<ProgressCardWidget> {
                   borderRadius: null,
                 ),
                 SizedBox(height: 16.h),
-                widget.valueWidget ?? Text(
-                  widget.value,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: false,
-                  style: TextStyleHelper.instance.headline28BoldInter.copyWith(
-                    fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
-                    color: Color(0xFF4E5965),
-                  ),
-                ),
+                widget.valueWidget ??
+                    Text(
+                      widget.value,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style:
+                          TextStyleHelper.instance.headline28BoldInter.copyWith(
+                        fontFamily: CoreTextStyles
+                            .TextStyleHelper.instance.headline24Bold.fontFamily,
+                        color: Color(0xFF4E5965),
+                      ),
+                    ),
                 if (widget.label.isNotEmpty) ...[
                   SizedBox(height: 4.h),
                   Text(
@@ -96,7 +99,8 @@ class _ProgressCardWidgetState extends State<ProgressCardWidget> {
                     overflow: TextOverflow.ellipsis,
                     softWrap: true,
                     style: TextStyleHelper.instance.headline22Inter.copyWith(
-                      fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                      fontFamily: CoreTextStyles
+                          .TextStyleHelper.instance.headline24Bold.fontFamily,
                       color: Color(0xFF8C9CAA),
                     ),
                   ),
@@ -139,7 +143,9 @@ class _IconRenderable extends StatelessWidget {
             width: width,
             height: height,
             fit: fit,
-            colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+            colorFilter: color != null
+                ? ColorFilter.mode(color!, BlendMode.srcIn)
+                : null,
           )
         : Image.asset(
             path,
@@ -150,7 +156,8 @@ class _IconRenderable extends StatelessWidget {
             colorBlendMode: color != null ? BlendMode.srcIn : null,
           );
     if (borderRadius != null) {
-      return ClipRRect(borderRadius: borderRadius ?? BorderRadius.zero, child: child);
+      return ClipRRect(
+          borderRadius: borderRadius ?? BorderRadius.zero, child: child);
     }
     return child;
   }

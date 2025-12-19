@@ -20,21 +20,21 @@ class QuestCardWidget extends StatelessWidget {
 
   // Button style getters
   ButtonStyle get _buttonStyle => ElevatedButton.styleFrom(
-    backgroundColor: color,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    elevation: 0,
-  );
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+      );
 
   ButtonStyle get _outlineButtonStyle => ElevatedButton.styleFrom(
-    backgroundColor: Colors.transparent,
-    foregroundColor: color,
-    side: BorderSide(color: color, width: 1.5),
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    elevation: 0,
-  );
+        backgroundColor: Colors.transparent,
+        foregroundColor: color,
+        side: BorderSide(color: color, width: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+      );
 
   @override
   Widget build(BuildContext context) {

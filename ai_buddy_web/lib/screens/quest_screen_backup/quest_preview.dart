@@ -47,7 +47,7 @@ class QuestsHomeScreen extends StatelessWidget {
         // Clear any existing quests
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('user_quests');
-        
+
         // Add sample quests
         final sampleQuests = [
           Quest(
@@ -95,11 +95,12 @@ class QuestsHomeScreen extends StatelessWidget {
             status: QuestStatus.locked,
           ),
         ];
-        
+
         // Save sample quests
-        final questsJson = jsonEncode(sampleQuests.map((q) => q.toJson()).toList());
+        final questsJson =
+            jsonEncode(sampleQuests.map((q) => q.toJson()).toList());
         await prefs.setString('user_quests', questsJson);
-        
+
         // Reload quests
         await questProvider.loadQuests();
       }
@@ -115,7 +116,8 @@ class QuestsHomeScreen extends StatelessWidget {
             icon: const Icon(Icons.refresh),
             onPressed: () async {
               // Reset preview data
-              final questProvider = Provider.of<QuestProvider>(context, listen: false);
+              final questProvider =
+                  Provider.of<QuestProvider>(context, listen: false);
               final prefs = await SharedPreferences.getInstance();
               await prefs.remove('user_quests');
               await questProvider.loadQuests();
@@ -132,21 +134,21 @@ class QuestsHomeScreen extends StatelessWidget {
               // Level and XP Indicator
               _buildLevelIndicator(context),
               const SizedBox(height: 24),
-              
+
               // In Progress Quests
               _buildSectionTitle('In Progress'),
               const SizedBox(height: 16),
               _buildQuestList(context, QuestStatus.inProgress),
-              
+
               const SizedBox(height: 24),
-              
+
               // Available Quests
               _buildSectionTitle('Available Quests'),
               const SizedBox(height: 16),
               _buildQuestList(context, QuestStatus.unlocked),
-              
+
               const SizedBox(height: 24),
-              
+
               // Locked Quests (collapsed by default)
               _buildLockedQuestsSection(context),
             ],
@@ -162,7 +164,7 @@ class QuestsHomeScreen extends StatelessWidget {
         final level = 5;
         final xp = 350; // XP in current level
         final xpNeeded = 1000; // XP needed for next level
-        
+
         return Card(
           elevation: 2,
           shape: RoundedRectangleBorder(
@@ -224,9 +226,12 @@ class QuestsHomeScreen extends StatelessWidget {
         if (status == QuestStatus.inProgress) {
           quests = questProvider.inProgressQuests;
         } else if (status == QuestStatus.unlocked) {
-          quests = questProvider.unlockedQuests.where((q) => q.status == status).toList();
+          quests = questProvider.unlockedQuests
+              .where((q) => q.status == status)
+              .toList();
         } else {
-          quests = questProvider.quests.where((q) => q.status == status).toList();
+          quests =
+              questProvider.quests.where((q) => q.status == status).toList();
         }
 
         if (quests.isEmpty) {
@@ -263,7 +268,9 @@ class QuestsHomeScreen extends StatelessWidget {
   Widget _buildLockedQuestsSection(BuildContext context) {
     return Consumer<QuestProvider>(
       builder: (context, questProvider, _) {
-        final lockedQuests = questProvider.quests.where((q) => q.status == QuestStatus.locked).toList();
+        final lockedQuests = questProvider.quests
+            .where((q) => q.status == QuestStatus.locked)
+            .toList();
 
         if (lockedQuests.isEmpty) return const SizedBox.shrink();
 
@@ -278,12 +285,12 @@ class QuestsHomeScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 8),
             ...lockedQuests.map((quest) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: QuestCard.fromQuest(
-                quest,
-                onTap: null,
-              ),
-            )),
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: QuestCard.fromQuest(
+                    quest,
+                    onTap: null,
+                  ),
+                )),
           ],
         );
       },
@@ -329,7 +336,8 @@ class QuestsHomeScreen extends StatelessWidget {
                       color: _getCategoryColor(quest.category).withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(quest.icon, color: _getCategoryColor(quest.category)),
+                    child: Icon(quest.icon,
+                        color: _getCategoryColor(quest.category)),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -400,18 +408,20 @@ class QuestsHomeScreen extends StatelessWidget {
                         // Update quest progress
                         final updatedQuest = quest.copyWith(
                           progress: newProgress,
-                          status: newProgress >= quest.target 
-                              ? QuestStatus.completed 
+                          status: newProgress >= quest.target
+                              ? QuestStatus.completed
                               : QuestStatus.inProgress,
                         );
-                        
+
                         // Save the updated quest
                         final prefs = await SharedPreferences.getInstance();
                         final quests = List<Quest>.from(questProvider.quests);
-                        final index = quests.indexWhere((q) => q.id == quest.id);
+                        final index =
+                            quests.indexWhere((q) => q.id == quest.id);
                         if (index != -1) {
                           quests[index] = updatedQuest;
-                          final questsJson = jsonEncode(quests.map((q) => q.toMap()).toList());
+                          final questsJson =
+                              jsonEncode(quests.map((q) => q.toMap()).toList());
                           await prefs.setString('user_quests', questsJson);
                           await questProvider.loadQuests();
                         }
@@ -431,14 +441,15 @@ class QuestsHomeScreen extends StatelessWidget {
                         progress: 1,
                         status: QuestStatus.inProgress,
                       );
-                      
+
                       // Save the updated quest
                       final prefs = await SharedPreferences.getInstance();
                       final quests = List<Quest>.from(questProvider.quests);
                       final index = quests.indexWhere((q) => q.id == quest.id);
                       if (index != -1) {
                         quests[index] = updatedQuest;
-                        final questsJson = jsonEncode(quests.map((q) => q.toMap()).toList());
+                        final questsJson =
+                            jsonEncode(quests.map((q) => q.toMap()).toList());
                         await prefs.setString('user_quests', questsJson);
                         await questProvider.loadQuests();
                       }

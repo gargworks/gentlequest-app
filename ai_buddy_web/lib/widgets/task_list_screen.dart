@@ -19,7 +19,8 @@ class TaskListScreen extends StatelessWidget {
           builder: (ctx) {
             final canPop = Navigator.of(ctx).canPop();
             final route = ModalRoute.of(ctx);
-            final isModal = route is PageRoute && route.fullscreenDialog == true;
+            final isModal =
+                route is PageRoute && route.fullscreenDialog == true;
             if (canPop) {
               return AppBackButton(isModal: isModal);
             }
@@ -44,10 +45,19 @@ class TaskListScreen extends StatelessWidget {
 
           // Placeholder tasks
           final tasks = [
-            {'title': 'Practice deep breathing for 5 minutes', 'completed': true},
+            {
+              'title': 'Practice deep breathing for 5 minutes',
+              'completed': true
+            },
             {'title': 'Go for a 15-minute walk', 'completed': false},
-            {'title': 'Write down 3 things you are grateful for', 'completed': false},
-            {'title': 'Disconnect from social media for 1 hour', 'completed': false},
+            {
+              'title': 'Write down 3 things you are grateful for',
+              'completed': false
+            },
+            {
+              'title': 'Disconnect from social media for 1 hour',
+              'completed': false
+            },
           ];
 
           return ListView.builder(

@@ -12,7 +12,8 @@ bool isImeOpen(BuildContext context) {
   bool hasTextFocus = false;
   final focusCtx = primary?.context;
   if (focusCtx != null) {
-    hasTextFocus = focusCtx.findAncestorWidgetOfExactType<EditableText>() != null;
+    hasTextFocus =
+        focusCtx.findAncestorWidgetOfExactType<EditableText>() != null;
   }
   if (kIsWeb) return hasTextFocus;
   return hasTextFocus;
@@ -127,10 +128,12 @@ class KeyboardAwareBackButton extends StatefulWidget {
   });
 
   @override
-  State<KeyboardAwareBackButton> createState() => _KeyboardAwareBackButtonState();
+  State<KeyboardAwareBackButton> createState() =>
+      _KeyboardAwareBackButtonState();
 }
 
-class _KeyboardAwareBackButtonState extends State<KeyboardAwareBackButton> with WidgetsBindingObserver {
+class _KeyboardAwareBackButtonState extends State<KeyboardAwareBackButton>
+    with WidgetsBindingObserver {
   void _onFocusChange() {
     if (mounted) setState(() {});
   }
@@ -168,7 +171,8 @@ class _KeyboardAwareBackButtonState extends State<KeyboardAwareBackButton> with 
       onPressed: widget.onPressed,
       size: widget.size,
     );
-    final child = SizedBox(width: widget.size, height: widget.size, child: back);
+    final child =
+        SizedBox(width: widget.size, height: widget.size, child: back);
 
     return AnimatedSwitcher(
       duration: widget.animationDuration,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum QuestStatus { locked, unlocked, inProgress, completed }
+
 enum QuestCategory { mindfulness, activity, social, learning, challenge }
 
 class Quest {
@@ -48,11 +49,12 @@ class Quest {
   }
 
   double get progressPercentage => (progress / target).clamp(0.0, 1.0);
-  
+
   bool get isCompleted => status == QuestStatus.completed;
-  
-  bool get canStart => status == QuestStatus.unlocked || status == QuestStatus.inProgress;
-  
+
+  bool get canStart =>
+      status == QuestStatus.unlocked || status == QuestStatus.inProgress;
+
   String get categoryName {
     switch (category) {
       case QuestCategory.mindfulness:
@@ -67,7 +69,7 @@ class Quest {
         return 'Challenge';
     }
   }
-  
+
   Color get categoryColor {
     switch (category) {
       case QuestCategory.mindfulness:
@@ -82,7 +84,7 @@ class Quest {
         return Colors.red;
     }
   }
-  
+
   static IconData getIconForCategory(QuestCategory category) {
     switch (category) {
       case QuestCategory.mindfulness:

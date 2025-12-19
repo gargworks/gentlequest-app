@@ -25,7 +25,8 @@ class QuestCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDone = (progress ?? 0) >= 1.0;
-    final String buttonText = isDone ? 'Done' : (isActive ? 'Continue' : 'Start');
+    final String buttonText =
+        isDone ? 'Done' : (isActive ? 'Continue' : 'Start');
     final VoidCallback? action = isDone ? null : onTap;
 
     return GestureDetector(
@@ -67,11 +68,11 @@ class QuestCardWidget extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: TextStyleHelper.instance.titleSmallInter
-                            .copyWith(
-                              color: ColorConstant.gray900,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style:
+                            TextStyleHelper.instance.titleSmallInter.copyWith(
+                          color: ColorConstant.gray900,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (subtitle != null) ...[
                         SizedBox(height: 4.v),

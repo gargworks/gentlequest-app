@@ -28,7 +28,8 @@ class RecommendationCardWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RecommendationCardWidget> createState() => _RecommendationCardWidgetState();
+  State<RecommendationCardWidget> createState() =>
+      _RecommendationCardWidgetState();
 }
 
 class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
@@ -41,7 +42,9 @@ class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
     final theme = Theme.of(context);
     // Decide tint color heuristically by category/path and completion state
     final cat = widget.category.toLowerCase();
-    final path = (widget.completed && widget.doneImagePath != null) ? widget.doneImagePath! : widget.imagePath;
+    final path = (widget.completed && widget.doneImagePath != null)
+        ? widget.doneImagePath!
+        : widget.imagePath;
     bool isAssess = cat.contains('assess');
     // Policy:
     // - Only Assess keeps overall tint (tertiary) for the whole SVG.
@@ -93,24 +96,30 @@ class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
                       children: [
                         Text(
                           widget.category,
-                          style: TextStyleHelper.instance.title19BoldInter.copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                          style: TextStyleHelper.instance.title19BoldInter
+                              .copyWith(
+                            fontFamily: CoreTextStyles.TextStyleHelper.instance
+                                .headline24Bold.fontFamily,
                             color: const Color(0xFF8E98A7),
                           ),
                         ),
                         SizedBox(height: 8.h),
                         Text(
                           widget.title,
-                          style: TextStyleHelper.instance.headline26BoldInter.copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                          style: TextStyleHelper.instance.headline26BoldInter
+                              .copyWith(
+                            fontFamily: CoreTextStyles.TextStyleHelper.instance
+                                .headline24Bold.fontFamily,
                             color: const Color(0xFF4C5664),
                           ),
                         ),
                         SizedBox(height: 12.h),
                         Text(
                           widget.subtitle,
-                          style: TextStyleHelper.instance.headline21Inter.copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance.headline24Bold.fontFamily,
+                          style:
+                              TextStyleHelper.instance.headline21Inter.copyWith(
+                            fontFamily: CoreTextStyles.TextStyleHelper.instance
+                                .headline24Bold.fontFamily,
                             color: const Color(0xFFA8B1BF),
                           ),
                         ),
@@ -147,7 +156,8 @@ class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFF22C55E),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                                border:
+                                    Border.all(color: Colors.white, width: 3),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.08),
@@ -156,7 +166,8 @@ class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
                                   ),
                                 ],
                               ),
-                              child: Icon(Icons.check, size: 16.h, color: Colors.white),
+                              child: Icon(Icons.check,
+                                  size: 16.h, color: Colors.white),
                             ),
                           ),
                       ],
@@ -201,7 +212,9 @@ class _IconRenderable extends StatelessWidget {
             width: width,
             height: height,
             fit: fit,
-            colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+            colorFilter: color != null
+                ? ColorFilter.mode(color!, BlendMode.srcIn)
+                : null,
           )
         : Image.asset(
             path,
@@ -212,7 +225,8 @@ class _IconRenderable extends StatelessWidget {
             colorBlendMode: color != null ? BlendMode.srcIn : null,
           );
     if (borderRadius != null) {
-      return ClipRRect(borderRadius: borderRadius ?? BorderRadius.zero, child: child);
+      return ClipRRect(
+          borderRadius: borderRadius ?? BorderRadius.zero, child: child);
     }
     return child;
   }

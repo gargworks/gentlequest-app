@@ -267,8 +267,7 @@ class CustomButton extends StatelessWidget {
     final baseStyle = textStyle ?? TextStyleHelper.instance.title18Regular;
 
     return baseStyle.copyWith(
-      color:
-          baseStyle.color ??
+      color: baseStyle.color ??
           defaultColor ??
           Colors.black, // Modified: Fixed undefined defaultColor
     );

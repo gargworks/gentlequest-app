@@ -17,25 +17,47 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen> {
 
   final List<Map<String, dynamic>> _questions = [
     {
-      'question': 'Over the last 2 weeks, how often have you been bothered by little interest or pleasure in doing things?',
-      'options': ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+      'question':
+          'Over the last 2 weeks, how often have you been bothered by little interest or pleasure in doing things?',
+      'options': [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day'
+      ],
     },
     {
       'question': 'Feeling down, depressed, or hopeless?',
-      'options': ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+      'options': [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day'
+      ],
     },
     {
       'question': 'Trouble falling or staying asleep, or sleeping too much?',
-      'options': ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+      'options': [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day'
+      ],
     },
     {
       'question': 'Feeling tired or having little energy?',
-      'options': ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+      'options': [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day'
+      ],
     },
   ];
 
   void _submitAssessment() {
-    final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
+    final assessmentProvider =
+        Provider.of<AssessmentProvider>(context, listen: false);
     assessmentProvider.submitAssessment(_answers);
     Navigator.of(context).pop();
   }
@@ -53,7 +75,8 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen> {
           builder: (ctx) {
             final canPop = Navigator.of(ctx).canPop();
             final route = ModalRoute.of(ctx);
-            final isModal = route is PageRoute && route.fullscreenDialog == true;
+            final isModal =
+                route is PageRoute && route.fullscreenDialog == true;
             if (canPop) {
               return AppBackButton(isModal: isModal);
             }
@@ -127,4 +150,4 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen> {
       ),
     );
   }
-} 
+}

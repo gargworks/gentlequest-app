@@ -32,9 +32,9 @@ class CrisisResourcesWidget extends StatelessWidget {
                 Text(
                   _getTitle(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: _getIconColor(context),
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: _getIconColor(context),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -50,7 +50,8 @@ class CrisisResourcesWidget extends StatelessWidget {
               runSpacing: 8,
               children: _getGeographySpecificResources().map((resource) {
                 return ElevatedButton.icon(
-                  onPressed: () => _launchUrl(context, resource.url, label: resource.label),
+                  onPressed: () =>
+                      _launchUrl(context, resource.url, label: resource.label),
                   icon: Icon(resource.icon),
                   label: Text(resource.label),
                   style: ElevatedButton.styleFrom(
@@ -147,7 +148,8 @@ class CrisisResourcesWidget extends StatelessWidget {
     if (crisisNumbers != null && crisisNumbers!.isNotEmpty) {
       for (final number in crisisNumbers!) {
         final name = number['name'] as String? ?? 'Crisis Helpline';
-        final phoneNumber = (number['number'] as String?) ?? (number['phone'] as String?);
+        final phoneNumber =
+            (number['number'] as String?) ?? (number['phone'] as String?);
         final textNumber = number['text'] as String?;
         final url = number['url'] as String?;
 
@@ -161,7 +163,8 @@ class CrisisResourcesWidget extends StatelessWidget {
           );
         } else if (textNumber != null) {
           resources.add(
-            CrisisResource(label: name, url: 'sms:$textNumber', icon: Icons.message),
+            CrisisResource(
+                label: name, url: 'sms:$textNumber', icon: Icons.message),
           );
         } else if (url != null) {
           resources.add(
@@ -211,12 +214,14 @@ class CrisisResourcesWidget extends StatelessWidget {
     return resources;
   }
 
-  Future<void> _launchUrl(BuildContext context, String url, {String? label}) async {
+  Future<void> _launchUrl(BuildContext context, String url,
+      {String? label}) async {
     final uri = Uri.parse(url);
     // Cache messenger to avoid using BuildContext across async gaps.
     final messenger = ScaffoldMessenger.maybeOf(context);
     try {
-      final launched = await canLaunchUrl(uri) && await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await canLaunchUrl(uri) &&
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (launched) return;
     } catch (_) {
       // Fall through to copy-to-clipboard
@@ -226,7 +231,8 @@ class CrisisResourcesWidget extends StatelessWidget {
     if (uri.scheme == 'tel') {
       final number = uri.path; // after tel:
       await Clipboard.setData(ClipboardData(text: number));
-      if (!kIsWeb) return; // On mobile, if we reach here copy is enough silently
+      if (!kIsWeb)
+        return; // On mobile, if we reach here copy is enough silently
       messenger?.showSnackBar(
         SnackBar(content: Text('Phone number copied: $number')),
       );

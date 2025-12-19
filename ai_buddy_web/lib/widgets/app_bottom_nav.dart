@@ -11,13 +11,16 @@ class AppBottomNav extends StatelessWidget {
   final ValueChanged<AppTab>? onTap; // if provided, used by HomeShell
   final ValueChanged<AppTab>? onReselect; // called when tapping the active tab
 
-  const AppBottomNav({super.key, required this.current, this.onTap, this.onReselect});
+  const AppBottomNav(
+      {super.key, required this.current, this.onTap, this.onReselect});
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final double vPad = bottomInset > 0 ? 6.0 : 10.0; // sit lower when inset exists
-    const bool kActiveLabelOnlyDemo = false; // labels always shown (keep note for future option)
+    final double vPad =
+        bottomInset > 0 ? 6.0 : 10.0; // sit lower when inset exists
+    const bool kActiveLabelOnlyDemo =
+        false; // labels always shown (keep note for future option)
 
     return Material(
       color: Colors.white,
@@ -30,15 +33,23 @@ class AppBottomNav extends StatelessWidget {
           top: false,
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: vPad), // adaptive touch target
+            padding:
+                EdgeInsets.symmetric(vertical: vPad), // adaptive touch target
             child: FocusTraversalGroup(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildItem(context, Icons.chat_bubble_outline, 'Talk', AppTab.talk, activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.mood, 'Mood', AppTab.mood, activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.emoji_events_outlined, 'Quest', AppTab.quest, activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.people_outline, 'Community', AppTab.community, activeLabelOnly: kActiveLabelOnlyDemo),
+                  _buildItem(
+                      context, Icons.chat_bubble_outline, 'Talk', AppTab.talk,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
+                  _buildItem(context, Icons.mood, 'Mood', AppTab.mood,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
+                  _buildItem(context, Icons.emoji_events_outlined, 'Quest',
+                      AppTab.quest,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
+                  _buildItem(context, Icons.people_outline, 'Community',
+                      AppTab.community,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
                 ],
               ),
             ),
@@ -48,13 +59,17 @@ class AppBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(BuildContext context, IconData icon, String label, AppTab tab, {required bool activeLabelOnly}) {
+  Widget _buildItem(
+      BuildContext context, IconData icon, String label, AppTab tab,
+      {required bool activeLabelOnly}) {
     final bool isActive = current == tab;
     return InkWell(
       onTap: () {
         // Haptic feedback on supported platforms
         if (!kIsWeb) {
-          try { HapticFeedback.selectionClick(); } catch (_) {}
+          try {
+            HapticFeedback.selectionClick();
+          } catch (_) {}
         }
         if (tab == current) {
           if (onReselect != null) onReselect!(tab);
@@ -78,7 +93,9 @@ class AppBottomNav extends StatelessWidget {
             Icon(
               icon,
               size: 28.0,
-              color: isActive ? Colors.blue : Colors.grey, // keep current grey→blue
+              color: isActive
+                  ? Colors.blue
+                  : Colors.grey, // keep current grey→blue
             ),
             const SizedBox(height: 4.0),
             AnimatedOpacity(

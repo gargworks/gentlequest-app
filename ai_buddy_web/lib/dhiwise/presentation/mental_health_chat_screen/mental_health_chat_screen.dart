@@ -35,8 +35,10 @@ class MentalHealthChatScreen extends StatelessWidget {
                       Builder(
                         builder: (ctx) {
                           final route = ModalRoute.of(ctx);
-                          final isModal = route is PageRoute && route.fullscreenDialog == true;
-                          return KeyboardAwareBackButton(isModal: isModal, size: 32.h);
+                          final isModal = route is PageRoute &&
+                              route.fullscreenDialog == true;
+                          return KeyboardAwareBackButton(
+                              isModal: isModal, size: 32.h);
                         },
                       ),
 

@@ -8,16 +8,17 @@ class ProfileConfig {
   // AI assistant
   static String aiName = 'Alex';
   // Default asset path for AI avatar. Replace with your own asset (no badge baked-in) as needed.
-  static String? aiAvatarAsset = 'assets/images/avatar_placeholder.png'; // e.g. 'assets/images/avatar_ai.png'
+  static String? aiAvatarAsset =
+      'assets/images/avatar_placeholder.png'; // e.g. 'assets/images/avatar_ai.png'
 
   // Current user
   static String userName = 'You';
   static String? userAvatarAsset; // e.g. 'assets/images/avatar_user.png'
 
   // Colors for status
-  static const Color online = Color(0xFF22C55E);    // green-500
-  static const Color idle = Color(0xFFF59E0B);      // amber-500
-  static const Color offline = Color(0xFF9CA3AF);   // gray-400
+  static const Color online = Color(0xFF22C55E); // green-500
+  static const Color idle = Color(0xFFF59E0B); // amber-500
+  static const Color offline = Color(0xFF9CA3AF); // gray-400
 }
 
 /// High-level presence for status badge.

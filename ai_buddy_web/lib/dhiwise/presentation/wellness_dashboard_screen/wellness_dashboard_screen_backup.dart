@@ -145,10 +145,7 @@ class WellnessDashboardScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyleHelper.instance.headline28Inter.copyWith(
               fontFamily: CoreTextStyles
-                  .TextStyleHelper
-                  .instance
-                  .headline24Bold
-                  .fontFamily,
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
               color: Color(0xFF555F6D),
             ),
           ),
@@ -158,10 +155,7 @@ class WellnessDashboardScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyleHelper.instance.headline21Inter.copyWith(
               fontFamily: CoreTextStyles
-                  .TextStyleHelper
-                  .instance
-                  .headline24Bold
-                  .fontFamily,
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
               color: Color(0xFF8C9CAA),
             ),
           ),
@@ -176,10 +170,7 @@ class WellnessDashboardScreen extends StatelessWidget {
             borderRadius: 37.h,
             textStyle: TextStyleHelper.instance.headline25BoldInter.copyWith(
               fontFamily: CoreTextStyles
-                  .TextStyleHelper
-                  .instance
-                  .headline24Bold
-                  .fontFamily,
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
             ),
             onPressed: () {
               // Handle check in click
@@ -200,10 +191,7 @@ class WellnessDashboardScreen extends StatelessWidget {
             'Your Progress',
             style: TextStyleHelper.instance.display31BoldInter.copyWith(
               fontFamily: CoreTextStyles
-                  .TextStyleHelper
-                  .instance
-                  .headline24Bold
-                  .fontFamily,
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
               color: Color(0xFF444D5C),
             ),
           ),
@@ -244,10 +232,7 @@ class WellnessDashboardScreen extends StatelessWidget {
             'Today\'s Recommendations',
             style: TextStyleHelper.instance.display32BoldInter.copyWith(
               fontFamily: CoreTextStyles
-                  .TextStyleHelper
-                  .instance
-                  .headline24Bold
-                  .fontFamily,
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
               color: Color(0xFF4A5261),
             ),
           ),

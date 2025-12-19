@@ -49,10 +49,10 @@ class SessionManager {
         ),
       );
       final resp = await dio.get('/api/get_or_create_session');
-      final sid = (resp.data is Map) ? resp.data['session_id'] as String? : null;
-      _sessionId = (sid != null && sid.trim().isNotEmpty)
-          ? sid
-          : _fallbackSessionId();
+      final sid =
+          (resp.data is Map) ? resp.data['session_id'] as String? : null;
+      _sessionId =
+          (sid != null && sid.trim().isNotEmpty) ? sid : _fallbackSessionId();
       try {
         await KvStorage.write(_sessionKey, _sessionId);
       } catch (e) {

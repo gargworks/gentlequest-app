@@ -3,7 +3,8 @@ import '../screens/legal/legal_screen.dart';
 
 /// Shows a minimal, accessible Safety & Legal sheet.
 /// If [requireAcknowledge] is true, shows a primary "I understand" action.
-Future<void> showSafetyLegalSheet(BuildContext context, {bool requireAcknowledge = false}) async {
+Future<void> showSafetyLegalSheet(BuildContext context,
+    {bool requireAcknowledge = false}) async {
   await showModalBottomSheet(
     context: context,
     showDragHandle: true,
@@ -30,7 +31,8 @@ Future<void> showSafetyLegalSheet(BuildContext context, {bool requireAcknowledge
                     Expanded(
                       child: Text(
                         'Safety & Legal',
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
                     IconButton(
@@ -46,11 +48,17 @@ Future<void> showSafetyLegalSheet(BuildContext context, {bool requireAcknowledge
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 12),
-                _Bullet(text: 'If you may harm yourself or others, contact local emergency services. Crisis resources are shown contextually.'),
+                _Bullet(
+                    text:
+                        'If you may harm yourself or others, contact local emergency services. Crisis resources are shown contextually.'),
                 const SizedBox(height: 8),
-                _Bullet(text: 'Your messages may be stored for a limited period to operate the service. You can request deletion.'),
+                _Bullet(
+                    text:
+                        'Your messages may be stored for a limited period to operate the service. You can request deletion.'),
                 const SizedBox(height: 8),
-                _Bullet(text: 'By continuing, you agree to the Terms of Service and Privacy Policy when presented.'),
+                _Bullet(
+                    text:
+                        'By continuing, you agree to the Terms of Service and Privacy Policy when presented.'),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,

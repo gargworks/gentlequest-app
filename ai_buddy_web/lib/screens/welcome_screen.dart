@@ -49,15 +49,18 @@ class WelcomeScreen extends StatelessWidget {
               // Quick access to Wellness Dashboard (DhiWise)
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/home', arguments: AppTab.quest);
+                  Navigator.pushNamed(context, '/home',
+                      arguments: AppTab.quest);
                 },
                 icon: const Icon(Icons.emoji_events_outlined),
                 label: const Text('Open Wellness Dashboard'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 20),

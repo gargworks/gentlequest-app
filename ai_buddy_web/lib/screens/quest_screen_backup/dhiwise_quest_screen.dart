@@ -72,16 +72,16 @@ class DhiwiseQuestScreen extends StatelessWidget {
             Text(
               'Your Quests',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
             ),
             const SizedBox(height: 4),
             Text(
               'Complete quests to earn rewards',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withOpacity(0.8),
-              ),
+                    color: Colors.white.withOpacity(0.8),
+                  ),
             ),
           ],
         ),

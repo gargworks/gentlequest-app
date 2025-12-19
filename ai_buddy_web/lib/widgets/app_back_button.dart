@@ -21,12 +21,14 @@ class AppBackButton extends StatelessWidget {
   final bool showBackground;
   final double size; // tap target size
 
-  bool get _isCupertinoLike => defaultTargetPlatform == TargetPlatform.iOS ||
+  bool get _isCupertinoLike =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
       defaultTargetPlatform == TargetPlatform.macOS;
 
   @override
   Widget build(BuildContext context) {
-    final Color resolvedIconColor = iconColor ?? Theme.of(context).colorScheme.onSurface;
+    final Color resolvedIconColor =
+        iconColor ?? Theme.of(context).colorScheme.onSurface;
     final Color? resolvedBgColor = showBackground
         ? (backgroundColor ?? Theme.of(context).colorScheme.surface)
         : null;
@@ -37,14 +39,15 @@ class AppBackButton extends StatelessWidget {
 
     final Widget icon = Icon(iconData, size: 20, color: resolvedIconColor);
 
-    final VoidCallback action = onPressed ?? () {
-      final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-      if (isKeyboardOpen) {
-        FocusScope.of(context).unfocus();
-        return;
-      }
-      Navigator.of(context).maybePop();
-    };
+    final VoidCallback action = onPressed ??
+        () {
+          final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+          if (isKeyboardOpen) {
+            FocusScope.of(context).unfocus();
+            return;
+          }
+          Navigator.of(context).maybePop();
+        };
 
     final Widget content = Center(child: icon);
 

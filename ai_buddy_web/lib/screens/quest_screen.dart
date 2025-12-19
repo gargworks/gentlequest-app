@@ -320,9 +320,8 @@ class _QuestScreenState extends State<QuestScreen>
       itemBuilder: (context, index) {
         final category = categories[index];
         final questsInCategory = questProvider.getQuestsByCategory(category);
-        final completedQuests = questsInCategory
-            .where((q) => q.isCompleted)
-            .length;
+        final completedQuests =
+            questsInCategory.where((q) => q.isCompleted).length;
         final progress = questsInCategory.isEmpty
             ? 0.0
             : completedQuests / questsInCategory.length;

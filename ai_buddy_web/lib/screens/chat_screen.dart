@@ -58,10 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
             itemCount: chatProvider.messages.length,
             itemBuilder: (context, index) {
               final message = chatProvider.messages[index];
-                              return ChatMessageWidget(
-                  text: message.content,
-                  isUser: message.isUser,
-                );
+              return ChatMessageWidget(
+                text: message.content,
+                isUser: message.isUser,
+              );
             },
           ),
         ),

@@ -86,9 +86,9 @@ class _StartupScreenState extends State<StartupScreen> {
               Text(
                 'GentleQuest',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
                 textAlign: TextAlign.center,
               ),
 
@@ -132,9 +132,8 @@ class _StartupScreenState extends State<StartupScreen> {
                             _isBackendHealthy
                                 ? Icons.check_circle
                                 : Icons.error,
-                            color: _isBackendHealthy
-                                ? Colors.green
-                                : Colors.red,
+                            color:
+                                _isBackendHealthy ? Colors.green : Colors.red,
                             size: 40,
                           ),
 
@@ -144,11 +143,11 @@ class _StartupScreenState extends State<StartupScreen> {
                     Text(
                       _healthStatus,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: _isBackendHealthy
-                            ? Colors.green[700]
-                            : Colors.red[700],
-                      ),
+                            fontWeight: FontWeight.w600,
+                            color: _isBackendHealthy
+                                ? Colors.green[700]
+                                : Colors.red[700],
+                          ),
                       textAlign: TextAlign.center,
                     ),
 
@@ -157,8 +156,8 @@ class _StartupScreenState extends State<StartupScreen> {
                       Text(
                         _errorDetails,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                         textAlign: TextAlign.center,
                       ),
                     ],

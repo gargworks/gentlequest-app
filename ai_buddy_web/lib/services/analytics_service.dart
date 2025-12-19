@@ -36,7 +36,8 @@ Future<bool> _isAnalyticsEnabled() async {
   }
 }
 
-Future<void> logAnalyticsEvent(String eventType, {Map<String, dynamic>? metadata}) async {
+Future<void> logAnalyticsEvent(String eventType,
+    {Map<String, dynamic>? metadata}) async {
   try {
     if (!(await _isAnalyticsEnabled())) return;
     // Centralized session ID (deduplicated) via SessionManager
