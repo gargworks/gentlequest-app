@@ -18,70 +18,93 @@ on:
         description: "Unified build number for both platforms (optional). Defaults to run number if empty."
         required: false
         default: ""
-      android_upload:
-        description: "Android: upload to Play after build?"
+      android_params:
+        description: "Android parameters JSON (app_id, package_name, track, upload, preflight, crashlytics_upload)"
         required: false
-        default: "true"
-      android_preflight:
-        description: "Android: run format/analyze/tests before build?"
+        default: |
+          {"app_id":"app.gentlequest.www","package_name":"app.gentlequest.www","track":"internal","upload":"true","preflight":"false","crashlytics_upload":"false"}
+      ios_params:
+        description: "iOS parameters JSON (bundle_id, scheme, export_method, upload, preflight)"
         required: false
-        default: "false"
-      ios_upload:
-        description: "iOS: upload to TestFlight after build?"
+        default: |
+          {"bundle_id":"com.gentlequest.app","scheme":"Runner","export_method":"app-store","upload":"true","preflight":"false"}
+      sentry_params:
+        description: "Sentry parameters JSON (upload, org, project_android, project_ios, release, environment)"
         required: false
-        default: "true"
-      ios_preflight:
-        description: "iOS: run format/analyze/tests before build?"
+        default: |
+          {"upload":"false","org":"","project_android":"","project_ios":"","release":"","environment":"beta"}
+      release_params:
+        description: "Release/notification parameters JSON (create_gh_release, notify_slack, tag_prefix)"
         required: false
-        default: "false"
+        default: |
+          {"create_gh_release":"false","notify_slack":"false","tag_prefix":"mobile-v"}
 
 jobs:
+  parse-inputs:
+    name: Parse inputs
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.jq.outputs.android }}
+      ios: ${{ steps.jq.outputs.ios }}
+      sentry: ${{ steps.jq.outputs.sentry }}
+      release_meta: ${{ steps.jq.outputs.release_meta }}
+    steps:
+      - name: Parse JSON payloads
+        id: jq
+        run: |
+          echo "android=$(echo '${{ inputs.android_params }}' | jq -c .)" >> $GITHUB_OUTPUT
+          echo "ios=$(echo '${{ inputs.ios_params }}' | jq -c .)" >> $GITHUB_OUTPUT
+          echo "sentry=$(echo '${{ inputs.sentry_params }}' | jq -c .)" >> $GITHUB_OUTPUT
+          echo "release_meta=$(echo '${{ inputs.release_params }}' | jq -c .)" >> $GITHUB_OUTPUT
+
   android:
     name: Android job
+    needs: parse-inputs
     uses: ./.github/workflows/android_release.yml
     secrets: inherit
     with:
-      app_id: app.mhb.preview
-      package_name: app.mhb.preview
-      track: internal
+      app_id: ${{ fromJson(needs.parse-inputs.outputs.android).app_id }}
+      package_name: ${{ fromJson(needs.parse-inputs.outputs.android).package_name }}
+      track: ${{ fromJson(needs.parse-inputs.outputs.android).track }}
       build_number: ${{ inputs.build_number }}
       release_notes: ${{ inputs.release_notes }}
-      upload: ${{ inputs.android_upload }}
-      preflight: ${{ inputs.android_preflight }}
-      environment: beta
-      sentry_upload: 'false'
-      sentry_org: ''
-      sentry_project: ''
-      sentry_release: ''
-      crashlytics_upload: 'false'
+      upload: ${{ fromJson(needs.parse-inputs.outputs.android).upload }}
+      preflight: ${{ fromJson(needs.parse-inputs.outputs.android).preflight }}
+      environment: ${{ fromJson(needs.parse-inputs.outputs.sentry).environment }}
+      sentry_upload: ${{ fromJson(needs.parse-inputs.outputs.sentry).upload }}
+      sentry_org: ${{ fromJson(needs.parse-inputs.outputs.sentry).org }}
+      sentry_project: ${{ fromJson(needs.parse-inputs.outputs.sentry).project_android }}
+      sentry_release: ${{ fromJson(needs.parse-inputs.outputs.sentry).release }}
+      crashlytics_upload: ${{ fromJson(needs.parse-inputs.outputs.android).crashlytics_upload }}
 
   ios:
     name: iOS job
+    needs: parse-inputs
     uses: ./.github/workflows/ios_release.yml
     secrets: inherit
     with:
-      bundle_id: app.mhb.preview
-      scheme: Runner
-      export_method: app-store
+      bundle_id: ${{ fromJson(needs.parse-inputs.outputs.ios).bundle_id }}
+      scheme: ${{ fromJson(needs.parse-inputs.outputs.ios).scheme }}
+      export_method: ${{ fromJson(needs.parse-inputs.outputs.ios).export_method }}
       build_number: ${{ inputs.build_number }}
       release_notes: ${{ inputs.release_notes }}
-      upload: ${{ inputs.ios_upload }}
-      preflight: ${{ inputs.ios_preflight }}
-      environment: beta
-      sentry_upload: 'false'
-      sentry_org: ''
-      sentry_project: ''
-      sentry_release: ''
-      crashlytics_upload: 'false'
+      upload: ${{ fromJson(needs.parse-inputs.outputs.ios).upload }}
+      preflight: ${{ fromJson(needs.parse-inputs.outputs.ios).preflight }}
+      environment: ${{ fromJson(needs.parse-inputs.outputs.sentry).environment }}
+      sentry_upload: ${{ fromJson(needs.parse-inputs.outputs.sentry).upload }}
+      sentry_org: ${{ fromJson(needs.parse-inputs.outputs.sentry).org }}
+      sentry_project: ${{ fromJson(needs.parse-inputs.outputs.sentry).project_ios }}
+      sentry_release: ${{ fromJson(needs.parse-inputs.outputs.sentry).release }}
+      crashlytics_upload: ${{ fromJson(needs.parse-inputs.outputs.ios).crashlytics_upload || 'false' }}
 
   release_notify:
     name: Release and Notify
     runs-on: ubuntu-latest
-    needs: [android, ios]
+    needs: [parse-inputs, android, ios]
     env:
-      DO_GH_RELEASE: ${{ vars.DO_GH_RELEASE || 'false' }}
-      DO_SLACK_NOTIFY: ${{ vars.DO_SLACK_NOTIFY || 'false' }}
-      TAG_PREFIX: ${{ vars.TAG_PREFIX || 'mobile-v' }}
+      DO_GH_RELEASE: ${{ fromJson(needs.parse-inputs.outputs.release_meta).create_gh_release }}
+      DO_SLACK_NOTIFY: ${{ fromJson(needs.parse-inputs.outputs.release_meta).notify_slack }}
+      TAG_PREFIX: ${{ fromJson(needs.parse-inputs.outputs.release_meta).tag_prefix }}
     steps:
       - name: Download Android artifact
         uses: actions/download-artifact@v4
