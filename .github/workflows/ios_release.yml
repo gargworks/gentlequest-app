@@ -189,6 +189,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
 
+      - name: Clear Pods and lockfile to enforce pinned Firebase version
+        working-directory: ai_buddy_web/ios
+        run: |
+          rm -rf Pods Podfile.lock
+
       - name: Install CocoaPods
         working-directory: ai_buddy_web/ios
         run: |
