@@ -179,16 +179,6 @@ jobs:
             echo "No tests/ directory found. Skipping flutter test."
           fi
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cocoapods
-            ai_buddy_web/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ai_buddy_web/ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Clear Pods and lockfile to enforce pinned Firebase version
         working-directory: ai_buddy_web/ios
         run: |
@@ -196,6 +186,8 @@ jobs:
 
       - name: Install CocoaPods
         working-directory: ai_buddy_web/ios
+        env:
+          FIREBASE_SDK_VERSION: "11.10.0"
         run: |
           set -e
           pod install --repo-update
