@@ -280,16 +280,13 @@ jobs:
           CRASHLYTICS_UPLOAD: ${{ inputs.crashlytics_upload || github.event.inputs.crashlytics_upload }}
         run: |
           set -e
-          BUILD_DIR=build/ios/ipa
-          EXTRA_ARGS=""
-          if [ "$EXPORT_METHOD" = "app-store" ]; then
-            EXTRA_ARGS="--export-options-plist=ios/Flutter/ExportOptions.plist"
+          BN="${{ steps.bn.outputs.bn }}"
+          echo "Using build number: $BN"
+          if [ "${{ steps.signing.outputs.with_signing }}" = "true" ]; then
+            flutter build ipa --release --no-codesign --build-number "$BN" --export-options-plist="ios/Flutter/ExportOptions.plist"
+          else
+            flutter build ios --release --no-codesign --build-number "$BN"
           fi
-          flutter build ipa --release --no-codesign \
-            --build-number=$BN \
-            --export-options-plist=ios/Flutter/ExportOptions.plist \
-            --bundle-identifier=$BUNDLE_ID \
-            $EXTRA_ARGS
 
       - name: Upload IPA artifact (if any)
         uses: actions/upload-artifact@v4
