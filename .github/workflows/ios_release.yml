@@ -285,7 +285,8 @@ jobs:
           if [ "${{ steps.signing.outputs.with_signing }}" = "true" ]; then
             flutter build ipa --release --no-codesign --build-number "$BN" --export-options-plist="ios/Flutter/ExportOptions.plist"
           else
-            flutter build ios --release --no-codesign --build-number "$BN"
+            # Even without signing, emit an unsigned IPA so artifacts exist
+            flutter build ipa --release --no-codesign --build-number "$BN" --export-options-plist="ios/Flutter/ExportOptions.plist"
           fi
 
       - name: Upload IPA artifact (if any)
