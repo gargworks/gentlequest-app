@@ -1143,15 +1143,6 @@ def _register_routes(app: Flask) -> None:
 """
         return Response(page, content_type="text/html; charset=utf-8")
 
-    @app.route("/<path:filename>")
-    def serve_static(filename):
-        """Serve static files for Flutter web app"""
-        if os.path.exists(os.path.join(app.static_folder, filename)):
-            return send_from_directory(app.static_folder, filename)
-        else:
-            # Fallback to index.html for SPA routing
-            return send_from_directory(app.static_folder, "index.html")
-
     @app.route("/.well-known/assetlinks.json")
     @app.limiter.exempt
     def assetlinks():
@@ -1160,6 +1151,15 @@ def _register_routes(app: Flask) -> None:
             return send_from_directory(os.path.join(os.path.dirname(__file__), '.well-known'), 'assetlinks.json', mimetype='application/json')
         except FileNotFoundError:
             return jsonify({"error": "Asset links file not found"}), 404
+
+    @app.route("/<path:filename>")
+    def serve_static(filename):
+        """Serve static files for Flutter web app"""
+        if os.path.exists(os.path.join(app.static_folder, filename)):
+            return send_from_directory(app.static_folder, filename)
+        else:
+            # Fallback to index.html for SPA routing
+            return send_from_directory(app.static_folder, "index.html")
 
     @app.route("/api/health", methods=["GET"])
     @app.limiter.exempt
