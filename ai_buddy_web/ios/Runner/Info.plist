@@ -67,5 +67,11 @@
 		<string>applinks:gentlequest.com</string>
 		<string>applinks:gentlequest.app</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow GentleQuest to connect to the Dart VM on your local network during development.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
 </dict>
 </plist>

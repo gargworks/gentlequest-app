@@ -83,33 +83,190 @@ class _QuestScreenState extends State<QuestScreen>
             ),
           ),
         ),
-        body: Consumer<QuestProvider>(
-          builder: (context, questProvider, _) {
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                // All Quests Tab
-                _buildQuestList(questProvider.quests, 'No quests available'),
-
-                // Active Quests Tab
-                _buildQuestList(
-                  questProvider.inProgressQuests,
-                  'No active quests. Start a new quest!',
-                ),
-
-                // Completed Quests Tab
-                _buildQuestList(
-                  questProvider.completedQuests,
-                  'No completed quests yet. Keep going!',
-                  showProgress: false,
-                ),
-
-                // Categories Tab
-                _buildCategoriesTab(questProvider),
-              ],
-            );
-          },
+        body: Column(
+          children: [
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: _buildPulseHero(),
+            ),
+            Expanded(
+              child: Consumer<QuestProvider>(
+                builder: (context, questProvider, _) {
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildQuestList(
+                        questProvider.quests,
+                        'No quests available',
+                      ),
+                      _buildQuestList(
+                        questProvider.inProgressQuests,
+                        'No active quests. Start a new quest!',
+                      ),
+                      _buildQuestList(
+                        questProvider.completedQuests,
+                        'No completed quests yet. Keep going!',
+                        showProgress: false,
+                      ),
+                      _buildCategoriesTab(questProvider),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPulseHero() {
+    // Placeholder data; wire to real streak/trend when available.
+    const streakDays = 4;
+    const trendLabel = "Calmer vs last week";
+    const nextBadge = "Next badge: 2 more days";
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).primaryColor.withOpacity(0.12),
+            Theme.of(context).primaryColor.withOpacity(0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.15),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "🔥",
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$streakDays-day streak",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                "Weekly Pulse",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            trendLabel,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 26,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  nextBadge,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                "See full recap",
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Theme.of(context).primaryColor,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

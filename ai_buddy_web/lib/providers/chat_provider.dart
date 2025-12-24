@@ -19,7 +19,7 @@ class ChatProvider extends ChangeNotifier {
 
   // Warm greeting variations for personality
   static const List<String> _greetings = [
-    "Hey there! How are you doing today? I'm here if you want to chat about anything. 🙂",
+    "This is your space to think out loud. Share what's on your mind. I'm here when you're ready. 🌱",
     "Hi! Ready when you are. No pressure, just here to listen. 🌱",
     "Hey! What's on your mind today? I'm all ears. 💭",
     "Hello! This is your space to think out loud. How can I help? ✨",

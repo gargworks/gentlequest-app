@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:confetti/confetti.dart';
 
 import '../../core/app_export.dart';
+import '../../../providers/mood_provider.dart';
 import '../../widgets/custom_button.dart';
 import './widgets/progress_card_widget.dart';
 import './widgets/recommendation_card_widget.dart';
@@ -21,6 +22,7 @@ import '../../../widgets/app_back_button.dart';
 import '../../../screens/quest_screen/widgets/quest_card_widget.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/notification_service.dart';
+import '../../../widgets/feedback_dialog.dart';
 
 // DEBUG ONLY: toggle to reset quest state on each app launch
 const bool _debugResetQuestsOnLaunch = false;
@@ -195,11 +197,46 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Track Explore completions this session to drive 'Done' state only after Explore interaction
   final Set<String> _exploreCompletedToday = <String>{};
 
+  // Quick check-in daily flag (separate from mood logging)
+  bool _hasCompletedQuickCheckinToday = false;
+
   // Telemetry helpers
   String _slug(String s) => s
       .toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
       .replaceAll(RegExp(r'^-+|-+$'), '');
+
+  // Quick check-in flag key helper (UTC date)
+  String _quickCheckinFlagKey(DateTime d) =>
+      'daily_quick_checkin_${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}_utc';
+
+  Future<void> _loadQuickCheckinFlag() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now().toUtc();
+      final k = _quickCheckinFlagKey(now);
+      final done = prefs.getBool(k) ?? false;
+      if (mounted) {
+        setState(() {
+          _hasCompletedQuickCheckinToday = done;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markQuickCheckinCompletedToday() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now().toUtc();
+      final k = _quickCheckinFlagKey(now);
+      await prefs.setBool(k, true);
+      if (mounted) {
+        setState(() {
+          _hasCompletedQuickCheckinToday = true;
+        });
+      }
+    } catch (_) {}
+  }
 
   // Handle completion of the Quick Check-in flow (explicit submission)
   Future<void> _onQuickCheckinSubmitted() async {
@@ -284,11 +321,39 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         _showXpChipPop(_startBtnKey, amount: QuestsEngine.xpOther);
       }
       _showCheckRipple(_startBtnKey);
+
+      // Celebration message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Done! Every small step builds something bigger. ✨'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (_) {}
 
-    // Telemetry: only log on first completion to avoid duplicate events
+    // Telemetry: track quest completion and daily check-in for retention
     try {
       if (awarded) {
+        // Calculate day number for retention tracking
+        int dayNumber = 1;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final firstCheckinKey = 'first_checkin_date_utc';
+          final now = DateTime.now().toUtc();
+          final firstCheckinStr = prefs.getString(firstCheckinKey);
+
+          if (firstCheckinStr != null) {
+            final firstCheckin = DateTime.parse(firstCheckinStr);
+            dayNumber = now.difference(firstCheckin).inDays + 1;
+          } else {
+            // First time check-in - store the date
+            await prefs.setString(firstCheckinKey, now.toIso8601String());
+          }
+        } catch (_) {}
+
+        // Log quest completion
         logAnalyticsEvent('quest_complete', metadata: {
           'quest_id': questId,
           'surface': 'wellness_dashboard',
@@ -298,6 +363,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           'success': true,
           'progress': 1.0,
           'ui': 'quick_checkin',
+        });
+
+        // Log daily check-in for retention tracking
+        logAnalyticsEvent('daily_checkin_completed', metadata: {
+          'day_number': dayNumber,
+          'date_utc': DateTime.now().toUtc().toIso8601String(),
+          'has_mood_data': true, // Always true since check-in includes mood
+          'completion_time_seconds': 2, // Approximate
         });
       }
     } catch (_) {}
@@ -313,6 +386,19 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     await _refreshExplore();
     // Force a lightweight rebuild so Explore list reflects "Done" state right away
     if (mounted) setState(() {});
+
+    // Mark daily quick check-in flag
+    await _markQuickCheckinCompletedToday();
+
+    // Track check-in count for feedback prompt
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final checkinCount = prefs.getInt('checkin_count') ?? 0;
+      await prefs.setInt('checkin_count', checkinCount + 1);
+
+      // Check if we should show feedback dialog
+      await checkAndShowFeedback(context);
+    } catch (_) {}
   }
 
   // Compute global center of a widget by key
@@ -1036,6 +1122,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   @override
   void initState() {
     super.initState();
+    _loadQuickCheckinFlag();
     // Initialize confetti controller
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
@@ -1896,6 +1983,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     });
   }
 
+  // Legacy mood gating (still used elsewhere if needed)
+  bool _hasLoggedMoodToday(MoodProvider moodProvider) {
+    final now = DateTime.now().toUtc();
+    for (final e in moodProvider.moodEntries) {
+      final t = e.timestamp.toUtc();
+      if (t.year == now.year && t.month == now.month && t.day == now.day) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Sticky header above the segmented control
   Widget _buildHeader() {
     return Column(
@@ -1973,11 +2072,61 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Large Quick check-in prompt section (title, subtitle, and Start button)
   Widget _buildMoodCheckInSection() {
+    // Calculate active days this week
+    int activeDaysThisWeek = 0;
+    try {
+      final now = DateTime.now().toUtc();
+      final startOfWeek =
+          now.subtract(Duration(days: now.weekday - 1)); // Monday
+      final endOfWeek = startOfWeek.add(const Duration(days: 6)); // Sunday
+
+      // Count mood entries in current week
+      final moodProvider = context.watch<MoodProvider>();
+      for (final entry in moodProvider.moodEntries) {
+        final entryDate = entry.timestamp.toUtc();
+        if (entryDate.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+            entryDate.isBefore(endOfWeek.add(const Duration(days: 1)))) {
+          activeDaysThisWeek++;
+        }
+      }
+    } catch (_) {}
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Active days counter
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: appTheme.whiteCustom,
+              borderRadius: BorderRadius.circular(12.h),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4.h,
+                  offset: Offset(0, 2.h),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Active this week: $activeDaysThisWeek/7 days',
+                  style: TextStyle(
+                    fontSize: 14.h,
+                    fontWeight: FontWeight.w500,
+                    color: appTheme.colorFF1F29,
+                  ),
+                ),
+                SizedBox(width: 6.h),
+                Text('🌟', style: TextStyle(fontSize: 16.h)),
+              ],
+            ),
+          ),
+          SizedBox(height: 24.h),
           // Large prompt card title
           Text('Quick check-in',
               textAlign: TextAlign.center,
@@ -2050,6 +2199,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 }
               } catch (_) {}
 
+              // Gate on quick check-in completion flag (separate from mood logging)
+              final bool gatedDone = isDone || _hasCompletedQuickCheckinToday;
               final Color bg = isDone
                   ? const Color(0xFFE6EAF0)
                   : Theme.of(context).colorScheme.primary;
@@ -2057,7 +2208,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
               return CustomButton(
                   key: _startBtnKey,
-                  text: isDone ? 'Done' : 'Start',
+                  text: gatedDone ? 'Logged today' : 'Start',
                   backgroundColor: bg,
                   textColor: fg,
                   borderColor: Colors.transparent,
@@ -2069,7 +2220,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       .copyWith(
                           fontFamily: CoreTextStyles.TextStyleHelper.instance
                               .headline24Bold.fontFamily),
-                  onPressed: isDone
+                  onPressed: gatedDone
                       ? null
                       : () async {
                           HapticFeedback.selectionClick();

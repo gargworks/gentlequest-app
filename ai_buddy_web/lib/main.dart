@@ -109,6 +109,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase (handles analytics & crashlytics)
+  await FirebaseService().setFirebaseOptions();
   await FirebaseService().initialize();
 
   const dsn = String.fromEnvironment('SENTRY_DSN_FRONTEND', defaultValue: '');

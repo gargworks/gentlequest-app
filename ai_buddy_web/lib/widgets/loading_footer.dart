@@ -4,7 +4,7 @@ import '../providers/community_provider.dart';
 
 /// A loading footer widget that shows loading, error, or no more content states.
 class LoadingFooter extends StatelessWidget {
-  const LoadingFooter({Key? key}) : super(key: key);
+  const LoadingFooter({super.key});
 
   @override
   Widget build(BuildContext context) {

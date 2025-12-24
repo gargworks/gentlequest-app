@@ -3,6 +3,8 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+late final FirebaseOptions firebaseOptions;
+
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   factory FirebaseService() => _instance;
@@ -14,11 +16,22 @@ class FirebaseService {
 
   FirebaseAnalytics get analytics => _analytics;
 
+  Future<void> setFirebaseOptions() async {
+    firebaseOptions = FirebaseOptions(
+      apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+      appId: String.fromEnvironment('FIREBASE_APP_ID', defaultValue: ''),
+      messagingSenderId: String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID',
+          defaultValue: ''),
+      projectId:
+          String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: ''),
+    );
+  }
+
   Future<void> initialize() async {
     if (_initialized) return;
 
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(options: firebaseOptions);
       _analytics = FirebaseAnalytics.instance;
       _crashlytics = FirebaseCrashlytics.instance;
 

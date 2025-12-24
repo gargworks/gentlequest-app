@@ -253,37 +253,27 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       }
                                     }
                                   } else {
-                                    await Clipboard.setData(
-                                        ClipboardData(text: textInstr));
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                            content: Text(
-                                                'Instructions copied to clipboard.')),
-                                      );
+                                    // Copy button for non-SMS patterns
+                                    final toCopy = number.isNotEmpty
+                                        ? number
+                                        : (textInstr.isNotEmpty
+                                            ? textInstr
+                                            : name);
+                                    if (toCopy.trim().isNotEmpty) {
+                                      await Clipboard.setData(
+                                          ClipboardData(text: toCopy.trim()));
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content:
+                                                  Text('Copied to clipboard.')),
+                                        );
+                                      }
                                     }
                                   }
                                 },
                               ),
-                            IconButton(
-                              icon: const Icon(Icons.copy_rounded),
-                              tooltip: 'Copy',
-                              onPressed: () async {
-                                final toCopy = number.isNotEmpty
-                                    ? number
-                                    : (textInstr.isNotEmpty ? textInstr : name);
-                                if (toCopy.trim().isEmpty) return;
-                                await Clipboard.setData(
-                                    ClipboardData(text: toCopy.trim()));
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Copied to clipboard.')),
-                                  );
-                                }
-                              },
-                            ),
                           ],
                         ),
                       );

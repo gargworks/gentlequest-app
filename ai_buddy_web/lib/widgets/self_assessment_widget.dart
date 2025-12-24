@@ -32,15 +32,13 @@ class _SelfAssessmentWidgetState extends State<SelfAssessmentWidget> {
 
   bool _isSubmitting = false;
 
+  // 5-point mood scale (align with Mood tab)
   final List<Map<String, dynamic>> _moodOptions = [
-    {'value': 'happy', 'label': 'Happy', 'icon': '😊'},
-    {'value': 'calm', 'label': 'Calm', 'icon': '😌'},
-    {'value': 'neutral', 'label': 'Neutral', 'icon': '😐'},
-    {'value': 'anxious', 'label': 'Anxious', 'icon': '😰'},
     {'value': 'sad', 'label': 'Sad', 'icon': '😢'},
-    {'value': 'angry', 'label': 'Angry', 'icon': '😠'},
-    {'value': 'depressed', 'label': 'Depressed', 'icon': '😞'},
-    {'value': 'mixed', 'label': 'Mixed', 'icon': '😕'},
+    {'value': 'anxious', 'label': 'Anxious', 'icon': '😰'},
+    {'value': 'neutral', 'label': 'Neutral', 'icon': '😐'},
+    {'value': 'calm', 'label': 'Calm', 'icon': '😌'},
+    {'value': 'happy', 'label': 'Happy', 'icon': '😊'},
   ];
 
   final List<Map<String, dynamic>> _levelOptions = [

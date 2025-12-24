@@ -1,12 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../providers/community_provider.dart';
-import './app_back_button.dart';
-import '../services/analytics_service.dart' show logAnalyticsEvent;
-import '../core/utils/size_utils.dart';
-import '../theme/theme_helper.dart';
-import '../theme/text_style_helper.dart';
 
 // ... [Previous widget imports and other code remain the same until _ReactionChip]
 

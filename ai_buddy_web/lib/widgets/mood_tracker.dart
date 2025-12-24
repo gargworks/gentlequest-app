@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../providers/mood_provider.dart';
 import '../models/mood_entry.dart';
+import '../quests/quests_engine.dart';
 
 enum ViewMode { daily, all }
 
@@ -40,6 +41,11 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               ],
               _buildMoodInput(context, moodProvider),
               const SizedBox(height: 16),
+              // Weekly Pulse hero (show when there are at least 3 entries)
+              if (moodProvider.moodEntries.length >= 3) ...[
+                _buildWeeklyPulseHero(context, moodProvider),
+                const SizedBox(height: 16),
+              ],
               // "You Are Not Alone" pulse card
               if (moodProvider.latestPulse != null) ...[
                 _buildPulseCard(context, moodProvider),
@@ -597,6 +603,211 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               Navigator.of(context).pop();
             },
             child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyPulseHero(
+      BuildContext context, MoodProvider moodProvider) {
+    final primary = Theme.of(context).primaryColor;
+    final moods = moodProvider.moodEntries;
+
+    // Create a temporary engine instance to compute streaks
+    // Note: This creates a new instance each time, but computeFriendlyDailyStreak
+    // reads from SharedPreferences so it will have the correct persisted data
+    final engine = QuestsEngine();
+    final int streakDays = engine.computeFriendlyDailyStreak();
+
+    // Calculate mood trend (last 7 days vs previous 7 days)
+    double? avgInRange(DateTime from, DateTime to) {
+      final filtered = moods.where((e) {
+        final t = e.timestamp.toUtc();
+        return t.isAfter(from) && !t.isAfter(to);
+      }).toList();
+      if (filtered.isEmpty) return null;
+      final sum = filtered.fold<int>(0, (s, e) => s + e.moodLevel);
+      return sum / filtered.length;
+    }
+
+    final now = DateTime.now().toUtc();
+    final recentFrom = now.subtract(const Duration(days: 7));
+    final prevFrom = now.subtract(const Duration(days: 14));
+    final prevTo = now.subtract(const Duration(days: 7));
+
+    final recentAvg = avgInRange(recentFrom, now);
+    final prevAvg = avgInRange(prevFrom, prevTo);
+
+    String trendLabel;
+    if (recentAvg != null && prevAvg != null) {
+      final delta = recentAvg - prevAvg;
+      if (delta > 0.15) {
+        trendLabel = "Calmer vs last week";
+      } else if (delta < -0.15) {
+        trendLabel = "Rougher vs last week";
+      } else {
+        trendLabel = "Steady vs last week";
+      }
+    } else {
+      trendLabel = "Keep checking in";
+    }
+
+    // Calculate next badge progress
+    int nextBadgeTarget;
+    if (streakDays >= 14) {
+      nextBadgeTarget = ((streakDays / 7).ceil() + 1) * 7;
+    } else if (streakDays >= 7) {
+      nextBadgeTarget = 14;
+    } else if (streakDays >= 3) {
+      nextBadgeTarget = 7;
+    } else {
+      nextBadgeTarget = 3;
+    }
+    final int daysToBadge =
+        (nextBadgeTarget - streakDays).clamp(0, nextBadgeTarget);
+    final String nextBadge = daysToBadge == 0
+        ? "Badge earned!"
+        : "Next badge: $daysToBadge more day${daysToBadge == 1 ? '' : 's'}";
+    final double badgeProgress = (streakDays / nextBadgeTarget).clamp(0.0, 1.0);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            primary.withOpacity(0.12),
+            primary.withOpacity(0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primary.withOpacity(0.15),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (streakDays > 0) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("🔥", style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Text(
+                        "$streakDays-day streak",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+              ],
+              Text(
+                "Weekly Pulse",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            trendLabel,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: (60 * badgeProgress).clamp(4.0, 60.0),
+                      decoration: BoxDecoration(
+                        color: primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  nextBadge,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                "See full recap",
+                style: TextStyle(
+                  color: primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: primary,
+              ),
+            ],
           ),
         ],
       ),

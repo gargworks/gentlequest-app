@@ -231,8 +231,9 @@ class CrisisResourcesWidget extends StatelessWidget {
     if (uri.scheme == 'tel') {
       final number = uri.path; // after tel:
       await Clipboard.setData(ClipboardData(text: number));
-      if (!kIsWeb)
+      if (!kIsWeb) {
         return; // On mobile, if we reach here copy is enough silently
+      }
       messenger?.showSnackBar(
         SnackBar(content: Text('Phone number copied: $number')),
       );
