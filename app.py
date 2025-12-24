@@ -1155,6 +1155,14 @@ def _register_routes(app: Flask) -> None:
     @app.route("/<path:filename>")
     def serve_static(filename):
         """Serve static files for Flutter web app"""
+        # Handle .well-known paths specially
+        if filename.startswith('.well-known/'):
+            if filename == '.well-known/assetlinks.json':
+                try:
+                    return send_from_directory(os.path.join(os.path.dirname(__file__), '.well-known'), 'assetlinks.json', mimetype='application/json')
+                except FileNotFoundError:
+                    return jsonify({"error": "Asset links file not found"}), 404
+        
         if os.path.exists(os.path.join(app.static_folder, filename)):
             return send_from_directory(app.static_folder, filename)
         else:
