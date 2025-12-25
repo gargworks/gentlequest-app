@@ -21,19 +21,31 @@
 | **Conversation Logs** | ✅ Stored | `conversation_logs` table |
 | **Crisis Detection** | ✅ Keyword-based | `crisis_detection.py`, `crisis_events` table |
 | **Session Management** | ✅ Working | `user_sessions` table |
+| **Function Calling** | ✅ **WORKING** | `providers/gemini.py`, 3/3 success |
+| **Smart Tools** | ✅ Implemented | `providers/agent_tools.py` |
 
-### ❌ What's Missing
+### ⏳ Deployed (Minimal Version)
 
-| Component | Current State | Required For |
-|-----------|--------------|--------------|
-| **Function Calling** | Not implemented | Luna taking actions |
-| **Vector Embeddings** | Not stored | RAG/Memory |
-| **pgvector Extension** | Not enabled | Semantic search |
-| **Memory Layer** | In-memory only (1hr timeout) | Cross-session context |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `get_wellness_intervention()` | ✅ Working | 3/3 success rate |
+| Smart intervention selection | ✅ Working | Selects based on issue/intensity |
+| Interactive exercises | ✅ Working | Breathing, grounding exercises |
+
+### 🔄 To Be Added Incrementally
+
+| Feature | Status | Blocker |
+|---------|--------|---------|
+| **System Prompt** | ❌ Removed | Complex prompts break function calling |
+| **Memory Context** | ❌ Removed | Needs isolated testing |
+| **Conversation History** | ❌ Removed | Needs isolated testing |
+| **`record_interaction_outcome()`** | ⏳ Defined | Not yet tested |
+| **pgvector/Embeddings** | ⏳ Not started | Phase II |
 
 ---
 
 ## Phase I: Function Calling
+### Current Status: ✅ WORKING (Minimal Version)
 
 ### What It Enables
 
@@ -61,34 +73,48 @@ Luna: → Calls log_mood(level=2, emotion="anxious")
 
 **File:** `providers/gemini.py`
 
+> **⚠️ CRITICAL REQUIREMENTS DISCOVERED (Dec 2024):**
+> 1. Schema types MUST be UPPERCASE: `OBJECT`, `STRING`, `NUMBER`, `BOOLEAN`
+> 2. Do NOT use `tool_config` parameter - it breaks function calling
+> 3. Keep prompts simple - complex system prompts interfere with function calls
+> 4. Model: `gemini-2.5-flash` works best for agentic use cases
+
 ```python
-# Tool declarations for Gemini
-WELLNESS_TOOLS = {
+# ✅ CORRECT: Tool declarations for Gemini (uppercase types!)
+WELLNESS_TOOLS_CONFIG = {
     "function_declarations": [
         {
-            "name": "log_mood",
-            "description": "Log user's emotional state when they express feelings",
+            "name": "get_wellness_intervention",
+            "description": "Get a wellness exercise. MUST be called when user mentions anxiety, stress, panic, sleep issues, sadness, or feeling overwhelmed.",
             "parameters": {
-                "type": "object",
+                "type": "OBJECT",  # ← MUST be uppercase!
                 "properties": {
-                    "level": {"type": "integer", "description": "1-5 scale, 1=very low"},
-                    "emotion": {"type": "string", "description": "Primary emotion"},
-                    "note": {"type": "string", "description": "Context from conversation"}
+                    "issue": {
+                        "type": "STRING",  # ← MUST be uppercase!
+                        "description": "The issue: anxiety, stress, panic, sleep, sadness, overwhelmed",
+                        "enum": ["anxiety", "stress", "panic", "sleep", "sadness", "overwhelmed"]
+                    },
+                    "intensity": {
+                        "type": "STRING",  # ← MUST be uppercase!
+                        "description": "Severity: mild, moderate, or severe",
+                        "enum": ["mild", "moderate", "severe"]
+                    }
                 },
-                "required": ["level", "emotion"]
+                "required": ["issue", "intensity"]
             }
-        },
-        {
-            "name": "get_breathing_exercise",
-            "description": "Provide calming breathing exercise for anxiety/stress",
-            "parameters": {"type": "object", "properties": {}}
-        },
-        # ... more functions
+        }
     ]
 }
+
+# ✅ CORRECT: Calling the model (NO tool_config!)
+model = genai.GenerativeModel("gemini-2.5-flash", tools=[WELLNESS_TOOLS_CONFIG])
+response = model.generate_content(message)  # Simple prompt, no tool_config
+
+# ❌ WRONG: These break function calling
+# response = model.generate_content(message, tool_config={"function_calling_config": {"mode": "any"}})
 ```
 
-**New File:** `providers/tools.py`
+**File:** `providers/agent_tools.py`
 
 ```python
 def execute_tool(name: str, args: dict, session_id: str) -> dict:

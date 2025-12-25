@@ -196,13 +196,31 @@ Year 4: Clinical validation → "GentleQuest reduces anxiety by X%"
 
 ## Part 5: Implementation Reality Check
 
-### Phase 1: Function Calling (1-2 weeks)
+### Phase 1: Function Calling - ✅ COMPLETE (Minimal Version)
 
-| What | Effort | Risk | Dependencies |
-|------|--------|------|--------------|
-| Add tool declarations to gemini.py | 2 days | Low | None |
-| Implement 3-5 basic functions | 3 days | Low | Existing DB |
-| Update Flutter UI for actions | 3 days | Medium | Flutter app |
+| What | Status | Notes |
+|------|--------|-------|
+| Add tool declarations to gemini.py | ✅ Done | Uppercase types critical |
+| Implement smart `get_wellness_intervention()` | ✅ Done | 3/3 success rate |
+| Update Flutter UI for actions | ✅ Done | Interactive widgets |
+| Remove `tool_config` (broke function calling) | ✅ Done | Critical fix |
+
+**Critical Requirements Discovered:**
+1. Schema types MUST be UPPERCASE: `OBJECT`, `STRING`, `NUMBER`, `BOOLEAN`
+2. Do NOT use `tool_config` parameter - it breaks function calling
+3. Keep prompts simple - complex system prompts interfere with function calls
+4. Model: `gemini-2.5-flash` works best for agentic use cases
+
+### Phase 1.5: Incremental Feature Testing (Next)
+
+| Feature | Test Approach | Priority |
+|---------|--------------|----------|
+| Short system prompt | Test minimal persona | High |
+| Memory context | Add to prompt, test | Medium |
+| Conversation history | Add last 3 messages | Medium |
+| `record_interaction_outcome()` | Test second tool | Low |
+
+**Goal:** Find what works with function calling without breaking it.
 
 ### Phase 2: RAG with pgvector (2-4 weeks)
 
