@@ -349,6 +349,15 @@ class ApiService {
 
       final data = response.data as Map<String, dynamic>;
 
+      // DEBUG: Log interactive fields
+      if (kDebugMode) {
+        if (data['interactive'] == true) {
+          debugPrint('🧩 DEBUG: Received interactive response');
+          debugPrint('🧩 DEBUG: Exercise Type: ${data['exercise_type']}');
+          debugPrint('🧩 DEBUG: Exercise Data: ${data['exercise']}');
+        }
+      }
+
       // Parse risk level from response
       RiskLevel riskLevel = RiskLevel.none;
       if (data['risk_level'] != null) {

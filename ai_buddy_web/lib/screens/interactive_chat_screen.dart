@@ -18,6 +18,10 @@ import '../widgets/assessment_splash.dart';
 import '../widgets/keyboard_dismissible_scaffold.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
+import '../models/interactive_exercise.dart';
+import '../widgets/exercises/breathing_exercise_widget.dart';
+import '../widgets/exercises/grounding_exercise_widget.dart';
+import '../widgets/exercises/journal_prompt_card.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -862,7 +866,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         ),
                       ),
                     ],
-                    // Hidden: do not render debug footer in UI
+                    if (message.exercise != null) ...[
+                      const SizedBox(height: 12),
+                      _buildExerciseWidget(message.exercise!),
+                    ],
                   ],
                 ),
               ),
@@ -881,6 +888,36 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildExerciseWidget(InteractiveExercise exercise) {
+    if (kDebugMode) {
+      debugPrint('Rendering exercise: ${exercise.type} - ${exercise.name}');
+    }
+    switch (exercise.type) {
+      case ExerciseType.breathing:
+        return BreathingExerciseWidget(
+          exercise: exercise as BreathingExercise,
+          onComplete: () {
+            // TODO: Track completion
+          },
+        );
+      case ExerciseType.grounding:
+        return GroundingExerciseWidget(
+          exercise: exercise as GroundingExercise,
+          onComplete: () {
+             // TODO: Track completion
+          },
+        );
+      case ExerciseType.journalPrompt:
+        return JournalPromptCard(
+          exercise: exercise as JournalPrompt,
+          onSave: (entry) {
+             // TODO: Handle save (e.g., send to API)
+             if (kDebugMode) debugPrint('Journal entry saved: $entry');
+          },
+        );
+    }
   }
 
   /// Simple smart-reply style suggestion chips - minimal, native to chat

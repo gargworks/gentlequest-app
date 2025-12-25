@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'interactive_exercise.dart';
 
 enum MessageType { text, error, system }
 
@@ -15,6 +16,9 @@ class Message {
   final String? crisisMsg;
   final List<Map<String, dynamic>>? crisisNumbers;
 
+  // NEW: Interactive exercise data
+  final InteractiveExercise? exercise;
+
   Message({
     String? id,
     required this.content,
@@ -25,10 +29,24 @@ class Message {
     this.resources,
     this.crisisMsg,
     this.crisisNumbers,
+    this.exercise,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         timestamp = timestamp ?? DateTime.now();
 
   factory Message.fromJson(Map<String, dynamic> json) {
+    // Parse interactive exercise if present
+    InteractiveExercise? parsedExercise;
+    if (json['interactive'] == true && json['exercise'] != null) {
+      try {
+        parsedExercise = InteractiveExercise.fromJson({
+          'type': json['exercise_type'], // Top-level type
+          ...json['exercise'] as Map<String, dynamic>, // Merged content
+        });
+      } catch (e) {
+        debugPrint('Error parsing exercise in Message: $e');
+      }
+    }
+
     return Message(
       id: json['id'] as String?,
       content: json['content'] as String,
@@ -49,6 +67,7 @@ class Message {
       crisisNumbers: (json['crisis_numbers'] as List<dynamic>?)
           ?.map((item) => Map<String, dynamic>.from(item))
           .toList(),
+      exercise: parsedExercise,
     );
   }
 
