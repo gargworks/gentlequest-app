@@ -63,3 +63,70 @@ class SelfAssessmentEntry(db.Model):
 
     def __repr__(self):
         return f"<SelfAssessmentEntry id={self.id} session_id={self.session_id}>"
+
+
+class MoodEntry(db.Model):
+    __tablename__ = "mood_entries"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    mood_level = db.Column(db.Integer, nullable=False)  # 1-5 scale
+    note = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<MoodEntry id={self.id} level={self.mood_level}>"
+
+
+class AnalyticsEvent(db.Model):
+    __tablename__ = "analytics_events"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    event_type = db.Column(db.String(50), nullable=False)
+    event_data = db.Column(JSONB)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AnalyticsEvent id={self.id} type={self.event_type}>"
+
+
+class User(db.Model):
+    __tablename__ = "users"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+
+    def __repr__(self):
+        return f"<User id={self.id} email={self.email}>"
+
+
+class CommunityPost(db.Model):
+    __tablename__ = "community_posts"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    content = db.Column(db.Text, nullable=False)
+    is_anonymous = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    likes = db.Column(db.Integer, default=0)
+
+    def __repr__(self):
+        return f"<CommunityPost id={self.id}>"
+
+
+class CommunityComment(db.Model):
+    __tablename__ = "community_comments"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("community_posts.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    content = db.Column(db.Text, nullable=False)
+    is_anonymous = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<CommunityComment id={self.id}>"
+
