@@ -30,15 +30,6 @@ class _ReactionChipState extends State<_ReactionChip> {
     super.dispose();
   }
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.enter ||
-          event.logicalKey == LogicalKeyboardKey.space) {
-        widget.onTap();
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
@@ -57,8 +48,8 @@ class _ReactionChipState extends State<_ReactionChip> {
         child: Container(
           decoration: BoxDecoration(
             color: _isFocused
-                ? color.primary.withOpacity(0.1)
-                : color.primary.withOpacity(0.05),
+                ? color.primary.withValues(alpha: 0.1)
+                : color.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _isFocused ? color.primary : const Color(0xFFE0E6EE),
@@ -67,7 +58,7 @@ class _ReactionChipState extends State<_ReactionChip> {
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: color.primary.withOpacity(0.2),
+                      color: color.primary.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
