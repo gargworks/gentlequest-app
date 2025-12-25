@@ -1,13 +1,17 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_service.dart';
 
+/// App rating service - only functional on mobile platforms.
+/// in_app_review package does NOT support web.
 class AppRatingService {
   static final AppRatingService _instance = AppRatingService._internal();
   factory AppRatingService() => _instance;
   AppRatingService._internal();
 
-  final InAppReview _inAppReview = InAppReview.instance;
+  // Only create InAppReview instance on mobile
+  InAppReview? _inAppReview;
   static const String _keyFirstLaunch = 'first_launch_date';
   static const String _keyLastRatingPrompt = 'last_rating_prompt';
   static const String _keySessionCount = 'session_count';
@@ -20,14 +24,25 @@ class AppRatingService {
   static const int _minDaysSinceInstall = 3;
   static const int _minDaysBetweenPrompts = 30;
 
+  /// Initialize the review instance on mobile only
+  void _ensureInit() {
+    if (!kIsWeb && _inAppReview == null) {
+      _inAppReview = InAppReview.instance;
+    }
+  }
+
   Future<void> checkAndRequestRating() async {
+    // In-app review not supported on web
+    if (kIsWeb) return;
+    
+    _ensureInit();
     final prefs = await SharedPreferences.getInstance();
 
     // Skip if already rated
     if (prefs.getBool(_keyHasRated) ?? false) return;
 
     // Check if available
-    if (!await _inAppReview.isAvailable()) return;
+    if (_inAppReview == null || !await _inAppReview!.isAvailable()) return;
 
     // Get metrics
     final sessionCount = prefs.getInt(_keySessionCount) ?? 0;
@@ -61,8 +76,10 @@ class AppRatingService {
   }
 
   Future<void> _requestRating() async {
+    if (kIsWeb || _inAppReview == null) return;
+    
     try {
-      await _inAppReview.requestReview();
+      await _inAppReview!.requestReview();
 
       // Log event
       FirebaseService().logEvent('rating_prompt_shown');

@@ -11,7 +11,7 @@ class FirebaseService {
   FirebaseService._internal();
 
   late FirebaseAnalytics _analytics;
-  late FirebaseCrashlytics _crashlytics;
+  FirebaseCrashlytics? _crashlytics; // Nullable - not available on web
   bool _initialized = false;
 
   FirebaseAnalytics get analytics => _analytics;
@@ -33,19 +33,23 @@ class FirebaseService {
     try {
       await Firebase.initializeApp(options: firebaseOptions);
       _analytics = FirebaseAnalytics.instance;
-      _crashlytics = FirebaseCrashlytics.instance;
+      
+      // FirebaseCrashlytics is NOT supported on web - only initialize on mobile
+      if (!kIsWeb) {
+        _crashlytics = FirebaseCrashlytics.instance;
 
-      // Configure Crashlytics
-      await _crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
+        // Configure Crashlytics (mobile only)
+        await _crashlytics!.setCrashlyticsCollectionEnabled(!kDebugMode);
 
-      // Set up Flutter error handling
-      FlutterError.onError = _crashlytics.recordFlutterFatalError;
+        // Set up Flutter error handling (mobile only)
+        FlutterError.onError = _crashlytics!.recordFlutterFatalError;
 
-      // Set up async error handling
-      PlatformDispatcher.instance.onError = (error, stack) {
-        _crashlytics.recordError(error, stack, fatal: true);
-        return true;
-      };
+        // Set up async error handling (mobile only)
+        PlatformDispatcher.instance.onError = (error, stack) {
+          _crashlytics!.recordError(error, stack, fatal: true);
+          return true;
+        };
+      }
 
       _initialized = true;
 
@@ -102,24 +106,24 @@ class FirebaseService {
     await _analytics.setUserProperty(name: name, value: value);
   }
 
-  // Crashlytics
+  // Crashlytics (mobile only - no-op on web)
   Future<void> recordError(
     dynamic exception,
     StackTrace? stack, {
     bool fatal = false,
   }) async {
-    if (!_initialized) return;
-    await _crashlytics.recordError(exception, stack, fatal: fatal);
+    if (!_initialized || _crashlytics == null) return;
+    await _crashlytics!.recordError(exception, stack, fatal: fatal);
   }
 
   Future<void> log(String message) async {
-    if (!_initialized) return;
-    _crashlytics.log(message);
+    if (!_initialized || _crashlytics == null) return;
+    _crashlytics!.log(message);
   }
 
   Future<void> setCustomKey(String key, dynamic value) async {
-    if (!_initialized) return;
-    _crashlytics.setCustomKey(key, value);
+    if (!_initialized || _crashlytics == null) return;
+    _crashlytics!.setCustomKey(key, value);
   }
 
   // Common events for mental health app

@@ -24,7 +24,7 @@ import 'navigation/home_tab_deeplink.dart';
 import 'widgets/app_bottom_nav.dart' show AppTab;
 import 'services/notification_service.dart';
 import 'screens/legal/legal_screen.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/services/app_rating_service.dart';
 import 'package:upgrader/upgrader.dart';
@@ -109,8 +109,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase (handles analytics & crashlytics)
-  await FirebaseService().setFirebaseOptions();
-  await FirebaseService().initialize();
+  // Wrapped in try-catch for resilience - app should still run if Firebase fails
+  try {
+    await FirebaseService().setFirebaseOptions();
+    await FirebaseService().initialize();
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
 
   const dsn = String.fromEnvironment('SENTRY_DSN_FRONTEND', defaultValue: '');
   const env = String.fromEnvironment('SENTRY_ENV', defaultValue: 'local');
@@ -122,22 +127,34 @@ Future<void> main() async {
   final traces = double.tryParse(tracesStr) ?? 0.0;
 
   if (dsn.isNotEmpty) {
-    await sentry.Sentry.init((options) {
-      options.dsn = dsn;
-      options.environment = env;
-      options.release = version;
-      options.tracesSampleRate = traces;
-    });
+    try {
+      await sentry.Sentry.init((options) {
+        options.dsn = dsn;
+        options.environment = env;
+        options.release = version;
+        options.tracesSampleRate = traces;
+      });
+    } catch (e) {
+      debugPrint('Sentry initialization error: $e');
+    }
   }
+  
   // Set tap handler for notification deep-linking
   NotificationService.onSelectNotification = (payload) {
     _handleNotificationPayload(payload);
   };
-  // Defer local notifications init until after first frame to mitigate iOS cold-start stalls.
-  // Initialize app rating service
-  await AppRatingService().incrementSessionCount();
+  
+  // Initialize app rating service (mobile only - no-op on web)
+  // Wrapped in try-catch for resilience
+  if (!kIsWeb) {
+    try {
+      await AppRatingService().incrementSessionCount();
+    } catch (e) {
+      debugPrint('AppRatingService initialization error: $e');
+    }
+  }
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -175,15 +192,18 @@ class MyApp extends StatelessWidget {
         ),
         navigatorKey: rootNavigatorKey,
         navigatorObservers: [routeObserver],
-        home: UpgradeAlert(
-          upgrader: Upgrader(
-            minAppVersion: '1.0.0',
-            messages: UpgraderMessages(
-              code: 'en',
-            ),
-          ),
-          child: const SplashScreen(),
-        ),
+        // UpgradeAlert is for mobile app store version checks - skip on web
+        home: kIsWeb 
+            ? const SplashScreen()
+            : UpgradeAlert(
+                upgrader: Upgrader(
+                  minAppVersion: '1.0.0',
+                  messages: UpgraderMessages(
+                    code: 'en',
+                  ),
+                ),
+                child: const SplashScreen(),
+              ),
         routes: {
           '/home': (context) {
             final args = ModalRoute.of(context)?.settings.arguments;
