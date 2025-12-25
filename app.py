@@ -1264,10 +1264,12 @@ def _register_routes(app: Flask) -> None:
             exercise_data = {}
             for tc in tool_calls:
                 result = tc.get("result", {})
-                if result.get("interactive") and result.get("exercise_type"):
+                # Handle both intervention_type and exercise_type (agent_tools vs legacy)
+                ex_type = result.get("intervention_type") or result.get("exercise_type")
+                if result.get("interactive") and ex_type:
                     exercise_data = {
                         "interactive": True,
-                        "exercise_type": result.get("exercise_type"),
+                        "exercise_type": ex_type,  # Normalize to exercise_type for Flutter
                         "exercise": result.get("exercise"),
                     }
                     break  # Only include first exercise
