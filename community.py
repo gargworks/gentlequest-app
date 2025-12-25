@@ -24,7 +24,7 @@ def _send_moderation_alert(post_id: int, body: str, report_count: int) -> None:
             requests.post(
                 f"https://api.telegram.org/bot{tg_token}/sendMessage",
                 json={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"},
-                timeout=5
+                timeout=5,
             )
             return
         except Exception:
@@ -40,6 +40,7 @@ def _send_moderation_alert(post_id: int, body: str, report_count: int) -> None:
         requests.post(webhook_url, json=payload, timeout=5)
     except Exception:
         pass
+
 
 SEED_PATH = "data/community_seed.json"
 
@@ -75,9 +76,15 @@ def _moderate_post(body: str) -> Tuple[str, Optional[str]]:
         )
         raw = (resp.text or "").strip().upper()
         if "CRISIS" in raw:
-            return ("crisis", "This post may indicate a crisis. Please reach out to a trusted adult or crisis line.")
+            return (
+                "crisis",
+                "This post may indicate a crisis. Please reach out to a trusted adult or crisis line.",
+            )
         if "REJECT" in raw:
-            return ("reject", "This post doesn't meet community guidelines. Please share supportive content.")
+            return (
+                "reject",
+                "This post doesn't meet community guidelines. Please share supportive content.",
+            )
         return ("allow", None)
     except Exception:
         return ("allow", None)
@@ -190,7 +197,9 @@ def _ensure_tables() -> None:
             if d == "sqlite":
                 try:
                     db.session.execute(
-                        text("ALTER TABLE community_posts ADD COLUMN is_hidden INTEGER DEFAULT 0")
+                        text(
+                            "ALTER TABLE community_posts ADD COLUMN is_hidden INTEGER DEFAULT 0"
+                        )
                     )
                 except Exception:
                     pass
@@ -203,20 +212,26 @@ def _ensure_tables() -> None:
             elif d not in {"unknown"}:
                 try:
                     db.session.execute(
-                        text("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE")
+                        text(
+                            "ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE"
+                        )
                     )
                 except Exception:
                     pass
                 try:
                     db.session.execute(
-                        text("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS author_hash VARCHAR(64)")
+                        text(
+                            "ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS author_hash VARCHAR(64)"
+                        )
                     )
                 except Exception:
                     pass
                 # Add reporter_ip to community_reports for deduplication
                 try:
                     db.session.execute(
-                        text("ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS reporter_ip VARCHAR(45)")
+                        text(
+                            "ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS reporter_ip VARCHAR(45)"
+                        )
                     )
                 except Exception:
                     pass
@@ -607,7 +622,9 @@ def register_community_routes(app: Flask) -> None:
                 _sync_post_counters(int(post_id), reactions)
                 db.session.commit()
                 return (
-                    jsonify({"ok": True, "already_reacted": True, "reactions": reactions}),
+                    jsonify(
+                        {"ok": True, "already_reacted": True, "reactions": reactions}
+                    ),
                     409,
                 )
 
@@ -674,7 +691,9 @@ def register_community_routes(app: Flask) -> None:
                 _sync_post_counters(int(post_id), reactions)
                 db.session.commit()
                 return (
-                    jsonify({"ok": True, "already_reacted": True, "reactions": reactions}),
+                    jsonify(
+                        {"ok": True, "already_reacted": True, "reactions": reactions}
+                    ),
                     409,
                 )
 
@@ -724,7 +743,9 @@ def register_community_routes(app: Flask) -> None:
                 return jsonify({"error": "Invalid report"}), 400
 
             # Get reporter IP for deduplication
-            reporter_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+            reporter_ip = request.headers.get(
+                "X-Forwarded-For", request.remote_addr or ""
+            )
             if reporter_ip:
                 reporter_ip = reporter_ip.split(",")[0].strip()[:45]
 
@@ -735,30 +756,43 @@ def register_community_routes(app: Flask) -> None:
                 VALUES (:tt, :tid, :reason, :notes, :ip)
                 """
                 ),
-                {"tt": target_type, "tid": target_id, "reason": reason, "notes": notes, "ip": reporter_ip},
+                {
+                    "tt": target_type,
+                    "tid": target_id,
+                    "reason": reason,
+                    "notes": notes,
+                    "ip": reporter_ip,
+                },
             )
 
             # Auto-hide post if 3+ unique IPs reported it
             if target_type == "post":
-                unique_ips = db.session.execute(
-                    text(
-                        """
+                unique_ips = (
+                    db.session.execute(
+                        text(
+                            """
                     SELECT COUNT(DISTINCT reporter_ip) as cnt
                     FROM community_reports
                     WHERE target_type = 'post' AND target_id = :tid AND reporter_ip IS NOT NULL
                     """
-                    ),
-                    {"tid": target_id},
-                ).scalar() or 0
+                        ),
+                        {"tid": target_id},
+                    ).scalar()
+                    or 0
+                )
                 if unique_ips >= 3:
                     # Get post body for alert before hiding
                     post_body = db.session.execute(
-                        text("SELECT body_redacted FROM community_posts WHERE id = :pid AND is_curated = FALSE"),
+                        text(
+                            "SELECT body_redacted FROM community_posts WHERE id = :pid AND is_curated = FALSE"
+                        ),
                         {"pid": target_id},
                     ).scalar()
                     if post_body:
                         db.session.execute(
-                            text("UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid AND is_curated = FALSE"),
+                            text(
+                                "UPDATE community_posts SET is_hidden = TRUE WHERE id = :pid AND is_curated = FALSE"
+                            ),
                             {"pid": target_id},
                         )
                         # Send alert after hiding
@@ -832,18 +866,24 @@ def register_community_routes(app: Flask) -> None:
             decision, reason = _moderate_post(body)
             if decision == "crisis":
                 return (
-                    jsonify({
-                        "error": reason or "Please reach out to a trusted adult or crisis resource.",
-                        "moderation": "crisis",
-                    }),
+                    jsonify(
+                        {
+                            "error": reason
+                            or "Please reach out to a trusted adult or crisis resource.",
+                            "moderation": "crisis",
+                        }
+                    ),
                     422,
                 )
             if decision == "reject":
                 return (
-                    jsonify({
-                        "error": reason or "This post doesn't meet community guidelines.",
-                        "moderation": "rejected",
-                    }),
+                    jsonify(
+                        {
+                            "error": reason
+                            or "This post doesn't meet community guidelines.",
+                            "moderation": "rejected",
+                        }
+                    ),
                     422,
                 )
 
@@ -862,7 +902,12 @@ def register_community_routes(app: Flask) -> None:
                     VALUES (:topic, :body, :is_curated, :author_hash)
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
+                    {
+                        "topic": topic or "general",
+                        "body": body,
+                        "is_curated": False,
+                        "author_hash": author_hash,
+                    },
                 )
                 new_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
                 created_at = db.session.execute(
@@ -878,7 +923,12 @@ def register_community_routes(app: Flask) -> None:
                     RETURNING id, created_at
                     """
                     ),
-                    {"topic": topic or "general", "body": body, "is_curated": False, "author_hash": author_hash},
+                    {
+                        "topic": topic or "general",
+                        "body": body,
+                        "is_curated": False,
+                        "author_hash": author_hash,
+                    },
                 )
                 row = res.first()
                 if row is not None:
@@ -933,7 +983,9 @@ def register_community_routes(app: Flask) -> None:
             user_hash = sid[:12]
 
             row = db.session.execute(
-                text("SELECT author_hash, is_curated FROM community_posts WHERE id = :pid"),
+                text(
+                    "SELECT author_hash, is_curated FROM community_posts WHERE id = :pid"
+                ),
                 {"pid": post_id},
             ).first()
 

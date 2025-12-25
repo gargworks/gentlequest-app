@@ -565,22 +565,25 @@ def create_app() -> Flask:
     # Register routes
     _register_routes(app)
     _register_additional_routes(app)
-    
+
     # Register Community (Phase 0) routes
     try:
         register_community_routes(app)
         app.logger.info("Community routes registered")
     except Exception as e:
         app.logger.warning(f"Community routes failed to register: {e}")
-    
+
     # Initialize Memory System (Phase II)
     try:
         from providers.memory import init_memory_tables, MEMORY_ENABLED
+
         if MEMORY_ENABLED:
             if init_memory_tables(app):
                 app.logger.info("Memory system initialized with pgvector")
             else:
-                app.logger.info("Memory system running without pgvector (fallback mode)")
+                app.logger.info(
+                    "Memory system running without pgvector (fallback mode)"
+                )
     except Exception as e:
         app.logger.warning(f"Memory system initialization skipped: {e}")
 
@@ -1127,9 +1130,9 @@ def _register_routes(app: Flask) -> None:
         """Serve assetlinks.json for Android App Links verification"""
         try:
             return send_from_directory(
-                os.path.join(os.path.dirname(__file__), '.well-known'),
-                'assetlinks.json',
-                mimetype='application/json'
+                os.path.join(os.path.dirname(__file__), ".well-known"),
+                "assetlinks.json",
+                mimetype="application/json",
             )
         except FileNotFoundError:
             return jsonify({"error": "Asset links file not found"}), 404
@@ -1684,19 +1687,23 @@ def _register_routes(app: Flask) -> None:
         """Get anonymous aggregate mood stats for today - 'You Are Not Alone' feature"""
         try:
             # Get today's start in UTC
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            
+            today_start = datetime.utcnow().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+
             # Count mood entries by level for today (across ALL users, anonymous)
             result = db.session.execute(
-                text("""
+                text(
+                    """
                     SELECT mood_level, COUNT(*) as count
                     FROM mood_entries
                     WHERE timestamp >= :today_start
                     GROUP BY mood_level
-                """),
-                {"today_start": today_start}
+                """
+                ),
+                {"today_start": today_start},
             ).fetchall()
-            
+
             # Build distribution
             distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
             total = 0
@@ -1706,7 +1713,7 @@ def _register_routes(app: Flask) -> None:
                 if 1 <= level <= 5:
                     distribution[level] = count
                     total += count
-            
+
             # Calculate percentages
             percentages = {}
             for level in range(1, 6):
@@ -1714,7 +1721,7 @@ def _register_routes(app: Flask) -> None:
                     percentages[level] = round((distribution[level] / total) * 100)
                 else:
                     percentages[level] = 0
-            
+
             # Friendly messages based on mood level
             solidarity_messages = {
                 1: "You're not alone. Others are having a tough day too.",
@@ -1723,14 +1730,16 @@ def _register_routes(app: Flask) -> None:
                 4: "Others are feeling good too! The positive energy is spreading.",
                 5: "You're part of the happiness today! Keep shining.",
             }
-            
-            return jsonify({
-                "total_checkins_today": total,
-                "distribution": distribution,
-                "percentages": percentages,
-                "solidarity_messages": solidarity_messages,
-            })
-            
+
+            return jsonify(
+                {
+                    "total_checkins_today": total,
+                    "distribution": distribution,
+                    "percentages": percentages,
+                    "solidarity_messages": solidarity_messages,
+                }
+            )
+
         except Exception as e:
             app.logger.error(f"Mood pulse error: {e}")
             return jsonify({"error": "Failed to get mood pulse"}), 500
@@ -1875,7 +1884,7 @@ def _register_routes(app: Flask) -> None:
             # Check consent header
             if request.headers.get("X-Analytics-Consent") != "true":
                 return jsonify({"ok": True}), 201
-            
+
             data = request.get_json(silent=True) or {}
             event_type = (data.get("event_type") or "").strip()
             if not event_type or len(event_type) > 64:
@@ -1995,7 +2004,7 @@ def _register_routes(app: Flask) -> None:
             else:
                 result = db.session.execute(sql, params)
                 rows = list(result.mappings())
-            
+
             for r in rows:
                 meta = r.get("metadata")
                 ts_val = r.get("ts")
@@ -2130,7 +2139,7 @@ def _get_or_create_session() -> str:
 
 def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
     """Process chat message with AI provider and crisis detection.
-    
+
     When using Gemini, this enables function calling for wellness tools.
     """
     try:
@@ -2138,18 +2147,19 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
         risk_level = detect_crisis_level(message)
 
         # Check if we should use function calling (Gemini only, non-crisis)
-        ai_provider = os.environ.get('AI_PROVIDER', 'gemini').lower()
+        ai_provider = os.environ.get("AI_PROVIDER", "gemini").lower()
         use_function_calling = (
-            ai_provider == 'gemini' 
-            and risk_level != 'crisis'
-            and os.environ.get('ENABLE_FUNCTION_CALLING', 'true').lower() == 'true'
+            ai_provider == "gemini"
+            and risk_level != "crisis"
+            and os.environ.get("ENABLE_FUNCTION_CALLING", "true").lower() == "true"
         )
-        
+
         tool_calls = []
-        
+
         if use_function_calling:
             # Use function calling enabled response
             from providers.gemini import get_gemini_response_with_tools
+
             ai_response, tool_calls = get_gemini_response_with_tools(
                 message, session_id, risk_level
             )
@@ -2161,16 +2171,22 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
 
         # Log conversation
         _log_conversation(session_id, message, ai_response, risk_level)
-        
+
         # Log tool calls for audit (if any)
         if tool_calls:
             _log_tool_calls(session_id, tool_calls)
-        
+
         # Store memory for long-term context (non-blocking)
         try:
-            from providers.memory import summarize_and_store_conversation, MEMORY_ENABLED
+            from providers.memory import (
+                summarize_and_store_conversation,
+                MEMORY_ENABLED,
+            )
+
             if MEMORY_ENABLED:
-                summarize_and_store_conversation(session_id, message, ai_response, risk_level)
+                summarize_and_store_conversation(
+                    session_id, message, ai_response, risk_level
+                )
         except Exception:
             pass  # Non-critical, continue if memory fails
 
@@ -2191,6 +2207,7 @@ def _log_tool_calls(session_id: str, tool_calls: List[Dict]) -> None:
     """Log tool calls for audit purposes."""
     try:
         from flask import current_app
+
         for tc in tool_calls:
             current_app.logger.info(
                 f"tool_call session={session_id} name={tc.get('name')} "
@@ -2449,9 +2466,7 @@ def _get_ai_response_with_failover(
     # user-friendly "daily limit" style message instead of a vague failure.
     fallback = last_err_text
     if _is_quota_or_rate_limit_error(last_err_text or ""):
-        fallback = (
-            "Today's AI chat limit has been reached. Please try again tomorrow."
-        )
+        fallback = "Today's AI chat limit has been reached. Please try again tomorrow."
     return (
         fallback
         or "I'm having trouble connecting to my AI services. Please try again in a moment."
@@ -2816,75 +2831,89 @@ def _log_crisis_detection(
 def _purge_old_data_inner():
     """Inner function to purge old data based on retention settings"""
     counts = {}
-    
+
     # Purge old messages
     message_days = app.config.get("MESSAGE_RETENTION_DAYS", 30)
     if message_days > 0:
         cutoff = datetime.utcnow() - timedelta(days=message_days)
         result = db.session.execute(
-            text("DELETE FROM messages WHERE timestamp < :cutoff"),
-            {"cutoff": cutoff}
+            text("DELETE FROM messages WHERE timestamp < :cutoff"), {"cutoff": cutoff}
         )
         counts["messages"] = result.rowcount
-    
+
     # Purge old sessions
     session_days = app.config.get("SESSION_RETENTION_DAYS", 90)
     if session_days > 0:
         cutoff = datetime.utcnow() - timedelta(days=session_days)
         result = db.session.execute(
-            text("DELETE FROM sessions WHERE created_at < :cutoff"),
-            {"cutoff": cutoff}
+            text("DELETE FROM sessions WHERE created_at < :cutoff"), {"cutoff": cutoff}
         )
         counts["sessions"] = result.rowcount
-    
+
     return counts
 
 
 def _register_additional_routes(app: Flask) -> None:
     """Register additional API routes"""
-    
-    @app.route('/api/clear_memory', methods=['POST'])
+
+    @app.route("/api/clear_memory", methods=["POST"])
     @app.limiter.limit("5 per hour")
     def clear_memory():
         """Clear all stored memories for the current user session."""
         try:
-            session_id = request.headers.get('X-Session-ID')
+            session_id = request.headers.get("X-Session-ID")
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 400
-            
+
             from providers.memory import clear_user_memory, MEMORY_ENABLED
-            
+
             if not MEMORY_ENABLED:
                 return jsonify({"message": "Memory system not enabled"}), 200
-            
+
             success = clear_user_memory(session_id)
-            
+
             if success:
-                return jsonify({
-                    "message": "Your memory has been cleared",
-                    "session_id": session_id
-                }), 200
+                return (
+                    jsonify(
+                        {
+                            "message": "Your memory has been cleared",
+                            "session_id": session_id,
+                        }
+                    ),
+                    200,
+                )
             else:
                 return jsonify({"error": "Failed to clear memory"}), 500
-                
+
         except Exception as e:
             app.logger.error(f"Clear memory error: {e}")
             return jsonify({"error": "Failed to clear memory"}), 500
-    
-    @app.route('/api/memory_status', methods=['GET'])
+
+    @app.route("/api/memory_status", methods=["GET"])
     def memory_status():
         """Check if memory system is enabled and healthy."""
         try:
             from providers.memory import MEMORY_ENABLED, PGVECTOR_ENABLED
-            return jsonify({
-                "memory_enabled": MEMORY_ENABLED,
-                "pgvector_enabled": PGVECTOR_ENABLED,
-            }), 200
+
+            return (
+                jsonify(
+                    {
+                        "memory_enabled": MEMORY_ENABLED,
+                        "pgvector_enabled": PGVECTOR_ENABLED,
+                    }
+                ),
+                200,
+            )
         except Exception:
-            return jsonify({
-                "memory_enabled": False,
-                "pgvector_enabled": False,
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "memory_enabled": False,
+                        "pgvector_enabled": False,
+                    }
+                ),
+                200,
+            )
 
 
 # Create the application instance
