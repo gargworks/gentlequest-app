@@ -5,12 +5,96 @@ import threading
 import time
 import hashlib
 import google.generativeai as genai
-from typing import Dict, List
+from google.generativeai.types import FunctionDeclaration, Tool
+from typing import Dict, List, Tuple, Any, Optional
 from datetime import datetime, timedelta
 
 # Store conversations with timestamp for cleanup
 conversations: Dict[str, List[dict]] = {}
 CONVERSATION_TIMEOUT = timedelta(hours=1)  # Clear conversations older than 1 hour
+
+# ============================================================================
+# WELLNESS TOOLS DECLARATIONS
+# ============================================================================
+
+WELLNESS_FUNCTION_DECLARATIONS = [
+    FunctionDeclaration(
+        name="log_mood",
+        description="Log the user's emotional state when they express how they're feeling. Use this when the user mentions emotions like anxious, sad, stressed, happy, etc.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "level": {
+                    "type": "integer",
+                    "description": "Mood level on 1-5 scale: 1=very low/distressed, 2=low, 3=neutral, 4=good, 5=great"
+                },
+                "emotion": {
+                    "type": "string",
+                    "description": "Primary emotion (anxious, sad, stressed, happy, calm, tired, frustrated, etc.)"
+                },
+                "note": {
+                    "type": "string",
+                    "description": "Brief context from the conversation about why they feel this way"
+                }
+            },
+            "required": ["level", "emotion"]
+        }
+    ),
+    FunctionDeclaration(
+        name="get_breathing_exercise",
+        description="Provide a calming breathing exercise when the user is anxious, stressed, panicking, or needs to calm down.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Type of exercise: 'calm' for 4-7-8 breathing, 'quick' for box breathing, 'energize' for alertness",
+                    "enum": ["calm", "quick", "energize"]
+                }
+            }
+        }
+    ),
+    FunctionDeclaration(
+        name="get_grounding_exercise",
+        description="Provide a grounding exercise when the user is having a panic attack, feeling disconnected, or needs to feel present.",
+        parameters={
+            "type": "object",
+            "properties": {}
+        }
+    ),
+    FunctionDeclaration(
+        name="get_journal_prompt",
+        description="Provide a reflective journaling prompt when the user wants to write, reflect, or process their feelings.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "Topic to focus on: anxiety, sadness, stress, sleep, or general"
+                }
+            }
+        }
+    ),
+    FunctionDeclaration(
+        name="get_mood_history",
+        description="Retrieve the user's recent mood history when they ask about patterns or how they've been doing.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Number of days to look back (1-30)"
+                }
+            }
+        }
+    ),
+]
+
+# Create Tool object for Gemini
+WELLNESS_TOOLS = Tool(function_declarations=WELLNESS_FUNCTION_DECLARATIONS)
+
+# Flag to enable/disable function calling (for gradual rollout)
+FUNCTION_CALLING_ENABLED = os.getenv('ENABLE_FUNCTION_CALLING', 'true').lower() == 'true'
 
 # ---------- Gemini multi-key + resilience helpers (single-file, surgical) ----------
 
@@ -263,3 +347,150 @@ Please remember that these intense feelings can pass, and there is hope for thin
     except Exception as e:
         print(f"Unexpected Gemini API error: {str(e)}")
         return "I'm having trouble connecting to my AI services. Please try again in a moment."
+
+
+# ============================================================================
+# FUNCTION CALLING RESPONSE HANDLER
+# ============================================================================
+
+def get_gemini_response_with_tools(
+    message: str,
+    session_id: str,
+    risk_level: str = 'low',
+    mode: str = 'mental_health'
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """
+    Get response from Gemini with function calling enabled.
+    
+    Returns:
+        Tuple of (response_text, list_of_tool_calls_executed)
+        
+    Note:
+        - Crisis mode BYPASSES function calling for safety
+        - Each tool call is logged for audit purposes
+    """
+    from providers.tools import execute_tool, format_tool_result_for_response
+    
+    tool_calls_executed = []
+    
+    # GUARDRAIL: Crisis mode bypasses function calling entirely
+    if risk_level == 'crisis':
+        _debug("crisis_mode: bypassing function calling")
+        response = get_gemini_response(message, mode, session_id, risk_level)
+        return response, []
+    
+    # If function calling is disabled, fall back to regular response
+    if not FUNCTION_CALLING_ENABLED:
+        response = get_gemini_response(message, mode, session_id, risk_level)
+        return response, []
+    
+    try:
+        if not _GEMINI_KEYS:
+            return "Configuration error: Gemini API key not found", []
+        
+        # Build system prompt with tool awareness
+        system_prompt = """You are Luna, a supportive AI wellness companion for high school students.
+You have access to wellness tools that can help the user. Use them when appropriate:
+
+- log_mood: When the user expresses how they're feeling (anxious, sad, stressed, happy, etc.)
+- get_breathing_exercise: When they need to calm down or are anxious
+- get_grounding_exercise: When they're panicking or feeling disconnected
+- get_journal_prompt: When they want to reflect or process feelings
+- get_mood_history: When they ask about their patterns or progress
+
+Guidelines:
+- Be empathetic and supportive first, tools second
+- Don't overuse tools - max 2 per response
+- If the user is just chatting, you don't need to use tools
+- NEVER mention crisis hotlines or phone numbers - the system handles that separately
+- Keep responses warm and conversational, not clinical"""
+
+        # Get conversation history
+        if session_id not in conversations:
+            conversations[session_id] = []
+        history = conversations[session_id]
+        
+        # Build conversation context
+        conversation_context = ""
+        if history:
+            conversation_context = "\n".join([
+                f"{'User' if msg['is_user'] else 'Luna'}: {msg['content']}"
+                for msg in history[-5:]
+            ])
+            conversation_context = f"\nRecent conversation:\n{conversation_context}\n"
+        
+        full_prompt = f"{system_prompt}\n{conversation_context}\nUser: {message}"
+        
+        # Configure API and create model with tools
+        key_idx = 0
+        if len(_GEMINI_KEYS) > 1 and session_id:
+            try:
+                hval = int(hashlib.sha256(session_id.encode('utf-8')).hexdigest(), 16)
+                key_idx = hval % len(_GEMINI_KEYS)
+            except Exception:
+                key_idx = 0
+        
+        api_key = _GEMINI_KEYS[key_idx]
+        genai.configure(api_key=api_key)
+        
+        # Use a model that supports function calling well
+        model_name = 'gemini-1.5-flash'  # Stable function calling support
+        model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS])
+        
+        # Generate response with potential function calls
+        response = model.generate_content(full_prompt)
+        
+        if not response.candidates:
+            _debug("no candidates in response")
+            return get_gemini_response(message, mode, session_id, risk_level), []
+        
+        candidate = response.candidates[0]
+        
+        # Check if there are function calls
+        function_calls_to_process = []
+        text_parts = []
+        
+        for part in candidate.content.parts:
+            if hasattr(part, 'function_call') and part.function_call:
+                fc = part.function_call
+                function_calls_to_process.append({
+                    'name': fc.name,
+                    'args': dict(fc.args) if fc.args else {}
+                })
+            elif hasattr(part, 'text') and part.text:
+                text_parts.append(part.text)
+        
+        # Execute function calls (max 2 per response - guardrail)
+        for fc in function_calls_to_process[:2]:
+            _debug(f"executing_tool: {fc['name']} args={fc['args']}")
+            result = execute_tool(fc['name'], fc['args'], session_id)
+            
+            tool_calls_executed.append({
+                'name': fc['name'],
+                'args': fc['args'],
+                'result': result,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # Add tool result context to response
+            result_text = format_tool_result_for_response(fc['name'], result)
+            if result_text:
+                text_parts.append(result_text)
+        
+        # Combine all text parts
+        final_response = ' '.join(text_parts) if text_parts else "I'm here to listen."
+        final_response = re.sub(r'\n\s*\n\s*\n', '\n\n', final_response).strip()
+        
+        # Store conversation
+        history.append({'content': message, 'is_user': True, 'timestamp': datetime.now()})
+        history.append({'content': final_response, 'is_user': False, 'timestamp': datetime.now()})
+        conversations[session_id] = history
+        
+        return final_response, tool_calls_executed
+        
+    except Exception as e:
+        _debug(f"function_calling_error: {e}")
+        # Fallback to regular response on any error
+        response = get_gemini_response(message, mode, session_id, risk_level)
+        return response, []
+

@@ -1984,18 +1984,42 @@ def _get_or_create_session() -> str:
 
 
 def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
-    """Process chat message with AI provider and crisis detection"""
+    """Process chat message with AI provider and crisis detection.
+    
+    When using Gemini, this enables function calling for wellness tools.
+    """
     try:
         # Detect crisis level FIRST
         risk_level = detect_crisis_level(message)
 
-        # Get AI response with cross-provider failover inferred from key presence
-        ai_response, _used_provider = _get_ai_response_with_failover(
-            message, session_id, risk_level
+        # Check if we should use function calling (Gemini only, non-crisis)
+        ai_provider = os.environ.get('AI_PROVIDER', 'gemini').lower()
+        use_function_calling = (
+            ai_provider == 'gemini' 
+            and risk_level != 'crisis'
+            and os.environ.get('ENABLE_FUNCTION_CALLING', 'true').lower() == 'true'
         )
+        
+        tool_calls = []
+        
+        if use_function_calling:
+            # Use function calling enabled response
+            from providers.gemini import get_gemini_response_with_tools
+            ai_response, tool_calls = get_gemini_response_with_tools(
+                message, session_id, risk_level
+            )
+        else:
+            # Regular response with failover
+            ai_response, _used_provider = _get_ai_response_with_failover(
+                message, session_id, risk_level
+            )
 
         # Log conversation
         _log_conversation(session_id, message, ai_response, risk_level)
+        
+        # Log tool calls for audit (if any)
+        if tool_calls:
+            _log_tool_calls(session_id, tool_calls)
 
         return ai_response, risk_level
 
@@ -2008,6 +2032,19 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
             "I'm having trouble processing your message right now. Please try again.",
             "low",
         )
+
+
+def _log_tool_calls(session_id: str, tool_calls: List[Dict]) -> None:
+    """Log tool calls for audit purposes."""
+    try:
+        from flask import current_app
+        for tc in tool_calls:
+            current_app.logger.info(
+                f"tool_call session={session_id} name={tc.get('name')} "
+                f"success={tc.get('result', {}).get('success', False)}"
+            )
+    except Exception as e:
+        pass  # Non-critical, don't fail on logging errors
 
 
 def _log_conversation(
