@@ -1100,8 +1100,26 @@ def _register_routes(app: Flask) -> None:
         ):
             return send_from_directory(app.static_folder, "index.html")
         else:
-            # Fallback to index.html for SPA routing
-            return send_from_directory(app.static_folder, "index.html")
+            return jsonify(
+                {
+                    "message": "GentleQuest AI Mental Health Assistant",
+                    "status": "running",
+                    "environment": app.config.get("ENVIRONMENT", "development"),
+                }
+            )
+
+    @app.route("/.well-known/assetlinks.json")
+    @app.limiter.exempt
+    def assetlinks():
+        """Serve assetlinks.json for Android App Links verification"""
+        try:
+            return send_from_directory(
+                os.path.join(os.path.dirname(__file__), '.well-known'),
+                'assetlinks.json',
+                mimetype='application/json'
+            )
+        except FileNotFoundError:
+            return jsonify({"error": "Asset links file not found"}), 404
 
     @app.route("/api/health", methods=["GET"])
     @app.limiter.exempt

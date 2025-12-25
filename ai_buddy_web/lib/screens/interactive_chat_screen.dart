@@ -552,8 +552,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Ephemeral top disclaimer (first few sessions only)
                 Builder(builder: (ctx) {
                   final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
-                  if (!_showTopDisclaimer || isKb)
+                  if (!_showTopDisclaimer || isKb) {
                     return const SizedBox.shrink();
+                  }
                   return Semantics(
                     label: 'Wellness disclaimer',
                     child: Container(
@@ -748,8 +749,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   Widget _buildMessageBubble(Message message, {bool isLast = false}) {
     // Guard: Do not render empty assistant messages (prevents blank bubble on web)
     if (!message.isUser && message.content.trim().isEmpty) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('[UI] Skipping empty assistant message bubble');
+      }
       return const SizedBox.shrink();
     }
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
