@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../config/feature_flags.dart';
 import 'streaming/streaming_sse.dart' as sse;
 import '../models/message.dart';
+import '../models/interactive_exercise.dart';
 import '../models/mood_entry.dart';
 import '../models/community_post.dart';
 import '../config/api_config.dart';
@@ -437,6 +438,24 @@ class ApiService {
         }
       }
 
+      // Parse interactive exercise if present
+      InteractiveExercise? parsedExercise;
+      if (data['interactive'] == true && data['exercise'] != null) {
+        try {
+          parsedExercise = InteractiveExercise.fromJson({
+            'type': data['exercise_type'], // Top-level type
+            ...(data['exercise'] as Map<String, dynamic>), // Merge exercise data
+          });
+          if (kDebugMode) {
+            debugPrint('🧩 DEBUG: Parsed exercise: ${parsedExercise.name}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('🧩 DEBUG: Error parsing exercise: $e');
+          }
+        }
+      }
+
       return Message(
         content: data['response'] as String,
         isUser: false,
@@ -444,6 +463,7 @@ class ApiService {
         riskLevel: riskLevel,
         crisisMsg: crisisMsg,
         crisisNumbers: crisisNumbers,
+        exercise: parsedExercise, // ✅ Now passing exercise data!
       );
     } on DioException catch (e) {
       // Single-shot: do not retry to avoid duplicate LLM requests
