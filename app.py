@@ -2996,6 +2996,62 @@ def _register_additional_routes(app: Flask) -> None:
                 200,
             )
 
+    @app.route("/api/intervention/outcome", methods=["POST"])
+    def log_intervention_outcome():
+        """
+        Log intervention start/complete/skip for learning.
+        
+        Request body:
+        {
+            "session_id": "...",
+            "intervention_id": "calm_478",
+            "exercise_type": "breathing",  // Optional
+            "outcome": "started" | "completed" | "skipped",
+            "effectiveness": 0.8,  // Optional, 0-1
+            "feedback": "It helped"  // Optional
+        }
+        """
+        try:
+            session_id = request.headers.get("X-Session-ID") or request.json.get("session_id")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+            
+            data = request.get_json() or {}
+            intervention_id = data.get("intervention_id")
+            outcome = data.get("outcome", "started")
+            effectiveness = data.get("effectiveness")
+            feedback = data.get("feedback")
+            
+            if not intervention_id:
+                return jsonify({"error": "intervention_id required"}), 400
+            
+            if outcome not in ["started", "completed", "skipped"]:
+                return jsonify({"error": "outcome must be 'started', 'completed', or 'skipped'"}), 400
+            
+            from providers.session_memory import update_intervention_outcome
+            
+            success = update_intervention_outcome(
+                session_id=session_id,
+                intervention_id=intervention_id,
+                outcome=outcome,
+                effectiveness_rating=effectiveness,
+                feedback=feedback,
+            )
+            
+            if success:
+                app.logger.info(f"Intervention outcome: {intervention_id} → {outcome}")
+                return jsonify({
+                    "success": True,
+                    "message": f"Outcome '{outcome}' recorded",
+                    "intervention_id": intervention_id,
+                }), 200
+            else:
+                return jsonify({"error": "Failed to record outcome"}), 500
+                
+        except Exception as e:
+            app.logger.error(f"Intervention outcome error: {e}")
+            return jsonify({"error": "Failed to record outcome"}), 500
+
 
 # Create the application instance
 app = create_app()

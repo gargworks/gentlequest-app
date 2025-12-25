@@ -483,26 +483,27 @@ DO NOT mention crisis hotlines - system handles that separately."""
         except Exception as e:
             _debug(f"memory_context_error: {e}")
 
-        # Get conversation history
-        if session_id not in conversations:
-            conversations[session_id] = []
-        history = conversations[session_id]
+        # Get conversation history from database (more reliable than in-memory)
+        db_history = ""
+        try:
+            from providers.session_memory import get_recent_messages, format_history_for_prompt
+            recent = get_recent_messages(session_id, limit=3)
+            if recent:
+                db_history = format_history_for_prompt(recent)
+        except Exception as e:
+            _debug(f"db_history_error: {e}")
 
-        # Build conversation context
-        conversation_context = ""
-        if history:
-            conversation_context = "\n".join(
-                [
-                    f"{'User' if msg['is_user'] else 'Luna'}: {msg['content']}"
-                    for msg in history[-5:]
-                ]
-            )
-            conversation_context = f"\nRecent conversation:\n{conversation_context}\n"
-
-        # SIMPLE PROMPT - complex prompts break function calling!
-        # The direct test without system prompt worked (2/3 success)
-        # Just use the user message directly - let the function description guide the model
-        full_prompt = message
+        # Minimal agentic context - just enough to guide behavior without breaking function calling
+        # Note: too much system prompt breaks function calling with Gemini
+        context_parts = []
+        if db_history:
+            context_parts.append(db_history)
+        
+        # Build prompt with minimal context
+        if context_parts:
+            full_prompt = f"{chr(10).join(context_parts)}{chr(10)}User: {message}"
+        else:
+            full_prompt = message
 
         # Configure API and create model with tools
         key_idx = 0

@@ -117,6 +117,54 @@ GROUNDING_INTERVENTIONS = {
     }
 }
 
+# Journaling Interventions (Stage 3)
+JOURNALING_INTERVENTIONS = {
+    "anxiety_reflection": {
+        "name": "Anxiety Reflection",
+        "description": "A guided journaling exercise to explore what's really worrying you.",
+        "prompt": "What specifically am I worried about right now?",
+        "follow_ups": [
+            "What's the worst that could realistically happen?",
+            "What would I tell a friend in this situation?",
+            "What's one small thing I can control right now?",
+        ],
+        "intensity": "moderate",
+        "best_for": ["anxiety", "stress", "overwhelmed"],
+    },
+    "mood_check": {
+        "name": "Mood Check-In",
+        "description": "A gentle prompt to explore your current feelings.",
+        "prompt": "How am I really feeling right now, underneath everything?",
+        "follow_ups": [
+            "When did I start feeling this way?",
+            "What do I need most right now?",
+        ],
+        "intensity": "mild",
+        "best_for": ["sadness", "stress", "fatigue"],
+    },
+    "gratitude_moment": {
+        "name": "Gratitude Moment",
+        "description": "Shift perspective by finding small positives.",
+        "prompt": "What's one small thing that went okay today?",
+        "follow_ups": [
+            "Who or what am I grateful for right now?",
+        ],
+        "intensity": "mild",
+        "best_for": ["sadness", "fatigue"],
+    },
+}
+
+# Talk Mode (Stage 4) - Conversation-based support
+TALK_MODE_RESPONSES = {
+    "anxiety": "I hear you're still feeling anxious. Sometimes exercises aren't enough - would you like to tell me more about what's really weighing on you?",
+    "stress": "It sounds like the stress is still there. I'm here to listen. What's the biggest thing on your mind right now?",
+    "sadness": "I'm sorry you're still feeling down. Sometimes it helps to talk it out. What's been going on?",
+    "panic": "I can tell you're really struggling. You don't have to face this alone. What would help right now?",
+    "sleep": "Sleep troubles can be tough. Let's talk about what's keeping your mind racing.",
+    "overwhelmed": "Feeling overwhelmed is exhausting. Let's break things down together - what feels like the biggest weight right now?",
+    "fatigue": "I understand you're drained. Sometimes rest isn't about sleep. What's been draining your energy?",
+}
+
 
 # ============================================================================
 # INTERVENTION SELECTOR (Smart Tool)
@@ -273,7 +321,10 @@ def get_wellness_intervention(
     context: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """
-    Smart wellness intervention selection
+    Smart wellness intervention selection with VARIETY.
+    
+    Uses session history to avoid repeating the same intervention.
+    Progression: breathing → grounding → journaling → talk mode
 
     Args:
         issue: "anxiety", "stress", "panic", "sleep", "sadness"
@@ -288,39 +339,123 @@ def get_wellness_intervention(
             'intervention_id': 'calm_478',
             'exercise': {...},
             'interactive': True,
-            'personalization': "This worked well for you before"
+            'offer_stage': 1,
+            'personalization': "..."
         }
     """
     try:
         context = context or {}
-
-        # Get user's past effectiveness
-        user_effectiveness = _get_user_effectiveness(user_id) if user_id else {}
-
-        # Add current time context
-        hour = datetime.now().hour
-        if hour >= 21 or hour <= 6:
-            context["time_of_day"] = "night"
+        issue_lower = issue.lower()
+        
+        # Get variety information from session
+        variety = {"offer_stage": 1, "intervention_type": "breathing", "previous_interventions": []}
+        if user_id:
+            try:
+                from providers.session_memory import get_intervention_variety, record_intervention_shown
+                variety = get_intervention_variety(user_id, issue_lower)
+            except Exception as e:
+                current_app.logger.warning(f"Could not get variety: {e}")
+        
+        offer_stage = variety["offer_stage"]
+        intervention_type = variety["intervention_type"]
+        
+        # Select intervention based on stage
+        if intervention_type == "talk":
+            # Stage 4: Talk mode - no exercise, just conversation
+            talk_response = TALK_MODE_RESPONSES.get(
+                issue_lower, 
+                "I'm here to listen. Would you like to tell me more about what's going on?"
+            )
+            return {
+                "success": True,
+                "intervention_type": "talk",
+                "intervention_id": f"talk_{issue_lower}",
+                "exercise": None,
+                "interactive": False,
+                "offer_stage": offer_stage,
+                "talk_prompt": talk_response,
+                "personalization": "We've tried a few exercises. Let's talk instead.",
+            }
+        
+        elif intervention_type == "journaling":
+            # Stage 3: Journaling prompt
+            journal = _select_journaling_intervention(issue_lower)
+            intervention_id = f"journal_{issue_lower}"
+            
+            # Record this intervention was shown
+            if user_id:
+                try:
+                    record_intervention_shown(user_id, issue_lower, "journaling", intervention_id, offer_stage)
+                except Exception:
+                    pass
+            
+            return {
+                "success": True,
+                "intervention_type": "journaling",
+                "intervention_id": intervention_id,
+                "exercise": journal,
+                "interactive": True,
+                "offer_stage": offer_stage,
+                "personalization": "Sometimes writing helps process feelings.",
+            }
+        
+        elif intervention_type == "grounding":
+            # Stage 2: Grounding exercise
+            intervention_id = "54321_senses"
+            grounding = GROUNDING_INTERVENTIONS[intervention_id]
+            
+            # Record this intervention was shown
+            if user_id:
+                try:
+                    from providers.session_memory import record_intervention_shown
+                    record_intervention_shown(user_id, issue_lower, "grounding", intervention_id, offer_stage)
+                except Exception:
+                    pass
+            
+            return {
+                "success": True,
+                "intervention_type": "grounding",
+                "intervention_id": intervention_id,
+                "exercise": grounding,
+                "interactive": True,
+                "offer_stage": offer_stage,
+                "personalization": "Let's try something different to ground you in the present.",
+            }
+        
         else:
-            context["time_of_day"] = "day"
-
-        # Select intervention
-        selection = _intervention_selector.select_intervention(
-            issue=issue.lower(),
-            intensity=intensity.lower(),
-            user_effectiveness=user_effectiveness,
-            context=context,
-        )
-
-        return {
-            "success": True,
-            "intervention_type": selection["type"],
-            "intervention_id": selection["intervention_id"],
-            "exercise": selection["content"],
-            "interactive": True,
-            "personalization": selection["personalization"],
-            "reasoning": selection.get("reasoning", ""),
-        }
+            # Stage 1 (default): Breathing exercise
+            user_effectiveness = _get_user_effectiveness(user_id) if user_id else {}
+            
+            # Add time context
+            hour = datetime.now().hour
+            context["time_of_day"] = "night" if (hour >= 21 or hour <= 6) else "day"
+            
+            # Use selector for best breathing exercise
+            selection = _intervention_selector.select_intervention(
+                issue=issue_lower,
+                intensity=intensity.lower(),
+                user_effectiveness=user_effectiveness,
+                context=context,
+            )
+            
+            # Record this intervention was shown
+            if user_id:
+                try:
+                    from providers.session_memory import record_intervention_shown
+                    record_intervention_shown(user_id, issue_lower, "breathing", selection["intervention_id"], offer_stage)
+                except Exception:
+                    pass
+            
+            return {
+                "success": True,
+                "intervention_type": selection["type"],
+                "intervention_id": selection["intervention_id"],
+                "exercise": selection["content"],
+                "interactive": True,
+                "offer_stage": offer_stage,
+                "personalization": selection["personalization"],
+                "reasoning": selection.get("reasoning", ""),
+            }
 
     except Exception as e:
         current_app.logger.error(f"get_wellness_intervention error: {e}")
@@ -328,10 +463,29 @@ def get_wellness_intervention(
         return {
             "success": True,
             "intervention_type": "breathing",
+            "intervention_id": "calm_478",
             "exercise": BREATHING_INTERVENTIONS["calm_478"],
             "interactive": True,
+            "offer_stage": 1,
             "personalization": "",
         }
+
+
+def _select_journaling_intervention(issue: str) -> Dict[str, Any]:
+    """Select best journaling intervention for issue."""
+    # Map issues to journaling types
+    issue_to_journal = {
+        "anxiety": "anxiety_reflection",
+        "stress": "anxiety_reflection",
+        "overwhelmed": "anxiety_reflection",
+        "sadness": "mood_check",
+        "fatigue": "gratitude_moment",
+        "panic": "mood_check",
+        "sleep": "mood_check",
+    }
+    
+    journal_id = issue_to_journal.get(issue, "mood_check")
+    return JOURNALING_INTERVENTIONS.get(journal_id, JOURNALING_INTERVENTIONS["mood_check"])
 
 
 def _get_user_effectiveness(user_id: str) -> Dict[str, float]:
