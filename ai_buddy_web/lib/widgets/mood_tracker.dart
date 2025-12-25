@@ -71,7 +71,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                                 .textTheme
                                 .bodySmall
                                 ?.color
-                                ?.withOpacity(0.7),
+                                ?.withValues(alpha: 0.7),
                             fontFamily: 'Inter',
                           ),
                     ),
@@ -94,10 +94,10 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.error.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withOpacity(0.35)),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -139,7 +139,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     return Card(
       elevation: 2.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -171,7 +171,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               Text(
                 '$pct% of $total check-ins today felt the same way',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   fontFamily: 'Inter',
                 ),
               ),
@@ -197,7 +197,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 Icon(
                   Icons.show_chart_outlined,
                   size: 40,
-                  color: theme.colorScheme.primary.withOpacity(0.4),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -208,7 +208,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 Text(
                   "Start tracking to discover patterns over time 🌱",
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     fontFamily: 'Inter',
                   ),
                 ),
@@ -271,7 +271,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
         borderRadius: BorderRadius.circular(8),
         selectedBorderColor: Theme.of(context).colorScheme.primary,
         selectedColor: Theme.of(context).colorScheme.primary,
-        fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+        fillColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
         children: const [
           Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -461,7 +461,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   belowBarData: BarAreaData(
                     show: spots.length > 1,
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -675,19 +675,19 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            primary.withOpacity(0.12),
-            primary.withOpacity(0.04),
+            primary.withValues(alpha: 0.12),
+            primary.withValues(alpha: 0.04),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: primary.withOpacity(0.15),
+          color: primary.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -708,7 +708,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -754,7 +754,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           Container(
             height: 32,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(10),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -764,7 +764,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   width: 60,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.25),
+                    color: primary.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: Align(

@@ -105,22 +105,22 @@ class _FeedSkeleton extends StatelessWidget {
                 Container(
                     height: 10,
                     width: 80,
-                    color: Colors.black12.withOpacity(0.08)),
+                    color: Colors.black12.withValues(alpha: 0.08)),
                 const SizedBox(height: 10),
                 Container(
                     height: 12,
                     width: double.infinity,
-                    color: Colors.black12.withOpacity(0.08)),
+                    color: Colors.black12.withValues(alpha: 0.08)),
                 const SizedBox(height: 6),
                 Container(
                     height: 12,
                     width: double.infinity,
-                    color: Colors.black12.withOpacity(0.08)),
+                    color: Colors.black12.withValues(alpha: 0.08)),
                 const SizedBox(height: 6),
                 Container(
                     height: 12,
                     width: MediaQuery.of(context).size.width * 0.6,
-                    color: Colors.black12.withOpacity(0.08)),
+                    color: Colors.black12.withValues(alpha: 0.08)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -128,7 +128,7 @@ class _FeedSkeleton extends StatelessWidget {
                         height: 28,
                         width: 90,
                         decoration: BoxDecoration(
-                            color: Colors.black12.withOpacity(0.06),
+                            color: Colors.black12.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(16),
                             border:
                                 Border.all(color: const Color(0xFFE0E6EE)))),
@@ -256,7 +256,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    initialValue:
+                    value:
                         (selectedTopic == null || selectedTopic == 'All')
                             ? null
                             : selectedTopic,
@@ -621,7 +621,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     itemBuilder: (_, i) => Container(
                       width: 72,
                       decoration: BoxDecoration(
-                        color: Colors.black12.withOpacity(0.06),
+                        color: Colors.black12.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE0E6EE)),
                       ),
@@ -641,7 +641,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                         label: const Text('More'),
                         selected: false,
                         onSelected: (_) => _showTopicPicker(),
-                        selectedColor: color.primary.withOpacity(0.12),
+                        selectedColor: color.primary.withValues(alpha: 0.12),
                         labelStyle: TextStyle(color: color.onSurface),
                       );
                     }
@@ -650,7 +650,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                       label: Text(t, semanticsLabel: 'Topic: $t'),
                       selected: active,
                       onSelected: (_) => _onSelectTopic(t),
-                      selectedColor: color.primary.withOpacity(0.15),
+                      selectedColor: color.primary.withValues(alpha: 0.15),
                       labelStyle: TextStyle(
                         color: active ? color.primary : color.onSurface,
                       ),
@@ -1033,10 +1033,10 @@ class _ReactionChipState extends State<_ReactionChip> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: widget.selected
-                    ? color.primary.withOpacity(0.15)
+                    ? color.primary.withValues(alpha: 0.15)
                     : (_isFocused
-                        ? color.primary.withOpacity(0.1)
-                        : color.primary.withOpacity(0.05)),
+                        ? color.primary.withValues(alpha: 0.1)
+                        : color.primary.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.selected
@@ -1047,7 +1047,7 @@ class _ReactionChipState extends State<_ReactionChip> {
                 boxShadow: _isFocused
                     ? [
                         BoxShadow(
-                          color: color.primary.withOpacity(0.2),
+                          color: color.primary.withValues(alpha: 0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
