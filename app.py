@@ -1546,6 +1546,138 @@ def _register_routes(app: Flask) -> None:
             db.session.rollback()
             return jsonify({"error": "Failed to add mood entry"}), 500
 
+    @app.route("/api/self_assessment", methods=["POST"])
+    @app.limiter.limit("120 per minute")
+    def submit_self_assessment():
+        """Handle self-assessment submissions"""
+        if request.method == "GET":
+            return jsonify({"message": "Self-assessment endpoint ready"})
+
+        try:
+            data = request.get_json() or {}
+
+            # Ensure session association
+            session_id = _get_or_create_session()
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+
+            # Clean and validate data
+            cleaned_data = {}
+            required_fields = ["mood", "energy", "sleep", "stress"]
+
+            for field in required_fields:
+                value = data.get(field)
+                if (
+                    value is None
+                    or value == ""
+                    or str(value).lower() in ["null", "none"]
+                ):
+                    return jsonify({"error": f"Missing required field: {field}"}), 400
+                cleaned_data[field] = value.strip() if isinstance(value, str) else value
+
+            # Optional fields
+            optional_fields = ["notes", "crisis_level", "anxiety_level"]
+            for field in optional_fields:
+                value = data.get(field)
+                if value and value != "" and str(value).lower() not in ["null", "none"]:
+                    cleaned_data[field] = (
+                        value.strip() if isinstance(value, str) else value
+                    )
+
+            # Optional timezone offset in minutes to determine local "day" boundaries
+            try:
+                tz_offset_min = int(data.get("tz_offset_minutes") or 0)
+            except Exception:
+                tz_offset_min = 0
+
+            now_utc = datetime.utcnow()
+            # Compute start of local day and convert back to UTC
+            now_local = now_utc + timedelta(minutes=tz_offset_min)
+            start_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+            start_of_day_utc = start_local - timedelta(minutes=tz_offset_min)
+
+            # Enforce single completion per (local) day
+            existing = (
+                db.session.query(SelfAssessmentEntry)
+                .filter(SelfAssessmentEntry.session_id == session_id)
+                .filter(SelfAssessmentEntry.timestamp >= start_of_day_utc)
+                .first()
+            )
+
+            if existing:
+                app.logger.info(
+                    f"Self-assessment already completed today | session_id={session_id} completed_at={existing.timestamp.isoformat()} tz_offset_min={tz_offset_min}"
+                )
+                return (
+                    jsonify(
+                        {
+                            "success": True,
+                            "already_completed_today": True,
+                            "xp_awarded": 0,
+                            "completed_at": existing.timestamp.isoformat(),
+                        }
+                    ),
+                    200,
+                )
+
+            # Create new entry (authoritative store)
+            entry = SelfAssessmentEntry(
+                session_id=session_id,
+                timestamp=now_utc,
+                assessment_data=cleaned_data,
+            )
+            db.session.add(entry)
+            db.session.commit()
+
+            # Best-effort mirror to legacy table for compatibility (non-fatal on error)
+            try:
+                db.session.execute(
+                    text(
+                        """
+                        INSERT INTO self_assessments (session_id, mood, energy, sleep, stress, social, work, notes, timestamp)
+                        VALUES (:session_id, :mood, :energy, :sleep, :stress, :social, :work, :notes, :timestamp)
+                        """
+                    ),
+                    {
+                        "session_id": session_id,
+                        "mood": cleaned_data.get("mood"),
+                        "energy": cleaned_data.get("energy"),
+                        "sleep": cleaned_data.get("sleep"),
+                        "stress": cleaned_data.get("stress"),
+                        "social": cleaned_data.get("social"),
+                        "work": cleaned_data.get("work"),
+                        "notes": cleaned_data.get("notes"),
+                        "timestamp": now_utc,
+                    },
+                )
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                app.logger.warning(f"Legacy self_assessments mirror skipped: {e}")
+
+            # Award XP once per day for quick check-in (value can be tuned server-side)
+            xp_awarded = 10
+            app.logger.info(
+                f"Self-assessment recorded | session_id={session_id} xp_awarded={xp_awarded} tz_offset_min={tz_offset_min} data_keys={list(cleaned_data.keys())}"
+            )
+
+            return (
+                jsonify(
+                    {
+                        "message": "Assessment recorded",
+                        "success": True,
+                        "already_completed_today": False,
+                        "xp_awarded": xp_awarded,
+                        "completed_at": now_utc.isoformat(),
+                    }
+                ),
+                201,
+            )
+
+        except Exception as e:
+            app.logger.error(f"Self-assessment error: {e}")
+            return jsonify({"error": "Failed to process assessment"}), 500
+
     @app.route("/api/mood_pulse", methods=["GET"])
     @app.limiter.limit("60 per minute")
     def mood_pulse():
