@@ -587,6 +587,37 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Memory system initialization skipped: {e}")
 
+    # Initialize Agentic Intervention Tracking (ensure table schema)
+    try:
+        with app.app_context():
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS intervention_outcomes (
+                    id SERIAL PRIMARY KEY,
+                    session_id VARCHAR(255) NOT NULL,
+                    intervention_id VARCHAR(100) NOT NULL,
+                    issue VARCHAR(50),
+                    offer_stage INTEGER DEFAULT 1,
+                    outcome VARCHAR(20) DEFAULT 'offered',
+                    completed BOOLEAN NOT NULL DEFAULT FALSE,
+                    effectiveness_rating FLOAT,
+                    feedback TEXT,
+                    timestamp TIMESTAMP NOT NULL
+                )
+            """))
+            # Add columns if they don't exist (for existing tables)
+            try:
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS issue VARCHAR(50)"))
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1"))
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS outcome VARCHAR(20) DEFAULT 'offered'"))
+            except Exception:
+                pass  # Columns may already exist
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_session ON intervention_outcomes(session_id)"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_issue ON intervention_outcomes(session_id, issue)"))
+            db.session.commit()
+            app.logger.info("Agentic intervention tracking initialized")
+    except Exception as e:
+        app.logger.warning(f"Intervention tracking init skipped: {e}")
+
     # Initialize Enterprise Features
     enterprise_routes_registered = False
     if ENTERPRISE_FEATURES:
