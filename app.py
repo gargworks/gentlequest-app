@@ -564,12 +564,25 @@ def create_app() -> Flask:
 
     # Register routes
     _register_routes(app)
+    _register_additional_routes(app)
+    
     # Register Community (Phase 0) routes
     try:
         register_community_routes(app)
         app.logger.info("Community routes registered")
     except Exception as e:
         app.logger.warning(f"Community routes failed to register: {e}")
+    
+    # Initialize Memory System (Phase II)
+    try:
+        from providers.memory import init_memory_tables, MEMORY_ENABLED
+        if MEMORY_ENABLED:
+            if init_memory_tables(app):
+                app.logger.info("Memory system initialized with pgvector")
+            else:
+                app.logger.info("Memory system running without pgvector (fallback mode)")
+    except Exception as e:
+        app.logger.warning(f"Memory system initialization skipped: {e}")
 
     # Initialize Enterprise Features
     enterprise_routes_registered = False
@@ -2020,6 +2033,14 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
         # Log tool calls for audit (if any)
         if tool_calls:
             _log_tool_calls(session_id, tool_calls)
+        
+        # Store memory for long-term context (non-blocking)
+        try:
+            from providers.memory import summarize_and_store_conversation, MEMORY_ENABLED
+            if MEMORY_ENABLED:
+                summarize_and_store_conversation(session_id, message, ai_response, risk_level)
+        except Exception:
+            pass  # Non-critical, continue if memory fails
 
         return ai_response, risk_level
 
@@ -2689,8 +2710,49 @@ def _purge_old_data_inner():
 
 def _register_additional_routes(app: Flask) -> None:
     """Register additional API routes"""
-    # Removed duplicate call
-    pass
+    
+    @app.route('/api/clear_memory', methods=['POST'])
+    @app.limiter.limit("5 per hour")
+    def clear_memory():
+        """Clear all stored memories for the current user session."""
+        try:
+            session_id = request.headers.get('X-Session-ID')
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+            
+            from providers.memory import clear_user_memory, MEMORY_ENABLED
+            
+            if not MEMORY_ENABLED:
+                return jsonify({"message": "Memory system not enabled"}), 200
+            
+            success = clear_user_memory(session_id)
+            
+            if success:
+                return jsonify({
+                    "message": "Your memory has been cleared",
+                    "session_id": session_id
+                }), 200
+            else:
+                return jsonify({"error": "Failed to clear memory"}), 500
+                
+        except Exception as e:
+            app.logger.error(f"Clear memory error: {e}")
+            return jsonify({"error": "Failed to clear memory"}), 500
+    
+    @app.route('/api/memory_status', methods=['GET'])
+    def memory_status():
+        """Check if memory system is enabled and healthy."""
+        try:
+            from providers.memory import MEMORY_ENABLED, PGVECTOR_ENABLED
+            return jsonify({
+                "memory_enabled": MEMORY_ENABLED,
+                "pgvector_enabled": PGVECTOR_ENABLED,
+            }), 200
+        except Exception:
+            return jsonify({
+                "memory_enabled": False,
+                "pgvector_enabled": False,
+            }), 200
 
 
 # Create the application instance

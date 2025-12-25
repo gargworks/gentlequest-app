@@ -5,7 +5,6 @@ import threading
 import time
 import hashlib
 import google.generativeai as genai
-from google.generativeai.types import FunctionDeclaration, Tool
 from typing import Dict, List, Tuple, Any, Optional
 from datetime import datetime, timedelta
 
@@ -14,84 +13,83 @@ conversations: Dict[str, List[dict]] = {}
 CONVERSATION_TIMEOUT = timedelta(hours=1)  # Clear conversations older than 1 hour
 
 # ============================================================================
-# WELLNESS TOOLS DECLARATIONS
+# WELLNESS TOOLS DECLARATIONS (dict-based for compatibility)
 # ============================================================================
 
-WELLNESS_FUNCTION_DECLARATIONS = [
-    FunctionDeclaration(
-        name="log_mood",
-        description="Log the user's emotional state when they express how they're feeling. Use this when the user mentions emotions like anxious, sad, stressed, happy, etc.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "level": {
-                    "type": "integer",
-                    "description": "Mood level on 1-5 scale: 1=very low/distressed, 2=low, 3=neutral, 4=good, 5=great"
+WELLNESS_TOOLS_CONFIG = {
+    "function_declarations": [
+        {
+            "name": "log_mood",
+            "description": "Log the user's emotional state when they express how they're feeling. Use this when the user mentions emotions like anxious, sad, stressed, happy, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "level": {
+                        "type": "integer",
+                        "description": "Mood level on 1-5 scale: 1=very low/distressed, 2=low, 3=neutral, 4=good, 5=great"
+                    },
+                    "emotion": {
+                        "type": "string",
+                        "description": "Primary emotion (anxious, sad, stressed, happy, calm, tired, frustrated, etc.)"
+                    },
+                    "note": {
+                        "type": "string",
+                        "description": "Brief context from the conversation about why they feel this way"
+                    }
                 },
-                "emotion": {
-                    "type": "string",
-                    "description": "Primary emotion (anxious, sad, stressed, happy, calm, tired, frustrated, etc.)"
-                },
-                "note": {
-                    "type": "string",
-                    "description": "Brief context from the conversation about why they feel this way"
-                }
-            },
-            "required": ["level", "emotion"]
-        }
-    ),
-    FunctionDeclaration(
-        name="get_breathing_exercise",
-        description="Provide a calming breathing exercise when the user is anxious, stressed, panicking, or needs to calm down.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "description": "Type of exercise: 'calm' for 4-7-8 breathing, 'quick' for box breathing, 'energize' for alertness",
-                    "enum": ["calm", "quick", "energize"]
+                "required": ["level", "emotion"]
+            }
+        },
+        {
+            "name": "get_breathing_exercise",
+            "description": "Provide a calming breathing exercise when the user is anxious, stressed, panicking, or needs to calm down.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Type of exercise: 'calm' for 4-7-8 breathing, 'quick' for box breathing, 'energize' for alertness",
+                        "enum": ["calm", "quick", "energize"]
+                    }
                 }
             }
-        }
-    ),
-    FunctionDeclaration(
-        name="get_grounding_exercise",
-        description="Provide a grounding exercise when the user is having a panic attack, feeling disconnected, or needs to feel present.",
-        parameters={
-            "type": "object",
-            "properties": {}
-        }
-    ),
-    FunctionDeclaration(
-        name="get_journal_prompt",
-        description="Provide a reflective journaling prompt when the user wants to write, reflect, or process their feelings.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "topic": {
-                    "type": "string",
-                    "description": "Topic to focus on: anxiety, sadness, stress, sleep, or general"
+        },
+        {
+            "name": "get_grounding_exercise",
+            "description": "Provide a grounding exercise when the user is having a panic attack, feeling disconnected, or needs to feel present.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        },
+        {
+            "name": "get_journal_prompt",
+            "description": "Provide a reflective journaling prompt when the user wants to write, reflect, or process their feelings.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "Topic to focus on: anxiety, sadness, stress, sleep, or general"
+                    }
                 }
             }
-        }
-    ),
-    FunctionDeclaration(
-        name="get_mood_history",
-        description="Retrieve the user's recent mood history when they ask about patterns or how they've been doing.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "days": {
-                    "type": "integer",
-                    "description": "Number of days to look back (1-30)"
+        },
+        {
+            "name": "get_mood_history",
+            "description": "Retrieve the user's recent mood history when they ask about patterns or how they've been doing.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of days to look back (1-30)"
+                    }
                 }
             }
-        }
-    ),
-]
-
-# Create Tool object for Gemini
-WELLNESS_TOOLS = Tool(function_declarations=WELLNESS_FUNCTION_DECLARATIONS)
+        },
+    ]
+}
 
 # Flag to enable/disable function calling (for gradual rollout)
 FUNCTION_CALLING_ENABLED = os.getenv('ENABLE_FUNCTION_CALLING', 'true').lower() == 'true'
@@ -403,7 +401,19 @@ Guidelines:
 - Don't overuse tools - max 2 per response
 - If the user is just chatting, you don't need to use tools
 - NEVER mention crisis hotlines or phone numbers - the system handles that separately
-- Keep responses warm and conversational, not clinical"""
+- Keep responses warm and conversational, not clinical
+- If you have context about the user from previous sessions, use it naturally"""
+
+        # Get memory context (if available)
+        memory_context = ""
+        try:
+            from providers.memory import get_memory_context_for_prompt, MEMORY_ENABLED
+            if MEMORY_ENABLED:
+                memory_context = get_memory_context_for_prompt(session_id, message)
+                if memory_context:
+                    memory_context = f"\n{memory_context}\n"
+        except Exception as e:
+            _debug(f"memory_context_error: {e}")
 
         # Get conversation history
         if session_id not in conversations:
@@ -419,7 +429,7 @@ Guidelines:
             ])
             conversation_context = f"\nRecent conversation:\n{conversation_context}\n"
         
-        full_prompt = f"{system_prompt}\n{conversation_context}\nUser: {message}"
+        full_prompt = f"{system_prompt}{memory_context}{conversation_context}\nUser: {message}"
         
         # Configure API and create model with tools
         key_idx = 0
@@ -435,7 +445,7 @@ Guidelines:
         
         # Use a model that supports function calling well
         model_name = 'gemini-1.5-flash'  # Stable function calling support
-        model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS])
+        model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS_CONFIG])
         
         # Generate response with potential function calls
         response = model.generate_content(full_prompt)

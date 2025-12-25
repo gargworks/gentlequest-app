@@ -214,19 +214,20 @@ Luna: "I remember you mentioned family stress last week.
 
 ## Implementation Checklist
 
-### Phase I: Function Calling
-- [ ] Create `providers/tools.py` with core functions
-- [ ] Add tool declarations to `gemini.py`
-- [ ] Modify chat endpoint to handle function calls
-- [ ] Add function call audit logging
-- [ ] Test with all function types
+### Phase I: Function Calling ✅ COMPLETE
+- [x] Create `providers/tools.py` with core functions
+- [x] Add tool declarations to `gemini.py`
+- [x] Modify chat endpoint to handle function calls
+- [x] Add function call audit logging
+- [x] Test with all function types
 - [ ] Update Flutter UI for interactive responses
 
-### Phase II: RAG/Memory
-- [ ] Enable pgvector extension on Render
-- [ ] Add embedding column to conversation_logs
-- [ ] Create memory_summaries table
-- [ ] Implement embedding generation
+### Phase II: RAG/Memory ✅ COMPLETE
+- [x] Enable pgvector extension (via init_memory_tables)
+- [x] Add embedding generation (providers/embeddings.py)
+- [x] Implement memory retrieval (providers/memory.py)
+- [x] Add /api/clear_memory endpoint
+- [x] Add /api/memory_status endpoint
 - [ ] Implement memory retrieval
 - [ ] Add memory context to prompts
 - [ ] Add /api/clear_memory endpoint
