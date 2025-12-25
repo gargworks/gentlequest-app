@@ -23,9 +23,17 @@ BREATHING_EXERCISES = {
         "name": "4-7-8 Calming Breath",
         "description": "A relaxing breathing pattern that activates your parasympathetic nervous system.",
         "steps": [
-            {"action": "breathe_in", "duration": 4, "instruction": "Breathe in slowly through your nose"},
+            {
+                "action": "breathe_in",
+                "duration": 4,
+                "instruction": "Breathe in slowly through your nose",
+            },
             {"action": "hold", "duration": 7, "instruction": "Hold your breath gently"},
-            {"action": "breathe_out", "duration": 8, "instruction": "Exhale slowly through your mouth"},
+            {
+                "action": "breathe_out",
+                "duration": 8,
+                "instruction": "Exhale slowly through your mouth",
+            },
         ],
         "cycles": 4,
         "total_time_seconds": 76,
@@ -46,8 +54,16 @@ BREATHING_EXERCISES = {
         "name": "Energizing Breath",
         "description": "A gentle pattern to increase alertness and energy.",
         "steps": [
-            {"action": "breathe_in", "duration": 4, "instruction": "Deep breath in through your nose"},
-            {"action": "breathe_out", "duration": 2, "instruction": "Quick exhale through your mouth"},
+            {
+                "action": "breathe_in",
+                "duration": 4,
+                "instruction": "Deep breath in through your nose",
+            },
+            {
+                "action": "breathe_out",
+                "duration": 2,
+                "instruction": "Quick exhale through your mouth",
+            },
         ],
         "cycles": 6,
         "total_time_seconds": 36,
@@ -132,15 +148,16 @@ JOURNAL_PROMPTS = {
 # TOOL EXECUTION FUNCTIONS
 # ============================================================================
 
+
 def execute_tool(name: str, args: dict, session_id: str) -> Dict[str, Any]:
     """
     Execute a wellness tool and return the result.
-    
+
     Args:
         name: The function name to execute
         args: Arguments passed by Gemini
         session_id: Current user session
-        
+
     Returns:
         Dict with tool result and any data
     """
@@ -167,17 +184,19 @@ def _log_mood(session_id: str, args: dict) -> Dict[str, Any]:
     level = args.get("level", 3)
     emotion = args.get("emotion", "neutral")
     note = args.get("note", "")
-    
+
     # Validate level
     if not isinstance(level, int) or level < 1 or level > 5:
         level = 3
-    
+
     try:
         db.session.execute(
-            text("""
+            text(
+                """
                 INSERT INTO mood_entries (session_id, mood_level, note, timestamp)
                 VALUES (:session_id, :mood_level, :note, :timestamp)
-            """),
+            """
+            ),
             {
                 "session_id": session_id,
                 "mood_level": level,
@@ -186,7 +205,7 @@ def _log_mood(session_id: str, args: dict) -> Dict[str, Any]:
             },
         )
         db.session.commit()
-        
+
         return {
             "success": True,
             "message": f"Logged mood: {emotion} (level {level})",
@@ -200,9 +219,9 @@ def _log_mood(session_id: str, args: dict) -> Dict[str, Any]:
 def _get_breathing_exercise(args: dict) -> Dict[str, Any]:
     """Return a structured breathing exercise."""
     exercise_type = args.get("type", "calm")
-    
+
     exercise = BREATHING_EXERCISES.get(exercise_type, BREATHING_EXERCISES["calm"])
-    
+
     return {
         "success": True,
         "exercise_type": "breathing",
@@ -214,7 +233,7 @@ def _get_breathing_exercise(args: dict) -> Dict[str, Any]:
 def _get_grounding_exercise() -> Dict[str, Any]:
     """Return a grounding exercise."""
     exercise = random.choice(GROUNDING_EXERCISES)
-    
+
     return {
         "success": True,
         "exercise_type": "grounding",
@@ -226,7 +245,7 @@ def _get_grounding_exercise() -> Dict[str, Any]:
 def _get_journal_prompt(args: dict) -> Dict[str, Any]:
     """Return a reflective journal prompt."""
     topic = args.get("topic", "general").lower()
-    
+
     # Map common emotions to categories
     topic_map = {
         "anxious": "anxiety",
@@ -241,13 +260,13 @@ def _get_journal_prompt(args: dict) -> Dict[str, Any]:
         "insomnia": "sleep",
         "can't sleep": "sleep",
     }
-    
+
     category = topic_map.get(topic, topic)
     if category not in JOURNAL_PROMPTS:
         category = "general"
-    
+
     prompt = random.choice(JOURNAL_PROMPTS[category])
-    
+
     return {
         "success": True,
         "prompt": prompt,
@@ -260,21 +279,23 @@ def _get_mood_history(session_id: str, args: dict) -> Dict[str, Any]:
     days = args.get("days", 7)
     if not isinstance(days, int) or days < 1 or days > 30:
         days = 7
-    
+
     try:
         since = datetime.utcnow() - timedelta(days=days)
-        
+
         entries = db.session.execute(
-            text("""
+            text(
+                """
                 SELECT mood_level, note, timestamp
                 FROM mood_entries
                 WHERE session_id = :session_id AND timestamp >= :since
                 ORDER BY timestamp DESC
                 LIMIT 20
-            """),
+            """
+            ),
             {"session_id": session_id, "since": since},
         ).fetchall()
-        
+
         history = [
             {
                 "level": e.mood_level,
@@ -283,15 +304,19 @@ def _get_mood_history(session_id: str, args: dict) -> Dict[str, Any]:
             }
             for e in entries
         ]
-        
+
         # Calculate average if we have data
         if history:
             avg = sum(h["level"] for h in history) / len(history)
-            trend = "improving" if len(history) > 1 and history[0]["level"] > history[-1]["level"] else "stable"
+            trend = (
+                "improving"
+                if len(history) > 1 and history[0]["level"] > history[-1]["level"]
+                else "stable"
+            )
         else:
             avg = None
             trend = None
-        
+
         return {
             "success": True,
             "entries": history,
@@ -308,31 +333,32 @@ def _get_mood_history(session_id: str, args: dict) -> Dict[str, Any]:
 # TOOL RESULT FORMATTING
 # ============================================================================
 
+
 def format_tool_result_for_response(tool_name: str, result: Dict[str, Any]) -> str:
     """
     Format tool result into natural language for Luna's response.
     """
     if not result.get("success"):
         return ""  # Don't mention failed tools
-    
+
     if tool_name == "log_mood":
         logged = result.get("logged", {})
         return f"I've noted that you're feeling {logged.get('emotion', 'this way')}."
-    
+
     elif tool_name == "get_breathing_exercise":
         exercise = result.get("exercise", {})
         name = exercise.get("name", "breathing exercise")
         return f"Let me guide you through {name}."
-    
+
     elif tool_name == "get_grounding_exercise":
         exercise = result.get("exercise", {})
         name = exercise.get("name", "a grounding exercise")
         return f"Let's try {name} together."
-    
+
     elif tool_name == "get_journal_prompt":
         prompt = result.get("prompt", "")
         return f"Here's something to reflect on: {prompt}"
-    
+
     elif tool_name == "get_mood_history":
         count = result.get("count", 0)
         avg = result.get("average")
@@ -340,5 +366,5 @@ def format_tool_result_for_response(tool_name: str, result: Dict[str, Any]) -> s
             return "I don't have any mood logs from you yet."
         trend = result.get("trend", "stable")
         return f"Looking at your {count} recent check-ins, you've been averaging {avg}/5. Your trend looks {trend}."
-    
+
     return ""

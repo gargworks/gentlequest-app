@@ -1253,21 +1253,39 @@ def _register_routes(app: Flask) -> None:
             country = get_country_from_request(request)
 
             # Process message with AI provider
-            ai_response, risk_level = _process_chat_message(user_message, session_id)
+            ai_response, risk_level, tool_calls = _process_chat_message(
+                user_message, session_id
+            )
 
             # Get geography-specific crisis data
             crisis_data = get_crisis_response_and_resources(risk_level, country)
 
-            return (
-                jsonify(
-                    {
-                        "response": ai_response,
-                        "risk_level": risk_level,
-                        "session_id": session_id,
-                        "crisis_msg": crisis_data["crisis_msg"],
-                        "crisis_numbers": crisis_data["crisis_numbers"],
+            # Extract exercise data from tool calls (if any)
+            exercise_data = {}
+            for tc in tool_calls:
+                result = tc.get("result", {})
+                if result.get("interactive") and result.get("exercise_type"):
+                    exercise_data = {
+                        "interactive": True,
+                        "exercise_type": result.get("exercise_type"),
+                        "exercise": result.get("exercise"),
                     }
-                ),
+                    break  # Only include first exercise
+
+            response_data = {
+                "response": ai_response,
+                "risk_level": risk_level,
+                "session_id": session_id,
+                "crisis_msg": crisis_data["crisis_msg"],
+                "crisis_numbers": crisis_data["crisis_numbers"],
+            }
+
+            # Merge exercise data if present
+            if exercise_data:
+                response_data.update(exercise_data)
+
+            return (
+                jsonify(response_data),
                 200,
             )
 
@@ -2137,10 +2155,13 @@ def _get_or_create_session() -> str:
     return session_id
 
 
-def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
+def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List[Dict]]:
     """Process chat message with AI provider and crisis detection.
 
     When using Gemini, this enables function calling for wellness tools.
+
+    Returns:
+        Tuple of (ai_response, risk_level, tool_calls)
     """
     try:
         # Detect crisis level FIRST
@@ -2190,7 +2211,7 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
         except Exception:
             pass  # Non-critical, continue if memory fails
 
-        return ai_response, risk_level
+        return ai_response, risk_level, tool_calls
 
     except Exception as e:
         # Use current_app for logging in request context
@@ -2200,6 +2221,7 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str]:
         return (
             "I'm having trouble processing your message right now. Please try again.",
             "low",
+            [],
         )
 
 
