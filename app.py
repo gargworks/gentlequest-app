@@ -2184,6 +2184,47 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
             ai_response, tool_calls = get_gemini_response_with_tools(
                 message, session_id, risk_level
             )
+            
+            # KEYWORD FALLBACK: If Gemini didn't call function but should have
+            # This ensures wellness interventions ALWAYS trigger when needed
+            if not tool_calls:
+                msg_lower = message.lower()
+                
+                # Detect wellness issues
+                issue = None
+                intensity = "moderate"  # Default
+                
+                # Check for severity indicators
+                if any(word in msg_lower for word in ["very", "really", "so", "extremely", "severe"]):
+                    intensity = "severe"
+                elif any(word in msg_lower for word in ["little", "bit", "slightly", "mild"]):
+                    intensity = "mild"
+                
+                # Detect issue type
+                if any(word in msg_lower for word in ["anxious", "anxiety", "nervous", "worried", "panic"]):
+                    issue = "anxiety"
+                elif any(word in msg_lower for word in ["stressed", "stress", "overwhelmed", "pressure"]):
+                    issue = "stress"  
+                elif any(word in msg_lower for word in ["sad", "depressed", "down", "lonely", "hopeless"]):
+                    issue = "sadness"
+                elif any(word in msg_lower for word in ["tired", "exhausted", "sleep", "insomnia", "can't sleep"]):
+                    issue = "sleep"
+                
+                # If we detected an issue, manually inject the tool call
+                if issue:
+                    from providers.agent_tools import execute_tool
+                    from flask import current_app as app # Import app for logging
+                    result = execute_tool(
+                        "get_wellness_intervention",
+                        {"issue": issue, "intensity": intensity},
+                        session_id
+                    )
+                    tool_calls = [{
+                        "name": "get_wellness_intervention",
+                        "args": {"issue": issue, "intensity": intensity},
+                        "result": result
+                    }]
+                    app.logger.info(f"💡 Keyword fallback triggered: {issue}/{intensity}")
         else:
             # Regular response with failover
             ai_response, _used_provider = _get_ai_response_with_failover(
