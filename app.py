@@ -1302,6 +1302,8 @@ def _register_routes(app: Flask) -> None:
                         "interactive": True,
                         "exercise_type": ex_type,  # Normalize to exercise_type for Flutter
                         "exercise": result.get("exercise"),
+                        "offer_stage": result.get("offer_stage", 1),  # Include stage for debugging
+                        "function_call_source": tc.get("source", "gemini"),  # Track if Gemini or fallback
                     }
                     break  # Only include first exercise
 
@@ -2271,7 +2273,8 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
                     tool_calls = [{
                         "name": "get_wellness_intervention",
                         "args": {"issue": issue, "intensity": intensity},
-                        "result": result
+                        "result": result,
+                        "source": "keyword_fallback"  # Track that this was fallback, not Gemini
                     }]
                     app.logger.info(f"💡 Keyword fallback triggered: {issue}/{intensity}")
         else:
