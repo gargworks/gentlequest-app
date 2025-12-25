@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
+import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
 
 class ChatProvider extends ChangeNotifier {
@@ -169,6 +170,7 @@ class ChatProvider extends ChangeNotifier {
         RiskLevel metaRisk = RiskLevel.none;
         String? metaCrisisMsg;
         List<Map<String, dynamic>>? metaCrisisNumbers;
+        InteractiveExercise? metaExercise;
         final sub = handle.stream.listen(
           (event) async {
             final type = event['type'] as String?;
@@ -178,6 +180,24 @@ class ChatProvider extends ChangeNotifier {
               metaCrisisMsg = event['crisis_msg'] as String?;
               metaCrisisNumbers = (event['crisis_numbers'] as List?)
                   ?.cast<Map<String, dynamic>>();
+              
+              // Parse exercise data from meta event
+              if (event['interactive'] == true && event['exercise'] != null) {
+                try {
+                  metaExercise = InteractiveExercise.fromJson({
+                    'type': event['exercise_type'],
+                    ...(event['exercise'] as Map<String, dynamic>),
+                  });
+                  if (kDebugMode) {
+                    debugPrint('🧩 [SSE meta] Parsed exercise: ${metaExercise?.name}');
+                  }
+                } catch (e) {
+                  if (kDebugMode) {
+                    debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
+                  }
+                }
+              }
+              
               if (kDebugMode) {
                 debugPrint(
                   '🟡 [SSE meta] risk=${event['risk_level']}, crisis_msg=${metaCrisisMsg?.substring(0, metaCrisisMsg!.length.clamp(0, 120))}',
@@ -199,6 +219,7 @@ class ChatProvider extends ChangeNotifier {
                     riskLevel: metaRisk,
                     crisisMsg: metaCrisisMsg,
                     crisisNumbers: metaCrisisNumbers,
+                    exercise: metaExercise, // ✅ Add exercise widget
                   );
                   _messages[idx] = replaced;
                   streaming = replaced; // update reference
@@ -216,6 +237,7 @@ class ChatProvider extends ChangeNotifier {
                   riskLevel: metaRisk,
                   crisisMsg: metaCrisisMsg,
                   crisisNumbers: metaCrisisNumbers,
+                  exercise: metaExercise, // ✅ Add exercise widget
                 );
                 _messages.add(streaming!);
               }

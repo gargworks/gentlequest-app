@@ -1316,13 +1316,27 @@ def _register_routes(app: Flask) -> None:
             risk_level = detect_crisis_level(message)
             crisis_data = get_crisis_response_and_resources(risk_level, country)
 
-            # Generate full AI response with failover chain
-            full_text, _used_provider = _get_ai_response_with_failover(
-                message, session_id, risk_level
+            # Generate AI response with tool support (function calling)
+            full_text, actual_risk, tool_calls = _process_chat_message(
+                message, session_id
             )
+            # Use detected risk level from the response if available
+            if actual_risk:
+                risk_level = actual_risk
 
-            # Log conversation (non-streaming DB log)
-            _log_conversation(session_id, message, full_text, risk_level)
+            # Extract exercise data from tool calls (if any)
+            exercise_data = {}
+            for tc in tool_calls:
+                result = tc.get("result", {})
+                # Handle both intervention_type and exercise_type
+                ex_type = result.get("intervention_type") or result.get("exercise_type")
+                if result.get("interactive") and ex_type:
+                    exercise_data = {
+                        "interactive": True,
+                        "exercise_type": ex_type,
+                        "exercise": result.get("exercise"),
+                    }
+                    break
 
             def stream_generator():
                 import time
@@ -1332,16 +1346,18 @@ def _register_routes(app: Flask) -> None:
                     data = _json.dumps(obj, ensure_ascii=False)
                     return f"data: {data}\n\n"
 
-                # Send initial metadata (risk/crisis info and session)
-                yield sse(
-                    {
-                        "type": "meta",
-                        "session_id": session_id,
-                        "risk_level": risk_level,
-                        "crisis_msg": crisis_data.get("crisis_msg"),
-                        "crisis_numbers": crisis_data.get("crisis_numbers", []),
-                    }
-                )
+                # Send initial metadata (risk/crisis info, session, and exercise data)
+                meta_event = {
+                    "type": "meta",
+                    "session_id": session_id,
+                    "risk_level": risk_level,
+                    "crisis_msg": crisis_data.get("crisis_msg"),
+                    "crisis_numbers": crisis_data.get("crisis_numbers", []),
+                }
+                # Include exercise data in meta if present
+                if exercise_data:
+                    meta_event.update(exercise_data)
+                yield sse(meta_event)
 
                 # Chunk the AI response for progressive reveal
                 text = full_text or ""
