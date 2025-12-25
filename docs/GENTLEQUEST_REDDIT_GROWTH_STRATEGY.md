@@ -13,6 +13,8 @@
 - Max 2 posts/week total across all subs until you have consistent approvals + non-flagged history.
 - Never post the same angle twice in the same sub within 30 days.
 
+**⚠️ Before any Reddit action:** Check subreddit sidebar + pinned rules. If promotion rules are unclear or restrictive → comment-only that day.
+
 ---
 
 ## Revo instructions
@@ -31,16 +33,16 @@ When Revo is asked to “do Reddit,” it should:
 Create and maintain a shortlist of 6–8 subs split across the 3 buckets below.
 
 **Problem-first subs:**
-- 
-- 
+- r/Anxiety — Safe topics: overwhelmed days, night anxiety, anxiety and relationships/work, “nothing sticks,” scared to get help.
+- [TBD]
 
 **Habit / self-improvement subs:**
-- 
-- 
+- r/Habits — https://www.reddit.com/r/Habits/ — Safe topics: can’t stick to habits, habit stacking, tiny habits, tracking, motivation vs systems.
+- r/productivity — https://www.reddit.com/r/productivity/ — Safe topics: decision fatigue, overwhelmed by tasks, procrastination, energy management, ADHD productivity.
 
 **Builder / indie subs:**
-- 
-- 
+- r/indiehackers — https://www.reddit.com/r/indiehackers/ — Safe topics: feedback on UX copy, privacy language, crisis wording, build-in-public lessons, user research.
+- r/AppIdeas — https://www.reddit.com/r/AppIdeas/ — Safe topics: mental health app concepts, AI wellness tools, privacy-first apps, user onboarding.
 
 For each subreddit add (as you decide): posting rules summary, link policy, best-performing post formats, and “safe topics.”
 
@@ -104,3 +106,34 @@ Template:
 **Builder / indie subs:**
 - r/indiehackers — https://www.reddit.com/r/indiehackers/
 - r/AppIdeas — https://www.reddit.com/r/AppIdeas/
+
+---
+
+### 2025-12-25
+- **Subs engaged:** r/Anxiety (or r/productivity - fill in which one)
+- **Actions:**
+  - Comments: 2–3 (paste thread URLs here after posting)
+  - Posts: None  
+  - DMs: 0
+- **Outcome:**
+  - Replies / feedback highlights: [Check back in 24h]
+  - Removals / warnings: None so far
+- **Product learnings:** [Fill tomorrow after reading replies]
+- **Next action (Fri, Dec 26):** 2 more comments OR 1 value-first post draft if comments go well
+
+---
+
+## 7-Day Execution Tracker
+
+| Day | Subreddit | Comments Posted | Outcome (Replies/Removals) | Product Learning |
+|-----|-----------|-----------------|----------------------------|------------------|
+| 21 Dec | r/Anxiety | 1 | [Check tomorrow] | [Fill later] |
+| 25 Dec | r/Anxiety / r/productivity | 2–3 (planned) | [Check in 24h] | [Fill tomorrow] |
+| 26 Dec | TBD | 2–3 (planned) | TBD | TBD |
+| 27 Dec | TBD | 2–3 (planned) | TBD | TBD |
+| 28 Dec | TBD | 2–3 (planned) | TBD | TBD |
+| 29 Dec | TBD | 2–3 (planned) | TBD | TBD |
+| 30 Dec | TBD | 2–3 (planned) | TBD | TBD |
+
+**Milestone:** After 10+ comments with positive outcomes, unlock 1 low-key app mention (disclosed, feedback-framed) in a clearly rule-allowing builder sub only.
+

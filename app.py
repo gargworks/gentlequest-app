@@ -8,14 +8,12 @@ import socket
 import re
 import logging
 import json
-import html
-import random
 import redis
 import requests
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, List, Any, Tuple
+from typing import Dict, List, Any, Tuple
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from flask import (
     Flask,
@@ -23,31 +21,31 @@ from flask import (
     jsonify,
     send_from_directory,
     g,
-    session,
     Response,
     current_app,
 )
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from sqlalchemy import text, func
+from sqlalchemy import text
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Import after environment setup
-from providers.gemini import get_gemini_response
-from providers.perplexity import get_perplexity_response
-from providers.openai import get_openai_response
 from models import (
     db,
     UserSession,
     Message,
     ConversationLog,
     CrisisEvent,
+    MoodEntry,
+    AnalyticsEvent,
+    CommunityPost,
+    CommunityComment,
+    User,
     SelfAssessmentEntry,
 )
 from crisis_detection import detect_crisis_level
@@ -55,7 +53,7 @@ from community import register_community_routes
 
 # Import enterprise integration
 try:
-    from integrations import integrate_with_app, process_chat_with_enterprise
+    from integrations import integrate_with_app
 
     ENTERPRISE_FEATURES = True
 except ImportError as e:
@@ -566,7 +564,6 @@ def create_app() -> Flask:
 
     # Register routes
     _register_routes(app)
-    _register_additional_routes(app)
     # Register Community (Phase 0) routes
     try:
         register_community_routes(app)
@@ -1103,69 +1100,6 @@ def _register_routes(app: Flask) -> None:
         ):
             return send_from_directory(app.static_folder, "index.html")
         else:
-            return _get_fallback_html(app)
-
-    @app.route("/privacy", methods=["GET"])
-    @app.route("/privacy/", methods=["GET"])
-    def privacy_policy():
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        policy_path = os.path.join(
-            base_dir, "ai_buddy_web", "assets", "legal", "privacy.md"
-        )
-        policy_text = ""
-        try:
-            with open(policy_path, "r", encoding="utf-8") as f:
-                policy_text = f.read()
-        except Exception:
-            policy_text = "# Privacy Policy\n\nPrivacy policy is temporarily unavailable.\n"
-
-        escaped = html.escape(policy_text)
-        page = f"""<!doctype html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"utf-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-  <title>Privacy Policy – GentleQuest</title>
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #ffffff; color: #111827; }}
-    .container {{ max-width: 900px; margin: 0 auto; padding: 24px; }}
-    h1 {{ font-size: 28px; margin: 0 0 16px; }}
-    pre {{ white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; }}
-  </style>
-</head>
-<body>
-  <div class=\"container\">
-    <h1>Privacy Policy</h1>
-    <pre>{escaped}</pre>
-  </div>
-</body>
-</html>
-"""
-        return Response(page, content_type="text/html; charset=utf-8")
-
-    @app.route("/.well-known/assetlinks.json")
-    @app.limiter.exempt
-    def assetlinks():
-        """Serve Android App Links verification file"""
-        try:
-            return send_from_directory(os.path.join(os.path.dirname(__file__), '.well-known'), 'assetlinks.json', mimetype='application/json')
-        except FileNotFoundError:
-            return jsonify({"error": "Asset links file not found"}), 404
-
-    @app.route("/<path:filename>")
-    def serve_static(filename):
-        """Serve static files for Flutter web app"""
-        # Handle .well-known paths specially
-        if filename.startswith('.well-known/'):
-            if filename == '.well-known/assetlinks.json':
-                try:
-                    return send_from_directory(os.path.join(os.path.dirname(__file__), '.well-known'), 'assetlinks.json', mimetype='application/json')
-                except FileNotFoundError:
-                    return jsonify({"error": "Asset links file not found"}), 404
-        
-        if os.path.exists(os.path.join(app.static_folder, filename)):
-            return send_from_directory(app.static_folder, filename)
-        else:
             # Fallback to index.html for SPA routing
             return send_from_directory(app.static_folder, "index.html")
 
@@ -1307,84 +1241,463 @@ def _register_routes(app: Flask) -> None:
             app.logger.error(f"Chat endpoint error: {e}")
             return jsonify({"error": "Internal server error"}), 500
 
-    # Additional routes...
-    # _register_additional_routes(app)  # Removed duplicate call
-
-    def _purge_old_data_inner():
-        """Delete old records based on retention policy. Returns counts by table."""
-        now = datetime.utcnow()
-        counts = {}
+    @app.route("/api/chat_stream", methods=["GET"])
+    def chat_stream():
+        """Server-Sent Events (SSE) streaming endpoint for chat responses.
+        Accepts query params: message (required), country (optional), session_id (optional)
+        Streams JSON objects with a 'type' field: 'meta', 'token', 'done', 'error'.
+        """
         try:
-            msg_days = int(app.config.get("MESSAGE_RETENTION_DAYS", 30))
-            sess_days = int(app.config.get("SESSION_RETENTION_DAYS", 14))
-            analytics_days = int(app.config.get("ANALYTICS_RETENTION_DAYS", 90))
-            cutoff_msgs = now - timedelta(days=msg_days)
-            cutoff_sess = now - timedelta(days=sess_days)
-            cutoff_analytics = now - timedelta(days=analytics_days)
+            message = (request.args.get("message") or "").strip()
+            if not message:
+                return jsonify({"error": "Message is required"}), 400
 
-            # Messages
-            counts["messages_deleted"] = (
-                db.session.query(Message)
-                .filter(Message.timestamp < cutoff_msgs)
-                .delete(synchronize_session=False)
-            )
-            # Conversation logs
-            counts["conversation_logs_deleted"] = (
-                db.session.query(ConversationLog)
-                .filter(ConversationLog.timestamp < cutoff_msgs)
-                .delete(synchronize_session=False)
-            )
-            # Crisis events
-            counts["crisis_events_deleted"] = (
-                db.session.query(CrisisEvent)
-                .filter(CrisisEvent.timestamp < cutoff_msgs)
-                .delete(synchronize_session=False)
-            )
-            # Self assessments (optional: align with message retention)
-            counts["self_assessments_deleted"] = (
-                db.session.query(SelfAssessmentEntry)
-                .filter(SelfAssessmentEntry.timestamp < cutoff_msgs)
-                .delete(synchronize_session=False)
-            )
-            # Sessions inactive beyond retention
-            counts["sessions_deleted"] = (
-                db.session.query(UserSession)
-                .filter(UserSession.last_active < cutoff_sess)
-                .delete(synchronize_session=False)
+            # Session handling: prefer provided session_id (from web EventSource cannot set headers)
+            session_id = request.args.get("session_id") or _get_or_create_session()
+
+            # Country for geo-specific crisis resources
+            country = request.args.get("country") or "generic"
+
+            # Crisis detection first
+            risk_level = detect_crisis_level(message)
+            crisis_data = get_crisis_response_and_resources(risk_level, country)
+
+            # Generate full AI response with failover chain
+            full_text, _used_provider = _get_ai_response_with_failover(
+                message, session_id, risk_level
             )
 
-            # Legacy/raw tables (best-effort). Ignore if not present.
-            try:
-                res = db.session.execute(
-                    text("DELETE FROM chat_messages WHERE timestamp < :cutoff"),
-                    {"cutoff": cutoff_msgs},
-                )
-                counts["chat_messages_deleted"] = getattr(res, "rowcount", None)
-            except Exception as _:
-                pass
-            try:
-                res = db.session.execute(
-                    text("DELETE FROM user_sessions WHERE last_active < :cutoff"),
-                    {"cutoff": cutoff_sess},
-                )
-                counts["legacy_sessions_deleted"] = getattr(res, "rowcount", None)
-            except Exception as _:
-                pass
-            try:
-                res = db.session.execute(
-                    text("DELETE FROM analytics_events WHERE timestamp < :cutoff"),
-                    {"cutoff": cutoff_analytics},
-                )
-                counts["analytics_events_deleted"] = getattr(res, "rowcount", None)
-            except Exception as _:
-                pass
+            # Log conversation (non-streaming DB log)
+            _log_conversation(session_id, message, full_text, risk_level)
 
-            db.session.commit()
-            return counts
+            def stream_generator():
+                import time
+                import json as _json
+
+                def sse(obj: dict):
+                    data = _json.dumps(obj, ensure_ascii=False)
+                    return f"data: {data}\n\n"
+
+                # Send initial metadata (risk/crisis info and session)
+                yield sse(
+                    {
+                        "type": "meta",
+                        "session_id": session_id,
+                        "risk_level": risk_level,
+                        "crisis_msg": crisis_data.get("crisis_msg"),
+                        "crisis_numbers": crisis_data.get("crisis_numbers", []),
+                    }
+                )
+
+                # Chunk the AI response for progressive reveal
+                text = full_text or ""
+                # Prefer newline splits, then sentence-ish (preserving spaces), then words
+                chunks: List[str]
+                joiner = ""
+                if "\n" in text:
+                    chunks = text.split("\n")
+                    joiner = "\n"
+                else:
+                    import re as _re
+
+                    parts = [p for p in _re.split(r"(?<=[.!?])\s+", text) if p]
+                    if len(parts) <= 1:
+                        chunks = text.split(" ")
+                    else:
+                        # Re-attach a single space that was consumed by the split for all but the last part.
+                        chunks = [
+                            p + (" " if i < len(parts) - 1 else "")
+                            for i, p in enumerate(parts)
+                        ]
+
+                for idx, ch in enumerate(chunks):
+                    yield sse(
+                        {
+                            "type": "token",
+                            "text": (joiner + ch) if (idx > 0 and joiner) else ch,
+                        }
+                    )
+                    # Small human-like pacing
+                    delay_ms = max(60, min(220, int(len(ch.strip()) * 12)))
+                    time.sleep(delay_ms / 1000.0)
+
+                # Done signal
+                yield sse({"type": "done"})
+
+            headers = {
+                "Cache-Control": "no-cache",
+                "Content-Type": "text/event-stream",
+                "Connection": "keep-alive",
+            }
+            return Response(stream_generator(), headers=headers)
+
         except Exception as e:
+            # Use app logger in request context
+            from flask import current_app
+
+            current_app.logger.error(f"Chat stream error: {e}")
+            # Fallback JSON error (non-SSE)
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/api/get_or_create_session", methods=["GET"])
+    def get_or_create_session_endpoint():
+        """Get or create user session"""
+        session_id = _get_or_create_session()
+        return jsonify({"session_id": session_id})
+
+    @app.route("/api/chat_history", methods=["GET"])
+    @app.limiter.limit("120 per minute")
+    def get_chat_history():
+        """Get chat history for the current session"""
+        try:
+            session_id = request.headers.get("X-Session-ID")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+
+            # Get chat messages from database
+            messages = db.session.execute(
+                text(
+                    """
+                    SELECT content, is_user, timestamp 
+                    FROM chat_messages 
+                    WHERE session_id = :session_id 
+                    ORDER BY timestamp ASC 
+                    LIMIT 50
+                """
+                ),
+                {"session_id": session_id},
+            ).fetchall()
+
+            chat_history = []
+            for message in messages:
+                chat_history.append(
+                    {
+                        "content": message.content,
+                        "is_user": message.is_user,
+                        "timestamp": (
+                            message.timestamp.isoformat() if message.timestamp else None
+                        ),
+                    }
+                )
+
+            return jsonify(chat_history)
+
+        except Exception as e:
+            app.logger.error(f"Error getting chat history: {e}")
+            return jsonify({"error": "Failed to get chat history"}), 500
+
+    @app.route("/api/mood_history", methods=["GET"])
+    @app.limiter.limit("120 per minute")
+    def get_mood_history():
+        """Get mood history for the current session"""
+        try:
+            session_id = request.headers.get("X-Session-ID")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+
+            # Get mood entries from database
+            entries = db.session.execute(
+                text(
+                    """
+                    SELECT mood_level, note, timestamp 
+                    FROM mood_entries 
+                    WHERE session_id = :session_id 
+                    ORDER BY timestamp DESC 
+                    LIMIT 50
+                """
+                ),
+                {"session_id": session_id},
+            ).fetchall()
+
+            mood_history = []
+            for entry in entries:
+                mood_history.append(
+                    {
+                        "mood_level": entry.mood_level,
+                        "note": _sanitize_note(entry.note),
+                        "timestamp": (
+                            entry.timestamp.isoformat() if entry.timestamp else None
+                        ),
+                    }
+                )
+
+            return jsonify(mood_history)
+
+        except Exception as e:
+            app.logger.error(f"Error getting mood history: {e}")
+            return jsonify({"error": "Failed to get mood history"}), 500
+
+    def _sanitize_note(note: str) -> str:
+        """Basic XSS mitigation for free-text notes.
+
+        This is intentionally conservative and focused on stripping raw
+        script tags while preserving most of the user's text.
+        """
+        try:
+            if not note:
+                return note
+            # Neutralize opening/closing script tags
+            return note.replace("<script", "&lt;script").replace(
+                "</script", "&lt;/script"
+            )
+        except Exception:
+            # On any unexpected issue, return the original note rather than failing
+            return note
+
+    @app.route("/api/mood_entry", methods=["POST"])
+    @app.limiter.limit("120 per minute")
+    def add_mood_entry():
+        """Add a new mood entry"""
+        try:
+            # Ensure session exists in DB (also syncs legacy 'sessions' table)
+            session_id = _get_or_create_session()
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+
+            mood_level = data.get("mood_level")
+            note_raw = data.get("note", "")
+            timestamp = data.get("timestamp")
+
+            if (
+                not mood_level
+                or not isinstance(mood_level, int)
+                or mood_level < 1
+                or mood_level > 5
+            ):
+                return jsonify({"error": "Invalid mood level (1-5 required)"}), 400
+
+            # Parse timestamp if provided, otherwise use current time
+            if timestamp:
+                try:
+                    entry_timestamp = datetime.fromisoformat(
+                        timestamp.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    entry_timestamp = datetime.utcnow()
+            else:
+                entry_timestamp = datetime.utcnow()
+
+            # Sanitize note to mitigate basic XSS vectors (e.g., raw <script> tags)
+            note = _sanitize_note(note_raw)
+
+            # Insert mood entry into database
+            db.session.execute(
+                text(
+                    """
+                    INSERT INTO mood_entries (session_id, mood_level, note, timestamp)
+                    VALUES (:session_id, :mood_level, :note, :timestamp)
+                """
+                ),
+                {
+                    "session_id": session_id,
+                    "mood_level": mood_level,
+                    "note": note,
+                    "timestamp": entry_timestamp,
+                },
+            )
+            db.session.commit()
+
+            return jsonify(
+                {
+                    "message": "Mood entry added successfully",
+                    "mood_level": mood_level,
+                    "note": note,
+                    "timestamp": entry_timestamp.isoformat(),
+                }
+            )
+
+        except Exception as e:
+            app.logger.error(f"Error adding mood entry: {e}")
             db.session.rollback()
-            app.logger.error(f"Purge error: {e}")
-            raise
+            return jsonify({"error": "Failed to add mood entry"}), 500
+
+    @app.route("/api/mood_pulse", methods=["GET"])
+    @app.limiter.limit("60 per minute")
+    def mood_pulse():
+        """Get anonymous aggregate mood stats for today - 'You Are Not Alone' feature"""
+        try:
+            # Get today's start in UTC
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Count mood entries by level for today (across ALL users, anonymous)
+            result = db.session.execute(
+                text("""
+                    SELECT mood_level, COUNT(*) as count
+                    FROM mood_entries
+                    WHERE timestamp >= :today_start
+                    GROUP BY mood_level
+                """),
+                {"today_start": today_start}
+            ).fetchall()
+            
+            # Build distribution
+            distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            total = 0
+            for row in result:
+                level = row.mood_level
+                count = row.count
+                if 1 <= level <= 5:
+                    distribution[level] = count
+                    total += count
+            
+            # Calculate percentages
+            percentages = {}
+            for level in range(1, 6):
+                if total > 0:
+                    percentages[level] = round((distribution[level] / total) * 100)
+                else:
+                    percentages[level] = 0
+            
+            # Friendly messages based on mood level
+            solidarity_messages = {
+                1: "You're not alone. Others are having a tough day too.",
+                2: "Many people feel this way sometimes. You're not alone.",
+                3: "Lots of us are feeling okay today. You're in good company.",
+                4: "Others are feeling good too! The positive energy is spreading.",
+                5: "You're part of the happiness today! Keep shining.",
+            }
+            
+            return jsonify({
+                "total_checkins_today": total,
+                "distribution": distribution,
+                "percentages": percentages,
+                "solidarity_messages": solidarity_messages,
+            })
+            
+        except Exception as e:
+            app.logger.error(f"Mood pulse error: {e}")
+            return jsonify({"error": "Failed to get mood pulse"}), 500
+
+    @app.route("/api/crisis_detection", methods=["POST"])
+    @app.limiter.limit("10 per minute")
+    def crisis_detection():
+        """Enhanced crisis detection with immediate response"""
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+
+            message = data.get("message", "")
+            session_id = request.headers.get("X-Session-ID")
+
+            if not message:
+                return jsonify({"error": "Message required"}), 400
+
+            # Enhanced crisis detection
+            risk_level, risk_score, keywords = _enhanced_crisis_detection(message)
+
+            # Immediate response based on risk level
+            response = _get_crisis_response(risk_level, risk_score)
+
+            # Log crisis detection
+            _log_crisis_detection(session_id, message, risk_level, risk_score, keywords)
+
+            return jsonify(
+                {
+                    "risk_level": risk_level,
+                    "risk_score": risk_score,
+                    "keywords": keywords,
+                    "response": response,
+                    "immediate_action_required": risk_level in ["high", "crisis"],
+                    "resources": _get_crisis_resources(risk_level),
+                }
+            )
+
+        except Exception as e:
+            app.logger.error(f"Crisis detection error: {e}")
+            return jsonify({"error": "Failed to process crisis detection"}), 500
+
+    @app.route("/api/mood_analytics", methods=["GET"])
+    @app.limiter.limit("30 per minute")
+    def mood_analytics():
+        """Get mood analytics and trends"""
+        try:
+            session_id = request.headers.get("X-Session-ID")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 400
+
+            # Get mood entries from database
+            entries = db.session.execute(
+                text(
+                    """
+                    SELECT mood_level, note, timestamp 
+                    FROM mood_entries 
+                    WHERE session_id = :session_id 
+                    ORDER BY timestamp DESC 
+                    LIMIT 100
+                """
+                ),
+                {"session_id": session_id},
+            ).fetchall()
+
+            if not entries:
+                return jsonify(
+                    {
+                        "message": "No mood data available",
+                        "analytics": {
+                            "average_mood": 0,
+                            "mood_trend": "stable",
+                            "total_entries": 0,
+                            "weekly_average": 0,
+                            "mood_distribution": {},
+                        },
+                    }
+                )
+
+            # Calculate analytics
+            mood_levels = [entry.mood_level for entry in entries]
+
+            # Mood trend calculation
+            recent_moods = mood_levels[:7] if len(mood_levels) >= 7 else mood_levels
+            older_moods = mood_levels[7:14] if len(mood_levels) >= 14 else []
+
+            if older_moods:
+                recent_avg = sum(recent_moods) / len(recent_moods)
+                older_avg = sum(older_moods) / len(older_moods)
+                if recent_avg > older_avg + 0.5:
+                    trend = "improving"
+                elif recent_avg < older_avg - 0.5:
+                    trend = "declining"
+                else:
+                    trend = "stable"
+            else:
+                trend = "stable"
+
+            # Mood distribution
+            mood_distribution = {}
+            for level in range(1, 6):
+                count = mood_levels.count(level)
+                mood_distribution[f"level_{level}"] = count
+
+            # Weekly average
+            week_ago = datetime.utcnow() - timedelta(days=7)
+            weekly_entries = [entry for entry in entries if entry.timestamp >= week_ago]
+            weekly_average = (
+                sum(entry.mood_level for entry in weekly_entries) / len(weekly_entries)
+                if weekly_entries
+                else 0
+            )
+
+            return jsonify(
+                {
+                    "analytics": {
+                        "average_mood": round(sum(mood_levels) / len(mood_levels), 2),
+                        "mood_trend": trend,
+                        "total_entries": len(entries),
+                        "weekly_average": round(weekly_average, 2),
+                        "mood_distribution": mood_distribution,
+                        "recent_entries": len(recent_moods),
+                    }
+                }
+            )
+
+        except Exception as e:
+            app.logger.error(f"Mood analytics error: {e}")
+            return jsonify({"error": "Failed to get mood analytics"}), 500
 
     @app.route("/api/analytics/log", methods=["POST"])
     @app.limiter.limit("120 per minute")
@@ -1396,10 +1709,10 @@ def _register_routes(app: Flask) -> None:
         - Associates events to a session and request_id for traceability.
         """
         try:
-            consent = (request.headers.get("X-Analytics-Consent", "") or "").lower()
-            if consent != "true":
-                return jsonify({"skipped": "no consent"}), 202
-
+            # Check consent header
+            if request.headers.get("X-Analytics-Consent") != "true":
+                return jsonify({"ok": True}), 201
+            
             data = request.get_json(silent=True) or {}
             event_type = (data.get("event_type") or "").strip()
             if not event_type or len(event_type) > 64:
@@ -1519,6 +1832,7 @@ def _register_routes(app: Flask) -> None:
             else:
                 result = db.session.execute(sql, params)
                 rows = list(result.mappings())
+            
             for r in rows:
                 meta = r.get("metadata")
                 ts_val = r.get("ts")
@@ -2291,711 +2605,37 @@ def _log_crisis_detection(
         db.session.rollback()
 
 
+def _purge_old_data_inner():
+    """Inner function to purge old data based on retention settings"""
+    counts = {}
+    
+    # Purge old messages
+    message_days = app.config.get("MESSAGE_RETENTION_DAYS", 30)
+    if message_days > 0:
+        cutoff = datetime.utcnow() - timedelta(days=message_days)
+        result = db.session.execute(
+            text("DELETE FROM messages WHERE timestamp < :cutoff"),
+            {"cutoff": cutoff}
+        )
+        counts["messages"] = result.rowcount
+    
+    # Purge old sessions
+    session_days = app.config.get("SESSION_RETENTION_DAYS", 90)
+    if session_days > 0:
+        cutoff = datetime.utcnow() - timedelta(days=session_days)
+        result = db.session.execute(
+            text("DELETE FROM sessions WHERE created_at < :cutoff"),
+            {"cutoff": cutoff}
+        )
+        counts["sessions"] = result.rowcount
+    
+    return counts
+
+
 def _register_additional_routes(app: Flask) -> None:
     """Register additional API routes"""
-
-    @app.route("/api/chat_stream", methods=["GET"])
-    def chat_stream():
-        """Server-Sent Events (SSE) streaming endpoint for chat responses.
-        Accepts query params: message (required), country (optional), session_id (optional)
-        Streams JSON objects with a 'type' field: 'meta', 'token', 'done', 'error'.
-        """
-        try:
-            message = (request.args.get("message") or "").strip()
-            if not message:
-                return jsonify({"error": "Message is required"}), 400
-
-            # Session handling: prefer provided session_id (from web EventSource cannot set headers)
-            session_id = request.args.get("session_id") or _get_or_create_session()
-
-            # Country for geo-specific crisis resources
-            country = request.args.get("country") or "generic"
-
-            # Crisis detection first
-            risk_level = detect_crisis_level(message)
-            crisis_data = get_crisis_response_and_resources(risk_level, country)
-
-            # Generate full AI response with failover chain
-            full_text, _used_provider = _get_ai_response_with_failover(
-                message, session_id, risk_level
-            )
-
-            # Log conversation (non-streaming DB log)
-            _log_conversation(session_id, message, full_text, risk_level)
-
-            def stream_generator():
-                import time
-                import json as _json
-
-                def sse(obj: dict):
-                    data = _json.dumps(obj, ensure_ascii=False)
-                    return f"data: {data}\n\n"
-
-                # Send initial metadata (risk/crisis info and session)
-                yield sse(
-                    {
-                        "type": "meta",
-                        "session_id": session_id,
-                        "risk_level": risk_level,
-                        "crisis_msg": crisis_data.get("crisis_msg"),
-                        "crisis_numbers": crisis_data.get("crisis_numbers", []),
-                    }
-                )
-
-                # Chunk the AI response for progressive reveal
-                text = full_text or ""
-                # Prefer newline splits, then sentence-ish (preserving spaces), then words
-                chunks: List[str]
-                joiner = ""
-                if "\n" in text:
-                    chunks = text.split("\n")
-                    joiner = "\n"
-                else:
-                    import re as _re
-
-                    parts = [p for p in _re.split(r"(?<=[.!?])\s+", text) if p]
-                    if len(parts) <= 1:
-                        chunks = text.split(" ")
-                    else:
-                        # Re-attach a single space that was consumed by the split for all but the last part.
-                        chunks = [
-                            p + (" " if i < len(parts) - 1 else "")
-                            for i, p in enumerate(parts)
-                        ]
-
-                for idx, ch in enumerate(chunks):
-                    yield sse(
-                        {
-                            "type": "token",
-                            "text": (joiner + ch) if (idx > 0 and joiner) else ch,
-                        }
-                    )
-                    # Small human-like pacing
-                    delay_ms = max(60, min(220, int(len(ch.strip()) * 12)))
-                    time.sleep(delay_ms / 1000.0)
-
-                # Done signal
-                yield sse({"type": "done"})
-
-            headers = {
-                "Cache-Control": "no-cache",
-                "Content-Type": "text/event-stream",
-                "Connection": "keep-alive",
-            }
-            return Response(stream_generator(), headers=headers)
-
-        except Exception as e:
-            # Use app logger in request context
-            from flask import current_app
-
-            current_app.logger.error(f"Chat stream error: {e}")
-            # Fallback JSON error (non-SSE)
-            return jsonify({"error": "Internal server error"}), 500
-
-    @app.route("/api/get_or_create_session", methods=["GET"])
-    def get_or_create_session_endpoint():
-        """Get or create user session"""
-        session_id = _get_or_create_session()
-        return jsonify({"session_id": session_id})
-
-    @app.route("/api/chat_history", methods=["GET"])
-    @app.limiter.limit("120 per minute")
-    def get_chat_history():
-        """Get chat history for the current session"""
-        try:
-            session_id = request.headers.get("X-Session-ID")
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            # Get chat messages from database
-            messages = db.session.execute(
-                text(
-                    """
-                    SELECT content, is_user, timestamp 
-                    FROM chat_messages 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp ASC 
-                    LIMIT 50
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
-
-            chat_history = []
-            for message in messages:
-                chat_history.append(
-                    {
-                        "content": message.content,
-                        "is_user": message.is_user,
-                        "timestamp": (
-                            message.timestamp.isoformat() if message.timestamp else None
-                        ),
-                    }
-                )
-
-            return jsonify(chat_history)
-
-        except Exception as e:
-            app.logger.error(f"Error getting chat history: {e}")
-            return jsonify({"error": "Failed to get chat history"}), 500
-
-    @app.route("/api/mood_history", methods=["GET"])
-    @app.limiter.limit("120 per minute")
-    def get_mood_history():
-        """Get mood history for the current session"""
-        try:
-            session_id = request.headers.get("X-Session-ID")
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            # Get mood entries from database
-            entries = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, note, timestamp 
-                    FROM mood_entries 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp DESC 
-                    LIMIT 50
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
-
-            mood_history = []
-            for entry in entries:
-                mood_history.append(
-                    {
-                        "mood_level": entry.mood_level,
-                        "note": _sanitize_note(entry.note),
-                        "timestamp": (
-                            entry.timestamp.isoformat() if entry.timestamp else None
-                        ),
-                    }
-                )
-
-            return jsonify(mood_history)
-
-        except Exception as e:
-            app.logger.error(f"Error getting mood history: {e}")
-            return jsonify({"error": "Failed to get mood history"}), 500
-
-    def _sanitize_note(note: str) -> str:
-        """Basic XSS mitigation for free-text notes.
-
-        This is intentionally conservative and focused on stripping raw
-        script tags while preserving most of the user's text.
-        """
-        try:
-            if not note:
-                return note
-            # Neutralize opening/closing script tags
-            return note.replace("<script", "&lt;script").replace(
-                "</script", "&lt;/script"
-            )
-        except Exception:
-            # On any unexpected issue, return the original note rather than failing
-            return note
-
-    @app.route("/api/mood_entry", methods=["POST"])
-    @app.limiter.limit("120 per minute")
-    def add_mood_entry():
-        """Add a new mood entry"""
-        try:
-            # Ensure session exists in DB (also syncs legacy 'sessions' table)
-            session_id = _get_or_create_session()
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            data = request.get_json()
-            if not data:
-                return jsonify({"error": "No data provided"}), 400
-
-            mood_level = data.get("mood_level")
-            note_raw = data.get("note", "")
-            timestamp = data.get("timestamp")
-
-            if (
-                not mood_level
-                or not isinstance(mood_level, int)
-                or mood_level < 1
-                or mood_level > 5
-            ):
-                return jsonify({"error": "Invalid mood level (1-5 required)"}), 400
-
-            # Parse timestamp if provided, otherwise use current time
-            if timestamp:
-                try:
-                    entry_timestamp = datetime.fromisoformat(
-                        timestamp.replace("Z", "+00:00")
-                    )
-                except ValueError:
-                    entry_timestamp = datetime.utcnow()
-            else:
-                entry_timestamp = datetime.utcnow()
-
-            # Sanitize note to mitigate basic XSS vectors (e.g., raw <script> tags)
-            note = _sanitize_note(note_raw)
-
-            # Sanitize note to mitigate basic XSS vectors (e.g., raw <script> tags)
-            note = _sanitize_note(note_raw)
-
-            # Insert mood entry into database
-            db.session.execute(
-                text(
-                    """
-                    INSERT INTO mood_entries (session_id, mood_level, note, timestamp)
-                    VALUES (:session_id, :mood_level, :note, :timestamp)
-                """
-                ),
-                {
-                    "session_id": session_id,
-                    "mood_level": mood_level,
-                    "note": note,
-                    "timestamp": entry_timestamp,
-                },
-            )
-            db.session.commit()
-
-            return jsonify(
-                {
-                    "message": "Mood entry added successfully",
-                    "mood_level": mood_level,
-                    "note": note,
-                    "timestamp": entry_timestamp.isoformat(),
-                }
-            )
-
-        except Exception as e:
-            app.logger.error(f"Error adding mood entry: {e}")
-            db.session.rollback()
-            return jsonify({"error": "Failed to add mood entry"}), 500
-
-    @app.route("/api/mood_pulse", methods=["GET"])
-    @app.limiter.limit("60 per minute")
-    def mood_pulse():
-        """Get anonymous aggregate mood stats for today - 'You Are Not Alone' feature"""
-        try:
-            # Get today's start in UTC
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            
-            # Count mood entries by level for today (across ALL users, anonymous)
-            result = db.session.execute(
-                text("""
-                    SELECT mood_level, COUNT(*) as count
-                    FROM mood_entries
-                    WHERE timestamp >= :today_start
-                    GROUP BY mood_level
-                """),
-                {"today_start": today_start}
-            ).fetchall()
-            
-            # Build distribution
-            distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-            total = 0
-            for row in result:
-                level = row.mood_level
-                count = row.count
-                if 1 <= level <= 5:
-                    distribution[level] = count
-                    total += count
-            
-            # Calculate percentages
-            percentages = {}
-            for level in range(1, 6):
-                if total > 0:
-                    percentages[level] = round((distribution[level] / total) * 100)
-                else:
-                    percentages[level] = 0
-            
-            # Friendly messages based on mood level
-            solidarity_messages = {
-                1: "You're not alone. Others are having a tough day too.",
-                2: "Many people feel this way sometimes. You're not alone.",
-                3: "Lots of us are feeling okay today. You're in good company.",
-                4: "Others are feeling good too! The positive energy is spreading.",
-                5: "You're part of the happiness today! Keep shining.",
-            }
-            
-            return jsonify({
-                "total_checkins_today": total,
-                "distribution": distribution,
-                "percentages": percentages,
-                "solidarity_messages": solidarity_messages,
-            })
-            
-        except Exception as e:
-            app.logger.error(f"Mood pulse error: {e}")
-            return jsonify({"error": "Failed to get mood pulse"}), 500
-
-    @app.route("/api/crisis_detection", methods=["POST"])
-    @app.limiter.limit("10 per minute")
-    def crisis_detection():
-        """Enhanced crisis detection with immediate response"""
-        try:
-            data = request.get_json()
-            if not data:
-                return jsonify({"error": "No data provided"}), 400
-
-            message = data.get("message", "")
-            session_id = request.headers.get("X-Session-ID")
-
-            if not message:
-                return jsonify({"error": "Message required"}), 400
-
-            # Enhanced crisis detection
-            risk_level, risk_score, keywords = _enhanced_crisis_detection(message)
-
-            # Immediate response based on risk level
-            response = _get_crisis_response(risk_level, risk_score)
-
-            # Log crisis detection
-            _log_crisis_detection(session_id, message, risk_level, risk_score, keywords)
-
-            return jsonify(
-                {
-                    "risk_level": risk_level,
-                    "risk_score": risk_score,
-                    "keywords": keywords,
-                    "response": response,
-                    "immediate_action_required": risk_level in ["high", "crisis"],
-                    "resources": _get_crisis_resources(risk_level),
-                }
-            )
-
-        except Exception as e:
-            app.logger.error(f"Crisis detection error: {e}")
-            return jsonify({"error": "Failed to process crisis detection"}), 500
-
-    @app.route("/api/mood_analytics", methods=["GET"])
-    @app.limiter.limit("30 per minute")
-    def mood_analytics():
-        """Get mood analytics and trends"""
-        try:
-            session_id = request.headers.get("X-Session-ID")
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            # Get mood entries from database
-            entries = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, note, timestamp 
-                    FROM mood_entries 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp DESC 
-                    LIMIT 100
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
-
-            if not entries:
-                return jsonify(
-                    {
-                        "message": "No mood data available",
-                        "analytics": {
-                            "average_mood": 0,
-                            "mood_trend": "stable",
-                            "total_entries": 0,
-                            "weekly_average": 0,
-                            "mood_distribution": {},
-                        },
-                    }
-                )
-
-            # Calculate analytics
-            mood_levels = [entry.mood_level for entry in entries]
-
-            # Mood trend calculation
-            recent_moods = mood_levels[:7] if len(mood_levels) >= 7 else mood_levels
-            older_moods = mood_levels[7:14] if len(mood_levels) >= 14 else []
-
-            if older_moods:
-                recent_avg = sum(recent_moods) / len(recent_moods)
-                older_avg = sum(older_moods) / len(older_moods)
-                if recent_avg > older_avg + 0.5:
-                    trend = "improving"
-                elif recent_avg < older_avg - 0.5:
-                    trend = "declining"
-                else:
-                    trend = "stable"
-            else:
-                trend = "stable"
-
-            # Mood distribution
-            mood_distribution = {}
-            for level in range(1, 6):
-                count = mood_levels.count(level)
-                mood_distribution[f"level_{level}"] = count
-
-            # Weekly average
-            week_ago = datetime.utcnow() - timedelta(days=7)
-            weekly_entries = [entry for entry in entries if entry.timestamp >= week_ago]
-            weekly_average = (
-                sum(entry.mood_level for entry in weekly_entries) / len(weekly_entries)
-                if weekly_entries
-                else 0
-            )
-
-            return jsonify(
-                {
-                    "analytics": {
-                        "average_mood": round(sum(mood_levels) / len(mood_levels), 2),
-                        "mood_trend": trend,
-                        "total_entries": len(entries),
-                        "weekly_average": round(weekly_average, 2),
-                        "mood_distribution": mood_distribution,
-                        "recent_entries": len(recent_moods),
-                    }
-                }
-            )
-
-        except Exception as e:
-            app.logger.error(f"Mood analytics error: {e}")
-            return jsonify({"error": "Failed to get mood analytics"}), 500
-
-    @app.route("/api/wellness_recommendations", methods=["GET"])
-    @app.limiter.limit("30 per minute")
-    def wellness_recommendations():
-        """Get personalized wellness recommendations"""
-        try:
-            session_id = request.headers.get("X-Session-ID")
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            # Get recent mood data
-            recent_entries = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, note, timestamp 
-                    FROM mood_entries 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp DESC 
-                    LIMIT 10
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
-
-            if not recent_entries:
-                return jsonify(
-                    {
-                        "recommendations": _get_default_recommendations(),
-                        "message": "No recent mood data available",
-                    }
-                )
-
-            # Calculate average mood
-            avg_mood = sum(entry.mood_level for entry in recent_entries) / len(
-                recent_entries
-            )
-
-            # Get personalized recommendations
-            recommendations = _get_personalized_recommendations(
-                avg_mood, recent_entries
-            )
-
-            return jsonify(
-                {
-                    "recommendations": recommendations,
-                    "current_mood_average": round(avg_mood, 2),
-                    "analysis": _analyze_mood_pattern(recent_entries),
-                }
-            )
-
-        except Exception as e:
-            app.logger.error(f"Wellness recommendations error: {e}")
-            return jsonify({"error": "Failed to get recommendations"}), 500
-
-    @app.route("/api/metrics", methods=["GET"])
-    def metrics():
-        """Prometheus metrics endpoint"""
-        try:
-            import psutil
-            import time
-
-            metrics = []
-
-            # System metrics
-            cpu_percent = psutil.cpu_percent(interval=1)
-            memory = psutil.virtual_memory()
-            disk = psutil.disk_usage("/")
-
-            # Application metrics
-            current_time = time.time()
-
-            # Database connection health
-            db_health = _check_database_health()
-            redis_health = _check_redis_health()
-
-            # Build metrics in Prometheus format
-            metrics.append(f"# HELP app_cpu_usage CPU usage percentage")
-            metrics.append(f"# TYPE app_cpu_usage gauge")
-            metrics.append(f"app_cpu_usage {cpu_percent}")
-
-            metrics.append(f"# HELP app_memory_usage Memory usage percentage")
-            metrics.append(f"# TYPE app_memory_usage gauge")
-            metrics.append(f"app_memory_usage {memory.percent}")
-
-            metrics.append(f"# HELP app_disk_usage Disk usage percentage")
-            metrics.append(f"# TYPE app_disk_usage gauge")
-            metrics.append(f"app_disk_usage {disk.percent}")
-
-            metrics.append(f"# HELP app_uptime_seconds Application uptime in seconds")
-            metrics.append(f"# TYPE app_uptime_seconds counter")
-            metrics.append(f"app_uptime_seconds {current_time}")
-
-            metrics.append(f"# HELP app_database_health Database health status")
-            metrics.append(f"# TYPE app_database_health gauge")
-            metrics.append(f"app_database_health {1 if 'healthy' in db_health else 0}")
-
-            metrics.append(f"# HELP app_redis_health Redis health status")
-            metrics.append(f"# TYPE app_redis_health gauge")
-            metrics.append(f"app_redis_health {1 if 'healthy' in redis_health else 0}")
-
-            # Request metrics (if available)
-            if hasattr(app, "request_count"):
-                metrics.append(f"# HELP app_requests_total Total number of requests")
-                metrics.append(f"# TYPE app_requests_total counter")
-                metrics.append(f"app_requests_total {app.request_count}")
-
-            return "\n".join(metrics), 200, {"Content-Type": "text/plain"}
-
-        except Exception as e:
-            app.logger.error(f"Metrics collection error: {e}")
-            return f"# ERROR: {str(e)}", 500, {"Content-Type": "text/plain"}
-
-    @app.route("/api/self_assessment", methods=["POST"])
-    def submit_self_assessment():
-        """Handle self-assessment submissions"""
-        if request.method == "GET":
-            return jsonify({"message": "Self-assessment endpoint ready"})
-
-        try:
-            data = request.get_json() or {}
-
-            # Ensure session association
-            session_id = _get_or_create_session()
-            if not session_id:
-                return jsonify({"error": "Session ID required"}), 400
-
-            # Clean and validate data
-            cleaned_data = {}
-            required_fields = ["mood", "energy", "sleep", "stress"]
-
-            for field in required_fields:
-                value = data.get(field)
-                if (
-                    value is None
-                    or value == ""
-                    or str(value).lower() in ["null", "none"]
-                ):
-                    return jsonify({"error": f"Missing required field: {field}"}), 400
-                cleaned_data[field] = value.strip() if isinstance(value, str) else value
-
-            # Optional fields
-            optional_fields = ["notes", "crisis_level", "anxiety_level"]
-            for field in optional_fields:
-                value = data.get(field)
-                if value and value != "" and str(value).lower() not in ["null", "none"]:
-                    cleaned_data[field] = (
-                        value.strip() if isinstance(value, str) else value
-                    )
-
-            # Optional timezone offset in minutes to determine local "day" boundaries
-            try:
-                tz_offset_min = int(data.get("tz_offset_minutes") or 0)
-            except Exception:
-                tz_offset_min = 0
-
-            now_utc = datetime.utcnow()
-            # Compute start of local day and convert back to UTC
-            now_local = now_utc + timedelta(minutes=tz_offset_min)
-            start_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-            start_of_day_utc = start_local - timedelta(minutes=tz_offset_min)
-
-            # Enforce single completion per (local) day
-            existing = (
-                db.session.query(SelfAssessmentEntry)
-                .filter(SelfAssessmentEntry.session_id == session_id)
-                .filter(SelfAssessmentEntry.timestamp >= start_of_day_utc)
-                .first()
-            )
-
-            if existing:
-                app.logger.info(
-                    f"Self-assessment already completed today | session_id={session_id} completed_at={existing.timestamp.isoformat()} tz_offset_min={tz_offset_min}"
-                )
-                return (
-                    jsonify(
-                        {
-                            "success": True,
-                            "already_completed_today": True,
-                            "xp_awarded": 0,
-                            "completed_at": existing.timestamp.isoformat(),
-                        }
-                    ),
-                    200,
-                )
-
-            # Create new entry (authoritative store)
-            entry = SelfAssessmentEntry(
-                session_id=session_id,
-                timestamp=now_utc,
-                assessment_data=cleaned_data,
-            )
-            db.session.add(entry)
-            db.session.commit()
-
-            # Best-effort mirror to legacy table for compatibility (non-fatal on error)
-            try:
-                db.session.execute(
-                    text(
-                        """
-                        INSERT INTO self_assessments (session_id, mood, energy, sleep, stress, social, work, notes, timestamp)
-                        VALUES (:session_id, :mood, :energy, :sleep, :stress, :social, :work, :notes, :timestamp)
-                        """
-                    ),
-                    {
-                        "session_id": session_id,
-                        "mood": cleaned_data.get("mood"),
-                        "energy": cleaned_data.get("energy"),
-                        "sleep": cleaned_data.get("sleep"),
-                        "stress": cleaned_data.get("stress"),
-                        "social": cleaned_data.get("social"),
-                        "work": cleaned_data.get("work"),
-                        "notes": cleaned_data.get("notes"),
-                        "timestamp": now_utc,
-                    },
-                )
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                app.logger.warning(f"Legacy self_assessments mirror skipped: {e}")
-
-            # Award XP once per day for quick check-in (value can be tuned server-side)
-            xp_awarded = 10
-            app.logger.info(
-                f"Self-assessment recorded | session_id={session_id} xp_awarded={xp_awarded} tz_offset_min={tz_offset_min} data_keys={list(cleaned_data.keys())}"
-            )
-
-            return (
-                jsonify(
-                    {
-                        "message": "Assessment recorded",
-                        "success": True,
-                        "already_completed_today": False,
-                        "xp_awarded": xp_awarded,
-                        "completed_at": now_utc.isoformat(),
-                    }
-                ),
-                201,
-            )
-
-        except Exception as e:
-            app.logger.error(f"Self-assessment error: {e}")
-            return jsonify({"error": "Failed to process assessment"}), 500
+    # Removed duplicate call
+    pass
 
 
 # Create the application instance
