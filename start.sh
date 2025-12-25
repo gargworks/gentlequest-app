@@ -50,17 +50,23 @@ else
   done
 fi
 
-REDIS_HOST="redis"
+# Check for Redis
+# Skip wait if REDIS_URL is set (production/Render mode) - app handles connection retry
+if [ -n "${REDIS_URL:-}" ]; then
+  echo "Using external REDIS_URL - skipping local Redis wait"
+else
+  REDIS_HOST="redis"
 
-echo "Waiting for Redis at ${REDIS_HOST}..."
-for i in $(seq 1 60); do
-  if redis-cli -h "${REDIS_HOST}" ping 2>/dev/null | grep -q PONG; then
-    echo "Redis is ready."
-    break
-  fi
-  echo "Redis not ready yet (attempt $i/60)..."
-  sleep 1
-done
+  echo "Waiting for Redis at ${REDIS_HOST}..."
+  for i in $(seq 1 60); do
+    if redis-cli -h "${REDIS_HOST}" ping 2>/dev/null | grep -q PONG; then
+      echo "Redis is ready."
+      break
+    fi
+    echo "Redis not ready yet (attempt $i/60)..."
+    sleep 1
+  done
+fi
 
 # Diagnostics
 which python || true
