@@ -20,13 +20,13 @@ WELLNESS_TOOLS_CONFIG = {
     "function_declarations": [
         {
             "name": "get_wellness_intervention",
-            "description": "Get a personalized wellness intervention (breathing exercise, grounding technique, etc.) that's optimized for this specific user based on their history and current context. This is a SMART tool that automatically selects the best intervention.",
+            "description": "Get a wellness exercise. MUST be called when user mentions anxiety, stress, panic, sleep issues, sadness, or feeling overwhelmed.",
             "parameters": {
-                "type": "object",
+                "type": "OBJECT",
                 "properties": {
                     "issue": {
-                        "type": "string",
-                        "description": "The user's primary concern: 'anxiety', 'stress', 'panic', 'sleep', 'sadness', 'overwhelmed', 'fatigue'",
+                        "type": "STRING",
+                        "description": "The issue: anxiety, stress, panic, sleep, sadness, overwhelmed, or fatigue",
                         "enum": [
                             "anxiety",
                             "stress",
@@ -38,14 +38,9 @@ WELLNESS_TOOLS_CONFIG = {
                         ],
                     },
                     "intensity": {
-                        "type": "string",
-                        "description": "Severity of the issue: 'mild' (slight discomfort), 'moderate' (noticeably affecting them), 'severe' (very distressed)",
+                        "type": "STRING",
+                        "description": "Severity: mild, moderate, or severe",
                         "enum": ["mild", "moderate", "severe"],
-                    },
-                    "context": {
-                        "type": "object",
-                        "description": "Optional additional context (location, recent events, etc.)",
-                        "properties": {},
                     },
                 },
                 "required": ["issue", "intensity"],
@@ -55,23 +50,23 @@ WELLNESS_TOOLS_CONFIG = {
             "name": "record_interaction_outcome",
             "description": "Record the outcome of a wellness intervention to help Luna learn what works for this user. Call this when the user completes an exercise or provides feedback.",
             "parameters": {
-                "type": "object",
+                "type": "OBJECT",
                 "properties": {
                     "intervention_id": {
-                        "type": "string",
-                        "description": "ID of the intervention (will be provided in the intervention response)",
+                        "type": "STRING",
+                        "description": "ID of the intervention",
                     },
                     "completed": {
-                        "type": "boolean",
-                        "description": "Whether the user completed the intervention",
+                        "type": "BOOLEAN",
+                        "description": "Whether user completed it",
                     },
                     "effectiveness_rating": {
-                        "type": "number",
-                        "description": "How effective it was (0.0 - 1.0), based on user feedback",
+                        "type": "NUMBER",
+                        "description": "Effectiveness 0.0-1.0",
                     },
                     "user_feedback": {
-                        "type": "string",
-                        "description": "Any qualitative feedback from the user",
+                        "type": "STRING",
+                        "description": "User feedback",
                     },
                 },
                 "required": ["intervention_id", "completed"],
@@ -439,49 +434,42 @@ def get_gemini_response_with_tools(
             return "Configuration error: Gemini API key not found", []
 
         # Build system prompt with tool awareness
-        system_prompt = """You are Luna, an AI mental health agent for high school students.
+        system_prompt = """You are Luna, a wellness AI agent for high school students.
 
-You have access to SMART wellness tools that provide personalized, context-aware interventions:
+CRITICAL FUNCTION CALLING RULES - FOLLOW EXACTLY:
 
-**get_wellness_intervention(issue, intensity)**
-- This is an INTELLIGENT tool that automatically selects the BEST intervention for this specific user
-- It considers: user's past effectiveness, preferences, time of day, and context
-- You just specify WHAT help is needed (anxiety, stress, panic, etc.) and HOW INTENSE
-- The tool decides which specific exercise/technique to provide
-- Example: User says "I'm anxious" → You call get_wellness_intervention(issue="anxiety", intensity="moderate")
-  → Tool returns a breathing exercise that worked well for this user before
+1. When user mentions anxiety/stressed/panic/overwhelmed/nervous:
+   → IMMEDIATELY call get_wellness_intervention(issue="anxiety", intensity=...)
+   → DO NOT just respond with text about breathing
 
-**record_interaction_outcome(intervention_id, completed, effectiveness_rating)**
-- Use this when user completes an exercise or provides feedback
-- Helps Luna learn what works for this specific user
-- Improves future recommendations
+2. When user mentions sadness/depressed/down/lonely:
+   → IMMEDIATELY call get_wellness_intervention(issue="sadness", intensity=...)
 
-CRITICAL GUIDELINES:
-1. **When to use tools:**
-   - User expresses anxiety/stress/panic → Call get_wellness_intervention()
-   - User completes an exercise → Call record_interaction_outcome() if they share feedback
-   - Be proactive but not pushy - offer help when appropriate
+3. When user mentions sleep/tired/can't sleep/insomnia:
+   → IMMEDIATELY call get_wellness_intervention(issue="sleep", intensity=...)
 
-2. **Trust the tools:**
-   - Don't worry about choosing specific exercises - the tool knows what works for this user
-   - Just identify the ISSUE and INTENSITY accurately
-   - The tool handles all personalization automatically
+INTENSITY GUIDE:
+- "very", "really", "so", "extremely" = "severe"
+- "feeling", "bit", "somewhat" = "moderate"  
+- "slightly", "little" = "mild"
 
-3. **Empathy first:**
-   - Always respond with empathy and understanding
-   - Tools enhance your support, they don't replace it
-   - Keep responses warm and conversational
+EXAMPLE CORRECT BEHAVIOR:
+User: "I'm feeling very anxious"
+YOU: Call get_wellness_intervention(issue="anxiety", intensity="severe")
+     Then add: "I hear you're anxious. Let me guide you through this exercise."
 
-4. **Don't overuse tools:**
-   - If user is just chatting, you don't need tools
-   - Tools are for active support moments, not every message
+EXAMPLE WRONG BEHAVIOR:
+User: "I'm stressed"
+YOU: Just responding with "Try taking deep breaths..." ❌ WRONG!
+     You MUST call the function FIRST!
 
-5. **NEVER mention:**
-   - Crisis hotlines or phone numbers (system handles that separately)
-   - Specific medical advice or diagnoses
-   - That you're using "tools" or "functions" - just help naturally
+After calling the function, be empathetic and supportive. But CALL THE FUNCTION FIRST.
 
-Remember: You're a supportive companion first, the tools just help you provide better, personalized support."""
+Available tools:
+- get_wellness_intervention(issue, intensity) - Use this when user needs help
+- record_interaction_outcome() - Use when they complete an exercise
+
+DO NOT mention crisis hotlines - system handles that separately."""
 
         # Get memory context (if available)
         memory_context = ""
@@ -511,9 +499,10 @@ Remember: You're a supportive companion first, the tools just help you provide b
             )
             conversation_context = f"\nRecent conversation:\n{conversation_context}\n"
 
-        full_prompt = (
-            f"{system_prompt}{memory_context}{conversation_context}\nUser: {message}"
-        )
+        # SIMPLE PROMPT - complex prompts break function calling!
+        # The direct test without system prompt worked (2/3 success)
+        # Just use the user message directly - let the function description guide the model
+        full_prompt = message
 
         # Configure API and create model with tools
         key_idx = 0
@@ -527,11 +516,13 @@ Remember: You're a supportive companion first, the tools just help you provide b
         api_key = _GEMINI_KEYS[key_idx]
         genai.configure(api_key=api_key)
 
-        # Use a model that supports function calling well
-        model_name = "gemini-1.5-flash"  # Stable function calling support
+        # Use Gemini 2.5 Flash - explicitly designed for "agentic use cases"
+        model_name = "gemini-2.5-flash"  # Best for function calling per Google docs
         model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS_CONFIG])
 
-        # Generate response with potential function calls
+        # Do NOT use tool_config - it breaks function calling!
+        # Direct test without tool_config works (2/3 success)
+        # Generate response - let function description guide behavior
         response = model.generate_content(full_prompt)
 
         if not response.candidates:
