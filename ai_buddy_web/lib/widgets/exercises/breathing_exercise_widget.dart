@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/interactive_exercise.dart';
+import '../../services/api_service.dart';
 
 class BreathingExerciseWidget extends StatefulWidget {
   final BreathingExercise exercise;
@@ -85,6 +86,12 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     // Haptic feedback on start
     HapticFeedback.mediumImpact();
     
+    // Report exercise started for session tracking
+    ApiService().reportExerciseOutcome(
+      exerciseType: 'breathing',
+      outcome: 'started',
+    );
+    
     setState(() {
       _isActive = true;
       _currentCycle = 1;
@@ -99,6 +106,14 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     // Check if exercise complete
     if (_currentCycle > widget.exercise.cycles) {
       HapticFeedback.heavyImpact(); // Completion haptic
+      
+      // Report exercise completed for session tracking
+      ApiService().reportExerciseOutcome(
+        exerciseType: 'breathing',
+        outcome: 'completed',
+        durationSeconds: widget.exercise.totalTimeSeconds,
+      );
+      
       setState(() => _isActive = false);
       widget.onComplete?.call();
       return;

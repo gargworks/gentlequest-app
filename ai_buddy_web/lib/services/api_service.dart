@@ -179,6 +179,39 @@ class ApiService {
     }
   }
 
+  /// Report outcome when user interacts with an exercise.
+  /// Used for session-level tracking to avoid repeating the same exercise.
+  /// 
+  /// [exerciseType] - Type of exercise: 'breathing', 'grounding', 'journaling'
+  /// [outcome] - User action: 'started', 'completed', 'skipped'
+  /// [durationSeconds] - Optional: how long the exercise lasted
+  Future<void> reportExerciseOutcome({
+    required String exerciseType,
+    required String outcome,
+    int? durationSeconds,
+  }) async {
+    try {
+      await _getSessionId();
+      await _dio.post(
+        '/api/intervention/outcome',
+        data: {
+          'session_id': _sessionId,
+          'exercise_type': exerciseType,
+          'outcome': outcome,
+          if (durationSeconds != null) 'duration_seconds': durationSeconds,
+        },
+      );
+      if (kDebugMode) {
+        debugPrint('📊 Exercise outcome: $exerciseType → $outcome');
+      }
+    } catch (e) {
+      // Fire-and-forget - don't break UX on analytics failure
+      if (kDebugMode) {
+        debugPrint('📊 Failed to report exercise outcome: $e');
+      }
+    }
+  }
+
   /// Create new session
   // Removed unused _createNewSession()
 

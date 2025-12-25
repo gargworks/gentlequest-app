@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/interactive_exercise.dart';
+import '../../services/api_service.dart';
 
 class GroundingExerciseWidget extends StatefulWidget {
   final GroundingExercise exercise;
@@ -19,11 +20,26 @@ class GroundingExerciseWidget extends StatefulWidget {
 class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
   int _currentStepIndex = 0;
   bool _isComplete = false;
+  bool _hasStarted = false; // Track if we've reported 'started'
 
   void _nextStep() {
+    // Report started on first interaction
+    if (!_hasStarted) {
+      _hasStarted = true;
+      ApiService().reportExerciseOutcome(
+        exerciseType: 'grounding',
+        outcome: 'started',
+      );
+    }
+    
     if (_currentStepIndex < widget.exercise.steps.length - 1) {
       setState(() => _currentStepIndex++);
     } else {
+      // Report completed when all steps done
+      ApiService().reportExerciseOutcome(
+        exerciseType: 'grounding',
+        outcome: 'completed',
+      );
       setState(() => _isComplete = true);
       widget.onComplete?.call();
     }
