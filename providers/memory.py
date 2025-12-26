@@ -22,6 +22,9 @@ from models import db
 MEMORY_ENABLED = os.getenv('ENABLE_MEMORY', 'true').lower() == 'true'
 PGVECTOR_ENABLED = os.getenv('ENABLE_PGVECTOR', 'true').lower() == 'true'
 
+# Runtime flag - set to False if tables don't exist or pgvector unavailable
+_memory_tables_ready = None
+
 # Retention policies (in days)
 MEMORY_RETENTION = {
     'episodic': 30,     # Specific events
@@ -31,6 +34,50 @@ MEMORY_RETENTION = {
 
 # How many memories to retrieve per query
 MAX_MEMORIES_RETRIEVED = 5
+
+
+def _check_memory_tables_exist() -> bool:
+    """
+    Check if memory tables exist and pgvector is available.
+    Caches result to avoid repeated checks.
+    """
+    global _memory_tables_ready
+    
+    if _memory_tables_ready is not None:
+        return _memory_tables_ready
+    
+    if not MEMORY_ENABLED or not PGVECTOR_ENABLED:
+        _memory_tables_ready = False
+        return False
+    
+    try:
+        # Check if table exists
+        result = db.session.execute(text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'memory_summaries'
+            )
+        """)).scalar()
+        
+        if not result:
+            _memory_tables_ready = False
+            return False
+        
+        # Check if pgvector extension is available
+        result = db.session.execute(text("""
+            SELECT EXISTS (
+                SELECT FROM pg_extension WHERE extname = 'vector'
+            )
+        """)).scalar()
+        
+        _memory_tables_ready = bool(result)
+        return _memory_tables_ready
+        
+    except Exception as e:
+        print(f"Memory table check error: {e}")
+        db.session.rollback()  # Important: don't let failed check abort transaction
+        _memory_tables_ready = False
+        return False
 
 
 # ============================================================================
@@ -124,7 +171,7 @@ def store_memory(
     Returns:
         True if stored successfully
     """
-    if not MEMORY_ENABLED:
+    if not MEMORY_ENABLED or not _check_memory_tables_exist():
         return False
     
     try:
@@ -203,7 +250,7 @@ def retrieve_relevant_memories(
     Returns:
         List of memory dicts with content and similarity score
     """
-    if not MEMORY_ENABLED or not PGVECTOR_ENABLED:
+    if not MEMORY_ENABLED or not PGVECTOR_ENABLED or not _check_memory_tables_exist():
         return []
     
     try:
@@ -254,6 +301,7 @@ def retrieve_relevant_memories(
         
     except Exception as e:
         print(f"Memory retrieval error: {e}")
+        db.session.rollback()  # Prevent transaction cascade
         return []
 
 
@@ -326,7 +374,7 @@ def summarize_and_store_conversation(
     
     This is called after each conversation to build long-term memory.
     """
-    if not MEMORY_ENABLED:
+    if not MEMORY_ENABLED or not _check_memory_tables_exist():
         return False
     
     # Don't store crisis conversations as memories (privacy/safety)
