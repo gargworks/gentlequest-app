@@ -224,11 +224,11 @@ def retrieve_relevant_memories(
                     memory_type,
                     metadata,
                     created_at,
-                    1 - (embedding <=> :query_embedding::vector) as similarity
+                    1 - (embedding <=> CAST(:query_embedding AS vector)) as similarity
                 FROM memory_summaries
                 WHERE session_id = :session_id
                   AND (expires_at IS NULL OR expires_at > NOW())
-                ORDER BY embedding <=> :query_embedding::vector
+                ORDER BY embedding <=> CAST(:query_embedding AS vector)
                 LIMIT :limit
             """),
             {

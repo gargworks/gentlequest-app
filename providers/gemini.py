@@ -482,6 +482,12 @@ DO NOT mention crisis hotlines - system handles that separately."""
                     memory_context = f"\n{memory_context}\n"
         except Exception as e:
             _debug(f"memory_context_error: {e}")
+            # Rollback transaction to prevent cascade failures
+            try:
+                from models import db
+                db.session.rollback()
+            except:
+                pass
 
         # Get conversation history from database (more reliable than in-memory)
         db_history = ""
