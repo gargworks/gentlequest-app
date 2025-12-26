@@ -3256,7 +3256,7 @@ def _register_additional_routes(app: Flask) -> None:
     # ========================================================================
 
     @app.route("/api/memory/status", methods=["GET"])
-    def memory_status():
+    def memory_system_status():
         """Check memory system status for graceful degradation"""
         try:
             from providers.memory import MEMORY_ENABLED, PGVECTOR_ENABLED, _check_memory_tables_exist
