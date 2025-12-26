@@ -1250,7 +1250,8 @@ def _register_routes(app: Flask) -> None:
                     "/api/analytics/user/<session_id>",
                     "/api/analytics/function-calling",
                     "/api/intervention/outcome",
-                    "/admin/analytics",
+                    "/api/admin/analytics",
+                    "/api/memory/status",
                     "/api/metrics",
                 ],
             }
@@ -3245,10 +3246,40 @@ def _register_additional_routes(app: Flask) -> None:
     # ADMIN DASHBOARD
     # ========================================================================
 
-    @app.route("/admin/analytics")
+    @app.route("/api/admin/analytics")
     def admin_analytics_dashboard():
         """Render the analytics dashboard HTML page."""
         return render_template("admin_dashboard.html")
+
+    # ========================================================================
+    # MEMORY STATUS ENDPOINT
+    # ========================================================================
+
+    @app.route("/api/memory/status", methods=["GET"])
+    def memory_status():
+        """Check memory system status for graceful degradation"""
+        try:
+            from providers.memory import MEMORY_ENABLED, PGVECTOR_ENABLED, _check_memory_tables_exist
+            
+            tables_exist = _check_memory_tables_exist()
+            
+            return jsonify({
+                "memory_enabled": MEMORY_ENABLED,
+                "pgvector_enabled": PGVECTOR_ENABLED,
+                "tables_initialized": tables_exist,
+                "status": "active" if (MEMORY_ENABLED and PGVECTOR_ENABLED and tables_exist) else "inactive",
+                "message": "Memory system operational" if tables_exist else "Memory system disabled or unavailable"
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"Memory status check error: {e}")
+            return jsonify({
+                "memory_enabled": False,
+                "pgvector_enabled": False,
+                "tables_initialized": False,
+                "status": "error",
+                "message": str(e)
+            }), 200  # Return 200 even on error - this is a status check
 
 # Create the application instance
 app = create_app()
