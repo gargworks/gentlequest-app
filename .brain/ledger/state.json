@@ -1,0 +1,112 @@
+{
+    "version": "2025.Final",
+    "initialized": "2025-12-26T21:20:00+05:30",
+    "architecture": "Nuclear",
+    "last_updated": "2025-12-26T21:14:43.000131+00:00",
+    "operations_protocol": {
+        "version": "1.0.0-Nuclear",
+        "source": ".brain/workflows/OPERATIONS.md",
+        "status": "ACTIVE",
+        "activated_at": "2025-12-27T00:02:35+05:30",
+        "guardrails": {
+            "max_retries": 3,
+            "stuck_task_timeout_minutes": 10,
+            "human_in_loop_required": [
+                "strategic_pivots",
+                "financial_commits",
+                "core_codebase_merges"
+            ],
+            "garbage_collection_threshold_lines": 500
+        },
+        "daily_rhythm": {
+            "phase_1_strategic_injection": "10 mins - Review digest, set trajectory via CLI",
+            "phase_2_recursive_review": "15 mins - Monitor events, check state health, approve criticals"
+        },
+        "meta_sprint_cycle_hours": 72,
+        "portability": "100% - Zip .brain/ to migrate"
+    },
+    "polling_instruction": {
+        "mandate": "EVERY agent MUST read state.json before EVERY response",
+        "reason": "Ensures no agent works on stale data or conflicting tasks",
+        "check_fields": [
+            "current_sprint",
+            "active_agents",
+            "pending_events",
+            "operations_protocol"
+        ],
+        "frequency": "Before each response, not just on activation"
+    },
+    "current_sprint": {
+        "id": "sprint-9a0502d1",
+        "name": "Sprint: see what are the tasks",
+        "started": "2025-12-26T20:27:25.353297+00:00",
+        "ends": "2025-12-29T20:27:25.353437+00:00",
+        "focus": "see what are the tasks",
+        "status": "ACTIVE",
+        "objectives": [
+            "see what are the tasks"
+        ],
+        "tasks": []
+    },
+    "active_agents": [
+        "synthesizer"
+    ],
+    "pending_events": [],
+    "founder_queue": [],
+    "top_3_leverage_actions": [
+        {
+            "rank": 1,
+            "action": "Post Build-in-Public to r/SideProject",
+            "agent": "founder",
+            "impact": "Start community NOW"
+        },
+        {
+            "rank": 2,
+            "action": "Implement Neural Bridge API",
+            "agent": "developer",
+            "impact": "Enable live orchestration"
+        },
+        {
+            "rank": 3,
+            "action": "Follow OPERATIONS.md daily rhythm",
+            "agent": "founder",
+            "impact": "80% cognitive load reduction"
+        }
+    ],
+    "meta": {
+        "last_optimization": null,
+        "optimization_cycle_hours": 72,
+        "auto_approval_enabled": true,
+        "next_digest": "2025-12-27T06:00:00+05:30",
+        "next_meta_sprint": "2025-12-29T00:02:35+05:30",
+        "sprint_review": "2025-12-26T23:57:03+05:30"
+    },
+    "counters": {
+        "total_events": 27,
+        "total_tasks": 12,
+        "tasks_completed": 9,
+        "auto_approvals": 9,
+        "founder_decisions": 0
+    },
+    "flywheel": {
+        "last_processed_event_id": "2e11094a-2de5-4603-9907-627eb12c426f",
+        "last_processed_at": "2025-12-26T21:14:43.000129+00:00"
+    },
+    "sprint_history": [
+        {
+            "id": "sprint-001",
+            "name": "Subatomic Sprint 1: Nuclear Activation",
+            "status": "COMPLETE"
+        },
+        {
+            "id": "sprint-6a31a24c",
+            "name": "Hardening Sprint + Prototype Roadmap",
+            "status": "COMPLETE"
+        },
+        {
+            "id": "sprint-003-mvp-genesis",
+            "name": "Sprint 3: MVP Genesis",
+            "status": "COMPLETE"
+        }
+    ]
+}

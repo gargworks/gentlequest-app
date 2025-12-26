@@ -1,0 +1,335 @@
+{
+    "_schema_version": "1.0",
+    "_description": "Complete Neural Trigger Schema for Nuclear Brain Architecture",
+    "_usage": "Agents emit events, triggers route to other agents automatically",
+    "event_schema": {
+        "required_fields": {
+            "event_id": {
+                "type": "string",
+                "format": "uuid-v4",
+                "description": "Unique identifier for this event",
+                "example": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "ISO8601 UTC",
+                "description": "When event was emitted",
+                "example": "2025-12-26T21:44:00Z"
+            },
+            "emitter": {
+                "type": "string",
+                "enum": [
+                    "system",
+                    "strategist",
+                    "architect",
+                    "developer",
+                    "critic",
+                    "researcher",
+                    "synthesizer",
+                    "founder"
+                ],
+                "description": "Who emitted this event"
+            },
+            "event_type": {
+                "type": "string",
+                "description": "Type of event, matches trigger definitions"
+            },
+            "severity": {
+                "type": "string",
+                "enum": [
+                    "ROUTINE",
+                    "NOTABLE",
+                    "CRITICAL"
+                ],
+                "description": "Event importance level"
+            },
+            "payload": {
+                "type": "object",
+                "description": "Event-specific data"
+            }
+        },
+        "optional_fields": {
+            "metadata": {
+                "task_id": "string (reference to related task)",
+                "parent_event": "string (for event chains)",
+                "ttl_hours": "integer (when event expires)"
+            }
+        }
+    },
+    "severity_definitions": {
+        "ROUTINE": {
+            "description": "Normal operations, auto-approved by Synthesizer",
+            "founder_visibility": "Log only, not in digest",
+            "examples": [
+                "Documentation update",
+                "Test passed",
+                "Routine code change"
+            ]
+        },
+        "NOTABLE": {
+            "description": "Worth noting but doesn't require decision",
+            "founder_visibility": "Included in daily digest",
+            "examples": [
+                "Feature completed",
+                "Sprint milestone",
+                "Performance improvement"
+            ]
+        },
+        "CRITICAL": {
+            "description": "Requires immediate founder attention",
+            "founder_visibility": "Immediate escalation",
+            "examples": [
+                "Security issue",
+                "Budget decision",
+                "Pivot needed",
+                "Deployment failure"
+            ]
+        }
+    },
+    "event_types": {
+        "brain_initialized": {
+            "description": "Nuclear Brain was bootstrapped",
+            "typical_emitter": "system",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "version": "string",
+                "method": "string"
+            }
+        },
+        "strategy_updated": {
+            "description": "Roadmap or strategy document changed",
+            "typical_emitter": "strategist",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "document": "string (path to updated doc)",
+                "changes_summary": "string",
+                "requires_architecture_review": "boolean"
+            }
+        },
+        "spec_ready_for_development": {
+            "description": "Technical specification is ready for coding",
+            "typical_emitter": "architect",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "spec_path": "string",
+                "feature_name": "string",
+                "estimated_hours": "integer",
+                "priority": "string"
+            }
+        },
+        "implementation_complete": {
+            "description": "Code implementation finished, needs review",
+            "typical_emitter": "developer",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "feature": "string",
+                "files_changed": "array[string]",
+                "tests_passed": "boolean",
+                "test_coverage": "number (optional)"
+            }
+        },
+        "review_approved": {
+            "description": "Quality gate passed",
+            "typical_emitter": "critic",
+            "typical_severity": "ROUTINE",
+            "payload": {
+                "review_type": "string (code|security|strategy)",
+                "target": "string (what was reviewed)",
+                "notes": "string (optional)"
+            }
+        },
+        "review_blocked": {
+            "description": "Quality gate failed, requires fix",
+            "typical_emitter": "critic",
+            "typical_severity": "NOTABLE or CRITICAL",
+            "payload": {
+                "review_type": "string",
+                "target": "string",
+                "issues": "array[{severity, description, fix_suggestion}]",
+                "blocking_reason": "string"
+            }
+        },
+        "market_shift_detected": {
+            "description": "Competitive intelligence requiring attention",
+            "typical_emitter": "researcher",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "topic": "string",
+                "summary": "string",
+                "impact": "string (HIGH|MEDIUM|LOW)",
+                "recommended_action": "string",
+                "sources": "array[string]"
+            }
+        },
+        "founder_decision_needed": {
+            "description": "Human decision required",
+            "typical_emitter": "any",
+            "typical_severity": "CRITICAL",
+            "payload": {
+                "reason": "string",
+                "options": "array[string]",
+                "context": "string",
+                "deadline": "string (optional)"
+            }
+        },
+        "task_assigned": {
+            "description": "Task delegated to an agent",
+            "typical_emitter": "synthesizer",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "target_agent": "string",
+                "task_description": "string",
+                "expected_output": "string (artifact path)",
+                "deadline_hours": "integer",
+                "context_files": "array[string]"
+            }
+        },
+        "task_completed": {
+            "description": "Agent finished a task",
+            "typical_emitter": "any worker agent",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "task_description": "string",
+                "output_path": "string",
+                "success": "boolean",
+                "notes": "string (optional)"
+            }
+        },
+        "sprint_started": {
+            "description": "New sprint initiated",
+            "typical_emitter": "synthesizer",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "sprint_name": "string",
+                "sprint_id": "string",
+                "focus": "string",
+                "assigned_agents": "array[string]",
+                "tasks": "array[{agent, description, status}]"
+            }
+        },
+        "sprint_completed": {
+            "description": "Sprint finished",
+            "typical_emitter": "synthesizer",
+            "typical_severity": "NOTABLE",
+            "payload": {
+                "sprint_id": "string",
+                "tasks_completed": "integer",
+                "tasks_failed": "integer",
+                "summary": "string"
+            }
+        },
+        "meta_optimization_complete": {
+            "description": "Synthesizer updated agent prompts/triggers",
+            "typical_emitter": "synthesizer",
+            "typical_severity": "ROUTINE",
+            "payload": {
+                "cycle_number": "integer",
+                "changes_made": "array[string]",
+                "expected_improvement": "string"
+            }
+        },
+        "daily_digest_generated": {
+            "description": "Daily founder digest is ready",
+            "typical_emitter": "synthesizer",
+            "typical_severity": "ROUTINE",
+            "payload": {
+                "digest_path": "string",
+                "critical_items": "integer",
+                "auto_approved": "integer"
+            }
+        }
+    },
+    "trigger_condition_types": {
+        "always": {
+            "description": "Trigger always fires when event matches type",
+            "example": {
+                "type": "always"
+            }
+        },
+        "severity_gte": {
+            "description": "Trigger fires if event severity >= value",
+            "example": {
+                "type": "severity_gte",
+                "value": "NOTABLE"
+            }
+        },
+        "severity_eq": {
+            "description": "Trigger fires if event severity == value",
+            "example": {
+                "type": "severity_eq",
+                "value": "CRITICAL"
+            }
+        },
+        "payload_contains": {
+            "description": "Trigger fires if payload has specific key",
+            "example": {
+                "type": "payload_contains",
+                "value": "urgent"
+            }
+        },
+        "schedule": {
+            "description": "Trigger fires on schedule (cron format)",
+            "example": {
+                "type": "schedule",
+                "cron": "0 6 * * *"
+            }
+        }
+    },
+    "handoff_examples": {
+        "developer_to_critic": {
+            "scenario": "Developer finishes code, Critic starts review",
+            "flow": [
+                "1. Developer writes code",
+                "2. Developer runs tests",
+                "3. Developer emits 'implementation_complete' event",
+                "4. Event logged to .brain/ledger/events.jsonl",
+                "5. Trigger 'code_to_critic' matches the event",
+                "6. Critic agent is activated",
+                "7. Critic reads the event payload for context",
+                "8. Critic performs review",
+                "9. Critic emits 'review_approved' or 'review_blocked'"
+            ],
+            "event_emitted": {
+                "event_id": "dev-001",
+                "timestamp": "2025-12-26T21:44:00Z",
+                "emitter": "developer",
+                "event_type": "implementation_complete",
+                "severity": "NOTABLE",
+                "payload": {
+                    "feature": "rag_memory_layer",
+                    "files_changed": [
+                        "providers/memory.py",
+                        "providers/embeddings.py"
+                    ],
+                    "tests_passed": true
+                },
+                "metadata": {
+                    "task_id": "task-rag-001"
+                }
+            }
+        },
+        "researcher_to_strategist": {
+            "scenario": "Researcher detects market shift, Strategist reviews strategy",
+            "flow": [
+                "1. Researcher monitors competitive landscape",
+                "2. Researcher detects significant change",
+                "3. Researcher emits 'market_shift_detected' event",
+                "4. Trigger 'market_intelligence' activates Strategist",
+                "5. Strategist reviews findings",
+                "6. Strategist may update roadmap",
+                "7. Strategist emits 'strategy_updated' if changes made"
+            ]
+        },
+        "any_to_founder": {
+            "scenario": "Critical issue requires human decision",
+            "flow": [
+                "1. Any agent encounters CRITICAL situation",
+                "2. Agent emits 'founder_decision_needed' with severity CRITICAL",
+                "3. Trigger 'founder_escalation' activates Synthesizer",
+                "4. Synthesizer immediately escalates to founder",
+                "5. Founder makes decision",
+                "6. Synthesizer logs decision and emits resolution event"
+            ]
+        }
+    }
+}

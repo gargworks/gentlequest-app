@@ -574,6 +574,74 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Community routes failed to register: {e}")
 
+    # Register Nuclear Brain Telegram Integration
+    try:
+        from brain_telegram import (
+            send_telegram_alert, 
+            process_telegram_message,
+            handle_status_command,
+            handle_sprint_command,
+            handle_tasks_command,
+            load_state,
+            emit_event
+        )
+        
+        TG_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        
+        @app.route("/api/brain/telegram/webhook", methods=["POST"])
+        def brain_telegram_webhook():
+            """Handle incoming Telegram updates for Nuclear Brain"""
+            try:
+                data = request.get_json()
+                message = data.get("message", {})
+                chat_id = str(message.get("chat", {}).get("id", ""))
+                
+                # Security: Only respond to authorized chat
+                if chat_id != TG_CHAT_ID:
+                    return jsonify({"ok": False, "error": "Unauthorized"}), 403
+                
+                response_text = process_telegram_message(message)
+                send_telegram_alert(response_text)
+                
+                return jsonify({"ok": True})
+            except Exception as e:
+                app.logger.error(f"Telegram webhook error: {e}")
+                return jsonify({"ok": False, "error": str(e)}), 500
+        
+        @app.route("/api/brain/status", methods=["GET"])
+        def brain_status():
+            """Get Nuclear Brain status via API"""
+            try:
+                state = load_state()
+                return jsonify(state)
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+        
+        @app.route("/api/brain/alert", methods=["POST"])
+        def brain_alert():
+            """Send alert to founder's Telegram"""
+            data = request.get_json() or {}
+            msg = data.get("message", "Alert from Nuclear Brain")
+            success = send_telegram_alert(msg)
+            return jsonify({"ok": success})
+        
+        @app.route("/api/brain/sprint", methods=["POST"])
+        def brain_sprint():
+            """Start new sprint via API"""
+            data = request.get_json() or {}
+            goal = data.get("goal", "")
+            if not goal:
+                return jsonify({"error": "Goal required"}), 400
+            result = handle_sprint_command(goal)
+            # Alert founder
+            send_telegram_alert(f"🚀 New Sprint Started via API\n\n{goal}")
+            return jsonify({"ok": True, "message": result})
+        
+        app.logger.info("Nuclear Brain Telegram routes registered (/api/brain/*)")
+    except Exception as e:
+        app.logger.warning(f"Brain Telegram routes not registered: {e}")
+
+
     # Initialize Memory System (Phase II)
     try:
         from providers.memory import init_memory_tables, MEMORY_ENABLED

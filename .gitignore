@@ -74,3 +74,8 @@ ai_buddy_web/ios/Config/local-overrides.xcconfig
 ai_buddy_web/android/key.properties
 **/*.keystore
 **/*.jks
+# Nuclear Brain runtime
+.brain/.flywheel.pid
+.brain/flywheel.log
+.brain/.state.lock
+.brain/.sync_state.json

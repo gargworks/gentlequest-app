@@ -1,0 +1,3 @@
+timestamp,experiment,total_tests,gemini_called,keyword_fallback,no_intervention,success_rate
+2025-12-26T17:02:14.912378,baseline,10,8,2,0,0.800
+2025-12-26T17:03:14.517405,baseline,20,13,4,3,0.765

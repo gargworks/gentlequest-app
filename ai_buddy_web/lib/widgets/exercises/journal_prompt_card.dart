@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/interactive_exercise.dart';
+import '../../services/api_service.dart';
 
 class JournalPromptCard extends StatefulWidget {
   final JournalPrompt exercise;
@@ -18,9 +19,16 @@ class JournalPromptCard extends StatefulWidget {
 class _JournalPromptCardState extends State<JournalPromptCard> {
   final TextEditingController _controller = TextEditingController();
   bool _isSaved = false;
+  bool _hasStarted = false; // Track if we've reported 'started'
 
   void _saveEntry() {
     if (_controller.text.trim().isEmpty) return;
+    
+    // Report completed
+    ApiService().reportExerciseOutcome(
+      exerciseType: 'journaling',
+      outcome: 'completed',
+    );
     
     widget.onSave?.call(_controller.text);
     setState(() => _isSaved = true);
@@ -31,6 +39,10 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
 
   void _useSuggestion(String suggestion) {
     if (_isSaved) return;
+    
+    // Report started on first interaction
+    _reportStartedOnce();
+    
     final current = _controller.text;
     final separator = current.isEmpty ? '' : '\n\n';
     _controller.text = '$current$separator$suggestion';
@@ -38,6 +50,27 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
     _controller.selection = TextSelection.fromPosition(
       TextPosition(offset: _controller.text.length),
     );
+  }
+  
+  void _reportStartedOnce() {
+    if (!_hasStarted) {
+      _hasStarted = true;
+      ApiService().reportExerciseOutcome(
+        exerciseType: 'journaling',
+        outcome: 'started',
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Track when user starts typing
+    _controller.addListener(() {
+      if (_controller.text.isNotEmpty && !_hasStarted) {
+        _reportStartedOnce();
+      }
+    });
   }
 
   @override

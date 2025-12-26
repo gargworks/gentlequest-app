@@ -137,3 +137,55 @@ Template:
 
 **Milestone:** After 10+ comments with positive outcomes, unlock 1 low-key app mention (disclosed, feedback-framed) in a clearly rule-allowing builder sub only.
 
+
+
+### 2025-12-26
+- **Subs engaged:** r/productivity
+- **Actions:**
+  - Comments: 0-1 
+  - Posts: "Tiny check-ins beat big productivity systems..." [PASTE URL HERE]
+  - DMs: 0
+- **Outcome:**
+  - Replies / feedback highlights: [Check 24h]
+  - Removals / warnings: [Update if mod action]
+- **Product learnings:** [e.g. "grounding rituals resonate"]
+- **Next action (Sat/Sun):** 5-10 comments across shortlist
+
+## Learnings Log (what's working / not working)
+
+Track patterns across weeks to evolve strategy. Update after 5+ log entries.
+
+### Week of Dec 21-27
+- **Working:** Comment drafts on 'overwhelmed' + 'tiny rituals' get positive replies (fill after Dec 26 post outcomes)
+- **Not working:** [TBD - e.g. 'too long comments get ignored']
+- **Pivot:** [TBD - e.g. 'shorten to 3 sentences max']
+- **Promo readiness:** [Current: 3-4 comments total → need 6+ more clean comments]
+
+**Changelog update**: 2025-12-26: Added Learnings Log for strategy evolution
+
+✅ **Posting Standards** (new section):
+  - **Tone**: Kind/trauma-informed ("you might try" vs "do this")
+  - **Length**: Comments 3-5 sentences, posts 150-250 words
+  - **Formatting**: Bold key phrases, italic validation, 3-bullet max, line breaks, end w/ question
+  - **Crisis**: "Not a crisis service" disclaimer
+  - **Disclosure**: "Full disclosure: I'm the builder" only when relevant
+
+✅ **Full feedback loop**:
+  - Working Log → daily raw data
+  - 7-day tracker → visual progress  
+  - Learnings Log → working/not working + pivots
+
+**Title:** Tiny check-ins > big productivity systems
+
+*Most productivity advice feels overwhelming when you're already drowning.*
+
+I've found **one 2-minute body scan** mid-day works better:
+• Notice body tension 
+• Name the feeling 
+• Pick 1 kind redirect
+
+**No apps. No tracking.** Just proof you can pause chaos.
+
+Stuck with this 3 weeks when decisions paralyzed me.
+
+**What's your smallest ritual that actually lands when motivation tanks?**
