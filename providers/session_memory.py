@@ -173,16 +173,24 @@ def update_intervention_outcome(
     session_id: str,
     intervention_id: str,
     outcome: str,
+    exercise_type: Optional[str] = None,
+    time_spent_seconds: Optional[int] = None,
+    mood_before: Optional[int] = None,
+    mood_after: Optional[int] = None,
     effectiveness_rating: Optional[float] = None,
     feedback: Optional[str] = None,
 ) -> bool:
     """
-    Update the outcome of an intervention.
+    Update the outcome of an intervention with analytics data.
     
     Args:
         session_id: User session
         intervention_id: The intervention shown
         outcome: 'started' | 'completed' | 'skipped'
+        exercise_type: breathing, grounding, journaling (optional)
+        time_spent_seconds: How long user spent on exercise (optional)
+        mood_before: User mood before exercise, 1-10 scale (optional)
+        mood_after: User mood after exercise, 1-10 scale (optional)
         effectiveness_rating: 0-1 score (optional)
         feedback: User feedback text (optional)
         
@@ -196,8 +204,12 @@ def update_intervention_outcome(
                 UPDATE intervention_outcomes
                 SET outcome = :outcome,
                     completed = :completed,
-                    effectiveness_rating = :rating,
-                    feedback = :feedback
+                    exercise_type = COALESCE(:exercise_type, exercise_type),
+                    time_spent_seconds = COALESCE(:time_spent, time_spent_seconds),
+                    mood_before = COALESCE(:mood_before, mood_before),
+                    mood_after = COALESCE(:mood_after, mood_after),
+                    effectiveness_rating = COALESCE(:rating, effectiveness_rating),
+                    feedback = COALESCE(:feedback, feedback)
                 WHERE id = (
                     SELECT id FROM intervention_outcomes
                     WHERE session_id = :session_id 
@@ -211,6 +223,10 @@ def update_intervention_outcome(
                 "intervention_id": intervention_id,
                 "outcome": outcome,
                 "completed": outcome == "completed",
+                "exercise_type": exercise_type,
+                "time_spent": time_spent_seconds,
+                "mood_before": mood_before,
+                "mood_after": mood_after,
                 "rating": effectiveness_rating,
                 "feedback": feedback,
             }

@@ -609,10 +609,34 @@ def create_app() -> Flask:
                 db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS issue VARCHAR(50)"))
                 db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1"))
                 db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS outcome VARCHAR(20) DEFAULT 'offered'"))
-            except Exception:
-                pass  # Columns may already exist
+                
+                # Analytics columns
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(50)"))
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER"))
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_before INTEGER"))
+                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER"))
+                
+                # Add constraints for mood ratings (1-10 scale)
+                db.session.execute(text("""
+                    DO $$ BEGIN
+                        ALTER TABLE intervention_outcomes 
+                        ADD CONSTRAINT mood_before_range CHECK (mood_before BETWEEN 1 AND 10);
+                    EXCEPTION WHEN duplicate_object THEN NULL;
+                    END $$;
+                """))
+                db.session.execute(text("""
+                    DO $$ BEGIN
+                        ALTER TABLE intervention_outcomes 
+                        ADD CONSTRAINT mood_after_range CHECK (mood_after BETWEEN 1 AND 10);
+                    EXCEPTION WHEN duplicate_object THEN NULL;
+                    END $$;
+                """))
+            except Exception as e:
+                app.logger.warning(f"Column migration warning: {e}")
+            
             db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_session ON intervention_outcomes(session_id)"))
             db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_issue ON intervention_outcomes(session_id, issue)"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_type ON intervention_outcomes(exercise_type)"))
             db.session.commit()
             app.logger.info("Agentic intervention tracking initialized")
     except Exception as e:
@@ -3033,16 +3057,19 @@ def _register_additional_routes(app: Flask) -> None:
     @app.route("/api/intervention/outcome", methods=["POST"])
     def log_intervention_outcome():
         """
-        Log intervention start/complete/skip for learning.
+        Log intervention start/complete/skip for learning and analytics.
         
         Request body:
         {
             "session_id": "...",
             "intervention_id": "calm_478",
-            "exercise_type": "breathing",  // Optional
+            "exercise_type": "breathing",  // breathing, grounding, journaling
             "outcome": "started" | "completed" | "skipped",
-            "effectiveness": 0.8,  // Optional, 0-1
-            "feedback": "It helped"  // Optional
+            "time_spent_seconds": 180,     // How long user spent on exercise
+            "mood_before": 3,              // 1-10 scale before exercise
+            "mood_after": 7,               // 1-10 scale after exercise
+            "effectiveness": 0.8,          // 0-1 scale
+            "feedback": "It helped"        // Optional text feedback
         }
         """
         try:
@@ -3052,7 +3079,11 @@ def _register_additional_routes(app: Flask) -> None:
             
             data = request.get_json() or {}
             intervention_id = data.get("intervention_id")
+            exercise_type = data.get("exercise_type")
             outcome = data.get("outcome", "started")
+            time_spent = data.get("time_spent_seconds")
+            mood_before = data.get("mood_before")
+            mood_after = data.get("mood_after")
             effectiveness = data.get("effectiveness")
             feedback = data.get("feedback")
             
@@ -3062,12 +3093,22 @@ def _register_additional_routes(app: Flask) -> None:
             if outcome not in ["started", "completed", "skipped"]:
                 return jsonify({"error": "outcome must be 'started', 'completed', or 'skipped'"}), 400
             
+            # Validate mood ratings if provided
+            if mood_before is not None and not (1 <= mood_before <= 10):
+                return jsonify({"error": "mood_before must be between 1 and 10"}), 400
+            if mood_after is not None and not (1 <= mood_after <= 10):
+                return jsonify({"error": "mood_after must be between 1 and 10"}), 400
+            
             from providers.session_memory import update_intervention_outcome
             
             success = update_intervention_outcome(
                 session_id=session_id,
                 intervention_id=intervention_id,
                 outcome=outcome,
+                exercise_type=exercise_type,
+                time_spent_seconds=time_spent,
+                mood_before=mood_before,
+                mood_after=mood_after,
                 effectiveness_rating=effectiveness,
                 feedback=feedback,
             )
