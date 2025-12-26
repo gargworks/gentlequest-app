@@ -23,6 +23,7 @@ from flask import (
     g,
     Response,
     current_app,
+    render_template,
 )
 from flask_cors import CORS
 from flask_session import Session
@@ -3235,6 +3236,14 @@ def _register_additional_routes(app: Flask) -> None:
             app.logger.error(f"Function calling analytics error: {e}")
             return jsonify({"error": "Failed to fetch function calling stats"}), 500
 
+    # ========================================================================
+    # ADMIN DASHBOARD
+    # ========================================================================
+
+    @app.route("/admin/analytics")
+    def admin_analytics_dashboard():
+        """Render the analytics dashboard HTML page."""
+        return render_template("admin_dashboard.html")
 
 # Create the application instance
 app = create_app()
