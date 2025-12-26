@@ -113,22 +113,40 @@ Review outputs in Antigravity."""
 # ═══════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
-    """Load current state.json"""
-    if STATE_FILE.exists():
-        with open(STATE_FILE, 'r') as f:
-            return json.load(f)
-    return {}
+    """Load current state.json - returns defaults if file doesn't exist (e.g., on Render)"""
+    try:
+        if STATE_FILE.exists():
+            with open(STATE_FILE, 'r') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    
+    # Return sensible defaults for production where .brain/ doesn't exist
+    return {
+        "current_sprint": {
+            "name": "No local brain",
+            "status": "REMOTE",
+            "focus": "Brain files exist only on dev machine"
+        },
+        "counters": {"total_events": 0, "tasks_completed": 0},
+        "active_agents": ["synthesizer"],
+        "top_3_leverage_actions": [{"action": "Sync .brain to production or use local dev"}]
+    }
 
 
 def save_state(state: dict):
-    """Save state.json"""
-    state["last_updated"] = datetime.now(timezone.utc).isoformat()
-    with open(STATE_FILE, 'w') as f:
-        json.dump(state, f, indent=4)
+    """Save state.json - no-op if .brain/ doesn't exist"""
+    try:
+        if BRAIN_ROOT.exists():
+            state["last_updated"] = datetime.now(timezone.utc).isoformat()
+            with open(STATE_FILE, 'w') as f:
+                json.dump(state, f, indent=4)
+    except Exception as e:
+        print(f"Could not save state: {e}")
 
 
 def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NOTABLE") -> str:
-    """Emit event to events.jsonl"""
+    """Emit event to events.jsonl - sends Telegram alert if file doesn't exist"""
     event = {
         "event_id": str(uuid.uuid4())[:8],
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -138,8 +156,14 @@ def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NO
         "payload": payload,
         "metadata": {"source": "telegram"}
     }
-    with open(EVENTS_FILE, 'a') as f:
-        f.write(json.dumps(event) + '\n')
+    
+    try:
+        if BRAIN_ROOT.exists():
+            with open(EVENTS_FILE, 'a') as f:
+                f.write(json.dumps(event) + '\n')
+    except Exception:
+        pass
+    
     return event["event_id"]
 
 
