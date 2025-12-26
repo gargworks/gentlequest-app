@@ -13,6 +13,7 @@
 !providers/
 !providers/**
 !community.py
+!brain_telegram.py
 !data/
 !data/**
 !templates/
