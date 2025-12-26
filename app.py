@@ -641,6 +641,17 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Brain Telegram routes not registered: {e}")
 
+    # DEBUG: Expose import failure reason
+    @app.route("/api/brain/debug_import")
+    def debug_brain_import():
+        import traceback
+        try:
+            import brain_telegram
+            return "Import Successful! If routes are 404, check route registration logic."
+        except Exception:
+            return traceback.format_exc()
+
+
 
     # Initialize Memory System (Phase II)
     try:
