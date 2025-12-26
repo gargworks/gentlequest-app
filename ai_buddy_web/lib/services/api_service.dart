@@ -180,15 +180,25 @@ class ApiService {
   }
 
   /// Report outcome when user interacts with an exercise.
-  /// Used for session-level tracking to avoid repeating the same exercise.
+  /// Used for session-level tracking and analytics to improve interventions.
   /// 
   /// [exerciseType] - Type of exercise: 'breathing', 'grounding', 'journaling'
   /// [outcome] - User action: 'started', 'completed', 'skipped'
-  /// [durationSeconds] - Optional: how long the exercise lasted
+  /// [interventionId] - Optional: specific intervention ID from backend
+  /// [timeSpentSeconds] - Optional: how long the user spent on the exercise
+  /// [moodBefore] - Optional: user's mood before exercise (1-10 scale)
+  /// [moodAfter] - Optional: user's mood after exercise (1-10 scale)
+  /// [effectiveness] - Optional: user's rating of effectiveness (0.0-1.0)
+  /// [feedback] - Optional: text feedback from user
   Future<void> reportExerciseOutcome({
     required String exerciseType,
     required String outcome,
-    int? durationSeconds,
+    String? interventionId,
+    int? timeSpentSeconds,
+    int? moodBefore,
+    int? moodAfter,
+    double? effectiveness,
+    String? feedback,
   }) async {
     try {
       await _getSessionId();
@@ -197,12 +207,20 @@ class ApiService {
         data: {
           'session_id': _sessionId,
           'exercise_type': exerciseType,
+          'intervention_id': interventionId ?? '${exerciseType}_default',
           'outcome': outcome,
-          if (durationSeconds != null) 'duration_seconds': durationSeconds,
+          if (timeSpentSeconds != null) 'time_spent_seconds': timeSpentSeconds,
+          if (moodBefore != null) 'mood_before': moodBefore,
+          if (moodAfter != null) 'mood_after': moodAfter,
+          if (effectiveness != null) 'effectiveness': effectiveness,
+          if (feedback != null) 'feedback': feedback,
         },
       );
       if (kDebugMode) {
         debugPrint('📊 Exercise outcome: $exerciseType → $outcome');
+        if (moodBefore != null && moodAfter != null) {
+          debugPrint('📊 Mood change: $moodBefore → $moodAfter');
+        }
       }
     } catch (e) {
       // Fire-and-forget - don't break UX on analytics failure

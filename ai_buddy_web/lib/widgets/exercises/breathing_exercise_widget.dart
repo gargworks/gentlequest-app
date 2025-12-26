@@ -111,7 +111,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
       ApiService().reportExerciseOutcome(
         exerciseType: 'breathing',
         outcome: 'completed',
-        durationSeconds: widget.exercise.totalTimeSeconds,
+        timeSpentSeconds: widget.exercise.totalTimeSeconds,
       );
       
       setState(() => _isActive = false);
