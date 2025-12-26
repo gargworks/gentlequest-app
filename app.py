@@ -384,7 +384,7 @@ class Config:
 
 def create_app() -> Flask:
     """Application factory pattern for single codebase usage"""
-    app = Flask(__name__, static_folder="static", static_url_path="")
+    app = Flask(__name__, static_folder="static", static_url_path="", template_folder="templates")
 
     # Load configuration
     app.config.from_object(Config)
@@ -1245,8 +1245,13 @@ def _register_routes(app: Flask) -> None:
                     "/api/mood_entry",
                     "/api/self_assessment",
                     "/api/analytics/log",
+                    "/api/analytics/overview",
+                    "/api/analytics/interventions",
+                    "/api/analytics/user/<session_id>",
+                    "/api/analytics/function-calling",
+                    "/api/intervention/outcome",
+                    "/admin/analytics",
                     "/api/metrics",
-                    "/api/deploy-test",
                 ],
             }
             try:
