@@ -15,6 +15,8 @@
 !community.py
 !data/
 !data/**
+!templates/
+!templates/**
 !start.sh
 !nginx.conf
 
