@@ -3127,6 +3127,114 @@ def _register_additional_routes(app: Flask) -> None:
             app.logger.error(f"Intervention outcome error: {e}")
             return jsonify({"error": "Failed to record outcome"}), 500
 
+    # ========================================================================
+    # ANALYTICS ENDPOINTS
+    # ========================================================================
+
+    @app.route("/api/analytics/overview", methods=["GET"])
+    def analytics_overview():
+        """
+        Get high-level analytics overview.
+        Query params: days (default: 30)
+        """
+        try:
+            from providers.analytics import get_intervention_stats, get_completion_rates_by_type
+            
+            days = int(request.args.get('days', 30))
+            
+            overall_stats = get_intervention_stats(days)
+            by_type = get_completion_rates_by_type(days)
+            
+            return jsonify({
+                "period_days": days,
+                "overall": overall_stats,
+                "by_type": by_type,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"Analytics overview error: {e}")
+            return jsonify({"error": "Failed to fetch analytics"}), 500
+
+    @app.route("/api/analytics/interventions", methods=["GET"])
+    def intervention_analytics():
+        """
+        Get detailed intervention effectiveness breakdown.
+        Query params: days (default: 30)
+        """
+        try:
+            from providers.analytics import (
+                get_completion_rates_by_type,
+                get_mood_improvement_by_type,
+                get_intervention_recommendations
+            )
+            
+            days = int(request.args.get('days', 30))
+            
+            completion_rates = get_completion_rates_by_type(days)
+            mood_improvements = get_mood_improvement_by_type(days)
+            recommendations = get_intervention_recommendations(days)
+            
+            return jsonify({
+                "period_days": days,
+                "completion_rates": completion_rates,
+                "mood_improvements": mood_improvements,
+                "recommendations": recommendations,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"Intervention analytics error: {e}")
+            return jsonify({"error": "Failed to fetch intervention analytics"}), 500
+
+    @app.route("/api/analytics/user/<session_id>", methods=["GET"])
+    def user_analytics(session_id):
+        """
+        Get analytics for a specific user session.
+        Query params: days (default: 30)
+        """
+        try:
+            from providers.analytics import get_user_engagement_metrics, get_best_intervention_for_user
+            
+            days = int(request.args.get('days', 30))
+            
+            engagement = get_user_engagement_metrics(session_id, days)
+            best_intervention = get_best_intervention_for_user(session_id)
+            
+            return jsonify({
+                "session_id": session_id,
+                "period_days": days,
+                "engagement": engagement,
+                "recommended_intervention": best_intervention,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"User analytics error: {e}")
+            return jsonify({"error": "Failed to fetch user analytics"}), 500
+
+    @app.route("/api/analytics/function-calling", methods=["GET"])
+    def function_calling_analytics():
+        """
+        Get function calling statistics (Gemini vs keyword fallback).
+        Query params: days (default: 7)
+        """
+        try:
+            from providers.analytics import get_function_calling_stats
+            
+            days = int(request.args.get('days', 7))
+            stats = get_function_calling_stats(days)
+            
+            return jsonify({
+                "period_days": days,
+                "stats": stats,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"Function calling analytics error: {e}")
+            return jsonify({"error": "Failed to fetch function calling stats"}), 500
+
 
 # Create the application instance
 app = create_app()
