@@ -574,14 +574,8 @@ DO NOT mention crisis hotlines - system handles that separately."""
         final_response = " ".join(text_parts) if text_parts else "I'm here to listen."
         final_response = re.sub(r"\n\s*\n\s*\n", "\n\n", final_response).strip()
 
-        # Store conversation
-        history.append(
-            {"content": message, "is_user": True, "timestamp": datetime.now()}
-        )
-        history.append(
-            {"content": final_response, "is_user": False, "timestamp": datetime.now()}
-        )
-        conversations[session_id] = history
+        # Note: Conversation history is now stored in database via conversation_logs table
+        # No need to maintain in-memory history here
 
         return final_response, tool_calls_executed
 

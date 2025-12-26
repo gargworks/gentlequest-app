@@ -21,6 +21,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - VERSION=${VERSION:-1.0.0}
       - BUILD_TIME=${BUILD_TIME:-unknown}
+      - ENABLE_MEMORY=false
+      - ENABLE_PGVECTOR=false
       # Admin + retention configuration
       - ADMIN_API_TOKEN=${ADMIN_API_TOKEN:-}
       - MESSAGE_RETENTION_DAYS=${MESSAGE_RETENTION_DAYS:-30}
