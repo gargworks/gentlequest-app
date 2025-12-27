@@ -7,6 +7,14 @@ __pycache__/
 venv/
 ENV/
 .env
+.env.*
+!.env.example
+
+# Sensitive files - NEVER COMMIT
+ACHIEVEMENT_REPORT.md
+*.secret
+*.credentials
+key.properties
 
 # Flutter/Dart
 .dart_tool/
