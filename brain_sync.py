@@ -221,14 +221,41 @@ def watch_and_sync(interval: int = 30):
             print("\n👋 Stopped watching")
             break
 
+def sync_to_production():
+    """Push local state.json to Production"""
+    print("🚀 Pushing state to Production...")
+    
+    if not STATE_FILE.exists():
+        print("❌ No state.json found locally.")
+        return
+
+    with open(STATE_FILE, 'r') as f:
+        state_data = json.load(f)
+    
+    prod_url = "https://gentlequest.onrender.com/api/brain/sync"
+    
+    try:
+        response = requests.post(prod_url, json=state_data, timeout=10)
+        if response.status_code == 200:
+            print("✅ Successfully synced state to Production!")
+        else:
+            print(f"❌ Failed to sync: {response.text}")
+    except Exception as e:
+        print(f"❌ Error syncing to prod: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Sync God Mode artifacts to event stream")
     parser.add_argument("--watch", action="store_true", help="Watch and sync continuously")
     parser.add_argument("--since", type=str, help="Time window (e.g., 1h, 30m, 2d)")
     parser.add_argument("--interval", type=int, default=30, help="Watch interval in seconds")
+    parser.add_argument("--push-to-prod", action="store_true", help="Push local state.json to Production")
     
     args = parser.parse_args()
     
+    if args.push_to_prod:
+        sync_to_production()
+        return
+
     # Parse --since
     since = None
     if args.since:

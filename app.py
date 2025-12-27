@@ -636,6 +636,30 @@ def create_app() -> Flask:
             # Alert founder
             send_telegram_alert(f"🚀 New Sprint Started via API\n\n{goal}")
             return jsonify({"ok": True, "message": result})
+
+        @app.route("/api/brain/sync", methods=["POST"])
+        def brain_sync_state():
+             """Sync local brain state to production"""
+             try:
+                 from pathlib import Path
+                 state_data = request.get_json()
+                 if not state_data:
+                     return jsonify({"error": "No data provided"}), 400
+
+                 # Write to file where brain_telegram reads
+                 brain_root = Path(app.root_path) / ".brain"
+                 ledger_dir = brain_root / "ledger"
+                 ledger_dir.mkdir(parents=True, exist_ok=True)
+                 
+                 save_path = ledger_dir / "state.json"
+                 with open(save_path, "w") as f:
+                     json.dump(state_data, f, indent=4)
+                 
+                 app.logger.info(f"Brain state synced to {save_path}")
+                 return jsonify({"ok": True, "message": "State synced"})
+             except Exception as e:
+                 app.logger.error(f"Sync failed: {e}")
+                 return jsonify({"ok": False, "error": str(e)}), 500
         
         app.logger.info("Nuclear Brain Telegram routes registered (/api/brain/*)")
     except Exception as e:
