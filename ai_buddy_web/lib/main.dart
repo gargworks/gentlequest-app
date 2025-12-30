@@ -1,11 +1,13 @@
 import 'package:ai_buddy_web/screens/dhiwise_chat_screen.dart';
 import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/quest_preview_screen.dart';
+import 'package:ai_buddy_web/screens/clinical_assessment_screen.dart';
 import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart'
     as dhiwise_wellness;
 import 'dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
 import 'package:ai_buddy_web/dhiwise/presentation/quest_screen/quest_screen.dart'
     as dhiwise_quest;
+
 
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -226,6 +228,7 @@ class MyApp extends StatelessWidget {
                     dhiwise_wellness.WellnessDashboardScreen(),
               ),
           '/quests-list': (context) => const dhiwise_quest.QuestScreen(),
+          '/clinical-assessment': (context) => const ClinicalAssessmentScreen(),
         },
       ),
     );

@@ -2,15 +2,25 @@
 
 **Status:** [ACTIVE] | **Version:** 1.1.0-Hardened | **Engine:** Level 5 Autonomy 
 
-## 1. DUAL-THREAD HIERARCHY (Where to Work)
+## 1. MULTI-ENVIRONMENT HIERARCHY (Where to Work)
 
-To prevent context rot, use this 2025 bifurcated workflow:
+To prevent context rot, use this 2025 flexible workflow:
 
-| Domain    | Role              | Location          | Responsibility                  |
-|-----------|-------------------|-------------------|---------------------------------|
-| STRATEGY  | Strategic Architect | [Original Chat]  | The "WHY." War-gaming, pivoting, SOTA benchmarking. |
-| CREATION  | Technical Creator  | Antigravity      | The "HOW." Generating code, fixing logic, building files. |
-| HIVE      | Autonomous Hive    | CLI/Background   | The "EXECUTION." Subatomic labor (Intel, Code, Audit).|
+| Domain    | Role              | Primary Location    | Alt Locations       | Responsibility                  |
+|-----------|-------------------|---------------------|---------------------|--------------------------------|
+| STRATEGY  | Strategic Architect | Windsurf          | Cursor (rare)       | The "WHY." War-gaming, pivoting, SOTA benchmarking. |
+| CREATION  | Technical Creator  | Antigravity        | Cursor, Windsurf    | The "HOW." Generating code, fixing logic, building files. |
+| HIVE      | Autonomous Hive    | Gemini CLI         | Background scripts  | The "EXECUTION." Subatomic labor (Intel, Code, Audit).|
+
+### 1.1 Environment Registry
+| Environment | Use Case | Frequency |
+|-------------|----------|-----------|
+| **Windsurf** | Strategy, history, major decisions | As needed |
+| **Antigravity** | Primary coding, daily development | Daily |
+| **Gemini CLI** | Background agents, batch tasks | Periodic |
+| **Cursor** | Quick edits, specific features | Rare |
+
+**Roles are FLEXIBLE** — any environment can do any task if context is loaded.
 
 ## 2. THE HIVE CODENAMES (Employee Directory)
 

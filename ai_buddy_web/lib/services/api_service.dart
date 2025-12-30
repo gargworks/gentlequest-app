@@ -580,6 +580,51 @@ class ApiService {
     });
   }
 
+  // ============================================================================
+  // CLINICAL ASSESSMENTS (PHQ-9, GAD-7)
+  // ============================================================================
+
+  /// Get clinical assessment questions (phq9 or gad7)
+  Future<Map<String, dynamic>> getClinicalAssessmentQuestions(String assessmentType) async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      final response = await _dio.get('/api/assessment/$assessmentType/questions');
+      return response.data as Map<String, dynamic>;
+    });
+  }
+
+  /// Submit clinical assessment (phq9 or gad7)
+  Future<Map<String, dynamic>> submitClinicalAssessment({
+    required String assessmentType,
+    required List<int> responses,
+  }) async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      final response = await _dio.post(
+        '/api/assessment/$assessmentType',
+        data: {
+          'session_id': _sessionId,
+          'responses': responses,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    });
+  }
+
+  /// Get clinical assessment history
+  Future<List<Map<String, dynamic>>> getClinicalAssessmentHistory() async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      final response = await _dio.get(
+        '/api/assessment/history',
+        queryParameters: {'session_id': _sessionId},
+      );
+      final data = response.data as Map<String, dynamic>;
+      final assessments = data['assessments'] as List<dynamic>? ?? [];
+      return assessments.map((e) => Map<String, dynamic>.from(e)).toList();
+    });
+  }
+
   /// Get mood pulse - anonymous aggregate stats for "You Are Not Alone" feature
   Future<Map<String, dynamic>> getMoodPulse() async {
     return _retryOperation(() async {

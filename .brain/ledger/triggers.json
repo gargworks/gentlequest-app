@@ -72,6 +72,16 @@
                 "*"
             ],
             "condition": "always"
+        },
+        {
+            "id": "dogfood_retrospective",
+            "event": "sprint_completed",
+            "emitter": "*",
+            "activates": [
+                "synthesizer"
+            ],
+            "condition": "always",
+            "action": "Prompt user for dogfood retrospective. Update test/dogfood_log.md with session ratings."
         }
     ]
 }

@@ -129,3 +129,21 @@ class CommunityComment(db.Model):
 
     def __repr__(self):
         return f"<CommunityComment id={self.id}>"
+
+
+class ClinicalAssessment(db.Model):
+    """Store PHQ-9 and GAD-7 clinical assessment results."""
+    __tablename__ = "clinical_assessments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    assessment_type = db.Column(db.String(20), nullable=False)  # 'phq9' or 'gad7'
+    responses = db.Column(JSONB, nullable=False)  # List of integer responses
+    total_score = db.Column(db.Integer, nullable=False)
+    severity = db.Column(db.String(20), nullable=False)  # minimal, mild, moderate, severe
+    requires_follow_up = db.Column(db.Boolean, default=False)  # For PHQ-9 Q9
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<ClinicalAssessment id={self.id} type={self.assessment_type} score={self.total_score}>"
+

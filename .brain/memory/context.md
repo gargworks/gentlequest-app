@@ -52,8 +52,9 @@ GentleQuest is an AI-powered mental wellness app featuring:
 
 - Phase 1 Function Calling: ✅ Implemented
 - Phase 2 RAG/Memory: 🔄 In Progress
+- PHQ-9/GAD-7 Assessments: ✅ Implemented (Dec 29)
 - Beta Testing: Active with friends/family
-- Next Milestone: PHQ-9/GAD-7 clinical assessments
+- Next Milestone: Memory system production verification
 
 ---
 
@@ -74,5 +75,14 @@ GentleQuest is an AI-powered mental wellness app featuring:
 
 ---
 
-*Last Updated: 2025-12-26*  
+*Last Updated: 2025-12-27*  
 *Next Review: Weekly by Synthesizer*
+
+---
+
+## 🔗 Related Projects
+
+| Project | Hub | Status |
+|---------|-----|--------|
+| **mcp-server-nucleus** | [NUCLEUS_HUB.md](../NUCLEUS_HUB.md) | Phase B: Validate |
+

@@ -274,7 +274,6 @@ def _get_environment_config(environment: str) -> Dict[str, Any]:
             "redis_url": "redis://localhost:6379",
             "cors_origins": [
                 "https://gentlequest.onrender.com",
-                "https://*.onrender.com",
                 "https://gentlequest.com",
                 "https://www.gentlequest.com",
                 "https://gentlequest.app",
@@ -812,6 +811,106 @@ def create_app() -> Flask:
                     },
                 }
             )
+
+    # ============================================================================
+    # CLINICAL ASSESSMENTS (PHQ-9, GAD-7)
+    # ============================================================================
+    try:
+        from providers.clinical_assessments import (
+            score_phq9,
+            score_gad7,
+            get_assessment_questions,
+            validate_responses,
+        )
+        from models import ClinicalAssessment
+
+        @app.route("/api/assessment/<assessment_type>/questions", methods=["GET"])
+        def get_clinical_assessment_questions(assessment_type):
+            """Get questions for a clinical assessment (phq9 or gad7)."""
+            try:
+                questions = get_assessment_questions(assessment_type)
+                return jsonify({"success": True, **questions})
+            except ValueError as e:
+                return jsonify({"success": False, "error": str(e)}), 400
+
+        @app.route("/api/assessment/<assessment_type>", methods=["POST"])
+        def submit_clinical_assessment(assessment_type):
+            """Submit a clinical assessment (phq9 or gad7)."""
+            try:
+                data = request.get_json() or {}
+                session_id = data.get("session_id")
+                responses = data.get("responses", [])
+
+                if not session_id:
+                    return jsonify({"success": False, "error": "session_id required"}), 400
+
+                # Validate responses
+                valid, error_msg = validate_responses(assessment_type, responses)
+                if not valid:
+                    return jsonify({"success": False, "error": error_msg}), 400
+
+                # Score the assessment
+                if assessment_type == "phq9":
+                    result = score_phq9(responses)
+                elif assessment_type == "gad7":
+                    result = score_gad7(responses)
+                else:
+                    return jsonify({"success": False, "error": f"Unknown assessment: {assessment_type}"}), 400
+
+                # Store in database
+                assessment = ClinicalAssessment(
+                    session_id=session_id,
+                    assessment_type=assessment_type,
+                    responses=responses,
+                    total_score=result["total_score"],
+                    severity=result["severity"],
+                    requires_follow_up=result.get("requires_follow_up", False),
+                )
+                db.session.add(assessment)
+                db.session.commit()
+
+                return jsonify({
+                    "success": True,
+                    "assessment_id": assessment.id,
+                    **result,
+                })
+
+            except Exception as e:
+                app.logger.error(f"Clinical assessment error: {e}")
+                return jsonify({"success": False, "error": str(e)}), 500
+
+        @app.route("/api/assessment/history", methods=["GET"])
+        def get_clinical_assessment_history():
+            """Get clinical assessment history for a session."""
+            try:
+                session_id = request.args.get("session_id")
+                if not session_id:
+                    return jsonify({"success": False, "error": "session_id required"}), 400
+
+                assessments = ClinicalAssessment.query.filter_by(
+                    session_id=session_id
+                ).order_by(ClinicalAssessment.timestamp.desc()).limit(20).all()
+
+                history = [
+                    {
+                        "id": a.id,
+                        "type": a.assessment_type,
+                        "score": a.total_score,
+                        "severity": a.severity,
+                        "timestamp": a.timestamp.isoformat(),
+                    }
+                    for a in assessments
+                ]
+
+                return jsonify({"success": True, "assessments": history})
+
+            except Exception as e:
+                app.logger.error(f"Assessment history error: {e}")
+                return jsonify({"success": False, "error": str(e)}), 500
+
+        app.logger.info("Clinical assessment routes registered (PHQ-9, GAD-7)")
+    except Exception as e:
+        app.logger.warning(f"Clinical assessment routes not registered: {e}")
 
     # Attach a request ID to each request and response for traceability
     @app.before_request
