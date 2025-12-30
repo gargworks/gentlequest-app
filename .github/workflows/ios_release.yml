@@ -240,6 +240,14 @@ jobs:
             mv "$PROFILE_TEMP" ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
             PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
             
+            # Configure Xcode project for manual signing
+            # Get the signing identity from the keychain
+            SIGNING_IDENTITY=$(security find-identity -p codesigning -v "$KEYCHAIN_PATH" | grep "iPhone Distribution" | head -1 | awk '{print $2}')
+            echo "Using signing identity: $SIGNING_IDENTITY"
+            
+            # Update Xcode project to use manual signing
+            sed -i '' 's/DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";/DEVELOPMENT_TEAM = "'$TEAM_ID'";\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "'$PROFILE_UUID'";/g' ai_buddy_web/ios/Runner.xcodeproj/project.pbxproj
+            
             # Create ExportOptions.plist using plutil
             mkdir -p ai_buddy_web/ios/Flutter
             /usr/libexec/PlistBuddy -c "Add :method string app-store" ai_buddy_web/ios/Flutter/ExportOptions.plist
