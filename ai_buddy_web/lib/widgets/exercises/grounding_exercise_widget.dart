@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/interactive_exercise.dart';
 import '../../services/api_service.dart';
 
@@ -17,10 +18,58 @@ class GroundingExerciseWidget extends StatefulWidget {
       _GroundingExerciseWidgetState();
 }
 
-class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
+class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
+    with SingleTickerProviderStateMixin {
   int _currentStepIndex = 0;
   bool _isComplete = false;
-  bool _hasStarted = false; // Track if we've reported 'started'
+  bool _hasStarted = false;
+  List<bool> _checkedItems = []; // Track checked items for current step
+  
+  // Entrance animation
+  late AnimationController _entranceController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCheckedItems();
+    
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideAnimation = Tween<double>(begin: 20, end: 0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOutCubic),
+    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
+    );
+    _entranceController.forward();
+  }
+  
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    super.dispose();
+  }
+  
+  void _initCheckedItems() {
+    final step = widget.exercise.steps[_currentStepIndex];
+    _checkedItems = List.filled(step.count, false);
+  }
+  
+  void _toggleItem(int index) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _checkedItems[index] = !_checkedItems[index];
+    });
+    
+    // Check if all items are checked
+    if (_checkedItems.every((checked) => checked)) {
+      Future.delayed(const Duration(milliseconds: 300), _nextStep);
+    }
+  }
 
   void _nextStep() {
     // Report started on first interaction
@@ -33,9 +82,16 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
     }
     
     if (_currentStepIndex < widget.exercise.steps.length - 1) {
-      setState(() => _currentStepIndex++);
+      HapticFeedback.mediumImpact();
+      setState(() {
+        _currentStepIndex++;
+        _initCheckedItems(); // Reset checkboxes for new step
+      });
+      // Replay entrance animation
+      _entranceController.forward(from: 0);
     } else {
       // Report completed when all steps done
+      HapticFeedback.heavyImpact();
       ApiService().reportExerciseOutcome(
         exerciseType: 'grounding',
         outcome: 'completed',
@@ -110,14 +166,21 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
       );
     }
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return AnimatedBuilder(
+      animation: _entranceController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
             // Header: Sense Icon + Title
             Row(
               children: [
@@ -170,17 +233,52 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
             ),
             const SizedBox(height: 16),
 
-            // Bullet points placeholder (visual aid)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Interactive checkboxes - tap to check off items
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: List.generate(step.count, (index) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
+                final isChecked = _checkedItems[index];
+                return GestureDetector(
+                  onTap: () => _toggleItem(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isChecked ? color : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isChecked ? color : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      boxShadow: isChecked
+                          ? [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 150),
+                        child: isChecked
+                            ? Icon(Icons.check, color: Colors.white, size: 24, key: ValueKey('check_$index'))
+                            : Text(
+                                '${index + 1}',
+                                key: ValueKey('num_$index'),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                      ),
+                    ),
                   ),
                 );
               }),
@@ -225,9 +323,13 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
