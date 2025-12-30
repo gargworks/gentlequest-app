@@ -113,7 +113,7 @@ on:
 jobs:
   build_ios:
     name: Build iOS (IPA or App)
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       # Flutter location
       FLUTTER_VERSION: '3.32.8'
@@ -349,7 +349,7 @@ jobs:
     name: Upload to TestFlight
     if: ${{ (inputs.upload || github.event.inputs.upload) == 'true' }}
     needs: build_ios
-    runs-on: macos-14
+    runs-on: macos-15
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     steps:
       - name: Download IPA artifact
