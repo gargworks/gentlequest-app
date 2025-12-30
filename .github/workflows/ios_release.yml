@@ -278,6 +278,7 @@ jobs:
           BN: ${{ steps.bn.outputs.bn }}
           EXPORT_METHOD: ${{ inputs.export_method || github.event.inputs.export_method }}
           CRASHLYTICS_UPLOAD: ${{ inputs.crashlytics_upload || github.event.inputs.crashlytics_upload }}
+          WITH_SIGNING: ${{ steps.signing.outputs.with_signing }}
         run: |
           set -e
           BN="${{ steps.bn.outputs.bn }}"
@@ -286,8 +287,14 @@ jobs:
           if [ -f "ios/Flutter/ExportOptions.plist" ]; then
             EXPORT_OPTS="--export-options-plist=ios/Flutter/ExportOptions.plist"
           fi
-          # Always emit an IPA (unsigned when signing is unavailable)
-          flutter build ipa --release --no-codesign --build-number "$BN" $EXPORT_OPTS
+          # Build signed IPA if signing materials are available, otherwise build unsigned
+          if [ "$WITH_SIGNING" == "true" ]; then
+            echo "Building signed IPA..."
+            flutter build ipa --release --build-number "$BN" $EXPORT_OPTS
+          else
+            echo "Building unsigned IPA..."
+            flutter build ipa --release --no-codesign --build-number "$BN" $EXPORT_OPTS
+          fi
 
       - name: Upload IPA artifact (if any)
         uses: actions/upload-artifact@v4
