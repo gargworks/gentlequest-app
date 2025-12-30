@@ -366,4 +366,9 @@ jobs:
         run: |
           set -e
           if [ ! -f dist/*.ipa ]; then echo "No IPA found; skipping upload"; exit 0; fi
+          
+          # Create private_keys directory and save API key file
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          
           xcrun altool --upload-app -t ios -f dist/*.ipa --apiKey "$APP_STORE_CONNECT_API_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
