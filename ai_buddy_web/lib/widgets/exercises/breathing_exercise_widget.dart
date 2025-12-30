@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/interactive_exercise.dart';
@@ -213,12 +212,12 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
               end: Alignment.bottomRight,
               colors: [
                 const Color(0xFFE3F2FD),
-                const Color(0xFFBBDEFB).withOpacity(0.8),
+                const Color(0xFFBBDEFB).withValues(alpha: 0.8),
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF42A5F5).withOpacity(glowValue),
+                color: const Color(0xFF42A5F5).withValues(alpha: glowValue),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -234,7 +233,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -275,7 +274,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                       backgroundColor: const Color(0xFF1976D2),
                       foregroundColor: Colors.white,
                       elevation: 4,
-                      shadowColor: const Color(0xFF1976D2).withOpacity(0.4),
+                      shadowColor: const Color(0xFF1976D2).withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -316,12 +315,12 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
           end: Alignment.bottomCenter,
           colors: [
             Colors.white,
-            phaseColor.withOpacity(0.1),
+            phaseColor.withValues(alpha: 0.1),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: phaseColor.withOpacity(0.2),
+            color: phaseColor.withValues(alpha: 0.2),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -378,7 +377,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: phaseColor.withOpacity(0.3 * _scaleAnimation.value),
+                        color: phaseColor.withValues(alpha: 0.3 * _scaleAnimation.value),
                         width: 2,
                       ),
                     ),
@@ -398,13 +397,13 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            phaseColor.withOpacity(0.8),
-                            phaseColor.withOpacity(0.4),
+                            phaseColor.withValues(alpha: 0.8),
+                            phaseColor.withValues(alpha: 0.4),
                           ],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: phaseColor.withOpacity(0.4),
+                            color: phaseColor.withValues(alpha: 0.4),
                             blurRadius: 30 * _scaleAnimation.value,
                             spreadRadius: 5,
                           )
@@ -443,7 +442,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: phaseColor.withOpacity(0.15),
+              color: phaseColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
