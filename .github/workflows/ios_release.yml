@@ -255,7 +255,7 @@ jobs:
             /usr/libexec/PlistBuddy -c "Add :method string app-store" ai_buddy_web/ios/Flutter/ExportOptions.plist
             /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM_ID" ai_buddy_web/ios/Flutter/ExportOptions.plist
             /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" ai_buddy_web/ios/Flutter/ExportOptions.plist
-            /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:app.gentlequest.www string $PROFILE_UUID" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.gentlequest.app string $PROFILE_UUID" ai_buddy_web/ios/Flutter/ExportOptions.plist
             /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" ai_buddy_web/ios/Flutter/ExportOptions.plist
             /usr/libexec/PlistBuddy -c "Add :uploadSymbols bool true" ai_buddy_web/ios/Flutter/ExportOptions.plist
             /usr/libexec/PlistBuddy -c "Add :compileBitcode bool false" ai_buddy_web/ios/Flutter/ExportOptions.plist
