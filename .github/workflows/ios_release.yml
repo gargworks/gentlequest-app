@@ -224,17 +224,21 @@ jobs:
             security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
             security find-identity -p codesigning -v || true
             
-            # Install provisioning profile
+            # Install provisioning profile (temporary location first)
             mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-            PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
-            echo "$IOS_MOBILEPROVISION_BASE64" | base64 -d > "$PROFILE_PATH"
+            PROFILE_TEMP=~/Library/MobileDevice/Provisioning\ Profiles/temp.mobileprovision
+            echo "$IOS_MOBILEPROVISION_BASE64" | base64 -d > "$PROFILE_TEMP"
             
             # Extract team ID and provisioning profile UUID
-            TEAM_ID=$(security cms -D -i "$PROFILE_PATH" 2>/dev/null | plutil -extract TeamIdentifier.0 raw -o - -)
-            PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" 2>/dev/null | plutil -extract UUID raw -o - -)
+            TEAM_ID=$(security cms -D -i "$PROFILE_TEMP" 2>/dev/null | plutil -extract TeamIdentifier.0 raw -o - -)
+            PROFILE_UUID=$(security cms -D -i "$PROFILE_TEMP" 2>/dev/null | plutil -extract UUID raw -o - -)
             
             echo "Team ID: $TEAM_ID"
             echo "Profile UUID: $PROFILE_UUID"
+            
+            # Rename profile to its UUID (required by Xcode)
+            mv "$PROFILE_TEMP" ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+            PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
             
             # Create ExportOptions.plist using plutil
             mkdir -p ai_buddy_web/ios/Flutter
