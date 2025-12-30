@@ -236,31 +236,15 @@ jobs:
             echo "Team ID: $TEAM_ID"
             echo "Profile UUID: $PROFILE_UUID"
             
-            # Create ExportOptions.plist with direct content
+            # Create ExportOptions.plist using plutil
             mkdir -p ai_buddy_web/ios/Flutter
-            cat > ai_buddy_web/ios/Flutter/ExportOptions.plist <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>
-    <string>app-store</string>
-    <key>teamID</key>
-    <string>$TEAM_ID</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>app.gentlequest.www</key>
-        <string>$PROFILE_UUID</string>
-    </dict>
-    <key>signingStyle</key>
-    <string>manual</string>
-    <key>uploadSymbols</key>
-    <true/>
-    <key>compileBitcode</key>
-    <false/>
-</dict>
-</plist>
-EOF
+            /usr/libexec/PlistBuddy -c "Add :method string app-store" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM_ID" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:app.gentlequest.www string $PROFILE_UUID" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :uploadSymbols bool true" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            /usr/libexec/PlistBuddy -c "Add :compileBitcode bool false" ai_buddy_web/ios/Flutter/ExportOptions.plist
           else
             echo "with_signing=false" >> $GITHUB_OUTPUT
           fi
