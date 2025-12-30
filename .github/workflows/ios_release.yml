@@ -236,34 +236,31 @@ jobs:
             echo "Team ID: $TEAM_ID"
             echo "Profile UUID: $PROFILE_UUID"
             
-            # Create ExportOptions.plist
-            cat > ai_buddy_web/ios/Flutter/ExportOptions.plist << 'PLISTEOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store</string>
-                <key>teamID</key>
-                <string>TEAM_ID_PLACEHOLDER</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>app.gentlequest.www</key>
-                    <string>PROFILE_UUID_PLACEHOLDER</string>
-                </dict>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>uploadSymbols</key>
-                <true/>
-                <key>compileBitcode</key>
-                <false/>
-            </dict>
-            </plist>
-            PLISTEOF
-            
-            # Replace placeholders
-            sed -i '' "s/TEAM_ID_PLACEHOLDER/$TEAM_ID/g" ai_buddy_web/ios/Flutter/ExportOptions.plist
-            sed -i '' "s/PROFILE_UUID_PLACEHOLDER/$PROFILE_UUID/g" ai_buddy_web/ios/Flutter/ExportOptions.plist
+            # Create ExportOptions.plist with direct content
+            mkdir -p ai_buddy_web/ios/Flutter
+            cat > ai_buddy_web/ios/Flutter/ExportOptions.plist <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store</string>
+    <key>teamID</key>
+    <string>$TEAM_ID</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>app.gentlequest.www</key>
+        <string>$PROFILE_UUID</string>
+    </dict>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>compileBitcode</key>
+    <false/>
+</dict>
+</plist>
+EOF
           else
             echo "with_signing=false" >> $GITHUB_OUTPUT
           fi
