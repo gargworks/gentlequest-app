@@ -36,6 +36,7 @@ ARTIFACTS_PATH = BRAIN_PATH / "artifacts"
 EVENTS_FILE = LEDGER_PATH / "events.jsonl"
 DIGEST_PATH = LEDGER_PATH / "daily_digest.md"
 KNOWLEDGE_INDEX_PATH = BRAIN_PATH / "knowledge_index.json"
+IDEAS_INBOX_PATH = ARTIFACTS_PATH / "ideas" / "inbox.md"
 MODEL_ID = "gemini-2.0-flash-exp"
 
 # Telegram config (loaded from .env or environment)
@@ -102,6 +103,32 @@ def load_artifact(path: str) -> str:
     if full_path.exists():
         return full_path.read_text(encoding='utf-8')
     return ""
+
+
+def get_unprocessed_ideas() -> tuple[int, list[str]]:
+    """Read unprocessed ideas (unchecked items) from ideas inbox."""
+    if not IDEAS_INBOX_PATH.exists():
+        return 0, []
+    
+    try:
+        content = IDEAS_INBOX_PATH.read_text(encoding='utf-8')
+        lines = content.split('\n')
+        
+        # Find unchecked items (- [ ])
+        unprocessed = []
+        for line in lines:
+            if line.strip().startswith('- [ ]'):
+                # Extract the idea text after the timestamp
+                idea_text = line.strip()[6:]  # Remove "- [ ] "
+                # Try to extract just the idea (after timestamp)
+                if '**: ' in idea_text:
+                    idea_text = idea_text.split('**: ', 1)[1]
+                unprocessed.append(idea_text[:60])  # Truncate for digest
+        
+        return len(unprocessed), unprocessed[:5]  # Return count and top 5
+    except Exception as e:
+        print(f"   ⚠️ Error reading ideas: {e}")
+        return 0, []
 
 
 def load_agent_prompt(agent_name: str) -> str:
@@ -330,6 +357,10 @@ def run_synthesizer_digest(client, test_count, test_passed, critic_review, strat
     
     status_emoji = "✅" if test_passed else "❌"
     
+    # Get unprocessed ideas
+    ideas_count, ideas_list = get_unprocessed_ideas()
+    ideas_text = f"- Ideas: {ideas_count} unprocessed - " + "; ".join(ideas_list[:3]) if ideas_count > 0 else "- Ideas: None pending"
+    
     prompt = f"""
 Create a concise founder daily digest.
 
@@ -339,6 +370,7 @@ INPUTS:
 - Strategist: {strategist_review[:200]}
 - Growth: {growth_nudge[:150]}
 - Docs: {doc_drift[:100]}
+{ideas_text}
 
 OUTPUT FORMAT:
 # 🌙 Nightly Report
@@ -350,10 +382,13 @@ Tests: [emoji] | Critic: [status] | Strategy: [status]
 • [Most important finding]
 • [Second finding]
 
+## Ideas Inbox
+[If any ideas pending, list them. Otherwise say "Clear"]
+
 ## Today's Action
 [Single most important thing to do today]
 
-Keep under 100 words.
+Keep under 120 words.
 """
     
     response = client.models.generate_content(model=MODEL_ID, contents=prompt)
@@ -371,12 +406,16 @@ def create_telegram_summary(test_passed, test_count, critic_review, strategist_r
     # Sanitize growth nudge for Telegram (remove markdown chars)
     growth_text = growth_nudge.replace('*', '').replace('_', '').replace('`', '')[:80]
     
+    # Get unprocessed ideas count
+    ideas_count, _ = get_unprocessed_ideas()
+    ideas_line = f"\n💡 Ideas: {ideas_count} unprocessed" if ideas_count > 0 else ""
+    
     # Use plain text, no markdown to avoid 400 errors
     return f"""🌙 Nightly Agent Report
 
 {test_emoji} Tests: {test_count} passed
 {critic_status} Critic: {'Clean' if 'APPROVED' in critic_review else 'Review needed'}
-{strategy_status} Strategy: {'Aligned' if 'ALIGNED' in strategist_review else 'Drift detected'}
+{strategy_status} Strategy: {'Aligned' if 'ALIGNED' in strategist_review else 'Drift detected'}{ideas_line}
 
 📈 Growth: {growth_text}
 
