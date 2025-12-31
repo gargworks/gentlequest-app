@@ -17,6 +17,7 @@ Commands (in Telegram):
     /status  - Get current Brain status
     /sprint <goal> - Start new sprint
     /tasks   - List pending tasks
+    /idea <thought> - Quick capture shower thoughts
     /event <type> <msg> - Log custom event
 
 Author: Nuclear Brain System
@@ -272,6 +273,51 @@ def handle_event_command(args: str) -> str:
     return f"✅ Event logged: `{event_id}`"
 
 
+def handle_idea_command(idea: str) -> str:
+    """Handle /idea <your shower thought> command - quick capture for ideas"""
+    if not idea:
+        return "❌ Usage: /idea <your thought>\nExample: /idea Add voice notes to Luna"
+    
+    # Get ideas inbox path
+    ideas_folder = BRAIN_ROOT / "artifacts" / "ideas"
+    inbox_file = ideas_folder / "inbox.md"
+    
+    # Create folder if needed (will fail gracefully on production)
+    try:
+        ideas_folder.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    
+    # Format the idea entry
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    entry = f"\n- [ ] **{timestamp}**: {idea}\n"
+    
+    # Append to inbox
+    try:
+        if BRAIN_ROOT.exists():
+            # Create file with header if it doesn't exist
+            if not inbox_file.exists():
+                inbox_file.write_text("# 💡 Ideas Inbox\n\nShower thoughts and quick captures from Telegram.\n\n---\n")
+            
+            with open(inbox_file, 'a') as f:
+                f.write(entry)
+            
+            # Also emit as event for ledger tracking
+            emit_event(
+                emitter="founder",
+                event_type="idea_captured",
+                payload={"idea": idea},
+                severity="ROUTINE"
+            )
+            
+            return f"💡 *Idea Captured!*\n\n_{idea}_\n\nSaved to ideas inbox. Review in Antigravity."
+        else:
+            # Production: no local brain, just acknowledge
+            return f"💡 *Idea Noted!*\n\n_{idea}_\n\n⚠️ No local brain on production. Sync needed for persistence."
+    except Exception as e:
+        return f"❌ Failed to save idea: {str(e)[:50]}"
+
+
 def process_telegram_message(message: dict) -> str:
     """Process incoming Telegram message and return response"""
     text = message.get("text", "")
@@ -290,16 +336,21 @@ def process_telegram_message(message: dict) -> str:
         args = text.replace("/event", "").strip()
         return handle_event_command(args)
     
+    elif text.startswith("/idea"):
+        idea = text.replace("/idea", "").strip()
+        return handle_idea_command(idea)
+    
     elif text.startswith("/help"):
         return """🧠 *Brain Commands*
 
 /status - Get current status
 /sprint <goal> - Start new sprint
 /tasks - List current tasks
+/idea <thought> - 💡 Quick capture (shower thoughts!)
 /event <type> <msg> - Log event
 
 Example:
-`/sprint Build payment integration`"""
+`/idea Add voice notes to Luna`"""
     
     else:
         return "❓ Unknown command. Try /help"
