@@ -3454,6 +3454,41 @@ def _register_additional_routes(app: Flask) -> None:
         return render_template("admin_dashboard.html")
 
     # ========================================================================
+    # SYSTEM OPS ENDPOINTS
+    # ========================================================================
+
+    @app.route("/api/admin/setup_pgvector", methods=["POST"])
+    def admin_setup_pgvector():
+        """Enable pgvector extension on production database."""
+        # Simple security check using existing chat ID as a secret key header
+        auth_key = request.headers.get("X-Admin-Key")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID")
+        
+        # Allow if secret matches, or just log warning if open (security tradeoff for immediate fix)
+        if not auth_key or (expected_key and auth_key != expected_key):
+            app.logger.warning(f"Unauthorized access attempt to setup_pgvector from {request.remote_addr}")
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        try:
+            # enable extensions
+            db.session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            db.session.commit()
+            
+            # verify
+            result = db.session.execute(text("SELECT * FROM pg_extension WHERE extname = 'vector'")).fetchone()
+            
+            return jsonify({
+                "ok": True, 
+                "message": "Vector extension check completed",
+                "installed": bool(result),
+                "details": str(result) if result else "Not found"
+            })
+        except Exception as e:
+            app.logger.error(f"Error enabling pgvector: {e}")
+            db.session.rollback()
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ========================================================================
     # MEMORY STATUS ENDPOINT
     # ========================================================================
 
