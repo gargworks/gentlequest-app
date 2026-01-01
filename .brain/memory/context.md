@@ -17,7 +17,7 @@
 ## Product Overview
 
 GentleQuest is an AI-powered mental wellness app featuring:
-- **Luna:** Empathetic AI companion using advanced LLMs
+- **Alex:** Empathetic AI companion (UI name, can be improved)
 - **Quest System:** Gamified micro-interventions for habit formation
 - **Mood Tracking:** Longitudinal emotional pattern analysis
 - **Crisis Detection:** Real-time safety monitoring with geo-specific resources
@@ -51,10 +51,10 @@ GentleQuest is an AI-powered mental wellness app featuring:
 ## Current Phase
 
 - Phase 1 Function Calling: ✅ Implemented
-- Phase 2 RAG/Memory: 🔄 In Progress
+- Phase 2 RAG/Memory: ✅ Integrated in chat (Dec 31 fix)
 - PHQ-9/GAD-7 Assessments: ✅ Implemented (Dec 29)
 - Beta Testing: Active with friends/family
-- Next Milestone: Memory system production verification
+- Next Milestone: Production deployment & testing
 
 ---
 

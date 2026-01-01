@@ -318,6 +318,50 @@ def handle_idea_command(idea: str) -> str:
         return f"❌ Failed to save idea: {str(e)[:50]}"
 
 
+def handle_research_command(task: str) -> str:
+    """Handle /research <task> command - queue research for Gemini CLI processing"""
+    if not task:
+        return "❌ Usage: /research <task>\nExample: /research Compare Stripe vs Paddle for solo SaaS"
+    
+    # Get research queue path
+    research_folder = BRAIN_ROOT / "artifacts" / "research"
+    queue_file = research_folder / "queue.md"
+    
+    # Create folder if needed
+    try:
+        research_folder.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    
+    # Format the queue entry
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    entry = f"\n- [ ] {timestamp} | {task}\n"
+    
+    # Append to queue
+    try:
+        if BRAIN_ROOT.exists():
+            # Create file with header if it doesn't exist
+            if not queue_file.exists():
+                queue_file.write_text("# 📚 Research Queue\n\nTasks queued via /research. Processed by Gemini CLI.\n\n---\n\n## Pending Tasks\n")
+            
+            with open(queue_file, 'a') as f:
+                f.write(entry)
+            
+            # Emit event for tracking
+            emit_event(
+                emitter="founder",
+                event_type="research_queued",
+                payload={"task": task},
+                severity="ROUTINE"
+            )
+            
+            return f"🔬 *Research Queued!*\n\n_{task}_\n\nWill be processed by Gemini CLI overnight (or run manually)."
+        else:
+            return f"🔬 *Research Noted!*\n\n_{task}_\n\n⚠️ No local brain on production."
+    except Exception as e:
+        return f"❌ Failed to queue research: {str(e)[:50]}"
+
+
 def process_telegram_message(message: dict) -> str:
     """Process incoming Telegram message and return response"""
     text = message.get("text", "")
@@ -340,6 +384,10 @@ def process_telegram_message(message: dict) -> str:
         idea = text.replace("/idea", "").strip()
         return handle_idea_command(idea)
     
+    elif text.startswith("/research"):
+        task = text.replace("/research", "").strip()
+        return handle_research_command(task)
+    
     elif text.startswith("/help"):
         return """🧠 *Brain Commands*
 
@@ -349,8 +397,9 @@ def process_telegram_message(message: dict) -> str:
 /idea <thought> - 💡 Quick capture (shower thoughts!)
 /event <type> <msg> - Log event
 
-Example:
-`/idea Add voice notes to Luna`"""
+Examples:
+`/idea Add voice notes to Luna`
+`/research Compare Stripe vs Paddle pricing`"""
     
     else:
         return "❓ Unknown command. Try /help"

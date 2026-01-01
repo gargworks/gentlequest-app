@@ -131,6 +131,57 @@ def get_unprocessed_ideas() -> tuple[int, list[str]]:
         return 0, []
 
 
+RESEARCH_QUEUE_PATH = ARTIFACTS_PATH / "research" / "queue.md"
+
+def run_research_queue() -> int:
+    """Process pending research tasks via run_research.py script.
+    
+    Returns the number of tasks processed.
+    """
+    print("🔬 Processing research queue...")
+    
+    # Check if queue file exists and has pending tasks
+    if not RESEARCH_QUEUE_PATH.exists():
+        print("   No research queue found.")
+        return 0
+    
+    content = RESEARCH_QUEUE_PATH.read_text()
+    pending_count = content.count('- [ ]')
+    
+    if pending_count == 0:
+        print("   No pending research tasks.")
+        return 0
+    
+    print(f"   Found {pending_count} pending research task(s)...")
+    
+    # Run the research processor script
+    try:
+        result = subprocess.run(
+            [sys.executable, str(PROJECT_ROOT / "scripts" / "run_research.py")],
+            capture_output=True,
+            text=True,
+            timeout=600,  # 10 min max for all research
+            cwd=str(PROJECT_ROOT)
+        )
+        
+        # Count completed (check for "completed" in output)
+        completed = result.stdout.count("✅ Saved to:")
+        print(f"   ✅ Completed {completed} research task(s)")
+        
+        emit_event("research_queue_processed", "ROUTINE", {
+            "pending": pending_count,
+            "completed": completed
+        })
+        
+        return completed
+    except subprocess.TimeoutExpired:
+        print("   ⚠️ Research processing timed out")
+        return 0
+    except Exception as e:
+        print(f"   ❌ Error processing research: {e}")
+        return 0
+
+
 def load_agent_prompt(agent_name: str) -> str:
     """Load an agent definition from .brain/agents/{agent_name}.md"""
     agent_file = AGENTS_PATH / f"{agent_name}.md"
@@ -351,7 +402,7 @@ PASS or DRIFT: [one specific issue]
         return f"Doc drift error: {e}"
 
 
-def run_synthesizer_digest(client, test_count, test_passed, critic_review, strategist_review, growth_nudge, doc_drift):
+def run_synthesizer_digest(client, test_count, test_passed, critic_review, strategist_review, growth_nudge, doc_drift, research_count=0):
     """Generate the final daily digest."""
     print("📋 Synthesizer generating digest...")
     
@@ -360,6 +411,9 @@ def run_synthesizer_digest(client, test_count, test_passed, critic_review, strat
     # Get unprocessed ideas
     ideas_count, ideas_list = get_unprocessed_ideas()
     ideas_text = f"- Ideas: {ideas_count} unprocessed - " + "; ".join(ideas_list[:3]) if ideas_count > 0 else "- Ideas: None pending"
+    
+    # Research info
+    research_text = f"- Research: {research_count} tasks completed overnight" if research_count > 0 else "- Research: None queued"
     
     prompt = f"""
 Create a concise founder daily digest.
@@ -371,6 +425,7 @@ INPUTS:
 - Growth: {growth_nudge[:150]}
 - Docs: {doc_drift[:100]}
 {ideas_text}
+{research_text}
 
 OUTPUT FORMAT:
 # 🌙 Nightly Report
@@ -454,10 +509,13 @@ def main():
     # 5. Doc Drift Check
     doc_drift = run_doc_drift_check(client)
     
+    # 5.5. Process Research Queue (via Gemini CLI)
+    research_count = run_research_queue()
+    
     # 6. Generate Synthesized Digest
     digest = run_synthesizer_digest(
         client, test_count, test_passed,
-        critic_review, strategist_review, growth_nudge, doc_drift
+        critic_review, strategist_review, growth_nudge, doc_drift, research_count
     )
     
     # 7. Save Digest
