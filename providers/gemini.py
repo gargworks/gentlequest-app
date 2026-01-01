@@ -502,6 +502,8 @@ DO NOT mention crisis hotlines - system handles that separately."""
         # Minimal agentic context - just enough to guide behavior without breaking function calling
         # Note: too much system prompt breaks function calling with Gemini
         context_parts = []
+        if memory_context:
+            context_parts.append(memory_context)
         if db_history:
             context_parts.append(db_history)
         

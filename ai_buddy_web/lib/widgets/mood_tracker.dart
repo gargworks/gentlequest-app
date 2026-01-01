@@ -41,6 +41,9 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               ],
               _buildMoodInput(context, moodProvider),
               const SizedBox(height: 16),
+              // Clinical Check-in card
+              _buildClinicalCheckInCard(context),
+              const SizedBox(height: 16),
               // Weekly Pulse hero (show when there are at least 3 entries)
               if (moodProvider.moodEntries.length >= 3) ...[
                 _buildWeeklyPulseHero(context, moodProvider),
@@ -251,6 +254,62 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               }),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClinicalCheckInCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/clinical-assessment'),
+        borderRadius: BorderRadius.circular(12.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.assignment_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Clinical Check-in',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'PHQ-9 & GAD-7 assessments',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );

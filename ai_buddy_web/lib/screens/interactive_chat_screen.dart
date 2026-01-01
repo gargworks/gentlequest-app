@@ -894,27 +894,48 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     if (kDebugMode) {
       debugPrint('Rendering exercise: ${exercise.type} - ${exercise.name}');
     }
+    // Use exercise name as identifier for tracking
+    final exerciseId = '${exercise.type.toString().split('.').last}_${exercise.name.hashCode}';
+    
     switch (exercise.type) {
       case ExerciseType.breathing:
         return BreathingExerciseWidget(
           exercise: exercise as BreathingExercise,
           onComplete: () {
-            // TODO: Track completion
+            // Track completion via chat provider
+            context.read<ChatProvider>().trackExerciseOutcome(
+              exerciseType: 'breathing',
+              outcome: 'completed',
+              interventionId: exerciseId,
+            );
+            if (kDebugMode) debugPrint('✓ Breathing exercise completed');
           },
         );
       case ExerciseType.grounding:
         return GroundingExerciseWidget(
           exercise: exercise as GroundingExercise,
           onComplete: () {
-             // TODO: Track completion
+            // Track completion via chat provider
+            context.read<ChatProvider>().trackExerciseOutcome(
+              exerciseType: 'grounding',
+              outcome: 'completed',
+              interventionId: exerciseId,
+            );
+            if (kDebugMode) debugPrint('✓ Grounding exercise completed');
           },
         );
       case ExerciseType.journalPrompt:
         return JournalPromptCard(
           exercise: exercise as JournalPrompt,
           onSave: (entry) {
-             // TODO: Handle save (e.g., send to API)
-             if (kDebugMode) debugPrint('Journal entry saved: $entry');
+            // Track journal save via chat provider
+            context.read<ChatProvider>().trackExerciseOutcome(
+              exerciseType: 'journal',
+              outcome: 'completed',
+              interventionId: exerciseId,
+              feedback: entry.isNotEmpty ? 'Entry saved' : null,
+            );
+            if (kDebugMode) debugPrint('✓ Journal entry saved: ${entry.length} chars');
           },
         );
     }

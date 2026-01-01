@@ -440,6 +440,29 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Track exercise completion outcome
+  void trackExerciseOutcome({
+    required String exerciseType,
+    required String outcome,
+    String? interventionId,
+    int? timeSpentSeconds,
+    int? moodBefore,
+    int? moodAfter,
+    double? effectiveness,
+    String? feedback,
+  }) {
+    _apiService.reportExerciseOutcome(
+      exerciseType: exerciseType,
+      outcome: outcome,
+      interventionId: interventionId,
+      timeSpentSeconds: timeSpentSeconds,
+      moodBefore: moodBefore,
+      moodAfter: moodAfter,
+      effectiveness: effectiveness,
+      feedback: feedback,
+    );
+  }
+
   @override
   void dispose() {
     for (final sub in _subscriptions) {
