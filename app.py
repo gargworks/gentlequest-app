@@ -3515,6 +3515,37 @@ def _register_additional_routes(app: Flask) -> None:
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/admin/init_memory_tables", methods=["POST"])
+    def admin_init_memory_tables():
+        """Initialize memory system tables on demand with cache invalidation"""
+        auth_header = request.headers.get("X-Admin-Key")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        if not auth_header or auth_header != expected_key:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        try:
+            from providers import memory
+            # Invalidate the cache to force re-check
+            memory._memory_tables_ready = None
+            
+            # Run initialization
+            result = memory.init_memory_tables(app)
+            
+            # Re-check status
+            tables_exist = memory._check_memory_tables_exist()
+            
+            return jsonify({
+                "ok": True,
+                "message": "Memory tables initialized" if result else "Initialization returned false",
+                "initialized": result,
+                "tables_exist": tables_exist,
+                "pgvector_enabled": memory.PGVECTOR_ENABLED,
+                "memory_enabled": memory.MEMORY_ENABLED
+            })
+        except Exception as e:
+            app.logger.error(f"Memory init error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/admin/debug/db", methods=["GET"])
     def admin_debug_db():
         auth_header = request.headers.get("X-Admin-Key")
