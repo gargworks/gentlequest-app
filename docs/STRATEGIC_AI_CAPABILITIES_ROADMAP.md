@@ -1,4 +1,4 @@
-# Strategic AI Capabilities Roadmap: GentleQuest
+/idea# Strategic AI Capabilities Roadmap: GentleQuest
 
 > **Purpose:** Deep analysis of how Function Calling + RAG add value now and position GentleQuest for investor-grade scale
 > **Date:** December 25, 2025

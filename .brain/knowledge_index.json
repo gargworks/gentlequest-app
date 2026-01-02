@@ -1,13 +1,14 @@
 {
-  "generated_at": "2025-12-30T11:20:35.404426",
-  "total_files": 150,
+  "generated_at": "2026-01-02T08:00:02.036718",
+  "total_files": 173,
   "total_rules_extracted": 180,
   "faculties": {
     "general": {
-      "count": 76,
+      "count": 93,
       "files": [
         ".brain/NUCLEUS_HUB.md",
         ".brain/artifacts/code/neural_bridge_spec.md",
+        ".brain/artifacts/ideas/inbox.md",
         ".brain/artifacts/reviews/critic_audit_20251229.md",
         ".brain/memory/context.md",
         ".brain/memory/patterns.md",
@@ -22,6 +23,7 @@
         ".brain/workflows/dev_environment_architecture.md",
         ".brain/workflows/verification_feedback.md",
         ".brain/workflows/execution_modalities.md",
+        ".brain/meta/thread_registry.md",
         ".brain/meta/next_iteration.md",
         "docs/deep_links.md",
         "docs/BETA_TESTING_TEMPLATES.md",
@@ -32,6 +34,7 @@
         "docs/ARCHITECTURE.md",
         "docs/AI_AGENTS_ASSESSMENT.md",
         "docs/ACTION_ITEMS.md",
+        "docs/architecture_persona_theory.md",
         "docs/TESTING.md",
         "docs/PROGRESS_TRACKER.md",
         "docs/IMPLEMENTATION_ROADMAP.md",
@@ -39,6 +42,7 @@
         "docs/INDEX.md",
         "docs/VIBE_POLISH_PROMPT.md",
         "docs/ci_release_notes.md",
+        "docs/GOOGLE_PLAY_API_ACCESS_GUIDE.md",
         "docs/ADMIN_OPS.md",
         "docs/APP_STORE_LISTING.md",
         "docs/mobile_signing_guide.md",
@@ -50,14 +54,27 @@
         "docs/context/MIRO_DESIGN_THINKING_SUMMARY.md",
         "docs/frontend/QUESTS_ENGINE.md",
         "docs/checkpoints/CHK_2025-08-13_chat_ux_streaming.md",
+        "docs/iip_reference/VERSION.md",
+        "docs/iip_reference/INDEX.md",
+        "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
+        "docs/iip_reference/derived/IIP_MIRO_CONTEXT_MERMAID.md",
+        "docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md",
+        "docs/iip_reference/derived/IIP_MIRO_CONTEXT_TEXT.md",
+        "docs/iip_reference/derived/IIP_INDEX.md",
+        "docs/iip_reference/derived/IIP_REFERENCE_README.md",
+        "docs/iip_reference/bridge/GAP_MAP.md",
+        "docs/iip_reference/bridge/DECISIONS.md",
+        "docs/iip_reference/raw/_DEPRECATED_PLACE_SOURCE_EXPORTS_HERE.md",
         "TEST_RESULTS_SUMMARY.md",
         "ACHIEVEMENT_REPORT.md",
         "API_DOCUMENTATION.md",
         "GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
         "RELEASES.md",
         "cli_changes.md",
+        "DASHBOARD.md",
         "GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
         "iphone_install.md",
+        "SYSTEM_INTEGRATION.md",
         "COMPREHENSIVE_FIXES.md",
         "COMPREHENSIVE_CRISIS_TESTING.md",
         "CONTEXT.md",
@@ -85,16 +102,19 @@
       ]
     },
     "research": {
-      "count": 17,
+      "count": 20,
       "files": [
         ".brain/artifacts/research/mcp_debugging_guide.md",
         ".brain/artifacts/research/hardening_patterns_research.md",
         ".brain/artifacts/research/competitive_mental_health_2024.md",
         ".brain/artifacts/research/interview_guide.md",
+        ".brain/artifacts/research/funding_landscape_2024.md",
+        ".brain/artifacts/research/university_pilot_playbook.md",
         ".brain/artifacts/research/mcp_usage_synthesis.md",
         ".brain/artifacts/research/mcp_dev_best_practices.md",
         ".brain/artifacts/research/agentic_communities_map.md",
         ".brain/artifacts/research/benchmark_sota_2025.md",
+        ".brain/artifacts/research/queue.md",
         ".brain/artifacts/research/b2b_market_sizing_2024.md",
         ".brain/artifacts/research/clinical_validation_pathway.md",
         ".brain/artifacts/research/simulated_user_research.md",
@@ -107,7 +127,7 @@
       ]
     },
     "execution": {
-      "count": 20,
+      "count": 22,
       "files": [
         ".brain/artifacts/test/eval_001_our_development.md",
         ".brain/artifacts/test/cold_start_test_results.md",
@@ -120,6 +140,7 @@
         ".brain/artifacts/test/dogfood_log.md",
         ".brain/artifacts/test/multi_client_mcp_test.md",
         ".brain/artifacts/synthesis/digest_20251228.md",
+        ".brain/artifacts/synthesis/20251230_consolidation_report.md",
         ".brain/artifacts/synthesis/digest_20251226.md",
         ".brain/artifacts/synthesis/founders_desk_20251226.md",
         ".brain/ledger/daily_digest.md",
@@ -128,18 +149,20 @@
         "docs/XP_UNDO_TEST_CHECKLIST.md",
         "docs/testing/deep_link_notifications_checklist.md",
         "LOCAL_TESTING_CHECKLIST.md",
-        "conversation_log.md"
+        "conversation_log.md",
+        "backlog.md"
       ]
     },
     "architecture": {
-      "count": 6,
+      "count": 7,
       "files": [
         ".brain/artifacts/architecture/hardening_specs.md",
         ".brain/artifacts/architecture/brain_and_installation_guide.md",
         ".brain/artifacts/architecture/agent_hierarchy_summary.md",
         ".brain/artifacts/architecture/brain_audit_report.md",
         ".brain/artifacts/architecture/development_modes_matrix.md",
-        "docs/AI_CAPABILITIES_SPEC.md"
+        "docs/AI_CAPABILITIES_SPEC.md",
+        "docs/iip_reference/derived/IIP_Project_Specification.md"
       ]
     },
     "strategy": {
@@ -236,6 +259,24 @@
       "modified": "2025-12-27T18:06:14.513769"
     },
     {
+      "path": ".brain/artifacts/research/funding_landscape_2024.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/funding_landscape_2024.md",
+      "faculty": "research",
+      "title": "Grant & Funding Landscape for Mental Health Startups",
+      "summary": "**Report Date:** December 31, 2024 **Researcher:** GentleQuest Researcher Agent **Confidence Level:** HIGH  --- ",
+      "size_bytes": 5988,
+      "modified": "2025-12-31T20:38:51.778584"
+    },
+    {
+      "path": ".brain/artifacts/research/university_pilot_playbook.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/university_pilot_playbook.md",
+      "faculty": "research",
+      "title": "University Pilot Playbook for GentleQuest",
+      "summary": "**Report Date:** December 31, 2024 **Researcher:** GentleQuest Researcher Agent **Confidence Level:** HIGH  --- ",
+      "size_bytes": 7094,
+      "modified": "2025-12-31T20:41:19.324878"
+    },
+    {
       "path": ".brain/artifacts/research/mcp_usage_synthesis.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/mcp_usage_synthesis.md",
       "faculty": "research",
@@ -270,6 +311,15 @@
       "summary": "> **Event ID:** syn-task-001 > **Agent:** Researcher | Level 5 Autonomy > **Sprint:** Subatomic Sprint 1 > **Confidence Level:** HIGH  --- ",
       "size_bytes": 6708,
       "modified": "2025-12-26T22:08:46.437416"
+    },
+    {
+      "path": ".brain/artifacts/research/queue.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/queue.md",
+      "faculty": "research",
+      "title": "📚 Research Queue",
+      "summary": "Research tasks queued via Telegram `/research` command. Processed nightly by Gemini CLI.  --- ",
+      "size_bytes": 196,
+      "modified": "2026-01-01T00:43:52.647091"
     },
     {
       "path": ".brain/artifacts/research/b2b_market_sizing_2024.md",
@@ -407,6 +457,15 @@
       "modified": "2025-12-28T09:53:38.366545"
     },
     {
+      "path": ".brain/artifacts/synthesis/20251230_consolidation_report.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/synthesis/20251230_consolidation_report.md",
+      "faculty": "execution",
+      "title": "Mega Status Report: The Great Convergence",
+      "summary": "**Date:** 2025-12-30 **Emitter:** Synthesizer (Manual Override) ",
+      "size_bytes": 2010,
+      "modified": "2025-12-30T23:31:42.402677"
+    },
+    {
       "path": ".brain/artifacts/synthesis/digest_20251226.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/synthesis/digest_20251226.md",
       "faculty": "execution",
@@ -513,6 +572,15 @@
       "summary": "| Attribute | Value | |-----------|-------| | **Duration** | 90 seconds (1:30) | | **Format** | MP4/WebM | | **Resolution** | 1080p | | **Style** | Clean, minimal, professional | | **Pacing** | Slow, ...",
       "size_bytes": 4484,
       "modified": "2025-12-27T14:01:04.570194"
+    },
+    {
+      "path": ".brain/artifacts/ideas/inbox.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/ideas/inbox.md",
+      "faculty": "general",
+      "title": "💡 Ideas Inbox",
+      "summary": "Shower thoughts and quick captures from Telegram.  ---  - [ ] **2025-12-31 16:15 UTC**: Test shower thought - add voice notes to Luna  - [ ] **2025-12-31 17:00 UTC**: Gemini CLI Sprint Executor - Use ...",
+      "size_bytes": 382,
+      "modified": "2025-12-31T22:30:37.401313"
     },
     {
       "path": ".brain/artifacts/reviews/critic_audit_20251229.md",
@@ -646,8 +714,8 @@
       "faculty": "execution",
       "title": "Daily Digest",
       "summary": "--- ",
-      "size_bytes": 4429,
-      "modified": "2025-12-30T11:18:10.992616"
+      "size_bytes": 5429,
+      "modified": "2026-01-01T11:45:06.211181"
     },
     {
       "path": ".brain/ledger/decisions.md",
@@ -664,8 +732,8 @@
       "faculty": "general",
       "title": "GentleQuest - Persistent Context",
       "summary": "> This file is read by ALL agents to maintain shared understanding. > Updated by Synthesizer during memory curation cycles.  --- ",
-      "size_bytes": 2374,
-      "modified": "2025-12-29T22:54:13.146459"
+      "size_bytes": 2394,
+      "modified": "2026-01-01T07:31:46.050989"
     },
     {
       "path": ".brain/memory/patterns.md",
@@ -785,6 +853,15 @@
       "modified": "2025-12-27T02:21:37.166447"
     },
     {
+      "path": ".brain/meta/thread_registry.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/thread_registry.md",
+      "faculty": "general",
+      "title": "Thread Registry",
+      "summary": "> **Purpose:** Central registry of all Antigravity conversation threads and their identities. > **Protocol:** Agents should read this file on activation to understand their role.  --- ",
+      "size_bytes": 7791,
+      "modified": "2025-12-31T02:14:25.403498"
+    },
+    {
       "path": ".brain/meta/optimization_log.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/optimization_log.md",
       "faculty": "execution",
@@ -896,10 +973,10 @@
       "path": "docs/STRATEGIC_AI_CAPABILITIES_ROADMAP.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/STRATEGIC_AI_CAPABILITIES_ROADMAP.md",
       "faculty": "general",
-      "title": "Strategic AI Capabilities Roadmap: GentleQuest",
-      "summary": "> **Purpose:** Deep analysis of how Function Calling + RAG add value now and position GentleQuest for investor-grade scale > **Date:** December 25, 2025  --- ",
-      "size_bytes": 11220,
-      "modified": "2025-12-25T18:39:44.604094"
+      "title": "Strategic Ai Capabilities Roadmap",
+      "summary": "/idea# Strategic AI Capabilities Roadmap: GentleQuest  > **Purpose:** Deep analysis of how Function Calling + RAG add value now and position GentleQuest for investor-grade scale > **Date:** December 2...",
+      "size_bytes": 11225,
+      "modified": "2026-01-02T02:14:59.827040"
     },
     {
       "path": "docs/data_inventory.md",
@@ -956,6 +1033,15 @@
       "modified": "2025-12-26T19:22:19.900313"
     },
     {
+      "path": "docs/architecture_persona_theory.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/architecture_persona_theory.md",
+      "faculty": "general",
+      "title": "Nucleus Architecture: The Theory of Personas",
+      "summary": "In Nucleus, a \"Persona\" is not a vibe. It is a mathematical structure:  `Agent(x) = Solver(Objective(x) + Constraints(x))` ",
+      "size_bytes": 1022,
+      "modified": "2025-12-30T23:05:25.637095"
+    },
+    {
       "path": "docs/TESTING.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/TESTING.md",
       "faculty": "general",
@@ -1006,8 +1092,8 @@
       "faculty": "general",
       "title": "Docs Hub",
       "summary": "- Architecture: `docs/ARCHITECTURE.md` - ADRs (Decisions): `docs/ADRS.md` - Testing: `docs/TESTING.md` - Quests Engine: `docs/frontend/QUESTS_ENGINE.md` - Schemas: `docs/schemas/quests.schema.json` - ...",
-      "size_bytes": 375,
-      "modified": "2025-08-10T15:02:32.065883"
+      "size_bytes": 512,
+      "modified": "2026-01-01T22:28:03.154377"
     },
     {
       "path": "docs/VIBE_POLISH_PROMPT.md",
@@ -1024,8 +1110,8 @@
       "faculty": "strategy",
       "title": "Gentlequest Reddit Growth Strategy",
       "summary": "--- ",
-      "size_bytes": 6832,
-      "modified": "2025-12-26T19:09:17.077817"
+      "size_bytes": 22472,
+      "modified": "2025-12-30T13:44:08.579855"
     },
     {
       "path": "docs/ci_release_notes.md",
@@ -1035,6 +1121,15 @@
       "summary": "- `release_notes` (string): Stored as artifact; not auto-published to stores. - `build_number` (string, optional): Defaults to run number when empty. - `android_params` (JSON): `{ \"app_id\", \"package_n...",
       "size_bytes": 2064,
       "modified": "2025-12-20T20:20:26.056625"
+    },
+    {
+      "path": "docs/GOOGLE_PLAY_API_ACCESS_GUIDE.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/GOOGLE_PLAY_API_ACCESS_GUIDE.md",
+      "faculty": "general",
+      "title": "Google Play Console API Access: The Complete 2024-2025 Guide",
+      "summary": "> **TL;DR:** Google removed the \"API Access\" page from Play Console. You now set up API access through Google Cloud Console and invite the service account to Play Console via \"Users and permissions.\" ...",
+      "size_bytes": 12866,
+      "modified": "2026-01-01T21:35:07.648170"
     },
     {
       "path": "docs/ADMIN_OPS.md",
@@ -1181,6 +1276,114 @@
       "modified": "2025-08-20T06:29:53.121875"
     },
     {
+      "path": "docs/iip_reference/VERSION.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/VERSION.md",
+      "faculty": "general",
+      "title": "IIP Reference Material — Provenance",
+      "summary": "**Source:** M6W12-D2-IIP-Miro-Export.pdf **Converted:** 2026-01-01 ",
+      "size_bytes": 876,
+      "modified": "2026-01-01T21:18:40.259250"
+    },
+    {
+      "path": "docs/iip_reference/INDEX.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/INDEX.md",
+      "faculty": "general",
+      "title": "IIP reference (course materials)",
+      "summary": "Start here: `docs/iip_reference/VERSION.md` ",
+      "size_bytes": 986,
+      "modified": "2026-01-01T21:18:31.504196"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Full Context (template + team) (derived)",
+      "summary": "This document combines: - **Template/guide structure** (for long-session design-thinking simulation), and - **Team-filled content** (your real project choices and notes)  …into a single agent-friendly...",
+      "size_bytes": 10761,
+      "modified": "2026-01-02T01:50:24.954993"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_Project_Specification.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_Project_Specification.md",
+      "faculty": "architecture",
+      "title": "IIP Module 6 Project Specification",
+      "summary": "**Source:** M6W12-D2-IIP-Miro-Export.pdf **Generated:** 2026-01-01 **Project Focus:** Mental Health Support for Students (Stigma Reduction + Early Intervention)  --- ",
+      "size_bytes": 23437,
+      "modified": "2026-01-01T11:49:19.094988"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_CONTEXT_MERMAID.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_CONTEXT_MERMAID.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Mermaid Context (derived)",
+      "summary": "This document is a **Mermaid-first structural visualization** derived from the course Miro export PDF.  - Source of truth: `docs/iip_reference/raw/M6W12-D2-IIP-Miro-Export.pdf` - Companion doc: `docs/...",
+      "size_bytes": 3479,
+      "modified": "2026-01-02T00:40:56.116364"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Team-filled Content (derived)",
+      "summary": "This doc captures **team-entered content** found inside the Miro export PDF (names, choices, filled sticky notes).  - Source of truth: `docs/iip_reference/raw/M6W12-D2-IIP-Miro-Export.pdf`. - Template...",
+      "size_bytes": 4789,
+      "modified": "2026-01-02T01:17:26.757214"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_CONTEXT_TEXT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_CONTEXT_TEXT.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Clean Text Context (derived)",
+      "summary": "This document is a **clean, agent-friendly Markdown** representation derived from the course Miro export PDF.  - Source of truth: `docs/iip_reference/raw/M6W12-D2-IIP-Miro-Export.pdf` - Visual compani...",
+      "size_bytes": 7307,
+      "modified": "2026-01-02T00:41:26.491215"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_INDEX.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_INDEX.md",
+      "faculty": "general",
+      "title": "IIP Module 6 Project - Complete Package Index",
+      "summary": "**Source Document:** M6W12-D2-IIP-Miro-Export.pdf **Generated:** January 1, 2026 **Project:** Mental Health Support for Students (Stigma Reduction + Early Intervention) **Tech Stack:** Flutter (Fronte...",
+      "size_bytes": 15421,
+      "modified": "2026-01-01T11:49:19.097071"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_REFERENCE_README.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_REFERENCE_README.md",
+      "faculty": "general",
+      "title": "IIP Module 6 Project Specification & Codebase",
+      "summary": "**Converted from:** M6W12-D2-IIP-Miro-Export.pdf **Generated:** 2026-01-01 **For:** Boston University Online MBA (OMBA) - Integrated Innovation Project (Module 6)  --- ",
+      "size_bytes": 13875,
+      "modified": "2026-01-01T11:49:19.088703"
+    },
+    {
+      "path": "docs/iip_reference/bridge/GAP_MAP.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/bridge/GAP_MAP.md",
+      "faculty": "general",
+      "title": "Gap Map: IIP Spec → GentleQuest",
+      "summary": "This file maps the IIP-course entities/artifacts to what exists (or does not) in the current GentleQuest codebase.  | IIP artifact/entity | Purpose in IIP | GentleQuest equivalent | Decision/status | ...",
+      "size_bytes": 1146,
+      "modified": "2026-01-01T11:40:46.457249"
+    },
+    {
+      "path": "docs/iip_reference/bridge/DECISIONS.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/bridge/DECISIONS.md",
+      "faculty": "general",
+      "title": "Decisions: Using IIP Materials",
+      "summary": "Track what is adopted from the IIP reference materials and what is intentionally ignored. ",
+      "size_bytes": 714,
+      "modified": "2026-01-01T11:40:37.430325"
+    },
+    {
+      "path": "docs/iip_reference/raw/_DEPRECATED_PLACE_SOURCE_EXPORTS_HERE.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/raw/_DEPRECATED_PLACE_SOURCE_EXPORTS_HERE.md",
+      "faculty": "general",
+      "title": "Deprecated placeholder",
+      "summary": "Raw source exports are now present in this folder.  See: - `docs/iip_reference/INDEX.md`  This file is retained only for history. ",
+      "size_bytes": 156,
+      "modified": "2026-01-01T21:21:14.568565"
+    },
+    {
       "path": "TEST_RESULTS_SUMMARY.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/TEST_RESULTS_SUMMARY.md",
       "faculty": "general",
@@ -1244,6 +1447,15 @@
       "modified": "2025-08-09T13:05:55.555335"
     },
     {
+      "path": "DASHBOARD.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/DASHBOARD.md",
+      "faculty": "general",
+      "title": "🎯 DASHBOARD — Your Single Entry Point",
+      "summary": "> **Open this file first. Every time.** > Auto-generated: 2026-01-02 02:07  --- ",
+      "size_bytes": 1569,
+      "modified": "2026-01-02T02:07:44.505865"
+    },
+    {
       "path": "SHARED_HISTORY_PROTOCOL.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/SHARED_HISTORY_PROTOCOL.md",
       "faculty": "operations",
@@ -1269,6 +1481,15 @@
       "summary": "``` https://gentlequest.onrender.com ``` ",
       "size_bytes": 1449,
       "modified": "2025-11-17T02:21:51.638194"
+    },
+    {
+      "path": "SYSTEM_INTEGRATION.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/SYSTEM_INTEGRATION.md",
+      "faculty": "general",
+      "title": "🛫 THE FULL AIRCRAFT — System Integration Map",
+      "summary": "> **Date:** 2026-01-02 02:17 IST > **Purpose:** One document showing ALL components, their status, and how they connect  --- ",
+      "size_bytes": 10007,
+      "modified": "2026-01-02T02:19:35.153921"
     },
     {
       "path": "LOCAL_TESTING_CHECKLIST.md",
@@ -2235,6 +2456,15 @@
       "summary": "**Status:** [ACTIVE] | **Version:** 1.1.0-Hardened | **Engine:** Level 5 Autonomy ",
       "size_bytes": 3838,
       "modified": "2025-12-30T07:24:40.633974"
+    },
+    {
+      "path": "backlog.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/backlog.md",
+      "faculty": "execution",
+      "title": "GentleQuest Backlog & Strategy",
+      "summary": "> **Context:** Captured during Sprint Review (Jan 2, 2026). > **Production Credentials Location:** `docs/ADMIN_OPS.md` (Line 46) ",
+      "size_bytes": 1658,
+      "modified": "2026-01-02T02:01:24.839368"
     },
     {
       "path": "README_CONSCIOUSNESS.md",

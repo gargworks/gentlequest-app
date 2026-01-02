@@ -1,0 +1,484 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "IIP Module 6 API",
+    "description": "REST API for Integrated Innovation Project (Mod 6) - Design Thinking & Research Platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Boston University OMBA",
+      "url": "https://www.bu.edu/"
+    }
+  },
+  "basePath": "/api/v1",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/teams": {
+      "post": {
+        "summary": "Create new project team",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TeamCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Team created",
+            "schema": {
+              "$ref": "#/definitions/Team"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List all teams",
+        "responses": {
+          "200": {
+            "description": "List of teams",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Team"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/pov": {
+      "post": {
+        "summary": "Create or update POV Statement",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POVStatementCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "POV Statement created/updated",
+            "schema": {
+              "$ref": "#/definitions/POVStatement"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get team's POV Statement",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "POV Statement",
+            "schema": {
+              "$ref": "#/definitions/POVStatement"
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/interviews": {
+      "post": {
+        "summary": "Create new research interview record",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InterviewCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Interview created",
+            "schema": {
+              "$ref": "#/definitions/Interview"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List team's interviews",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of interviews",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Interview"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/personas": {
+      "post": {
+        "summary": "Create new persona",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PersonaCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Persona created",
+            "schema": {
+              "$ref": "#/definitions/Persona"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List team's personas",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of personas",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Persona"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/cvp": {
+      "post": {
+        "summary": "Create or update CVP Canvas",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CVPCanvasCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CVP Canvas created/updated",
+            "schema": {
+              "$ref": "#/definitions/CVPCanvas"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get team's CVP Canvas",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CVP Canvas",
+            "schema": {
+              "$ref": "#/definitions/CVPCanvas"
+            }
+          }
+        }
+      }
+    },
+    "/teams/{team_id}/experiments": {
+      "post": {
+        "summary": "Create new experiment",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ExperimentCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Experiment created",
+            "schema": {
+              "$ref": "#/definitions/Experiment"
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List team's experiments",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of experiments",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Experiment"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Team": {
+      "type": "object",
+      "properties": {
+        "team_id": {"type": "integer"},
+        "team_name": {"type": "string"},
+        "project_focus": {"type": "string"},
+        "created_date": {"type": "string", "format": "date-time"},
+        "members": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/TeamMember"}
+        }
+      }
+    },
+    "TeamCreate": {
+      "type": "object",
+      "required": ["team_name", "project_focus"],
+      "properties": {
+        "team_name": {"type": "string"},
+        "project_focus": {"type": "string"}
+      }
+    },
+    "TeamMember": {
+      "type": "object",
+      "properties": {
+        "member_id": {"type": "integer"},
+        "name": {"type": "string"},
+        "email": {"type": "string"},
+        "role": {"type": "string"},
+        "timezone": {"type": "string"}
+      }
+    },
+    "POVStatement": {
+      "type": "object",
+      "properties": {
+        "pov_id": {"type": "integer"},
+        "team_id": {"type": "integer"},
+        "users_description": {"type": "string"},
+        "need_description": {"type": "string"},
+        "why_matters_description": {"type": "string"},
+        "full_statement": {"type": "string"},
+        "iteration_count": {"type": "integer"},
+        "created_date": {"type": "string", "format": "date-time"}
+      }
+    },
+    "POVStatementCreate": {
+      "type": "object",
+      "required": ["users_description", "need_description", "why_matters_description"],
+      "properties": {
+        "users_description": {"type": "string"},
+        "need_description": {"type": "string"},
+        "why_matters_description": {"type": "string"}
+      }
+    },
+    "Interview": {
+      "type": "object",
+      "properties": {
+        "interview_id": {"type": "integer"},
+        "team_id": {"type": "integer"},
+        "interview_date": {"type": "string", "format": "date-time"},
+        "participant_role": {"type": "string"},
+        "participant_anonymized_id": {"type": "string"},
+        "interview_notes": {"type": "string"},
+        "key_quotes": {"type": "array", "items": {"type": "string"}},
+        "insights_extracted": {"type": "array"},
+        "researcher_bias_notes": {"type": "string"},
+        "created_date": {"type": "string", "format": "date-time"}
+      }
+    },
+    "InterviewCreate": {
+      "type": "object",
+      "required": ["interview_date", "participant_role", "interview_notes"],
+      "properties": {
+        "interview_date": {"type": "string", "format": "date-time"},
+        "participant_role": {"type": "string"},
+        "participant_anonymized_id": {"type": "string"},
+        "interview_notes": {"type": "string"},
+        "location": {"type": "string"},
+        "duration_minutes": {"type": "integer"},
+        "key_quotes": {"type": "array", "items": {"type": "string"}},
+        "researcher_bias_notes": {"type": "string"}
+      }
+    },
+    "Persona": {
+      "type": "object",
+      "properties": {
+        "persona_id": {"type": "integer"},
+        "team_id": {"type": "integer"},
+        "name": {"type": "string"},
+        "age": {"type": "integer"},
+        "context": {"type": "string"},
+        "goals": {"type": "array", "items": {"type": "string"}},
+        "frustrations": {"type": "array", "items": {"type": "string"}},
+        "behaviors": {"type": "array", "items": {"type": "string"}},
+        "motivations": {"type": "array", "items": {"type": "string"}},
+        "barriers": {"type": "array", "items": {"type": "string"}},
+        "environment": {"type": "string"},
+        "supporting_quotes": {"type": "array", "items": {"type": "string"}},
+        "created_date": {"type": "string", "format": "date-time"}
+      }
+    },
+    "PersonaCreate": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "age": {"type": "integer"},
+        "context": {"type": "string"},
+        "goals": {"type": "array", "items": {"type": "string"}},
+        "frustrations": {"type": "array", "items": {"type": "string"}},
+        "behaviors": {"type": "array", "items": {"type": "string"}},
+        "motivations": {"type": "array", "items": {"type": "string"}},
+        "barriers": {"type": "array", "items": {"type": "string"}},
+        "environment": {"type": "string"},
+        "supporting_interview_ids": {"type": "array", "items": {"type": "integer"}}
+      }
+    },
+    "CVPCanvas": {
+      "type": "object",
+      "properties": {
+        "cvp_id": {"type": "integer"},
+        "team_id": {"type": "integer"},
+        "customer_segment": {"type": "string"},
+        "jobs_to_be_done": {"type": "array", "items": {"type": "string"}},
+        "value_proposition": {"type": "string"},
+        "pains": {"type": "array", "items": {"type": "string"}},
+        "pain_relievers": {"type": "array", "items": {"type": "string"}},
+        "gains": {"type": "array", "items": {"type": "string"}},
+        "gain_creators": {"type": "array", "items": {"type": "string"}},
+        "competitive_positioning": {"type": "string"},
+        "differentiation": {"type": "string"},
+        "last_updated": {"type": "string", "format": "date-time"}
+      }
+    },
+    "CVPCanvasCreate": {
+      "type": "object",
+      "required": ["customer_segment", "value_proposition"],
+      "properties": {
+        "customer_segment": {"type": "string"},
+        "jobs_to_be_done": {"type": "array", "items": {"type": "string"}},
+        "value_proposition": {"type": "string"},
+        "pains": {"type": "array", "items": {"type": "string"}},
+        "pain_relievers": {"type": "array", "items": {"type": "string"}},
+        "gains": {"type": "array", "items": {"type": "string"}},
+        "gain_creators": {"type": "array", "items": {"type": "string"}},
+        "competitive_positioning": {"type": "string"},
+        "direct_competitors": {"type": "array", "items": {"type": "string"}},
+        "differentiation": {"type": "string"}
+      }
+    },
+    "Experiment": {
+      "type": "object",
+      "properties": {
+        "exp_id": {"type": "integer"},
+        "team_id": {"type": "integer"},
+        "hypothesis": {"type": "string"},
+        "assumption": {"type": "string"},
+        "test_method": {"type": "string"},
+        "success_metric": {"type": "string"},
+        "learning_goal": {"type": "string"},
+        "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"]},
+        "result_summary": {"type": "string"},
+        "metric_value": {"type": "number"},
+        "learnings": {"type": "string"},
+        "created_date": {"type": "string", "format": "date-time"}
+      }
+    },
+    "ExperimentCreate": {
+      "type": "object",
+      "required": ["hypothesis", "test_method", "success_metric"],
+      "properties": {
+        "hypothesis": {"type": "string"},
+        "assumption": {"type": "string"},
+        "test_method": {"type": "string"},
+        "test_description": {"type": "string"},
+        "success_metric": {"type": "string"},
+        "learning_goal": {"type": "string"}
+      }
+    }
+  }
+}

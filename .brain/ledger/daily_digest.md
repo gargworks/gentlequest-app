@@ -131,3 +131,42 @@ Tests: ✅ | Critic: Okay | Strategy: 🟡 DRIFT
 
 ## Today's Action
 Prioritize user interviews to guide feature refinement and reduce scope based on user feedback.
+
+
+---
+
+## 🌙 Nightly Report: 2026-01-01
+# 🌙 Nightly Report
+
+## Status
+Tests: ✅ | Critic: Code review incoming | Strategy: 🟡 DRIFT
+
+## Key Findings
+• Sprint needs ruthless simplification, focusing only on core GentleQuest brain functionality and cloud backup. Eliminate peripheral features.
+• No interviews conducted.
+
+## Ideas Inbox
+Test shower thought - add voice notes to Luna; Gemini CLI Sprint Executor - Use Gemini Pro to auto-execute
+
+## Today's Action
+Ruthlessly simplify the GentleQuest sprint scope, focusing on core brain functionality and cloud backup.
+
+
+---
+
+## 🌙 Nightly Report: 2026-01-02
+# 🌙 Nightly Report
+
+## Status
+Tests: ✅ | Critic: Analyzing | Strategy: 🟡 DRIFT
+
+## Key Findings
+• Commit 7c1b6fe drifts from core sprint focus on feature additions and cleanup, prioritizing necessary (but complexity-adding) `setup_pgv`.
+• README.md documentation is drifting, should re-focus on end user clarity.
+
+## Ideas Inbox
+• Test shower thought - add voice notes to Luna
+• Gemini CLI Sprint Executor - Use Gemini Pro to auto-execute
+
+## Today's Action
+Review README.md and ensure it is accessible for new users.
