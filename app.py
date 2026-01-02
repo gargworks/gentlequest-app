@@ -662,7 +662,8 @@ def create_app() -> Flask:
         
         app.logger.info("Nuclear Brain Telegram routes registered (/api/brain/*)")
     except Exception as e:
-        app.logger.warning(f"Brain Telegram routes not registered: {e}")
+        import traceback
+        app.logger.error(f"Brain Telegram routes failed to register: {e}\n{traceback.format_exc()}")
 
     # DEBUG: Expose import failure reason
     @app.route("/api/brain/debug_import")
@@ -3632,22 +3633,45 @@ def _register_additional_routes(app: Flask) -> None:
             return jsonify({"error": "Unauthorized"}), 403
 
         try:
-            # Check extensions
-            extensions = db.session.execute(text("SELECT extname FROM pg_extension")).fetchall()
-            ext_list = [row[0] for row in extensions]
+            # Diagnostics
+            user_info = db.session.execute(text("SELECT current_user, current_database(), current_schema(), session_user")).fetchone()
+            search_path = db.session.execute(text("SHOW search_path")).scalar()
+            
+            # Extensions - Get detail to check installation namespace
+            extensions = db.session.execute(text("SELECT extname, extversion, extnamespace FROM pg_extension")).fetchall()
+            ext_list = [{"name": row[0], "version": row[1], "namespace_oid": row[2]} for row in extensions]
 
-            # Check memory tables
-            tables = db.session.execute(text(
-                "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+            # Schemata
+            schemata = db.session.execute(text("SELECT schema_name FROM information_schema.schemata")).fetchall()
+            schema_list = [r[0] for r in schemata]
+
+            # Table search (all schemas)
+            memory_table = db.session.execute(text(
+                "SELECT table_schema, table_name FROM information_schema.tables WHERE table_name = 'memory_summaries'"
             )).fetchall()
-            table_list = [row[0] for row in tables]
+            
+            # App's view of memory
+            from providers.memory import MEMORY_ENABLED, PGVECTOR_ENABLED, _memory_tables_ready
 
-            # Check brain state (handle table not existing)
-            brain_state_rows = 0
-            if "brain_state" in table_list:
-                try:
-                    brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
-                except:
+            return jsonify({
+                "connection": {
+                    "user": user_info[0],
+                    "db": user_info[1],
+                    "schema": user_info[2],
+                    "session": user_info[3],
+                    "search_path": search_path
+                },
+                "extensions": ext_list,
+                "schemas": schema_list,
+                "memory_table_found": [f"{row[0]}.{row[1]}" for row in memory_table],
+                "app_state": {
+                    "MEMORY_ENABLED": MEMORY_ENABLED,
+                    "PGVECTOR_ENABLED": PGVECTOR_ENABLED,
+                    "cached_tables_ready": _memory_tables_ready
+                }
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
                     pass
 
             return jsonify({

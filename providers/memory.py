@@ -96,8 +96,8 @@ def init_memory_tables(app) -> bool:
             engine = db.session.bind
             dialect = engine.dialect.name if engine else 'unknown'
             
-            if dialect != 'postgresql':
-                app.logger.info("Memory system: pgvector requires PostgreSQL, using fallback")
+            if 'postgres' not in dialect.lower():
+                app.logger.info(f"Memory system: pgvector requires PostgreSQL, got '{dialect}', using fallback")
                 return False
             
             # Try to enable pgvector extension

@@ -102,20 +102,38 @@ Return the final status (In Review, Published, or any errors).
 
 #### App Store (TestFlight → App Review)
 
+> ✅ **Verified:** This prompt was tested on January 2, 2026 and successfully submitted v1.2.0 (Build 101) for review.
+
 ```
 Submit the GentleQuest iOS app from TestFlight to App Store review.
 
 Steps:
 1. Navigate to: https://appstoreconnect.apple.com/apps
-2. Select GentleQuest app
-3. Go to the latest build in TestFlight
-4. Click "Submit for Review" or navigate to App Store → version
-5. Fill in any required information (What's New, etc.)
-6. Select the build from TestFlight
-7. Submit for Apple review
+2. Click on the GentleQuest app
+3. Look for iOS App section in left sidebar
+4. Click the "+" button to create a new version if needed, enter version (e.g., "1.2.0")
+5. Click "Create" to confirm new version
+6. Scroll down to find "Build" section
+7. Click "Add Build" or "Select a build before you submit"
+8. Select the latest build (e.g., Build 101) from TestFlight
+9. Click "Done" to confirm build selection
+10. If "Missing Compliance" appears, click "Manage" 
+11. For export compliance, select "None of the algorithms mentioned above" (if app doesn't use encryption)
+12. Click "Save" to confirm compliance
+13. Scroll up to "What's New in This Version" and add release notes
+14. Click "Save" in top right
+15. Click "Add for Review" in top right
+16. Review the submission summary
+17. Click "Submit for Review"
 
-Return the final status.
+Report the final status (Waiting for Review, or any errors).
 ```
+
+**Expected dialogs:**
+- Version creation dialog
+- Build selection dialog  
+- Export compliance questions (encryption)
+- Submission summary modal
 
 ---
 
@@ -197,6 +215,23 @@ Return the final status.
    - Typically reviewed within 24-48 hours
    - May get questions from reviewer
 
+### Privacy & Personal Safety on App Stores
+
+To minimize personal exposure on public store listings:
+
+**Google Play:**
+- **Developer Name:** Set to Brand Name (e.g., "GentleQuest")
+- **Physical Address:** Required for paid apps/subscriptions. Consider a P.O. Box or office address if "Garg Enterprises" allows. *Note: This is pulled from your Google Payments Profile and cannot be edited in Play Console.*
+- **Email:** Use a dedicated support email (e.g., `support@gentlequest.app`).
+- **Phone:** Use a landline or VOIP number if a phone number is required for support (e.g., your Mumbai landline).
+
+**App Store:**
+- **Seller Name:** 
+    - **Individual Account:** MUST show your legal personal name (e.g., "Lokesh Kumar Garg"). This cannot be hidden.
+    - **Organization Account:** Shows the legal entity name (e.g., "GentleQuest LLC"). 
+    - *Tip:* To show a brand name, you must migrate to an Organization account (requires D-U-N-S number).
+- **Support URL:** Use your website contact page.
+
 ---
 
 ## Troubleshooting
@@ -205,11 +240,12 @@ Return the final status.
 
 | Issue | Solution |
 |-------|----------|
-| **Version code conflict** | Use a higher build_number than existing |
-| **Privacy policy 404** | Deploy the `/privacy` route to production |
+| **Version code conflict** | Use a higher `build_number` than existing |
+| **Privacy policy 404** | **CRITICAL:** Ensure the `/privacy` route is deployed to production before release. <br>`curl -I https://gentlequest.onrender.com/privacy` |
 | **Signing failed** | Check GitHub secrets are set correctly |
 | **Upload failed** | Verify `PLAY_SERVICE_ACCOUNT_JSON` secret |
 | **iOS signing failed** | Check Apple certificates haven't expired |
+| **Personal Info Exposed** | Check "Store Settings" and "Developer Page" in Play Console. Edit Google Payments Profile for address changes. |
 
 ### Build Number Best Practices
 
@@ -221,7 +257,7 @@ Return the final status.
 
 **Privacy Policy URL:** Must be accessible. Currently configured as:
 - `https://www.gentlequest.app/privacy`
-- Fallback: `https://gentlequest.onrender.com/privacy`
+- Fallback: `https://gentlequest.onrender.com/privacy` (Use this if domain is down)
 
 ---
 
@@ -257,20 +293,23 @@ Return the final status.
 ║                  ONE-BUTTON RELEASE                        ║
 ╠════════════════════════════════════════════════════════════╣
 ║                                                            ║
-║  1. TRIGGER RELEASE                                        ║
+║  1. PREREQUISITES                                          ║
+║     Check privacy policy: curl -I gentlequest.app/privacy  ║
+║                                                            ║
+║  2. TRIGGER RELEASE                                        ║
 ║     gh workflow run release_one_button.yml \               ║
 ║       -f build_number="102" \                              ║
 ║       -f 'android_params={"track":"internal","upload":"true"}' ║
 ║       -f 'ios_params={"upload":"true"}'                    ║
 ║                                                            ║
-║  2. WAIT ~10 MINUTES                                       ║
+║  3. WAIT ~10 MINUTES                                       ║
 ║     Check: gh run list --workflow="release_one_button.yml" ║
 ║                                                            ║
-║  3. PROMOTE TO PRODUCTION                                  ║
+║  4. PROMOTE TO PRODUCTION (See Agent Prompts above)        ║
 ║     Android: Play Console → Internal → Promote → Production║
 ║     iOS: App Store Connect → TestFlight → Submit for Review║
 ║                                                            ║
-║  4. MONITOR REVIEW                                         ║
+║  5. MONITOR REVIEW                                         ║
 ║     Android: 1-3 days                                      ║
 ║     iOS: 24-48 hours                                       ║
 ║                                                            ║
