@@ -3496,6 +3496,25 @@ def _register_additional_routes(app: Flask) -> None:
             db.session.rollback()
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/admin/init_brain_tables", methods=["POST"])
+    def admin_init_brain_tables():
+        """Initialize brain state tables on demand"""
+        auth_header = request.headers.get("X-Admin-Key")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        if not auth_header or auth_header != expected_key:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        try:
+            from providers.brain_state import init_brain_tables
+            result = init_brain_tables()
+            return jsonify({
+                "ok": True,
+                "message": "Brain tables initialized" if result else "Tables already exist or creation skipped",
+                "initialized": result
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/admin/debug/db", methods=["GET"])
     def admin_debug_db():
         auth_header = request.headers.get("X-Admin-Key")
