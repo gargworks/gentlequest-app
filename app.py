@@ -3495,35 +3495,37 @@ def _register_additional_routes(app: Flask) -> None:
             app.logger.error(f"Error enabling pgvector: {e}")
             db.session.rollback()
             return jsonify({"ok": False, "error": str(e)}), 500
-@app.route("/api/admin/debug/db", methods=["GET"])
-def admin_debug_db():
-    auth_header = request.headers.get("X-Admin-Key")
-    if not auth_header or auth_header != TG_CHAT_ID:
-        return jsonify({"error": "Unauthorized"}), 403
 
-    try:
-        # Check extensions
-        extensions = db.session.execute(text("SELECT extname FROM pg_extension")).fetchall()
-        ext_list = [row[0] for row in extensions]
+    @app.route("/api/admin/debug/db", methods=["GET"])
+    def admin_debug_db():
+        auth_header = request.headers.get("X-Admin-Key")
+        if not auth_header or auth_header != TG_CHAT_ID:
+            return jsonify({"error": "Unauthorized"}), 403
 
-        # Check brain state
-        brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
-        
-        # Check memory tables
-        tables = db.session.execute(text(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
-        )).fetchall()
-        table_list = [row[0] for row in tables]
+        try:
+            # Check extensions
+            extensions = db.session.execute(text("SELECT extname FROM pg_extension")).fetchall()
+            ext_list = [row[0] for row in extensions]
 
-        return jsonify({
-            "ok": True,
-            "extensions": ext_list,
-            "pgvector_installed": "vector" in ext_list,
-            "brain_state_rows": brain_state_rows,
-            "tables": table_list
-        })
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+            # Check brain state
+            brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
+            
+            # Check memory tables
+            tables = db.session.execute(text(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+            )).fetchall()
+            table_list = [row[0] for row in tables]
+
+            return jsonify({
+                "ok": True,
+                "extensions": ext_list,
+                "pgvector_installed": "vector" in ext_list,
+                "brain_state_rows": brain_state_rows,
+                "tables": table_list
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     # ========================================================================
     # MEMORY STATUS ENDPOINT
     # ========================================================================
