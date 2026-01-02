@@ -3507,24 +3507,32 @@ def _register_additional_routes(app: Flask) -> None:
             extensions = db.session.execute(text("SELECT extname FROM pg_extension")).fetchall()
             ext_list = [row[0] for row in extensions]
 
-            # Check brain state
-            brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
-            
             # Check memory tables
             tables = db.session.execute(text(
                 "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
             )).fetchall()
             table_list = [row[0] for row in tables]
 
+            # Check brain state (handle table not existing)
+            brain_state_rows = 0
+            if "brain_state" in table_list:
+                try:
+                    brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
+                except:
+                    pass
+
             return jsonify({
                 "ok": True,
                 "extensions": ext_list,
                 "pgvector_installed": "vector" in ext_list,
                 "brain_state_rows": brain_state_rows,
+                "brain_state_exists": "brain_state" in table_list,
                 "tables": table_list
             })
         except Exception as e:
+            db.session.rollback()
             return jsonify({"ok": False, "error": str(e)}), 500
+
 
     # ========================================================================
     # MEMORY STATUS ENDPOINT
