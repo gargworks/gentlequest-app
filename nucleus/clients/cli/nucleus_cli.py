@@ -75,7 +75,7 @@ def start_remote_sprint(url: str, name: str):
     """Start a new sprint remotely."""
     try:
         data = {
-            "name": name,
+            "goal": name,
             "emitter": "cli"
         }
         resp = requests.post(f"{url}/api/brain/sprint", json=data)
