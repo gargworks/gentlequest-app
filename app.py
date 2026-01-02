@@ -3652,17 +3652,6 @@ def _register_additional_routes(app: Flask) -> None:
                     pass
 
             return jsonify({
-                "extensions": ext_list,
-                "tables": table_list,
-                "brain_state_rows": brain_state_rows,
-                "db_url_masked": str(db.engine.url).split("@")[-1] if db.engine.url else "None"
-            })
-
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-                    pass
-
-            return jsonify({
                 "ok": True,
                 "dialect": db.session.bind.dialect.name if db.session.bind else "unknown",
                 "extensions": ext_list,
