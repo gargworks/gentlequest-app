@@ -133,7 +133,7 @@ Review outputs in Antigravity."""
 # ═══════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
-    """Load current brain state - uses DB on production, file locally."""
+    """Load current brain state - uses DB on production, nucleus package locally."""
     # Try database first if on production
     if USE_DB_STATE:
         db = _get_db_state()
@@ -143,13 +143,12 @@ def load_state() -> dict:
             except Exception as e:
                 print(f"DB state load failed: {e}")
     
-    # Fall back to file-based
+    # Fall back to nucleus package (file-based)
     try:
-        if STATE_FILE.exists():
-            with open(STATE_FILE, 'r') as f:
-                return json.load(f)
-    except Exception:
-        pass
+        from nucleus import get_state as nucleus_get_state
+        return nucleus_get_state()
+    except Exception as e:
+        print(f"Nucleus state load failed: {e}")
     
     # Return sensible defaults
     return {
@@ -165,7 +164,7 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
-    """Save brain state - uses DB on production, file locally."""
+    """Save brain state - uses DB on production, nucleus package locally."""
     state["last_updated"] = datetime.now(timezone.utc).isoformat()
     
     # Try database first if on production
@@ -178,19 +177,16 @@ def save_state(state: dict):
             except Exception as e:
                 print(f"DB state save failed: {e}")
     
-    # Fall back to file-based
+    # Fall back to nucleus package (file-based)
     try:
-        if BRAIN_ROOT.exists():
-            with open(STATE_FILE, 'w') as f:
-                json.dump(state, f, indent=4)
+        from nucleus import set_state as nucleus_set_state
+        nucleus_set_state(state)
     except Exception as e:
-        print(f"Could not save state: {e}")
+        print(f"Could not save state via nucleus: {e}")
 
 
 def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NOTABLE") -> str:
-    """Emit event - uses DB on production, file locally."""
-    event_id = str(uuid.uuid4())[:8]
-    
+    """Emit event - uses DB on production, nucleus package locally."""
     # Try database first if on production
     if USE_DB_STATE:
         db = _get_db_state()
@@ -200,25 +196,20 @@ def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NO
             except Exception as e:
                 print(f"DB event emit failed: {e}")
     
-    # Fall back to file-based
-    event = {
-        "event_id": event_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "emitter": emitter,
-        "event_type": event_type,
-        "severity": severity,
-        "payload": payload,
-        "metadata": {"source": "telegram"}
-    }
-    
+    # Fall back to nucleus package (file-based)
     try:
-        if BRAIN_ROOT.exists():
-            with open(EVENTS_FILE, 'a') as f:
-                f.write(json.dumps(event) + '\n')
-    except Exception:
-        pass
-    
-    return event_id
+        from nucleus import emit_event as nucleus_emit_event
+        # Add source metadata manually since nucleus signature might not support update?
+        # Actually nucleus emit_event takes (emitter, type, payload, severity).
+        # We lose metadata currently in nucleus package? Let's check.
+        # nucleus/events.py: emit_event(emitter, event_type, payload, severity="NOTABLE")
+        # It doesn't take metadata. We can put source in payload.
+        if "metadata" not in payload:
+            payload["metadata"] = {"source": "telegram"}
+        return nucleus_emit_event(emitter, event_type, payload, severity)
+    except Exception as e:
+        print(f"Nucleus emit failed: {e}")
+        return "error-id"
 
 
 # ═══════════════════════════════════════════════════════════════════

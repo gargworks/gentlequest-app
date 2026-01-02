@@ -32,7 +32,7 @@
 
 | Document | Purpose |
 |----------|---------|
-| [SYSTEM_INTEGRATION.md](../SYSTEM_INTEGRATION.md) | System overview |
+| [SYSTEM_INTEGRATION.md](../.brain/meta/SYSTEM_INTEGRATION.md) | System overview |
 | [SINGLE_CODEBASE_GUIDE.md](../SINGLE_CODEBASE_GUIDE.md) | Codebase structure |
 | [SHARED_HISTORY_PROTOCOL.md](../SHARED_HISTORY_PROTOCOL.md) | Agent memory |
 

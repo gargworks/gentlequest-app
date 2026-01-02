@@ -60,24 +60,24 @@
     "top_3_leverage_actions": [
         {
             "rank": 1,
-            "action": "Verify deployment (memory + brain tables)",
-            "agent": "developer",
-            "impact": "Confirm pgvector and brain_state are live",
-            "status": "PENDING_DEPLOY"
+            "action": "Enable pgvector on Production",
+            "agent": "human_founder",
+            "impact": "Unblock memory system (Needs DB Admin access)",
+            "file": "scripts/enable_pgvector.py"
         },
         {
             "rank": 2,
-            "action": "Validate Clinical Assessment UI",
+            "action": "Run Load Tests",
             "agent": "developer",
-            "impact": "Core product value for B2B",
-            "file": "ai_buddy_web/lib/screens/assessment_screen.dart"
+            "impact": "Verify scale for B2B pilot",
+            "file": "tests/load_test.py"
         },
         {
             "rank": 3,
-            "action": "Consolidate meta-artifacts",
-            "agent": "synthesizer",
-            "impact": "Single source of truth for Nucleus",
-            "file": "SYSTEM_INTEGRATION.md"
+            "action": "Conduct User Interviews",
+            "agent": "product_manager",
+            "impact": "Validate PMF assumption",
+            "file": ".brain/artifacts/research/user_interview_script.md"
         }
     ],
     "meta": {
