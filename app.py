@@ -3499,7 +3499,8 @@ def _register_additional_routes(app: Flask) -> None:
     @app.route("/api/admin/debug/db", methods=["GET"])
     def admin_debug_db():
         auth_header = request.headers.get("X-Admin-Key")
-        if not auth_header or auth_header != TG_CHAT_ID:
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        if not auth_header or auth_header != expected_key:
             return jsonify({"error": "Unauthorized"}), 403
 
         try:
