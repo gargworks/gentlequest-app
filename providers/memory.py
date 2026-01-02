@@ -101,14 +101,21 @@ def init_memory_tables(app) -> bool:
                 return False
             
             # Try to enable pgvector extension
+            # Try to enable pgvector extension
             try:
                 db.session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                 db.session.commit()
                 app.logger.info("Memory system: pgvector extension enabled")
             except Exception as e:
-                app.logger.warning(f"Memory system: pgvector not available: {e}")
+                app.logger.warning(f"Memory system: pgvector creation skipped (might exist or permission denied): {e}")
                 db.session.rollback()
-                return False
+                
+                # Check if it actually exists before giving up
+                exists = db.session.execute(text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector')")).scalar()
+                if not exists:
+                    app.logger.error("Memory system: pgvector extension missing and creation failed")
+                    return False
+                app.logger.info("Memory system: pgvector verified existing")
             
             # Create memory_summaries table
             db.session.execute(text("""
