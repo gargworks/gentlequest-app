@@ -43,6 +43,25 @@ STATE_FILE = BRAIN_ROOT / "ledger" / "state.json"
 TG_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7575125475")  # Your ID
 
+# Use database-backed state on production (Render), file-based locally
+USE_DB_STATE = os.getenv("RENDER", "false").lower() == "true"
+
+# Lazy import for database state (only when needed)
+_db_state_module = None
+def _get_db_state():
+    global _db_state_module
+    if _db_state_module is None:
+        try:
+            from providers.brain_state import get_brain_state, set_brain_state, emit_brain_event
+            _db_state_module = {
+                'get': get_brain_state,
+                'set': set_brain_state,
+                'emit': emit_brain_event
+            }
+        except ImportError:
+            _db_state_module = None
+    return _db_state_module
+
 # ═══════════════════════════════════════════════════════════════════
 # TELEGRAM ALERTS (Brain → Telegram)
 # ═══════════════════════════════════════════════════════════════════
@@ -114,7 +133,17 @@ Review outputs in Antigravity."""
 # ═══════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
-    """Load current state.json - returns defaults if file doesn't exist (e.g., on Render)"""
+    """Load current brain state - uses DB on production, file locally."""
+    # Try database first if on production
+    if USE_DB_STATE:
+        db = _get_db_state()
+        if db:
+            try:
+                return db['get']()
+            except Exception as e:
+                print(f"DB state load failed: {e}")
+    
+    # Fall back to file-based
     try:
         if STATE_FILE.exists():
             with open(STATE_FILE, 'r') as f:
@@ -122,24 +151,36 @@ def load_state() -> dict:
     except Exception:
         pass
     
-    # Return sensible defaults for production where .brain/ doesn't exist
+    # Return sensible defaults
     return {
         "current_sprint": {
-            "name": "No local brain",
-            "status": "REMOTE",
-            "focus": "Brain files exist only on dev machine"
+            "name": "No Sprint",
+            "status": "INACTIVE",
+            "focus": "Start with /sprint <goal>"
         },
         "counters": {"total_events": 0, "tasks_completed": 0},
         "active_agents": ["synthesizer"],
-        "top_3_leverage_actions": [{"action": "Sync .brain to production or use local dev"}]
+        "top_3_leverage_actions": [{"action": "Start a sprint"}]
     }
 
 
 def save_state(state: dict):
-    """Save state.json - no-op if .brain/ doesn't exist"""
+    """Save brain state - uses DB on production, file locally."""
+    state["last_updated"] = datetime.now(timezone.utc).isoformat()
+    
+    # Try database first if on production
+    if USE_DB_STATE:
+        db = _get_db_state()
+        if db:
+            try:
+                db['set'](state)
+                return
+            except Exception as e:
+                print(f"DB state save failed: {e}")
+    
+    # Fall back to file-based
     try:
         if BRAIN_ROOT.exists():
-            state["last_updated"] = datetime.now(timezone.utc).isoformat()
             with open(STATE_FILE, 'w') as f:
                 json.dump(state, f, indent=4)
     except Exception as e:
@@ -147,9 +188,21 @@ def save_state(state: dict):
 
 
 def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NOTABLE") -> str:
-    """Emit event to events.jsonl - sends Telegram alert if file doesn't exist"""
+    """Emit event - uses DB on production, file locally."""
+    event_id = str(uuid.uuid4())[:8]
+    
+    # Try database first if on production
+    if USE_DB_STATE:
+        db = _get_db_state()
+        if db:
+            try:
+                return db['emit'](emitter, event_type, payload, severity, {"source": "telegram"})
+            except Exception as e:
+                print(f"DB event emit failed: {e}")
+    
+    # Fall back to file-based
     event = {
-        "event_id": str(uuid.uuid4())[:8],
+        "event_id": event_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "emitter": emitter,
         "event_type": event_type,
@@ -165,7 +218,7 @@ def emit_event(emitter: str, event_type: str, payload: dict, severity: str = "NO
     except Exception:
         pass
     
-    return event["event_id"]
+    return event_id
 
 
 # ═══════════════════════════════════════════════════════════════════

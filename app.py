@@ -690,6 +690,14 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Memory system initialization skipped: {e}")
 
+    # Initialize Brain State Tables (for Telegram/Nucleus integration)
+    try:
+        from providers.brain_state import init_brain_tables
+        if init_brain_tables():
+            app.logger.info("Brain state tables initialized")
+    except Exception as e:
+        app.logger.warning(f"Brain state initialization skipped: {e}")
+
     # Initialize Agentic Intervention Tracking (ensure table schema)
     try:
         with app.app_context():
