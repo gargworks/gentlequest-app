@@ -159,8 +159,8 @@
 
 | Phase | GentleQuest Focus | Nucleus Focus |
 |-------|-------------------|---------------|
-| **Now (Validation)** | Social media + User interviews | Reddit + GitHub |
-| **Month 2 (Beta)** | ASO + Partnerships | Product Hunt + Twitter |
+| **Now (Validation)** | Social media (Peer Credibility) + Website Quiet Launch | Reddit + GitHub |
+| **Month 2 (Beta)** | Organic Reddit Product Mentions + User Interviews | Product Hunt + Twitter |
 | **Month 3 (Growth)** | B2B pilots + PR | Open source community |
 | **Month 6+** | Paid ads + Scale | Enterprise/Pro tier |
 

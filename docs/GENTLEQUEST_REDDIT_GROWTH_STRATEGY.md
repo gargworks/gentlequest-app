@@ -257,8 +257,12 @@ After 5+ real log entries, summarize:
 
 ## Current status snapshot (update this as you go)
 
+
 - Last known logged days: 2025-12-21, 2025-12-25, 2025-12-26 (URL/outcomes pending in doc).
-- Current promo state: **No promotion yet** (waiting on 10+ clean, non-promotional contributions + positive outcomes). [web:9][web:12]
+- Current promo state: **PAUSED (Building Credibility)**.
+    - **Goal:** Reach 100 contributions / 500 karma before ANY product mention.
+    - **Reason:** Prevent "who are you?" spam dismissal. Peer credibility > Premature launch.
+
 
 ### Next required housekeeping (fill in)
 - Add actual Reddit thread URLs for 2025-12-25 comments.
