@@ -54,19 +54,34 @@
                 "description": "Conduct User Interviews",
                 "status": "TODO",
                 "preferred_role": "Researcher",
-                "claimed_by": null
+                "claimed_by": "482f5f52-8ab7-4dd0-a486-898dcef95671 (Researcher)"
             },
             {
                 "description": "Deploy Fixes to Production",
-                "status": "TODO",
+                "status": "COMPLETE",
                 "preferred_role": "Lead Systems Architect",
+                "claimed_by": "Antigravity (Lead Systems Architect)"
+            },
+            {
+                "description": "RAG/Memory Architecture Planning",
+                "status": "TODO",
+                "preferred_role": "Strategist",
+                "claimed_by": "6c8d0959-9c69-4eb5-8e9c-303dd8b732ac (Strategist)"
+            },
+            {
+                "description": "Nucleus GTM Plan (Channel Strategy, Competitor Pricing)",
+                "status": "TODO",
+                "preferred_role": "Strategist",
                 "claimed_by": null
             }
         ]
     },
     "active_agents": [
         "synthesizer",
-        "developer"
+        "developer",
+        "lead_systems_architect",
+        "researcher",
+        "strategist"
     ],
     "pending_events": [],
     "founder_queue": [],
