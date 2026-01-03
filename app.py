@@ -2805,27 +2805,34 @@ def _log_tool_calls(session_id: str, tool_calls: List[Dict]) -> None:
 def _log_conversation(
     session_id: str, user_message: str, ai_response: str, risk_level: str
 ) -> None:
-    """Log conversation to database with error handling"""
+    """Log conversation to database using Message table"""
     try:
-        # Convert risk level to numeric score
-        risk_score = _convert_risk_level_to_score(risk_level)
+        from flask import current_app
 
-        conversation_log = ConversationLog(
+        # 1. Save User Message
+        user_msg_entry = Message(
             session_id=session_id,
-            user_message=user_message,
-            ai_response=ai_response,
-            risk_level=risk_level,
-            risk_score=risk_score,
-            timestamp=datetime.utcnow(),
+            content=user_message,
+            is_user=True,
+            risk_level=risk_level, # Log risk with user message too? Or just generic.
+            timestamp=datetime.utcnow()
         )
+        db.session.add(user_msg_entry)
 
-        db.session.add(conversation_log)
+        # 2. Save AI Response
+        ai_msg_entry = Message(
+            session_id=session_id,
+            content=ai_response,
+            is_user=False,
+            risk_level=risk_level,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(ai_msg_entry)
+        
         db.session.commit()
 
     except Exception as e:
-        # Use current_app for logging in request context
         from flask import current_app
-
         current_app.logger.error(f"Failed to log conversation: {e}")
 
 
