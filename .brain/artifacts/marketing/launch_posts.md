@@ -4,71 +4,74 @@
 
 ### Tweet 1 (Main)
 ```
-🧠 Just shipped mcp-server-nucleus v0.2.1
+🧠 Just shipped mcp-server-nucleus v0.3.0
 
-The first multi-agent orchestration MCP server for Claude Desktop.
+Multi-agent orchestration for Claude Desktop & Windsurf.
 
-→ 10 tools for agent coordination
-→ Persistent memory via local .brain/
-→ One-command setup: nucleus-init
+→ 16 tools (6 new V2 Task tools!)
+→ Priority queues + skill-based routing
+→ Atomic task claiming (no race conditions)
+→ One command: nucleus-init
 
 pip install mcp-server-nucleus
 
 🔗 github.com/LKGargProjects/mcp-server-nucleus
 ```
 
-### Tweet 2 (Features)
+### Tweet 2 (V2 Features)
 ```
-What can you do with it?
+What's new in v0.3.0?
 
-• Ask Claude about your project sprint
-• Store research artifacts
-• Trigger agents with tasks
-• Coordinate multiple AI agents
+🎯 Task Orchestration System:
+• Priority queues (1 = urgent)
+• Skill-based routing
+• Dependency DAG
+• Escalation to humans
 
-All data stays local. Zero-knowledge default.
+Your AI agents can now coordinate like a real team.
 ```
 
 ### Tweet 3 (Demo)
 ```
 🎬 [VIDEO]
 
-Watch: Claude remembers my project and lists my artifacts.
+Watch: Claude claims a task, updates status, and escalates when stuck.
 
-This is the future of AI assistants with persistent memory.
+This is proper multi-agent coordination.
 ```
 
 ---
 
 ## 📰 Hacker News Post
 
-**Title:** Show HN: mcp-server-nucleus – Multi-agent orchestration for Claude Desktop
+**Title:** Show HN: mcp-server-nucleus v0.3.0 – Multi-agent task orchestration for Claude
 
 **Text:**
 ```
-I built an MCP server that gives Claude persistent memory and multi-agent coordination.
+I built an MCP server that gives AI agents persistent memory and real task coordination.
 
-The problem: Every Claude conversation starts from zero. No memory across sessions. No way to coordinate multiple AI agents.
+The problem: Every Claude conversation starts from zero. No memory. No way to coordinate multiple agents.
 
-The solution: A local .brain/ folder that stores:
+The solution: A local .brain/ folder with:
 - Event ledger (what happened)
 - State (current context)
 - Artifacts (agent outputs)
-- Triggers (when to activate agents)
+- V2 Task Queue (priority, skills, dependencies)
 
-Features:
-- 10 MCP tools for reading/writing state
-- 3 MCP Resources for subscribable data
-- 2 MCP Prompts for pre-built orchestration
-- One-command setup: python3 -m mcp_server_nucleus.cli init
+New in v0.3.0:
+- 6 Task Orchestration tools (claim, escalate, etc.)
+- Priority queues (1 = urgent)
+- Skill-based routing
+- Dependency DAG (task A blocks task B)
+- Atomic locking (no race conditions)
 
-All data stays local - zero cloud dependency.
+Works with Claude Desktop & Windsurf. All data stays local.
 
 Try it: pip install mcp-server-nucleus
 
 Looking for feedback on:
-1. What tools would be most useful?
-2. Interest in a pattern-sharing cloud layer (opt-in)?
+1. What task orchestration patterns do you need?
+2. Interest in optional cloud sync for teams?
 
 GitHub: https://github.com/LKGargProjects/mcp-server-nucleus
 ```
@@ -79,13 +82,18 @@ GitHub: https://github.com/LKGargProjects/mcp-server-nucleus
 
 ### r/LocalLLaMA
 ```
-[Tool] mcp-server-nucleus - Give Claude Desktop persistent memory
+[Tool] mcp-server-nucleus v0.3.0 - Multi-agent task orchestration for Claude
 
-Built an MCP server that connects Claude to a local .brain/ folder for:
-- Session memory
-- Project state
-- Research artifacts
-- Multi-agent coordination
+Built an MCP server that gives Claude/Windsurf agents:
+- Persistent memory (.brain/ folder)
+- Task queue with priorities
+- Skill-based routing
+- Escalation to humans
+
+New in v0.3.0:
+- 6 Task Orchestration tools
+- Atomic locking (no race conditions)
+- Dependency DAG
 
 100% local, no cloud dependency.
 
@@ -93,24 +101,29 @@ pip install mcp-server-nucleus
 
 GitHub: https://github.com/LKGargProjects/mcp-server-nucleus
 
-Would love feedback from the community!
+Demo video in comments!
 ```
 
 ### r/ClaudeAI
 ```
-Built an MCP server for multi-agent orchestration
+Built an MCP server for multi-agent task orchestration (v0.3.0)
 
-After getting frustrated with Claude forgetting context between sessions, I built mcp-server-nucleus.
+After getting frustrated with Claude forgetting context and having no way to coordinate tasks between agents, I built mcp-server-nucleus.
 
 It gives Claude a "brain" - a local folder that persists:
-- Your project state
-- Research artifacts
+- Project state
+- Task queue (with priorities!)
 - Event history
-- Agent coordination rules
+- Agent coordination
 
-Works with Claude Desktop. Setup takes 2 minutes.
+New in v0.3.0:
+- Claim tasks atomically (prevents race conditions)
+- Escalate to humans when stuck
+- Skill-based routing
+
+Works with Claude Desktop & Windsurf. Setup takes 2 minutes.
 
 pip install mcp-server-nucleus
 
-Anyone else working on persistent memory for Claude?
+Anyone else building multi-agent workflows with MCP?
 ```

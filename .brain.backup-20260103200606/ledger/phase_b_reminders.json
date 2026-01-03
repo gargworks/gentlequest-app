@@ -1,0 +1,68 @@
+{
+    "version": "1.0.0",
+    "triggers": [
+        {
+            "id": "phase-b-week2-check",
+            "name": "Phase B Week 2 Review",
+            "due_date": "2025-01-10",
+            "condition": "date >= 2025-01-10",
+            "action": "Review: Have we completed 5 user interviews? Update task.md.",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "phase-b-week4-check",
+            "name": "Phase B Week 4 Review",
+            "due_date": "2025-01-24",
+            "condition": "date >= 2025-01-24",
+            "action": "Review: Are 5 templates shipped? Is v0.3.0 on PyPI?",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "phase-b-week6-check",
+            "name": "Phase B Week 6 Review",
+            "due_date": "2025-02-07",
+            "condition": "date >= 2025-02-07",
+            "action": "Review: How many Pro waitlist signups? Prepare decision.",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "phase-b-decision-point",
+            "name": "Phase B Decision Point",
+            "due_date": "2025-02-08",
+            "condition": "date >= 2025-02-08",
+            "action": "CRITICAL: Make go/no-go decision on Pattern Cloud based on metrics.",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "dogfood-week1-review",
+            "name": "Nucleus Dogfood Week 1 Review",
+            "due_date": "2025-01-03",
+            "condition": "date >= 2025-01-03",
+            "action": "Review dogfood_log.md. Is nucleus helping or hurting development? Update weekly summary.",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "dogfood-decision-point",
+            "name": "Nucleus Launch Decision",
+            "due_date": "2025-01-10",
+            "condition": "date >= 2025-01-10",
+            "action": "DECISION: Based on 2 weeks dogfooding - launch video/posts or pivot messaging?",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        },
+        {
+            "id": "verification-rule-assess",
+            "name": "Verification Rule Assessment",
+            "due_date": "2025-01-04",
+            "condition": "date >= 2025-01-04",
+            "action": "Review verification_protocol.md usage log. Did 'verify before negative claims' rule prevent false alarms? If yes, add to BRAIN_PRODUCT_V1/agents/synthesizer.md",
+            "target_agent": "synthesizer",
+            "status": "pending"
+        }
+    ]
+}

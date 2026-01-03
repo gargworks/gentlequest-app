@@ -1,0 +1,122 @@
+{
+    "version": "1.0",
+    "last_updated": "2026-01-02T11:00:00+05:30",
+    "triggers": [
+        {
+            "name": "session_started",
+            "event_type": "session_started",
+            "activates": [
+                "genesis",
+                "orchestrator"
+            ],
+            "description": "Fired when a new autonomous session begins"
+        },
+        {
+            "name": "task_assigned",
+            "event_type": "task_assigned",
+            "activates": [
+                "*"
+            ],
+            "meta_field": "agent",
+            "description": "Fired to assign a specific agent a task"
+        },
+        {
+            "name": "deployment_complete",
+            "event_type": "deployment_complete",
+            "activates": [
+                "critic",
+                "tester"
+            ],
+            "description": "Fired when a production deployment finishes"
+        },
+        {
+            "name": "error_detected",
+            "event_type": "error_detected",
+            "severity": "CRITICAL",
+            "activates": [
+                "debugger",
+                "architect"
+            ],
+            "description": "Fired when a critical error is detected"
+        },
+        {
+            "name": "sprint_complete",
+            "event_type": "sprint_complete",
+            "activates": [
+                "synthesizer",
+                "documentarian"
+            ],
+            "description": "Fired when a sprint is completed"
+        }
+    ],
+    "agents": {
+        "genesis": {
+            "role": "System bootstrap and coordination",
+            "triggers_on": [
+                "session_started",
+                "task_assigned"
+            ]
+        },
+        "orchestrator": {
+            "role": "Multi-agent coordination",
+            "triggers_on": [
+                "session_started",
+                "task_assigned"
+            ]
+        },
+        "architect": {
+            "role": "System design and technical decisions",
+            "triggers_on": [
+                "error_detected",
+                "task_assigned"
+            ]
+        },
+        "implementer": {
+            "role": "Code implementation",
+            "triggers_on": [
+                "task_assigned"
+            ]
+        },
+        "critic": {
+            "role": "Code review and quality assurance",
+            "triggers_on": [
+                "deployment_complete",
+                "task_assigned"
+            ]
+        },
+        "tester": {
+            "role": "Testing and verification",
+            "triggers_on": [
+                "deployment_complete",
+                "task_assigned"
+            ]
+        },
+        "researcher": {
+            "role": "Research and competitive analysis",
+            "triggers_on": [
+                "task_assigned"
+            ]
+        },
+        "synthesizer": {
+            "role": "Knowledge consolidation",
+            "triggers_on": [
+                "sprint_complete",
+                "task_assigned"
+            ]
+        },
+        "documentarian": {
+            "role": "Documentation and walkthroughs",
+            "triggers_on": [
+                "sprint_complete",
+                "task_assigned"
+            ]
+        },
+        "debugger": {
+            "role": "Error diagnosis and fixing",
+            "triggers_on": [
+                "error_detected",
+                "task_assigned"
+            ]
+        }
+    }
+}
