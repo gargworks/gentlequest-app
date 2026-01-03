@@ -5,6 +5,8 @@ PHQ-9 (Depression) and GAD-7 (Anxiety) validated screening tools.
 
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
+import json
+# psycopg2 imports moved to functions to allow running without postgres driver
 
 
 # ============================================================================
@@ -264,3 +266,160 @@ def validate_responses(assessment_type: str, responses: List[int]) -> Tuple[bool
         return False, "All responses must be integers between 0 and 3"
     
     return True, None
+
+
+# ============================================================================
+# PERSISTENCE (DATABASE)
+# ============================================================================
+
+def init_assessment_tables(conn):
+    """
+    Initialize clinical assessments table if it doesn't exist.
+    """
+    try:
+        import psycopg2
+    except ImportError:
+        # If running with SQLite or without psycopg2, we might be in test mode or local dev using sqlite
+        # If conn is sqlite, we can try to run SQL but syntax might differ slightly (JSONB etc)
+        # But for now, just return or print warning if we strictly need Postgres features.
+        print("⚠️ psycopg2 not found. init_assessment_tables skipped (unless mocked).")
+        return
+
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS clinical_assessments (
+        id SERIAL PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        assessment_type TEXT NOT NULL,  -- 'phq9' or 'gad7'
+        total_score INTEGER NOT NULL,
+        severity TEXT NOT NULL,
+        responses JSONB NOT NULL,       -- Stored as list of integers
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        metadata JSONB DEFAULT '{}'::jsonb
+    );
+    
+    CREATE WITH INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
+    """
+    # Note: postgres doesn't support CREATE WITH INDEX directly like that for idx, 
+    # but we can do CREATE INDEX separately.
+    
+    # Correct SQL for Postgres:
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS clinical_assessments (
+        id SERIAL PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        assessment_type TEXT NOT NULL,
+        total_score INTEGER NOT NULL,
+        severity TEXT NOT NULL,
+        responses JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        metadata JSONB DEFAULT '{}'::jsonb
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
+    CREATE INDEX IF NOT EXISTS idx_assessments_created_at ON clinical_assessments(created_at);
+    """
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute(create_table_sql)
+        conn.commit()
+        print("✅ Clinical assessments table initialized.")
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Error initializing assessment tables: {e}")
+        raise e
+
+
+def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
+    """
+    Save an assessment result to the database.
+    
+    Args:
+        conn: Database connection
+        session_id: User's session ID
+        assessment_data: Dictionary returned by score_phq9 or score_gad7
+                         (must contain assessment_type, total_score, severity)
+        
+    Returns:
+        The ID of the inserted record.
+    """
+    import psycopg2
+    
+    insert_sql = """
+    INSERT INTO clinical_assessments 
+    (session_id, assessment_type, total_score, severity, responses, metadata)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    RETURNING id;
+    """
+    
+    # Extract needed fields
+    assessment_type = assessment_data.get('assessment_type')
+    total_score = assessment_data.get('total_score')
+    severity = assessment_data.get('severity')
+    # We assume the caller passes the raw responses separately or we inject them into assessment_data
+    # But score functions don't return responses.
+    # We need the 'responses' list to be passed in or added to the dict.
+    # Let's assume the API adds 'responses' to the dict before calling this.
+    responses = json.dumps(assessment_data.get('responses', [])) 
+    
+    # Metadata could store the full result (recommendations, flags)
+    metadata = json.dumps({
+        "message": assessment_data.get('message'),
+        "requires_follow_up": assessment_data.get('requires_follow_up', False),
+        "follow_up_reason": assessment_data.get('follow_up_reason'),
+        "recommendations": assessment_data.get('recommendations', [])
+    })
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute(insert_sql, (
+                session_id, 
+                assessment_type, 
+                total_score, 
+                severity, 
+                responses, 
+                metadata
+            ))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        return new_id
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Error saving assessment: {e}")
+        raise e
+
+
+def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]:
+    """
+    Retrieve assessment history for a session.
+    """
+    try:
+        from psycopg2.extras import RealDictCursor
+    except ImportError:
+        print("⚠️ psycopg2 not found. get_assessment_history returning empty.")
+        return []
+
+    sql = """
+    SELECT id, assessment_type, total_score, severity, created_at, metadata
+    FROM clinical_assessments
+    WHERE session_id = %s
+    ORDER BY created_at DESC
+    LIMIT %s;
+    """
+    
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, (session_id, limit))
+            rows = cur.fetchall()
+            
+            # Convert rows to serializable dicts
+            history = []
+            for row in rows:
+                row_dict = dict(row)
+                if row_dict.get('created_at'):
+                    row_dict['created_at'] = row_dict['created_at'].isoformat()
+                history.append(row_dict)
+            return history
+    except Exception as e:
+        print(f"❌ Error getting assessment history: {e}")
+        return []

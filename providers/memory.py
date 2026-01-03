@@ -12,7 +12,13 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
+import threading
 from sqlalchemy import text
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 
 # Import from app context
 from models import db
@@ -366,99 +372,83 @@ def cleanup_expired_memories() -> int:
 # CONVERSATION SUMMARIZATION
 # ============================================================================
 
-def summarize_and_store_conversation(
+def _get_api_key() -> Optional[str]:
+    """Get Gemini API key from environment."""
+    return os.getenv('GEMINI_API_KEY', '').split(',')[0].strip() or None
+
+
+def summarize_interaction_llm(
     session_id: str,
     user_message: str,
-    ai_response: str,
-    risk_level: str = 'low'
+    ai_response: str
 ) -> bool:
     """
-    Extract key information from a conversation turn and store as memory.
-    
-    This is called after each conversation to build long-term memory.
+    Extract memories using Gemini Flash (Observer Pattern).
+    Intended to be run asynchronously.
     """
-    if not MEMORY_ENABLED or not _check_memory_tables_exist():
+    if not MEMORY_ENABLED or not _check_memory_tables_exist() or not GEMINI_AVAILABLE:
         return False
-    
-    # Don't store crisis conversations as memories (privacy/safety)
-    if risk_level == 'crisis':
+        
+    api_key = _get_api_key()
+    if not api_key:
         return False
-    
+        
     try:
-        # Extract emotional state if present
-        emotions = _extract_emotions(user_message)
-        if emotions:
-            emotion_summary = f"User expressed feeling {emotions[0]}"
-            if len(user_message) > 20:
-                # Add context if message is substantial
-                context = user_message[:100].replace('\n', ' ')
-                emotion_summary += f" about: {context}"
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        prompt = f"""
+        Analyze this interaction between a user and an AI companion.
+        Extract 1-3 atomic facts, emotional states, or preferences worth remembering long-term.
+        Ignore trivial chitchat.
+        
+        User: {user_message}
+        AI: {ai_response}
+        
+        Return ONLY a JSON array of objects with this schema:
+        [
+            {{
+                "type": "episodic" | "emotional" | "preference",
+                "content": "concise memory statement"
+            }}
+        ]
+        """
+        
+        response = model.generate_content(prompt)
+        if not response.text:
+            return False
             
+        # Clean markdown code blocks if present
+        text = response.text.strip()
+        if text.startswith('```json'):
+            text = text[7:]
+        if text.endswith('```'):
+            text = text[:-3]
+        text = text.strip()
+            
+        memories = json.loads(text)
+        
+        for mem in memories:
             store_memory(
                 session_id=session_id,
-                content=emotion_summary,
-                memory_type='emotional',
-                metadata={"emotions": emotions, "date": datetime.utcnow().isoformat()}
+                content=mem['content'],
+                memory_type=mem.get('type', 'episodic'),
+                metadata={"source": "observer", "date": datetime.utcnow().isoformat()}
             )
-        
-        # Extract topics mentioned
-        topics = _extract_topics(user_message)
-        if topics:
-            for topic in topics[:2]:  # Max 2 topics per message
-                topic_summary = f"User mentioned {topic}"
-                store_memory(
-                    session_id=session_id,
-                    content=topic_summary,
-                    memory_type='episodic',
-                    metadata={"topic": topic, "date": datetime.utcnow().isoformat()}
-                )
-        
+            
         return True
         
     except Exception as e:
-        print(f"Conversation summarization error: {e}")
+        print(f"Observer LLM error: {e}")
         return False
 
 
-def _extract_emotions(text: str) -> List[str]:
-    """Extract emotional keywords from text."""
-    emotion_keywords = {
-        'anxious': ['anxious', 'anxiety', 'worried', 'nervous', 'panic'],
-        'sad': ['sad', 'depressed', 'down', 'unhappy', 'lonely', 'hopeless'],
-        'stressed': ['stressed', 'overwhelmed', 'pressure', 'exhausted'],
-        'angry': ['angry', 'frustrated', 'annoyed', 'irritated'],
-        'happy': ['happy', 'good', 'great', 'excited', 'grateful'],
-        'tired': ['tired', 'exhausted', 'drained', 'fatigued'],
-        'scared': ['scared', 'afraid', 'fearful', 'terrified'],
-    }
-    
-    text_lower = text.lower()
-    found = []
-    
-    for emotion, keywords in emotion_keywords.items():
-        if any(kw in text_lower for kw in keywords):
-            found.append(emotion)
-    
-    return found
+# Deprecated: _extract_emotions and _extract_topics are replaced by summarize_interaction_llm
+# Keeping empty/pass functions if imported elsewhere, or we can just remove them 
+# since they were internal helpers (starts with _)
 
+def _extract_emotions(text: str) -> List[str]:
+    return []
 
 def _extract_topics(text: str) -> List[str]:
-    """Extract key topics mentioned in text."""
-    topic_patterns = {
-        'school': ['school', 'class', 'teacher', 'homework', 'exam', 'test', 'grades'],
-        'family': ['parents', 'mom', 'dad', 'family', 'brother', 'sister', 'home'],
-        'friends': ['friend', 'friends', 'social', 'popularity'],
-        'sleep': ['sleep', 'insomnia', 'tired', 'nightmares', 'rest'],
-        'relationships': ['boyfriend', 'girlfriend', 'crush', 'dating', 'breakup'],
-        'future': ['future', 'college', 'career', 'job', 'uncertainty'],
-        'self-esteem': ['confidence', 'self-esteem', 'worthless', 'ugly', 'failure'],
-    }
-    
-    text_lower = text.lower()
-    found = []
-    
-    for topic, keywords in topic_patterns.items():
-        if any(kw in text_lower for kw in keywords):
-            found.append(topic)
-    
-    return found
+    return []

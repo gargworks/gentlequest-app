@@ -23,7 +23,7 @@
 
 | Thread ID | Label | Agent Role | Purpose |
 | :--- | :--- | :--- | :--- |
-| `7c654df4-b83e-43f9-8620-f15868ec39d1` | Automating Agentic Workflow | **Lead Systems Architect** | Built Nucleus, talked to Genesis |
+| `7c654df4-b83e-43f9-8620-f15868ec39d1` | Nucleus Release & Pos. | **Lead Systems Architect** | Built Nucleus 0.2.6, Release Manager |
 | `853a0b7e-9052-4918-8c22-8031ee15aeec` | GentleQuest UI / Brain Sync | **Synthesizer** | Brain-to-Prod Sync, Orchestration |
 | `6c8d0959-9c69-4eb5-8e9c-303dd8b732ac` | RAG/Memory Planning | **Strategist** | Sprint Planning, RAG Architecture |
 | `6fa3fec0-7621-4380-b0ca-cff20117a719` | Architect Activation | **Architect** | Architecture setup |

@@ -11,6 +11,7 @@ import json
 import redis
 import requests
 import time
+import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Tuple
@@ -51,6 +52,15 @@ from models import (
 )
 from crisis_detection import detect_crisis_level
 from community import register_community_routes
+from providers.clinical_assessments import (
+    init_assessment_tables,
+    get_assessment_questions,
+    validate_responses,
+    score_phq9,
+    score_gad7,
+    save_assessment_result,
+    get_assessment_history
+)
 
 # Import enterprise integration
 try:
@@ -709,6 +719,19 @@ def create_app() -> Flask:
             app.logger.info("Brain state tables initialized")
     except Exception as e:
         app.logger.warning(f"Brain state initialization skipped: {e}")
+
+    # Initialize Clinical Assessments Tables
+    try:
+        with app.app_context():
+            # SQLAlchemy engine raw connection
+            conn = db.engine.raw_connection()
+            try:
+                init_assessment_tables(conn)
+            finally:
+                conn.close()
+            app.logger.info("Clinical assessment tables initialized")
+    except Exception as e:
+        app.logger.warning(f"Clinical assessment initialization skipped: {e}")
 
     # Initialize Agentic Intervention Tracking (ensure table schema)
     try:
@@ -1379,8 +1402,86 @@ def _register_routes(app: Flask) -> None:
         """Ensure session ID is always a string for consistency"""
         session_id = request.headers.get("X-Session-ID")
         if session_id and not isinstance(session_id, str):
-            request.headers = request.headers.copy()
             request.headers["X-Session-ID"] = str(session_id)
+
+    @app.route("/api/assessment/<assessment_type>/questions", methods=["GET"])
+    def get_assessment_questions_route(assessment_type):
+        """Get questions for a specific assessment type"""
+        try:
+            questions = get_assessment_questions(assessment_type)
+            return jsonify(questions)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            app.logger.error(f"Error fetching assessment questions: {e}")
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/api/assessment/<assessment_type>", methods=["POST"])
+    def submit_assessment(assessment_type):
+        """Submit and score an assessment"""
+        try:
+            session_id = request.headers.get("X-Session-ID")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 401
+                
+            data = request.get_json()
+            if not data or "responses" not in data:
+                return jsonify({"error": "Responses array required"}), 400
+                
+            # Allow single string "responses" if passed as JSON string (edge case)
+            responses = data["responses"]
+            
+            # 1. Validate
+            is_valid, error = validate_responses(assessment_type, responses)
+            if not is_valid:
+                return jsonify({"error": error}), 400
+                
+            # 2. Score
+            if assessment_type == "phq9":
+                result = score_phq9(responses)
+            elif assessment_type == "gad7":
+                result = score_gad7(responses)
+            else:
+                 return jsonify({"error": f"Unknown assessment type: {assessment_type}"}), 400
+            
+            # 3. Save
+            result["responses"] = responses # Inject responses for saving
+            
+            with app.app_context():
+                conn = db.engine.raw_connection()
+                try:
+                    assessment_id = save_assessment_result(conn, session_id, result)
+                    result["id"] = assessment_id
+                finally:
+                    conn.close()
+            
+            return jsonify(result)
+            
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            app.logger.error(f"Error submitting assessment: {e}")
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/api/assessment/history", methods=["GET"])
+    def get_assessment_history_route():
+        """Get assessment history for the user"""
+        try:
+            session_id = request.headers.get("X-Session-ID")
+            if not session_id:
+                return jsonify({"error": "Session ID required"}), 401
+                            
+            with app.app_context():
+                conn = db.engine.raw_connection()
+                try:
+                    history = get_assessment_history(conn, session_id)
+                finally:
+                    conn.close()
+                    
+            return jsonify({"history": history})
+        except Exception as e:
+            app.logger.error(f"Error fetching history: {e}")
+            return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/", methods=["GET"])
     def index():
@@ -2546,8 +2647,19 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
         Tuple of (ai_response, risk_level, tool_calls)
     """
     try:
+        from flask import current_app # Force local scope to fix UnboundLocalError
         # Detect crisis level FIRST
         risk_level = detect_crisis_level(message)
+        
+        # Guardrail Layer 1: Immediate Crisis Blocking
+        if risk_level == "crisis":
+             # Use the function defined in this file (available at runtime)
+             crisis_data = get_crisis_response_and_resources(risk_level)
+             crisis_msg = crisis_data.get("crisis_msg", "Please seek help immediately.")
+             
+             _log_conversation(session_id, message, f"BLOCKED_CRISIS: {crisis_msg}", risk_level)
+             # Return early with crisis message and no tool calls
+             return crisis_msg, risk_level, []
 
         # Check if we should use function calling (Gemini only, non-crisis)
         ai_provider = os.environ.get("AI_PROVIDER", "gemini").lower()
@@ -2556,6 +2668,8 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
             and risk_level != "crisis"
             and os.environ.get("ENABLE_FUNCTION_CALLING", "true").lower() == "true"
         )
+
+
 
         tool_calls = []
 
@@ -2566,6 +2680,24 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
             ai_response, tool_calls = get_gemini_response_with_tools(
                 message, session_id, risk_level
             )
+
+            # Guardrail Layer 2: Output Safety Verification
+            # Perform this check only if we have a text response (tool_calls might be empty or not)
+            if ai_response:
+                from providers.safety import check_safety_llm
+                is_safe, safety_msg = check_safety_llm(message, ai_response)
+                
+                if not is_safe:
+                    current_app.logger.warning(f"Guardrail Layer 2 Block: {safety_msg}")
+                    # Log the blocked attempt
+                    _log_conversation(session_id, message, f"BLOCKED_UNSAFE: {safety_msg} (Refused: {ai_response[:50]}...)", risk_level)
+                    # Return safe fallback
+                    return safety_msg, risk_level, tool_calls # Return tool_calls? Maybe clear them if unsafe? 
+                    # If text is unsafe, we probably shouldn't execute tools either if they depend on it?
+                    # For now just replace text.
+
+
+
             
             # KEYWORD FALLBACK: If Gemini didn't call function but should have
             # This ensures wellness interventions ALWAYS trigger when needed
@@ -2595,7 +2727,8 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
                 # If we detected an issue, manually inject the tool call
                 if issue:
                     from providers.agent_tools import execute_tool
-                    from flask import current_app as app # Import app for logging
+                    # Removed shadowing import
+
                     result = execute_tool(
                         "get_wellness_intervention",
                         {"issue": issue, "intensity": intensity},
@@ -2607,7 +2740,7 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
                         "result": result,
                         "source": "keyword_fallback"  # Track that this was fallback, not Gemini
                     }]
-                    app.logger.info(f"💡 Keyword fallback triggered: {issue}/{intensity}")
+                    current_app.logger.info(f"💡 Keyword fallback triggered: {issue}/{intensity}")
         else:
             # Regular response with failover
             ai_response, _used_provider = _get_ai_response_with_failover(
@@ -2624,14 +2757,20 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
         # Store memory for long-term context (non-blocking)
         try:
             from providers.memory import (
-                summarize_and_store_conversation,
+                summarize_interaction_llm,
                 MEMORY_ENABLED,
             )
 
             if MEMORY_ENABLED:
-                summarize_and_store_conversation(
-                    session_id, message, ai_response, risk_level
-                )
+                # Run memory extraction in background thread with app context
+                def _async_mem_worker(app_ctx, sess_id, u_msg, a_resp):
+                    with app_ctx.app_context():
+                        summarize_interaction_llm(sess_id, u_msg, a_resp)
+
+                threading.Thread(
+                    target=_async_mem_worker,
+                    args=(current_app._get_current_object(), session_id, message, ai_response)
+                ).start()
         except Exception:
             pass  # Non-critical, continue if memory fails
 

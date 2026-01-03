@@ -104,7 +104,7 @@ Each team member conducted independent field research using methods from their W
 - Updated POV statements
 - Solo reflections on data quality and assumptions
 
-**Documentation note:** The PDF export captured complete details for **Ryoma Machida** and **Afsheen Shakoor**. Other team members' solo work was integrated during Week 6 convergence.
+**Documentation note:** The PDF export captured complete solo persona details for **Ryoma Machida**, **Afsheen Shakoor**, **Victoria Tan**, and **Yunfeng Xie** (additional personas were recovered after a later pass of the export).
 
 ---
 
@@ -265,6 +265,57 @@ The field research highlighted some important strengths, such as the genuine pas
 - **Method 2:** POEMS
   - **Users:** Parents
   - **Context:** Understanding challenges in dealing with children with mental health issues
+
+### Persona 1: Mental Health Practitioner — Dr. Ayesha Khan
+
+**Distinguished Characteristics:**
+- MD in Psychiatry; specialization in Child and Adolescent Psychiatry
+- 5–10 years of experience across hospital settings and private practice
+- Mission-driven, prioritizing child safety and trust-building
+
+**Usage Scenario:**
+In day-to-day practice, Dr. Khan balances clinical care with the emotional load of severe cases, while also advocating for better mental health resources and awareness.
+
+**Key Tasks:**
+1. Diagnose child/adolescent mental health disorders (e.g., ADHD, anxiety, depression, autism spectrum disorders)
+2. Provide holistic, compassionate care addressing both child and family needs
+3. Stay updated with current research/advancements to improve treatment
+
+**Key Frustrations:**
+- Emotional strain from severe cases, affecting practitioner well-being
+- Limitations in available mental health resources and fragmented support systems
+
+**Key Needs:**
+- Improved resource availability and broader awareness of child mental health
+- Stronger collaboration networks across healthcare, education, and family systems
+
+### Persona 2: Parent/Caregiver — Mr. Jehangir Seth
+
+**Distinguished Characteristics:**
+- Highly committed caregiver balancing work responsibilities with ongoing care coordination
+- Experiences worry, guilt, and financial strain related to treatment access
+
+**Usage Scenario:**
+Mr. Seth coordinates across healthcare providers to maintain consistent treatment and tries to sustain a stable home environment while juggling demanding work.
+
+**Key Tasks:**
+1. Coordinate appointments and treatment across providers
+2. Maintain stability at home while supporting the child’s progress
+3. Build understanding/advocacy in the community for better mental health support
+
+**Key Frustrations:**
+- Financial burden of therapy, medication, and related treatments
+- Limited support networks and stigma/taboo around mental health in the community
+
+**Key Needs:**
+- Affordable access to quality mental health services and caregiver support resources
+
+**Supporting Evidence/Quotation:**
+> “Every day is a new challenge, but seeing my daughter’s progress, no matter how small, makes it all worth it.”
+
+**Solo Reflection (bias + assumptions captured):**
+- Attribution bias risk noted due to mental health taboo; may undervalue own observations vs teammates.
+- Assumption noted: caregiver persona recognizes and engages with the child’s mental health condition, which may not hold in all contexts.
 
 ### Field Observations — Key Challenges Identified
 
@@ -733,6 +784,470 @@ Test how effectively the app delivers value-added steps such as:
 
 # PART VI: Week 9 (Customer Value Proposition - CVP)
 
+## WEEK 9: INDIVIDUAL CUSTOMER VALUE PROPOSITIONS (SOLO WORK)
+
+*Note: This section documents each team member's individual CVP development before team convergence. Each member explored different customer segments, contexts, and value propositions based on their Week 4-5 field research insights.*
+
+---
+
+### Team Member 1: Lokesh Garg
+
+**Organization Type:** Startup  
+**Innovation Pathway:** Explore - Disruptive Innovation
+
+#### Customer Segments
+
+1. **High school students** seeking tools to manage stress and anxiety related to academic pressures and social dynamics
+2. **Schools** looking to monitor and support student mental health effectively
+
+#### Customer Context
+
+Students today are increasingly aware of and proactive about their mental health, seeking solutions that fit seamlessly into their digitally integrated lifestyles.
+
+#### Jobs-to-be-Done (JTBD)
+
+- Find and use a mental health app that is engaging, easy to use, and effective in providing personalized support
+- Integrate mental health management into daily activities without feeling intrusive
+
+#### Value Propositions
+
+**For Students:**
+- Fun, engaging way to manage mental health through gamification
+- Tools that fit seamlessly into students' digital lifestyles
+
+**For Schools:**
+- Platform that helps schools monitor and support student mental health effectively
+- Easy integration with existing systems
+- Actionable insights for administrators
+
+#### Pain Relievers & Gain Creators
+
+- Gamification elements reduce stigma and increase engagement
+- Real-time monitoring for schools to identify at-risk students
+- Privacy-first approach builds trust with students and parents
+
+#### Complete Product/Service Description
+
+A mobile mental health app featuring gamification for student engagement combined with a dashboard platform for schools to monitor student well-being and intervention effectiveness.
+
+#### Channels
+
+- **Digital Marketing:** Social media, online advertising, partnerships with educational content platforms
+- **Direct Sales:** Engage directly with school districts and educational boards
+
+#### Customer Relationships
+
+- **Students:** Build trust through high user privacy standards and engaging content
+- **Schools:** Establish reliable support and continuous updates on system efficacy and student engagement statistics
+
+#### Revenue Streams
+
+- **Subscription Model:** Schools and parents can subscribe monthly or annually
+- **Freemium Model:** Students access basic features for free, with premium features available via subscription
+
+#### Key Assumptions
+
+1. High school students actively seek digital tools for mental health management
+2. Schools have budget allocation for mental health platforms
+3. Gamification will drive sustained engagement
+4. Privacy concerns can be adequately addressed through compliance
+
+---
+
+### Team Member 2: Afsheen Shakoor
+
+**Organization Type:** Startup  
+**Innovation Pathway:** Explore - Transformative Innovation
+
+#### Customer Segments
+
+1. **Educational Institutions** (high schools, universities)
+2. **Caregiver Organizations** or Counseling Services
+
+#### Customer Context & JTBD
+
+**Educational Institutions:**
+- **Context:** Schools require a secure, user-friendly platform that integrates seamlessly with their existing systems and aligns with educational goals
+- **JTBD:** Implement a mental health solution that supports student well-being, reduces stigma, and fosters a supportive school environment
+
+**Caregiver Organizations:**
+- **Context:** Caregiver organizations need a collaborative tool that allows them to support student mental health in partnership with schools
+- **JTBD:** Enable caregivers to deliver accessible, consistent mental health support that is easy to manage and scales with student needs
+
+#### Value Propositions
+
+**For Educational Institutions:**
+1. **Mental Health Coordination Platform** — Streamlined tools for tracking, coordinating, and reporting student mental health progress
+2. **Automated Administrative Support** — Automates time-consuming tasks, allowing counselors to focus on direct student interaction
+3. **Real-Time Communication Hub** — Provides structured, timely updates for caregivers
+4. **Data Privacy and Secure Access Controls** — Ensures safe storage and controlled access to sensitive student information
+
+**For Caregiver Organizations/Counseling Services:**
+1. **Caregiver Engagement Tools** — Resources and personalized recommendations to empower caregivers
+2. **Progress and Notification System** — Regular, structured updates about student mental health progress
+3. **Co-designed Mental Health Support Plans** — Personalize mental health plans alongside school counselors
+4. **Secure Access to Student Information** — Securely view relevant mental health information with privacy compliance
+
+#### Complete Product/Service Description
+
+A comprehensive mental health platform that streamlines support, enhances collaboration, and provides real-time insights to proactively support student well-being through coordination between schools and caregivers.
+
+#### Channels
+
+- **Educational Institutions:** Direct sales through partnerships, email marketing campaigns, webinars and informational sessions
+- **Caregiver Organizations:** Partnerships for direct outreach, social media for awareness, in-app communication for feedback
+
+#### Customer Relationships
+
+- **Educational Institutions:** Dedicated account managers for high-touch support, self-service resources, regular check-ins
+- **Caregiver Organizations:** Community support with mental health forums, problem-solving assistance, semi-automated feedback loop
+
+#### Revenue Streams
+
+- **Subscription Model:** Monthly or annual subscription for schools and caregiver organizations
+- **Usage-Based Fees:** Pay-per-use charges for premium analytics and reporting features
+
+#### Key Partners
+
+- Governmental and educational bodies for compliance support
+- Technology providers for secure integration
+- Mental health organizations for resource collaboration
+- Counseling and therapy providers
+- Non-profits focused on student well-being
+
+#### Key Assumptions
+
+1. Educational institutions and caregiver organizations prioritize mental health support and are willing to invest
+2. Schools actively seek digital solutions that integrate with existing systems
+3. Students will engage if resources are easily accessible and secure
+4. Privacy and compliance are critical for adoption
+
+---
+
+### Team Member 3: Victoria Tan
+
+**Organization Type:** Startup  
+**Innovation Pathway:** Explore - Disruptive Innovation
+
+#### Customer Segments
+
+1. **Schools and educational institutions** incorporating mental health support
+2. **Students** (Primary Users, Non-paying)
+
+#### Customer Context & JTBD
+
+**Schools:**
+- **Context:** Need effective, engaging tools that cater to unique pressures faced by students
+- **JTBD:** Implement an accessible, easy-to-use digital tool that helps students manage mental health, improve academic and social experiences, and reduce school-wide mental health issues
+
+**Students (Primary Users):**
+- **Context:** Benefit from a supportive environment that promotes mental health and provides resources for well-being
+- **JTBD:** 
+  - Access mental health resources and support services in an easy-to-use way that fosters safety and security
+  - Communicate with counselors and caregivers through a trusted platform that maintains confidentiality
+  - Receive structured guidance to manage mental health challenges
+
+#### Value Propositions
+
+**For Students:**
+- Accessible mental health resources tailored to their needs
+- Sense of security and well-being within the school environment
+- Clear communication channels to connect with counselors and caregivers
+
+**For Schools:**
+- Comprehensive platform for student mental health support
+- Integration into existing school wellness programs
+- In-app notifications and updates to keep students informed
+
+#### Complete Product/Service Description
+
+A digital mental health platform specifically designed for students who may not realize their mental health needs, featuring AI-based tools to detect needs and provide support, combined with premium counseling services.
+
+#### Channels
+
+- **Through schools:** Integration into school wellness programs (mindfulness workshops, stress management sessions)
+- **Educational conferences:** Direct outreach to administrators
+- **Online workshops:** Digital marketing and social media outreach
+- **Student ambassadors:** Collaboration to drive awareness and engagement
+- **Online community:** Creating engagement platforms
+
+#### Customer Relationships
+
+- **Online community** for peer support
+- **Educational seminars** for awareness
+- **Free assessment** tools to drive adoption
+
+#### Revenue Streams
+
+- **Subscription fees** for schools
+- **Premium counseling services** as upgrades
+- **Tiered subscription model** with basic and premium plans
+
+#### Key Activities
+
+1. **Assessment** — AI-powered mental health assessments
+2. **Teacher training** — Educating staff on platform use
+3. **Data collection** — Analytics for improvement
+
+#### Key Resources
+
+1. **Assessment data** for AI algorithm training
+2. **Experienced sales team** for institutional partnerships
+3. **AI know-how staff** for technical development
+
+#### Key Partners
+
+1. **Qualified practitioners** for credibility
+2. **KOLs in mental health** for endorsements
+3. **Stable digital platform** providers
+
+#### Cost Structure
+
+- **Platform costs** (fixed)
+- **Sales commissions** (variable)
+- **AI development costs** (variable)
+
+#### Key Assumptions
+
+1. Students who don't realize they have mental health problems can be identified through AI
+2. Schools will pay for subscription-based mental health platforms
+3. Free assessments will drive conversions to paid services
+4. Teachers can be trained effectively to support platform adoption
+
+---
+
+### Team Member 4: Yunfeng Xie
+
+**Organization Type:** Startup  
+**Innovation Pathway:** Explore - Disruptive Innovation
+
+#### Customer Segments
+
+1. **Primary Customers:** Educational Institutions (high schools, universities) and Caregiver Organizations
+2. **Primary Users:** High school and college students who may not be aware of their mental health needs
+
+#### Customer Context & JTBD
+
+**Educational Institutions and Caregiver Organizations:**
+- **JTBD:** Empower schools and caregivers with a comprehensive mental health platform that streamlines support, enhances collaboration, and provides real-time insights to proactively support student well-being
+
+**Primary Users (Students):**
+- **JTBD:** Gain access to a supportive mental health platform that fits seamlessly into daily routine, helping manage stress, track progress, and connect with counselors in a secure, engaging, and personalized way
+
+#### Value Propositions
+
+**For Students:**
+- Supportive mental health platform integrated into daily routine
+- Stress management and progress tracking tools
+- Secure, engaging, and personalized counselor connections
+
+**For Educational Institutions and Caregivers:**
+- Comprehensive mental health platform
+- Streamlined support and enhanced collaboration
+- Real-time insights for proactive intervention
+
+#### Complete Product/Service Description
+
+An AI-powered mental health platform featuring personalized assessments, gamified engagement tools, and real-time analytics for institutions, combined with seamless counselor integration for students.
+
+#### Key Activities
+
+1. **Product Development:** Continuous improvement based on user feedback and AI-driven assessment advancements
+2. **Customer Support and Training:** Tech support for all users, training educators and caregivers
+3. **Data Collection and Analysis:** Use assessment data to improve platform and provide actionable insights
+4. **Compliance and Privacy Assurance:** Meeting regulatory standards for student data privacy
+5. **Content Creation:** Regular updates to mental health-related content
+
+#### Key Resources
+
+1. **Technology Infrastructure:** Secure and scalable platform supporting AI-based assessments
+2. **Mental Health Expertise and Content Creation:** Resources and partnerships for engaging educational content
+3. **AI Know-How Staff:** Expertise in AI for assessment tools offering real-time feedback
+4. **Legal and Compliance Expertise:** Ensuring all regulatory requirements are met
+
+#### Customer Relationships
+
+**Educational Institutions and Caregivers:**
+1. **Dedicated Personal Assistance:** Ongoing support through dedicated account managers
+2. **Automated Services and Self-Service Resources:** Access to online portals with FAQs and support documentation
+
+**Students:**
+1. **Automated Services:** AI-driven tools providing personalized assessments and feedback
+2. **Self-Service:** Library of resources, exercises, and tools for private use
+3. **Personal Assistance:** Confidential, secure one-on-one communication with licensed counselors
+
+#### Channels
+
+- **Educational Institutions:** Direct partnerships with schools and educational conferences
+- **Students:** Integration into school wellness programs, online workshops, digital marketing, social media outreach, student ambassadors, online community
+
+#### Revenue Streams
+
+- **Subscription Model:** Institutions pay flat fee or per-student basis for platform access (basic plan for access, premium plan for advanced analytics)
+- **Freemium Model with Premium Counseling Services:** Basic features free for students, premium counseling and mental health resources as paid upgrades
+
+#### Key Partners
+
+1. **Qualified Practitioners and Mental Health Organizations** (National Alliance on Mental Illness, American Psychological Association)
+2. **Educational Technology Firms and Local School Districts** (Google for Education, Microsoft Education)
+3. **Conference Organizers and Online Workshop Facilitators**
+4. **Privacy and Data Security Firms** (GDPR and HIPAA compliance specialists)
+
+#### Cost Structure
+
+- **Fixed Costs:** Platform infrastructure and maintenance, salaries for development and support staff, compliance and data protection services
+- **Variable Costs:** Marketing expenses for customer acquisition (sales commissions, video content creation), customer support, training and workshop facilitation, content development costs
+
+#### Key Assumptions
+
+1. Educational institutions prioritize mental health support and will invest in digital tools
+2. High school and college students are open to using digital platforms for mental health support
+3. Schools and caregivers see high value in integrated mental health support platforms
+4. Students will engage more actively with gamified elements and personalized feedback
+5. Institutions will pay subscription fees if platform demonstrates measurable improvements
+6. Students will upgrade to premium services if they see value
+7. AI-based assessments require robust and secure technology infrastructure
+8. Partnerships with mental health organizations are critical for credibility
+9. High initial development costs are expected for platform infrastructure
+
+---
+
+### Team Member 5: Ryoma Machida
+
+**Organization Type:** Startup  
+**Innovation Pathway:** Explore - Disruptive Innovation
+
+#### Customer Segments
+
+1. **Student:** Harendra, a 17-year-old preparing for competitive exams, faces pressure from family and peers
+2. **School Counselor/Mental Health Professional:** Dr. Patel, a school counselor managing many students with limited resources
+
+#### Customer Context & JTBD
+
+**Student (Harendra):**
+- **Context:** High school students juggling academics, work, and social life, facing challenges like academic stress, time management, and anxiety. Need accessible mental health resources, effective stress management strategies, and a supportive community
+- **JTBD:** Manage stress without disrupting study routine while achieving academic success, improving time management, and maintaining mental well-being
+
+**School Counselor (Dr. Patel):**
+- **Context:** Mental health professionals with experience working with young adults, aiming to stay updated with latest research while managing a large number of students and addressing stigma surrounding mental health. Need efficient tools for remote counseling, methods to track student progress, and opportunities for professional collaboration
+- **JTBD:** Efficiently identify at-risk students and provide support, leverage technology to enhance practice, and help reduce mental health stigma among students
+
+#### Value Propositions
+
+**For Students:**
+- Personalized mental health support through AI-driven tools
+- Gamified mental health exercises for stress relief
+- Peer-to-peer support groups for community engagement
+- Seamless integration with daily study routine
+
+**For Counselors:**
+- Tools to manage student cases and offer remote support
+- Efficient student progress tracking
+- Reduced time spent per student while maintaining care quality
+- AI-powered identification of at-risk students
+
+#### Complete Product/Service Description
+
+A mobile app offering personalized mental health support for students using AI-driven tools. The app addresses both students' needs for stress management and counselors' needs for efficient tracking, creating value by addressing both functional and emotional jobs-to-be-done.
+
+**Integrated App Features:**
+- **AI-Powered Mental Health App:** Personalized Assessments, Chatbots, Mood Tracking
+- **Virtual Counseling Services:** Telehealth Platform, Group Therapy Sessions
+- **Peer Support Network:** Peer Counseling Program, Support Groups
+- **Gamified Mental Health Programs:** Mindfulness and Meditation Apps, Stress Management Games
+- **Augmented Reality (AR) and Virtual Reality (VR) Experiences:** VR Therapy, AR Relaxation Spaces
+- **Customized Care Packages:** Mental Health Kits, Subscription Boxes
+
+#### Channels
+
+- **App Stores:** Available on iOS and Android platforms
+- **Schools and Educational Platforms:** Partner with schools to integrate the app into mental health programs
+- **Online Marketing:** Social media and educational websites to reach students and counselors
+- **Direct Sales, Online Sales, Social Media, Digital Platforms, Physical Products**
+
+#### Customer Relationships
+
+- **Self-Service:** Students can access personalized mental health support through the app
+- **Community Support:** Peer-to-peer support groups within the app to foster engagement
+- **Dedicated Support for Counselors:** Tools to manage student cases and offer remote support
+- **Customer Support, Trust and Reliability, Empathy and Understanding, Accessibility and Responsiveness, Personalization, Community and Connection, Transparency and Honesty**
+
+#### Revenue Streams
+
+- **Subscription Fees:** Schools or counselors pay monthly or yearly subscription to use the app
+- **Freemium Model:** Students use basic features for free, with premium features available for a fee
+- **Partnerships:** Revenue from partnerships with mental health organizations or educational institutions
+- **Subscription-Based Model, Partnerships and Collaborations, Workshops and Events, Advertising and Sponsorship, Data Analytics and Insights, Customized Solutions**
+
+#### Key Activities
+
+- **App Development and Maintenance:** Continuously improve AI algorithms and user interface
+- **Content Creation:** Develop gamified mental health exercises and resources
+- **Customer Support:** Provide technical support for both students and counselors
+- **Product Development, Research and Innovation, Service Provision, Partnerships and Collaboration, Marketing and Outreach, Customer Relationship Management, Fundraising and Financial Management**
+
+#### Key Resources
+
+- **AI Technology:** Core of the app, providing personalized recommendations
+- **Mental Health Experts:** Create content and ensure valuable support
+- **App Developers:** Maintain and improve the platform
+- **Human Resources:** Mental Health Professionals, Technical Team, Content Creators, Customer Support Team
+- **Financial Resources:** Funding and Grants, Revenue Streams
+- **Partnerships and Networks:** Educational Institutions, Health and Wellness Organizations
+- **Physical and Digital Assets:** Digital Platforms, Office Space, Educational Materials
+
+#### Key Partners
+
+- **Schools and Educational Institutions:** Promote the app to students and integrate into mental health programs
+- **Mental Health Organizations:** Provide expert content and resources for mental health support
+- **Technology Providers (AI):** Develop and maintain AI-driven tools for personalized recommendations
+- **Technology Partners, Healthcare Providers, Community and Peer Support Networks, Corporate and Social Responsibility Partners**
+
+#### Key Suppliers
+
+- **Cloud Service Providers** (AWS, Google Cloud): Host the app and ensure reliable performance
+- **App Development Agencies:** Outsource some aspects of app development or maintenance
+- **Content Creators:** Provide mental health-related content (exercises, videos, articles)
+
+#### Cost Structure
+
+- **App Development and Maintenance Costs:** Regular updates, bug fixes, and new feature development
+- **Content Creation Costs:** Hiring mental health experts to create new content
+- **Marketing Costs:** Promoting the app through online platforms, schools, and partnerships
+- **Development and Technology, Human Resources, Marketing and Outreach, Operational Costs, Service Delivery, Research and Development, Partnerships and Collaboration, Compliance and Legal**
+
+#### Key Assumptions
+
+1. High school students will find value in using gamified exercises for stress relief and mental health management
+2. School counselors will adopt the app as a tool to track student progress and provide remote support
+3. Personalized AI-based recommendations will effectively help students manage stress levels and improve academic performance
+4. Users will trust that their personal data is secure (critical for adoption in sensitive mental health area)
+5. Students and counselors will trust data security due to GDPR/HIPAA compliance
+6. Educational institutions will adopt the platform primarily through direct partnerships and referrals at educational conferences
+7. Students are more likely to adopt if introduced through social media, digital marketing, and online workshops
+8. Schools and caregivers expect regular account management support (dedicated contacts, training, system updates)
+9. Students expect responsive, engaging user experience with community support, rewards for participation, and secure counselor access
+10. AI-driven recommendations will reduce student stress levels, validated via surveys and performance tracking
+11. Counselors will adopt the app to manage caseloads efficiently
+
+---
+
+## WEEK 10: INDIVIDUAL BUSINESS MODEL CANVASES (SOLO WORK)
+
+*Note: Each team member developed a complete 9-box Business Model Canvas based on their Week 9 CVP. These individual BMCs represent divergent thinking before team convergence. All canvases include: Customer Segments, Value Propositions, Channels, Customer Relationships, Revenue Streams, Key Activities, Key Resources, Key Partners, and Cost Structure.*
+
+**Documentation:** All 5 individual Business Model Canvases are fully documented in the Week 9 CVP sections above. Each team member's CVP includes their complete BMC elements:
+
+1. **Lokesh Garg** — Gamification-focused app for students + school dashboard
+2. **Afsheen Shakoor** — Coordination platform for educational institutions and caregiver organizations
+3. **Victoria Tan** — AI-based detection platform for students who don't realize their needs
+4. **Yunfeng Xie** — Comprehensive AI-powered platform with institutional and student focus
+5. **Ryoma Machida** — Integrated app with multiple features (AI, VR/AR, peer support, virtual counseling)
+
+---
+
+# PART VI: Week 9 (Customer Value Proposition - CVP) — TEAM CONVERGENCE
+
 ## Template (guide)
 
 ### Step 1 — Define your organization
@@ -1047,6 +1562,102 @@ The PDF export includes **reflection prompt areas** for Week 12 but does not con
 ---
 
 # APPENDICES
+
+## Appendix D: Recovered Week 4–5 Solo Personas (Addendum)
+
+The following Week 4–5 solo persona details were recovered from the PDF export during a later extraction pass and are included here to ensure the expanded context remains complete.
+
+### Team Member 3: Victoria Tan
+
+#### Persona 1: Proactive Mother Managing Child Anxiety (Lisa)
+
+**Distinguished Characteristics:**
+- Caring, proactive, seeks best practices
+- Feels urgency and responsibility, often carrying the emotional load alone
+
+**Usage Scenario:**
+Across a typical day (morning routine → school drop-off → work → evening routine), Lisa uses affirmations and planning tools to help her son manage anxiety, while struggling to find timely professional support.
+
+**Key Observations / Tasks:**
+- Uses affirmations and helps break school tasks into manageable steps
+- Seeks updates during the workday and looks for reassurance
+- Attempts to build routines and relaxation techniques at home
+
+**Key Frustrations:**
+- Limited access to effective youth mental health resources
+- Low responsiveness/time constraints from school staff
+- Feeling isolated and unsure “where or whom” to turn to for professional help
+
+**Key Needs:**
+- Clearer pathways and more immediate access to appropriate mental health support
+- Support mechanisms specifically for parents/caregivers
+
+**Supporting Evidence/Quotations:**
+> “Despite our best efforts, it feels like we’re always on our own.”
+
+#### Persona 2: Introverted Student With Social Anxiety (Emily)
+
+**Distinguished Characteristics:**
+- Introverted, socially anxious, prefers structured environments
+
+**Usage Scenario:**
+In a typical school day, Emily navigates academic pressure and unstructured social environments (like the cafeteria), often feeling overlooked in large classes and unclear group work settings.
+
+**Key Frustrations:**
+- Overwhelming unstructured environments (e.g., cafeteria)
+- Unclear group roles and uneven workload distribution
+- Teacher overload limits individual attention
+- Stigma reduces willingness to use counseling services
+
+**Key Needs:**
+- Structured social interactions and psychologically safer school experiences
+- Clear communication and defined roles in group projects
+- Accessible, stigma-reducing paths to support
+
+**Supporting Evidence/Quotations:**
+> “Sometimes, it feels like everything is just too much, and I don’t know how to handle it on my own.”
+
+**Assumptions (captured):**
+- Parent persona: assumes access/availability alone improves outcomes (may ignore fit/quality/capacity factors).
+- Student persona: assumes structure/clear communication alleviates anxiety (may ignore deeper mental health history or external stressors).
+
+### Team Member 4: Yunfeng Xie
+
+#### Persona 1: School Mental Health Program Runner (L.N. Liang)
+
+**Distinguished Characteristics:**
+- Runs a school mental health program and trains/supports other counselors
+
+**Key Tasks:**
+- Provide in-person student mental health support
+- Train and support counselors
+
+**Key Frustrations:**
+- Lack of qualified practitioners
+- Lack of organization/regulation among counselors/practitioners
+- Practitioners-in-training lack real-life practice
+
+**Key Needs:**
+- More qualified practitioners and more efficient training pathways
+
+#### Persona 2: High-Pressure Student Seeking Support (S. Zhang)
+
+**Distinguished Characteristics:**
+- Student in a highly prestigious university
+- Under pressure from academics, relationships, and peer/family expectations
+
+**Key Frustrations:**
+- Perception that school counselors are not professional enough
+- Outside clinical services are expensive
+- Privacy concerns lead to keeping issues to self; may not realize help is needed
+
+**Key Needs:**
+- Trusted, affordable, privacy-protecting mental health support
+
+**Noted Research Limitations:**
+- Observations were drawn from university contexts; high school needs may differ.
+- L.N. Liang context reflects a resourceful private university; public university settings were not researched.
+
 
 ## Appendix A: Team Roster (full)
 

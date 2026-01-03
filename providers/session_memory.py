@@ -252,31 +252,32 @@ def get_recent_messages(session_id: str, limit: int = 5) -> List[Dict[str, Any]]
         List of {role: 'user'|'assistant', content: str, timestamp: str}
     """
     try:
+        # Use messages table instead of broken conversation_logs
         result = db.session.execute(
             text("""
-                SELECT user_message, ai_response, timestamp
-                FROM conversation_logs
+                SELECT content, is_user, timestamp
+                FROM messages
                 WHERE session_id = :session_id
                 ORDER BY timestamp DESC
                 LIMIT :limit
             """),
-            {"session_id": session_id, "limit": limit}
+            {"session_id": session_id, "limit": limit * 2} # Query more to get turns
         ).fetchall()
         
         messages = []
-        # Reverse to get chronological order
+        # Result is chronological DESC (newest first). 
+        # We need to reverse to get oldest -> newest
+        
+        # Also, raw messages might be [User, AI, User, AI]
+        # We want to preserve that order.
+        
         for row in reversed(list(result)):
             messages.append({
-                "role": "user",
-                "content": row.user_message,
+                "role": "user" if row.is_user else "assistant",
+                "content": row.content,
                 "timestamp": row.timestamp.isoformat() if row.timestamp else None,
             })
-            messages.append({
-                "role": "assistant", 
-                "content": row.ai_response,
-                "timestamp": row.timestamp.isoformat() if row.timestamp else None,
-            })
-        
+            
         return messages
         
     except Exception as e:

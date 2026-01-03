@@ -174,6 +174,9 @@
 | Branding | [GENTLEQUEST_BRANDING_STRATEGY.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/GENTLEQUEST_BRANDING_STRATEGY.md) |
 | Reddit | [GENTLEQUEST_REDDIT_GROWTH_STRATEGY.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/GENTLEQUEST_REDDIT_GROWTH_STRATEGY.md) |
 | Recruitment | [AGENTIC_USER_RECRUITMENT_PLAYBOOK.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/AGENTIC_USER_RECRUITMENT_PLAYBOOK.md) |
+| FB Strategy | [GENTLEQUEST_FACEBOOK_STRATEGY.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/GENTLEQUEST_FACEBOOK_STRATEGY.md) |
+| IH Protocol | [INDIEHACKERS_PROTOCOL.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/INDIEHACKERS_PROTOCOL.md) |
+| Nucleus Strat | [NUCLEUS_GROWTH_STRATEGY.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/NUCLEUS_GROWTH_STRATEGY.md) |
 | Beta Templates | [BETA_TESTING_TEMPLATES.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/BETA_TESTING_TEMPLATES.md) |
 
 ---
