@@ -3,6 +3,7 @@ from datetime import datetime
 import uuid
 import os
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import JSON
 
 db = SQLAlchemy()
 
@@ -59,7 +60,7 @@ class SelfAssessmentEntry(db.Model):
         db.String(36), db.ForeignKey("user_sessions.id"), nullable=False
     )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    assessment_data = db.Column(JSONB, nullable=False)
+    assessment_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
 
     def __repr__(self):
         return f"<SelfAssessmentEntry id={self.id} session_id={self.session_id}>"
@@ -84,7 +85,7 @@ class AnalyticsEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     event_type = db.Column(db.String(50), nullable=False)
-    event_data = db.Column(JSONB)
+    event_data = db.Column(JSON().with_variant(JSONB, "postgresql"))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -138,7 +139,7 @@ class ClinicalAssessment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
     assessment_type = db.Column(db.String(20), nullable=False)  # 'phq9' or 'gad7'
-    responses = db.Column(JSONB, nullable=False)  # List of integer responses
+    responses = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)  # List of integer responses
     total_score = db.Column(db.Integer, nullable=False)
     severity = db.Column(db.String(20), nullable=False)  # minimal, mild, moderate, severe
     requires_follow_up = db.Column(db.Boolean, default=False)  # For PHQ-9 Q9

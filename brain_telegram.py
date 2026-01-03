@@ -322,44 +322,38 @@ def handle_idea_command(idea: str) -> str:
     if not idea:
         return "❌ Usage: /idea <your thought>\nExample: /idea Add voice notes to Luna"
     
-    # Get ideas inbox path
-    ideas_folder = BRAIN_ROOT / "artifacts" / "ideas"
-    inbox_file = ideas_folder / "inbox.md"
-    
-    # Create folder if needed (will fail gracefully on production)
-    try:
-        ideas_folder.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    
     # Format the idea entry
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     entry = f"\n- [ ] **{timestamp}**: {idea}\n"
     
-    # Append to inbox
+    # Try nucleus artifact system (local)
     try:
-        if BRAIN_ROOT.exists():
-            # Create file with header if it doesn't exist
-            if not inbox_file.exists():
-                inbox_file.write_text("# 💡 Ideas Inbox\n\nShower thoughts and quick captures from Telegram.\n\n---\n")
-            
-            with open(inbox_file, 'a') as f:
-                f.write(entry)
-            
-            # Also emit as event for ledger tracking
-            emit_event(
-                emitter="founder",
-                event_type="idea_captured",
-                payload={"idea": idea},
-                severity="ROUTINE"
-            )
-            
-            return f"💡 *Idea Captured!*\n\n_{idea}_\n\nSaved to ideas inbox. Review in Antigravity."
+        from nucleus import read_artifact, write_artifact
+        
+        artifact_path = "ideas/inbox.md"
+        existing = read_artifact(artifact_path)
+        
+        if existing is None:
+            # Create with header
+            header = "# 💡 Ideas Inbox\n\nShower thoughts and quick captures from Telegram.\n\n---\n"
+            write_artifact(artifact_path, header + entry)
         else:
-            # Production: no local brain, just acknowledge
-            return f"💡 *Idea Noted!*\n\n_{idea}_\n\n⚠️ No local brain on production. Sync needed for persistence."
+            # Append to existing
+            write_artifact(artifact_path, entry, append=True)
+        
+        # Emit event for tracking
+        emit_event(
+            emitter="founder",
+            event_type="idea_captured",
+            payload={"idea": idea},
+            severity="ROUTINE"
+        )
+        
+        return f"💡 *Idea Captured!*\n\n_{idea}_\n\nSaved to ideas inbox. Review in Antigravity."
+    
     except Exception as e:
-        return f"❌ Failed to save idea: {str(e)[:50]}"
+        # Fallback: just acknowledge (production without local brain)
+        return f"💡 *Idea Noted!*\n\n_{idea}_\n\n⚠️ Could not persist locally: {str(e)[:30]}"
 
 
 def handle_research_command(task: str) -> str:
@@ -367,43 +361,38 @@ def handle_research_command(task: str) -> str:
     if not task:
         return "❌ Usage: /research <task>\nExample: /research Compare Stripe vs Paddle for solo SaaS"
     
-    # Get research queue path
-    research_folder = BRAIN_ROOT / "artifacts" / "research"
-    queue_file = research_folder / "queue.md"
-    
-    # Create folder if needed
-    try:
-        research_folder.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    
     # Format the queue entry
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     entry = f"\n- [ ] {timestamp} | {task}\n"
     
-    # Append to queue
+    # Try nucleus artifact system (local)
     try:
-        if BRAIN_ROOT.exists():
-            # Create file with header if it doesn't exist
-            if not queue_file.exists():
-                queue_file.write_text("# 📚 Research Queue\n\nTasks queued via /research. Processed by Gemini CLI.\n\n---\n\n## Pending Tasks\n")
-            
-            with open(queue_file, 'a') as f:
-                f.write(entry)
-            
-            # Emit event for tracking
-            emit_event(
-                emitter="founder",
-                event_type="research_queued",
-                payload={"task": task},
-                severity="ROUTINE"
-            )
-            
-            return f"🔬 *Research Queued!*\n\n_{task}_\n\nWill be processed by Gemini CLI overnight (or run manually)."
+        from nucleus import read_artifact, write_artifact
+        
+        artifact_path = "research/queue.md"
+        existing = read_artifact(artifact_path)
+        
+        if existing is None:
+            # Create with header
+            header = "# 📚 Research Queue\n\nTasks queued via /research. Processed by Gemini CLI.\n\n---\n\n## Pending Tasks\n"
+            write_artifact(artifact_path, header + entry)
         else:
-            return f"🔬 *Research Noted!*\n\n_{task}_\n\n⚠️ No local brain on production."
+            # Append to existing
+            write_artifact(artifact_path, entry, append=True)
+        
+        # Emit event for tracking
+        emit_event(
+            emitter="founder",
+            event_type="research_queued",
+            payload={"task": task},
+            severity="ROUTINE"
+        )
+        
+        return f"🔬 *Research Queued!*\n\n_{task}_\n\nWill be processed by Gemini CLI overnight (or run manually)."
+    
     except Exception as e:
-        return f"❌ Failed to queue research: {str(e)[:50]}"
+        # Fallback: just acknowledge (production without local brain)
+        return f"🔬 *Research Noted!*\n\n_{task}_\n\n⚠️ Could not persist locally: {str(e)[:30]}"
 
 
 def process_telegram_message(message: dict) -> str:

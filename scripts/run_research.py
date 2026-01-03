@@ -79,12 +79,17 @@ Output: Provide a concise, well-structured research report with:
 
 Be thorough but concise. Focus on actionable insights."""
 
-    cmd = ["gemini", "-m", MODEL]
+    cmd = ["gemini", "-m", MODEL, "-p", ""]
     
-    # Add context file if exists
+    # Add context content to prompt
+    context_text = ""
     if CONTEXT_FILE.exists():
-        cmd.extend(["--file", str(CONTEXT_FILE)])
-    
+        try:
+            context_text = CONTEXT_FILE.read_text()
+            prompt += f"\n\nProject Context:\n{context_text}"
+        except Exception:
+            pass # Ignore context read errors
+
     try:
         result = subprocess.run(
             cmd,

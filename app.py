@@ -467,13 +467,24 @@ def create_app() -> Flask:
 
     # SQLAlchemy reliability options
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    
+    # Define base engine options
+    engine_options = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
-        "pool_size": 5,
-        "max_overflow": 10,
-        "pool_timeout": 2,
     }
+    
+    # Add pooling options only for non-SQLite databases (Postgres/MySQL)
+    # SQLite (especially in-memory) doesn't support these pool arguments with StaticPool
+    db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if not db_uri.startswith("sqlite"):
+        engine_options.update({
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_timeout": 2,
+        })
+        
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options
 
     # Log effective DB URL (masked) and attempt DNS resolution of host
     try:

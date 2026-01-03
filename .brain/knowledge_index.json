@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-01-02T08:00:02.036718",
-  "total_files": 173,
+  "generated_at": "2026-01-03T08:00:02.202863",
+  "total_files": 186,
   "total_rules_extracted": 180,
   "faculties": {
     "general": {
-      "count": 93,
+      "count": 104,
       "files": [
         ".brain/NUCLEUS_HUB.md",
         ".brain/artifacts/code/neural_bridge_spec.md",
@@ -24,6 +24,10 @@
         ".brain/workflows/verification_feedback.md",
         ".brain/workflows/execution_modalities.md",
         ".brain/meta/thread_registry.md",
+        ".brain/meta/active_task_list.md",
+        ".brain/meta/SYSTEM_INTEGRATION.md",
+        ".brain/meta/operating_manual.md",
+        ".brain/meta/implementation_dashboard.md",
         ".brain/meta/next_iteration.md",
         "docs/deep_links.md",
         "docs/BETA_TESTING_TEMPLATES.md",
@@ -31,7 +35,9 @@
         "docs/EMOTIONAL_DESIGN_PROMPT.md",
         "docs/STRATEGIC_AI_CAPABILITIES_ROADMAP.md",
         "docs/data_inventory.md",
+        "docs/ARCHIVE.md",
         "docs/ARCHITECTURE.md",
+        "docs/ONE_BUTTON_RELEASE_GUIDE.md",
         "docs/AI_AGENTS_ASSESSMENT.md",
         "docs/ACTION_ITEMS.md",
         "docs/architecture_persona_theory.md",
@@ -53,11 +59,39 @@
         "docs/context/AGENTS_GUIDE.md",
         "docs/context/MIRO_DESIGN_THINKING_SUMMARY.md",
         "docs/frontend/QUESTS_ENGINE.md",
+        "docs/archive/TEST_RESULTS_SUMMARY.md",
+        "docs/archive/ACHIEVEMENT_REPORT.md",
+        "docs/archive/GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
+        "docs/archive/cli_changes.md",
+        "docs/archive/DASHBOARD.md",
+        "docs/archive/GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
+        "docs/archive/iphone_install.md",
+        "docs/archive/COMPREHENSIVE_FIXES.md",
+        "docs/archive/COMPREHENSIVE_CRISIS_TESTING.md",
+        "docs/archive/CONTEXT.md",
+        "docs/archive/restart_drill.md",
+        "docs/archive/SINGLE_CONTAINER_PLAN.md",
+        "docs/archive/QUICK_ACTIONS_REDESIGN.md",
+        "docs/archive/CRISIS_DETECTION_ANALYSIS.md",
+        "docs/archive/WEEK0.md",
+        "docs/archive/BEFORE_AFTER_COMPARISON.md",
+        "docs/archive/test_native_app.md",
+        "docs/archive/COMPREHENSIVE_TESTING_PLAN.md",
+        "docs/archive/DEPLOYMENT_STATUS.md",
+        "docs/archive/session_context.md",
+        "docs/archive/CRISIS_WIDGET_DEBUG.md",
+        "docs/archive/gemini.md",
+        "docs/archive/ENTERPRISE_IMPLEMENTATION.md",
+        "docs/archive/CRISIS_DETECTION_TEST_CASES.md",
         "docs/checkpoints/CHK_2025-08-13_chat_ux_streaming.md",
         "docs/iip_reference/VERSION.md",
         "docs/iip_reference/INDEX.md",
+        "docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO_ADDENDUM.md",
         "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
         "docs/iip_reference/derived/IIP_MIRO_CONTEXT_MERMAID.md",
+        "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT_EXPANDED.md",
+        "docs/iip_reference/derived/EXPANSION_SUMMARY.md",
+        "docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO.md",
         "docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md",
         "docs/iip_reference/derived/IIP_MIRO_CONTEXT_TEXT.md",
         "docs/iip_reference/derived/IIP_INDEX.md",
@@ -65,52 +99,31 @@
         "docs/iip_reference/bridge/GAP_MAP.md",
         "docs/iip_reference/bridge/DECISIONS.md",
         "docs/iip_reference/raw/_DEPRECATED_PLACE_SOURCE_EXPORTS_HERE.md",
-        "TEST_RESULTS_SUMMARY.md",
-        "ACHIEVEMENT_REPORT.md",
         "API_DOCUMENTATION.md",
-        "GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
         "RELEASES.md",
-        "cli_changes.md",
-        "DASHBOARD.md",
-        "GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
-        "iphone_install.md",
-        "SYSTEM_INTEGRATION.md",
-        "COMPREHENSIVE_FIXES.md",
-        "COMPREHENSIVE_CRISIS_TESTING.md",
-        "CONTEXT.md",
-        "restart_drill.md",
-        "SINGLE_CONTAINER_PLAN.md",
-        "QUICK_ACTIONS_REDESIGN.md",
         "FEATURE_PLANNING_TEMPLATE.md",
-        "CRISIS_DETECTION_ANALYSIS.md",
-        "WEEK0.md",
-        "BEFORE_AFTER_COMPARISON.md",
         "ANTIGRAVITY_BOOTSTRAP.md",
         "PRODUCTION_DEPLOYMENT_GUIDE.md",
-        "test_native_app.md",
         "README.md",
-        "COMPREHENSIVE_TESTING_PLAN.md",
         "DOWNTIME_SOLUTION.md",
-        "session_context.md",
-        "CRISIS_WIDGET_DEBUG.md",
-        "gemini.md",
-        "ENTERPRISE_IMPLEMENTATION.md",
+        "STRESS_TEST_REPORT.md",
         "AGENTS.md",
         "README_CONSCIOUSNESS.md",
-        "CRISIS_DETECTION_TEST_CASES.md",
         "SINGLE_CODEBASE_GUIDE.md"
       ]
     },
     "research": {
-      "count": 20,
+      "count": 22,
       "files": [
         ".brain/artifacts/research/mcp_debugging_guide.md",
+        ".brain/artifacts/research/user_interview_script.md",
         ".brain/artifacts/research/hardening_patterns_research.md",
         ".brain/artifacts/research/competitive_mental_health_2024.md",
         ".brain/artifacts/research/interview_guide.md",
         ".brain/artifacts/research/funding_landscape_2024.md",
         ".brain/artifacts/research/university_pilot_playbook.md",
         ".brain/artifacts/research/mcp_usage_synthesis.md",
+        ".brain/artifacts/research/2026-01-03_test_research_from_refactor.md",
         ".brain/artifacts/research/mcp_dev_best_practices.md",
         ".brain/artifacts/research/agentic_communities_map.md",
         ".brain/artifacts/research/benchmark_sota_2025.md",
@@ -147,9 +160,9 @@
         ".brain/ledger/decisions.md",
         ".brain/meta/optimization_log.md",
         "docs/XP_UNDO_TEST_CHECKLIST.md",
+        "docs/archive/conversation_log.md",
         "docs/testing/deep_link_notifications_checklist.md",
         "LOCAL_TESTING_CHECKLIST.md",
-        "conversation_log.md",
         "backlog.md"
       ]
     },
@@ -166,7 +179,7 @@
       ]
     },
     "strategy": {
-      "count": 18,
+      "count": 19,
       "files": [
         ".brain/artifacts/strategy/prototype_roadmap_investor.md",
         ".brain/artifacts/strategy/first_principles_review.md",
@@ -180,6 +193,7 @@
         ".brain/artifacts/strategy/build_in_public_post_001.md",
         ".brain/artifacts/strategy/board_decision.md",
         ".brain/artifacts/strategy/strategy_debate.md",
+        "docs/GENTLEQUEST_BRANDING_STRATEGY.md",
         "docs/AGENTIC_SOLO_FOUNDER_PLAYBOOK.md",
         "docs/AGENTIC_COMPANY_ARCHITECTURE.md",
         "docs/PRODUCT_STRATEGY_DEPTH_OVER_BREADTH.md",
@@ -189,13 +203,12 @@
       ]
     },
     "operations": {
-      "count": 7,
+      "count": 6,
       "files": [
         ".brain/workflows/verification_protocol.md",
         "DEPLOYMENT_PROTOCOL.md",
         "SHARED_HISTORY_PROTOCOL.md",
         "TESTING_GUIDE.md",
-        "DEPLOYMENT_STATUS.md",
         "DEPLOYMENT.md",
         "DEVELOPMENT_RULES.md"
       ]
@@ -230,6 +243,15 @@
       "summary": "> **Sources:** Official MCP Docs, Empirical Lessons from Nucleus Dogfooding > **Date:** December 28, 2025  --- ",
       "size_bytes": 3436,
       "modified": "2025-12-29T00:35:45.312139"
+    },
+    {
+      "path": ".brain/artifacts/research/user_interview_script.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/user_interview_script.md",
+      "faculty": "research",
+      "title": "User Validation: Interview Script (Week 1)",
+      "summary": "> **Context:** Before building complex features (Patterns, Cloud Sync), we must validate **Problem-Solution Fit**. > **Target Audience:** Solo Founders / Heavy LLM Users (r/ClaudeAI, r/LocalLLaMA) > *...",
+      "size_bytes": 2333,
+      "modified": "2026-01-03T00:26:41.447490"
     },
     {
       "path": ".brain/artifacts/research/hardening_patterns_research.md",
@@ -286,6 +308,15 @@
       "modified": "2025-12-27T22:17:21.047978"
     },
     {
+      "path": ".brain/artifacts/research/2026-01-03_test_research_from_refactor.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/2026-01-03_test_research_from_refactor.md",
+      "faculty": "research",
+      "title": "📚 Research: Test research from refactor",
+      "summary": "**Queued:** 2026-01-03 02:01 **Completed:** 2026-01-03 02:13 UTC **Model:** gemini-2.0-flash-exp  ---  Data collection is disabled. Okay, I understand the context. Please provide the research to be ma...",
+      "size_bytes": 263,
+      "modified": "2026-01-03T07:43:21.999104"
+    },
+    {
       "path": ".brain/artifacts/research/mcp_dev_best_practices.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/mcp_dev_best_practices.md",
       "faculty": "research",
@@ -318,8 +349,8 @@
       "faculty": "research",
       "title": "📚 Research Queue",
       "summary": "Research tasks queued via Telegram `/research` command. Processed nightly by Gemini CLI.  --- ",
-      "size_bytes": 196,
-      "modified": "2026-01-01T00:43:52.647091"
+      "size_bytes": 250,
+      "modified": "2026-01-03T07:43:22.000312"
     },
     {
       "path": ".brain/artifacts/research/b2b_market_sizing_2024.md",
@@ -577,10 +608,10 @@
       "path": ".brain/artifacts/ideas/inbox.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/ideas/inbox.md",
       "faculty": "general",
-      "title": "💡 Ideas Inbox",
-      "summary": "Shower thoughts and quick captures from Telegram.  ---  - [ ] **2025-12-31 16:15 UTC**: Test shower thought - add voice notes to Luna  - [ ] **2025-12-31 17:00 UTC**: Gemini CLI Sprint Executor - Use ...",
-      "size_bytes": 382,
-      "modified": "2025-12-31T22:30:37.401313"
+      "title": "�� Ideas Inbox",
+      "summary": "Shower thoughts and quick captures from Telegram.  --- ",
+      "size_bytes": 381,
+      "modified": "2026-01-03T07:59:08.834823"
     },
     {
       "path": ".brain/artifacts/reviews/critic_audit_20251229.md",
@@ -714,8 +745,8 @@
       "faculty": "execution",
       "title": "Daily Digest",
       "summary": "--- ",
-      "size_bytes": 5429,
-      "modified": "2026-01-01T11:45:06.211181"
+      "size_bytes": 6005,
+      "modified": "2026-01-02T08:00:13.394401"
     },
     {
       "path": ".brain/ledger/decisions.md",
@@ -862,6 +893,33 @@
       "modified": "2025-12-31T02:14:25.403498"
     },
     {
+      "path": ".brain/meta/active_task_list.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/active_task_list.md",
+      "faculty": "general",
+      "title": "Strategy/Docs Track - Tasks",
+      "summary": "- [x] Sprint 1: Nuclear Activation (COMPLETE) - [x] Sprint 2: Hardening + Flywheel (COMPLETE) - [x] Sprint 3: MVP Genesis (COMPLETE) - [x] Build Hardened Cockpit v2 (COMPLETE) - [x] Build Automated LL...",
+      "size_bytes": 5550,
+      "modified": "2026-01-03T07:41:40.120794"
+    },
+    {
+      "path": ".brain/meta/SYSTEM_INTEGRATION.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/SYSTEM_INTEGRATION.md",
+      "faculty": "general",
+      "title": "🛫 THE FULL AIRCRAFT — System Integration Map",
+      "summary": "> **Date:** 2026-01-02 02:17 IST > **Purpose:** One document showing ALL components, their status, and how they connect  --- ",
+      "size_bytes": 10007,
+      "modified": "2026-01-02T02:19:35.153921"
+    },
+    {
+      "path": ".brain/meta/operating_manual.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/operating_manual.md",
+      "faculty": "general",
+      "title": "User Work Pattern: The \"Universal Adaptor\" Model",
+      "summary": "> **Context:** The previous \"One Thread Per Agent\" model caused friction, fragmentation, and overhead for a solo founder. > **Solution:** A simplified, unified workflow centered on `state.json` as the...",
+      "size_bytes": 2211,
+      "modified": "2026-01-03T07:41:40.118947"
+    },
+    {
       "path": ".brain/meta/optimization_log.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/optimization_log.md",
       "faculty": "execution",
@@ -869,6 +927,15 @@
       "summary": "> Record of all meta-optimizations performed by Synthesizer. > This is how the system learns and improves itself.  --- ",
       "size_bytes": 1206,
       "modified": "2025-12-26T21:26:04.910460"
+    },
+    {
+      "path": ".brain/meta/implementation_dashboard.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/meta/implementation_dashboard.md",
+      "faculty": "general",
+      "title": "🤖 Automation-First Approach",
+      "summary": "**Philosophy:** Don't delete features. Automate them. Track usage. Audit later.  --- ",
+      "size_bytes": 2676,
+      "modified": "2026-01-03T07:41:40.117040"
     },
     {
       "path": ".brain/meta/next_iteration.md",
@@ -934,6 +1001,15 @@
       "modified": "2025-12-26T21:57:02.839190"
     },
     {
+      "path": "docs/GENTLEQUEST_BRANDING_STRATEGY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/GENTLEQUEST_BRANDING_STRATEGY.md",
+      "faculty": "strategy",
+      "title": "GentleQuest Branding Strategy",
+      "summary": "> **Core Insight:** Build for the hardest user (ADHD), brand for the broadest user (Overwhelmed).  --- ",
+      "size_bytes": 1472,
+      "modified": "2026-01-03T07:51:40.413626"
+    },
+    {
       "path": "docs/deep_links.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/deep_links.md",
       "faculty": "general",
@@ -988,6 +1064,15 @@
       "modified": "2025-08-24T16:26:45.425255"
     },
     {
+      "path": "docs/ARCHIVE.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/ARCHIVE.md",
+      "faculty": "general",
+      "title": "Archived Documentation",
+      "summary": "> Storage for deprecated or superseded documentation. > Moved during \"Boeing 747\" Consolidation Sprint (Jan 2026).  | File | Reason | Date Archived | |------|--------|---------------| | `WEEK0.md` | I...",
+      "size_bytes": 2124,
+      "modified": "2026-01-02T10:40:20.691141"
+    },
+    {
       "path": "docs/ARCHITECTURE.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/ARCHITECTURE.md",
       "faculty": "general",
@@ -995,6 +1080,15 @@
       "summary": "- Frontend: Flutter app in `ai_buddy_web/` - Backend: Flask app in `app.py` - Key systems: Quests Engine, Crisis Detection, Mood Tracker, DhiWise UI integration ",
       "size_bytes": 710,
       "modified": "2025-08-10T15:02:44.061137"
+    },
+    {
+      "path": "docs/ONE_BUTTON_RELEASE_GUIDE.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/ONE_BUTTON_RELEASE_GUIDE.md",
+      "faculty": "general",
+      "title": "🚀 One-Button Release: Complete Guide",
+      "summary": "> **Version:** 1.0 | **Last Updated:** January 2, 2026  This document covers the full release workflow from triggering the one-button automation to publishing on app stores.  --- ",
+      "size_bytes": 12162,
+      "modified": "2026-01-02T23:03:45.051040"
     },
     {
       "path": "docs/AI_AGENTS_ASSESSMENT.md",
@@ -1090,10 +1184,10 @@
       "path": "docs/INDEX.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/INDEX.md",
       "faculty": "general",
-      "title": "Docs Hub",
-      "summary": "- Architecture: `docs/ARCHITECTURE.md` - ADRs (Decisions): `docs/ADRS.md` - Testing: `docs/TESTING.md` - Quests Engine: `docs/frontend/QUESTS_ENGINE.md` - Schemas: `docs/schemas/quests.schema.json` - ...",
-      "size_bytes": 512,
-      "modified": "2026-01-01T22:28:03.154377"
+      "title": "📚 Documentation Index",
+      "summary": "> Last updated: 2026-01-02 ",
+      "size_bytes": 1945,
+      "modified": "2026-01-02T20:17:25.009360"
     },
     {
       "path": "docs/VIBE_POLISH_PROMPT.md",
@@ -1258,6 +1352,231 @@
       "modified": "2025-08-10T15:03:36.184771"
     },
     {
+      "path": "docs/archive/TEST_RESULTS_SUMMARY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/TEST_RESULTS_SUMMARY.md",
+      "faculty": "general",
+      "title": "Crisis Detection Test Results Summary",
+      "summary": "| Test | Expected | Actual | Status | |------|----------|--------|--------| | Crisis Detection | \"crisis\" | \"crisis\" | ✅ PASS | | Response Structure | true, true, true | true, true, true | ✅ PASS | | ...",
+      "size_bytes": 6044,
+      "modified": "2025-08-03T11:17:32.141575"
+    },
+    {
+      "path": "docs/archive/ACHIEVEMENT_REPORT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/ACHIEVEMENT_REPORT.md",
+      "faculty": "general",
+      "title": "🏆 GentleQuest Enterprise Achievement Report",
+      "summary": "Over the past 2-3 days, we've transformed GentleQuest from a basic mental health app into an **enterprise-grade platform** capable of serving 100,000+ users with clinical-grade features, advanced AI o...",
+      "size_bytes": 9017,
+      "modified": "2025-11-17T02:58:53.978316"
+    },
+    {
+      "path": "docs/archive/GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
+      "faculty": "general",
+      "title": "Geography-Specific Crisis Detection - Test Report",
+      "summary": "Successfully implemented geography-specific crisis detection with automatic country detection and country-specific crisis resources. ",
+      "size_bytes": 5452,
+      "modified": "2025-08-03T21:00:22.292829"
+    },
+    {
+      "path": "docs/archive/cli_changes.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/cli_changes.md",
+      "faculty": "general",
+      "title": "Cli Changes",
+      "summary": "- Replicated the Flutter application from `lokesh_s_application` to `lokesh_s_application_replicated`. - Fetched Flutter dependencies for the replicated application. - Added web support to the replica...",
+      "size_bytes": 633,
+      "modified": "2025-08-09T13:05:55.555335"
+    },
+    {
+      "path": "docs/archive/DASHBOARD.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/DASHBOARD.md",
+      "faculty": "general",
+      "title": "🎯 DASHBOARD — Your Single Entry Point",
+      "summary": "> **Open this file first. Every time.** > Auto-generated: 2026-01-02 02:07  --- ",
+      "size_bytes": 1569,
+      "modified": "2026-01-02T02:07:44.505865"
+    },
+    {
+      "path": "docs/archive/GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
+      "faculty": "general",
+      "title": "Geography-Specific Crisis Detection - Implementation Summary",
+      "summary": "Successfully implemented geography-specific crisis detection with automatic country detection and country-specific crisis resources for the AI Mental Health Assistant. ",
+      "size_bytes": 7596,
+      "modified": "2025-08-03T21:04:46.566282"
+    },
+    {
+      "path": "docs/archive/iphone_install.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/iphone_install.md",
+      "faculty": "general",
+      "title": "📱 Install GentleQuest on iPhone 15 Pro Max",
+      "summary": "``` https://gentlequest.onrender.com ``` ",
+      "size_bytes": 1449,
+      "modified": "2025-11-17T02:21:51.638194"
+    },
+    {
+      "path": "docs/archive/COMPREHENSIVE_FIXES.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/COMPREHENSIVE_FIXES.md",
+      "faculty": "general",
+      "title": "🚨 COMPREHENSIVE ISSUE ANALYSIS & FIXES",
+      "summary": "1. **Cold Start Prevention**: GitHub Actions workflow exists and configured (every 13 minutes) 2. **Keep-Alive Endpoint**: `/api/ping` working correctly 3. **Basic Chat**: Working but missing crisis_d...",
+      "size_bytes": 3989,
+      "modified": "2025-11-18T22:49:18.189303"
+    },
+    {
+      "path": "docs/archive/COMPREHENSIVE_CRISIS_TESTING.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/COMPREHENSIVE_CRISIS_TESTING.md",
+      "faculty": "general",
+      "title": "Comprehensive Crisis Detection Testing Protocol",
+      "summary": "```bash",
+      "size_bytes": 14896,
+      "modified": "2025-08-03T11:17:32.142842"
+    },
+    {
+      "path": "docs/archive/CONTEXT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/CONTEXT.md",
+      "faculty": "general",
+      "title": "CONTEXT.md (LLM One-Pager)",
+      "summary": "- Repo: ai-mvp-backend - Git rev: db2739f - Last updated: 2025-08-10T15:09:04.798048 ",
+      "size_bytes": 5139,
+      "modified": "2025-08-10T15:09:04.819800"
+    },
+    {
+      "path": "docs/archive/restart_drill.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/restart_drill.md",
+      "faculty": "general",
+      "title": "Restart Drill",
+      "summary": "To restart our session and fully restore my operational context, please provide the following prompt. This single command will load my core instructions, our latest successful change, and our exact la...",
+      "size_bytes": 780,
+      "modified": "2025-08-09T13:05:55.556553"
+    },
+    {
+      "path": "docs/archive/SINGLE_CONTAINER_PLAN.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/SINGLE_CONTAINER_PLAN.md",
+      "faculty": "general",
+      "title": "Single Codebase Containerization & Deployment Plan",
+      "summary": "Transform the current multi-service Docker setup into a single container solution that combines Flask backend and Flutter web frontend, while maintaining all existing functionality and iOS app compati...",
+      "size_bytes": 6544,
+      "modified": "2025-08-02T22:12:13.334559"
+    },
+    {
+      "path": "docs/archive/QUICK_ACTIONS_REDESIGN.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/QUICK_ACTIONS_REDESIGN.md",
+      "faculty": "general",
+      "title": "Quick Actions UI Redesign - Implementation Summary",
+      "summary": "The original Quick Actions implementation placed action chips **above the chat input field**, creating several UX issues:  1. **Cognitive Pressure**: Users opening the app for emotional support immedi...",
+      "size_bytes": 6152,
+      "modified": "2025-12-18T17:03:37.551291"
+    },
+    {
+      "path": "docs/archive/conversation_log.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/conversation_log.md",
+      "faculty": "execution",
+      "title": "Conversation Log (Summary)",
+      "summary": "This document summarizes the full set of topics covered in our conversations in this workspace, focusing on **key decisions**, **code changes**, and **architectural choices**. ",
+      "size_bytes": 37254,
+      "modified": "2025-12-30T07:26:05.659948"
+    },
+    {
+      "path": "docs/archive/CRISIS_DETECTION_ANALYSIS.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/CRISIS_DETECTION_ANALYSIS.md",
+      "faculty": "general",
+      "title": "Crisis Detection Analysis & Action Plan",
+      "summary": "- **Local Environment**: Normal responses even with crisis keywords like \"I want to die\" - **Production Environment**: Triggers crisis detection and shows therapist/helpline resources - **Expected Beh...",
+      "size_bytes": 8514,
+      "modified": "2025-08-03T10:42:47.913223"
+    },
+    {
+      "path": "docs/archive/WEEK0.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/WEEK0.md",
+      "faculty": "general",
+      "title": "Week 0: Quests MVP (Minimal, Local, Deterministic)",
+      "summary": "This PR ships the smallest working foundation for “Quests” without changing any existing UI widgets. It adds:  - `lib/quests/quests_engine.dart` — single-file QuestsEngine module (selector, telemetry,...",
+      "size_bytes": 3768,
+      "modified": "2025-08-10T10:35:09.904787"
+    },
+    {
+      "path": "docs/archive/BEFORE_AFTER_COMPARISON.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/BEFORE_AFTER_COMPARISON.md",
+      "faculty": "general",
+      "title": "Quick Actions: Before vs After",
+      "summary": "``` ┌─────────────────────────────────────┐ │         Alex (Avatar)               │ ├─────────────────────────────────────┤ │ ⚠️ Not medical care disclaimer      │ ├───────────────────────────────────...",
+      "size_bytes": 9537,
+      "modified": "2025-12-18T17:04:21.995612"
+    },
+    {
+      "path": "docs/archive/test_native_app.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/test_native_app.md",
+      "faculty": "general",
+      "title": "✅ GentleQuest Native App - Testing Guide",
+      "summary": "Now that GentleQuest is on your iPhone, let's test all features: ",
+      "size_bytes": 2648,
+      "modified": "2025-11-17T02:36:39.545334"
+    },
+    {
+      "path": "docs/archive/COMPREHENSIVE_TESTING_PLAN.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/COMPREHENSIVE_TESTING_PLAN.md",
+      "faculty": "general",
+      "title": "Comprehensive Testing Plan - Frontend & Mobile Apps",
+      "summary": "Address web frontend issues and complete mobile app testing (iOS & Android) that were not thoroughly verified in the previous single container implementation. ",
+      "size_bytes": 9144,
+      "modified": "2025-08-02T22:12:13.285866"
+    },
+    {
+      "path": "docs/archive/DEPLOYMENT_STATUS.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/DEPLOYMENT_STATUS.md",
+      "faculty": "general",
+      "title": "🚀 GentleQuest Deployment Status Report",
+      "summary": "- **Frontend**: Flutter web app serving correctly - **Chat API**: AI responses working with Gemini - **Redis**: Session management operational - **Health Endpoint**: API is accessible - **Auto-Deploy*...",
+      "size_bytes": 4859,
+      "modified": "2025-11-17T01:23:31.619310"
+    },
+    {
+      "path": "docs/archive/session_context.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/session_context.md",
+      "faculty": "general",
+      "title": "Session Context",
+      "summary": "Implement the Journaling feature. ",
+      "size_bytes": 822,
+      "modified": "2025-08-09T13:05:55.557938"
+    },
+    {
+      "path": "docs/archive/CRISIS_WIDGET_DEBUG.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/CRISIS_WIDGET_DEBUG.md",
+      "faculty": "general",
+      "title": "Crisis Resources Widget Debug",
+      "summary": "When user types \"I want to die\", we should see: 1. ✅ AI crisis intervention message (WORKING) 2. ❌ Red crisis resources widget with buttons (NOT WORKING) ",
+      "size_bytes": 4082,
+      "modified": "2025-08-03T11:48:21.794314"
+    },
+    {
+      "path": "docs/archive/gemini.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/gemini.md",
+      "faculty": "general",
+      "title": "Gemini Assistant Instructions",
+      "summary": "This file contains my core operational model, project conventions, and my evolving knowledge base. ",
+      "size_bytes": 3504,
+      "modified": "2025-08-11T18:55:19.619377"
+    },
+    {
+      "path": "docs/archive/ENTERPRISE_IMPLEMENTATION.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/ENTERPRISE_IMPLEMENTATION.md",
+      "faculty": "general",
+      "title": "🚀 GentleQuest Enterprise Implementation",
+      "summary": "This document outlines the complete enterprise-grade systems implemented using Opus 4.1 deep analysis capabilities. ",
+      "size_bytes": 8476,
+      "modified": "2025-11-16T23:55:15.856044"
+    },
+    {
+      "path": "docs/archive/CRISIS_DETECTION_TEST_CASES.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/archive/CRISIS_DETECTION_TEST_CASES.md",
+      "faculty": "general",
+      "title": "Crisis Detection Test Cases - Successfully Implemented",
+      "summary": "Verify that crisis detection works identically across local and production environments, ensuring consistent behavior when users input crisis keywords. ",
+      "size_bytes": 8668,
+      "modified": "2025-08-03T11:44:44.101024"
+    },
+    {
       "path": "docs/checkpoints/CHK_2025-08-13_chat_ux_streaming.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/checkpoints/CHK_2025-08-13_chat_ux_streaming.md",
       "faculty": "general",
@@ -1294,13 +1613,22 @@
       "modified": "2026-01-01T21:18:31.504196"
     },
     {
+      "path": "docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO_ADDENDUM.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO_ADDENDUM.md",
+      "faculty": "general",
+      "title": "Weeks 4–5 Solo Field Research — Addendum (More Personas Found)",
+      "summary": "This addendum captures additional Week 4–5 solo persona details that were **present in the PDF export text** but were not included in the earlier expanded compilation.  Source: `M6W12-D2-IIP-Miro-Expo...",
+      "size_bytes": 8545,
+      "modified": "2026-01-02T20:50:42.152315"
+    },
+    {
       "path": "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT.md",
       "faculty": "general",
       "title": "IIP Miro Export — Full Context (template + team) (derived)",
       "summary": "This document combines: - **Template/guide structure** (for long-session design-thinking simulation), and - **Team-filled content** (your real project choices and notes)  …into a single agent-friendly...",
-      "size_bytes": 10761,
-      "modified": "2026-01-02T01:50:24.954993"
+      "size_bytes": 26430,
+      "modified": "2026-01-02T15:54:20.928581"
     },
     {
       "path": "docs/iip_reference/derived/IIP_Project_Specification.md",
@@ -1319,6 +1647,33 @@
       "summary": "This document is a **Mermaid-first structural visualization** derived from the course Miro export PDF.  - Source of truth: `docs/iip_reference/raw/M6W12-D2-IIP-Miro-Export.pdf` - Companion doc: `docs/...",
       "size_bytes": 3479,
       "modified": "2026-01-02T00:40:56.116364"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT_EXPANDED.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_FULL_CONTEXT_EXPANDED.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Full Context EXPANDED",
+      "summary": "This document is the **fully expanded version** of `IIP_MIRO_FULL_CONTEXT.md`, including: - **Weeks 4–5 solo field research** (all team members' personas, insights, reflections) - **Week 7 complete so...",
+      "size_bytes": 52534,
+      "modified": "2026-01-02T20:17:52.615538"
+    },
+    {
+      "path": "docs/iip_reference/derived/EXPANSION_SUMMARY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/EXPANSION_SUMMARY.md",
+      "faculty": "general",
+      "title": "IIP Miro Export — Expansion Summary",
+      "summary": "**Date:** January 2, 2026 **Source:** `M6W12-D2-IIP-Miro-Export.pdf` **Project:** MindPath (Mental Health App for High School Students)  --- ",
+      "size_bytes": 19509,
+      "modified": "2026-01-02T20:34:50.484407"
+    },
+    {
+      "path": "docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO.md",
+      "faculty": "general",
+      "title": "Weeks 4–5 Solo Field Research (Expanded)",
+      "summary": "This document captures each team member's solo field research work from Weeks 4–5, including: - Field research methods and contexts - Personas (2 per member) - Isolated insights - Updated POV statemen...",
+      "size_bytes": 17164,
+      "modified": "2026-01-02T17:10:18.703012"
     },
     {
       "path": "docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md",
@@ -1384,24 +1739,6 @@
       "modified": "2026-01-01T21:21:14.568565"
     },
     {
-      "path": "TEST_RESULTS_SUMMARY.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/TEST_RESULTS_SUMMARY.md",
-      "faculty": "general",
-      "title": "Crisis Detection Test Results Summary",
-      "summary": "| Test | Expected | Actual | Status | |------|----------|--------|--------| | Crisis Detection | \"crisis\" | \"crisis\" | ✅ PASS | | Response Structure | true, true, true | true, true, true | ✅ PASS | | ...",
-      "size_bytes": 6044,
-      "modified": "2025-08-03T11:17:32.141575"
-    },
-    {
-      "path": "ACHIEVEMENT_REPORT.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/ACHIEVEMENT_REPORT.md",
-      "faculty": "general",
-      "title": "🏆 GentleQuest Enterprise Achievement Report",
-      "summary": "Over the past 2-3 days, we've transformed GentleQuest from a basic mental health app into an **enterprise-grade platform** capable of serving 100,000+ users with clinical-grade features, advanced AI o...",
-      "size_bytes": 9017,
-      "modified": "2025-11-17T02:58:53.978316"
-    },
-    {
       "path": "DEPLOYMENT_PROTOCOL.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/DEPLOYMENT_PROTOCOL.md",
       "faculty": "operations",
@@ -1420,15 +1757,6 @@
       "modified": "2025-11-16T22:50:15.980980"
     },
     {
-      "path": "GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/GEOGRAPHY_CRISIS_DETECTION_TEST_REPORT.md",
-      "faculty": "general",
-      "title": "Geography-Specific Crisis Detection - Test Report",
-      "summary": "Successfully implemented geography-specific crisis detection with automatic country detection and country-specific crisis resources. ",
-      "size_bytes": 5452,
-      "modified": "2025-08-03T21:00:22.292829"
-    },
-    {
       "path": "RELEASES.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/RELEASES.md",
       "faculty": "general",
@@ -1436,24 +1764,6 @@
       "summary": "- Prevent duplicate Safety & Legal modal via guard in `ai_buddy_web/lib/screens/interactive_chat_screen.dart`. - Removed `dart:io` usage in `ai_buddy_web/lib/services/notification_service.dart`; use `...",
       "size_bytes": 9707,
       "modified": "2025-08-23T13:28:27.689271"
-    },
-    {
-      "path": "cli_changes.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/cli_changes.md",
-      "faculty": "general",
-      "title": "Cli Changes",
-      "summary": "- Replicated the Flutter application from `lokesh_s_application` to `lokesh_s_application_replicated`. - Fetched Flutter dependencies for the replicated application. - Added web support to the replica...",
-      "size_bytes": 633,
-      "modified": "2025-08-09T13:05:55.555335"
-    },
-    {
-      "path": "DASHBOARD.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/DASHBOARD.md",
-      "faculty": "general",
-      "title": "🎯 DASHBOARD — Your Single Entry Point",
-      "summary": "> **Open this file first. Every time.** > Auto-generated: 2026-01-02 02:07  --- ",
-      "size_bytes": 1569,
-      "modified": "2026-01-02T02:07:44.505865"
     },
     {
       "path": "SHARED_HISTORY_PROTOCOL.md",
@@ -1465,33 +1775,6 @@
       "modified": "2025-12-30T07:25:49.378025"
     },
     {
-      "path": "GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/GEOGRAPHY_CRISIS_DETECTION_IMPLEMENTATION_SUMMARY.md",
-      "faculty": "general",
-      "title": "Geography-Specific Crisis Detection - Implementation Summary",
-      "summary": "Successfully implemented geography-specific crisis detection with automatic country detection and country-specific crisis resources for the AI Mental Health Assistant. ",
-      "size_bytes": 7596,
-      "modified": "2025-08-03T21:04:46.566282"
-    },
-    {
-      "path": "iphone_install.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/iphone_install.md",
-      "faculty": "general",
-      "title": "📱 Install GentleQuest on iPhone 15 Pro Max",
-      "summary": "``` https://gentlequest.onrender.com ``` ",
-      "size_bytes": 1449,
-      "modified": "2025-11-17T02:21:51.638194"
-    },
-    {
-      "path": "SYSTEM_INTEGRATION.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/SYSTEM_INTEGRATION.md",
-      "faculty": "general",
-      "title": "🛫 THE FULL AIRCRAFT — System Integration Map",
-      "summary": "> **Date:** 2026-01-02 02:17 IST > **Purpose:** One document showing ALL components, their status, and how they connect  --- ",
-      "size_bytes": 10007,
-      "modified": "2026-01-02T02:19:35.153921"
-    },
-    {
       "path": "LOCAL_TESTING_CHECKLIST.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/LOCAL_TESTING_CHECKLIST.md",
       "faculty": "execution",
@@ -1501,69 +1784,6 @@
       "modified": "2025-08-03T21:06:49.684057"
     },
     {
-      "path": "COMPREHENSIVE_FIXES.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/COMPREHENSIVE_FIXES.md",
-      "faculty": "general",
-      "title": "🚨 COMPREHENSIVE ISSUE ANALYSIS & FIXES",
-      "summary": "1. **Cold Start Prevention**: GitHub Actions workflow exists and configured (every 13 minutes) 2. **Keep-Alive Endpoint**: `/api/ping` working correctly 3. **Basic Chat**: Working but missing crisis_d...",
-      "size_bytes": 3989,
-      "modified": "2025-11-18T22:49:18.189303"
-    },
-    {
-      "path": "COMPREHENSIVE_CRISIS_TESTING.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/COMPREHENSIVE_CRISIS_TESTING.md",
-      "faculty": "general",
-      "title": "Comprehensive Crisis Detection Testing Protocol",
-      "summary": "```bash",
-      "size_bytes": 14896,
-      "modified": "2025-08-03T11:17:32.142842"
-    },
-    {
-      "path": "CONTEXT.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/CONTEXT.md",
-      "faculty": "general",
-      "title": "CONTEXT.md (LLM One-Pager)",
-      "summary": "- Repo: ai-mvp-backend - Git rev: db2739f - Last updated: 2025-08-10T15:09:04.798048 ",
-      "size_bytes": 5139,
-      "modified": "2025-08-10T15:09:04.819800"
-    },
-    {
-      "path": "restart_drill.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/restart_drill.md",
-      "faculty": "general",
-      "title": "Restart Drill",
-      "summary": "To restart our session and fully restore my operational context, please provide the following prompt. This single command will load my core instructions, our latest successful change, and our exact la...",
-      "size_bytes": 780,
-      "modified": "2025-08-09T13:05:55.556553"
-    },
-    {
-      "path": "SINGLE_CONTAINER_PLAN.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/SINGLE_CONTAINER_PLAN.md",
-      "faculty": "general",
-      "title": "Single Codebase Containerization & Deployment Plan",
-      "summary": "Transform the current multi-service Docker setup into a single container solution that combines Flask backend and Flutter web frontend, while maintaining all existing functionality and iOS app compati...",
-      "size_bytes": 6544,
-      "modified": "2025-08-02T22:12:13.334559"
-    },
-    {
-      "path": "QUICK_ACTIONS_REDESIGN.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/QUICK_ACTIONS_REDESIGN.md",
-      "faculty": "general",
-      "title": "Quick Actions UI Redesign - Implementation Summary",
-      "summary": "The original Quick Actions implementation placed action chips **above the chat input field**, creating several UX issues:  1. **Cognitive Pressure**: Users opening the app for emotional support immedi...",
-      "size_bytes": 6152,
-      "modified": "2025-12-18T17:03:37.551291"
-    },
-    {
-      "path": "conversation_log.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/conversation_log.md",
-      "faculty": "execution",
-      "title": "Conversation Log (Summary)",
-      "summary": "This document summarizes the full set of topics covered in our conversations in this workspace, focusing on **key decisions**, **code changes**, and **architectural choices**. ",
-      "size_bytes": 37254,
-      "modified": "2025-12-30T07:26:05.659948"
-    },
-    {
       "path": "FEATURE_PLANNING_TEMPLATE.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/FEATURE_PLANNING_TEMPLATE.md",
       "faculty": "general",
@@ -1571,33 +1791,6 @@
       "summary": "- [ ] **What is the user trying to accomplish?** - [ ] **What is the complete user journey?** - [ ] **What are ALL the steps from start to finish?** - [ ] **What are ALL the possible outcomes?** ",
       "size_bytes": 6446,
       "modified": "2025-08-03T11:54:37.925803"
-    },
-    {
-      "path": "CRISIS_DETECTION_ANALYSIS.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/CRISIS_DETECTION_ANALYSIS.md",
-      "faculty": "general",
-      "title": "Crisis Detection Analysis & Action Plan",
-      "summary": "- **Local Environment**: Normal responses even with crisis keywords like \"I want to die\" - **Production Environment**: Triggers crisis detection and shows therapist/helpline resources - **Expected Beh...",
-      "size_bytes": 8514,
-      "modified": "2025-08-03T10:42:47.913223"
-    },
-    {
-      "path": "WEEK0.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/WEEK0.md",
-      "faculty": "general",
-      "title": "Week 0: Quests MVP (Minimal, Local, Deterministic)",
-      "summary": "This PR ships the smallest working foundation for “Quests” without changing any existing UI widgets. It adds:  - `lib/quests/quests_engine.dart` — single-file QuestsEngine module (selector, telemetry,...",
-      "size_bytes": 3768,
-      "modified": "2025-08-10T10:35:09.904787"
-    },
-    {
-      "path": "BEFORE_AFTER_COMPARISON.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/BEFORE_AFTER_COMPARISON.md",
-      "faculty": "general",
-      "title": "Quick Actions: Before vs After",
-      "summary": "``` ┌─────────────────────────────────────┐ │         Alex (Avatar)               │ ├─────────────────────────────────────┤ │ ⚠️ Not medical care disclaimer      │ ├───────────────────────────────────...",
-      "size_bytes": 9537,
-      "modified": "2025-12-18T17:04:21.995612"
     },
     {
       "path": "ANTIGRAVITY_BOOTSTRAP.md",
@@ -1627,15 +1820,6 @@
       "modified": "2025-12-18T17:05:24.779394"
     },
     {
-      "path": "test_native_app.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/test_native_app.md",
-      "faculty": "general",
-      "title": "✅ GentleQuest Native App - Testing Guide",
-      "summary": "Now that GentleQuest is on your iPhone, let's test all features: ",
-      "size_bytes": 2648,
-      "modified": "2025-11-17T02:36:39.545334"
-    },
-    {
       "path": "README.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/README.md",
       "faculty": "general",
@@ -1643,24 +1827,6 @@
       "summary": "> AI Mental Health Assistant with Nuclear Brain Architecture  [![Render Deploy](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render)](https://render.com) [![Python 3.9+](ht...",
       "size_bytes": 4038,
       "modified": "2025-12-28T09:50:04.313997"
-    },
-    {
-      "path": "COMPREHENSIVE_TESTING_PLAN.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/COMPREHENSIVE_TESTING_PLAN.md",
-      "faculty": "general",
-      "title": "Comprehensive Testing Plan - Frontend & Mobile Apps",
-      "summary": "Address web frontend issues and complete mobile app testing (iOS & Android) that were not thoroughly verified in the previous single container implementation. ",
-      "size_bytes": 9144,
-      "modified": "2025-08-02T22:12:13.285866"
-    },
-    {
-      "path": "DEPLOYMENT_STATUS.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/DEPLOYMENT_STATUS.md",
-      "faculty": "operations",
-      "title": "🚀 GentleQuest Deployment Status Report",
-      "summary": "- **Frontend**: Flutter web app serving correctly - **Chat API**: AI responses working with Gemini - **Redis**: Session management operational - **Health Endpoint**: API is accessible - **Auto-Deploy*...",
-      "size_bytes": 4859,
-      "modified": "2025-11-17T01:23:31.619310"
     },
     {
       "path": "DOWNTIME_SOLUTION.md",
@@ -2413,40 +2579,13 @@
       "rules_count": 180
     },
     {
-      "path": "session_context.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/session_context.md",
+      "path": "STRESS_TEST_REPORT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/STRESS_TEST_REPORT.md",
       "faculty": "general",
-      "title": "Session Context",
-      "summary": "Implement the Journaling feature. ",
-      "size_bytes": 822,
-      "modified": "2025-08-09T13:05:55.557938"
-    },
-    {
-      "path": "CRISIS_WIDGET_DEBUG.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/CRISIS_WIDGET_DEBUG.md",
-      "faculty": "general",
-      "title": "Crisis Resources Widget Debug",
-      "summary": "When user types \"I want to die\", we should see: 1. ✅ AI crisis intervention message (WORKING) 2. ❌ Red crisis resources widget with buttons (NOT WORKING) ",
-      "size_bytes": 4082,
-      "modified": "2025-08-03T11:48:21.794314"
-    },
-    {
-      "path": "gemini.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/gemini.md",
-      "faculty": "general",
-      "title": "Gemini Assistant Instructions",
-      "summary": "This file contains my core operational model, project conventions, and my evolving knowledge base. ",
-      "size_bytes": 3504,
-      "modified": "2025-08-11T18:55:19.619377"
-    },
-    {
-      "path": "ENTERPRISE_IMPLEMENTATION.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/ENTERPRISE_IMPLEMENTATION.md",
-      "faculty": "general",
-      "title": "🚀 GentleQuest Enterprise Implementation",
-      "summary": "This document outlines the complete enterprise-grade systems implemented using Opus 4.1 deep analysis capabilities. ",
-      "size_bytes": 8476,
-      "modified": "2025-11-16T23:55:15.856044"
+      "title": "🔥 Stress Test Report",
+      "summary": "> Generated: 2026-01-02T09:24:55.701290 ",
+      "size_bytes": 270,
+      "modified": "2026-01-02T09:24:55.701360"
     },
     {
       "path": "AGENTS.md",
@@ -2474,15 +2613,6 @@
       "summary": "> **\"The only way to discover the limits of the possible is to go beyond them into the impossible.\"** > - Arthur C. Clarke ",
       "size_bytes": 3856,
       "modified": "2025-12-19T20:12:33.327951"
-    },
-    {
-      "path": "CRISIS_DETECTION_TEST_CASES.md",
-      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/CRISIS_DETECTION_TEST_CASES.md",
-      "faculty": "general",
-      "title": "Crisis Detection Test Cases - Successfully Implemented",
-      "summary": "Verify that crisis detection works identically across local and production environments, ensuring consistent behavior when users input crisis keywords. ",
-      "size_bytes": 8668,
-      "modified": "2025-08-03T11:44:44.101024"
     },
     {
       "path": "SINGLE_CODEBASE_GUIDE.md",
