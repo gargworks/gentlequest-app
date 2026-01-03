@@ -131,6 +131,36 @@
         "escalation_reason": null,
         "created_at": "2026-01-03T19:16:58+0530",
         "updated_at": "2026-01-03T19:16:58+0530"
+      },
+      {
+        "id": "task-93f20f21",
+        "description": "[PROD-TEST] Verify MCP integration",
+        "status": "DONE",
+        "priority": 5,
+        "blocked_by": [],
+        "required_skills": [
+          "testing"
+        ],
+        "claimed_by": "production-verifier",
+        "source": "synthesizer",
+        "escalation_reason": null,
+        "created_at": "2026-01-03T19:31:22+0530",
+        "updated_at": "2026-01-03T19:31:22+0530"
+      },
+      {
+        "id": "task-69565ee5",
+        "description": "[PROD-TEST] Escalation test",
+        "status": "ESCALATED",
+        "priority": 5,
+        "blocked_by": [],
+        "required_skills": [
+          "human"
+        ],
+        "claimed_by": null,
+        "source": "synthesizer",
+        "escalation_reason": "Production MCP verification complete",
+        "created_at": "2026-01-03T19:31:22+0530",
+        "updated_at": "2026-01-03T19:31:22+0530"
       }
     ]
   },
