@@ -1,0 +1,24 @@
+# Nucleus Onboarding Sprint
+
+## Objective
+Enhance `nucleus-init` to provide a guided onboarding experience for new users.
+
+---
+
+## Tasks
+
+### Phase 1: Implementation
+- [x] Add `DEFAULT_TASKS` to [cli.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py) (instructional seed tasks)
+- [x] Add `.brain/README.md` creation to both templates
+- [x] Improve CLI output with bolder "next steps" prompts
+
+### Phase 2: Verification
+- [x] Test `nucleus-init` locally (default template)
+- [x] Test `nucleus-init --template=solo` locally
+- [ ] Verify tasks appear in Claude Desktop
+
+### Phase 3: Ship
+- [x] Bump version to 0.3.1
+- [x] Update CHANGELOG.md
+- [ ] Commit and push
+- [ ] Update PyPI (optional)

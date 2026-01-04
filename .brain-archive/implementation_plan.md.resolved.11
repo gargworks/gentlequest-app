@@ -1,0 +1,93 @@
+# 🤖 Automation-First Approach
+
+**Philosophy:** Don't delete features. Automate them. Track usage. Audit later.
+
+---
+
+## Current Automations (Already Running)
+
+| What | Schedule | Status |
+|:-----|:---------|:-------|
+| Nightly Agent | Cron 2am | ✅ Active |
+| Knowledge Indexer | Part of nightly | ✅ Active |
+| Daily Digest | Part of nightly | ✅ Active |
+| Events Logging | On every action | ✅ Active |
+
+---
+
+## What Should Be Automatic (But Isn't Yet)
+
+| Feature | Current Trigger | Make Automatic |
+|:--------|:----------------|:---------------|
+| Research queue | Manual `/research` | ✅ Nightly processes queue |
+| Ideas reminder | None | Add to Telegram summary if ideas > 3 |
+| Sprint progress | Manual check | Include in nightly digest |
+
+**Good news:** Research queue is already integrated into nightly_agent.py. It will run automatically at 2am.
+
+---
+
+## Telegram: No Manual Commands Needed
+
+| Instead of... | It Does Automatically... |
+|:--------------|:-------------------------|
+| `/status` every day | Nightly sends you summary |
+| `/tasks` | Included in nightly summary |
+| Checking `/idea` inbox | Nightly reminds if pending |
+
+**You only need commands when you want to ADD something:**
+- `/idea` → capture thought
+- `/research` → queue task
+- `/sprint` → start new focus
+
+---
+
+## Usage Tracking (Already Happening)
+
+Every action emits an event to [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl):
+
+```json
+{"event_type": "idea_captured", "timestamp": "..."}
+{"event_type": "research_queued", "timestamp": "..."}
+{"event_type": "sprint_started", "timestamp": "..."}
+```
+
+**After 2 weeks, we can query:**
+- How many ideas captured?
+- How many research tasks completed?
+- Which commands used most?
+
+---
+
+## Audit Schedule
+
+| Date | Action |
+|:-----|:-------|
+| Jan 14, 2025 | Review events.jsonl for usage |
+| Jan 14, 2025 | Check which features have 0 usage |
+| Jan 14, 2025 | Decide what to deprecate |
+
+---
+
+## Your Zero-Effort Daily Experience
+
+| Time | What Happens | Your Action |
+|:-----|:-------------|:------------|
+| **Anytime** | Have an idea | `/idea <thought>` via Telegram |
+| **Anytime** | Want research | `/research <topic>` via Telegram |
+| **2am** | Nightly agent runs | None (automatic) |
+| **Morning** | Telegram summary arrives | Read it |
+| **Morning** | Research results ready | Optional: review in `.brain/artifacts/research/` |
+
+---
+
+## Summary
+
+| Before | After |
+|:-------|:------|
+| "Too many commands" | Use 2: `/idea`, `/research` |
+| "Nothing runs" | Everything runs at 2am |
+| "Don't know what exists" | Telegram summary tells you |
+| "Is this useful?" | Audit after 2 weeks |
+
+**No changes needed. System is already set up to run automatically.**

@@ -1,0 +1,482 @@
+# MCP Brain Tools Server - Implementation Plan
+
+> **Goal:** Build world's first multi-agent MCP with network effects
+> **Target:** 100% God Mode utilization + viral growth + recurring revenue
+
+---
+
+## 🔐 Secret Sauce Protection Strategy
+
+### What We Keep Open (Free Tier)
+| Component | Open Source? | Reason |
+|-----------|--------------|--------|
+| 10 Base Tools | ✅ Yes | Attracts developers |
+| Local `.brain/` structure | ✅ Yes | Portability promise |
+| Basic event emission | ✅ Yes | Core functionality |
+
+### What We Keep Closed (The Moat)
+| Component | Closed? | Why It's Secret |
+|-----------|---------|-----------------|
+| **Pattern Optimization Engine** | 🔒 Yes | Learns from all users' patterns.md |
+| **Cross-Tenant Learning Sync** | 🔒 Yes | Network effects magic |
+| **Agent Performance Ranker** | 🔒 Yes | Shows which prompts work best |
+| **Trigger Recommendation AI** | 🔒 Yes | Suggests optimal trigger configs |
+
+**Key:** The MCP tools are commodities. The **intelligence layer** is proprietary.
+
+---
+
+## 🌐 Network Effects Architecture
+
+### The Data Flywheel
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NETWORK EFFECTS FLYWHEEL                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   User A's patterns.md ─┐                                       │
+│   User B's patterns.md ─┼──► Pattern Cloud ──► Better Patterns  │
+│   User C's patterns.md ─┘        │                    │         │
+│                                  │                    │         │
+│                                  ▼                    ▼         │
+│                           ML Analysis ──► Pattern Suggestions   │
+│                                                 │               │
+│                                                 ▼               │
+│                                     All Users Get Smarter       │
+│                                                                 │
+│   More users = Better patterns = More users = ...               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### What Gets Synced (Anonymized)
+| Data | Synced? | Network Benefit |
+|------|---------|-----------------|
+| [patterns.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/memory/patterns.md) content | ✅ Anonymous | Best practices emerge |
+| [performance.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/meta/performance.json) metrics | ✅ Anonymous | Know which agents work |
+| Trigger configurations | ✅ Anonymous | Optimal routing discovered |
+| Agent prompt versions | ✅ With consent | Community prompts library |
+| Actual task content | ❌ Never | Privacy guarantee |
+
+### Why This Is "Facebook of MCPs"
+
+| Facebook Effect | Our Equivalent |
+|-----------------|----------------|
+| More friends = More value | More users = Better patterns |
+| Photo sharing | Pattern sharing |
+| Viral loops | "This pattern saved 40% time" notifications |
+| Data moat | Pattern intelligence moat |
+| Switching cost | Leaving means losing optimized prompts |
+
+---
+
+## 📛 Naming Analysis
+
+### Critical Finding
+| Name | Available on PyPI? | Trademark Issue? |
+|------|--------------------|------------------|
+| `mcp-server-hive` | ❌ **TAKEN** | ❌ Apache Hive trademark |
+| `mcp-server-swarm` | ⚠️ Likely available | ✅ No conflict |
+| `mcp-server-cortex` | ⚠️ Likely available | ⚠️ Cortex.io exists |
+
+### Alternative Names (Verified Available)
+
+| Name | Meaning | Score |
+|------|---------|-------|
+| `mcp-server-nucleus` | "Core" - fits brain metaphor | **9/10** |
+| `mcp-server-synapse` | Neural connection | 8/10 |
+| `mcp-server-cerebrum` | Brain region | 7/10 |
+| `mcp-server-nexus` | Connection point | 8/10 |
+| `mcp-server-orchestr` | Orchestration (short) | 7/10 |
+
+### **Recommendation: `mcp-server-nucleus`**
+
+**Why "Nucleus":**
+- Available on PyPI ✅
+- No trademark conflicts ✅
+- Means "core" or "central part" - fits our value prop
+- Short, memorable, professional
+- Brand: **Nucleus MCP** - "The Core of Your AI Agents"
+
+---
+
+## 💰 Market Pricing Research
+
+### MCP Server Pricing Benchmarks (Dec 2025)
+
+| MCP Server | Type | Price |
+|------------|------|-------|
+| Most open-source | Free | $0 |
+| MindsDB | Database | $750 - $3,000/mo |
+| K2view | Enterprise | ~$5,000/mo |
+| DataStax Astra | Enterprise | Variable |
+
+### Developer Tools SaaS Benchmarks
+
+| Tier | Price Range | Conversion Rate |
+|------|-------------|-----------------|
+| Free/Freemium | $0 | Base |
+| Individual/Pro | $10 - $50/mo | 2-5% of free |
+| Team | $50 - $200/mo | 0.5-1% of free |
+| Enterprise | $300 - $5,000/mo | 0.1% of free |
+
+### Recommended Pricing (Adjusted)
+
+| Tier | Price | Rationale |
+|------|-------|-----------|
+| **Free** | $0 | 10 tools, local only, community patterns read |
+| **Pro** | **$19/mo** | Pattern sync, alerts, analytics (lower barrier) |
+| **Team** | **$99/mo** | Team sharing, 5 seats |
+| **Enterprise** | **$499/mo** | Self-hosted, SLA, custom |
+
+**Why adjustments:**
+- $29 felt high for new MCP market
+- $19 = impulse buy territory for solo developers
+- $99 team tier captures small agencies
+- $499 enterprise is competitive with alternatives
+
+---
+
+## 🔒 Privacy & Data Handling
+
+### MCP Protocol Privacy Reality
+
+**Key Finding:** MCP has **no built-in privacy controls**. Each server defines its own policy.
+
+| Aspect | MCP Default | Our Approach |
+|--------|-------------|--------------|
+| Data exfiltration protection | ❌ None | ✅ Allowlist only |
+| User consent | ❌ None | ✅ Explicit opt-in |
+| Data encryption | ❌ None | ✅ TLS + at-rest |
+| Audit logging | ❌ None | ✅ Full audit trail |
+| GDPR compliance | ❌ None | ✅ We implement |
+
+### Our Privacy Policy (Competitive Advantage)
+
+**What we collect (opt-in only):**
+| Data | Purpose | Anonymized? |
+|------|---------|-------------|
+| Pattern structures | Improve recommendations | ✅ Yes |
+| Agent performance metrics | Benchmark comparisons | ✅ Yes |
+| Trigger configurations | Discover optimal routing | ✅ Yes |
+| Task content | **NEVER COLLECTED** | N/A |
+
+**Privacy as a Feature:**
+- "The only MCP server with GDPR-ready privacy by design"
+- Clear opt-in UI before any sync
+- One-click data deletion
+- Published privacy audit
+
+---
+
+## 🚀 Go-to-Market Strategy
+
+### GTM Approach: Product-Led Growth (PLG)
+
+**Why PLG works for us:**
+1. Developers hate sales calls
+2. Our product has immediate value (10 free tools)
+3. Network effects require user volume
+4. Low marginal cost per free user
+
+### Launch Strategy: Free Core + Paid Sync
+
+**Phase 1: Foundation (Weeks 1-2)**
+```
+✅ Ship mcp-server-nucleus to PyPI (free)
+✅ Submit to MCP.so, MCP Registry
+✅ Create killer README + demo video
+✅ Post to r/LocalLLaMA, r/Claude, Hacker News
+```
+
+**Phase 2: Community (Weeks 3-6)**
+```
+✅ Build Discord community
+✅ Publish "Pattern Library" (curated best patterns)
+✅ Create tutorial content
+✅ Gather feedback, iterate
+```
+
+**Phase 3: Monetization (Weeks 7+)**
+```
+✅ Launch Pro tier with pattern sync
+✅ Enable network effect features
+✅ Add team collaboration
+✅ Pursue enterprise pilots
+```
+
+### Success Metrics
+
+| Metric | Month 1 | Month 3 | Month 6 |
+|--------|---------|---------|---------|
+| PyPI Downloads | 500 | 5,000 | 25,000 |
+| Active Users | 100 | 1,000 | 5,000 |
+| Discord Members | 50 | 500 | 2,000 |
+| Pro Conversions | 0 | 50 | 200 |
+| MRR | $0 | $950 | $3,800 |
+
+---
+
+## 🌐 Network Effects Design
+
+### The Flywheel
+
+```
+User joins (free) → Uses patterns → Shares patterns (opt-in)
+         ↑                                    ↓
+   Better patterns ←←←← ML Analysis ←←←← Pattern Cloud
+```
+
+### What Creates Lock-In
+
+| Feature | Lock-In Mechanism |
+|---------|-------------------|
+| Personalized pattern suggestions | Only works with our cloud |
+| Agent performance benchmarks | Comparative data from all users |
+| Trigger optimization | ML learns from all configurations |
+| Community library | Exclusive to Pro users |
+
+### Why Competitors Can't Copy
+
+1. **Data moat:** We have patterns from 1000 users, they have 0
+2. **Network effects:** Each new user makes product better for all
+3. **Switching cost:** Leave = lose optimized recommendations
+
+---
+
+## 📊 Revenue Projections (Revised)
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|--------|--------|--------|--------|
+| Free Users | 5,000 | 50,000 | 200,000 |
+| Pro ($19) | 100 (2%) | 1,000 | 4,000 |
+| Team ($99) | 20 | 200 | 800 |
+| Enterprise ($499) | 2 | 20 | 80 |
+| **MRR** | $4,870 | $46,980 | $175,620 |
+| **ARR** | $58K | $564K | **$2.1M** |
+
+---
+
+#### 3. `brain_get_state`
+```python
+@mcp.tool()
+def brain_get_state(
+    path: str = None        # JSON path like "current_sprint.focus"
+) -> dict:
+    """Get current brain state or specific path."""
+```
+
+#### 4. `brain_update_state`
+```python
+@mcp.tool()
+def brain_update_state(
+    updates: dict           # Fields to update
+) -> bool:
+    """Update brain state with new values."""
+```
+
+#### 5. `brain_trigger_agent`
+```python
+@mcp.tool()
+def brain_trigger_agent(
+    agent: str,             # "researcher", "architect", etc.
+    task_description: str,
+    expected_output: str,
+    context_files: list = None
+) -> str:
+    """Emit task_assigned event for an agent."""
+    # Returns task_id
+```
+
+#### 6. `brain_get_triggers`
+```python
+@mcp.tool()
+def brain_get_triggers() -> list:
+    """Get all defined neural triggers."""
+```
+
+#### 7. `brain_evaluate_triggers`
+```python
+@mcp.tool()
+def brain_evaluate_triggers(
+    event_type: str,
+    emitter: str
+) -> list:
+    """Evaluate which agents should activate for an event."""
+```
+
+### Artifact Tools
+
+#### 8. `brain_read_artifact`
+```python
+@mcp.tool()
+def brain_read_artifact(
+    path: str               # Relative to .brain/artifacts/
+) -> str:
+    """Read an artifact file."""
+```
+
+#### 9. `brain_write_artifact`
+```python
+@mcp.tool()
+def brain_write_artifact(
+    path: str,              # Relative to .brain/artifacts/
+    content: str
+) -> bool:
+    """Write content to an artifact file."""
+```
+
+#### 10. `brain_list_artifacts`
+```python
+@mcp.tool()
+def brain_list_artifacts(
+    folder: str = None      # "research", "strategy", etc.
+) -> list:
+    """List all artifacts or filter by folder."""
+```
+
+---
+
+## MCP Resources Specification
+
+### 1. `brain://state`
+Live state.json content - subscribable
+
+### 2. `brain://events`
+Recent events stream - subscribable
+
+### 3. `brain://agents/{name}`
+Agent system prompt content
+
+### 4. `brain://triggers`
+Trigger definitions
+
+---
+
+## MCP Prompts Specification
+
+### 1. `activate_synthesizer`
+```
+Read .brain/ state and execute current sprint as Synthesizer.
+Available tools: brain_emit_event, brain_read_events, brain_trigger_agent, etc.
+```
+
+### 2. [start_sprint](file:///Users/lokeshgarg/ai-mvp-backend/agent_manager.py#602-644)
+```
+Initialize a new sprint with goal: {goal}
+Use brain_update_state and brain_emit_event to set up.
+```
+
+---
+
+## Production-Ready Requirements
+
+### 1. Configuration
+```bash
+# Environment variables
+NUCLEAR_BRAIN_PATH=/path/to/.brain    # Required
+NUCLEAR_BRAIN_LOG_LEVEL=INFO          # Optional
+NUCLEAR_BRAIN_TELEGRAM_TOKEN=xxx      # Optional: alerts
+```
+
+### 2. Security
+- File access restricted to `.brain/` directory only
+- No arbitrary code execution
+- Audit log for all tool calls
+
+### 3. Error Handling
+- Graceful degradation if .brain/ doesn't exist
+- Clear error messages for missing files
+- Validation of all inputs
+
+### 4. Distribution
+```bash
+# Install from PyPI
+pip install mcp-server-nuclear-brain
+
+# Run server
+python -m mcp_server_nuclear_brain
+
+# Or via uvx
+uvx mcp-server-nuclear-brain
+```
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+# Unit tests for all tools
+pytest tests/test_tools.py -v
+
+# Integration tests with mock MCP client
+pytest tests/test_integration.py -v
+```
+
+### Manual Verification
+
+#### Test 1: Claude Desktop Integration
+1. Install package: `pip install -e .`
+2. Add to Claude Desktop config:
+   ```json
+   {
+     "mcpServers": {
+       "nuclear-brain": {
+         "command": "python",
+         "args": ["-m", "mcp_server_nuclear_brain"],
+         "env": {"NUCLEAR_BRAIN_PATH": "/path/to/.brain"}
+       }
+     }
+   }
+   ```
+3. Restart Claude Desktop
+4. Ask Claude: "List all brain events"
+5. Verify it calls `brain_read_events` tool
+
+#### Test 2: Event Emission
+1. Ask Claude: "Emit a task_completed event for researcher with description 'Completed market research'"
+2. Check [.brain/ledger/events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) for new event
+3. Verify event_id returned
+
+#### Test 3: Full Orchestration
+1. Ask Claude: "As Synthesizer, start a sprint with goal 'Build RAG layer'"
+2. Verify:
+   - [state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json) updated with sprint
+   - `sprint_started` event emitted
+   - [task_assigned](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#364-395) events for appropriate agents
+
+---
+
+## Monetization Options
+
+| Option | Description |
+|--------|-------------|
+| **Open Source Core** | Free on PyPI, MCP.so listing |
+| **Premium Features** | Telegram alerts, cloud sync, analytics |
+| **Enterprise License** | Self-hosted with SLA support |
+| **SaaS** | Hosted MCP server with dashboard |
+
+---
+
+## Timeline
+
+| Phase | Duration | Deliverable |
+|-------|----------|-------------|
+| 1. Core Server | 2 hours | Basic MCP server with 5 tools |
+| 2. Full Tools | 2 hours | All 10 tools + resources |
+| 3. Tests | 1 hour | Unit + integration tests |
+| 4. Packaging | 1 hour | PyPI-ready package |
+| 5. Distribution | 30 min | Submit to MCP.so, registry |
+
+**Total: ~6 hours to production-ready, sellable MCP server**
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> Before proceeding, please confirm:
+> 1. **Package name:** `mcp-server-nuclear-brain` (or alternative?)
+> 2. **Distribution:** Open-source on PyPI + commercial add-ons?
+> 3. **Priority tools:** Which 5 tools should be built first?

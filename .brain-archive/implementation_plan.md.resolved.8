@@ -1,0 +1,427 @@
+# Gemini CLI Grunt Worker
+
+## Goal
+
+Build a background system that executes "grunt work" tasks using Gemini CLI, freeing you to focus on critical thinking with Claude Opus 4.5.
+
+---
+
+## Architecture Overview
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        TRIGGER SOURCES                         │
+├────────────┬─────────────┬────────────────┬───────────────────┤
+│ Telegram   │ Manual CLI  │ Nightly Agent  │ Sprint Queue      │
+│ /grunt     │ grunt.py    │ (scheduled)    │ (auto-picked)     │
+└─────┬──────┴──────┬──────┴───────┬────────┴─────────┬─────────┘
+      │             │              │                  │
+      ▼             ▼              ▼                  ▼
+┌────────────────────────────────────────────────────────────────┐
+│                      TASK QUEUE                                │
+│   .brain/ledger/grunt_queue.json                               │
+│   [{ task, type, priority, context_files, status }]            │
+└─────────────────────────────┬──────────────────────────────────┘
+                              │
+                              ▼
+┌────────────────────────────────────────────────────────────────┐
+│                    GRUNT WORKER DAEMON                         │
+│   scripts/grunt_worker.py                                      │
+│                                                                │
+│   1. Poll queue for pending tasks                              │
+│   2. Classify task type → select context files                 │
+│   3. Build Gemini CLI command with context                     │
+│   4. Execute with premium model                                │
+│   5. Save output to .brain/artifacts/grunt/                    │
+│   6. Notify via Telegram                                       │
+│   7. Check rate limits → pause if exceeded                     │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Work Type Classification
+
+### Types of Grunt Work
+
+| Type | Description | Context Files Needed |
+|:-----|:------------|:---------------------|
+| `research` | Market research, competitor analysis | context.md |
+| `summarize` | Summarize docs, PRs, articles | context.md + target doc |
+| [test](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py#158-187) | Generate unit tests | context.md + target file + existing tests |
+| `boilerplate` | CRUD endpoints, widgets, models | context.md + patterns + spec |
+| `docs` | README, API docs, comments | context.md + target file |
+| `refactor` | Code cleanup, formatting | target file + style guide |
+
+### Classification Logic
+
+```python
+TASK_PATTERNS = {
+    "research": ["research", "find", "analyze", "compare", "investigate"],
+    "summarize": ["summarize", "tldr", "overview", "digest"],
+    "test": ["test", "unittest", "spec", "coverage"],
+    "boilerplate": ["create", "generate", "scaffold", "build", "widget", "endpoint"],
+    "docs": ["document", "readme", "docstring", "api doc"],
+    "refactor": ["refactor", "cleanup", "format", "lint"]
+}
+
+def classify_task(task_description: str) -> str:
+    description_lower = task_description.lower()
+    for task_type, keywords in TASK_PATTERNS.items():
+        if any(kw in description_lower for kw in keywords):
+            return task_type
+    return "general"
+```
+
+---
+
+## Context Selection Strategy
+
+### Per-Task-Type Context
+
+```python
+CONTEXT_MAP = {
+    "research": [
+        ".brain/memory/context.md",
+    ],
+    "summarize": [
+        ".brain/memory/context.md",
+        # + target document passed in task
+    ],
+    "test": [
+        ".brain/memory/context.md",
+        ".brain/knowledge_index.json",
+        "tests/conftest.py",  # existing test patterns
+        # + target file passed in task
+    ],
+    "boilerplate": [
+        ".brain/memory/context.md",
+        ".brain/knowledge_index.json",
+        # + pattern examples passed in task
+    ],
+    "docs": [
+        ".brain/memory/context.md",
+        # + target file passed in task
+    ],
+    "refactor": [
+        ".brain/memory/context.md",
+        # + target file passed in task
+    ],
+    "general": [
+        ".brain/memory/context.md",
+        ".brain/ledger/state.json",
+    ]
+}
+```
+
+---
+
+## Gemini Model Selection
+
+### Model Priority (Premium First)
+
+```python
+MODELS = [
+    "gemini-2.0-flash-exp",      # Best, experimental
+    "gemini-1.5-pro-latest",     # Fallback, very capable
+    "gemini-1.5-flash-latest",   # Fast fallback
+]
+
+# Start with best model
+current_model_index = 0
+
+def get_model():
+    return MODELS[current_model_index]
+
+def handle_rate_limit():
+    global current_model_index
+    if current_model_index < len(MODELS) - 1:
+        current_model_index += 1
+        return True  # Try next model
+    return False  # All models rate limited, stop
+```
+
+### Rate Limit Detection
+
+```python
+def is_rate_limited(response) -> bool:
+    return "429" in str(response) or "quota" in str(response).lower()
+```
+
+---
+
+## Queue Structure
+
+### File: `.brain/ledger/grunt_queue.json`
+
+```json
+{
+    "tasks": [
+        {
+            "id": "grunt-001",
+            "created": "2025-12-31T17:00:00Z",
+            "status": "pending",  // pending, running, completed, failed
+            "type": "boilerplate",
+            "description": "Create mood history chart widget",
+            "context_files": [
+                "ai_buddy_web/lib/widgets/breathing_exercise_widget.dart"
+            ],
+            "priority": 1,
+            "output_path": null,
+            "error": null
+        }
+    ],
+    "stats": {
+        "total_completed": 0,
+        "total_failed": 0,
+        "tokens_used_today": 0
+    }
+}
+```
+
+---
+
+## Grunt Worker Script
+
+### File: `scripts/grunt_worker.py`
+
+```python
+#!/usr/bin/env python3
+"""
+Grunt Worker - Background task execution via Gemini CLI
+
+Usage:
+    python grunt_worker.py run        # Process queue once
+    python grunt_worker.py daemon     # Run continuously
+    python grunt_worker.py add "task" # Add task to queue
+"""
+
+import subprocess
+import json
+import os
+from pathlib import Path
+from datetime import datetime, timezone
+
+PROJECT_ROOT = Path(__file__).parent.parent
+BRAIN_PATH = PROJECT_ROOT / ".brain"
+QUEUE_FILE = BRAIN_PATH / "ledger" / "grunt_queue.json"
+OUTPUT_DIR = BRAIN_PATH / "artifacts" / "grunt"
+
+def load_queue():
+    if QUEUE_FILE.exists():
+        return json.loads(QUEUE_FILE.read_text())
+    return {"tasks": [], "stats": {...}}
+
+def save_queue(queue):
+    QUEUE_FILE.write_text(json.dumps(queue, indent=2))
+
+def run_gemini_cli(task, context_files, model):
+    """Execute Gemini CLI with context files."""
+    cmd = ["gemini", "-m", model]
+    
+    for cf in context_files:
+        path = PROJECT_ROOT / cf
+        if path.exists():
+            cmd.extend(["--file", str(path)])
+    
+    # Add the task as prompt
+    prompt = f"""
+You are a code assistant. Complete this task:
+
+{task['description']}
+
+Output only the code/content, no explanations.
+"""
+    
+    result = subprocess.run(
+        cmd,
+        input=prompt,
+        capture_output=True,
+        text=True,
+        timeout=300  # 5 min max
+    )
+    
+    return result.stdout, result.stderr, result.returncode
+
+def process_task(task, queue):
+    """Process a single task."""
+    task_type = classify_task(task['description'])
+    context_files = get_context_files(task_type, task.get('context_files', []))
+    model = get_model()
+    
+    task['status'] = 'running'
+    save_queue(queue)
+    
+    stdout, stderr, code = run_gemini_cli(task, context_files, model)
+    
+    if code == 0 and stdout:
+        # Save output
+        output_file = OUTPUT_DIR / f"{task['id']}.md"
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(f"# {task['description']}\n\n{stdout}")
+        
+        task['status'] = 'completed'
+        task['output_path'] = str(output_file.relative_to(PROJECT_ROOT))
+        queue['stats']['total_completed'] += 1
+        
+        # Notify via Telegram
+        send_telegram(f"✅ Grunt task completed: {task['description'][:50]}")
+    else:
+        if is_rate_limited(stderr):
+            if not handle_rate_limit():
+                task['status'] = 'failed'
+                task['error'] = 'All models rate limited'
+                send_telegram("⚠️ Grunt worker paused: Rate limit reached")
+        else:
+            task['status'] = 'failed'
+            task['error'] = stderr[:200]
+        
+        queue['stats']['total_failed'] += 1
+    
+    save_queue(queue)
+    return task['status'] == 'completed'
+
+def daemon():
+    """Run continuously, processing tasks."""
+    while True:
+        queue = load_queue()
+        pending = [t for t in queue['tasks'] if t['status'] == 'pending']
+        
+        if pending:
+            task = pending[0]  # FIFO
+            process_task(task, queue)
+        
+        time.sleep(30)  # Poll every 30 sec
+```
+
+---
+
+## Telegram Integration
+
+### New Command: `/grunt`
+
+```python
+# In brain_telegram.py
+
+def handle_grunt_command(task_description: str) -> str:
+    """Handle /grunt <task description> command."""
+    if not task_description:
+        return "❌ Usage: /grunt Create mood chart widget"
+    
+    # Add to queue
+    queue = load_grunt_queue()
+    task_id = f"grunt-{uuid.uuid4().hex[:8]}"
+    
+    task = {
+        "id": task_id,
+        "created": datetime.now(timezone.utc).isoformat(),
+        "status": "pending",
+        "type": classify_task(task_description),
+        "description": task_description,
+        "context_files": [],
+        "priority": 1,
+        "output_path": None,
+        "error": None
+    }
+    
+    queue['tasks'].append(task)
+    save_grunt_queue(queue)
+    
+    return f"""🔧 Grunt task queued!
+
+ID: `{task_id}`
+Type: {task['type']}
+Task: {task_description[:50]}
+
+Will be processed when grunt worker is running."""
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|:-----|:--------|
+| `scripts/grunt_worker.py` | Main daemon script |
+| `.brain/ledger/grunt_queue.json` | Task queue |
+| `.brain/artifacts/grunt/` | Output directory |
+| Update [brain_telegram.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_telegram.py) | Add `/grunt` command |
+
+---
+
+## Usage Flow
+
+### 1. Queue a Task
+
+```bash
+# Via Telegram
+/grunt Create a Flutter widget for mood history chart following breathing_exercise_widget.dart pattern
+
+# Via CLI
+python scripts/grunt_worker.py add "Create mood chart widget"
+```
+
+### 2. Start Worker
+
+```bash
+# One-time run
+python scripts/grunt_worker.py run
+
+# Daemon mode (continuous)
+python scripts/grunt_worker.py daemon
+```
+
+### 3. Get Results
+
+- Output saved to `.brain/artifacts/grunt/{task_id}.md`
+- Telegram notification when complete
+- Review and copy to project
+
+---
+
+## Safety Features
+
+| Feature | Implementation |
+|:--------|:---------------|
+| **Rate limit handling** | Pause on 429, switch models |
+| **Timeout** | 5 min max per task |
+| **Error capture** | Log stderr, notify on failure |
+| **Token tracking** | Count tokens used (future) |
+| **Premium only** | Start with best model always |
+
+---
+
+## Build Order
+
+1. **Phase 1: Core** (30 min)
+   - Create `grunt_queue.json` structure
+   - Create `grunt_worker.py` with basic queue processing
+   - Test locally with simple task
+
+2. **Phase 2: Classification** (20 min)
+   - Add task type detection
+   - Add context file selection
+   - Test with different task types
+
+3. **Phase 3: Telegram** (20 min)
+   - Add `/grunt` command
+   - Add completion notifications
+   - Deploy and test
+
+4. **Phase 4: Polish** (20 min)
+   - Add daemon mode
+   - Add rate limit handling
+   - Add model fallback
+
+---
+
+## Decision Points for Review
+
+> [!IMPORTANT]
+> 1. Should the worker run as a daemon or be triggered on-demand?
+> 2. Should completed tasks auto-archive after 7 days?
+> 3. Should we add a `/grunt status` command to check queue?
+
+---
+
+## Estimated Total Time: ~90 minutes

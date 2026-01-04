@@ -1,0 +1,35 @@
+# LinkedIn Launch Post
+
+## Image Alt-Text (for accessibility)
+> High-level placement of an open-source MCP server ("Nucleus") as a task orchestration layer between LLM/agents and tools/runtimes, with an optional state/tasks box.
+
+---
+
+## Post Caption ("Two Saturdays" Framing)
+
+```
+I spent two Saturdays exploring MCP-based agent orchestration and posted v0.3.0 of a small open-source MCP server:
+
+📦 GitHub: github.com/LKGargProjects/mcp-server-nucleus
+📥 PyPI: pip install mcp-server-nucleus
+
+Notes:
+• After-hours OSS; non-commercial
+• No employer/customer context
+• Feedback on architecture welcome
+
+#BuildInPublic #AgenticAI #MCP #OpenSource
+```
+
+---
+
+## Export Settings
+- Format: PNG
+- Size: 1024 x 1024
+- Background: White
+- Stroke: 1px grey
+- Font: 14-16pt sans-serif
+
+---
+
+*Internal artifact for LinkedIn launch*

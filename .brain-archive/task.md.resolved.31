@@ -1,0 +1,42 @@
+# Active Task List
+
+> **Mode:** Universal Adaptor (Solo Founder)
+> **Thread:** Lead Systems Architect (Acting Generalist)
+
+---
+
+## 🚀 Current Objectives (GentleQuest)
+
+- [x] **Refactor Telegram Bot to use MCP** ✅
+- [x] **Validate Clinical Assessments UI** ✅
+  - [x] Verified Backend API (PHQ-9, GAD-7)
+  - [x] Solved SQLite `JSONB` incompatibility (Refactored [models.py](file:///Users/lokeshgarg/ai-mvp-backend/models.py))
+  - [x] Solved Port 5000 conflict (Used Flask Test Client)
+- [x] **Consolidate Meta-Artifacts into Nucleus** ✅
+  - [x] Synced [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md), [implementation_plan.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/implementation_plan.md), [work_pattern_analysis.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/work_pattern_analysis.md) to `.brain/meta/`
+- [x] **Verify Research Automation** ✅
+  - [x] Fixed `run_research.py` CLI args
+  - [x] Executed queued test task
+
+---
+
+## 🏗️ Nucleus Infrastructure (Thread Identity)
+
+- [x] **Implement Thread Identity System** (Simplified Registry-First) ✅
+  - [x] Update `state.json` schema with `preferred_role`
+  - [x] Update `task.md` (Self)
+  - [x] Verify `thread_registry.md` accuracy (Shipped in v0.2.6)
+
+---
+
+## 🔮 Next Priorities
+
+- [ ] **Conduct User Interviews** (Researcher Role)
+- [x] **Deploy Fixes to Production** (Architect Role) ✅
+- [x] **Enable `pgvector` on Production** (Confirmed via Ledger) ✅
+
+---
+
+### Completed Sprints
+- [x] Automated LLM Bridge (Dec 2025)
+- [x] Commercial MCP Server V1 (Jan 2026)

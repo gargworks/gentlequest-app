@@ -1,0 +1,32 @@
+# Strategy/Docs Track - Tasks
+
+## Current: Automated LLM Bridge ✅
+
+- [x] Sprint 1: Nuclear Activation (COMPLETE)
+- [x] Sprint 2: Hardening + Flywheel (COMPLETE)
+- [x] Sprint 3: MVP Genesis (COMPLETE)
+- [x] Build Hardened Cockpit v2 (COMPLETE)
+- [x] Build Automated LLM Bridge:
+  - [x] Create [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py) with Gemini API
+  - [x] Agent identification via system prompt files
+  - [x] Context building (task + state + files)
+  - [x] Response capture → event emission
+  - [x] Integration with flywheel
+
+## New: Commercial MCP Server (mcp-server-nucleus)
+- [x] Initialize Project Structure
+  - [x] [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml) definition
+  - [x] Directory structure (`src/mcp_server_nucleus`)
+- [x] Implement Core Server (FastMCP)
+- [x] Implement V1 Tools (Local Only)
+  - [x] Event Tools ([emit](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#94-150), [read](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#83-90))
+  - [x] State Tools ([get](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#320-324), [update](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#335-341))
+  - [x] Agent Tools ([trigger](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [triggers](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [evaluate](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#260-289))
+  - [x] Artifact Tools ([read](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#83-90), [write](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#91-96), [list](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#153-171))
+- [x] Manual Verification (Dogfooding)
+- [/] Package & Release Preparation
+  - [ ] Add LICENSE file
+  - [ ] Finalize README with badges
+  - [ ] Build package with `hatch build`
+  - [ ] Test install from wheel
+  - [ ] Publish to PyPI

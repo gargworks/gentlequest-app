@@ -1,0 +1,103 @@
+# Work Pattern & Model Usage Assessment
+> **Date:** December 30, 2025  
+> **Data Source:** 50 events from [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl)
+
+---
+
+## 📊 Task Distribution by Agent
+
+Based on completed tasks in the event ledger:
+
+| Agent | Tasks Completed | Task Types |
+|:------|:---------------:|:-----------|
+| **Researcher** | 6 | SOTA benchmark, community mapping, competitive analysis, market sizing, clinical pathways |
+| **Strategist** | 4 | Value prop, roadmap, build-in-public, prototype |
+| **Architect** | 3 | Brain audit, hardening specs, development modes |
+| **Developer** | 2 | Neural bridge spec, cockpit |
+| **Synthesizer** | 3 | Sprint orchestration, digest, marathon |
+| **Critic** | 0 | None logged |
+
+---
+
+## 🧠 Nature of Work (What You Actually Do)
+
+### Work Breakdown
+```
+Research & Strategy: 55%  ████████████░░░░░░░░
+Architecture:        17%  ████░░░░░░░░░░░░░░░░
+Development:         11%  ███░░░░░░░░░░░░░░░░░
+Orchestration:       17%  ████░░░░░░░░░░░░░░░░
+```
+
+### Insight
+> **You spend more time THINKING than CODING.**
+
+This is typical for a solo founder in early stage:
+- Research competitors, markets, validation pathways
+- Define strategy and roadmap
+- Architecture and specs
+- Actual coding is a smaller percentage
+
+---
+
+## 🤖 Model Fit by Task Type
+
+| Task Type | Best Model | Why |
+|:----------|:-----------|:----|
+| **Research** | Gemini 2.5 Pro | Fast, good at summarization, free tier |
+| **Strategy** | Opus 4.5 | Deep thinking, nuanced reasoning |
+| **Architecture** | Opus 4.5 | Complex decisions, trade-offs |
+| **Coding** | Opus 4.5 | Best code quality |
+| **Review/Critic** | Opus 4.5 | Careful analysis needed |
+| **Digest/Summary** | Gemini 2.5 | Fast, routine |
+
+---
+
+## 🔄 Current Model Usage Pattern
+
+### What You're Using Now
+| Context | Model | Via |
+|:--------|:------|:----|
+| **All work** | Opus 4.5 (me) | Antigravity Pro |
+| **Backup** | Opus (Windsurf) | Available but unused |
+| **Background** | None | NOT using Gemini CLI |
+
+### The Gap
+**You're using Opus 4.5 for EVERYTHING, including tasks that don't need extended thinking.**
+
+---
+
+## 💡 Recommended Model Routing
+
+| Task Type | Current | Should Be |
+|:----------|:--------|:----------|
+| **Research (55%)** | Opus 4.5 (expensive quota) | Gemini 2.5 (free, parallel) |
+| **Strategy** | Opus 4.5 ✅ | Opus 4.5 ✅ |
+| **Architecture** | Opus 4.5 ✅ | Opus 4.5 ✅ |
+| **Coding** | Opus 4.5 ✅ | Opus 4.5 ✅ |
+| **Digest/Summary** | Opus 4.5 (overkill) | Gemini 2.5 (cron) |
+
+---
+
+## 🎯 Implications
+
+### For Internal Workflow
+1. **Offload research to Gemini CLI** — Frees up 55% of Opus quota
+2. **Automate digests** — Another 10% freed
+3. **Reserve Opus for deep work** — Strategy, architecture, coding
+
+### For Public MCP Roadmap
+1. **Your users likely have same pattern** — More research than coding
+2. **Templates should reflect this** — `researcher` template may be most popular
+3. **Multi-model routing** — Could be a Phase C feature for Nucleus Pro
+
+---
+
+## ✅ Summary
+
+| Observation | Implication |
+|:------------|:------------|
+| 55% of work is research | Build Gemini CLI daemon for background research |
+| Opus used for everything | Wasting quota on simple tasks |
+| No parallelism | You're blocked waiting for research |
+| Critic agent unused | Add review checkpoints |

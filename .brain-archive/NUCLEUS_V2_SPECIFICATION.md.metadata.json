@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary":  "Complete specification for Nucleus V2 agent orchestration system. Defines 11-field task schema, 6 MCP tools, 5 core principles, safety/liveness properties, evolution roadmap (V1→V2→V3), competitive positioning, and implementation timeline. Based on 14 exhaustive thinking passes covering mechanisms, CS theory, philosophy, history, and operations.",
+  "updatedAt":  "2026-01-03T08:01:51.085985Z"
+}

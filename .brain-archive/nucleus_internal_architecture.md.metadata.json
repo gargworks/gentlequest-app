@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_OTHER",
+  "summary":  "Internal technical architecture sketch for Nucleus MCP Server showing component breakdown: MCP Ingress, Task Router, DAG Executor, State Store, Tool Bridge, and Workers. Includes Mermaid diagram and component summary table. Marked as working sketch, not for public use.",
+  "updatedAt":  "2026-01-03T17:43:37.541617Z"
+}

@@ -1,0 +1,14 @@
+# Strategy/Docs Track - Tasks
+
+## Current: Automated LLM Bridge ✅
+
+- [x] Sprint 1: Nuclear Activation (COMPLETE)
+- [x] Sprint 2: Hardening + Flywheel (COMPLETE)
+- [x] Sprint 3: MVP Genesis (COMPLETE)
+- [x] Build Hardened Cockpit v2 (COMPLETE)
+- [x] Build Automated LLM Bridge:
+  - [x] Create [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py) with Gemini API
+  - [x] Agent identification via system prompt files
+  - [x] Context building (task + state + files)
+  - [x] Response capture → event emission
+  - [x] Integration with flywheel

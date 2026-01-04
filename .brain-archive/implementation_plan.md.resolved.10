@@ -1,0 +1,360 @@
+# Gemini CLI Grunt Worker
+
+## Goal
+
+Build a background system that executes "grunt work" tasks using Gemini CLI, freeing you to focus on critical thinking with Claude Opus 4.5.
+
+---
+
+## Architecture Overview
+
+### Architecture Overview
+
+**The Connectivity Gap:** Render (where Telegram lives) cannot write to your Mac's filesystem.
+**The Solution:** Use **GitHub Issues** as the persistent queue.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        TRIGGER SOURCES                         │
+├────────────┬─────────────┬─────────────────────────────────────┤
+│ Telegram   │ Manual CLI  │                                     │
+│ /grunt     │ grunt.py    │                                     │
+└─────┬──────┴──────┬──────┘                                     │
+      │             │                                            │
+      ▼             ▼                                            │
+┌────────────────────────────────────────────────────────────────┐
+│                      TASK QUEUE                                │
+│   GitHub Repository Issues                                     │
+│   - Label: `grunt-work`                                        │
+│   - Body: Task description                                     │
+│   - Comments: Results/Updates                                  │
+└─────────────────────────────┬──────────────────────────────────┘
+                              │
+                              ▼
+┌────────────────────────────────────────────────────────────────┐
+│                    GRUNT WORKER DAEMON                         │
+│   scripts/grunt_worker.py (Running on Mac)                     │
+│                                                                │
+│   1. Poll GitHub for open issues with label `grunt-work`       │
+│   2. Claim task (comment "Processing...")                      │
+│   3. Classify & Select context files (.brain/ + repo)          │
+│   4. Execute via Gemini CLI (Premium Model)                    │
+│   5. Post result as Issue Comment                              │
+│   6. Close Issue                                               │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Work Type Classification
+
+### Types of Grunt Work
+
+| Type | Description | Context Files Needed |
+|:-----|:------------|:---------------------|
+| `research` | Market research, competitor analysis | context.md |
+| `summarize` | Summarize docs, PRs, articles | context.md + target doc |
+| [test](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py#158-187) | Generate unit tests | context.md + target file + existing tests |
+| `boilerplate` | CRUD endpoints, widgets, models | context.md + patterns + spec |
+| `docs` | README, API docs, comments | context.md + target file |
+| `refactor` | Code cleanup, formatting | target file + style guide |
+
+### Classification Logic
+
+```python
+TASK_PATTERNS = {
+    "research": ["research", "find", "analyze", "compare", "investigate"],
+    "summarize": ["summarize", "tldr", "overview", "digest"],
+    "test": ["test", "unittest", "spec", "coverage"],
+    "boilerplate": ["create", "generate", "scaffold", "build", "widget", "endpoint"],
+    "docs": ["document", "readme", "docstring", "api doc"],
+    "refactor": ["refactor", "cleanup", "format", "lint"]
+}
+
+def classify_task(task_description: str) -> str:
+    description_lower = task_description.lower()
+    for task_type, keywords in TASK_PATTERNS.items():
+        if any(kw in description_lower for kw in keywords):
+            return task_type
+    return "general"
+```
+
+---
+
+## Context Selection Strategy
+
+### Per-Task-Type Context
+
+```python
+CONTEXT_MAP = {
+    "research": [
+        ".brain/memory/context.md",
+    ],
+    "summarize": [
+        ".brain/memory/context.md",
+        # + target document passed in task
+    ],
+    "test": [
+        ".brain/memory/context.md",
+        ".brain/knowledge_index.json",
+        "tests/conftest.py",  # existing test patterns
+        # + target file passed in task
+    ],
+    "boilerplate": [
+        ".brain/memory/context.md",
+        ".brain/knowledge_index.json",
+        # + pattern examples passed in task
+    ],
+    "docs": [
+        ".brain/memory/context.md",
+        # + target file passed in task
+    ],
+    "refactor": [
+        ".brain/memory/context.md",
+        # + target file passed in task
+    ],
+    "general": [
+        ".brain/memory/context.md",
+        ".brain/ledger/state.json",
+    ]
+}
+```
+
+---
+
+## Gemini Model Selection
+
+### Model Priority (Premium First)
+
+```python
+MODELS = [
+    "gemini-2.0-flash-exp",      # Best, experimental
+    "gemini-1.5-pro-latest",     # Fallback, very capable
+    "gemini-1.5-flash-latest",   # Fast fallback
+]
+
+# Start with best model
+current_model_index = 0
+
+def get_model():
+    return MODELS[current_model_index]
+
+def handle_rate_limit():
+    global current_model_index
+    if current_model_index < len(MODELS) - 1:
+        current_model_index += 1
+        return True  # Try next model
+    return False  # All models rate limited, stop
+```
+
+### Rate Limit Detection
+
+```python
+def is_rate_limited(response) -> bool:
+    return "429" in str(response) or "quota" in str(response).lower()
+```
+
+---
+
+## Queue Structure (GitHub API)
+
+Instead of a local JSON file, we use `gh` CLI or `requests` to manage issues.
+
+- **New Task**: `gh issue create --title "Grunt: <Task>" --body "<Details>" --label "grunt-work"`
+- **Poll**: `gh issue list --label "grunt-work" --state open --json number,title,body`
+- **Complete**: `gh issue comment <id> --body "✅ Result..."` and `gh issue close <id>`
+
+---
+
+## Grunt Worker Script
+
+### File: `scripts/grunt_worker.py`
+
+```python
+#!/usr/bin/env python3
+"""
+Grunt Worker - Background task execution via Gemini CLI & GitHub Issues
+
+Usage:
+    python grunt_worker.py daemon     # Run continuously
+"""
+
+import subprocess
+import time
+import os
+from pathlib import Path
+
+# ... (Context & Classification logic same as above) ...
+
+def get_pending_tasks():
+    """Get open issues with label 'grunt-work' via gh CLI."""
+    cmd = ["gh", "issue", "list", "--label", "grunt-work", "--state", "open", "--json", "number,title,body"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        return json.loads(result.stdout)
+    return []
+
+def post_comment(issue_number, body):
+    subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", body])
+
+def close_issue(issue_number):
+    subprocess.run(["gh", "issue", "close", str(issue_number)])
+
+def process_task(task):
+    """Process a single GitHub issue task."""
+    print(f"⚙️ Processing issue #{task['number']}: {task['title']}")
+    
+    # Notify start
+    post_comment(task['number'], "🤖 Gemini Grunt Worker engaged. Analyzing...")
+    
+    task_desc = f"{task['title']}\n{task['body']}"
+    task_type = classify_task(task_desc)
+    context_files = get_context_files(task_type, [])
+    model = get_model()
+    
+    stdout, stderr, code = run_gemini_cli({'description': task_desc}, context_files, model)
+    
+    if code == 0 and stdout:
+        # Post result
+        result_msg = f"## ✅ Task Completed\n\n**Type:** {task_type}\n**Model:** {model}\n\n### Output\n\n```\n{stdout}\n```"
+        post_comment(task['number'], result_msg)
+        close_issue(task['number'])
+        print(f"✅ Completed #{task['number']}")
+    else:
+        # Report error
+        error_msg = f"## ❌ Task Failed\n\nError: {stderr[:500]}"
+        post_comment(task['number'], error_msg)
+        print(f"❌ Failed #{task['number']}")
+
+def daemon():
+    print("🤖 Grunt Worker Daemon Started (Polling GitHub Issues)...")
+    while True:
+        try:
+            tasks = get_pending_tasks()
+            for task in tasks:
+                process_task(task)
+        except Exception as e:
+            print(f"⚠️ Error polling: {e}")
+        
+        time.sleep(60)  # Poll every minute
+```
+
+---
+
+## Telegram Integration
+
+### New Command: `/grunt`
+
+Update [brain_telegram.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_telegram.py) (which runs on Render) to use GitHub Issues.
+
+```python
+# In brain_telegram.py
+
+from github import Github  # or use requests/subprocess if simpler, but pygithub is cleaner
+import os
+
+def handle_grunt_command(task_description: str) -> str:
+    """Handle /grunt <task description> command."""
+    if not task_description:
+        return "❌ Usage: /grunt Create mood chart widget"
+    
+    try:
+        # Create GitHub Issue
+        # Note: Requires GITHUB_TOKEN env var on Render
+        g = Github(os.getenv("GITHUB_TOKEN"))
+        repo = g.get_repo("lokeshgarg/ai-mvp-backend")  # Hardcoded for now
+        issue = repo.create_issue(
+            title=f"Grunt: {task_description[:50]}...",
+            body=task_description,
+            labels=["grunt-work"]
+        )
+        
+        return f"🔧 Grunt task queued!\n\nIssue #{issue.number}\nTask: {task_description[:50]}\n\nWorker will pick this up."
+    except Exception as e:
+        return f"❌ Failed to queue task: {str(e)}"
+```
+
+---
+
+## Files to Create/Update
+
+| File | Purpose |
+|:-----|:--------|
+| `scripts/grunt_worker.py` | Main daemon script (uses `gh` CLI) |
+| [brain_telegram.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_telegram.py) | Update `/grunt` to write to GitHub |
+| [requirements.txt](file:///Users/lokeshgarg/ai-mvp-backend/requirements.txt) | Add `PyGithub` |
+
+---
+
+## Usage Flow
+
+### 1. Queue a Task
+
+```bash
+# Via Telegram
+/grunt Create a Flutter widget for mood history chart following breathing_exercise_widget.dart pattern
+
+# Via GitHub CLI (Manual)
+gh issue create --title "Grunt: Create widget" --body "Details..." --label "grunt-work"
+```
+
+### 2. Start Worker (Mac)
+
+```bash
+# Daemon mode (continuous)
+python scripts/grunt_worker.py daemon
+```
+
+### 3. Get Results
+
+- Worker posts result as a **Comment** on the GitHub Issue
+- Worker closes the issue
+- GitHub Notification / Telegram (via Issue Close event if configured)
+
+---
+
+## Safety Features
+
+| Feature | Implementation |
+|:--------|:---------------|
+| **Rate limit handling** | Pause on 429, switch models |
+| **Timeout** | 5 min max per task |
+| **Error capture** | Post error to Issue Comment |
+| **Token tracking** | Count tokens used |
+| **Premium only** | Start with best model always |
+
+---
+
+## Build Order
+
+1. **Phase 1: Worker (Mac)** (30 min)
+   - Create `scripts/grunt_worker.py`.
+   - Implement `gh issue list` polling.
+   - Test interaction with a manually created issue.
+
+2. **Phase 2: Telegram (Render)** (20 min)
+   - Add `PyGithub` to [requirements.txt](file:///Users/lokeshgarg/ai-mvp-backend/requirements.txt).
+   - Update [brain_telegram.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_telegram.py) with `/grunt` command.
+   - Deploy to Render (requires setting GITHUB_TOKEN).
+
+3. **Phase 3: Integration Test** (10 min)
+   - Send `/grunt` from Telegram.
+   - Watch `grunt_worker.py` on Mac pick it up.
+   - Verify result comment on GitHub.
+
+4. **Phase 4: Polish** (15 min)
+   - Context classification fine-tuning.
+   - Rate limiting logic integration.
+
+---
+
+## Decision Points for Review
+
+> [!IMPORTANT]
+> 1. Should the worker run as a daemon or be triggered on-demand?
+> 2. Should completed tasks auto-archive after 7 days?
+> 3. Should we add a `/grunt status` command to check queue?
+
+---
+
+## Estimated Total Time: ~90 minutes

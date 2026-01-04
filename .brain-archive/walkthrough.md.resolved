@@ -1,0 +1,202 @@
+# Walkthrough: Knowledge University Activation
+
+> **Date:** December 30, 2025
+> **Status:** ✅ COMPLETE
+
+---
+
+## What Was Built
+
+### 1. Knowledge Indexer
+**File:** [scripts/knowledge_indexer.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/knowledge_indexer.py)
+
+- Scans **149 files** across [.brain/](file:///Users/lokeshgarg/ai-mvp-backend/.brain), `docs/`, and root
+- Classifies into **7 faculties** (operations, agents, research, strategy, etc.)
+- Extracts **180 rules** from `DEVELOPMENT_RULES.md`
+- Outputs to [.brain/knowledge_index.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/knowledge_index.json)
+
+---
+
+### 2. Nightly Agent (Upgraded)
+**File:** [scripts/nightly_agent.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py)
+
+**5-Step Pipeline:**
+| Step | Function | Description |
+|:-----|:---------|:------------|
+| 0 | 📚 Knowledge Indexer | Updates the index |
+| 1 | 🧪 Test Runner | Runs pytest |
+| 2 | 👮 Compliance Officer | Checks git log against 180 rules |
+| 3 | 📄 Doc Drift | Compares README.md vs app.py |
+| 4 | 📋 Digest | Generates daily report |
+
+---
+
+### 3. Cron Setup
+**File:** [scripts/setup_cron.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/setup_cron.sh)
+
+One-command setup for daily 8 AM runs.
+
+---
+
+## How to Activate
+
+```bash
+# 1. Set API key
+export GEMINI_API_KEY=your_key
+
+# 2. Test manually
+python3 scripts/nightly_agent.py
+
+# 3. Install cron (runs daily at 8 AM)
+./scripts/setup_cron.sh
+```
+
+---
+
+## Knowledge Coverage
+
+| Faculty | Files | % of Total |
+|:--------|:------|:-----------|
+| General | 76 | 51% |
+| Execution | 19 | 13% |
+| Strategy | 18 | 12% |
+| Research | 17 | 11% |
+| Operations | 7 | 5% |
+| Architecture | 6 | 4% |
+| Agents | 6 | 4% |
+
+**Total:** 149 files, 180 extracted rules
+
+---
+
+# Walkthrough: Nucleus Release & Deployment
+
+> **Date:** January 3, 2026
+> **Status:** ✅ COMPLETE
+
+## 1. Nucleus MCP v0.2.6 Release
+- **PyPI:** [mcp-server-nucleus 0.2.6](https://pypi.org/project/mcp-server-nucleus/)
+- **Features:**
+  - `nucleus-init --template=solo` (Minimal 3-file setup)
+  - Auto-backup before overwrite (`.brain.backup.TIMESTAMP/`)
+  - Active brain detection safety check
+
+### Usage
+```bash
+# Initialize minimal solo brain
+python3.11 -m mcp_server_nucleus.cli --template solo
+```
+
+## 2. GentleQuest Production Deployment
+- **Status:** Live on Render
+- **Fixes Deployed:**
+  - SQLite/Postgres JSON compatibility
+  - Research CLI arguments
+  - SQLAlchemy pool options
+
+### Verification
+- **Health Check:** `200 OK` (db=healthy, redis=healthy)
+- **Deployment Logs:**
+
+![Render Deployment Logs](/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/render_logs_1767413188363.png)
+
+---
+
+## 3. Nucleus v0.3.0: V2 Task Orchestration System
+
+**Date:** 2026-01-03
+
+### Summary
+
+After **14 exhaustive thinking passes** covering mechanisms, CS theory, philosophy, history, and operations, implemented the complete V2 Task Orchestration System for Nucleus.
+
+### What Was Built
+
+**6 New MCP Tools:**
+| Tool | Purpose |
+| :--- | :--- |
+| [brain_list_tasks](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#580-599) | Query tasks with filters (status, priority, skill, claimed_by) |
+| [brain_get_next_task](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#600-611) | Pull highest-priority unblocked task matching agent skills |
+| [brain_claim_task](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#612-624) | Atomically claim a task (prevents race conditions) |
+| [brain_update_task](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#625-637) | Modify task fields (status, priority, etc.) |
+| [brain_add_task](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#638-659) | Create new tasks with full V2 schema |
+| [brain_escalate](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#660-672) | Request human help when stuck |
+
+**11-Field Task Schema:**
+```
+id, description, status, priority, blocked_by, required_skills,
+claimed_by, source, escalation_reason, created_at, updated_at
+```
+
+**Status States:** `PENDING | READY | IN_PROGRESS | BLOCKED | DONE | FAILED | ESCALATED`
+
+### Test Coverage
+
+- **44 tests passed** (all passing)
+- **66% code coverage** on main module
+- Unit tests for all 6 tools
+- Integration tests for full task lifecycle
+- Edge case coverage: already claimed, nonexistent, legacy format
+- Safety property tests: referential integrity, DAG validation
+
+### Commits
+
+```
+[main fa61bf5] docs: Add V2 Specification (14 thinking passes)
+[main 811d590] feat(nucleus): Implement V2 Task Management System (370 lines)
+[main 5f03bbf] test(nucleus): Add comprehensive V2 task management tests (462 lines)
+[main 144f5d8] fix(nucleus): Make BRAIN_PATH dynamic for testing
+[main 2a1a01b] feat(nucleus): Add safety property enforcement
+```
+
+### Specification Document
+
+Full specification at [mcp-server-nucleus/docs/SPECIFICATION.md](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/docs/SPECIFICATION.md) documenting:
+- 5 Core Principles: Legibility, Reversibility, Degradation, Trust, Simplicity
+- Safety/Liveness properties
+- V1→V2→V3 evolution roadmap
+- Competitive positioning
+
+### 4. Client-Side E2E Verification
+**Status:** ⏳ In Progress
+
+| Test Case | Status | Notes |
+| :--- | :--- | :--- |
+| **1. Cold Start** | ✅ PASS | Verified safety check + successful init via CLI. |
+| **2. Stress Test** | ✅ PASS | Created 10 tasks in <30s. Validation OK. |
+| **3. Priority** | ✅ PASS | Fixed bug in [_list_tasks](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#257-312) to sort by priority (1=Highest). Verified P1 > P2 > P3. |
+| **4. Concurrency** | ✅ PASS | Verified atomic locking. Windsurf won the race; Claude correctly rejected the double-claim. |
+
+### 5. Final Logic Verification
+**Status:** ✅ Passed
+
+| Test Case | Status | Notes |
+| :--- | :--- | :--- |
+| **Lifecycle** | ✅ PASS | Pending → In Progress → Done transition verified. |
+| **Escalation** | ✅ PASS | Escalation event emitted and status updated correctly. |
+| **Safety Guard** | ✅ PASS | **Referential Integrity Enforced.** System rejected dependency on non-existent ID. |
+
+### Release Status
+
+| Item | Status |
+| :--- | :--- |
+| Specification (14 passes) | ✅ Complete |
+| Implementation (6 tools) | ✅ Complete |
+| Unit Tests (44 passing) | ✅ Complete |
+| Code Coverage (66%) | ✅ Complete |
+| Safety Properties | ✅ Complete |
+| E2E Verification | ✅ Complete |
+| GitHub Push | ✅ Complete (6 commits) |
+| **PyPI Publish (v0.3.0)** | ✅ **Complete** |
+| Autopilot V2 | ✅ Created |
+| Task Migration | ✅ Complete |
+| Integration Verified | ✅ Skill routing works |
+
+### Summary
+
+**Nucleus V2 Task Orchestration is DONE.**
+
+- 14-pass specification → 6 MCP tools → 44 tests → PyPI v0.3.0
+- Autopilot daemon ready to use
+- Tasks migrated and skill-based routing verified
+

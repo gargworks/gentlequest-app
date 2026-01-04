@@ -1,0 +1,108 @@
+# Strategy/Docs Track - Tasks
+
+## Current: Automated LLM Bridge ✅
+
+- [x] Sprint 1: Nuclear Activation (COMPLETE)
+- [x] Sprint 2: Hardening + Flywheel (COMPLETE)
+- [x] Sprint 3: MVP Genesis (COMPLETE)
+- [x] Build Hardened Cockpit v2 (COMPLETE)
+- [x] Build Automated LLM Bridge:
+  - [x] Create [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py) with Gemini API
+  - [x] Agent identification via system prompt files
+  - [x] Context building (task + state + files)
+  - [x] Response capture → event emission
+  - [x] Integration with flywheel
+
+## New: Commercial MCP Server (mcp-server-nucleus)
+- [x] Initialize Project Structure
+  - [x] [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml) definition
+  - [x] Directory structure (`src/mcp_server_nucleus`)
+- [x] Implement Core Server (FastMCP)
+- [x] Implement V1 Tools (Local Only)
+  - [x] Event Tools ([emit](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#97-111), [read](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#83-90))
+  - [x] State Tools ([get](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#320-324), [update](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#335-341))
+  - [x] Agent Tools ([trigger](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [triggers](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [evaluate](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#209-227))
+  - [x] Artifact Tools ([read](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#83-90), [write](file:///Users/lokeshgarg/ai-mvp-backend/cockpit.py#115-131), [list](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#153-171))
+- [x] Manual Verification (Dogfooding)
+- [x] Package & Release Preparation
+  - [x] Add LICENSE file
+  - [x] Finalize README with badges
+  - [x] Build package with `hatch build`
+  - [x] Test install from wheel
+  - [x] Publish to PyPI ✅
+
+## Post-Launch
+- [x] Create public GitHub repo ✅
+- [x] Add CHANGELOG.md ✅
+- [x] Clean public repo ✅
+- [x] Submit to MCP.so ✅
+- [x] Submit to PulseMCP ✅
+- [x] Draft launch posts (Twitter/HN/Reddit) ✅
+- [/] Record demo video (user editing, queued)
+- [/] Post launch (queued for when video ready)
+
+## Phase A: Complete V1 ✅
+- [x] Add missing tools (10 total) ✅
+- [x] Add MCP Resources (3) ✅
+- [x] Add MCP Prompts (2) ✅
+- [x] Write pytest tests (11 passing) ✅
+- [x] Set up GitHub Actions CI ✅
+- [x] Publish v0.2.0 → v0.2.1 → v0.2.2 → v0.2.3 ✅
+- [x] Add nucleus-init CLI ✅
+- [x] Smart Init (auto-configure Claude Desktop) ✅
+- [x] Simplified config key: "nucleus" ✅
+
+## Phase B: Validate Before You Build 🎯
+> **Board Decision:** Dec 27, 2025 — Unanimous
+> **Strategy:** User interviews → Templates → Pricing test → Then decide
+
+### Week 1-2: Discovery (Dec 28 - Jan 10)
+- [ ] Conduct 5 user interviews (Reddit/Discord)
+  - [ ] Find users in r/ClaudeAI, r/LocalLLaMA
+  - [ ] Ask: "What's hardest about using Claude?"
+  - [ ] Ask: "Would you pay for cloud backup?"
+  - [ ] Ask: "Which template: Solo Founder, Developer, Researcher, Writer?"
+- [ ] Document `.brain/` protocol spec (1-page)
+
+### Week 3-4: Templates (Jan 11 - Jan 24)
+- [ ] Ship 5 templates based on interview feedback
+  - [ ] `nucleus init --template=solo-founder`
+  - [ ] `nucleus init --template=developer`
+  - [ ] `nucleus init --template=researcher`
+  - [ ] `nucleus init --template=writer`
+  - [ ] `nucleus init --template=blank`
+- [ ] Add anonymous telemetry (template usage counts only)
+- [ ] Publish v0.3.0 to PyPI
+
+### Week 5-6: Pricing Validation (Jan 25 - Feb 7)
+- [ ] Create "Pro waitlist" landing page ($9/mo backup)
+- [ ] Offer to template users
+- [ ] Measure signups
+
+### Week 7: Decision Point (Feb 8) ⚡
+- [ ] **IF 50+ waitlist signups** → Build backup feature
+- [ ] **IF <10 signups** → Pivot (stay free, find other monetization)
+- [ ] **IF pattern demand emerges** → Revisit Pattern Cloud
+
+### 📊 Success Metrics
+| Metric | Target | Current |
+|--------|--------|---------|
+| User interviews | 5 | 0 |
+| Templates shipped | 5 | 0 |
+| GitHub stars | 50 | ? |
+| PyPI downloads | 500 | ? |
+| Pro waitlist | 50 | 0 |
+
+---
+
+## DEFERRED: Pattern Cloud (Only if demand proven)
+- Pattern Cloud backend
+- ML recommendations
+- Vector search (pgvector)
+- Complex auth flows
+- Sync daemon
+
+## Phase C: Monetization (After Validation)
+- [ ] Pro tier: Private Sync ($9/mo)
+- [ ] Stripe billing
+- [ ] Team tier ($49/mo)

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "upgrade-1",
+    "description": "Brain upgraded to v0.3.1 - try 'Show me all tasks'",
+    "status": "READY",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": null,
+    "source": "manual-upgrade",
+    "escalation_reason": null,
+    "created_at": "2026-01-04T19:40:00+0530",
+    "updated_at": "2026-01-04T19:40:00+0530"
+  },
+  {
+    "id": "upgrade-2",
+    "description": "Try: 'Add a task: [your task here]' to create your first real task",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": ["upgrade-1"],
+    "required_skills": [],
+    "claimed_by": null,
+    "source": "manual-upgrade",
+    "escalation_reason": null,
+    "created_at": "2026-01-04T19:40:00+0530",
+    "updated_at": "2026-01-04T19:40:00+0530"
+  }
+]

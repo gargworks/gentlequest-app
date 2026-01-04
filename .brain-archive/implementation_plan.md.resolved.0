@@ -1,0 +1,317 @@
+# MCP Brain Tools Server - Implementation Plan
+
+> **Goal:** Build a production-ready, sellable MCP server for multi-agent orchestration
+> **Target:** 100% feature utilization in God Mode + PyPI distribution
+
+---
+
+## Market Assessment
+
+### Existing MCP Marketplaces
+| Platform | Type | Submission |
+|----------|------|------------|
+| **MCP.so** | Main community directory | GitHub issue |
+| **mcpmarket.com** | Commercial marketplace | Direct submission |
+| **glama.ai** | AI tools marketplace | Application |
+| **MCP Registry** | Official Anthropic registry | GitHub PR |
+
+### Competing Products (Multi-Agent/Orchestration)
+| Product | Focus | Gap We Fill |
+|---------|-------|-------------|
+| None found | — | **First MCP for multi-agent orchestration** |
+| LangGraph MCP | Graphs | No portable brain |
+| CrewAI | Teams | No event-driven triggers |
+
+### Unique Value Proposition
+**"Nuclear Brain MCP" - The first MCP server for solo founders to run autonomous AI agents**
+- Event-driven agent orchestration via LLM
+- Portable `.brain/` folder architecture
+- Works with Claude, Gemini, OpenAI in any MCP-compatible client
+
+---
+
+## Proposed Package Structure
+
+```
+mcp-server-nuclear-brain/
+├── pyproject.toml                 # Package config
+├── README.md                      # Documentation
+├── LICENSE                        # MIT
+├── src/
+│   └── mcp_server_nuclear_brain/
+│       ├── __init__.py
+│       ├── __main__.py           # Entry point
+│       ├── server.py             # FastMCP server
+│       ├── tools/                # MCP Tools
+│       │   ├── events.py         # emit_event, read_events
+│       │   ├── state.py          # get_state, update_state
+│       │   ├── agents.py         # trigger_agent, list_agents
+│       │   ├── triggers.py       # get_triggers, evaluate_trigger
+│       │   └── artifacts.py      # read_artifact, write_artifact
+│       ├── resources/            # MCP Resources
+│       │   ├── brain_state.py    # state.json as resource
+│       │   └── events_stream.py  # events.jsonl as resource
+│       └── prompts/              # MCP Prompts
+│           └── synthesizer.py    # Synthesizer activation prompt
+├── tests/
+│   ├── test_tools.py
+│   ├── test_resources.py
+│   └── test_integration.py
+└── examples/
+    ├── claude_desktop_config.json
+    └── vscode_mcp.json
+```
+
+---
+
+## MCP Tools Specification
+
+### Core Tools
+
+#### 1. `brain_emit_event`
+```python
+@mcp.tool()
+def brain_emit_event(
+    emitter: str,           # "synthesizer", "researcher", etc.
+    event_type: str,        # "task_completed", "sprint_started", etc.
+    severity: str,          # "ROUTINE", "NOTABLE", "CRITICAL"
+    payload: dict           # Event-specific data
+) -> str:
+    """Emit an event to the Neural Brain event stream."""
+    # Returns event_id
+```
+
+#### 2. `brain_read_events`
+```python
+@mcp.tool()
+def brain_read_events(
+    count: int = 10,        # Number of recent events
+    event_type: str = None, # Filter by type
+    emitter: str = None     # Filter by emitter
+) -> list:
+    """Read recent events from the event stream."""
+```
+
+#### 3. `brain_get_state`
+```python
+@mcp.tool()
+def brain_get_state(
+    path: str = None        # JSON path like "current_sprint.focus"
+) -> dict:
+    """Get current brain state or specific path."""
+```
+
+#### 4. `brain_update_state`
+```python
+@mcp.tool()
+def brain_update_state(
+    updates: dict           # Fields to update
+) -> bool:
+    """Update brain state with new values."""
+```
+
+#### 5. `brain_trigger_agent`
+```python
+@mcp.tool()
+def brain_trigger_agent(
+    agent: str,             # "researcher", "architect", etc.
+    task_description: str,
+    expected_output: str,
+    context_files: list = None
+) -> str:
+    """Emit task_assigned event for an agent."""
+    # Returns task_id
+```
+
+#### 6. `brain_get_triggers`
+```python
+@mcp.tool()
+def brain_get_triggers() -> list:
+    """Get all defined neural triggers."""
+```
+
+#### 7. `brain_evaluate_triggers`
+```python
+@mcp.tool()
+def brain_evaluate_triggers(
+    event_type: str,
+    emitter: str
+) -> list:
+    """Evaluate which agents should activate for an event."""
+```
+
+### Artifact Tools
+
+#### 8. `brain_read_artifact`
+```python
+@mcp.tool()
+def brain_read_artifact(
+    path: str               # Relative to .brain/artifacts/
+) -> str:
+    """Read an artifact file."""
+```
+
+#### 9. `brain_write_artifact`
+```python
+@mcp.tool()
+def brain_write_artifact(
+    path: str,              # Relative to .brain/artifacts/
+    content: str
+) -> bool:
+    """Write content to an artifact file."""
+```
+
+#### 10. `brain_list_artifacts`
+```python
+@mcp.tool()
+def brain_list_artifacts(
+    folder: str = None      # "research", "strategy", etc.
+) -> list:
+    """List all artifacts or filter by folder."""
+```
+
+---
+
+## MCP Resources Specification
+
+### 1. `brain://state`
+Live state.json content - subscribable
+
+### 2. `brain://events`
+Recent events stream - subscribable
+
+### 3. `brain://agents/{name}`
+Agent system prompt content
+
+### 4. `brain://triggers`
+Trigger definitions
+
+---
+
+## MCP Prompts Specification
+
+### 1. `activate_synthesizer`
+```
+Read .brain/ state and execute current sprint as Synthesizer.
+Available tools: brain_emit_event, brain_read_events, brain_trigger_agent, etc.
+```
+
+### 2. [start_sprint](file:///Users/lokeshgarg/ai-mvp-backend/agent_manager.py#602-644)
+```
+Initialize a new sprint with goal: {goal}
+Use brain_update_state and brain_emit_event to set up.
+```
+
+---
+
+## Production-Ready Requirements
+
+### 1. Configuration
+```bash
+# Environment variables
+NUCLEAR_BRAIN_PATH=/path/to/.brain    # Required
+NUCLEAR_BRAIN_LOG_LEVEL=INFO          # Optional
+NUCLEAR_BRAIN_TELEGRAM_TOKEN=xxx      # Optional: alerts
+```
+
+### 2. Security
+- File access restricted to `.brain/` directory only
+- No arbitrary code execution
+- Audit log for all tool calls
+
+### 3. Error Handling
+- Graceful degradation if .brain/ doesn't exist
+- Clear error messages for missing files
+- Validation of all inputs
+
+### 4. Distribution
+```bash
+# Install from PyPI
+pip install mcp-server-nuclear-brain
+
+# Run server
+python -m mcp_server_nuclear_brain
+
+# Or via uvx
+uvx mcp-server-nuclear-brain
+```
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+# Unit tests for all tools
+pytest tests/test_tools.py -v
+
+# Integration tests with mock MCP client
+pytest tests/test_integration.py -v
+```
+
+### Manual Verification
+
+#### Test 1: Claude Desktop Integration
+1. Install package: `pip install -e .`
+2. Add to Claude Desktop config:
+   ```json
+   {
+     "mcpServers": {
+       "nuclear-brain": {
+         "command": "python",
+         "args": ["-m", "mcp_server_nuclear_brain"],
+         "env": {"NUCLEAR_BRAIN_PATH": "/path/to/.brain"}
+       }
+     }
+   }
+   ```
+3. Restart Claude Desktop
+4. Ask Claude: "List all brain events"
+5. Verify it calls `brain_read_events` tool
+
+#### Test 2: Event Emission
+1. Ask Claude: "Emit a task_completed event for researcher with description 'Completed market research'"
+2. Check [.brain/ledger/events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) for new event
+3. Verify event_id returned
+
+#### Test 3: Full Orchestration
+1. Ask Claude: "As Synthesizer, start a sprint with goal 'Build RAG layer'"
+2. Verify:
+   - [state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json) updated with sprint
+   - `sprint_started` event emitted
+   - [task_assigned](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#364-395) events for appropriate agents
+
+---
+
+## Monetization Options
+
+| Option | Description |
+|--------|-------------|
+| **Open Source Core** | Free on PyPI, MCP.so listing |
+| **Premium Features** | Telegram alerts, cloud sync, analytics |
+| **Enterprise License** | Self-hosted with SLA support |
+| **SaaS** | Hosted MCP server with dashboard |
+
+---
+
+## Timeline
+
+| Phase | Duration | Deliverable |
+|-------|----------|-------------|
+| 1. Core Server | 2 hours | Basic MCP server with 5 tools |
+| 2. Full Tools | 2 hours | All 10 tools + resources |
+| 3. Tests | 1 hour | Unit + integration tests |
+| 4. Packaging | 1 hour | PyPI-ready package |
+| 5. Distribution | 30 min | Submit to MCP.so, registry |
+
+**Total: ~6 hours to production-ready, sellable MCP server**
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> Before proceeding, please confirm:
+> 1. **Package name:** `mcp-server-nuclear-brain` (or alternative?)
+> 2. **Distribution:** Open-source on PyPI + commercial add-ons?
+> 3. **Priority tools:** Which 5 tools should be built first?

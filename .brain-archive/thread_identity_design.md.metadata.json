@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary":  "Design spec for Thread Identity System - solving the 'which agent is which' UX problem in agentic IDEs where thread names change automatically. Defines the stable identity protocol using thread_id as anchor.",
+  "updatedAt":  "2026-01-03T02:44:19.345562Z"
+}

@@ -1,0 +1,73 @@
+# mcp-server-nucleus v0.1.0 — Launch Walkthrough
+
+**Published:** December 27, 2025  
+**PyPI:** [mcp-server-nucleus](https://pypi.org/project/mcp-server-nucleus/0.1.0/)
+
+---
+
+## 🎯 What Was Built
+
+A production-ready MCP (Model Context Protocol) server that bridges AI agents with a local "Nuclear Brain" system.
+
+### Core Features
+
+| Tool | Purpose |
+|------|---------|
+| [brain_emit_event](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#195-199) | Emit events to the ledger |
+| [brain_read_events](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#200-204) | Read recent events |
+| [brain_get_state](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#205-209) | Query brain state |
+| [brain_update_state](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#210-214) | Update brain state |
+| [brain_read_artifact](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#215-219) | Read artifact files |
+| [brain_write_artifact](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#220-224) | Write artifact files |
+| [brain_list_artifacts](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#225-229) | List all artifacts |
+| [brain_trigger_agent](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#230-234) | Trigger agent with task |
+
+---
+
+## 📦 Package Structure
+
+```
+mcp-server-nucleus/
+├── pyproject.toml          # Hatch build config
+├── LICENSE                  # MIT
+├── README.md                # With badges & docs
+└── src/mcp_server_nucleus/
+    ├── __init__.py          # Core logic + MCP wrappers
+    └── __main__.py          # Entry point
+```
+
+---
+
+## ✅ Verification Performed
+
+1. **Local validation script** — All 8 tools tested against `.brain/`
+2. **Claude Desktop integration** — Confirmed MCP connection working
+3. **Real query test** — "What's my sprint focus?" returned correct data
+4. **Wheel install test** — Package installs and runs correctly
+
+---
+
+## 🔧 Claude Desktop Config
+
+```json
+{
+  "mcpServers": {
+    "nucleus-brain": {
+      "command": "python3",
+      "args": ["-m", "mcp_server_nucleus"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 📈 Next Steps
+
+1. **GitHub Repo** — Make source code public
+2. **MCP Directory** — Submit to modelcontextprotocol.io
+3. **Launch Marketing** — Tweet, Product Hunt, HN
+4. **V0.2 Features** — Add Resources, Prompts, more tools

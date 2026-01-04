@@ -1,0 +1,65 @@
+# Strategy/Docs Track - Tasks
+
+## Current: Automated LLM Bridge ✅
+
+- [x] Sprint 1: Nuclear Activation (COMPLETE)
+- [x] Sprint 2: Hardening + Flywheel (COMPLETE)
+- [x] Sprint 3: MVP Genesis (COMPLETE)
+- [x] Build Hardened Cockpit v2 (COMPLETE)
+- [x] Build Automated LLM Bridge:
+  - [x] Create [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py) with Gemini API
+  - [x] Agent identification via system prompt files
+  - [x] Context building (task + state + files)
+  - [x] Response capture → event emission
+  - [x] Integration with flywheel
+
+## New: Commercial MCP Server (mcp-server-nucleus)
+- [x] Initialize Project Structure
+  - [x] [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml) definition
+  - [x] Directory structure (`src/mcp_server_nucleus`)
+- [x] Implement Core Server (FastMCP)
+- [x] Implement V1 Tools (Local Only)
+  - [x] Event Tools ([emit](file:///Users/lokeshgarg/ai-mvp-backend/agent_manager.py#215-234), [read](file:///Users/lokeshgarg/ai-mvp-backend/cockpit.py#101-114))
+  - [x] State Tools ([get](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#320-324), [update](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#335-341))
+  - [x] Agent Tools ([trigger](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [triggers](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#232-236), [evaluate](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#260-289))
+  - [x] Artifact Tools ([read](file:///Users/lokeshgarg/ai-mvp-backend/cockpit.py#101-114), [write](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py#91-96), [list](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#153-171))
+- [x] Manual Verification (Dogfooding)
+- [x] Package & Release Preparation
+  - [x] Add LICENSE file
+  - [x] Finalize README with badges
+  - [x] Build package with `hatch build`
+  - [x] Test install from wheel
+  - [x] Publish to PyPI ✅
+
+## Post-Launch
+- [x] Create public GitHub repo ✅
+- [x] Add CHANGELOG.md ✅
+- [ ] Clean public repo (remove internal files)
+- [ ] Submit to MCP registries
+- [ ] Draft launch tweet/post
+- [ ] Record demo video
+
+## Phase A: Complete V1 (Priority)
+- [ ] Add missing tools
+  - [ ] `brain_get_triggers`
+  - [ ] `brain_evaluate_triggers`
+- [ ] Add MCP Resources
+  - [ ] `brain://state`
+  - [ ] `brain://events`
+- [ ] Add MCP Prompts
+  - [ ] `activate_synthesizer`
+  - [ ] [start_sprint](file:///Users/lokeshgarg/ai-mvp-backend/agent_manager.py#602-644)
+- [ ] Write pytest unit tests
+- [ ] Set up GitHub Actions CI
+
+## Phase B: Network Effects (Future)
+- [ ] Build Pattern Cloud backend
+- [ ] Implement opt-in sync daemon
+- [ ] Add telemetry (PostHog)
+- [ ] Create privacy opt-in UI
+
+## Phase C: Monetization (Future)
+- [ ] Pro tier: Private Sync
+- [ ] Stripe billing
+- [ ] Team tier features
+
