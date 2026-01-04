@@ -1,0 +1,242 @@
+# The Satellite View: Design Translation
+
+> **Core Vision:** Nucleus is not a task manager. It's a **multi-dimensional navigator** for the brain's work patterns.
+
+---
+
+## The Metaphor (Preserved In Full)
+
+### The User's Words:
+> "Think of it like electricity or a pattern that goes through different zigzag paths, lighting up certain parts of the brain and propagating to different directions in a beautiful pattern. We take a photo of that, then come back and activate some other part of the brain, lighting up that part of the world and capturing it.
+>
+> We want to light up this whole world into a beautiful harmony of light, something that looks beautiful from satellite view—like a civilization emerging. Zooming in and zooming out is really important. How we preserve those images... think of it like Google satellite view where you see a beautiful planet or continent, but you can also zoom back into a particular city and see the lights beautifully emerge.
+>
+> Over time, Google Maps timeline shows you how different levels of dimension emerge. That multi-dimensional ability to navigate through full context—that's really beautiful. That's the kind of capability I want to build. This is the brain connected with code, operating through thoughts. A Neuralink for coding."
+
+---
+
+## What This Means (Design Translation)
+
+### 1. Work as Neural Pathways
+**Problem Solved:** Context loss between sessions.
+
+**Current State:**
+- User starts work on "Crisis Detection"
+- Gets interrupted (life, job, ADHD)
+- Returns days later: "What was I even doing?"
+
+**Satellite View Solution:**
+- The system captured not just "Crisis Detection task"
+- It captured:
+  - Which files were open
+  - What decisions were being debated
+  - What alternatives were explored
+  - Where the thinking was heading
+  - Related work that was "lit up" (accessed, considered)
+
+**Technical Implementation:**
+```
+Session Snapshot {
+  active_task: "crisis_detection",
+  lit_pathways: [
+    "safety.py",
+    "app.py",
+    "CRISIS_GUARDRAIL_SPEC.md",
+    "conversation with user about keywords vs LLM approach"
+  ],
+  decision_points: [
+    "Keyword-based fast trigger vs LLM deep analysis"
+  ],
+  next_thought: "Wire input analysis to /chat endpoint"
+}
+```
+
+When user returns, Nucleus **reactivates** this pattern:
+- Opens the same files
+- Shows the decision context
+- Reminds: "You were about to wire this to /chat endpoint"
+
+---
+
+### 2. Zoom Levels as Context Dimensions
+
+**Problem Solved:** Switching between detail work and strategic thinking causes cognitive load.
+
+**The Zoom Hierarchy:**
+
+| Level | What You See | Example | Time Horizon |
+|:------|:-------------|:--------|:-------------|
+| **Satellite (Continent)** | Multi-month vision | "Ship GentleQuest v2" | Q1 2026 |
+| **Country** | Sprint-level goals | "Build safety system" | 2-3 weeks |
+| **City** | Session-level work | "Wire crisis detection to /chat" | Today |
+| **Street** | Individual edits | "Fix typo in error message" | Right now |
+
+**Satellite View Solution:**
+- User says: "Show me the big picture"
+  - System zooms out to "Continent" level
+  - Shows: GentleQuest v2 roadmap, major milestones
+  
+- User says: "What am I working on right now?"
+  - System zooms in to "City" level
+  - Shows: Crisis detection wiring, next 3 steps
+
+- User says: "What's left on safety?"
+  - System shows "Country" level
+  - Safety system progress: Input layer (done), Output layer (in progress), Testing (pending)
+
+**Technical Implementation:**
+```
+Task Hierarchy {
+  level: "continent",
+  name: "Ship GentleQuest v2",
+  children: [
+    {
+      level: "country",
+      name: "Build safety system",
+      children: [
+        {
+          level: "city",
+          name: "Wire crisis detection to /chat",
+          children: [
+            { level: "street", name: "Import safety module in app.py" },
+            { level: "street", name: "Add input validation" },
+            { level: "street", name: "Write tests" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### 3. Time as a Dimension (Google Maps Timeline)
+
+**Problem Solved:** "I feel like I'm not making progress."
+
+**Satellite View Solution:**
+- Show "City lights" emerging over weeks
+- Visualization: What was dark (not started) is now lit (shipped)
+
+**Example:**
+```
+Week 1: [Crisis Detection] lit up
+Week 2: [Crisis Detection + Output Verification] lit up
+Week 3: [Crisis Detection + Output Verification + Memory System] lit up
+```
+
+User can see: "Oh, I lit up 3 major systems in 3 weeks."
+
+**Technical Implementation:**
+- [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) already captures this (every task status change)
+- New feature: **Progress Timeline Visualization**
+  - Input: [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl)
+  - Output: Animated map of work lighting up over time
+  - Like: GitHub contribution graph, but for work patterns
+
+---
+
+### 4. Neural Pathway Preservation
+
+**Problem Solved:** Switching tasks kills momentum.
+
+**The Pattern:**
+1. User starts "Feature A" → Lights up neurons (files, decisions, context)
+2. Gets pulled into "Feature B" → Different neurons light up
+3. Returns to "Feature A" → **Neurons are dark again** (context lost)
+
+**Satellite View Solution:**
+- When switching, **save the lit pattern**
+- When returning, **reactivate the pattern**
+
+**Technical Implementation:**
+```python
+def switch_focus(from_task, to_task):
+    # Save current pathways
+    snapshot = capture_lit_pathways(from_task)
+    save_snapshot(from_task.id, snapshot)
+    
+    # Activate new pathways
+    new_snapshot = load_snapshot(to_task.id)
+    reactivate_pathways(new_snapshot)
+    
+    # Reopen files, restore context
+    for file in new_snapshot.open_files:
+        open_in_editor(file)
+    
+    print(f"💡 Reactivated: {to_task.name}")
+    print(f"   Last thought: {new_snapshot.next_thought}")
+```
+
+---
+
+## The "Neuralink for Coding" Vision
+
+**What It Means:**
+- Brain → Voice (Wispr Flow) → Prompt → AI → Code → Validation → Deploy
+- **Seamless thought-to-production pipeline**
+
+**Current Workflow:**
+1. Think: "I want calm breathing mode"
+2. Voice dictate to AI (Wispr Flow)
+3. AI writes code
+4. Push to GitHub
+5. **WAIT 15 minutes for Render**
+6. Test manually
+7. **Context lost**
+
+**Satellite View Workflow:**
+1. Think: "I want calm breathing mode"
+2. Voice dictate
+3. AI writes code + **captures session snapshot**
+4. Auto-deploy triggers
+5. **System polls Render** (async, in background)
+6. **Notifies when ready:** "Calm breathing is live. Test: [URL]"
+7. User tests on phone
+8. **System captures result:** "Validated on production ✅"
+9. **Session wraps automatically:** Snapshot saved, pathways preserved
+
+**The Difference:**
+- Current: 7 manual steps, context lost in waiting
+- Satellite View: 2 manual steps (dictate, test), system handles the rest
+
+---
+
+## Design Principles Extracted
+
+### 1. Preserve, Don't Remind
+❌ Bad: "Task: Wire crisis detection. Status: In progress."  
+✅ Good: "You were wiring crisis detection. You decided on keyword approach. Next: Add to app.py. Files already open."
+
+### 2. Multi-Dimensional, Not Linear
+❌ Bad: Flat task list (1. Task A, 2. Task B, 3. Task C)  
+✅ Good: Nested zoom levels (Continent → Country → City → Street)
+
+### 3. Show Progress, Don't Just Track It
+❌ Bad: "5/10 tasks complete"  
+✅ Good: "3 major systems lit up this week. [Show visualization]"
+
+### 4. Automate the Boring, Preserve the Thinking
+❌ Bad: "Deploy manually, test manually, update status manually"  
+✅ Good: "System deploys, polls, notifies. You focus on testing, system captures the result."
+
+---
+
+## What I'm NOT Building (Anti-Patterns)
+
+1.❌ **"Better Jira"** - Adding labels, priorities, swimlanes
+2. ❌ **"AI That Does Everything"** - Removing human from loop
+3. ❌ **"Linear Task Queue"** - Just optimizing throughput
+4. ❌ **"Notification Spam"** - "Task updated! Task completed! Task..."
+
+## What I AM Building
+
+✅ **"Google Earth for Work"** - Navigate your brain's work patterns  
+✅ **"Session Time Machine"** - Reactivate past neural pathways  
+✅ **"Thought → Production Pipeline"** - Seamless flow from brain to code  
+✅ **"Progress Illumination"** - See your civilization of work emerge  
+
+---
+
+**Next: Capture Part 3 (Dopamine) and Part 4 (Product vs Meta), then synthesize into full system design.**

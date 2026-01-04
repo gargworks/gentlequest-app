@@ -23,3 +23,9 @@ Enhance `nucleus-init` to provide a guided onboarding experience for new users.
 - [x] Update CHANGELOG.md
 - [x] Commit and push
 - [x] Upload to PyPI (v0.3.2 live)
+
+### Phase 4: Infrastructure & Meta (Added)
+- [x] Create `DECISION_LOG.md` for architectural continuity
+- [x] Create `RAW_MONOLOGUE_*.md` to preserve user context
+- [x] Create `backup-brain.sh` script (Git + Google Drive)
+- [x] Install weekly cron job (Sunday 11 PM) for automated backups
