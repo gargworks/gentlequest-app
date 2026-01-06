@@ -1,7 +1,7 @@
 services:
   # Backend API Service with Flutter Web
   - type: web
-    name: GentleQuest
+    name: ai-mental-health-backend
     env: docker
     plan: free
     healthCheckPath: /api/health
