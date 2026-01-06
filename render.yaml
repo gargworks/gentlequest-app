@@ -16,7 +16,7 @@ services:
       - key: AI_PROVIDER
         value: gemini
       - key: CORS_ORIGINS
-        value: "https://gentlequest.onrender.com,https://gentlequest.com,https://www.gentlequest.com,https://gentlequest.app,https://www.gentlequest.app"
+        value: "https://gentlequest.onrender.com,https://gentlequest.com,https://www.gentlequest.com,https://gentlequest.app,https://www.gentlequest.app,https://app.gentlequest.app"
 
       # Database: set in dashboard with External Connection String
       # (Blueprints only support `connectionString`, which is private network only)
@@ -139,3 +139,15 @@ services:
         value: render
       - key: PYTHON_VERSION
         value: "3.9.6"
+
+staticSites:
+  - name: gentlequest-landing
+    buildCommand: cd landing-page && npm install && npm run build
+    publishPath: landing-page/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

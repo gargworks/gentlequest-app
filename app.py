@@ -2036,12 +2036,21 @@ def _register_routes(app: Flask) -> None:
             )
             db.session.commit()
 
+            # Check valid feedback trigger (after 3rd check-in)
+            check_in_count = db.session.execute(
+                text("SELECT COUNT(*) FROM mood_entries WHERE session_id = :session_id"),
+                {"session_id": session_id},
+            ).scalar()
+            
+            show_feedback_prompt = (check_in_count == 3)
+
             return jsonify(
                 {
                     "message": "Mood entry added successfully",
                     "mood_level": mood_level,
                     "note": note,
                     "timestamp": entry_timestamp.isoformat(),
+                    "show_feedback_prompt": show_feedback_prompt,
                 }
             )
 

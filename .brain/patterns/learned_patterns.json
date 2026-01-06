@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Successful deploying via do_now",
+    "keywords": [
+      "deploying"
+    ],
+    "action": "do_now",
+    "confidence": 0.8,
+    "source": "auto_learned"
+  },
+  {
+    "name": "Successful update via do_now",
+    "keywords": [
+      "update"
+    ],
+    "action": "do_now",
+    "confidence": 0.8,
+    "source": "auto_learned"
+  },
+  {
+    "name": "Successful production via do_now",
+    "keywords": [
+      "production"
+    ],
+    "action": "do_now",
+    "confidence": 0.8,
+    "source": "auto_learned"
+  }
+]

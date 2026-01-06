@@ -1,0 +1,41 @@
+{
+  "id": "gentlequest_marketing_-_interv_20260106_061524",
+  "context": "GentleQuest Marketing - Interviews Plan",
+  "active_task": "Developing interviews strategy for GentleQuest marketing plan",
+  "pending_decisions": [],
+  "breadcrumbs": [
+    "Switched from Nucleus session testing",
+    "Now focusing on GentleQuest marketing interviews"
+  ],
+  "next_steps": [
+    "Define interview objectives",
+    "Identify target interview segments",
+    "Create interview questions framework",
+    "Plan interview logistics and timeline"
+  ],
+  "depth_snapshot": {
+    "current_depth": 3,
+    "levels": [
+      {
+        "depth": 1,
+        "topic": "Current news and events",
+        "started_at": "2026-01-05T21:44:12+0530",
+        "status": "active"
+      },
+      {
+        "depth": 2,
+        "topic": "Iran protests and economic crisis",
+        "started_at": "2026-01-05T22:00:08+0530",
+        "status": "active"
+      },
+      {
+        "depth": 3,
+        "topic": "Iran protests and economic crisis",
+        "started_at": "2026-01-05T22:00:08+0530",
+        "status": "current"
+      }
+    ]
+  },
+  "created_at": "2026-01-06T06:15:24+0530",
+  "is_active": true
+}

@@ -38,6 +38,15 @@ except ImportError:
     HAS_GENAI = False
     print("Warning: google-generativeai not installed. Run: pip install google-generativeai")
 
+# MDR_010: Telemetry Integration
+try:
+    sys.path.append(str(Path(__file__).parent / "mcp-server-nucleus" / "src"))
+    from mcp_server_nucleus import commitment_ledger
+    HAS_LEDGER = True
+except ImportError:
+    HAS_LEDGER = False
+    print("Warning: mcp_server_nucleus not found. Telemetry disabled.")
+
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
@@ -196,6 +205,13 @@ class AgentExecutor:
     def execute(self, task: dict, dry_run: bool = False) -> dict:
         """Execute the agent on a task"""
         
+        # MDR_010: Record Usage
+        if HAS_LEDGER and not dry_run:
+            try:
+                commitment_ledger.record_interaction(BRAIN_ROOT)
+            except Exception as e:
+                print(f"Warning: Telemetry failed: {e}")
+
         # Build context
         context = self.build_context(task)
         

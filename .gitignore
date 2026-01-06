@@ -12,6 +12,7 @@ ENV/
 
 # Sensitive files - NEVER COMMIT
 ACHIEVEMENT_REPORT.md
+IDENTITY_MAP_PRIVATE.md
 *.secret
 *.credentials
 key.properties

@@ -80,10 +80,10 @@
 | **Single account** (`gentlequest_dev`) | Simpler, cross-pollinate | Identity confusion |
 | **Separate accounts** | Clear branding | More maintenance |
 
-**My Recommendation:** 
-- **Reddit:** Use `gentlequest_dev` for both (you're the "founder" persona)
-- **Twitter:** Separate accounts (`@GentleQuestApp` + `@nucleus_cli`)
-- **Facebook:** GentleQuest only (Nucleus doesn't need FB)
+**My Recommendation (Brand-Only):**
+- **Unified Identity:** `GentleQuest` (or `GentleQuest Dev`) everywhere. 
+- **Privacy:** No personal names. No "day job" justification.
+- **Story:** "We building calm tools." (The product speaks).
 
 ---
 

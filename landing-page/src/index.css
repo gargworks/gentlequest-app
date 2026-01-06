@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Custom styles for GentleQuest Landing Page */
+:root {
+  --color-primary: #667EEA;
+  --color-secondary: #764BA2;
+  --color-dark-bg: #0A1628;
+  --color-dark-purple: #1E0A3C;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, var(--color-dark-purple) 0%, var(--color-dark-bg) 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}

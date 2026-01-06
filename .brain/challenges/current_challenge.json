@@ -1,0 +1,11 @@
+{
+  "id": "red_slayer",
+  "title": "Red Slayer",
+  "description": "Close 3 red-tier items this week",
+  "target_type": "tier",
+  "target_value": "red",
+  "target_count": 3,
+  "reward": "Guilt-free weekend",
+  "started_at": "2026-01-06T18:22:11.590275",
+  "status": "active"
+}

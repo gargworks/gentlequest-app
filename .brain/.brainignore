@@ -1,0 +1,30 @@
+# .brainignore - Files excluded from brain exports (MDR_008)
+# Pattern syntax follows .gitignore
+
+# Personal commitment data
+commitments/ledger.json
+commitments/feedback_log.json
+
+# Learned patterns (personal workflow IP)
+patterns/learned_patterns.json
+
+# Session data (conversation context)
+sessions/
+
+# Private features/roadmap
+features/
+
+# Strategy documents (core IP)
+strategy/MDR_001_FOUNDATION/
+
+# Memory (personal context)
+memory/
+
+# Challenges (personal gamification state)
+challenges/
+
+# Sync state (local config)
+.sync_state.json
+.flywheel.pid
+.state.lock
+flywheel.log

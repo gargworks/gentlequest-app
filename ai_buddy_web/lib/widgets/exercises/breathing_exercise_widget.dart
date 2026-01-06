@@ -122,7 +122,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     setState(() => _timeLeftInStep = step.duration);
     
     // Subtle haptic on phase change
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
 
     // Setup animation based on action
     _breathController.duration = Duration(seconds: step.duration);

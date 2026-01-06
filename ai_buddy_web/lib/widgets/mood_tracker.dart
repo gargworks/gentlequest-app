@@ -243,8 +243,10 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 final moodLevel = index + 1;
                 final entry = MoodEntry(moodLevel: moodLevel);
                 return IconButton(
-                  onPressed: () =>
-                      _showMoodDialog(context, moodProvider, moodLevel),
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    _showMoodDialog(context, moodProvider, moodLevel);
+                  },
                   icon: Text(
                     entry.moodEmoji,
                     style: const TextStyle(fontSize: 32),
@@ -654,7 +656,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           ),
           FilledButton(
             onPressed: () {
-              HapticFeedback.heavyImpact();
+              HapticFeedback.mediumImpact();
               moodProvider.addMoodEntry(
                 moodLevel,
                 note: noteController.text.trim(),

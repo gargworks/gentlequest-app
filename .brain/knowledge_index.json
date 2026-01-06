@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-01-03T08:00:02.202863",
-  "total_files": 186,
+  "generated_at": "2026-01-06T08:00:02.163080",
+  "total_files": 197,
   "total_rules_extracted": 180,
   "faculties": {
     "general": {
-      "count": 104,
+      "count": 105,
       "files": [
         ".brain/NUCLEUS_HUB.md",
         ".brain/artifacts/code/neural_bridge_spec.md",
@@ -13,6 +13,7 @@
         ".brain/memory/context.md",
         ".brain/memory/patterns.md",
         ".brain/memory/learnings.md",
+        ".brain/features/proofs/crisis_detection.md",
         ".brain/workflows/first_activation.md",
         ".brain/workflows/OPERATIONS.md",
         ".brain/workflows/thread_identity_manifesto.md",
@@ -113,7 +114,7 @@
       ]
     },
     "research": {
-      "count": 22,
+      "count": 25,
       "files": [
         ".brain/artifacts/research/mcp_debugging_guide.md",
         ".brain/artifacts/research/user_interview_script.md",
@@ -130,13 +131,16 @@
         ".brain/artifacts/research/queue.md",
         ".brain/artifacts/research/b2b_market_sizing_2024.md",
         ".brain/artifacts/research/clinical_validation_pathway.md",
+        ".brain/artifacts/research/gentlequest_interview_framework.md",
+        ".brain/artifacts/research/competitor_voc_analysis.md",
         ".brain/artifacts/research/simulated_user_research.md",
         ".brain/artifacts/marketing/interview_recruitment_posts.md",
         ".brain/artifacts/marketing/build_in_public_thread.md",
         ".brain/artifacts/marketing/mcp_launch_assets.md",
         ".brain/artifacts/marketing/launch_posts.md",
         ".brain/artifacts/marketing/demo_video_plan.md",
-        ".brain/artifacts/strategy/critical_thinking_benchmark.md"
+        ".brain/artifacts/strategy/critical_thinking_benchmark.md",
+        "docs/MARKETING_MASTER_PLAYBOOK.md"
       ]
     },
     "execution": {
@@ -179,7 +183,7 @@
       ]
     },
     "strategy": {
-      "count": 19,
+      "count": 24,
       "files": [
         ".brain/artifacts/strategy/prototype_roadmap_investor.md",
         ".brain/artifacts/strategy/first_principles_review.md",
@@ -192,20 +196,27 @@
         ".brain/artifacts/strategy/musk_method.md",
         ".brain/artifacts/strategy/build_in_public_post_001.md",
         ".brain/artifacts/strategy/board_decision.md",
+        ".brain/artifacts/strategy/nucleus_positioning.md",
         ".brain/artifacts/strategy/strategy_debate.md",
         "docs/GENTLEQUEST_BRANDING_STRATEGY.md",
         "docs/AGENTIC_SOLO_FOUNDER_PLAYBOOK.md",
         "docs/AGENTIC_COMPANY_ARCHITECTURE.md",
+        "docs/GENTLEQUEST_FACEBOOK_STRATEGY.md",
+        "docs/AGENTIC_USER_RECRUITMENT_PLAYBOOK.md",
         "docs/PRODUCT_STRATEGY_DEPTH_OVER_BREADTH.md",
+        "docs/NUCLEUS_GROWTH_STRATEGY.md",
         "docs/GENTLEQUEST_REDDIT_GROWTH_STRATEGY.md",
         "docs/strategy.md",
-        "docs/NUCLEAR_AGENTIC_BLUEPRINT.md"
+        "docs/NUCLEAR_AGENTIC_BLUEPRINT.md",
+        "docs/NUCLEUS_STRATEGY_BLUEPRINT.md"
       ]
     },
     "operations": {
-      "count": 6,
+      "count": 8,
       "files": [
         ".brain/workflows/verification_protocol.md",
+        "docs/INDIEHACKERS_PROTOCOL.md",
+        "docs/MARKETING_HANDOFF_PROTOCOLS.md",
         "DEPLOYMENT_PROTOCOL.md",
         "SHARED_HISTORY_PROTOCOL.md",
         "TESTING_GUIDE.md",
@@ -371,13 +382,31 @@
       "modified": "2025-12-29T23:00:24.808005"
     },
     {
+      "path": ".brain/artifacts/research/gentlequest_interview_framework.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/gentlequest_interview_framework.md",
+      "faculty": "research",
+      "title": "GentleQuest User Interview Framework",
+      "summary": "**Report Date:** January 3, 2026 **Researcher:** GentleQuest Researcher Agent **Purpose:** Validate Problem-Solution Fit for GentleQuest Mental Health App  --- ",
+      "size_bytes": 9313,
+      "modified": "2026-01-03T14:28:58.963513"
+    },
+    {
+      "path": ".brain/artifacts/research/competitor_voc_analysis.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/competitor_voc_analysis.md",
+      "faculty": "research",
+      "title": "Competitor Voice of Customer (VoC) Analysis",
+      "summary": "**Date:** January 4, 2026 **Source:** Reddit (r/ADHD, r/Anxiety, r/Headspace, r/Calm) **Confidence:** HIGH (Based on direct user quotes)  --- ",
+      "size_bytes": 2506,
+      "modified": "2026-01-04T15:42:01.252656"
+    },
+    {
       "path": ".brain/artifacts/research/simulated_user_research.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/research/simulated_user_research.md",
       "faculty": "research",
-      "title": "Simulated User Research: Web Signal Analysis",
-      "summary": "> Methodology: Crawled Reddit, HN, forums for organic demand signals. Analyzed with bias awareness.  --- ",
-      "size_bytes": 4938,
-      "modified": "2025-12-27T17:37:26.895845"
+      "title": "Simulated User Research: GentleQuest PMF Hypothesis",
+      "summary": "**Date:** January 3, 2026 **Method:** Synthetic Persona Simulation (n=3) **Goal:** Validate interview scripts & generate baseline PMF hypotheses.  --- ",
+      "size_bytes": 4015,
+      "modified": "2026-01-03T14:31:03.578881"
     },
     {
       "path": ".brain/artifacts/test/eval_001_our_development.md",
@@ -591,9 +620,9 @@
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/marketing/launch_posts.md",
       "faculty": "research",
       "title": "Launch Posts for mcp-server-nucleus",
-      "summary": "``` 🧠 Just shipped mcp-server-nucleus v0.2.1  The first multi-agent orchestration MCP server for Claude Desktop.  → 10 tools for agent coordination → Persistent memory via local .brain/ → One-command ...",
-      "size_bytes": 2696,
-      "modified": "2025-12-27T16:17:56.308131"
+      "summary": "``` 🧠 Just shipped mcp-server-nucleus v0.3.0  Multi-agent orchestration for Claude Desktop & Windsurf.  → 16 tools (6 new V2 Task tools!) → Priority queues + skill-based routing → Atomic task claiming...",
+      "size_bytes": 3030,
+      "modified": "2026-01-03T21:18:20.739178"
     },
     {
       "path": ".brain/artifacts/marketing/demo_video_plan.md",
@@ -731,6 +760,15 @@
       "modified": "2025-12-27T17:59:58.390794"
     },
     {
+      "path": ".brain/artifacts/strategy/nucleus_positioning.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/strategy/nucleus_positioning.md",
+      "faculty": "strategy",
+      "title": "Nucleus MCP: Product Positioning",
+      "summary": "> **Tagline:** Persistent memory for AI coding agents. Works everywhere, breaks nothing.  --- ",
+      "size_bytes": 3463,
+      "modified": "2026-01-03T08:33:57.338760"
+    },
+    {
       "path": ".brain/artifacts/strategy/strategy_debate.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/strategy/strategy_debate.md",
       "faculty": "strategy",
@@ -745,8 +783,8 @@
       "faculty": "execution",
       "title": "Daily Digest",
       "summary": "--- ",
-      "size_bytes": 6005,
-      "modified": "2026-01-02T08:00:13.394401"
+      "size_bytes": 7007,
+      "modified": "2026-01-05T08:05:56.094948"
     },
     {
       "path": ".brain/ledger/decisions.md",
@@ -783,6 +821,15 @@
       "summary": "> Institutional memory of what worked, what didn't, and why. > Updated by all agents; curated by Synthesizer.  --- ",
       "size_bytes": 1924,
       "modified": "2025-12-26T22:11:42.451448"
+    },
+    {
+      "path": ".brain/features/proofs/crisis_detection.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/features/proofs/crisis_detection.md",
+      "faculty": "general",
+      "title": "Proof: Crisis Detection",
+      "summary": "> Generated: 2026-01-06 05:36:59 > Feature ID: `crisis_detection` > Product: gentlequest > Version: 1.2.0  --- ",
+      "size_bytes": 1207,
+      "modified": "2026-01-06T05:36:59.132922"
     },
     {
       "path": ".brain/workflows/first_activation.md",
@@ -889,8 +936,8 @@
       "faculty": "general",
       "title": "Thread Registry",
       "summary": "> **Purpose:** Central registry of all Antigravity conversation threads and their identities. > **Protocol:** Agents should read this file on activation to understand their role.  --- ",
-      "size_bytes": 7791,
-      "modified": "2025-12-31T02:14:25.403498"
+      "size_bytes": 7790,
+      "modified": "2026-01-03T11:32:41.268151"
     },
     {
       "path": ".brain/meta/active_task_list.md",
@@ -1118,6 +1165,24 @@
       "modified": "2025-12-22T00:14:21.254325"
     },
     {
+      "path": "docs/INDIEHACKERS_PROTOCOL.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/INDIEHACKERS_PROTOCOL.md",
+      "faculty": "operations",
+      "title": "IndieHackers Engagement Protocol",
+      "summary": "> **Goal:** Get \"Roast\" feedback on GentleQuest concept/onboarding from fellow builders. > **Platform:** IndieHackers.com & r/indiehackers  --- ",
+      "size_bytes": 1827,
+      "modified": "2026-01-03T09:44:46.143496"
+    },
+    {
+      "path": "docs/MARKETING_MASTER_PLAYBOOK.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/MARKETING_MASTER_PLAYBOOK.md",
+      "faculty": "research",
+      "title": "Marketing Master Playbook",
+      "summary": "> **Two Products. Two Audiences. Shared Infrastructure.** > **Marketing = Social + SEO + Partnerships + PR + Paid + Product-Led Growth**  --- ",
+      "size_bytes": 6758,
+      "modified": "2026-01-03T17:21:48.815158"
+    },
+    {
       "path": "docs/AGENTIC_COMPANY_ARCHITECTURE.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/AGENTIC_COMPANY_ARCHITECTURE.md",
       "faculty": "strategy",
@@ -1145,6 +1210,15 @@
       "modified": "2025-08-10T15:03:15.764642"
     },
     {
+      "path": "docs/GENTLEQUEST_FACEBOOK_STRATEGY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/GENTLEQUEST_FACEBOOK_STRATEGY.md",
+      "faculty": "strategy",
+      "title": "GentleQuest Facebook Growth Strategy & Agent Protocols",
+      "summary": "> **Goal:** Recruit beta testers and build community without triggering \"spam\" filters or damaging brand reputation in sensitive mental health groups. > **Owner:** Comet (Browser Agent) / Founder  ---...",
+      "size_bytes": 3549,
+      "modified": "2026-01-03T09:44:29.731675"
+    },
+    {
       "path": "docs/PROGRESS_TRACKER.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/PROGRESS_TRACKER.md",
       "faculty": "general",
@@ -1154,6 +1228,15 @@
       "modified": "2025-12-22T00:21:16.318030"
     },
     {
+      "path": "docs/AGENTIC_USER_RECRUITMENT_PLAYBOOK.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/AGENTIC_USER_RECRUITMENT_PLAYBOOK.md",
+      "faculty": "strategy",
+      "title": "Agentic User Recruitment Playbook",
+      "summary": "> **Purpose:** Scalable, agent-driven user validation and recruitment for GentleQuest (and Nucleus). > **Agents Involved:** Antigravity (Dev), Comet (Reddit/Browser), Synthesizer (Strategy)  --- ",
+      "size_bytes": 6045,
+      "modified": "2026-01-03T09:00:37.042710"
+    },
+    {
       "path": "docs/PRODUCT_STRATEGY_DEPTH_OVER_BREADTH.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/PRODUCT_STRATEGY_DEPTH_OVER_BREADTH.md",
       "faculty": "strategy",
@@ -1161,6 +1244,15 @@
       "summary": "**Date:** December 21, 2025 **Context:** Strategic guidance on meaningful product progression  --- ",
       "size_bytes": 5178,
       "modified": "2025-12-22T00:07:26.448168"
+    },
+    {
+      "path": "docs/NUCLEUS_GROWTH_STRATEGY.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/NUCLEUS_GROWTH_STRATEGY.md",
+      "faculty": "strategy",
+      "title": "Nucleus Growth Strategy & Positioning",
+      "summary": "> **Product:** Nucleus (CLI Tool / MCP Server) > **Value Prop:** \"Persistent Context Memory for AI Agents\" > **Target:** Solo Founders, Devs using Cursor/Windsurf/Claude  --- ",
+      "size_bytes": 2013,
+      "modified": "2026-01-03T09:45:00.439900"
     },
     {
       "path": "docs/IMPLEMENTATION_ROADMAP.md",
@@ -1204,8 +1296,8 @@
       "faculty": "strategy",
       "title": "Gentlequest Reddit Growth Strategy",
       "summary": "--- ",
-      "size_bytes": 22472,
-      "modified": "2025-12-30T13:44:08.579855"
+      "size_bytes": 22571,
+      "modified": "2026-01-03T17:21:46.768421"
     },
     {
       "path": "docs/ci_release_notes.md",
@@ -1262,6 +1354,15 @@
       "modified": "2025-11-21T21:14:48.038861"
     },
     {
+      "path": "docs/MARKETING_HANDOFF_PROTOCOLS.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/MARKETING_HANDOFF_PROTOCOLS.md",
+      "faculty": "operations",
+      "title": "Marketing Ops Handoff Protocols",
+      "summary": "> **Philosophy:** Decentralized Command. > **Comet:** Head of Community (Reddit). Full authority on tone/execution. > **Antigravity:** Head of Strategy & Ops (Facebook/Other). > **Founder:** The Boss....",
+      "size_bytes": 1932,
+      "modified": "2026-01-03T10:06:35.168302"
+    },
+    {
       "path": "docs/XP_UNDO_TEST_CHECKLIST.md",
       "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/XP_UNDO_TEST_CHECKLIST.md",
       "faculty": "execution",
@@ -1278,6 +1379,15 @@
       "summary": "> **Version:** 2025.Final > **Paradigm:** Level 5 Autonomy | 6th Revolution Pioneer > **Core Thesis:** Orchestration Logic IS the Moat  --- ",
       "size_bytes": 28401,
       "modified": "2025-12-26T21:23:46.891641"
+    },
+    {
+      "path": "docs/NUCLEUS_STRATEGY_BLUEPRINT.md",
+      "absolute_path": "/Users/lokeshgarg/ai-mvp-backend/docs/NUCLEUS_STRATEGY_BLUEPRINT.md",
+      "faculty": "strategy",
+      "title": "Nucleus Strategy Blueprint: The \"Agent OS\"",
+      "summary": "> **Core Insight:** The market is flooded with \"Hard Drives\" (Semantic Memory/Vector DBs) but lacks \"Operating Systems\" (Operational Memory/Process Management). Nucleus fills this gap.  --- ",
+      "size_bytes": 4464,
+      "modified": "2026-01-03T12:39:21.792919"
     },
     {
       "path": "docs/mobile_signing_guide.md",
@@ -1654,8 +1764,8 @@
       "faculty": "general",
       "title": "IIP Miro Export — Full Context EXPANDED",
       "summary": "This document is the **fully expanded version** of `IIP_MIRO_FULL_CONTEXT.md`, including: - **Weeks 4–5 solo field research** (all team members' personas, insights, reflections) - **Week 7 complete so...",
-      "size_bytes": 52534,
-      "modified": "2026-01-02T20:17:52.615538"
+      "size_bytes": 82929,
+      "modified": "2026-01-03T15:14:58.417986"
     },
     {
       "path": "docs/iip_reference/derived/EXPANSION_SUMMARY.md",

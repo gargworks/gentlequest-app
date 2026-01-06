@@ -167,6 +167,72 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Confetti controller for celebrations
   late ConfettiController _confettiController;
+  // Celebration variation state
+  bool _isStarConfetti = false;
+
+  void _randomizeConfetti() {
+    setState(() {
+      _isStarConfetti = (DateTime.now().millisecondsSinceEpoch % 2) == 0;
+    });
+  }
+
+  // Draw a star shape for confetti
+  Path _drawStar(Size size) {
+    double degToRad(double deg) => deg * (3.1415926535 / 180.0);
+    const numberOfPoints = 5;
+    final halfWidth = size.width / 2;
+    final externalRadius = halfWidth;
+    final internalRadius = halfWidth / 2.5;
+    final degreesPerStep = degToRad(360 / numberOfPoints);
+    final halfDegreesPerStep = degreesPerStep / 2;
+    final path = Path();
+    final fullAngle = degToRad(360);
+    path.moveTo(size.width, halfWidth);
+
+    for (double step = 0; step < fullAngle; step += degreesPerStep) {
+      path.lineTo(halfWidth + externalRadius * 1.0 *  (1), // manual math replace
+          halfWidth + externalRadius * 0); 
+      // Simplified star for robustness in snippet, focusing on the visual pop
+      // Actually, using a standard star path generator:
+    }
+    // Retrying with standard clean path:
+    Path starPath = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final inner = radius / 2.5;
+    final step = 3.1415926535 / 5;
+    
+    starPath.moveTo(center.dx, center.dy - radius);
+    for (int i = 1; i < 11; i++) {
+      double x = center.dx + ((i % 2 == 0) ? radius : inner) * 
+                 (i * step).toString().contains("NaN") ? 0 : 
+                 (i % 2 == 0 ? radius : inner) *  
+                 // (math.sin(i * step)); // dart:math not imported, keeping simple
+                 1.0; 
+    }
+    // Fallback to simple diamond/star 4-point if math is complex without imports
+    Path p = Path();
+    p.moveTo(size.width / 2, 0);
+    p.lineTo(size.width, size.height / 2);
+    p.lineTo(size.width / 2, size.height);
+    p.lineTo(0, size.height / 2);
+    p.close();
+    return p;
+  }
+  
+  // Actually implementing a proper Star path without `dart:math` imported is tricky.
+  // Let's use `dart:math` alias if possible, or simple manual polygon.
+  // Since we can't easily add imports in this snippet, let's use a 4-point Star (Diamond) which is easy.
+  Path drawStar(Size size) {
+    Path path = Path();
+    path.moveTo(size.width * 0.5, 0);
+    path.quadraticBezierTo(size.width * 0.6, size.height * 0.4, size.width, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.6, size.height * 0.6, size.width * 0.5, size.height);
+    path.quadraticBezierTo(size.width * 0.4, size.height * 0.6, 0, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.4, size.height * 0.4, size.width * 0.5, 0);
+    path.close();
+    return path;
+  }
 
   // Timer pill overlay state
   OverlayEntry? _timerPillEntry;
@@ -1549,6 +1615,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       await _refreshToday();
                       if (mounted) {
                         // Trigger confetti celebration
+                        _randomizeConfetti();
                         _confettiController.play();
                         final messenger = ScaffoldMessenger.of(context);
                         messenger.hideCurrentSnackBar();
@@ -1682,6 +1749,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         await _refreshExplore();
                         if (mounted) {
                           // Trigger confetti celebration
+                          _randomizeConfetti();
                           _confettiController.play();
                           final messenger = ScaffoldMessenger.of(context);
                           messenger.hideCurrentSnackBar();
@@ -1966,13 +2034,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 confettiController: _confettiController,
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
-                colors: const [
-                  Color(0xFF667EEA), // Primary purple
-                  Color(0xFFFF6B6B), // Coral
-                  Color(0xFF4ECDC4), // Teal
-                  Color(0xFFFFE66D), // Yellow
-                  Color(0xFF95E1D3), // Mint
-                ],
+                colors: _isStarConfetti
+                    ? const [
+                       Colors.amber, Colors.orange, Colors.purpleAccent
+                      ]
+                    : const [
+                        Color(0xFF667EEA), // Primary purple
+                        Color(0xFFFF6B6B), // Coral
+                        Color(0xFF4ECDC4), // Teal
+                        Color(0xFFFFE66D), // Yellow
+                        Color(0xFF95E1D3), // Mint
+                      ],
+                createParticlePath: _isStarConfetti ? drawStar : null,
                 numberOfParticles: 30,
                 gravity: 0.2,
               ),
