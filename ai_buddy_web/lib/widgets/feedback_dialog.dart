@@ -227,6 +227,6 @@ Future<void> checkAndShowFeedback(BuildContext context) async {
     }
   } catch (e) {
     // Silently fail to not disrupt user experience
-    print('Error checking feedback prompt: $e');
+    debugPrint('Error checking feedback prompt: $e');
   }
 }
