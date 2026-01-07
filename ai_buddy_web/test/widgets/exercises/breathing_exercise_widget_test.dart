@@ -34,7 +34,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Verify active state
-    expect(find.text('Cycle 1 / 1'), findsOneWidget); // Progress indicator
+    expect(find.text('Cycle 1 of 1'), findsOneWidget); // Progress indicator
     expect(find.text('In'), findsOneWidget); // Instruction
   });
 }
