@@ -1838,6 +1838,7 @@ def _register_routes(app: Flask) -> None:
                     parts = [p for p in _re.split(r"(?<=[.!?])\s+", text) if p]
                     if len(parts) <= 1:
                         chunks = text.split(" ")
+                        joiner = " "
                     else:
                         # Re-attach a single space that was consumed by the split for all but the last part.
                         chunks = [
