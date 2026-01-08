@@ -30,7 +30,7 @@ function App() {
               <span className="gradient-text">Without Pressure</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-lg">
-              The AI companion that helps you build mental resilience through gentle,
+              The gentle guide that helps you build mental resilience through
               gamified daily quests. Tiny wins when you're overwhelmed.
             </p>
 
@@ -103,9 +103,9 @@ function App() {
               <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI Buddy Alex</h3>
+              <h3 className="text-xl font-semibold mb-3">Meet Alex</h3>
               <p className="text-gray-300">
-                A compassionate AI that remembers your context
+                A compassionate listener that remembers your context
                 and adapts to your unique journey.
               </p>
             </div>
