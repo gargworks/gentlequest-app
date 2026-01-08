@@ -791,7 +791,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   borderRadius: BorderRadius.circular(16.h),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4.h,
                       offset: Offset(0, 2.h),
                     ),
@@ -1026,7 +1026,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   borderRadius: BorderRadius.circular(16.h),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 4.h,
                       offset: Offset(0, 2.h),
                     ),
@@ -1275,7 +1275,7 @@ class _TypingDotsState extends State<_TypingDots>
             width: 8.h,
             height: 8.h,
             decoration: BoxDecoration(
-              color: baseColor.withOpacity(0.6),
+              color: baseColor.withValues(alpha: 0.6),
               shape: BoxShape.circle,
             ),
           );
@@ -1299,7 +1299,7 @@ class _TypingDotsState extends State<_TypingDots>
               width: 8.h,
               height: 8.h,
               decoration: BoxDecoration(
-                color: baseColor.withOpacity(v(i)),
+                color: baseColor.withValues(alpha: v(i)),
                 shape: BoxShape.circle,
               ),
             );

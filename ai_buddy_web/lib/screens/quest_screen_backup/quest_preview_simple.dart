@@ -218,7 +218,7 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: quest.categoryColor.withOpacity(0.2),
+                          color: quest.categoryColor.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(quest.icon, color: quest.categoryColor),
@@ -315,7 +315,7 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: quest.categoryColor.withOpacity(0.2),
+                      color: quest.categoryColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(quest.icon, color: quest.categoryColor),

@@ -70,7 +70,7 @@ class QuestScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(24.h),
             boxShadow: [
               BoxShadow(
-                color: ColorConstant.black900.withOpacity(0.05),
+                color: ColorConstant.black900.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: Offset(0, 4),
               ),

@@ -248,7 +248,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isSelected 
-                      ? Theme.of(context).primaryColor.withOpacity(0.1) 
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1) 
                       : Colors.grey[100],
                   border: Border.all(
                     color: isSelected 
@@ -373,7 +373,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _getSeverityColor(severity).withOpacity(0.1),
+              color: _getSeverityColor(severity).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _getSeverityColor(severity)),
             ),

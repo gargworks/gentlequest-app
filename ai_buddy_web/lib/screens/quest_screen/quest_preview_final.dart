@@ -153,7 +153,7 @@ class QuestsHomeScreen extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _getCategoryColor(quest.category).withOpacity(0.2),
+                color: _getCategoryColor(quest.category).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(quest.icon, color: _getCategoryColor(quest.category)),
@@ -239,7 +239,7 @@ class QuestsHomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(quest.category).withOpacity(0.2),
+                  color: _getCategoryColor(quest.category).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

@@ -33,7 +33,7 @@ class QuestCardWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.h),
           boxShadow: [
             BoxShadow(
-              color: ColorConstant.black900.withOpacity(0.05),
+              color: ColorConstant.black900.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -49,7 +49,7 @@ class QuestCardWidget extends StatelessWidget {
                   width: 48.h,
                   height: 48.h,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.h),
                   ),
                   child: Icon(

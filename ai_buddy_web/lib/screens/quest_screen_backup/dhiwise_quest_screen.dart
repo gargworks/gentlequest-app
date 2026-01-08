@@ -80,7 +80,7 @@ class DhiwiseQuestScreen extends StatelessWidget {
             Text(
               'Complete quests to earn rewards',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
             ),
           ],
@@ -156,7 +156,7 @@ class DhiwiseQuestScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _getCategoryColor(quest.category).withOpacity(0.2),
+            color: _getCategoryColor(quest.category).withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -263,7 +263,7 @@ class DhiwiseQuestScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(quest.category).withOpacity(0.2),
+                  color: _getCategoryColor(quest.category).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

@@ -131,19 +131,19 @@ class _QuestScreenState extends State<QuestScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).primaryColor.withOpacity(0.12),
-            Theme.of(context).primaryColor.withOpacity(0.04),
+            Theme.of(context).primaryColor.withValues(alpha: 0.12),
+            Theme.of(context).primaryColor.withValues(alpha: 0.04),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).primaryColor.withOpacity(0.15),
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -163,7 +163,7 @@ class _QuestScreenState extends State<QuestScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -211,7 +211,7 @@ class _QuestScreenState extends State<QuestScreen>
           Container(
             height: 32,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(10),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -221,7 +221,7 @@ class _QuestScreenState extends State<QuestScreen>
                   width: 60,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.25),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: Align(
@@ -307,8 +307,8 @@ class _QuestScreenState extends State<QuestScreen>
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: quest.status == QuestStatus.completed
-              ? Colors.green.withOpacity(0.5)
-              : Colors.grey.withOpacity(0.2),
+              ? Colors.green.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -327,7 +327,7 @@ class _QuestScreenState extends State<QuestScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: quest.categoryColor.withOpacity(0.1),
+                      color: quest.categoryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -500,7 +500,7 @@ class _QuestScreenState extends State<QuestScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(category).withOpacity(0.1),
+                      color: _getCategoryColor(category).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -601,7 +601,7 @@ class _QuestScreenState extends State<QuestScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: quest.categoryColor.withOpacity(0.1),
+                  color: quest.categoryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(quest.icon, color: quest.categoryColor, size: 32),
@@ -625,7 +625,7 @@ class _QuestScreenState extends State<QuestScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: quest.categoryColor.withOpacity(0.1),
+                        color: quest.categoryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

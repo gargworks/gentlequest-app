@@ -21,6 +21,10 @@
 !start.sh
 !nginx.conf
 
+# Allow Android App Links
+!.well-known/
+!.well-known/**
+
 # Allow Flutter sources strictly required to build web
 !ai_buddy_web/
 !ai_buddy_web/pubspec.yaml
