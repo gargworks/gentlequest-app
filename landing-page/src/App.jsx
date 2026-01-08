@@ -163,9 +163,9 @@ function App() {
             <span className="text-sm text-gray-400">© 2026 GentleQuest</span>
           </div>
           <div className="flex gap-6 text-sm text-gray-400">
-            <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="/terms" className="hover:text-white transition-colors">Terms</a>
-            <a href="/support" className="hover:text-white transition-colors">Support</a>
+            <a href="https://app.gentlequest.app/privacy" className="hover:text-white transition-colors">Privacy</a>
+            <a href="https://app.gentlequest.app/terms" className="hover:text-white transition-colors">Terms</a>
+            <a href="mailto:support@gentlequest.app" className="hover:text-white transition-colors">Support</a>
           </div>
         </div>
       </footer>
