@@ -159,7 +159,7 @@ function App() {
       <footer className="px-6 py-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <img src="/icon-512.png" alt="GentleQuest" className="w-8 h-8 rounded-lg" />
+            <img src="/logo-192.png" alt="GentleQuest" className="w-8 h-8 rounded-lg" />
             <span className="text-sm text-gray-400">© 2026 GentleQuest</span>
           </div>
           <div className="flex gap-6 text-sm text-gray-400">
