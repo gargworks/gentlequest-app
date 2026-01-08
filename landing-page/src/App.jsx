@@ -1,8 +1,8 @@
 import { Heart, MessageCircle, Brain, Download, Smartphone, ExternalLink } from 'lucide-react';
 
 function App() {
-  const IOS_APP_URL = 'https://apps.apple.com/us/app/gentlequest/id6737521877';
-  const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=com.gentlequest.app';
+  const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
+  const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
   const WEB_APP_URL = 'https://app.gentlequest.app';
 
   return (
