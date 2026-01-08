@@ -7,9 +7,9 @@ ENVIRONMENT_NAME="${ENVIRONMENT:-docker}"
 
 # Decide nginx listen port
 # In docker/local, always keep nginx on 80 to avoid conflicts with Gunicorn (5055).
-# Only honor PORT when running on Render/production-like environments.
+# Honor PORT when running on Render, Cloud Run, or production-like environments.
 PORT_TO_USE="80"
-if [ -n "${PORT:-}" ] && { [ -n "${RENDER:-}" ] || [ -n "${RENDER_SERVICE_ID:-}" ] || [ "${ENVIRONMENT_NAME}" = "render" ] || [ "${ENVIRONMENT_NAME}" = "production" ]; }; then
+if [ -n "${PORT:-}" ] && { [ -n "${RENDER:-}" ] || [ -n "${RENDER_SERVICE_ID:-}" ] || [ -n "${K_SERVICE:-}" ] || [ "${ENVIRONMENT_NAME}" = "render" ] || [ "${ENVIRONMENT_NAME}" = "production" ] || [ "${ENVIRONMENT_NAME}" = "gcp" ]; }; then
   PORT_TO_USE="${PORT}"
 fi
 
