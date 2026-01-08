@@ -6,6 +6,8 @@ import requests
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
 import google.generativeai as genai
 from flask import Flask, jsonify, request
 from sqlalchemy import text
@@ -349,6 +351,25 @@ def register_community_routes(app: Flask) -> None:
     limits_post = str(
         app.config.get("RATE_LIMITS_COMMUNITY_POST", "6 per minute; 60 per day")
     )
+
+    @app.route("/api/community/flags", methods=["GET"])
+    def community_flags():
+        try:
+            return (
+                jsonify(
+                    {
+                        "enabled": _enabled(),
+                        "posting_enabled": _posting_enabled(),
+                        "templates_only": str(
+                            app.config.get("TEMPLATES_ONLY", "false")
+                        ).lower()
+                        == "true",
+                    }
+                ),
+                200,
+            )
+        except Exception:
+            return jsonify({"error": "Failed to fetch flags"}), 500
 
     @app.route("/api/community/feed", methods=["GET"])
     @app.limiter.limit(limits_feed)
