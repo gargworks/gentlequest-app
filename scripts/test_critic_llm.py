@@ -18,7 +18,7 @@ SERVER_SRC = PROJECT_ROOT / "mcp-server-nucleus" / "src"
 sys.path.insert(0, str(SERVER_SRC))
 
 try:
-    import google.generativeai as genai
+    from google import genai
     from mcp_server_nucleus.runtime.factory import ContextFactory
     from mcp_server_nucleus.runtime.agent import EphemeralAgent
 except ImportError as e:
@@ -32,14 +32,13 @@ async def test_critic_loop():
     print("MDR_002 CRITIC LOOP TEST")
     print("=" * 60)
     
-    # 1. Configure Gemini
+    # 1. Configure Gemini with new Client API
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("❌ GEMINI_API_KEY not set")
         return False
     
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=api_key)
     
     print(f"✅ Gemini configured")
     
@@ -60,7 +59,11 @@ async def test_critic_loop():
     print(context['system_prompt'][:300])
     print("...")
     
-    # 3. Spawn Agent with LLM
+    # 3. Spawn Agent (Note: agent.py still uses old API internally)
+    # For this test, we'll create a simple model wrapper
+    import google.generativeai as old_genai
+    old_genai.configure(api_key=api_key)
+    model = old_genai.GenerativeModel("gemini-2.0-flash")
     agent = EphemeralAgent(model=model, context=context)
     
     print("\n" + "=" * 60)

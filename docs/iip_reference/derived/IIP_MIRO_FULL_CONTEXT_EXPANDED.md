@@ -1675,6 +1675,8 @@ In a typical school day, Emily navigates academic pressure and unstructured soci
   - `docs/iip_reference/derived/IIP_MIRO_CONTEXT_TEXT.md`
   - `docs/iip_reference/derived/IIP_MIRO_TEAM_CONTENT.md`
 - **Weeks 4–5 solo (focused):** `docs/iip_reference/derived/IIP_MIRO_WEEKS_4_5_SOLO.md`
+- **Week 9 & 10 Individual Work (Complete):** `docs/iip_reference/derived/WEEK_9_10_INDIVIDUAL_COMPLETE.md`
+- **Week 14 Final Deliverable (Script/Outline):** `docs/iip_reference/derived/WEEK_14_FINAL_DELIVERABLE.md`
 
 ## Appendix C: Mermaid Diagram Reference
 

@@ -26,6 +26,8 @@ SERVER_SRC = CURRENT_DIR.parent / "mcp-server-nucleus" / "src"
 sys.path.append(str(SERVER_SRC))
 
 try:
+    import warnings
+    warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
     import google.generativeai as genai
     from mcp_server_nucleus.runtime.factory import ContextFactory
     from mcp_server_nucleus.runtime.agent import EphemeralAgent
@@ -71,7 +73,7 @@ async def main():
     print("🏁 SESSION COMPLETE")
     print("="*60 + "\n")
     
-    logger.info(f"Agent finished. Steps: {len(result.get('history', []))}")
+    logger.info(f"Agent finished. Result type: {type(result).__name__}")
 
 if __name__ == "__main__":
     asyncio.run(main())

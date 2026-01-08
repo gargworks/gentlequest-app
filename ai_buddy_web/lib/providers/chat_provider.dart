@@ -18,6 +18,8 @@ class ChatProvider extends ChangeNotifier {
   final List<StreamSubscription<Map<String, dynamic>>> _subscriptions = [];
   final List<void Function()> _closers = [];
 
+  bool _isOptimisticGreeting = false; // Track if we are showing the temporary local greeting
+
   // Warm greeting variations for personality
   static const List<String> _greetings = [
     "This is your space to think out loud. Share what's on your mind. I'm here when you're ready. 🌱",
@@ -93,6 +95,7 @@ class ChatProvider extends ChangeNotifier {
         ),
       );
       _hasShownGreeting = true;
+      _isOptimisticGreeting = true; // Mark as optimistic
       notifyListeners();
       // Update greeting with context asynchronously
       _updateGreetingWithContext();
@@ -102,7 +105,8 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> _updateGreetingWithContext() async {
     final contextualGreeting = await _getGreetingWithContext();
-    if (_messages.isNotEmpty && !_messages.first.isUser) {
+    // Only update if we are still showing the optimistic greeting
+    if (_isOptimisticGreeting && _messages.isNotEmpty && !_messages.first.isUser) {
       // Only update if it's different from the sync greeting
       if (_messages.first.content != contextualGreeting) {
         _messages[0] = Message(
@@ -133,6 +137,7 @@ class ChatProvider extends ChangeNotifier {
         _messages
           ..clear()
           ..addAll(history);
+        _isOptimisticGreeting = false; // History loaded, no longer optimistic
       }
     } catch (e) {
       debugPrint('❌ Error loading chat history: $e');

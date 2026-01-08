@@ -1,87 +1,62 @@
 {
-    "triggers": [
-        {
-            "id": "strategy_to_architect",
-            "event": "strategy_updated",
-            "emitter": "strategist",
-            "activates": [
-                "architect",
-                "synthesizer"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "spec_to_dev",
-            "event": "spec_ready_for_development",
-            "emitter": "architect",
-            "activates": [
-                "developer"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "code_to_critic",
-            "event": "implementation_complete",
-            "emitter": "developer",
-            "activates": [
-                "critic"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "review_pass",
-            "event": "review_approved",
-            "emitter": "critic",
-            "activates": [
-                "synthesizer"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "review_fail",
-            "event": "review_blocked",
-            "emitter": "critic",
-            "activates": [
-                "developer"
-            ],
-            "condition": "severity >= HIGH"
-        },
-        {
-            "id": "market_intel",
-            "event": "market_shift_detected",
-            "emitter": "researcher",
-            "activates": [
-                "strategist"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "founder_escalation",
-            "event": "founder_decision_needed",
-            "emitter": "*",
-            "activates": [
-                "synthesizer"
-            ],
-            "condition": "severity == CRITICAL"
-        },
-        {
-            "id": "meta_optimization",
-            "event": "meta_optimization_complete",
-            "emitter": "synthesizer",
-            "activates": [
-                "*"
-            ],
-            "condition": "always"
-        },
-        {
-            "id": "dogfood_retrospective",
-            "event": "sprint_completed",
-            "emitter": "*",
-            "activates": [
-                "synthesizer"
-            ],
-            "condition": "always",
-            "action": "Prompt user for dogfood retrospective. Update test/dogfood_log.md with session ratings."
-        }
-    ]
+  "version": "2.0",
+  "last_updated": "2026-01-08T11:40:00+05:30",
+  "triggers": [
+    {
+      "id": "task-state-changed",
+      "event_type": "task_state_changed",
+      "condition": "always",
+      "activates": "synthesizer",
+      "description": "Log task state transitions for digest"
+    },
+    {
+      "id": "task-created",
+      "event_type": "task_created",
+      "condition": "always",
+      "activates": "orchestrator",
+      "description": "New task added to queue"
+    },
+    {
+      "id": "commitment-created",
+      "event_type": "commitment_created",
+      "condition": "always",
+      "activates": "synthesizer",
+      "description": "New commitment for tracking"
+    },
+    {
+      "id": "commitment-closed",
+      "event_type": "commitment_closed",
+      "condition": "always",
+      "activates": "synthesizer",
+      "description": "Commitment closed, update velocity"
+    },
+    {
+      "id": "health-check",
+      "event_type": "health_status",
+      "condition": "always",
+      "activates": "synthesizer",
+      "description": "Health check results for monitoring"
+    },
+    {
+      "id": "deploy-complete",
+      "event_type": "deploy_complete",
+      "condition": "always",
+      "activates": "tester",
+      "description": "Deploy finished, run verification"
+    },
+    {
+      "id": "session-saved",
+      "event_type": "session_saved",
+      "condition": "always",
+      "activates": "synthesizer",
+      "description": "Context saved for continuity"
+    },
+    {
+      "id": "critical-escalation",
+      "event_type": "*",
+      "condition": "severity == 'CRITICAL'",
+      "activates": "synthesizer",
+      "description": "Any critical event escalates to Synthesizer"
+    }
+  ]
 }

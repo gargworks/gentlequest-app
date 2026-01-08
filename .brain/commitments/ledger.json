@@ -1,11 +1,87 @@
 {
-  "commitments": [],
-  "last_scan": "2026-01-06T22:12:26.783404",
+  "commitments": [
+    {
+      "id": "comm_20260107_092703_0",
+      "created": "2026-01-07T09:27:03.504830",
+      "source_file": "manual",
+      "source_line": 0,
+      "type": "task",
+      "source": "manual",
+      "description": "Marathon discovered: 9 files need google.genai migration",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 4,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "closed",
+      "closed_at": "2026-01-08T09:31:48.100130",
+      "closed_method": "do_now"
+    },
+    {
+      "id": "comm_20260107_221728_1",
+      "created": "2026-01-07T22:17:28.928725",
+      "source_file": "manual",
+      "source_line": 0,
+      "type": "task",
+      "source": "manual",
+      "description": "Migrate remaining 8 files from google.generativeai to google.genai (agent.py, nightly_agent.py, community.py, autopilot*.py) - BREAKING API CHANGES require Client pattern",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "closed",
+      "closed_at": "2026-01-08T09:24:05.939503",
+      "closed_method": "archived"
+    },
+    {
+      "id": "comm_20260108_113302_2",
+      "created": "2026-01-08T11:33:02.108072",
+      "source_file": "manual",
+      "source_line": 0,
+      "type": "task",
+      "source": "manual",
+      "description": "Test commitment for event emission",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 4,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    }
+  ],
+  "last_scan": "2026-01-07T09:35:03.806125",
   "stats": {
-    "total_open": 0,
-    "green_tier": 0,
+    "total_open": 1,
+    "green_tier": 1,
     "yellow_tier": 0,
     "red_tier": 0,
-    "by_type": {}
-  }
+    "by_type": {
+      "task": 1
+    }
+  },
+  "last_interaction": "2026-01-07T09:24:34.077973"
 }

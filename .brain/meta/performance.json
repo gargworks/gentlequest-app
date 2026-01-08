@@ -1,62 +1,230 @@
 {
-    "initialized": "2025-12-26T21:20:00+05:30",
-    "last_updated": "2025-12-26T22:20:32+05:30",
-    "agents": {
-        "strategist": {
-            "tasks_completed": 1,
-            "success_rate": 1.0,
-            "avg_time_minutes": 54,
-            "escalation_rate": 0,
-            "rework_rate": 0
-        },
-        "architect": {
-            "tasks_completed": 1,
-            "success_rate": 1.0,
-            "avg_time_minutes": 68,
-            "escalation_rate": 0,
-            "rework_rate": 0
-        },
-        "developer": {
-            "tasks_completed": 0,
-            "success_rate": null,
-            "avg_time_minutes": null,
-            "escalation_rate": null,
-            "rework_rate": null
-        },
-        "critic": {
-            "tasks_completed": 0,
-            "success_rate": null,
-            "avg_time_minutes": null,
-            "escalation_rate": null,
-            "rework_rate": null
-        },
-        "researcher": {
-            "tasks_completed": 1,
-            "success_rate": 1.0,
-            "avg_time_minutes": 38,
-            "escalation_rate": 0,
-            "rework_rate": 0
-        },
-        "synthesizer": {
-            "tasks_completed": 2,
-            "success_rate": 1.0,
-            "avg_time_minutes": 10,
-            "escalation_rate": 0,
-            "rework_rate": 0
-        }
+  "initialized": "2025-12-26T21:20:00+05:30",
+  "last_updated": "2026-01-08T11:40:31.168376",
+  "agents": {
+    "orchestrator": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain_add_loop": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain_update_task": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "nucleus_mcp": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "health_check": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "user": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "marathon-test": {
+      "completed": 1,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "depth_tracker": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "meta_optimizer": {
+      "completed": 2,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "test": {
+      "completed": 1,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "nightly_agent": {
+      "completed": 57,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "claude": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "stress-agent": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "production-verifier": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "antigravity": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "researcher": {
+      "completed": 3,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "stuck-agent": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "e2e-test-agent": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "founder": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
     },
     "system": {
-        "total_events": 7,
-        "handoff_efficiency": 1.0,
-        "founder_interrupts": 0,
-        "auto_approvals": 3,
-        "optimization_cycles": 0
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
     },
-    "sprint_001_metrics": {
-        "tasks_assigned": 3,
-        "tasks_completed": 3,
-        "completion_rate": 1.0,
-        "avg_completion_hours": 0.5,
-        "escalations": 0
+    "autonomous_session": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "mcp_test": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "master_controller": {
+      "completed": 1,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "Windsurf": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "backend-analytics-agent": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "synthesizer": {
+      "completed": 7,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "tester": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "developer": {
+      "completed": 2,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "strategist": {
+      "completed": 3,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "architect": {
+      "completed": 2,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
     }
+  },
+  "system": {
+    "total_events": 7,
+    "handoff_efficiency": 1.0,
+    "founder_interrupts": 0,
+    "auto_approvals": 3,
+    "optimization_cycles": 0
+  },
+  "sprint_001_metrics": {
+    "tasks_assigned": 3,
+    "tasks_completed": 3,
+    "completion_rate": 1.0,
+    "avg_completion_hours": 0.5,
+    "escalations": 0
+  }
 }

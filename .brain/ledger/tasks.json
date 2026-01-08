@@ -39,5 +39,60 @@
     "escalation_reason": null,
     "created_at": "2026-01-05T22:49:12+0530",
     "updated_at": "2026-01-06T15:26:28+0530"
+  },
+  {
+    "id": "task-e048c499",
+    "description": "\ud83d\ude80 EVENING REMINDER: Deploy GentleQuest Landing Page static site on Render (5 mins) + Start 12-hour Marathon E2E Test Session. See gentlequest_marathon_plan.md for full instructions.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": null,
+    "source": "user",
+    "escalation_reason": null,
+    "created_at": "2026-01-07T08:37:37+0530",
+    "updated_at": "2026-01-07T08:37:37+0530"
+  },
+  {
+    "id": "task-dc8bdba9",
+    "description": "Marathon test task - auto-created during marathon session",
+    "status": "DONE",
+    "priority": 5,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": null,
+    "source": "synthesizer",
+    "escalation_reason": null,
+    "created_at": "2026-01-07T09:27:03+0530",
+    "updated_at": "2026-01-08T09:24:02+0530"
+  },
+  {
+    "id": "task-7bee5998",
+    "description": "Implement brain_list_services MCP function for Render service listing (currently shows ImportError)",
+    "status": "DONE",
+    "priority": 4,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "mcp"
+    ],
+    "claimed_by": null,
+    "source": "synthesizer",
+    "escalation_reason": null,
+    "created_at": "2026-01-08T08:58:05+0530",
+    "updated_at": "2026-01-08T09:24:48+0530"
+  },
+  {
+    "id": "task-403586eb",
+    "description": "Test task for event emission",
+    "status": "IN_PROGRESS",
+    "priority": 5,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": null,
+    "source": "synthesizer",
+    "escalation_reason": null,
+    "created_at": "2026-01-08T10:55:49+0530",
+    "updated_at": "2026-01-08T10:55:49+0530"
   }
 ]

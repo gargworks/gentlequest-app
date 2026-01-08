@@ -66,15 +66,14 @@ function App() {
           </div>
 
           {/* Hero Image Placeholder */}
-          <div className="flex justify-center">
-            <div className="glass-card p-4 rounded-3xl shadow-2xl">
-              <div className="w-64 h-[500px] bg-gradient-to-b from-purple-900/50 to-blue-900/50 rounded-2xl flex items-center justify-center">
-                <span className="text-gray-400 text-center px-8">
-                  📱 App Screenshot<br />
-                  <span className="text-sm">(Add your mockup here)</span>
-                </span>
-              </div>
-            </div>
+          {/* Hero Image */}
+          <div className="flex justify-center relative">
+            <div className="absolute -inset-1 rounded-full bg-purple-500/20 blur-xl"></div>
+            <img
+              src="/app-screenshot.png"
+              alt="GentleQuest App Interface showing Luna AI"
+              className="relative w-72 rounded-[2.5rem] shadow-2xl border-4 border-white/10 rotate-[-2deg] hover:rotate-0 transition-transform duration-500"
+            />
           </div>
         </div>
       </section>

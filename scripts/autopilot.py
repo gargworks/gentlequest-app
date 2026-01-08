@@ -15,6 +15,8 @@ if not os.environ.get("GOOGLE_API_KEY"):
 
 # Import Gemini
 try:
+    import warnings
+    warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
     import google.generativeai as genai
 except ImportError:
     print("❌ 'google-generativeai' package not installed. Run: pip install google-generativeai")

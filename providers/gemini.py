@@ -48,7 +48,7 @@ WELLNESS_TOOLS_CONFIG = {
         },
         {
             "name": "record_interaction_outcome",
-            "description": "Record the outcome of a wellness intervention to help Luna learn what works for this user. Call this when the user completes an exercise or provides feedback.",
+            "description": "Record the outcome of a wellness intervention to help Alex learn what works for this user. Call this when the user completes an exercise or provides feedback.",
             "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -434,7 +434,7 @@ def get_gemini_response_with_tools(
             return "Configuration error: Gemini API key not found", []
 
         # Build system prompt with tool awareness
-        system_prompt = """You are Luna, a wellness AI agent for high school students.
+        system_prompt = """You are Alex, a wellness AI agent for high school students.
 
 CRITICAL FUNCTION CALLING RULES - FOLLOW EXACTLY:
 

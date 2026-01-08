@@ -3,7 +3,7 @@
   "started_at": "2026-01-02T09:09:00+05:30",
   "current_phase": 7,
   "current_step": 1,
-  "mode": "LOCAL_FALLBACK",
+  "mode": "PRODUCTION",
   "phases": {
     "0": {
       "name": "Resilience Setup",
@@ -16,9 +16,8 @@
       "status": "COMPLETE",
       "started": "2026-01-02T09:11:38.713510",
       "result": {
-        "health": true,
-        "memory": false,
-        "reason": "Deployment stale"
+        "success": true,
+        "mode": "PRODUCTION"
       },
       "completed": "2026-01-02T09:24:38.578758"
     },

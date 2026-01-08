@@ -83,7 +83,11 @@ ai_buddy_web/ios/Config/local-overrides.xcconfig
 ai_buddy_web/android/key.properties
 **/*.keystore
 **/*.jks
-# Nuclear Brain runtime
+# MDR_008: Private Brain (entire folder except .gitkeep)
+.brain/
+!.brain/.gitkeep
+
+# Nuclear Brain runtime (legacy specific rules)
 .brain/.flywheel.pid
 .brain/flywheel.log
 .brain/.state.lock
