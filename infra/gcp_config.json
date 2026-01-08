@@ -1,0 +1,16 @@
+{
+    "project": "ai-mental-health-assistant",
+    "region": "us-central1",
+    "services": [
+        {
+            "name": "gentlequest-backend",
+            "type": "cloud-run",
+            "source": ".",
+            "allow-unauthenticated": true,
+            "env": [
+                "LOG_LEVEL=INFO",
+                "ENVIRONMENT=production"
+            ]
+        }
+    ]
+}

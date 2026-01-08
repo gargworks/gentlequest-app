@@ -1,0 +1,26 @@
+steps:
+  # 1. Build Container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/gentlequest-backend', '.']
+
+  # 2. Push Container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gentlequest-backend']
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'gentlequest-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/gentlequest-backend'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=production'
+
+images:
+  - 'gcr.io/$PROJECT_ID/gentlequest-backend'
