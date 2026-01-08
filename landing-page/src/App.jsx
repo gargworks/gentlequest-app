@@ -10,7 +10,7 @@ function App() {
       {/* Navbar */}
       <nav className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
-          <img src="/icon-512.png" alt="GentleQuest" className="w-10 h-10 rounded-xl" />
+          <img src="/favicon.png" alt="GentleQuest" className="w-10 h-10 rounded-xl" />
           <span className="text-xl font-semibold">GentleQuest</span>
         </div>
         <a
