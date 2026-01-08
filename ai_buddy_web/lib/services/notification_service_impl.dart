@@ -139,7 +139,7 @@ class NotificationService {
 
     // Debug logging for scheduling
     // Schedule notification silently
-    print('NotificationService.scheduleOneShot debugTag='
+    debugPrint('NotificationService.scheduleOneShot debugTag='
         '$debugTag id=$id target=$tzTarget');
 
     await _plugin.zonedSchedule(
