@@ -52,8 +52,11 @@ fi
 
 # Check for Redis
 # Skip wait if REDIS_URL is set (production/Render mode) - app handles connection retry
+# Also skip if running on Cloud Run (K_SERVICE) without Redis configured
 if [ -n "${REDIS_URL:-}" ]; then
   echo "Using external REDIS_URL - skipping local Redis wait"
+elif [ -n "${K_SERVICE:-}" ]; then
+  echo "Running on Cloud Run without REDIS_URL - skipping Redis wait (caching disabled)"
 else
   REDIS_HOST="redis"
 
