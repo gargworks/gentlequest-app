@@ -72,9 +72,14 @@ else
 fi
 
 # Diagnostics
-which python || true
-python --version || true
-python -m gunicorn --version || true
+echo "=== DIAGNOSTICS START ==="
+which python || echo "python not found"
+python --version || echo "python version failed"
+echo "Checking gunicorn module..."
+python -m gunicorn --version 2>&1 || echo "gunicorn module check failed"
+echo "Checking app.py imports..."
+python -c "import app; print('app.py import OK')" 2>&1 || echo "app.py import FAILED"
+echo "=== DIAGNOSTICS END ==="
 
 # Use module invocation to avoid issues with gunicorn entrypoint script paths
 # Add verbose logging to capture errors on startup
