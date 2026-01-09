@@ -19,7 +19,7 @@ jobs:
       - name: Ping /api/ping (HEAD) with fallback to /api/health (GET)
         run: |
           set -euxo pipefail
-          URL="https://gentlequest.onrender.com/api/ping"
+          URL="https://app.gentlequest.app/api/ping"
           # Try a HEAD request first (lightweight), fallback to GET /api/health
           (curl -fsSI --max-time 5 -H "User-Agent: gentlequest-keepalive/1.0" "$URL" || \
-           curl -fsS  --max-time 5 -H "User-Agent: gentlequest-keepalive/1.0" "https://gentlequest.onrender.com/api/health")
+           curl -fsS  --max-time 5 -H "User-Agent: gentlequest-keepalive/1.0" "https://app.gentlequest.app/api/health")
