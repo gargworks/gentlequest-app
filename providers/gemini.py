@@ -294,7 +294,7 @@ def get_gemini_response(
 
             api_key = _GEMINI_KEYS[key_idx]
             try:
-                genai.configure(api_key=api_key)
+                # genai.configure(api_key=api_key) # Handled by DualEngineLLM
                 _debug(f"using_key_index={key_idx}")
 
                 # Build model order, trying last-good first if present
@@ -306,8 +306,16 @@ def get_gemini_response(
 
                 for model_name in models_order:
                     try:
-                        model = genai.GenerativeModel(model_name)
-                        response = model.generate_content(prompt)
+                        # Use Dual-Engine Adapter
+                        try:
+                            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+                            llm = DualEngineLLM(model_name, api_key=api_key)
+                            response = llm.generate_content(prompt)
+                        except ImportError:
+                            # Fallback if Adapter missing
+                            genai.configure(api_key=api_key)
+                            model = genai.GenerativeModel(model_name)
+                            response = model.generate_content(prompt)
                         if not response or not getattr(response, "text", None):
                             _debug(f"empty_response model={model_name}")
                             last_error = ValueError("empty response")
@@ -514,6 +522,9 @@ DO NOT mention crisis hotlines - system handles that separately."""
             full_prompt = message
 
         # Configure API and create model with tools
+        # Configure API and create model with tools using Dual-Engine Adapter
+        # Note: DualEngineLLM handles engine selection (New vs Legacy).
+        # We MUST pass the specific rotated api_key to it to support key rotation.
         key_idx = 0
         if len(_GEMINI_KEYS) > 1 and session_id:
             try:
@@ -523,16 +534,26 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 key_idx = 0
 
         api_key = _GEMINI_KEYS[key_idx]
-        genai.configure(api_key=api_key)
+        # _debug(f"using_key_index={key_idx}") # Logging handled in DualEngineLLM or below
 
-        # Use Gemini 2.5 Flash - explicitly designed for "agentic use cases"
-        model_name = "gemini-2.5-flash"  # Best for function calling per Google docs
-        model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS_CONFIG])
-
-        # Do NOT use tool_config - it breaks function calling!
-        # Direct test without tool_config works (2/3 success)
-        # Generate response - let function description guide behavior
-        response = model.generate_content(full_prompt)
+        # Use Dual-Engine abstraction
+        # If tools are provided, it will auto-fallback to Legacy engine
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            
+            # Instantiate with specific key for rotation support
+            model_name = "gemini-2.5-flash"
+            llm = DualEngineLLM(model_name, api_key=api_key)
+            
+            # Generate content (DualEngine will force Legacy because tools are present)
+            response = llm.generate_content(full_prompt, tools=[WELLNESS_TOOLS_CONFIG])
+            
+        except ImportError:
+            # Fallback if Adapter missing (should not happen in prod)
+            _debug("DualEngineLLM import failed - using direct legacy")
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS_CONFIG])
+            response = model.generate_content(full_prompt)
 
         if not response.candidates:
             _debug("no candidates in response")

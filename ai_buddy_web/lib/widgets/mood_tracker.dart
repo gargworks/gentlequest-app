@@ -679,7 +679,9 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     // Note: This creates a new instance each time, but computeFriendlyDailyStreak
     // reads from SharedPreferences so it will have the correct persisted data
     final engine = QuestsEngine();
-    final int streakDays = engine.computeFriendlyDailyStreak();
+    // CHANGED: Use total active days for "No-Guilt" tracking
+    // final int streakDays = engine.computeFriendlyDailyStreak();
+    final int streakDays = engine.computeTotalActiveDays();
 
     // Calculate mood trend (last 7 days vs previous 7 days)
     double? avgInRange(DateTime from, DateTime to) {
@@ -778,10 +780,10 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text("🔥", style: TextStyle(fontSize: 14)),
+                      const Text("🌱", style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       Text(
-                        "$streakDays-day streak",
+                        "$streakDays days total", // No-Guilt Label
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,

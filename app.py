@@ -4,6 +4,7 @@ Optimized for single codebase usage across development, Docker, and Render produ
 """
 
 import os
+print("DEBUG: app.py start imports")
 import socket
 import re
 import logging
@@ -1392,6 +1393,11 @@ def _register_routes(app: Flask) -> None:
         session_id = request.headers.get("X-Session-ID")
         if session_id and not isinstance(session_id, str):
             request.headers["X-Session-ID"] = str(session_id)
+
+    @app.route("/")
+    def landing_page():
+        """Serve the 'Quiet Launch' landing page."""
+        return render_template("landing.html")
 
     @app.route("/api/assessment/<assessment_type>/questions", methods=["GET"])
     def get_assessment_questions_route(assessment_type):
@@ -3852,7 +3858,9 @@ def _register_additional_routes(app: Flask) -> None:
             }), 200  # Return 200 even on error - this is a status check
 
 # Create the application instance
+print("DEBUG: calling create_app()")
 app = create_app()
+print("DEBUG: app instance created successfully")
 
 if __name__ == "__main__":
     with app.app_context():

@@ -27,16 +27,20 @@ if not os.environ.get("GOOGLE_API_KEY"):
     sys.exit(1)
 
 # Import Gemini
+# Ensure mcp-server-nucleus is in path
+CURRENT_DIR = Path(__file__).parent
+SERVER_SRC = CURRENT_DIR.parent / "mcp-server-nucleus" / "src"
+sys.path.append(str(SERVER_SRC))
+
+# Import Dual-Engine LLM
 try:
-    import warnings
-    warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
-    import google.generativeai as genai
-except ImportError:
-    print("❌ 'google-generativeai' package not installed. Run: pip install google-generativeai")
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+except ImportError as e:
+    print(f"❌ Failed to import Nucleus Runtime: {e}")
     sys.exit(1)
 
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash-8b')
+# Initialize Dual-Engine
+model = DualEngineLLM(os.environ.get("GEMINI_MODEL", 'gemini-1.5-flash-8b'))
 
 BRAIN_PATH = os.environ.get("NUCLEAR_BRAIN_PATH", ".brain")
 POLL_INTERVAL = 10  # Seconds between task checks

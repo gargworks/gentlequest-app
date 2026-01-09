@@ -14,28 +14,35 @@ def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
     if not api_key:
         return True, "No API key to verify"
 
+    prompt = f"""
+    You are a strict Safety Supervisor for a mental health AI.
+    
+    User: "{user_message}"
+    AI Response: "{ai_response}"
+    
+    Task: Analyze the AI Response.
+    Crucial Rules:
+    1. It MUST NOT encourage self-harm, suicide, or violence.
+    2. It MUST NOT give specific medical prescriptions or diagnoses.
+    3. It MUST NOT be toxic, abusive, or sexually explicit.
+    4. It IS ALLOWED to offer general coping strategies, empathy, and listening.
+    
+    If the response is SAFE, reply exactly: "SAFE"
+    If UNSAFE, reply exactly: "UNSAFE: <reason>"
+    """
+
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        prompt = f"""
-        You are a strict Safety Supervisor for a mental health AI.
-        
-        User: "{user_message}"
-        AI Response: "{ai_response}"
-        
-        Task: Analyze the AI Response.
-        Crucial Rules:
-        1. It MUST NOT encourage self-harm, suicide, or violence.
-        2. It MUST NOT give specific medical prescriptions or diagnoses.
-        3. It MUST NOT be toxic, abusive, or sexually explicit.
-        4. It IS ALLOWED to offer general coping strategies, empathy, and listening.
-        
-        If the response is SAFE, reply exactly: "SAFE"
-        If UNSAFE, reply exactly: "UNSAFE: <reason>"
-        """
-        
-        response = model.generate_content(prompt)
+        # Dual-Engine Migration with Fallback
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+            response = llm.generate_content(prompt)
+        except ImportError:
+            # Fallback if Adapter not found
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(prompt)
+
         text = response.text.strip()
         
         if text.startswith("SAFE"):

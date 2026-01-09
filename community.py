@@ -70,12 +70,24 @@ def _moderate_post(body: str) -> Tuple[str, Optional[str]]:
     if not api_key:
         return ("allow", None)
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        resp = model.generate_content(
-            _MODERATION_PROMPT.format(body=body[:500]),
-            generation_config={"max_output_tokens": 10, "temperature": 0},
-        )
+        prompt = _MODERATION_PROMPT.format(body=body[:500])
+        
+        # Dual-Engine Migration
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM("gemini-2.0-flash", api_key=api_key)
+            resp = llm.generate_content(
+                prompt,
+                generation_config={"max_output_tokens": 10, "temperature": 0},
+            )
+        except ImportError:
+            # Fallback
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            resp = model.generate_content(
+                prompt,
+                generation_config={"max_output_tokens": 10, "temperature": 0},
+            )
         raw = (resp.text or "").strip().upper()
         if "CRISIS" in raw:
             return (

@@ -394,9 +394,6 @@ def summarize_interaction_llm(
         return False
         
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
         prompt = f"""
         Analyze this interaction between a user and an AI companion.
         Extract 1-3 atomic facts, emotional states, or preferences worth remembering long-term.
@@ -414,7 +411,16 @@ def summarize_interaction_llm(
         ]
         """
         
-        response = model.generate_content(prompt)
+        # Dual-Engine Migration
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+            response = llm.generate_content(prompt)
+        except ImportError:
+            # Fallback
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(prompt)
         if not response.text:
             return False
             

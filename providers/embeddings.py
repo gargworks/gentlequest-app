@@ -44,13 +44,23 @@ def generate_embedding(text: str) -> Optional[List[float]]:
         return None
     
     try:
-        genai.configure(api_key=api_key)
-        
         # Truncate text if too long (embedding model has limits)
         max_chars = 8000  # Safe limit for embedding
         if len(text) > max_chars:
             text = text[:max_chars]
-        
+
+        # Dual-Engine Migration
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+            result = llm.embed_content(text, task_type="retrieval_document")
+            if result and 'embedding' in result:
+                return result['embedding']
+        except ImportError:
+            pass
+
+        # Fallback
+        genai.configure(api_key=api_key)
         result = genai.embed_content(
             model=EMBEDDING_MODEL,
             content=text,
@@ -77,6 +87,16 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
         return None
     
     try:
+        # Dual-Engine Migration
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+            result = llm.embed_content(query, task_type="retrieval_query")
+            if result and 'embedding' in result:
+                return result['embedding']
+        except ImportError:
+            pass
+
         genai.configure(api_key=api_key)
         
         result = genai.embed_content(

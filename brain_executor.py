@@ -152,15 +152,21 @@ class AgentExecutor:
         # Load system prompt
         self.system_prompt = self.prompt_file.read_text()
         
-        # Initialize Gemini
-        if HAS_GENAI:
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key:
-                raise ValueError("GEMINI_API_KEY environment variable not set")
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(DEFAULT_MODEL)
-        else:
+        # Initialize LLM (Dual-Engine Migration)
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
             self.model = None
+        else:
+            try:
+                from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+                self.model = DualEngineLLM(DEFAULT_MODEL, api_key=api_key)
+            except ImportError:
+                # Fallback
+                if HAS_GENAI:
+                    genai.configure(api_key=api_key)
+                    self.model = genai.GenerativeModel(DEFAULT_MODEL)
+                else:
+                    self.model = None
     
     def build_context(self, task: dict, include_files: List[str] = None) -> str:
         """Build execution context for the agent"""

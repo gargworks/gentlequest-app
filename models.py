@@ -144,6 +144,7 @@ class ClinicalAssessment(db.Model):
     severity = db.Column(db.String(20), nullable=False)  # minimal, mild, moderate, severe
     requires_follow_up = db.Column(db.Boolean, default=False)  # For PHQ-9 Q9
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    assessment_metadata = db.Column(JSON().with_variant(JSONB, "postgresql"), default={})
 
     def __repr__(self):
         return f"<ClinicalAssessment id={self.id} type={self.assessment_type} score={self.total_score}>"

@@ -2284,17 +2284,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         : (_baseSteps - completedLocal).clamp(0, _baseSteps);
     final int xpEarned =
         hasEngineData ? pp.xpEarned : (_baseXp + (completedLocal * 10));
+    // CHANGED: Use total active days for "No-Guilt" tracking
     final int streak = (_questsEngine != null)
-        ? _questsEngine!.computeFriendlyDailyStreak()
+        ? _questsEngine!.computeTotalActiveDays()
         : 0;
-    final int recordStreak =
-        (_questsEngine != null) ? _questsEngine!.computeRecordDailyStreak() : 0;
+    // Record is same as streak in "Total Days" model, or we can just hide it.
+    // We set it to 0 to ensure the "strict greater" check below fails and hides the label.
+    final int recordStreak = 0; 
+    
     // Responsive label and pluralization
     final double _w = MediaQuery.of(context).size.width;
     final bool _narrow = _w < 420;
     final String _dayWord = streak == 1 ? 'day' : 'days';
     final String _recordLabel = _narrow ? 'record' : 'record';
-    // Only show record when it's strictly greater than current streak
+    // Only show record when it's strictly greater than current streak (Never true now)
     final String _streakRecordLabel =
         (recordStreak > streak) ? '($_recordLabel $recordStreak)' : '';
     // Lifetime XP -> Level and progress
@@ -2356,7 +2359,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             Expanded(
                 child: ProgressCardWidget(
                     imagePath: ImageConstant.imgImage65x52,
-                    value: '$streak\u2011day streak',
+                    value: '$streak days total', // No-Guilt Label
                     label: _streakRecordLabel,
                     backgroundColor: Color(0xFFE0F2E9),
                     valueWidget: AnimatedSwitcher(
@@ -2370,7 +2373,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              '$streak\u2011day streak',
+                              '$streak days total',
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               softWrap: false,
@@ -3478,10 +3481,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     // Keep XP display consistent with Today tab (use provider's xpEarned)
     final int xpToday = pp.xpEarned;
     final int lifetimeXp = pp.lifetimeXp;
-    // Streak values for header
+    // Streak values for header (No-Guilt)
     final engineForHeader = _questsEngine;
-    final int streakDays = engineForHeader?.computeFriendlyDailyStreak() ?? 0;
-    final int recordStreak = engineForHeader?.computeRecordDailyStreak() ?? 0;
+    final int streakDays = engineForHeader?.computeTotalActiveDays() ?? 0;
+    final int recordStreak = 0; // Unused in header
     // Responsive tweaks
     final double _w = MediaQuery.of(context).size.width;
     final bool _narrow = _w < 420;
@@ -3621,7 +3624,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           minHeight: _narrow ? 30.h : 34.h,
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.local_fire_department_outlined,
+                          Icon(Icons.spa_outlined, // Seedling for growth
                               size: iconSize,
                               color: Theme.of(context).colorScheme.primary),
                           SizedBox(width: iconGap),

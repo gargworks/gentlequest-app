@@ -68,6 +68,30 @@
       "required_skills": [],
       "suggested_action": "schedule",
       "suggested_reason": "Needs focused time",
+      "status": "closed",
+      "closed_at": "2026-01-08T13:09:21.096684",
+      "closed_method": "do_now"
+    },
+    {
+      "id": "comm_20260108_224853_3",
+      "created": "2026-01-08T22:48:53.755734",
+      "source_file": "manual",
+      "source_line": 0,
+      "type": "task",
+      "source": "manual",
+      "description": "[Tech Debt] Increase brain_smoke_test timeout to 60s to handle Render Free Tier cold starts",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
       "status": "open",
       "closed_at": null,
       "closed_method": null
@@ -83,5 +107,6 @@
       "task": 1
     }
   },
-  "last_interaction": "2026-01-07T09:24:34.077973"
+  "last_interaction": "2026-01-08T23:00:02.256980",
+  "notifications_sent": 2
 }

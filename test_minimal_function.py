@@ -4,14 +4,26 @@ Run with: GEMINI_API_KEY=your_key python3 test_minimal_function.py
 """
 
 import os
-import google.generativeai as genai
+import sys
+
+# Add path for DualEngineLLM
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src"))
+
+# Try DualEngineLLM first, fallback to legacy
+try:
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+    USE_DUAL_ENGINE = True
+except ImportError:
+    import google.generativeai as genai
+    USE_DUAL_ENGINE = False
 
 api_key = os.environ.get('GEMINI_API_KEY')
 if not api_key:
     print("❌ Set GEMINI_API_KEY first")
     exit(1)
 
-genai.configure(api_key=api_key)
+if not USE_DUAL_ENGINE:
+    genai.configure(api_key=api_key)
 
 # Correct format: list of function declarations wrapped in dict
 tools = [
@@ -52,8 +64,12 @@ for model_name in models_to_test:
     print("-" * 40)
     
     try:
-        model = genai.GenerativeModel(model_name, tools=tools)
-        response = model.generate_content(message)
+        if USE_DUAL_ENGINE:
+            model = DualEngineLLM(model_name, api_key=api_key)
+            response = model.generate_content(message, tools=tools)
+        else:
+            model = genai.GenerativeModel(model_name, tools=tools)
+            response = model.generate_content(message)
         
         found_function = False
         if response.candidates and response.candidates[0].content.parts:

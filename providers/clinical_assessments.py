@@ -276,14 +276,11 @@ def init_assessment_tables(conn):
     """
     Initialize clinical assessments table if it doesn't exist.
     """
+    # psycopg2 check removed to allow SQLite fallback logic below
     try:
         import psycopg2
     except ImportError:
-        # If running with SQLite or without psycopg2, we might be in test mode or local dev using sqlite
-        # If conn is sqlite, we can try to run SQL but syntax might differ slightly (JSONB etc)
-        # But for now, just return or print warning if we strictly need Postgres features.
-        print("⚠️ psycopg2 not found. init_assessment_tables skipped (unless mocked).")
-        return
+        psycopg2 = None
 
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS clinical_assessments (
@@ -303,7 +300,7 @@ def init_assessment_tables(conn):
     # but we can do CREATE INDEX separately.
     
     # Correct SQL for Postgres:
-    create_table_sql = """
+    create_table_sql_pg = """
     CREATE TABLE IF NOT EXISTS clinical_assessments (
         id SERIAL PRIMARY KEY,
         session_id TEXT NOT NULL,
@@ -311,17 +308,46 @@ def init_assessment_tables(conn):
         total_score INTEGER NOT NULL,
         severity TEXT NOT NULL,
         responses JSONB NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        metadata JSONB DEFAULT '{}'::jsonb
+        requires_follow_up BOOLEAN DEFAULT FALSE,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        assessment_metadata JSONB DEFAULT '{}'::jsonb
     );
     
     CREATE INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
-    CREATE INDEX IF NOT EXISTS idx_assessments_created_at ON clinical_assessments(created_at);
+    CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON clinical_assessments(timestamp);
+    """
+
+    create_table_sql_sqlite = """
+    CREATE TABLE IF NOT EXISTS clinical_assessments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        assessment_type TEXT NOT NULL,
+        total_score INTEGER NOT NULL,
+        severity TEXT NOT NULL,
+        responses TEXT NOT NULL,
+        requires_follow_up BOOLEAN DEFAULT 0,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        assessment_metadata TEXT DEFAULT '{}'
+    );
+    CREATE INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
+    CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON clinical_assessments(timestamp);
     """
     
     try:
-        with conn.cursor() as cur:
-            cur.execute(create_table_sql)
+        # Check if conn is sqlite3
+        # Robust check: if psycopg2 is missing, we assume SQLite
+        # Also check connection class string just in case
+        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
+        
+        cur = conn.cursor()
+        try:
+            if is_sqlite:
+                cur.executescript(create_table_sql_sqlite)
+            else:
+                cur.execute(create_table_sql_pg)
+        finally:
+            cur.close()
+            
         conn.commit()
         print("✅ Clinical assessments table initialized.")
     except Exception as e:
@@ -343,44 +369,66 @@ def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
     Returns:
         The ID of the inserted record.
     """
-    import psycopg2
     
-    insert_sql = """
-    INSERT INTO clinical_assessments 
-    (session_id, assessment_type, total_score, severity, responses, metadata)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    RETURNING id;
-    """
-    
+    try:
+        import psycopg2
+    except ImportError:
+        psycopg2 = None
+
+    if psycopg2:
+        insert_sql = """
+        INSERT INTO clinical_assessments 
+        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id;
+        """
+    else:
+        # SQLite fallback
+        insert_sql = """
+        INSERT INTO clinical_assessments 
+        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
     # Extract needed fields
     assessment_type = assessment_data.get('assessment_type')
     total_score = assessment_data.get('total_score')
     severity = assessment_data.get('severity')
-    # We assume the caller passes the raw responses separately or we inject them into assessment_data
-    # But score functions don't return responses.
-    # We need the 'responses' list to be passed in or added to the dict.
-    # Let's assume the API adds 'responses' to the dict before calling this.
     responses = json.dumps(assessment_data.get('responses', [])) 
+    requires_follow_up = assessment_data.get('requires_follow_up', False)
+    timestamp = datetime.utcnow()
     
-    # Metadata could store the full result (recommendations, flags)
-    metadata = json.dumps({
+    assessment_metadata = json.dumps({
         "message": assessment_data.get('message'),
-        "requires_follow_up": assessment_data.get('requires_follow_up', False),
+        "requires_follow_up": requires_follow_up,
         "follow_up_reason": assessment_data.get('follow_up_reason'),
         "recommendations": assessment_data.get('recommendations', [])
     })
     
     try:
-        with conn.cursor() as cur:
-            cur.execute(insert_sql, (
-                session_id, 
-                assessment_type, 
-                total_score, 
-                severity, 
-                responses, 
-                metadata
-            ))
-            new_id = cur.fetchone()[0]
+        # Check if conn is sqlite3
+        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
+        
+        cursor = conn.cursor()
+        params = (
+            session_id, 
+            assessment_type, 
+            total_score, 
+            severity, 
+            responses, 
+            assessment_metadata,
+            timestamp,
+            requires_follow_up
+        )
+
+        if psycopg2 and not is_sqlite:
+            cursor.execute(insert_sql, params)
+            new_id = cursor.fetchone()[0]
+        else:
+             # SQLite execution
+            cursor.execute(insert_sql, params)
+            new_id = cursor.lastrowid
+            
         conn.commit()
         return new_id
     except Exception as e:
@@ -394,9 +442,38 @@ def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]
     Retrieve assessment history for a session.
     """
     try:
+        import psycopg2
         from psycopg2.extras import RealDictCursor
     except ImportError:
-        print("⚠️ psycopg2 not found. get_assessment_history returning empty.")
+        psycopg2 = None
+
+    try:
+        # SQLite Helper to return dicts
+        def dict_factory(cursor, row):
+            d = {}
+            for idx, col in enumerate(cursor.description):
+                d[col[0]] = row[idx]
+            return d
+
+        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
+
+        if is_sqlite:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            sql = "SELECT * FROM clinical_assessments WHERE session_id = ? ORDER BY timestamp DESC LIMIT ?"
+            cursor.execute(sql, (session_id, limit))
+            return cursor.fetchall()
+        else:
+             # Postgres logic
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                 cur.execute(
+                    "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
+                    (session_id, limit)
+                )
+                 return cur.fetchall()
+
+    except Exception as e:
+        print(f"⚠️ Error fetching history: {e}")
         return []
 
     sql = """

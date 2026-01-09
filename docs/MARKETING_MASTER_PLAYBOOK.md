@@ -181,4 +181,36 @@
 
 ---
 
-*Last updated: 2026-01-03*
+*Last updated: 2026-01-09*
+
+---
+
+## Triangulation Protocol (The 3-Layer Filter)
+
+Before posting content, triangulate between our three core strategies to ensure safety and impact.
+
+### 1. The Strategy Filter (Source: `REDDIT_GROWTH_STRATEGY.md`)
+*   **Question:** *Is this the right action for TODAY?*
+*   **Rules:**
+    *   **Cadence Check:** Mon-Thu = Comments Only. Fri = Value Post.
+    *   **Format Check:** Text-only? No links? (Unless specifically allowed).
+    *   **Subreddit Check:** Is this a "Problem-Sub" (r/Anxiety) or "Builder-Sub" (r/IndieHackers)?
+        *   *If Problem-Sub*: **0% Promotion**. Pure peer support.
+        *   *If Builder-Sub*: Feedback requests allowed (with disclaimer).
+
+### 2. The Identity Filter (Source: `SOLO_FOUNDER_PLAYBOOK.md` + Privacy)
+*   **Question:** *Does this protect Lokesh while building the Brand?*
+*   **Rules:**
+    *   **Persona:** Speak as `GentleQuest Dev`, not personal identity.
+    *   **No "Day Job" Justification:** Never say "I built this after my 9-5..." -> Say "I built this because existing tools were too loud."
+    *   **Privacy:** No personal photos, no real name, no specific location data.
+    *   **Authority:** You are a "Peer Builder" (one of us), not a "Guru" (expert).
+
+### 3. The Brand/Tone Filter (Source: `MARKETING_MASTER_PLAYBOOK.md`)
+*   **Question:** *Does this sound like "Calm" and "Progress"?*
+*   **Rules:**
+    *   **Voice:** "Trauma-informed." Use "You might try..." instead of "Do this!"
+    *   **Vocabulary:**
+        *   Instead of "ADHD App" -> say "Tool for when you're overwhelmed."
+        *   Instead of "Gamification" -> say "Tiny wins."
+    *   **Vibe:** Calm, low-pressure, validating. (The product is "Gentle", so the marketing must be gentle).

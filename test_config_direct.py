@@ -5,8 +5,16 @@ This will help identify if the issue is in our function or the config
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src"))
 
-import google.generativeai as genai
+# Try DualEngineLLM first, fallback to legacy
+try:
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+    USE_DUAL_ENGINE = True
+except ImportError:
+    import google.generativeai as genai
+    USE_DUAL_ENGINE = False
+
 from providers.gemini import WELLNESS_TOOLS_CONFIG
 
 api_key = os.environ.get('GEMINI_API_KEY')
@@ -14,7 +22,8 @@ if not api_key:
     print("❌ Set GEMINI_API_KEY first")
     exit(1)
 
-genai.configure(api_key=api_key)
+if not USE_DUAL_ENGINE:
+    genai.configure(api_key=api_key)
 
 # Use WELLNESS_TOOLS_CONFIG from our actual code
 tools = [WELLNESS_TOOLS_CONFIG]
@@ -36,8 +45,12 @@ for msg in messages:
     
     try:
         # EXACT same call as working test
-        model = genai.GenerativeModel(model_name, tools=tools)
-        response = model.generate_content(msg)
+        if USE_DUAL_ENGINE:
+            model = DualEngineLLM(model_name, api_key=api_key)
+            response = model.generate_content(msg, tools=tools)
+        else:
+            model = genai.GenerativeModel(model_name, tools=tools)
+            response = model.generate_content(msg)
         
         found = False
         if response.candidates and response.candidates[0].content.parts:

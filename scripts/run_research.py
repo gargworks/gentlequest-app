@@ -13,7 +13,6 @@ This script:
 4. Marks tasks as complete in queue
 """
 
-import subprocess
 import sys
 import os
 import re
@@ -62,8 +61,20 @@ def mark_task_complete(task_desc: str):
     QUEUE_FILE.write_text(new_content)
 
 
+# Ensure mcp-server-nucleus is in path
+CURRENT_DIR = Path(__file__).parent
+SERVER_SRC = CURRENT_DIR.parent / "mcp-server-nucleus" / "src"
+sys.path.append(str(SERVER_SRC))
+
+try:
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+except ImportError:
+    print("❌ Failed to import Nucleus Runtime (DualEngineLLM). Check paths.")
+    sys.exit(1)
+
+
 def run_gemini_research(task: str) -> tuple[str, bool]:
-    """Execute research task via Gemini CLI.
+    """Execute research task via DualEngineLLM (Python SDK).
     
     Returns (output, success).
     """
@@ -79,8 +90,6 @@ Output: Provide a concise, well-structured research report with:
 
 Be thorough but concise. Focus on actionable insights."""
 
-    cmd = ["gemini", "-m", MODEL, "-p", ""]
-    
     # Add context content to prompt
     context_text = ""
     if CONTEXT_FILE.exists():
@@ -91,23 +100,17 @@ Be thorough but concise. Focus on actionable insights."""
             pass # Ignore context read errors
 
     try:
-        result = subprocess.run(
-            cmd,
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=300  # 5 min max
-        )
+        # Initialize Dual-Engine (New API -> Legacy Fallback)
+        llm = DualEngineLLM(MODEL)
         
-        if result.returncode == 0:
-            return result.stdout, True
-        else:
-            return f"Error: {result.stderr[:500]}", False
+        # DualEngineLLM.generate_content returns a simple object with .text (or similar unified interface)
+        # Based on my implementation of DualEngineLLM, it returns an object with .text
+        response = llm.generate_content(prompt)
+        
+        return response.text, True
             
-    except subprocess.TimeoutExpired:
-        return "Error: Research task timed out after 5 minutes", False
-    except FileNotFoundError:
-        return "Error: Gemini CLI not found. Install with: pip install google-generativeai", False
+    except Exception as e:
+        return f"Error executing research: {str(e)}", False
 
 
 def save_research_result(task: str, result: str, timestamp: str):

@@ -27,8 +27,7 @@ sys.path.append(str(SERVER_SRC))
 
 try:
     import warnings
-    warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
-    import google.generativeai as genai
+    # Legacy warnings suppression no longer needed for new path, but kept for fallback
     from mcp_server_nucleus.runtime.factory import ContextFactory
     from mcp_server_nucleus.runtime.agent import EphemeralAgent
 except ImportError as e:
@@ -38,14 +37,15 @@ except ImportError as e:
 async def main():
     logger.info("🌙 Nightly Agent Trigger - Waking up Nucleus...")
 
-    # 1. Initialize LLM (Gemini)
+    # 1. Initialize Dual-Engine LLM
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+    
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         logger.error("GEMINI_API_KEY not set")
         sys.exit(1)
         
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"))
+    model = DualEngineLLM(os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"))
     
     # 2. Initialize Runtime Factory
     factory = ContextFactory()

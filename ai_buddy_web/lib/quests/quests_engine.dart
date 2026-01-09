@@ -918,6 +918,23 @@ class QuestsEngine {
     return _isIsoSameDay(lastIso, _now());
   }
 
+  /// Total days with at least one completion (No-Guilt Streak).
+  int computeTotalActiveDays() {
+    int count = 0;
+    for (final key in _history.keys) {
+      final entry =
+          (_history[key] as Map?)?.cast<String, dynamic>() ?? const {};
+      final dynamic completedAny = entry['completed'];
+      final List<String> completed = (completedAny is List)
+          ? completedAny.map((e) => e.toString()).toList()
+          : const <String>[];
+      if (completed.isNotEmpty) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   void _ensureQuestStats(String questId) {
     _telemetry[questId] = (_telemetry[questId] as Map<String, dynamic>?) ?? {};
   }

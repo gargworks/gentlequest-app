@@ -16,6 +16,11 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     set +a
 fi
 
+# Activate virtual environment if it exists
+if [ -d "$PROJECT_ROOT/.venv" ]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
+fi
+
 # Change to project directory
 cd "$PROJECT_ROOT"
 
