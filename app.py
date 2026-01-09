@@ -37,19 +37,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import after environment setup
-from models import (
-    db,
-    UserSession,
-    Message,
-    ConversationLog,
-    CrisisEvent,
-    MoodEntry,
-    AnalyticsEvent,
-    CommunityPost,
-    CommunityComment,
-    User,
-    SelfAssessmentEntry,
-)
+from models import db, Message, ConversationLog, SelfAssessmentEntry
 from crisis_detection import detect_crisis_level
 from community import register_community_routes
 from providers.clinical_assessments import (
@@ -714,9 +702,10 @@ def create_app() -> Flask:
 
     # Initialize Brain State Tables (for Telegram/Nucleus integration)
     try:
-        from providers.brain_state import init_brain_tables
-        if init_brain_tables():
-            app.logger.info("Brain state tables initialized")
+        with app.app_context():
+            from providers.brain_state import init_brain_tables
+            if init_brain_tables():
+                app.logger.info("Brain state tables initialized")
     except Exception as e:
         app.logger.warning(f"Brain state initialization skipped: {e}")
 
@@ -2808,8 +2797,8 @@ def _log_tool_calls(session_id: str, tool_calls: List[Dict]) -> None:
                 f"tool_call session={session_id} name={tc.get('name')} "
                 f"success={tc.get('result', {}).get('success', False)}"
             )
-    except Exception as e:
-        pass  # Non-critical, don't fail on logging errors
+    except Exception as exc:
+        logging.warning(f"Tool call logging failed: {exc}")
 
 
 def _log_conversation(
