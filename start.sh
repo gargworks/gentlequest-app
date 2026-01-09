@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+export PYTHONUNBUFFERED=1
 
 # Determine environment (default to docker/local)
 ENVIRONMENT_NAME="${ENVIRONMENT:-docker}"
@@ -21,12 +22,7 @@ if [ "${PORT_TO_USE}" != "80" ]; then
   sed -i "s/listen 80;/listen ${PORT_TO_USE};/g" /etc/nginx/nginx.conf
 fi
 
-# Start nginx in the background
-echo "Starting nginx..."
-nginx
-
-# Wait a moment for nginx to start
-sleep 2
+# nginx will be started AFTER gunicorn is ready (at the end of the script)
 
 # Start Flask application with Gunicorn (backend listens on 5055; nginx proxies /api to it)
 echo "Starting Flask application..."
@@ -75,11 +71,9 @@ fi
 echo "=== DIAGNOSTICS ==="
 which python || echo "python not found"
 python --version || echo "python version failed"
-python -m gunicorn --version 2>&1 || echo "gunicorn module check failed"
 echo "=== END DIAGNOSTICS ==="
 
-# Use module invocation to avoid issues with gunicorn entrypoint script paths
-# Add verbose logging to capture errors on startup
+# Build Gunicorn command
 GUNICORN_WORKERS="${GUNICORN_WORKERS:-4}"
 GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-120}"
 GUNICORN_LOG_LEVEL="${GUNICORN_LOG_LEVEL:-debug}"
@@ -92,5 +86,34 @@ GUNICORN_ARGS=(
   --error-logfile -
   --log-level "${GUNICORN_LOG_LEVEL}"
 )
-echo "Launching gunicorn with args: ${GUNICORN_ARGS[*]}"
-exec python -m gunicorn "${GUNICORN_ARGS[@]}" app:app
+
+echo "Launching gunicorn in background with args: ${GUNICORN_ARGS[*]}"
+python -m gunicorn "${GUNICORN_ARGS[@]}" app:app &
+GUNICORN_PID=$!
+
+# Wait for Gunicorn to start listening on port 5055
+echo "Waiting for Gunicorn to be ready on port 5055..."
+MAX_WAIT=120
+for i in $(seq 1 $MAX_WAIT); do
+  if nc -z 127.0.0.1 5055 2>/dev/null; then
+    echo "✅ Gunicorn is ready on port 5055 (waited ${i}s)"
+    break
+  fi
+  if ! kill -0 $GUNICORN_PID 2>/dev/null; then
+    echo "❌ Gunicorn process died unexpectedly!"
+    exit 1
+  fi
+  sleep 1
+done
+
+if ! nc -z 127.0.0.1 5055 2>/dev/null; then
+  echo "❌ Gunicorn failed to start within ${MAX_WAIT}s"
+  exit 1
+fi
+
+# NOW start nginx (after Gunicorn is ready)
+echo "Starting nginx..."
+nginx
+
+echo "✅ All services started. Waiting for Gunicorn process..."
+wait $GUNICORN_PID
