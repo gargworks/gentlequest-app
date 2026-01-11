@@ -5,6 +5,7 @@
 [![Render Deploy](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render)](https://render.com)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-black?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
+[![E2E Tests](https://img.shields.io/badge/E2E-71.4%25%20pass-yellow)](test/comprehensive_e2e_report.md)
 
 ---
 
@@ -142,6 +143,11 @@ python3 -c "import brain_sync; print('OK')"
 
 # Test Telegram locally
 python3 brain_telegram.py status
+
+# E2E Tests
+python3 test/focused_e2e_test.py
+# Screenshots: test/screenshots/e2e/
+# Reports: test/comprehensive_e2e_report.md
 ```
 
 ---

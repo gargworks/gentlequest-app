@@ -160,13 +160,9 @@ class AgentExecutor:
             try:
                 from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
                 self.model = DualEngineLLM(DEFAULT_MODEL, api_key=api_key)
-            except ImportError:
-                # Fallback
-                if HAS_GENAI:
-                    genai.configure(api_key=api_key)
-                    self.model = genai.GenerativeModel(DEFAULT_MODEL)
-                else:
-                    self.model = None
+            except Exception as e:
+                print(f"Error initializing DualEngineLLM: {e}")
+                self.model = None
     
     def build_context(self, task: dict, include_files: List[str] = None) -> str:
         """Build execution context for the agent"""

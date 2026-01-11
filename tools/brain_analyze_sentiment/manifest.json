@@ -1,0 +1,10 @@
+{
+  "name": "brain_analyze_sentiment",
+  "version": "0.1.0",
+  "description": "Analyze emotional tone of user input",
+  "author": "Nucleus User",
+  "capabilities": [
+    "llm_generate"
+  ],
+  "entry_point": "src.main"
+}

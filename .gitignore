@@ -93,3 +93,4 @@ ai_buddy_web/android/key.properties
 .brain/.state.lock
 .brain/.sync_state.json
 !*.md
+secret/service_account.json

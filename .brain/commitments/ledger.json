@@ -86,6 +86,126 @@
         "urgency": null,
         "emotional_load": 0
       },
+      "age_days": 1,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "comm_20260110_231606_4",
+      "created": "2026-01-10T23:16:06.043975",
+      "source_file": "NAR_AGENT",
+      "source_line": 0,
+      "type": "task",
+      "source": "project_meeting",
+      "description": "Finalize project proposal and submit to stakeholders.",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "comm_20260110_231610_5",
+      "created": "2026-01-10T23:16:10.839361",
+      "source_file": "NAR_AGENT",
+      "source_line": 0,
+      "type": "task",
+      "source": "engineer_albert",
+      "description": "Add unit tests for all of the core utils, especially the math module.",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Needs focused time",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "comm_20260110_231612_6",
+      "created": "2026-01-10T23:16:12.475325",
+      "source_file": "NAR_AGENT",
+      "source_line": 0,
+      "type": "todo",
+      "source": "Synthesizer",
+      "description": "Track new commitment",
+      "context": {
+        "novelty": "high",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "High novelty, needs Chairman attention",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "comm_20260110_231825_7",
+      "created": "2026-01-10T23:18:25.594512",
+      "source_file": "NAR_AGENT",
+      "source_line": 0,
+      "type": "task",
+      "source": "documentation",
+      "description": "Review the new documentation on GentleQuest and update the feature map accordingly.",
+      "context": {
+        "novelty": "high",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "do_now",
+      "suggested_reason": "Pattern match: Successful update via do_now",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "comm_20260110_231910_8",
+      "created": "2026-01-10T23:19:10.406987",
+      "source_file": "NAR_AGENT",
+      "source_line": 0,
+      "type": "task",
+      "source": "slack_thread",
+      "description": "Follow up with the team regarding the status of the integration tests.",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "medium",
+        "urgency": null,
+        "emotional_load": 0
+      },
       "age_days": 0,
       "tier": "green",
       "priority": 3,
@@ -97,7 +217,7 @@
       "closed_method": null
     }
   ],
-  "last_scan": "2026-01-07T09:35:03.806125",
+  "last_scan": "2026-01-10T20:24:08.621793",
   "stats": {
     "total_open": 1,
     "green_tier": 1,
@@ -107,6 +227,7 @@
       "task": 1
     }
   },
-  "last_interaction": "2026-01-08T23:00:02.256980",
-  "notifications_sent": 2
+  "last_interaction": "2026-01-10T20:24:07.351127",
+  "notifications_sent": 4,
+  "notifications_paused": false
 }

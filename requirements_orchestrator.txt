@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+fastmcp
+pydantic
+watchdog
+google-genai

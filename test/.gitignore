@@ -1,0 +1,50 @@
+# E2E Test Environment
+test_env/
+scheduler_env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Test Results and Logs
+*.log
+scheduler.log
+maintenance_report.txt
+test_health_report.txt
+test_analytics_report.txt
+performance_benchmark_report.txt
+
+# Screenshots (keep archive, ignore current)
+screenshots/e2e/*.png
+!screenshots/e2e/.gitkeep
+
+# Performance Data
+performance_results.json
+test_metrics.json
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup directories (keep structure, ignore contents)
+backups/*/
+!backups/.gitkeep
+archive/*/
+!archive/.gitkeep
+
+# Dashboard build artifacts
+dashboard/dist/
+dashboard/node_modules/

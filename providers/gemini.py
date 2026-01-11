@@ -4,7 +4,6 @@ import random
 import threading
 import time
 import hashlib
-import google.generativeai as genai
 from typing import Dict, List, Tuple, Any, Optional
 from datetime import datetime, timedelta
 
@@ -294,8 +293,7 @@ def get_gemini_response(
 
             api_key = _GEMINI_KEYS[key_idx]
             try:
-                # genai.configure(api_key=api_key) # Handled by DualEngineLLM
-                _debug(f"using_key_index={key_idx}")
+                # _debug(f"using_key_index={key_idx}")
 
                 # Build model order, trying last-good first if present
                 models_order = list(default_models)
@@ -306,16 +304,13 @@ def get_gemini_response(
 
                 for model_name in models_order:
                     try:
-                        # Use Dual-Engine Adapter
-                        try:
-                            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-                            llm = DualEngineLLM(model_name, api_key=api_key)
-                            response = llm.generate_content(prompt)
-                        except ImportError:
-                            # Fallback if Adapter missing
-                            genai.configure(api_key=api_key)
-                            model = genai.GenerativeModel(model_name)
-                            response = model.generate_content(prompt)
+                        # Use Nucleus V1 Client (DualEngineLLM)
+                        # We import here to avoid circular imports if any, but ideally top-level is fine.
+                        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+                        
+                        llm = DualEngineLLM(model_name, api_key=api_key)
+                        response = llm.generate_content(prompt)
+                        
                         if not response or not getattr(response, "text", None):
                             _debug(f"empty_response model={model_name}")
                             last_error = ValueError("empty response")
@@ -507,8 +502,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
         except Exception as e:
             _debug(f"db_history_error: {e}")
 
-        # Minimal agentic context - just enough to guide behavior without breaking function calling
-        # Note: too much system prompt breaks function calling with Gemini
+        # Minimal agentic context
         context_parts = []
         if memory_context:
             context_parts.append(memory_context)
@@ -522,9 +516,6 @@ DO NOT mention crisis hotlines - system handles that separately."""
             full_prompt = message
 
         # Configure API and create model with tools
-        # Configure API and create model with tools using Dual-Engine Adapter
-        # Note: DualEngineLLM handles engine selection (New vs Legacy).
-        # We MUST pass the specific rotated api_key to it to support key rotation.
         key_idx = 0
         if len(_GEMINI_KEYS) > 1 and session_id:
             try:
@@ -534,26 +525,22 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 key_idx = 0
 
         api_key = _GEMINI_KEYS[key_idx]
-        # _debug(f"using_key_index={key_idx}") # Logging handled in DualEngineLLM or below
-
-        # Use Dual-Engine abstraction
-        # If tools are provided, it will auto-fallback to Legacy engine
+        
+        # Use Dual-Engine abstraction (now V1 Native)
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
             
-            # Instantiate with specific key for rotation support
             model_name = "gemini-2.5-flash"
             llm = DualEngineLLM(model_name, api_key=api_key)
             
-            # Generate content (DualEngine will force Legacy because tools are present)
-            response = llm.generate_content(full_prompt, tools=[WELLNESS_TOOLS_CONFIG])
+            # Generate content - LLM Client handles the 'tools' kwarg adaptation
+            response = llm.generate_content(full_prompt, tools=WELLNESS_TOOLS_CONFIG)
             
-        except ImportError:
-            # Fallback if Adapter missing (should not happen in prod)
-            _debug("DualEngineLLM import failed - using direct legacy")
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(model_name, tools=[WELLNESS_TOOLS_CONFIG])
-            response = model.generate_content(full_prompt)
+        except Exception as e:
+             _debug(f"LLM Client execution failed: {e}")
+             # Fallback to text-only if tools fail (Safety)
+             response = get_gemini_response(message, mode, session_id, risk_level)
+             return response, []
 
         if not response.candidates:
             _debug("no candidates in response")
@@ -562,16 +549,21 @@ DO NOT mention crisis hotlines - system handles that separately."""
         candidate = response.candidates[0]
 
         # Check if there are function calls
+        # NEW SDK: Function calls are parts with function_call attribute
         function_calls_to_process = []
         text_parts = []
 
         for part in candidate.content.parts:
-            if hasattr(part, "function_call") and part.function_call:
+            # Check for function_call (native object in V1 SDK)
+            if part.function_call:
                 fc = part.function_call
+                # Convert args to dict if not already
+                # V1 SDK might return a Map or similar object, ensure it's a dict
+                args = dict(fc.args) if fc.args else {}
                 function_calls_to_process.append(
-                    {"name": fc.name, "args": dict(fc.args) if fc.args else {}}
+                    {"name": fc.name, "args": args}
                 )
-            elif hasattr(part, "text") and part.text:
+            elif part.text:
                 text_parts.append(part.text)
 
         # Execute function calls (max 2 per response - guardrail)
@@ -588,7 +580,6 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 }
             )
 
-            # Add tool result context to response
             result_text = format_tool_result_for_response(fc["name"], result)
             if result_text:
                 text_parts.append(result_text)
@@ -596,9 +587,6 @@ DO NOT mention crisis hotlines - system handles that separately."""
         # Combine all text parts
         final_response = " ".join(text_parts) if text_parts else "I'm here to listen."
         final_response = re.sub(r"\n\s*\n\s*\n", "\n\n", final_response).strip()
-
-        # Note: Conversation history is now stored in database via conversation_logs table
-        # No need to maintain in-memory history here
 
         return final_response, tool_calls_executed
 

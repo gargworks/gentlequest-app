@@ -1,0 +1,94 @@
+{
+  "total_tests": 12,
+  "passed": 2,
+  "failed": 10,
+  "partial": 0,
+  "pass_rate": 16.666666666666664,
+  "results": [
+    {
+      "test": "App Loads",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:12:29.640627",
+      "details": "",
+      "screenshot": "test/screenshots/e2e/app_loads_error_20260110_121229.png"
+    },
+    {
+      "test": "Onboarding Flow",
+      "status": "PASS",
+      "timestamp": "2026-01-10T12:12:42.716984",
+      "details": "Found element: None",
+      "screenshot": "test/screenshots/e2e/onboarding_20260110_121242.png"
+    },
+    {
+      "test": "Chat Functionality",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:12:55.786313",
+      "details": "Chat input not found",
+      "screenshot": "test/screenshots/e2e/chat_error_20260110_121255.png"
+    },
+    {
+      "test": "Crisis Detection",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:13:01.847395",
+      "details": "Page.wait_for_selector: Timeout 5000ms exceeded.\nCall log:\n  - waiting for locator(\"textarea, input[type=\\\"text\\\"]\") to be visible\n",
+      "screenshot": "test/screenshots/e2e/crisis_error_20260110_121301.png"
+    },
+    {
+      "test": "Mood Tracking",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:15:29.045887",
+      "details": "cannot access local variable 'mood_buttons' where it is not associated with a value",
+      "screenshot": "test/screenshots/e2e/mood_error_20260110_121528.png"
+    },
+    {
+      "test": "Breathing Exercise",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:02.246423",
+      "details": "cannot access local variable 'animation_found' where it is not associated with a value",
+      "screenshot": "test/screenshots/e2e/breathing_error_20260110_121802.png"
+    },
+    {
+      "test": "Chat Functionality",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:15.329001",
+      "details": "Chat input not found",
+      "screenshot": "test/screenshots/e2e/chat_error_20260110_121815.png"
+    },
+    {
+      "test": "Session Persistence",
+      "status": "PASS",
+      "timestamp": "2026-01-10T12:18:18.350332",
+      "details": "Session indicators: 0, Messages: 0",
+      "screenshot": "test/screenshots/e2e/session_persistence_20260110_121818.png"
+    },
+    {
+      "test": "Responsive - Mobile",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:21.692285",
+      "details": "Scroll: False, Elements: 0",
+      "screenshot": "test/screenshots/e2e/responsive_mobile_20260110_121821.png"
+    },
+    {
+      "test": "Responsive - Tablet",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:23.768481",
+      "details": "Scroll: False, Elements: 0",
+      "screenshot": "test/screenshots/e2e/responsive_tablet_20260110_121823.png"
+    },
+    {
+      "test": "Responsive - Desktop",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:25.838745",
+      "details": "Scroll: False, Elements: 0",
+      "screenshot": "test/screenshots/e2e/responsive_desktop_20260110_121825.png"
+    },
+    {
+      "test": "Error Handling",
+      "status": "FAIL",
+      "timestamp": "2026-01-10T12:18:27.487142",
+      "details": "Page.goto: net::ERR_FAILED at https://app.gentlequest.app/\nCall log:\n  - navigating to \"https://app.gentlequest.app/\", waiting until \"load\"\n",
+      "screenshot": "test/screenshots/e2e/error_handling_error_20260110_121827.png"
+    }
+  ],
+  "screenshots_dir": "test/screenshots/e2e"
+}

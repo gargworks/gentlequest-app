@@ -1,101 +1,82 @@
-# 🏗️ Marketing Autopilot Architecture 2.0
+# 🏗️ Marketing Autopilot Architecture 2.0 (The Sensor Network)
+
 **Philosophy:** "The Growth Machine" (Automated, Frictionless, Daily)
-**Methodology:** Double Diamond (Diverge/Converge) + Critic Governance
+**Status:** Live (v2.1 - Hybrid Agentic Model)
+**Maintainer:** Lead Systems Architect
 
 ---
 
-## 🔌 Technical Sync Protocol ("The Git Pulse")
-**The Sync Mechanism:**
-The "Brain" and "Body" are decoupled. They communicate via the File System, synced by Git.
+## 🗺️ The System Flow (How it Works)
 
-### 1. The Pulse (How Data Moves)
-*   **Nucleus (Brain):** Defines Strategy -> Commits to Repo.
-*   **Comet (Body):** Pulls Repo -> Executes -> Writes Log -> Commits to Repo.
-*   **Loop:** `Pull -> Act -> Push`.
+```mermaid
+graph TD
+    subgraph "Input: Automated Intelligence"
+        A[Comet Browser] -->|Trend Protocol| B(Perplexity.ai)
+        A -->|Inbox Protocol| C(Social Notifications)
+        B -->|Auto-Post Data| E[Ingest Server (Port 9999)]
+        C -->|Auto-Post Data| E
+        E -->|Write to Disk| D[Marketing Log]
+    end
 
-### 2. State Files (The Synapse)
-*   `docs/marketing/BRAND_STRATEGY.md` (Read-Only for Comet)
-*   `docs/marketing/marketing_log.md` (Append-Only for Comet)
+    subgraph "The Hub"
+        D -->|Parsed Live| F[Interactive Dashboard]
+    end
 
-### 3. Execution Reality (Browser vs API)
-*   **Scenario A (Captive Browser):** If utilizing a "Human-in-the-Loop" browser session:
-    *   Comet navigates to X/Reddit.
-    *   Comet performs action.
-    *   Comet commits the Log.
-*   **Scenario B (Headless):** (Not currently active due to Auth risks).
-
----
-
-## 🧠 The Central Brain (State)
-The system relies on **Single Source of Truth (SSOT)** documents. Agents must read these before acting.
-
-1.  **Constituion (Voice & Rules):** `docs/marketing/BRAND_STRATEGY.md`
-    *   *Governs:* Tone ("Gentle"), Privacy (No Names), positioning.
-2.  ** Reddit Strategy (Manual Safety):** `docs/GENTLEQUEST_REDDIT_GROWTH_STRATEGY.md`
-    *   *Governs:* 10:1 Ratio, Crisis Protocols, Subreddit Shortlist.
-3.  **Memory (Logs):** `docs/marketing/marketing_log.md`
-    *   *Governs:* What we did, what worked, what failed.
+    subgraph "Output: Rapid Execution"
+        F -->|Click 'Post'| G(TwitterIntent/RedditSubmit)
+        G -->|Action| H(The World)
+    end
+```
 
 ---
 
 ## ⚙️ The 3 Engines
 
-### 1. The Scout (Diverge) 🔭
-**Agent:** Perplexity / Comet
-**Goal:** Gather raw intelligence.
-*   **Triggers:** Daily scheduled run.
-*   **Actions:**
-    *   Scan Twitter Trends (#ADHD, #Burnout).
-    *   Scan Subreddit mood (What are people complaining about today?).
-    *   Scan News (Is there a relevant "Mental Health" story?).
-*   **Output:** `Trend Report` (3 potential angles).
+### 1. The Trend Scout (Outbound) 🔭
+*   **Agent:** Comet (The Browser)
+*   **Tool:** Perplexity Web Interface (`comet_trend_protocol.md`)
+*   **Goal:** Find *new* things to talk about.
+*   **Mechanism:** Comet visits `perplexity.ai` (Free/Pro) and types the Prompt.
+*   **Output:** "Trend Alert" -> Marketing Log.
 
-### 2. The Maker (Converge) ✍️
-**Agent:** Comet
-**Goal:** Turn intelligence into content.
-*   **Twitter (Low Risk):**
-    *   Selects best angle.
-    *   Drafts tweet.
-    *   **Mode:** *Automated Execution* (after Critic check).
-*   **Reddit (High Risk):**
-    *   Selects "Safe" subreddit.
-    *   Drafts "Smallest Safe Action" (Comment).
-    *   **Mode:** *Manual Handoff* (Prepares draft for Human click).
+### 2. The Inbox Listener (Inbound) 👂
+*   **Agent:** Comet (The Browser)
+*   **Tool:** Direct Browser Navigation (`comet_inbox_protocol.md`)
+*   **Goal:** Hear who is talking to *us* (Engagement).
+*   **Mechanism:** Comet logs in (using your session) and checks notifications.
+*   **Output:** "Reply Needed" -> Marketing Log.
 
-### 3. The Judge (Governance) ⚖️
-**Agent:** Critic / Nucleus
-**Goal:** Prevent Brand/Safety violations.
-*   **Triggers:** Pre-Post (Twitter) or Weekly Audit (Reddit).
-*   **Checks:**
-    *   "Does this sound like 'Hustle Culture'?" (If yes -> Reject).
-    *   "Is this a Crisis thread?" (If yes -> Abort).
-    *   "Does this reveal the Founder's identity?" (If yes -> Reject).
+### 3. The Dashboard (Command Center) 🕹️
+*   **Tool:** Local HTML App (`marketing-dashboard/index.html`)
+*   **Goal:** Eliminate friction.
+*   **Mechanism:** Reads the Log -> Auto-generates "Click-to-Post" buttons.
+*   **Output:** Pre-filled Twitter/Reddit tabs.
 
 ---
 
-## 🔄 The Daily Loop (Workflow)
-Defined in `.agent/workflows/marketing_autopilot.md`.
+## 🧪 The "Dev -> UAT -> Prod" Pipeline
 
-1.  **Wake Up:** Comet initializes + **GIT PULL**.
-2.  **Ingest:** Reads `BRAND_STRATEGY` + `marketing_log`.
-3.  **Scout:** Finds the "Angle of the Day".
-4.  **Judge:** Self-critique against Constitution.
-5.  **Execute:**
-    *   Post Tweet (Immediate).
-    *   Log Action.
-    *   **GIT COMMIT + PUSH**.
-6.  **Sleep:** Until next cycle.
+To ensure reliability, we follow this testing lifecycle:
+
+1.  **Dev (Simulation):** We inject mock data into the log to verify the Dashboard renders correctly.
+2.  **UAT (User Acceptance):** You run the Protocols with Comet (Real Data) and verify the dashboard updates.
+3.  **Prod (Daily Habit):** You perform the loop daily as part of your morning routine.
 
 ---
 
-## 🔁 The Weekly Sync (Reconciliation)
-**Owner:** Nucleus (Antigravity)
-**Frequency:** Sunday Evening
+## ⚠️ Known Limitations (The "Honest" Section)
 
-1.  **Audit:** Read `marketing_log` vs Actual Platform History.
-2.  **Synthesize:** Update `BRAND_STRATEGY` with new learnings.
-3.  **Refill:** Update `LAUNCH_CONTENT_PACK` with new evergreen basics.
+### 1. The Data Bridge Gap (Browser -> Disk)
+*   **Issue:** Comet (Browser Agent) sees the data but may not have permission to write directly to `marketing_log.md` on your local disk.
+*   **Workaround:** The Protocol asks Comet to *generate* the Markdown row. The User (You) may need to "Copy Code Block" and paste it into the file manually.
+*   **Fix (Future):** Give Comet filesystem access or use the Python API script (Cost tradeoff).
 
----
-**Status:** Live
-**Maintainer:** Lead Systems Architect
+### 2. The Echo Chamber Risk
+*   **Issue:** Perplexity scans the same sources (Reddit/Twitter) daily. It may repetitively surface "Burnout" or "AI Anxiety" every single day.
+*   **Risk:** Editorial fatigue.
+*   **Fix (Future):** Implement "Topic Rotation" logic in the Brain (e.g., "Ignore 'Burnout' for 3 days").
+
+### 3. Analytics Blindness
+*   **Issue:** We track *Outputs* (Posts) but not *Outcomes* (Clicks/Traffic).
+*   **Risk:** We don't know which posts actually drive users to the app.
+*   **Fix (Future):** Implement UTM tags (`?utm_source=reddit`) in the Dashboard's link generator.

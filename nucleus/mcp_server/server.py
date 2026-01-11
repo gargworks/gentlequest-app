@@ -37,6 +37,7 @@ def handle_tool_call(tool_name: str, arguments: dict) -> dict:
         "brain_read_events": handle_read_events,
         "brain_list_artifacts": handle_list_artifacts,
         "brain_read_artifact": handle_read_artifact,
+        "brain_scan_marketing_log": handle_scan_marketing_log,
     }
     
     handler = handlers.get(tool_name)
@@ -118,6 +119,47 @@ def handle_read_artifact(args: dict) -> dict:
     except Exception as e:
         return {"error": f"Read error: {e}"}
 
+
+def handle_scan_marketing_log(args: dict) -> dict:
+    """Scan marketing_log.md for failures."""
+    try:
+        # Resolve path relative to project root (parent of parent of parent of this file)
+        # This file is in nucleus/mcp_server/server.py
+        root_dir = Path(__file__).parent.parent.parent
+        log_path = root_dir / "docs" / "marketing" / "marketing_log.md"
+        
+        if not log_path.exists():
+            return {"status": "error", "message": "Log file not found"}
+            
+        content = log_path.read_text()
+        
+        # Parse failures
+        import re
+        failures = []
+        lines = content.splitlines()
+        for i, line in enumerate(lines):
+            if "[FAILURE]" in line:
+                # Extract context if possible (tag inside brackets)
+                tag_match = re.search(r"\[FAILURE\]\s*\[(.*?)\]", line)
+                tag = tag_match.group(1) if tag_match else "UNKNOWN"
+                
+                failures.append({
+                    "line": i + 1,
+                    "tag": tag,
+                    "content": line.strip()
+                })
+        
+        status = "degraded" if failures else "healthy"
+        
+        return {
+            "status": status,
+            "failure_count": len(failures),
+            "failures": failures[-5:] # Return last 5 failures
+        }
+            
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 def get_tool_definitions() -> list:
     """Return MCP tool definitions."""
     return [
@@ -193,8 +235,17 @@ def get_tool_definitions() -> list:
                 },
                 "required": ["path"]
             }
+        },
+        {
+            "name": "brain_scan_marketing_log",
+            "description": "Scan the marketing log for system failures.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     ]
+
 
 if __name__ == "__main__":
     # Test the handlers
@@ -211,5 +262,10 @@ if __name__ == "__main__":
         "data": {"message": "MCP server test"}
     })
     print(f"emit_event: {result}")
+
+    # Test scan marketing log (Adaptive Protocol)
+    print("\nTesting brain_scan_marketing_log...")
+    result = handle_tool_call("brain_scan_marketing_log", {})
+    print(f"scan_result: {json.dumps(result, indent=2)}")
     
     print("✅ MCP Server handlers working")

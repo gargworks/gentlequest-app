@@ -1,0 +1,58 @@
+{
+  "total": 7,
+  "passed": 1,
+  "failed": 3,
+  "partial": 3,
+  "pass_rate": 14.285714285714285,
+  "results": [
+    {
+      "test": "Flutter App Structure",
+      "status": "PASS",
+      "details": "Flutter loaded: True, Elements: 4, App object: True",
+      "screenshot": "test/screenshots/e2e/flutter_structure_20260110_122230.png",
+      "timestamp": "2026-01-10T12:22:30.954824"
+    },
+    {
+      "test": "Bottom Navigation",
+      "status": "PARTIAL",
+      "details": "Bottom navigation not found",
+      "screenshot": "test/screenshots/e2e/bottom_navigation_20260110_122247.png",
+      "timestamp": "2026-01-10T12:22:47.838580"
+    },
+    {
+      "test": "Chat Interface",
+      "status": "PARTIAL",
+      "details": "No chat elements found",
+      "screenshot": "test/screenshots/e2e/chat_interface_20260110_122249.png",
+      "timestamp": "2026-01-10T12:22:49.734480"
+    },
+    {
+      "test": "Mood Tracking UI",
+      "status": "PARTIAL",
+      "details": "No mood elements found",
+      "screenshot": "test/screenshots/e2e/mood_tracking_ui_20260110_122251.png",
+      "timestamp": "2026-01-10T12:22:51.588119"
+    },
+    {
+      "test": "Flutter Responsive - Mobile",
+      "status": "FAIL",
+      "details": "Flutter loaded: True, Adapts: False",
+      "screenshot": "test/screenshots/e2e/flutter_responsive_mobile_20260110_122253.png",
+      "timestamp": "2026-01-10T12:22:53.535018"
+    },
+    {
+      "test": "Flutter Responsive - Tablet",
+      "status": "FAIL",
+      "details": "Flutter loaded: True, Adapts: False",
+      "screenshot": "test/screenshots/e2e/flutter_responsive_tablet_20260110_122254.png",
+      "timestamp": "2026-01-10T12:22:54.572188"
+    },
+    {
+      "test": "Flutter Responsive - Desktop",
+      "status": "FAIL",
+      "details": "Flutter loaded: True, Adapts: False",
+      "screenshot": "test/screenshots/e2e/flutter_responsive_desktop_20260110_122255.png",
+      "timestamp": "2026-01-10T12:22:55.999275"
+    }
+  ]
+}

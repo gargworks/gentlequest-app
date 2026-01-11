@@ -1,0 +1,14 @@
+{
+    "tools": [
+        {
+            "name": "core_nucleus",
+            "path": "mcp_server_nucleus",
+            "status": "core"
+        },
+        {
+            "name": "brain_analyze_sentiment",
+            "path": "tools/brain_analyze_sentiment",
+            "status": "active"
+        }
+    ]
+}

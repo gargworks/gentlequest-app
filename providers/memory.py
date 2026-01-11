@@ -14,11 +14,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 import threading
 from sqlalchemy import text
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
 
 # Import from app context
 from models import db
@@ -386,7 +381,7 @@ def summarize_interaction_llm(
     Extract memories using Gemini Flash (Observer Pattern).
     Intended to be run asynchronously.
     """
-    if not MEMORY_ENABLED or not _check_memory_tables_exist() or not GEMINI_AVAILABLE:
+    if not MEMORY_ENABLED or not _check_memory_tables_exist():
         return False
         
     api_key = _get_api_key()
@@ -411,17 +406,13 @@ def summarize_interaction_llm(
         ]
         """
         
-        # Dual-Engine Migration
-        try:
-            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
-            response = llm.generate_content(prompt)
-        except ImportError:
-            # Fallback
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(prompt)
-        if not response.text:
+        # Use Nucleus V1 Client (DualEngineLLM)
+        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+        
+        llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+        response = llm.generate_content(prompt)
+        
+        if not response or not getattr(response, "text", None):
             return False
             
         # Clean markdown code blocks if present

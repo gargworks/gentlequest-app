@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-01-11T06:58:50.536874",
+  "overall_status": "operational",
+  "components": {
+    "python_env": {
+      "python_available": true,
+      "python_version": "Python 3.14.2",
+      "virtual_env": false,
+      "playwright": false
+    },
+    "file_structure": {
+      "directories": {
+        "screenshots/e2e": true,
+        "backups": true,
+        "archive": true,
+        "dashboard": true,
+        "__pycache__": true
+      },
+      "key_files": {
+        "focused_e2e_test.py": true,
+        "health_check.py": true,
+        "test_analytics.py": true,
+        "dashboard/index.html": true,
+        "README.md": true,
+        "requirements.txt": true
+      },
+      "total_files": 12
+    },
+    "test_results": {
+      "focused_results": true,
+      "flutter_results": true,
+      "comprehensive_results": true,
+      "latest_run": null,
+      "pass_rates": {
+        "focused": 71.42857142857143,
+        "flutter": 14.285714285714285,
+        "e2e_results.json": 16.666666666666664
+      }
+    },
+    "performance": {
+      "app_load_time": 0.360149,
+      "performance_status": "excellent"
+    }
+  },
+  "issues": []
+}

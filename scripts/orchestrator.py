@@ -80,14 +80,27 @@ async def process_events(factory: ContextFactory) -> dict:
             
             event_type = event.get('event_type') or event.get('type', 'unknown')
             print(f"🚀 Spawning {agent_name} for event: {event_type}")
-            summary["agents_spawned"].append({
-                "agent": agent_name,
-                "event": event_type,
-                "trigger": match.get("trigger_id")
-            })
             
-            # Note: In production, you'd actually spawn and run the agent here
-            # For now, we log the action
+            # Execute the agent
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            try:
+                llm = DualEngineLLM()
+                agent = EphemeralAgent(context, model=llm)
+                
+                print(f"   >> Running {agent_name}...")
+                log = await agent.run()
+                print(f"   ✅ {agent_name} Complete.")
+                
+                summary["agents_spawned"].append({
+                    "agent": agent_name,
+                    "event": event_type,
+                    "trigger": match.get("trigger_id"),
+                    "log": log[:200] + "..." # Store snippet
+                })
+            except Exception as e:
+                print(f"   ❌ Failed to run {agent_name}: {e}")
+                summary["errors"].append(f"{agent_name}: {e}")
+            
             summary["events_processed"] += 1
     
     return summary

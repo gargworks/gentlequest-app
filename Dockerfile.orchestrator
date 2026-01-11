@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install git for git operations (required by some nucleus tools)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
+COPY requirements_orchestrator.txt .
+RUN pip install --no-cache-dir -r requirements_orchestrator.txt
+
+# Copy source code
+COPY mcp-server-nucleus /app/mcp-server-nucleus
+COPY scripts /app/scripts
+
+# Set Python path to include Nucleus source
+ENV PYTHONPATH="${PYTHONPATH}:/app/mcp-server-nucleus/src"
+
+# Default environment variables
+ENV PORT=8080
+ENV NUCLEUS_BRAIN_PATH="/app/.brain"
+
+# Create brain directory
+RUN mkdir -p /app/.brain
+
+# Run the server
+CMD ["python", "scripts/orchestrator_server.py"]

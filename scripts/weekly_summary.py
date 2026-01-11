@@ -118,50 +118,55 @@ def get_events_summary() -> dict:
     return {"total": len(events), "by_type": by_type}
 
 
-def generate_weekly_summary(client, digests: list, events_summary: dict) -> str:
+def get_strategy_insights() -> str:
+    """Read the latest strategy file and extract key insights."""
+    strategy_path = PROJECT_ROOT / "docs" / "marketing" / "strategy.md"
+    if not strategy_path.exists():
+        return "No strategy file found."
+    
+    content = strategy_path.read_text(encoding='utf-8')
+    # Simple extraction of the first 1000 chars which usually contains the high-level recent insights
+    return content[:1500]
+
+def generate_weekly_summary(client, digests: list, events_summary: dict, strategy_content: str) -> str:
     """Generate a weekly summary using Gemini."""
     
     # Combine recent digests
     digest_text = "\n\n---\n\n".join(digests)[:4000]
     
     prompt = f"""
-Analyze the last 7 days of nightly reports and create a weekly summary.
+    Analyze the last 7 days of nightly reports AND the newly updated Strategy to create a comprehensive Sunday Briefing.
+    
+    NIGHTLY REPORTS:
+    {digest_text}
+    
+    EVENTS THIS WEEK:
+    Total: {events_summary['total']}
+    By type: {json.dumps(events_summary['by_type'], indent=2)}
 
-NIGHTLY REPORTS:
-{digest_text}
-
-EVENTS THIS WEEK:
-Total: {events_summary['total']}
-By type: {json.dumps(events_summary['by_type'], indent=2)}
-
-OUTPUT FORMAT:
-# 📊 Weekly Summary
-
-## Week of [date range]
-
-### Highlights
-- [Key accomplishment 1]
-- [Key accomplishment 2]
-- [Key accomplishment 3]
-
-### Patterns Noticed
-- [Recurring theme from daily reports]
-- [Area of improvement]
-
-### Tests & Code Health
-- Test pass rate this week
-- Any recurring issues
-
-### Strategic Alignment
-- Were we building the right things?
-- Musk Method verdict
-
-### Next Week Focus
-- [Priority 1]
-- [Priority 2]
-
-Keep it under 200 words. Be actionable.
-"""
+    LATEST STRATEGY REFRESH (Just now):
+    {strategy_content}
+    
+    OUTPUT FORMAT:
+    # 📊 Weekly Summary & Strategy Report
+    
+    ## Highlights & Progress
+    - [Key accomplishment 1]
+    - [Key accomplishment 2]
+    
+    ## 🧠 Strategy Shift (Crucial)
+    - [Summarize the *New* Strategy Angle from the input]
+    - [Mention any new Trends identified]
+    
+    ## 🛠️ Workflow Meta-Updates
+    - [Mention if the System self-corrected or added tasks to task.md]
+    
+    ## Next Week Focus
+    - [Priority 1]
+    - [Priority 2]
+    
+    Keep it high-signal. This goes to the Chairman.
+    """
     
     response = client.models.generate_content(model=MODEL_ID, contents=prompt)
     return response.text
@@ -190,9 +195,13 @@ def main():
     events_summary = get_events_summary()
     print(f"   {events_summary['total']} events this week")
     
+    # Get strategy insights
+    print("🧠 Reading latest Strategy...")
+    strategy_content = get_strategy_insights()
+
     # Generate summary
     print("✍️ Generating weekly summary...")
-    summary = generate_weekly_summary(client, digests, events_summary)
+    summary = generate_weekly_summary(client, digests, events_summary, strategy_content)
     
     # Save to file
     today = datetime.datetime.now().strftime("%Y-%m-%d")

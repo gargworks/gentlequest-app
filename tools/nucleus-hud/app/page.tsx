@@ -29,6 +29,7 @@ export default function Home() {
           <VoiceSynthesizer />
         </p>
         <div className="flex gap-4 opacity-50 hover:opacity-100 transition-opacity">
+          <a href="/clinical" className="hover:text-green-400">CLINICAL</a>
           <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9999"}/api/tasks`} target="_blank" className="hover:text-green-400">TASK.MD</a>
           <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9999"}/api/events`} target="_blank" className="hover:text-green-400">EVENTS.JSONL</a>
         </div>

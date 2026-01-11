@@ -7,7 +7,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Set environment
 export NUCLEAR_BRAIN_PATH="$PROJECT_ROOT/.brain"
-export PATH="/usr/local/bin:/usr/bin:$PATH"
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:$PATH"
 
 # Load .env if exists
 if [ -f "$PROJECT_ROOT/.env" ]; then

@@ -1,6 +1,5 @@
 
 import os
-import google.generativeai as genai
 from typing import Tuple
 
 def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
@@ -32,16 +31,11 @@ def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
     """
 
     try:
-        # Dual-Engine Migration with Fallback
-        try:
-            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
-            response = llm.generate_content(prompt)
-        except ImportError:
-            # Fallback if Adapter not found
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(prompt)
+        # Use Nucleus V1 Client (DualEngineLLM)
+        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+        
+        llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+        response = llm.generate_content(prompt)
 
         text = response.text.strip()
         

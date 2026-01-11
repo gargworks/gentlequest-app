@@ -59,11 +59,16 @@ async def test_critic_loop():
     print(context['system_prompt'][:300])
     print("...")
     
-    # 3. Spawn Agent (Note: agent.py still uses old API internally)
-    # For this test, we'll create a simple model wrapper
-    import google.generativeai as old_genai
-    old_genai.configure(api_key=api_key)
-    model = old_genai.GenerativeModel("gemini-2.0-flash")
+    # 3. Spawn Agent (Note: agent.py still uses old API internally - wait, Agent uses LLM Client now)
+    # We should use DualEngineLLM to wrap the model for EphemeralAgent if it expects a model object.
+    # EphemeralAgent likely expects a legacy model object if it hasn't been updated.
+    # Let's check: EphemeralAgent usually takes a model. If we pass DualEngineLLM, it might work if duck-typed.
+    
+    from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+    model = DualEngineLLM("gemini-2.5-flash", api_key=api_key)
+    
+    # We need to make sure EphemeralAgent can handle DualEngineLLM.
+    # If EphemeralAgent calls generate_content, it should match.
     agent = EphemeralAgent(model=model, context=context)
     
     print("\n" + "=" * 60)

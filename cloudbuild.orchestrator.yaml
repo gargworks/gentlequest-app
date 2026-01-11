@@ -1,0 +1,7 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/gen-lang-client-0894185576/nucleus-orchestrator', '-f', 'Dockerfile.orchestrator', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/gen-lang-client-0894185576/nucleus-orchestrator']
+images:
+  - 'gcr.io/gen-lang-client-0894185576/nucleus-orchestrator'

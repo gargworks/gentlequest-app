@@ -1,0 +1,58 @@
+{
+  "total": 7,
+  "passed": 5,
+  "failed": 0,
+  "partial": 2,
+  "pass_rate": 71.42857142857143,
+  "results": [
+    {
+      "test": "App Loads",
+      "status": "PASS",
+      "details": "Web app loaded (title: Progress Without Pressure)",
+      "screenshot": "test/screenshots/e2e/app_loads_20260110_122114.png",
+      "timestamp": "2026-01-10T12:21:14.088356"
+    },
+    {
+      "test": "Navigation",
+      "status": "PASS",
+      "details": "Found 1 navigation elements",
+      "screenshot": "test/screenshots/e2e/navigation_20260110_122147.png",
+      "timestamp": "2026-01-10T12:21:47.256737"
+    },
+    {
+      "test": "Interactive Elements",
+      "status": "PARTIAL",
+      "details": "Elements: 1, Tested: 0",
+      "screenshot": "test/screenshots/e2e/interactive_elements_20260110_122149.png",
+      "timestamp": "2026-01-10T12:21:49.602631"
+    },
+    {
+      "test": "Responsive - Mobile",
+      "status": "PASS",
+      "details": "Scroll: False, Content: True",
+      "screenshot": "test/screenshots/e2e/responsive_mobile_20260110_122151.png",
+      "timestamp": "2026-01-10T12:21:51.954550"
+    },
+    {
+      "test": "Responsive - Tablet",
+      "status": "PASS",
+      "details": "Scroll: False, Content: True",
+      "screenshot": "test/screenshots/e2e/responsive_tablet_20260110_122153.png",
+      "timestamp": "2026-01-10T12:21:53.319521"
+    },
+    {
+      "test": "Responsive - Desktop",
+      "status": "PASS",
+      "details": "Scroll: False, Content: True",
+      "screenshot": "test/screenshots/e2e/responsive_desktop_20260110_122154.png",
+      "timestamp": "2026-01-10T12:21:54.805747"
+    },
+    {
+      "test": "Error Handling",
+      "status": "PARTIAL",
+      "details": "Error handling: False, Recovery: True",
+      "screenshot": "test/screenshots/e2e/error_handling_20260110_122201.png",
+      "timestamp": "2026-01-10T12:22:01.700533"
+    }
+  ]
+}

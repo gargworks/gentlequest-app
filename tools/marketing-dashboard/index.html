@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛸 GentleQuest Marketing Autopilot</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --accent: #8b5cf6;
+            --twitter: #1d9bf0;
+            --reddit: #ff4500;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed #475569;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: #1e293b;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .content {
+            font-size: 1.125rem;
+            white-space: pre-wrap;
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-twitter {
+            background: var(--twitter);
+        }
+
+        .btn-reddit {
+            background: var(--reddit);
+        }
+
+        .routine-panel {
+            background: #1e1b4b;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--accent);
+        }
+
+        .routine-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-num {
+            background: var(--accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        code {
+            background: #0f172a;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #d8b4fe;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>
+        <span>🛸 Marketing Autopilot</span>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem; font-size: 0.8rem;">
+            <span id="auth-status" style="color: #94a3b8;"></span>
+            <button id="auth-btn" class="btn" onclick="login()"
+                style="background: #2563eb; font-size: 0.8rem; padding: 0.4rem 0.8rem;">Login</button>
+        </div>
+    </h1>
+
+    <div class="routine-panel">
+        <h3 style="margin-top: 0; color: #d8b4fe;">🌅 Morning Routine (Hands-Off)</h3>
+        <div class="routine-step">
+            <span class="step-num">1</span>
+            <div>
+                Open <strong>Comet</strong> and paste the <a href=".agent/workflows/comet_trend_protocol.md"
+                    style="color: var(--accent);">Trend Protocol</a> prompt.
+                <br><small>Comet will browse Perplexity and log findings here automatically.</small>
+            </div>
+        </div>
+        <div class="routine-step">
+            <span class="step-num">2</span>
+            <div>
+                Once finished, paste the <a href=".agent/workflows/comet_inbox_protocol.md"
+                    style="color: var(--accent);">Inbox Protocol</a> prompt.
+                <br><small>Comet will check notifications and log them here automatically.</small>
+            </div>
+        </div>
+        <div class="routine-step">
+            <span class="step-num">3</span>
+            <div>
+                <strong>Refresh this page</strong> to see your new missions below.
+            </div>
+        </div>
+    </div>
+
+
+    <div id="agent-portal" class="card" style="border-color: var(--accent); background: #1e1b4b;">
+        <div class="meta" style="color: var(--accent);">🤖 Agent Drop-Zone (Seamless Ingest)</div>
+        <textarea id="raw-intelligence" placeholder="Comet: Paste your summary here..."
+            style="width: 100%; height: 80px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem; font-family: inherit; box-sizing: border-box;"></textarea>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="intelligence-type"
+                style="background: #0f172a; color: white; border: 1px solid #475569; padding: 0.5rem; border-radius: 0.5rem;">
+                <option value="Trend 📡">Trend Scout 📡</option>
+                <option value="Inbox 📬">Inbox Listener 📬</option>
+            </select>
+            <button onclick="ingestIntelligence()" class="btn" style="background: var(--accent); flex-grow: 1;">💾 Save
+                to Brain</button>
+        </div>
+        <div id="ingest-status" style="font-size: 0.8rem; height: 1.2rem;"></div>
+    </div>
+
+    <div id="upload" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+
+        <h3>📂 Click to Load "marketing_log.md"</h3>
+        <p>Select the file from docs/marketing/marketing_log.md</p>
+        <input type="file" id="fileInput" class="hidden" accept=".md">
+    </div>
+
+    <div id="feed"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="firebase_config.js"></script>
+
+    <script>
+        // --- 1. FIREBASE AUTH SETUP ---
+        let currentUser = null;
+        let idToken = null;
+
+        // Initialize Firebase
+        try {
+            if (window.firebaseConfig && window.firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(window.firebaseConfig);
+                console.log("🔥 Firebase initialized");
+
+                // Auth State Listener
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        idToken = await user.getIdToken();
+                        console.log("👤 User logged in:", user.email);
+                        updateUI(true);
+                    } else {
+                        currentUser = null;
+                        idToken = null;
+                        console.log("👤 User logged out");
+                        updateUI(false);
+                    }
+                });
+            } else {
+                console.warn("⚠️ Firebase Config is missing or default. Auth disabled.");
+                document.getElementById('auth-status').innerHTML = '<small style="color:orange">Auth Config Missing</small>';
+            }
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
+
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).catch(e => alert(e.message));
+        }
+
+        function logout() {
+            firebase.auth().signOut();
+        }
+
+        function updateUI(isLoggedIn) {
+            const portal = document.getElementById('agent-portal');
+            const authBtn = document.getElementById('auth-btn');
+            const authStatus = document.getElementById('auth-status');
+
+            if (isLoggedIn) {
+                portal.classList.remove('hidden');
+                authBtn.innerText = 'Log Out';
+                authBtn.onclick = logout;
+                authBtn.style.background = '#334155';
+                authStatus.innerText = `✅ ${currentUser.email}`;
+            } else {
+                portal.classList.add('hidden');
+                authBtn.innerText = 'Login with Google';
+                authBtn.onclick = login;
+                authBtn.style.background = '#2563eb'; // Blue for CTA
+                authStatus.innerText = '';
+            }
+        }
+
+        async function ingestIntelligence() {
+            const content = document.getElementById('raw-intelligence').value;
+            const type = document.getElementById('intelligence-type').value;
+            const status = document.getElementById('ingest-status');
+
+            if (!content) {
+                status.innerText = '❌ Error: Content is empty';
+                status.style.color = '#ef4444';
+                return;
+            }
+
+            // Check Auth (Optional for now, enforced by backend)
+            if (!idToken && window.firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                status.innerText = '🔒 Login Required';
+                status.style.color = '#ef4444';
+                return;
+            }
+
+            status.innerText = '⏳ Saving to Brain...';
+            status.style.color = '#94a3b8';
+
+            try {
+                const response = await fetch('/api/ingest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': idToken ? `Bearer ${idToken}` : '' // Send Token
+                    },
+                    body: JSON.stringify({ content, type })
+                });
+
+                if (response.ok) {
+                    status.innerText = '✅ Success: Saved to marketing_log.md';
+                    status.style.color = '#22c55e';
+                    document.getElementById('raw-intelligence').value = '';
+
+                    // Trigger a re-parse/refresh in 2 seconds
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    const errText = await response.text();
+                    throw new Error(errText || 'Server error');
+                }
+            } catch (err) {
+                status.innerText = `❌ Failed: ${err.message}`;
+                status.style.color = '#ef4444';
+                console.error(err);
+            }
+        }
+
+        // Auto-load logic for testing/local server
+        window.addEventListener('load', () => {
+            // Check if portal should be hidden initially (if Auth Config exists)
+            // If No Config, we leave it open (Dev Mode)
+            if (window.firebaseConfig && window.firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                document.getElementById('agent-portal').classList.add('hidden');
+            }
+
+            fetch('/marketing_log.md')
+                .then(r => {
+                    if (r.ok) return r.text();
+                    throw new Error('Fetch failed');
+                })
+                .then(text => {
+                    parseMarkdown(text);
+                    const h1 = document.querySelector('h1');
+                    h1.innerHTML += ' <span style="font-size: 0.4em; background: #22c55e; color: #000; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">ONLINE</span>';
+                })
+                .catch(e => console.log('Auto-fetch failed (check server.py)'));
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                parseMarkdown(e.target.result);
+            };
+            reader.readAsText(file);
+        });
+
+        function parseMarkdown(md) {
+            const lines = md.split('\n');
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+
+            let inTable = false;
+
+            lines.forEach(line => {
+                if (line.startsWith('| Date')) { inTable = true; return; }
+                if (line.startsWith('| :---')) return;
+
+                if (inTable && line.startsWith('|')) {
+                    const cols = line.split('|').map(c => c.trim()).filter(c => c);
+                    if (cols.length < 3) return;
+
+                    const date = cols[0];
+                    const platform = cols[1];
+                    const contentRaw = cols[2];
+
+                    // Simple logic: If it looks like a draft, show it
+                    if (contentRaw.includes('http') && !contentRaw.includes('DRAFT')) return;
+
+                    renderCard(date, platform, contentRaw);
+                }
+            });
+
+            document.getElementById('upload').style.display = 'none';
+        }
+
+        function renderCard(date, platform, content) {
+            const feed = document.getElementById('feed');
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            // Clean content (remove quotes if wrapped)
+            let cleanContent = content.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+            // Escape for attribute safely (crucial for onclick)
+            // 1. Replace backslashes first (to avoid escaping the escape chars)
+            // 2. Escape double quotes for HTML attribute "..."
+            // 3. Escape single quotes for JS string '...'
+            const contentForJS = cleanContent
+                .replace(/\\/g, '\\\\')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, "\\'");
+
+            // Determine Action
+            let actionBtn = '';
+
+            // Auto-detect Drafts
+            const isDraft = cleanContent.includes('DRAFT READY') || cleanContent.includes('Draft:');
+
+            if (platform.toLowerCase().includes('twitter') && !isDraft) {
+                const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(cleanContent)}`;
+                actionBtn = `<a href="${tweetUrl}" target="_blank" class="btn btn-twitter">🐦 Post to Twitter</a>`;
+            } else if (isDraft) {
+                // For drafts, we copy the WHOLE text content
+                // Extract Title for the log
+                const titleMatch = cleanContent.match(/Title: (.*?)(<br>|\n)/);
+                const draftTitle = titleMatch ? titleMatch[1] : 'Draft';
+
+                actionBtn = `
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="copyAndOpen('${encodeURIComponent(cleanContent)}', this)" class="btn" style="background: #22c55e;">📝 Copy</button>
+                        <button onclick="markAsPosted('${encodeURIComponent(draftTitle)}', this)" class="btn" style="background: #3b82f6;">✅ Mark Posted</button>
+                    </div>
+                `;
+            } else if (platform.toLowerCase().includes('reddit')) {
+                actionBtn = `<button onclick="copyAndOpen('${encodeURIComponent(cleanContent)}', this)" class="btn btn-reddit">🤖 Copy & Open Reddit</button>`;
+            }
+
+            card.innerHTML = `
+                <div class="meta">
+                    <span>📅 ${date}</span>
+                    <span>📍 ${platform}</span>
+                </div>
+                <div class="content">${cleanContent}</div>
+                <div class="actions">
+                    ${actionBtn}
+                </div>
+            `;
+
+            // Prepend to show newest first!
+            feed.prepend(card);
+        }
+
+        async function markAsPosted(encodedTitle, btn) {
+            const title = decodeURIComponent(encodedTitle);
+            const status = document.getElementById('ingest-status');
+
+            // Check Auth
+            if (!idToken && window.firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                alert('Login required to mark as posted.');
+                return;
+            }
+
+            btn.innerText = '⏳ Saving...';
+
+            try {
+                const response = await fetch('/api/ingest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': idToken ? `Bearer ${idToken}` : ''
+                    },
+                    body: JSON.stringify({
+                        content: `**POSTED** ${title}`,
+                        type: 'Status Update ✅'
+                    })
+                });
+
+                if (response.ok) {
+                    btn.innerText = '✅ Done';
+                    btn.style.background = '#059669';
+                    btn.disabled = true;
+                    // Reload to show the new log entry at the top
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Failed to save status.');
+            }
+        }
+
+        async function copyAndOpen(encodedContent, btn) {
+            // ... (Simple copy logic matches existing) ...
+            // Simplified for brevity in rewrite logic match
+            const text = decodeURIComponent(encodedContent);
+            try {
+                await navigator.clipboard.writeText(text);
+
+                // Visual Feedback
+                const originalText = btn.innerText;
+                btn.innerText = '✅ Copied!';
+
+                setTimeout(() => {
+                    if (originalText.includes('Reddit')) {
+                        window.open('https://reddit.com/submit', '_blank');
+                    }
+                    btn.innerText = originalText;
+                }, 1000);
+
+            } catch (err) {
+                console.error('Copy failed', err);
+                alert('Clipboard access denied. Please copy manually.');
+                if (encodedContent.includes('Reddit')) window.open('https://reddit.com/submit', '_blank');
+            }
+        }
+    </script>
+</body>
+
+</html>

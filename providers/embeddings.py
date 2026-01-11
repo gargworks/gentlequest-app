@@ -8,14 +8,6 @@ import hashlib
 from typing import List, Optional
 from datetime import datetime
 
-# Try to import Gemini for embeddings
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
-
-
 # Embedding model configuration
 EMBEDDING_MODEL = "models/text-embedding-004"  # Gemini's embedding model
 EMBEDDING_DIMENSION = 768  # Dimension of text-embedding-004
@@ -36,9 +28,6 @@ def generate_embedding(text: str) -> Optional[List[float]]:
     Returns:
         List of floats (768 dimensions) or None if failed
     """
-    if not GEMINI_AVAILABLE:
-        return None
-    
     api_key = _get_api_key()
     if not api_key:
         return None
@@ -49,25 +38,16 @@ def generate_embedding(text: str) -> Optional[List[float]]:
         if len(text) > max_chars:
             text = text[:max_chars]
 
-        # Dual-Engine Migration
-        try:
-            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(text, task_type="retrieval_document")
-            if result and 'embedding' in result:
-                return result['embedding']
-        except ImportError:
-            pass
-
-        # Fallback
-        genai.configure(api_key=api_key)
-        result = genai.embed_content(
-            model=EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_document"
-        )
+        # Use Nucleus V1 Client (DualEngineLLM)
+        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
         
-        return result['embedding']
+        llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+        result = llm.embed_content(text, task_type="retrieval_document")
+        
+        if result and 'embedding' in result:
+            return result['embedding']
+        
+        return None
         
     except Exception as e:
         print(f"Embedding generation error: {e}")
@@ -79,33 +59,21 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
     Generate embedding for a search query.
     Uses task_type="retrieval_query" for better search results.
     """
-    if not GEMINI_AVAILABLE:
-        return None
-    
     api_key = _get_api_key()
     if not api_key:
         return None
     
     try:
-        # Dual-Engine Migration
-        try:
-            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(query, task_type="retrieval_query")
-            if result and 'embedding' in result:
-                return result['embedding']
-        except ImportError:
-            pass
-
-        genai.configure(api_key=api_key)
+        # Use Nucleus V1 Client (DualEngineLLM)
+        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
         
-        result = genai.embed_content(
-            model=EMBEDDING_MODEL,
-            content=query,
-            task_type="retrieval_query"
-        )
+        llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+        result = llm.embed_content(query, task_type="retrieval_query")
         
-        return result['embedding']
+        if result and 'embedding' in result:
+            return result['embedding']
+            
+        return None
         
     except Exception as e:
         print(f"Query embedding error: {e}")

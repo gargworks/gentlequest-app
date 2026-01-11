@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import NucleusCrisisModal from './NucleusCrisisModal';
 
 // Context: PHQ-9 Standard
 const questions = [
@@ -53,12 +54,11 @@ export default function NucleusPHQ9() {
                 </div>
             </div>
 
-            {isCrisis && (
-                <div role="alert" className="mb-6 p-4 border border-red-500/50 bg-red-900/20 text-red-400 rounded animate-pulse">
-                    <strong className="block text-lg">⚠️ SAFETY ALERT</strong>
-                    <p>We noticed you flagged Question 9. If you are in immediate danger, please call 988 or go to the nearest emergency room.</p>
-                </div>
-            )}
+            <NucleusCrisisModal
+                isOpen={isCrisis}
+                onConfirmSafe={() => console.log("User confirmed safety")}
+                reason="PHQ-9 Question 9 Flagged"
+            />
 
             {!submitted ? (
                 <div className="space-y-6">

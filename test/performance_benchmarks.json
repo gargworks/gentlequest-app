@@ -1,0 +1,34 @@
+{
+  "app_load_time": {
+    "target": 1.0,
+    "warning": 2.0,
+    "critical": 3.0
+  },
+  "test_execution_time": {
+    "focused": {
+      "target": 60,
+      "warning": 120,
+      "critical": 180
+    },
+    "flutter": {
+      "target": 90,
+      "warning": 150,
+      "critical": 240
+    },
+    "comprehensive": {
+      "target": 120,
+      "warning": 200,
+      "critical": 300
+    }
+  },
+  "memory_usage": {
+    "target": 100,
+    "warning": 200,
+    "critical": 500
+  },
+  "disk_usage": {
+    "target": 10,
+    "warning": 50,
+    "critical": 100
+  }
+}

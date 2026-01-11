@@ -10,7 +10,8 @@
 ```
 Read these files in order to understand the full project context:
 1. AGENTS.md — The operational constitution (your role is CREATION/Technical Creator)
-2. conversation_log.md — Complete project history (688 lines of decisions, architecture, code changes)
+2. docs/windsurf_chat_history.md — Complete project history (688 lines of decisions, architecture, code changes)
+
 3. .brain/NUCLEUS_HUB.md — Central navigation hub
 4. docs/AGENTIC_SOLO_FOUNDER_PLAYBOOK.md — Thread model reference
 ```
