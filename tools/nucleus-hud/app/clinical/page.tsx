@@ -3,6 +3,7 @@
 
 import React from 'react';
 import NucleusPHQ9 from '../components/clinical/NucleusPHQ9';
+import NucleusWellnessChart from '../components/outcome/NucleusWellnessChart';
 
 export default function ClinicalPage() {
     return (
@@ -12,13 +13,21 @@ export default function ClinicalPage() {
                 <p className="text-green-500/60 font-mono text-sm">Validating Assessment Logic & Safety Protocols</p>
             </header>
 
-            <main className="grid grid-cols-1 gap-8">
+            <main className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <section>
                     <div className="mb-4 flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                         <h2 className="text-xl font-bold text-green-400">PHQ-9 STANDARD</h2>
                     </div>
                     <NucleusPHQ9 />
+                </section>
+
+                <section>
+                    <div className="mb-4 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <h2 className="text-xl font-bold text-green-400">OUTCOME_TRACKING</h2>
+                    </div>
+                    <NucleusWellnessChart />
                 </section>
             </main>
         </div>

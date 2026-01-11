@@ -16,9 +16,10 @@ export const metadata: Metadata = {
         index: true,
         follow: true,
     },
-    viewport: {
-        width: 'device-width',
-        initialScale: 1,
-    },
-    themeColor: '#00FF41', // Neon Green (Matrix Theme)
+};
+
+export const viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    themeColor: '#00FF41',
 };
