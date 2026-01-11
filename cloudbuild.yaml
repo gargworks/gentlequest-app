@@ -7,7 +7,22 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/gentlequest-backend']
 
-  # 3. Deploy to Cloud Run with Cloud SQL connection
+
+  # 3. Build Nucleus HUD (Next.js)
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/nucleus-hud'
+      - 'tools/nucleus-hud'
+
+  # 4. Push Nucleus HUD
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/nucleus-hud']
+
+  # 5. Deploy Backend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -24,5 +39,19 @@ steps:
       - '--set-env-vars'
       - 'ENVIRONMENT=production,DATABASE_URL=postgresql://gentlequest:gentlequest2026@/gentlequest?host=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
 
+  # 6. Deploy Nucleus HUD to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'nucleus-hud'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/nucleus-hud'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+
 images:
   - 'gcr.io/$PROJECT_ID/gentlequest-backend'
+  - 'gcr.io/$PROJECT_ID/nucleus-hud'
