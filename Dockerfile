@@ -3,26 +3,29 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Dependencies
-RUN pip install --no-cache-dir firebase-admin google-auth
+# Install system dependencies (for psycopg, etc.)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy Codebase
-# We copy specific folders to avoid sending the whole repo (like node_modules)
-COPY tools /app/tools
-COPY docs /app/docs
-COPY .brain /app/.brain
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Create empty log if it doesn't exist (to avoid errors)
-RUN touch /app/docs/marketing/marketing_log.md
+# Copy Application Code
+COPY . .
 
-# Path Helper for server.py which expects to be deep in tools
-# server.py finds root via os.path.dirname(os.path.dirname(BASE_DIR))
-# If server.py is at /app/tools/marketing-dashboard/server.py
-# BASE_DIR = /app/tools/marketing-dashboard
-# PROJECT_ROOT = /app
-# This matches the container structure.
+# Environment
+ENV PORT=5055
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-ENV PORT 8080
-EXPOSE 8080
+# Expose the port
+EXPOSE 5055
 
-CMD ["python", "tools/marketing-dashboard/server.py"]
+# Run the application
+# Using python app.py for now to match dev behavior, 
+# but in true production gunicorn is recommended.
+CMD ["python", "app.py"]

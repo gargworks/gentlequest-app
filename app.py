@@ -646,6 +646,32 @@ def create_app() -> Flask:
             send_telegram_alert(f"🚀 New Sprint Started via API\n\n{goal}")
             return jsonify({"ok": True, "message": result})
 
+        @app.route("/api/swarms", methods=["GET"])
+        def get_swarms():
+            """Get active swarms state"""
+            try:
+                from pathlib import Path
+                # Determine brain path
+                brain_path = Path(os.getenv("NUCLEUS_BRAIN_PATH", ".brain"))
+                state_file = brain_path / "swarms" / "state.json"
+                
+                swarms_list = []
+                if state_file.exists():
+                    state = json.loads(state_file.read_text())
+                    for mid, mdata in state.items():
+                        # Adapt data model for frontend
+                        mdata['session_id'] = mid
+                        if 'agents' not in mdata:
+                            # Show lead and implied squad
+                            # MVP: just show lead
+                            mdata['agents'] = [mdata.get('lead', 'Unknown')]
+                        swarms_list.append(mdata)
+                        
+                return jsonify({"swarms": swarms_list})
+            except Exception as e:
+                app.logger.error(f"Failed to get swarms: {e}")
+                return jsonify({"error": str(e)}), 500
+
         @app.route("/api/brain/sync", methods=["POST"])
         def brain_sync_state():
              """Sync local brain state to production"""
@@ -912,34 +938,6 @@ def create_app() -> Flask:
                 app.logger.error(f"Clinical assessment error: {e}")
                 return jsonify({"success": False, "error": str(e)}), 500
 
-        @app.route("/api/assessment/history", methods=["GET"])
-        def get_clinical_assessment_history():
-            """Get clinical assessment history for a session."""
-            try:
-                session_id = request.args.get("session_id")
-                if not session_id:
-                    return jsonify({"success": False, "error": "session_id required"}), 400
-
-                assessments = ClinicalAssessment.query.filter_by(
-                    session_id=session_id
-                ).order_by(ClinicalAssessment.timestamp.desc()).limit(20).all()
-
-                history = [
-                    {
-                        "id": a.id,
-                        "type": a.assessment_type,
-                        "score": a.total_score,
-                        "severity": a.severity,
-                        "timestamp": a.timestamp.isoformat(),
-                    }
-                    for a in assessments
-                ]
-
-                return jsonify({"success": True, "assessments": history})
-
-            except Exception as e:
-                app.logger.error(f"Assessment history error: {e}")
-                return jsonify({"success": False, "error": str(e)}), 500
 
         app.logger.info("Clinical assessment routes registered (PHQ-9, GAD-7)")
     except Exception as e:
@@ -1394,9 +1392,33 @@ def _register_routes(app: Flask) -> None:
         if session_id and not isinstance(session_id, str):
             request.headers["X-Session-ID"] = str(session_id)
 
+    def _serve_app_logic():
+        """Shared logic to serve the Flutter web app or fallback."""
+        app.logger.info(
+            f"Serving app logic. Environment: {app.config.get('ENVIRONMENT')}"
+        )
+        if os.path.exists(app.static_folder) and os.path.exists(
+            os.path.join(app.static_folder, "index.html")
+        ):
+            return send_from_directory(app.static_folder, "index.html")
+        else:
+            return jsonify(
+                {
+                    "message": "GentleQuest AI Mental Health Assistant",
+                    "status": "running",
+                    "environment": app.config.get("ENVIRONMENT", "development"),
+                }
+            )
+
     @app.route("/")
     def landing_page():
-        """Serve the 'Quiet Launch' landing page."""
+        """Serve the 'Quiet Launch' landing page, or the App if strictly on 'app.*' domain."""
+        host = request.headers.get("Host", "").lower()
+        # If accessing via app.gentlequest.app (or similar app.*), serve the Flutter app
+        if host.startswith("app."):
+            return _serve_app_logic()
+        
+        # Otherwise, serve the marketing landing page
         return render_template("landing.html")
 
     @app.route("/api/assessment/<assessment_type>/questions", methods=["GET"])
@@ -1478,25 +1500,10 @@ def _register_routes(app: Flask) -> None:
             app.logger.error(f"Error fetching history: {e}")
             return jsonify({"error": "Internal server error"}), 500
 
-    @app.route("/", methods=["GET"])
-    def index():
-        """Serve the Flutter web app or fallback page"""
-        app.logger.info(
-            f"Root route called. Environment: {app.config.get('ENVIRONMENT')}"
-        )
-
-        if os.path.exists(app.static_folder) and os.path.exists(
-            os.path.join(app.static_folder, "index.html")
-        ):
-            return send_from_directory(app.static_folder, "index.html")
-        else:
-            return jsonify(
-                {
-                    "message": "GentleQuest AI Mental Health Assistant",
-                    "status": "running",
-                    "environment": app.config.get("ENVIRONMENT", "development"),
-                }
-            )
+    @app.route("/app", methods=["GET"])
+    def serve_app():
+        """Serve the Flutter web app or fallback page (explicit route)."""
+        return _serve_app_logic()
 
     @app.route("/.well-known/assetlinks.json")
     @app.limiter.exempt

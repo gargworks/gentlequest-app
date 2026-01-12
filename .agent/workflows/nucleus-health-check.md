@@ -63,3 +63,11 @@ After running health check, view the analytics dashboard:
 ```bash
 cat .gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_ANALYTICS_DASHBOARD.md
 ```
+
+## Brain Consolidation Status
+
+To verify if the "Marketing Archival" and "Periodic Saving" is working:
+
+1. Check raw log accumulation: `du -sh .brain/raw/`
+2. Run consolidation if needed: `/consolidate-brain`
+

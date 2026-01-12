@@ -55,6 +55,7 @@ def collect_metrics():
         "open_loops": None,
         "tasks": None,
         "events": None,
+        "consolidation": None,
     }
     
     try:
@@ -98,6 +99,24 @@ def collect_metrics():
         metrics["events"] = events
     except Exception as e:
         metrics["events"] = f"Error: {e}"
+
+    try:
+        # Get Brain Consolidation Status (MDR_010)
+        brain_path = get_brain_path()
+        raw_path = brain_path / "raw"
+        if raw_path.exists():
+            files = list(raw_path.glob("*.json"))
+            count = len(files)
+            size_mb = sum(f.stat().st_size for f in files) / (1024 * 1024)
+            metrics["consolidation"] = {
+                "raw_file_count": count,
+                "raw_size_mb": round(size_mb, 2),
+                "status": "accumulating" if count > 50 else "clean"
+            }
+        else:
+            metrics["consolidation"] = {"status": "missing_dir"}
+    except Exception as e:
+        metrics["consolidation"] = f"Error: {e}"
     
     return metrics
 
@@ -171,6 +190,17 @@ def generate_report(metrics, health):
             report.append(f"  - {item}")
     report.append("")
     
+    # Consolidation (MDR_010)
+    report.append("💿 CONSOLIDATION (Brain Protocol):")
+    cons = metrics.get('consolidation')
+    if isinstance(cons, dict):
+        report.append(f"  Raw Files: {cons.get('raw_file_count', 0)}")
+        report.append(f"  Total Size: {cons.get('raw_size_mb', 0)} MB")
+        report.append(f"  Status: {cons.get('status', 'unknown').upper()}")
+    elif cons:
+        report.append(str(cons))
+    report.append("")
+
     # Issues & Recommendations
     if health['issues']:
         report.append("⚠️  ISSUES:")

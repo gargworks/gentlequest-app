@@ -52,7 +52,7 @@ async def main():
     
     # 3. Create Context for Librarian (Intent = 'admin')
     # Use a descriptive intent that triggers classify_intent -> 'admin'
-    intent = "Perform daily admin scan of commitments and archive stale items."
+    intent = "Perform daily admin scan of commitments, archive stale items, and consolidate raw brain logs."
     session_id = f"nightly-{datetime.now().strftime('%Y%m%d')}"
     
     context = factory.create_context(session_id=session_id, intent=intent)
