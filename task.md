@@ -1033,6 +1033,8 @@ Enhance `nucleus-init` to provide a guided onboarding experience for new users.
 - [x] **Snapshot**: Created `scripts/save_session_context.py` for manual dumps.
 - [x] **Mining**: Added `extract` command to `marketing_autopilot.py`.
 - [x] **Health**: Updated `nucleus_health_check.py` to monitor `.brain/raw/` size.
+- [x] **Consolidation**: Implemented `brain_consolidate_logs` tool in `BrainOps`.
+- [x] **Cleanup**: Implemented `clean_drafts` in `marketing_autopilot.py`.
 - [x] **Protocol**: Documented workflow in `.agent/workflows/consolidate-brain.md`.
 - [x] **Verified**: Test mode confirmed concept extraction ("Neural Pathways").
 
