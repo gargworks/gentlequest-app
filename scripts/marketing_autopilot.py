@@ -247,7 +247,31 @@ def cmd_publish(args):
         
     print(f"\n📄 Current Drafts in {DRAFTS_PATH.name}:")
     print(DRAFTS_PATH.read_text())
-    print("\n👉 Action: Manually post these, then run 'python3 scripts/marketing_autopilot.py clean_drafts' (To Be Implemented)")
+    print("\n👉 Action: Manually post these, then run 'python3 scripts/marketing_autopilot.py clean'")
+
+
+def cmd_clean_drafts(args):
+    """Archive current drafts and clear the file"""
+    if not DRAFTS_PATH.exists() or not DRAFTS_PATH.read_text().strip():
+        logger.info("Drafts file is empty or missing.")
+        return
+
+    logger.info("🧹 Cleaning up drafts...")
+    
+    archive_path = DOCS_DIR / "drafts_archive.md"
+    content = DRAFTS_PATH.read_text()
+    
+    # Append to archive with timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    header = f"\n\n# Archived Batch ({timestamp})\n" + "="*40 + "\n"
+    
+    with open(archive_path, "a") as f:
+        f.write(header + content)
+        
+    # Clear drafts file
+    DRAFTS_PATH.write_text("")
+    
+    logger.info(f"✅ Archived drafts to {archive_path.name} and cleared {DRAFTS_PATH.name}")
 
 
 def cmd_daemon(args):
@@ -270,6 +294,7 @@ def main(parser=None):
         subparsers.add_parser("strategize", help="Update strategy")
         subparsers.add_parser("draft", help="Generate drafts")
         subparsers.add_parser("publish", help="Review drafts")
+        subparsers.add_parser("clean", help="Archive and clear drafts")
         subparsers.add_parser("extract", help="Mine raw logs for marketing insights")
         subparsers.add_parser("daemon", help="Run continuous loop")
     
@@ -285,6 +310,7 @@ def main(parser=None):
     elif args.command == "strategize": cmd_strategize(args)
     elif args.command == "draft": cmd_draft(args)
     elif args.command == "publish": cmd_publish(args)
+    elif args.command == "clean": cmd_clean_drafts(args)
     elif args.command == "daemon": cmd_daemon(args)
     elif args.command == "extract": cmd_extract(args)
     else: parser.print_help()
