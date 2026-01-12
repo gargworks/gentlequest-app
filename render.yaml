@@ -59,7 +59,7 @@ services:
 
       # Informational
       - key: VERSION
-        value: 1.0.0
+        value: 2.1.0
       - key: BUILD_TIME
         generateValue: true
       - key: PLATFORM
