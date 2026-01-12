@@ -29,3 +29,5 @@ prometheus-client>=0.16.0
 # Content Automation
 moviepy==1.0.3
 pillow
+nest_asyncio
+psycopg2-binary
