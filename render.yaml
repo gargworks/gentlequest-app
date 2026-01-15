@@ -91,3 +91,15 @@ staticSites:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # Nucleus Developer Blog (nucleus.sh)
+  - name: nucleus-blog
+    buildCommand: cd mcp-server-nucleus/website && npm install && npm run build
+    publishPath: mcp-server-nucleus/website/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
