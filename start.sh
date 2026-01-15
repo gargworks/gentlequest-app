@@ -3,6 +3,26 @@
 set -euo pipefail
 export PYTHONUNBUFFERED=1
 
+echo "DEBUG: Starting up..."
+echo "DEBUG: DATABASE_URL is '${DATABASE_URL:-}'"
+echo "DEBUG: DB_USER is '${DB_USER:-}'"
+echo "DEBUG: DB_HOST is '${DB_HOST:-}'"
+if [ -n "${DB_PASSWORD:-}" ]; then
+  echo "DEBUG: DB_PASSWORD is set (length: ${#DB_PASSWORD})"
+else
+  echo "DEBUG: DB_PASSWORD is UNSET or EMPTY"
+fi
+
+# Inject DATABASE_URL from secrets if available (TASK-007)
+# This allows us to remove the hardcoded password from cloudbuild.yaml
+if [ -z "${DATABASE_URL:-}" ] && [ -n "${DB_PASSWORD:-}" ] && [ -n "${DB_USER:-}" ]; then
+  echo "Constructing DATABASE_URL from secrets..."
+  # Construct standard PostgreSQL connection string
+  # host usually contains the socket path for Cloud SQL (e.g. /cloudsql/PROJECT:REGION:INSTANCE)
+  export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@/${DB_NAME}?host=${DB_HOST}"
+  echo "DEBUG: DATABASE_URL constructed (masked password)."
+fi
+
 # Determine environment (default to docker/local)
 ENVIRONMENT_NAME="${ENVIRONMENT:-docker}"
 

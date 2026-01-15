@@ -26,6 +26,7 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 5055
 
 # Run the application
-# Using python app.py for now to match dev behavior, 
-# but in true production gunicorn is recommended.
-CMD ["python", "app.py"]
+# Using custom entrypoint to handle creation of DATABASE_URL from secrets
+COPY scripts/cloud_run_entrypoint.sh .
+RUN chmod +x cloud_run_entrypoint.sh
+CMD ["./cloud_run_entrypoint.sh"]
