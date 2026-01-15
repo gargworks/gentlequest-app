@@ -1,0 +1,18 @@
+steps:
+  # 1. Install Dependencies (Using Nucleus Image would be faster, but this ensures fresh env)
+  - name: 'python:3.10-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install google-genai
+        pip install -r mcp-server-nucleus/requirements.txt
+        # Run the Simulator in Verify Truth Mode
+        FORCE_VERTEX=1 python3 scripts/gladiator_simulator.py "${_PROPOSITION}" --mode ${_MODE}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _MODE: verify_truth
+  _PROPOSITION: CLOUD_AUDIT_REQUEST

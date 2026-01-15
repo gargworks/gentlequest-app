@@ -1,0 +1,39 @@
+# Dockerfile.swarm - Nucleus Builder (Cloud Run Job)
+# Optimized for batch execution (no HTTP server)
+
+FROM python:3.11-slim
+
+# Install system dependencies
+# git: for cloning/pushing
+# curl: for bootstrapping
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+# We install nucleus-server dependencies + google-genai
+# Copy submodule definition first to cache dependencies
+COPY mcp-server-nucleus/pyproject.toml mcp-server-nucleus/README.md /app/mcp-server-nucleus/
+COPY mcp-server-nucleus/src /app/mcp-server-nucleus/src
+
+# Install Nucleus from local path
+RUN pip install --no-cache-dir ./mcp-server-nucleus google-genai
+
+# Copy application code
+COPY . .
+
+# Set environment
+ENV PYTHONUNBUFFERED=1
+ENV FORCE_VERTEX=1
+ENV NUCLEUS_BRAIN_PATH=/app/.brain
+
+# Add mcp-server-nucleus to PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/app/mcp-server-nucleus/src"
+
+# Default Command: Run Execution Swarm
+# Can be overridden by Cloud Run Job arguments
+ENTRYPOINT ["python", "scripts/execution_swarm.py"]

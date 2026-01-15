@@ -1,0 +1,14 @@
+# deploy/render_hud.yaml
+services:
+  - type: web
+    name: nucleus-hud
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: cd tools/nucleus-hud && npm install && npm run build
+    startCommand: cd tools/nucleus-hud && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.9.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://nucleus-daemon-uc.a.run.app # Placeholder for Cloud Run URL

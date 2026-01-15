@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  iip-backend:
+    build: ./backend
+    container_name: iip_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend_config.env
+    depends_on:
+      - iip-db
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  iip-db:
+    image: postgres:15-alpine
+    container_name: iip_db
+    environment:
+      POSTGRES_USER: iip_user
+      POSTGRES_PASSWORD: iip_password
+      POSTGRES_DB: iip_db
+    ports:
+      - "5433:5432" # Port 5433 to avoid conflict with main DB (5432)
+    volumes:
+      - iip_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  iip_postgres_data:

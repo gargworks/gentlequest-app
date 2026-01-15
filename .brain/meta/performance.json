@@ -1,35 +1,7 @@
 {
   "initialized": "2025-12-26T21:20:00+05:30",
-  "last_updated": "2026-01-08T11:40:31.168376",
+  "last_updated": "2026-01-13T00:00:02.748550",
   "agents": {
-    "orchestrator": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "brain_add_loop": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "brain_update_task": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "nucleus_mcp": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
     "health_check": {
       "completed": 0,
       "failed": 0,
@@ -37,179 +9,18 @@
       "success_rate": 0.0,
       "escalation_rate": 0.0
     },
-    "user": {
+    "orchestrator": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,
       "success_rate": 0.0,
       "escalation_rate": 0.0
     },
-    "marathon-test": {
-      "completed": 1,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "depth_tracker": {
+    "autopilot": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,
       "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "meta_optimizer": {
-      "completed": 2,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "test": {
-      "completed": 1,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "nightly_agent": {
-      "completed": 57,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "claude": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "stress-agent": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "production-verifier": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "antigravity": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "researcher": {
-      "completed": 3,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "stuck-agent": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "e2e-test-agent": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "founder": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "system": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "autonomous_session": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "mcp_test": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "master_controller": {
-      "completed": 1,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "Windsurf": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "backend-analytics-agent": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "synthesizer": {
-      "completed": 7,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "tester": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "developer": {
-      "completed": 2,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "strategist": {
-      "completed": 3,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
-      "escalation_rate": 0.0
-    },
-    "architect": {
-      "completed": 2,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 1.0,
       "escalation_rate": 0.0
     }
   },

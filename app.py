@@ -9,11 +9,15 @@ import socket
 import re
 import logging
 import json
+import sys
 import redis
 import requests
 import time
 import threading
 import uuid
+
+# Add mcp-server-nucleus to python path for local imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src"))
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Tuple
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -1382,6 +1386,53 @@ def _setup_cors(app: Flask) -> None:
     )
 
 
+def _setup_security_headers(app: Flask) -> None:
+    """Add security headers to all responses"""
+    @app.after_request
+    def add_security_headers(response: Response) -> Response:
+        # HSTS (Strict-Transport-Security)
+        # Enforce HTTPS in production.
+        # Max-age: 1 year (31536000 seconds)
+        # includeSubDomains: Apply to all subdomains (api., app., etc.)
+        # preload: Allow inclusion in browser HSTS preload list
+        if app.config.get("ENVIRONMENT") == "production":
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
+        
+        # X-Content-Type-Options
+        # Prevent MIME-type sniffing (security requirement)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # X-Frame-Options
+        # Prevent clickjacking. Allow same origin for iframe embedding (if needed)
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        
+        # X-XSS-Protection
+        # Enable XSS filtering in modern browsers (legacy but good to have)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Referrer-Policy
+        # Control how much referrer info is sent with requests
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Content-Security-Policy (CSP)
+        # A basic policy to upgrade insecure requests.
+        # NOTE: A full CSP requires careful tuning to avoid breaking scripts.
+        # Currently, we only enforce HTTPS upgrade.
+        if "Content-Security-Policy" not in response.headers:
+             response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
+             
+        # Permissions-Policy (formerly Feature-Policy)
+        # Disable sensitive features by default
+        if "Permissions-Policy" not in response.headers:
+            response.headers["Permissions-Policy"] = (
+                "geolocation=(), microphone=(), camera=(), payment=()"
+            )
+
+        return response
+
+
 def _register_routes(app: Flask) -> None:
     """Register all application routes"""
 
@@ -1409,6 +1460,9 @@ def _register_routes(app: Flask) -> None:
                     "environment": app.config.get("ENVIRONMENT", "development"),
                 }
             )
+
+    # Security Headers
+    _setup_security_headers(app)
 
     @app.route("/")
     def landing_page():

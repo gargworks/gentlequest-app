@@ -1,0 +1,50 @@
+# === Stage 1: Build the Face (Next.js) ===
+FROM node:20-alpine AS hud-builder
+WORKDIR /app
+COPY tools/nucleus-hud/package*.json ./
+RUN npm ci
+COPY tools/nucleus-hud .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+# === Stage 2: The Sovereign Container (Python + Node Runtime) ===
+FROM python:3.11-slim
+WORKDIR /app
+
+# Install Node.js (for running the HUD) and Supervisor
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    supervisor \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python Dependencies (The Brain)
+COPY mcp-server-nucleus /app/mcp-server-nucleus
+RUN pip install --no-cache-dir -e /app/mcp-server-nucleus
+
+# Copy Built HUD from Stage 1
+COPY --from=hud-builder /app/.next /app/tools/nucleus-hud/.next
+COPY --from=hud-builder /app/public /app/tools/nucleus-hud/public
+COPY --from=hud-builder /app/package.json /app/tools/nucleus-hud/package.json
+COPY --from=hud-builder /app/node_modules /app/tools/nucleus-hud/node_modules
+
+# Copy Process Manager Config
+COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy The Brain Seed (For bootstrapping empty volumes)
+COPY .brain /app/.brain_seed
+# Ensure the mount point exists
+RUN mkdir -p /app/.brain
+
+# Copy Bootloader
+COPY deploy/bootloader.sh /app/deploy/bootloader.sh
+RUN chmod +x /app/deploy/bootloader.sh
+
+# Environment Variables
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080 
+
+EXPOSE 3000 8000
+
+CMD ["/app/deploy/bootloader.sh"]

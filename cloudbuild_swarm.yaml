@@ -1,0 +1,6 @@
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/gen-lang-client-0894185576/nucleus-artifacts/nucleus-builder', '-f', 'Dockerfile.swarm', '.' ]
+images:
+- 'us-central1-docker.pkg.dev/gen-lang-client-0894185576/nucleus-artifacts/nucleus-builder'

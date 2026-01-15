@@ -1,3 +1,47 @@
+# IIP App: Persona Generation Sprint ✅
+
+## Objective
+Implement end-to-end Persona generation for the IIP App, clustering interview insights and maintaining strict schema compliance for traceability.
+
+## Tasks
+- [x] **Backend:** Implement Persona models, CRUD, and `/generate` extension.
+- [x] **LLM:** Develop synthesis logic with supporting quotes and interview IDs.
+- [x] **Frontend:** Build `PersonaListScreen` and wire up "Auto-Generate" button.
+- [x] **Verification:** Fix CORS and complete manual walkthrough via browser agent.
+
+## Phase 3: CVP Generation 🔮 ✅
+- [x] **Backend:**
+  - [x] Implement `CVPCanvas` SQLModel with strict keys.
+  - [x] Implement `CVPRead`/`CVPCreate` schemas.
+  - [x] Add `generate_cvp` to `AIInsightsService`.
+  - [x] Implement `GET/POST /teams/{id}/cvp` and `/cvp/generate` endpoints.
+- [x] **Frontend (Flutter):**
+  - [x] Implement `CVPCanvas` model with @JsonKey.
+  - [x] Enhance `ApiService` with CVP methods.
+  - [x] Create `CVPCanvasScreen` (Visual Canvas UI + Generate Button).
+- [x] **Verification:**
+  - [x] Verify CRUD endpoints via curl.
+  - [x] Verify LLM generation trigger (CORS fix identified).
+  - [x] Complete UI walkthrough.
+
+## Next: Phase 4 - MVP Roadmap 🚀
+- [x] Spec `MVPRoadmap` entity.
+- [x] Implement synthesis of feature backlog from CVP goals.
+- [x] Build Roadmap visualization screen.
+- [x] **Verification:** Gladiator Simulator strategic audit.
+
+## Next: Phase 5 - Deployment & Live Integration ✅
+- [x] **Plan:** Create `deploy/cloudbuild_iip.yaml` for Backend & Frontend.
+- [x] **Backend:** Deploy `iip-backend` to Cloud Run (with Secrets).
+- [x] **Frontend:** Deploy `iip-frontend` (Flutter Web) to Firebase Hosting or Cloud Run.
+- [ ] **Integration:** Switch to Live Gemini API Key (remove Mock).
+
+**Live URLs:**
+- Backend API: https://iip-backend-999376128638.us-central1.run.app
+- Frontend: https://iip-frontend-999376128638.us-central1.run.app
+
+---
+
 # Nucleus Onboarding Sprint
 
 ## Objective

@@ -1,0 +1,48 @@
+
+# Dockerfile.daemon
+# The Sovereign Runtime Container.
+# Runs the Nucleus Daemon in a headless, isolated environment.
+
+FROM python:3.11-slim-bookworm
+
+# 1. System Dependencies
+# 'procps' for ps command (process management)
+# 'git' for potential self-updates
+# 'build-essential' for compiling usage if needed
+RUN apt_get update && apt-get install -y --no-install-recommends \
+    procps \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Workspace Setup
+WORKDIR /app
+ENV PYTHONPATH=/app/src
+
+# 3. Python Dependencies
+# Copy requirements first for caching
+COPY pyproject.toml .
+# Assuming a requirements.txt was generated or we install from pip .
+# For now, we install basic deps manually if no lock file, or we pip install .
+RUN pip install --no-cache-dir \
+    google-genai \
+    beautifulsoup4 \
+    duckduckgo-search \
+    python-dotenv \
+    watchdog \
+    aiohttp
+
+# 4. Copy Codebase
+COPY . .
+
+# 5. Runtime Configuration
+# Volume for State (The Brain)
+VOLUME ["/app/.brain"]
+ENV NUCLEUS_BRAIN_PATH="/app/.brain"
+ENV NUCLEUS_LOCK_DIR="/tmp/nucleus_locks"
+
+# 6. Entrypoint
+# We run the daemon verification script as the default command for now, 
+# or the actual daemon runner if we had a __main__.py
+# Creating a dedicated runner entrypoint.
+CMD ["python", "scripts/verify_daemon_swarm.py"]

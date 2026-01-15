@@ -34,3 +34,32 @@ ai_buddy_web/.packages
 
 # Large Data (Optional - Keep this if you have large local datasets)
 data/
+
+# Brain Logs & Archives (Don't deploy raw memory)
+.brain/raw/
+.brain/archive/
+.brain/backups/
+.brain-archive/
+
+# Logs
+logs/
+*.log
+
+# Huge Directories (Irrelevant to Swarm)
+ai_buddy_web/
+landing-page/
+test_env/
+scheduler_env/
+# Exclude specific tools subdirectories (keep nucleus-hud for the HUD build)
+tools/brain_analyze_sentiment/
+tools/marketing-dashboard/
+tools/omega/
+tools/*.py
+tools/registry.json
+
+# Recursive Exclusions
+**/.venv
+**/venv
+**/__pycache__
+**/.DS_Store
+

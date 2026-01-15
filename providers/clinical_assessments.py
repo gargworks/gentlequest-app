@@ -375,19 +375,30 @@ def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
     except ImportError:
         psycopg2 = None
 
-    if psycopg2:
+    try:
+        import psycopg
+    except ImportError:
+        psycopg = None
+
+    # Check if conn is sqlite3
+    # Robust check: look at connection type string
+    is_sqlite = 'sqlite' in str(type(conn)).lower()
+    is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
+    
+    # Default to Postgres if not clearly SQLite, unless strictly SQLite
+    if is_sqlite:
+        insert_sql = """
+        INSERT INTO clinical_assessments 
+        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+    else:
+        # Postgres (psycopg2 or psycopg3) uses %s
         insert_sql = """
         INSERT INTO clinical_assessments 
         (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id;
-        """
-    else:
-        # SQLite fallback
-        insert_sql = """
-        INSERT INTO clinical_assessments 
-        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
 
     # Extract needed fields
@@ -406,9 +417,6 @@ def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
     })
     
     try:
-        # Check if conn is sqlite3
-        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
-        
         cursor = conn.cursor()
         params = (
             session_id, 
@@ -421,13 +429,14 @@ def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
             requires_follow_up
         )
 
-        if psycopg2 and not is_sqlite:
-            cursor.execute(insert_sql, params)
-            new_id = cursor.fetchone()[0]
-        else:
+        if is_sqlite:
              # SQLite execution
             cursor.execute(insert_sql, params)
             new_id = cursor.lastrowid
+        else:
+            # Postgres execution
+            cursor.execute(insert_sql, params)
+            new_id = cursor.fetchone()[0]
             
         conn.commit()
         return new_id
@@ -446,6 +455,13 @@ def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]
         from psycopg2.extras import RealDictCursor
     except ImportError:
         psycopg2 = None
+        RealDictCursor = None
+
+    try:
+        import psycopg
+        from psycopg.rows import dict_row
+    except ImportError:
+        psycopg = None
 
     try:
         # SQLite Helper to return dicts
@@ -455,7 +471,8 @@ def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]
                 d[col[0]] = row[idx]
             return d
 
-        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
+        is_sqlite = 'sqlite' in str(type(conn)).lower()
+        is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
 
         if is_sqlite:
             conn.row_factory = dict_factory
@@ -465,12 +482,21 @@ def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]
             return cursor.fetchall()
         else:
              # Postgres logic
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                 cur.execute(
-                    "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
-                    (session_id, limit)
-                )
-                 return cur.fetchall()
+             if psycopg2:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                     cur.execute(
+                        "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
+                        (session_id, limit)
+                    )
+                     return cur.fetchall()
+             elif psycopg:
+                # Psycopg 3 logic
+                with conn.cursor(row_factory=dict_row) as cur:
+                     cur.execute(
+                        "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
+                        (session_id, limit)
+                    )
+                     return cur.fetchall()
 
     except Exception as e:
         print(f"⚠️ Error fetching history: {e}")

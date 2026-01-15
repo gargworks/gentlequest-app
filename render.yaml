@@ -103,3 +103,15 @@ staticSites:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # GentleQuest Consumer Blog (blog.gentlequest.app)
+  - name: gentlequest-blog
+    buildCommand: cd gentlequest-blog && npm install && npm run build
+    publishPath: gentlequest-blog/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

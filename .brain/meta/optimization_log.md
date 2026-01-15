@@ -331,3 +331,29 @@
 - Windsurf: Add more explicit tool usage examples to prompt [pending_approval]
 - backend-analytics-agent: Add more explicit tool usage examples to prompt [pending_approval]
 - tester: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-13 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| health_check | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| autopilot | 0.0% | 0.0% | 0 |
+
+### Issues Identified (3)
+- **health_check**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **autopilot**: low_success_rate (0.0%)
+
+### Recommendations (3)
+- **health_check**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **autopilot**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- autopilot: Add more explicit tool usage examples to prompt [pending_approval]

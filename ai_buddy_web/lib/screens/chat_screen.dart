@@ -37,10 +37,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.trim().isEmpty) return;
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    // MVP Testing: Use India for crisis detection testing
-    // TODO: Implement proper country detection or user preference
-    debugPrint('🔍 DEBUG: Sending message with country: in');
-    chatProvider.sendMessage(text, country: 'in');
+    // Country is auto-derived from device locale in ApiService._deriveCountry()
+    chatProvider.sendMessage(text);
     _messageController.clear();
     _scrollToBottom();
   }

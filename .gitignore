@@ -86,6 +86,8 @@ ai_buddy_web/android/key.properties
 # MDR_008: Private Brain (entire folder except .gitkeep)
 .brain/
 !.brain/.gitkeep
+!.brain/tools/
+
 
 # Nuclear Brain runtime (legacy specific rules)
 .brain/.flywheel.pid
@@ -94,3 +96,4 @@ ai_buddy_web/android/key.properties
 .brain/.sync_state.json
 !*.md
 secret/service_account.json
+backend_config.env

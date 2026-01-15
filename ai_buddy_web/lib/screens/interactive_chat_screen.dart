@@ -504,15 +504,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         Expanded(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              StatusAvatar(
-                                name: ProfileConfig.aiName,
-                                imageAsset: ProfileConfig.aiAvatarAsset,
-                                size: 66.h,
-                                status: PresenceStatus.online,
-                                showStatus: true,
-                              ),
-                              SizedBox(width: 12.h),
                               Text(
                                 ProfileConfig.aiName,
                                 style: TextStyleHelper.instance.headline24Bold,
@@ -728,7 +719,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      Icons.send,
+                                      Icons.arrow_upward_rounded,
                                       color: Colors.white,
                                       size: 32.h,
                                     ),

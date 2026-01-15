@@ -1,36 +1,43 @@
-
-# Version Control
+# Exclude Everything by default (safer)
 .git
 .gitignore
-
-# Dependencies
-node_modules
-.venv
-venv
-env
-__pycache__
-*.pyc
-*.pyo
-
-# Local Environment
-.env
-.env.local
 .DS_Store
+.idea
+.vscode
+venv/
+.venv/
+test_env/
 
-# Build Artifacts
-build/
-dist/
-.next/
+# Exclude Large Unrelated Projects
+ai_buddy_web/
+# Exclude tools except nucleus-hud
+# Exclude tools except nucleus-hud
+tools/brain_analyze_sentiment/
+tools/marketing-dashboard/
+tools/omega/
+# tools/nucleus-hud is included by default now
+tools/nucleus-hud/node_modules
+tools/nucleus-hud/.next
+tools/nucleus-hud/.next
 
-# IDEs
-.vscode/
-.idea/
+# Global excludes
+**/node_modules/
+mcp-server-nucleus/
+landing-page/
+archive/
 
-# Flutter (Specifics)
-ai_buddy_web/.dart_tool/
-ai_buddy_web/build/
-ai_buddy_web/.pub/
-ai_buddy_web/.packages
+# Exclude Build Artifacts in Target Projects
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.pub-cache/
+backend/__pycache__/
+backend/venv/
+backend/.venv/
 
-# Large Data (Optional - Keep this if you have large local datasets)
-data/
+# Artifacts
+*.webp
+*.png
+*.jpg
+brain/
+
+# Explicitly Allow (if we were using whitelist, but here we just block the big stuff)

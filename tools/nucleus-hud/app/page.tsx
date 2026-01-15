@@ -1,4 +1,3 @@
-
 "use client";
 
 import EventStream from "./components/EventStream";
@@ -9,6 +8,8 @@ import ResearchWidget from "./components/ResearchWidget";
 import NeuralChat from "./components/NeuralChat";
 import VoiceSynthesizer from "./components/VoiceSynthesizer";
 import MemoryMatrix from "./components/MemoryMatrix";
+import OracleWidget from "./components/OracleWidget";
+import WarRoom from "./components/WarRoom";
 
 export default function Home() {
   return (
@@ -23,7 +24,7 @@ export default function Home() {
       <div className="z-10 w-full max-w-7xl items-center justify-between font-mono text-sm lg:flex mb-8 border-b border-green-900/50 pb-4">
         <p className="flex items-center gap-4 text-green-500">
           <span className="font-bold text-xl tracking-widest text-white">NUCLEUS // HUD</span>
-          <span className="text-xs bg-green-900/30 px-2 py-0.5 rounded text-green-300 border border-green-500/20">v1.0.0</span>
+          <span className="text-xs bg-green-900/30 px-2 py-0.5 rounded text-green-300 border border-green-500/20">v1.2.0</span>
           <SystemHealth />
           <div className="h-4 w-px bg-green-900/50 mx-2"></div>
           <VoiceSynthesizer />
@@ -43,13 +44,15 @@ export default function Home() {
           <EventStream />
         </div>
 
-        {/* Column 2: Plan (Left) */}
+        {/* Column 2: Strategy & Plan (Left) */}
         <div className="lg:col-span-2 space-y-4">
+          <WarRoom />
           <TaskBoard />
         </div>
 
         {/* Column 3: Active Swarms (Right - New) */}
         <div className="lg:col-span-1 space-y-4">
+          <OracleWidget />
           <SwarmMonitor />
           <ResearchWidget />
           <NeuralChat />
