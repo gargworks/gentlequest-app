@@ -504,6 +504,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         Expanded(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
                               Text(
                                 ProfileConfig.aiName,
                                 style: TextStyleHelper.instance.headline24Bold,
