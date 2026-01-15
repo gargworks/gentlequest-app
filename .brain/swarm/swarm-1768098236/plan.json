@@ -1,0 +1,11 @@
+{
+  "mission": "Test Mission",
+  "session_id": "swarm-1768098236",
+  "status": "active",
+  "agents": [
+    "developer",
+    "critic"
+  ],
+  "steps": [],
+  "current_step_index": 0
+}

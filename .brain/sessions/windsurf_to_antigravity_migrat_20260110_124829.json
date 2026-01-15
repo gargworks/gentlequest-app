@@ -1,0 +1,24 @@
+{
+  "id": "windsurf_to_antigravity_migrat_20260110_124829",
+  "context": "Windsurf to Antigravity Migration Context",
+  "active_task": "Researching and planning Windsurf Cascade Context import.",
+  "pending_decisions": [
+    "Which export method user prefers (likely 'Ask Cascade')."
+  ],
+  "breadcrumbs": [
+    "Investigated Windsurf Cascade Full Context rules",
+    "Discovered no-scroll export challenges with 3-month history",
+    "Proposed 'Ask Cascade' method for summary export"
+  ],
+  "next_steps": [
+    "User to run 'Ask Cascade' prompt in Windsurf IDE.",
+    "Paste results into docs/windsurf_chat_history.md.",
+    "Synthesizer to ingest new context into gemini.md."
+  ],
+  "depth_snapshot": {
+    "current_depth": 0,
+    "levels": []
+  },
+  "created_at": "2026-01-10T12:48:29+0530",
+  "is_active": true
+}

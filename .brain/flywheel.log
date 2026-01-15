@@ -1,0 +1,154 @@
+2025-12-26 23:28:08,221 [INFO] ============================================================
+2025-12-26 23:28:08,221 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-26 23:28:08,221 [INFO] PID: 5891
+2025-12-26 23:28:08,221 [INFO] Poll Interval: 5s
+2025-12-26 23:28:08,221 [INFO] Triggers Loaded: 8
+2025-12-26 23:28:08,221 [INFO] ============================================================
+2025-12-26 23:28:08,224 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-26 23:28:08,224 [INFO] Processing 9 events
+2025-12-26 23:28:08,224 [INFO] Event: sprint_started from synthesizer
+2025-12-26 23:28:08,224 [INFO] No agents triggered for: sprint_started
+2025-12-26 23:28:08,224 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:28:08,225 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:28:08,225 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:28:08,225 [INFO] Event: task_completed from researcher
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_completed
+2025-12-26 23:28:08,225 [INFO] Event: task_completed from strategist
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_completed
+2025-12-26 23:28:08,225 [INFO] Event: task_completed from architect
+2025-12-26 23:28:08,225 [INFO] No agents triggered for: task_completed
+2025-12-26 23:28:08,226 [INFO] Event: sprint_completed from synthesizer
+2025-12-26 23:28:08,226 [INFO] No agents triggered for: sprint_completed
+2025-12-26 23:28:08,226 [INFO] Event: flywheel_started from system
+2025-12-26 23:28:08,226 [INFO] No agents triggered for: flywheel_started
+2025-12-26 23:29:09,228 [INFO] Keyboard interrupt received
+2025-12-26 23:29:09,229 [INFO] Emitted: flywheel_stopped from system [NOTABLE]
+2025-12-26 23:29:09,229 [INFO] ============================================================
+2025-12-26 23:29:09,230 [INFO] NUCLEAR FLYWHEEL STOPPED
+2025-12-26 23:29:09,230 [INFO] Events Processed: 9
+2025-12-26 23:29:09,230 [INFO] Critical Events: 0
+2025-12-26 23:29:09,230 [INFO] ============================================================
+2025-12-26 23:29:34,962 [INFO] ============================================================
+2025-12-26 23:29:34,963 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-26 23:29:34,963 [INFO] PID: 6251
+2025-12-26 23:29:34,963 [INFO] Poll Interval: 5s
+2025-12-26 23:29:34,963 [INFO] Triggers Loaded: 8
+2025-12-26 23:29:34,963 [INFO] ============================================================
+2025-12-26 23:29:34,967 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-26 23:29:34,969 [INFO] Processing 2 events
+2025-12-26 23:29:34,969 [INFO] Event: flywheel_stopped from system
+2025-12-26 23:29:34,969 [INFO] No agents triggered for: flywheel_stopped
+2025-12-26 23:29:34,970 [INFO] Event: flywheel_started from system
+2025-12-26 23:29:34,970 [INFO] No agents triggered for: flywheel_started
+2025-12-26 23:29:51,459 [INFO] Emitted: sprint_started from founder [NOTABLE]
+2025-12-26 23:29:51,459 [INFO] Sprint started: sprint-6a31a24c
+2025-12-26 23:29:51,459 [INFO] Goal: Finalize the Hardening Sprint and generate the investor-ready Prototype Roadmap.
+2025-12-26 23:29:54,992 [INFO] Processing 1 events
+2025-12-26 23:29:54,993 [INFO] Event: sprint_started from founder
+2025-12-26 23:29:54,993 [INFO] No agents triggered for: sprint_started
+2025-12-26 23:39:50,566 [INFO] Processing 3 events
+2025-12-26 23:39:50,567 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:39:50,567 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:39:50,568 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:39:50,568 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:39:50,568 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:39:50,568 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:43:40,803 [INFO] Processing 3 events
+2025-12-26 23:43:40,805 [INFO] Event: task_completed from researcher
+2025-12-26 23:43:40,805 [INFO] No agents triggered for: task_completed
+2025-12-26 23:43:40,806 [INFO] Event: task_completed from strategist
+2025-12-26 23:43:40,806 [INFO] No agents triggered for: task_completed
+2025-12-26 23:43:40,807 [INFO] Event: task_completed from architect
+2025-12-26 23:43:40,807 [INFO] No agents triggered for: task_completed
+2025-12-26 23:44:25,851 [INFO] Processing 1 events
+2025-12-26 23:44:25,852 [INFO] Event: sprint_completed from synthesizer
+2025-12-26 23:44:25,852 [INFO] No agents triggered for: sprint_completed
+2025-12-26 23:57:11,568 [INFO] Processing 4 events
+2025-12-26 23:57:11,570 [INFO] Event: sprint_started from synthesizer
+2025-12-26 23:57:11,570 [INFO] No agents triggered for: sprint_started
+2025-12-26 23:57:11,571 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:57:11,571 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:57:11,572 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:57:11,572 [INFO] No agents triggered for: task_assigned
+2025-12-26 23:57:11,573 [INFO] Event: task_assigned from synthesizer
+2025-12-26 23:57:11,573 [INFO] No agents triggered for: task_assigned
+2025-12-27 01:10:54,167 [INFO] Processing 1 events
+2025-12-27 01:10:54,173 [INFO] Event: task_completed from developer
+2025-12-27 01:10:54,174 [INFO] No agents triggered for: task_completed
+2025-12-27 01:16:49,629 [INFO] ============================================================
+2025-12-27 01:16:49,629 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-27 01:16:49,629 [INFO] PID: 22749
+2025-12-27 01:16:49,629 [INFO] Poll Interval: 5s
+2025-12-27 01:16:49,629 [INFO] Triggers Loaded: 8
+2025-12-27 01:16:49,629 [INFO] ============================================================
+2025-12-27 01:16:49,630 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-27 01:16:49,631 [INFO] Processing 1 events
+2025-12-27 01:16:49,631 [INFO] Event: flywheel_started from system
+2025-12-27 01:16:49,631 [INFO] No agents triggered for: flywheel_started
+2025-12-27 01:33:01,334 [INFO] ============================================================
+2025-12-27 01:33:01,334 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-27 01:33:01,334 [INFO] PID: 25439
+2025-12-27 01:33:01,334 [INFO] Poll Interval: 5s
+2025-12-27 01:33:01,334 [INFO] Triggers Loaded: 8
+2025-12-27 01:33:01,335 [INFO] ============================================================
+2025-12-27 01:33:01,336 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-27 01:33:01,336 [INFO] Processing 1 events
+2025-12-27 01:33:01,336 [INFO] Event: flywheel_started from system
+2025-12-27 01:33:01,336 [INFO] No agents triggered for: flywheel_started
+2025-12-27 01:37:48,490 [INFO] Keyboard interrupt received
+2025-12-27 01:37:48,492 [INFO] Emitted: flywheel_stopped from system [NOTABLE]
+2025-12-27 01:37:48,492 [INFO] ============================================================
+2025-12-27 01:37:48,492 [INFO] NUCLEAR FLYWHEEL STOPPED
+2025-12-27 01:37:48,492 [INFO] Events Processed: 1
+2025-12-27 01:37:48,492 [INFO] Critical Events: 0
+2025-12-27 01:37:48,492 [INFO] ============================================================
+2025-12-27 01:46:35,089 [INFO] ============================================================
+2025-12-27 01:46:35,089 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-27 01:46:35,089 [INFO] PID: 27644
+2025-12-27 01:46:35,089 [INFO] Poll Interval: 5s
+2025-12-27 01:46:35,089 [INFO] Triggers Loaded: 8
+2025-12-27 01:46:35,089 [INFO] ============================================================
+2025-12-27 01:46:35,091 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-27 01:46:35,092 [INFO] Processing 2 events
+2025-12-27 01:46:35,092 [INFO] Event: flywheel_stopped from system
+2025-12-27 01:46:35,092 [INFO] No agents triggered for: flywheel_stopped
+2025-12-27 01:46:35,092 [INFO] Event: flywheel_started from system
+2025-12-27 01:46:35,092 [INFO] No agents triggered for: flywheel_started
+2025-12-27 01:55:11,873 [INFO] ============================================================
+2025-12-27 01:55:11,873 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-27 01:55:11,873 [INFO] PID: 28703
+2025-12-27 01:55:11,873 [INFO] Poll Interval: 5s
+2025-12-27 01:55:11,873 [INFO] Triggers Loaded: 8
+2025-12-27 01:55:11,873 [INFO] ============================================================
+2025-12-27 01:55:11,874 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-27 01:55:11,874 [INFO] Processing 1 events
+2025-12-27 01:55:11,874 [INFO] Event: flywheel_started from system
+2025-12-27 01:55:11,874 [INFO] No agents triggered for: flywheel_started
+2025-12-27 01:57:25,353 [INFO] Emitted: sprint_started from founder [NOTABLE]
+2025-12-27 01:57:25,353 [INFO] Sprint started: sprint-9a0502d1
+2025-12-27 01:57:25,353 [INFO] Goal: see what are the tasks
+2025-12-27 01:57:27,032 [INFO] Processing 1 events
+2025-12-27 01:57:27,033 [INFO] Event: sprint_started from founder
+2025-12-27 01:57:27,033 [INFO] No agents triggered for: sprint_started
+2025-12-27 02:40:12,310 [INFO] Keyboard interrupt received
+2025-12-27 02:40:12,312 [INFO] Emitted: flywheel_stopped from system [NOTABLE]
+2025-12-27 02:40:12,312 [INFO] ============================================================
+2025-12-27 02:40:12,312 [INFO] NUCLEAR FLYWHEEL STOPPED
+2025-12-27 02:40:12,312 [INFO] Events Processed: 2
+2025-12-27 02:40:12,312 [INFO] Critical Events: 0
+2025-12-27 02:40:12,312 [INFO] ============================================================
+2025-12-27 02:44:42,997 [INFO] ============================================================
+2025-12-27 02:44:42,997 [INFO] NUCLEAR FLYWHEEL STARTED
+2025-12-27 02:44:42,997 [INFO] PID: 37083
+2025-12-27 02:44:42,997 [INFO] Poll Interval: 5s
+2025-12-27 02:44:42,997 [INFO] Triggers Loaded: 8
+2025-12-27 02:44:42,997 [INFO] ============================================================
+2025-12-27 02:44:42,999 [INFO] Emitted: flywheel_started from system [NOTABLE]
+2025-12-27 02:44:42,999 [INFO] Processing 2 events
+2025-12-27 02:44:42,999 [INFO] Event: flywheel_stopped from system
+2025-12-27 02:44:42,999 [INFO] No agents triggered for: flywheel_stopped
+2025-12-27 02:44:43,000 [INFO] Event: flywheel_started from system
+2025-12-27 02:44:43,000 [INFO] No agents triggered for: flywheel_started

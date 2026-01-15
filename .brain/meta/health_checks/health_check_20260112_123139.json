@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-01-12T12:31:39.204713",
+  "satellite": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502  \ud83e\udde0 NUCLEUS SATELLITE VIEW                              \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502                                                         \u2502\n\u2502  \ud83d\udccd DEPTH: \ud83d\udfe2 DEPTH: \u25cb\u25cb\u25cb\u25cb\u25cb (0/5)                          \u2502\n\u2502     (root)                                               \u2502\n\u2502                                                         \u2502\n\u2502  \ud83d\udcc8 ACTIVITY (7d): \u2581\u2581\u2581\u2581\u2581\u2581\u2581  (0 events, peak: N/A  ) \u2502\n\u2502                                                         \u2502\n\u2502  \ud83c\udfe5 HEALTH                                              \u2502\n\u2502     Artifacts: 0 active | 0 archived                           \u2502\n\u2502                                                         \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f",
+  "metrics": "Error: NUCLEAR_BRAIN_PATH environment variable not set",
+  "health": "Error: NUCLEAR_BRAIN_PATH environment variable not set",
+  "open_loops": "Error: NUCLEAR_BRAIN_PATH environment variable not set",
+  "tasks": {
+    "count": 0,
+    "items": []
+  },
+  "events": [],
+  "consolidation": {
+    "raw_file_count": 0,
+    "raw_size_mb": 0.0,
+    "status": "clean"
+  }
+}

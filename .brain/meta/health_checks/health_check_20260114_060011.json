@@ -1,0 +1,149 @@
+{
+  "timestamp": "2026-01-14T06:00:02.256496",
+  "satellite": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502  \ud83e\udde0 NUCLEUS SATELLITE VIEW                              \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502                                                         \u2502\n\u2502  \ud83d\udccd DEPTH: \ud83d\udfe2 DEPTH: \u25cb\u25cb\u25cb\u25cb\u25cb (0/5)                          \u2502\n\u2502     (root)                                               \u2502\n\u2502                                                         \u2502\n\u2502  \ud83d\udcc8 ACTIVITY (7d): \u2588\u2581\u2583\u2581\u2581\u2581\u2581  (97 events, peak: 01-08) \u2502\n\u2502                                                         \u2502\n\u2502  \ud83c\udfe5 HEALTH                                              \u2502\n\u2502     Artifacts: 80 active | 1 archived                          \u2502\n\u2502                                                         \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f",
+  "metrics": "## \ud83d\udcca Coordination Metrics (Last 7 Days)\n\n**\ud83d\ude80 Velocity:** 3 items closed\n**\u23f1\ufe0f Speed:** 0.0 days avg to close\n\n**\ud83d\udcc8 Closure Rates by Type:**\n- task: 100%\n\n**\ud83e\udde0 Current Load:**\n- Total Open: 1\n- Red Tier: 0\n",
+  "health": "## \ud83c\udfaf Commitment Health\n\n**Open loops:** 1\n- \ud83d\udfe2 Green: 1\n- \ud83d\udfe1 Yellow: 0\n- \ud83d\udd34 Red: 0\n\n**By type:** task: 1\n\n**Mental load:** \ud83d\udfe2 LOW\n**Advice:** Looking good, maintain momentum\n\n**Last scan:** 2026-01-10T20:24",
+  "open_loops": "## \ud83d\udccb Open Loops (6 total)\n\n### \ud83d\udd27 TASK (5)\n\n\ud83d\udfe2 **[Tech Debt] Increase brain_smoke_test timeout to 6**\n   1d old | Suggested: schedule\n   ID: `comm_20260108_224853_3`\n\n\ud83d\udfe2 **Finalize project proposal and submit to stakeholde**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231606_4`\n\n\ud83d\udfe2 **Add unit tests for all of the core utils, especial**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231610_5`\n\n\ud83d\udfe2 **Review the new documentation on GentleQuest and up**\n   0d old | Suggested: do_now\n   ID: `comm_20260110_231825_7`\n\n\ud83d\udfe2 **Follow up with the team regarding the status of th**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231910_8`\n\n### \u2611\ufe0f TODO (1)\n\n\ud83d\udfe2 **Track new commitment**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231612_6`\n\n",
+  "tasks": {
+    "count": 6,
+    "items": [
+      "[Tech Debt] Increase brain_smoke_test timeout to 60s to hand",
+      "Finalize project proposal and submit to stakeholders.",
+      "Add unit tests for all of the core utils, especially the mat",
+      "Track new commitment",
+      "Review the new documentation on GentleQuest and update the f"
+    ]
+  },
+  "events": [
+    {
+      "event_id": "orc-4d08bf9b",
+      "timestamp": "2026-01-12T09:00:01.088226",
+      "emitter": "orchestrator",
+      "event_type": "daily_digest_generated",
+      "severity": "ROUTINE",
+      "payload": {
+        "digest_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/synthesis/digest_20260112.md",
+        "events_processed": 0,
+        "agents_spawned": 0,
+        "critical_count": 0
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "evt-1768199408-32cbc345",
+      "timestamp": "2026-01-12T12:00:08+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-12T12:00:02.014297"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "evt-1768221010-ebf661a2",
+      "timestamp": "2026-01-12T18:00:10+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-12T18:00:01.373370"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "met-f7171bfe",
+      "timestamp": "2026-01-13T00:00:02.748976",
+      "emitter": "meta_optimizer",
+      "event_type": "meta_optimization_complete",
+      "severity": "NOTABLE",
+      "payload": {
+        "agents_analyzed": 3,
+        "issues_found": 3,
+        "recommendations": 3
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "evt-1768242611-cde7e291",
+      "timestamp": "2026-01-13T00:00:11+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-13T00:00:02.743536"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "evt-1768264211-ee2af4a2",
+      "timestamp": "2026-01-13T06:00:11+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-13T06:00:02.264818"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "orc-1d0dc703",
+      "timestamp": "2026-01-13T09:00:02.019260",
+      "emitter": "orchestrator",
+      "event_type": "daily_digest_generated",
+      "severity": "ROUTINE",
+      "payload": {
+        "digest_path": "/Users/lokeshgarg/ai-mvp-backend/.brain/artifacts/synthesis/digest_20260113.md",
+        "events_processed": 0,
+        "agents_spawned": 0,
+        "critical_count": 0
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "evt-1768285815-5472d163",
+      "timestamp": "2026-01-13T12:00:15+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-13T12:00:06.172403"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "evt-1768307411-a6ee7d95",
+      "timestamp": "2026-01-13T18:00:11+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-13T18:00:02.404838"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "evt-1768329010-71a031ab",
+      "timestamp": "2026-01-14T00:00:10+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-14T00:00:01.679499"
+      },
+      "description": "Health check: healthy"
+    }
+  ],
+  "consolidation": {
+    "raw_file_count": 30,
+    "raw_size_mb": 0.11,
+    "status": "clean"
+  }
+}

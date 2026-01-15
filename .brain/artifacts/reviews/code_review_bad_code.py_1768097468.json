@@ -1,0 +1,23 @@
+{
+  "event_type": "review_blocked",
+  "severity": "CRITICAL",
+  "payload": {
+    "review_type": "code",
+    "target": "tests/bad_code.py",
+    "issues": [
+      {
+        "severity": "CRITICAL",
+        "line": 5,
+        "description": "Hardcoded password 'super_secret_password' presents a severe security vulnerability.",
+        "fix_suggestion": "Remove the hardcoded password and use a secure method for handling credentials, such as retrieving it from environment variables or a secrets management system."
+      },
+      {
+        "severity": "CRITICAL",
+        "line": 8,
+        "description": "The use of `os.system('rm -rf /')` poses an extreme system command injection risk and can lead to irreversible data loss. This is completely unacceptable.",
+        "fix_suggestion": "Remove this line immediately. There is no legitimate use case for this command. If database deletion is required, use proper database management tools or libraries with appropriate permissions."
+      }
+    ],
+    "blocking_reason": "Critical security vulnerabilities detected: hardcoded password and dangerous system command injection risk. Immediate action required."
+  }
+}

@@ -1,0 +1,35 @@
+============================================================
+🧠 NUCLEUS HEALTH CHECK
+============================================================
+Timestamp: 2026-01-12T12:31:39.204713
+Overall Status: HEALTHY
+
+📍 SATELLITE VIEW:
+╭─────────────────────────────────────────────────────────╮
+│  🧠 NUCLEUS SATELLITE VIEW                              │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  📍 DEPTH: 🟢 DEPTH: ○○○○○ (0/5)                          │
+│     (root)                                               │
+│                                                         │
+│  📈 ACTIVITY (7d): ▁▁▁▁▁▁▁  (0 events, peak: N/A  ) │
+│                        
+
+📊 METRICS:
+Error: NUCLEAR_BRAIN_PATH environment variable not set
+
+🏥 HEALTH:
+Error: NUCLEAR_BRAIN_PATH environment variable not set
+
+📋 OPEN LOOPS:
+Error: NUCLEAR_BRAIN_PATH environment variable not set
+
+✓ TASKS:
+  Pending: 0
+
+💿 CONSOLIDATION (Brain Protocol):
+  Raw Files: 0
+  Total Size: 0.0 MB
+  Status: CLEAN
+
+============================================================

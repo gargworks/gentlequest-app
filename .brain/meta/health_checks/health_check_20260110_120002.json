@@ -1,0 +1,131 @@
+{
+  "timestamp": "2026-01-10T12:00:02.190364",
+  "satellite": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502  \ud83e\udde0 NUCLEUS SATELLITE VIEW                              \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502                                                         \u2502\n\u2502  \ud83d\udccd DEPTH: \ud83d\udfe2 DEPTH: \u25cb\u25cb\u25cb\u25cb\u25cb (0/5)                          \u2502\n\u2502     (root)                                               \u2502\n\u2502                                                         \u2502\n\u2502  \ud83d\udcc8 ACTIVITY (7d): \u2581\u2581\u2581\u2581\u2588\u2581\u2582  (74 events, peak: 01-08) \u2502\n\u2502                                                         \u2502\n\u2502  \ud83c\udfe5 HEALTH                                              \u2502\n\u2502     Artifacts: 69 active | 1 archived                          \u2502\n\u2502                                                         \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f",
+  "metrics": "## \ud83d\udcca Coordination Metrics (Last 7 Days)\n\n**\ud83d\ude80 Velocity:** 3 items closed\n**\u23f1\ufe0f Speed:** 0.0 days avg to close\n\n**\ud83d\udcc8 Closure Rates by Type:**\n- task: 100%\n\n**\ud83e\udde0 Current Load:**\n- Total Open: 1\n- Red Tier: 0\n",
+  "health": "## \ud83c\udfaf Commitment Health\n\n**Open loops:** 1\n- \ud83d\udfe2 Green: 1\n- \ud83d\udfe1 Yellow: 0\n- \ud83d\udd34 Red: 0\n\n**By type:** task: 1\n\n**Mental load:** \ud83d\udfe2 LOW\n**Advice:** Looking good, maintain momentum\n\n**Last scan:** 2026-01-10T09:39",
+  "open_loops": "## \ud83d\udccb Open Loops (1 total)\n\n### \ud83d\udd27 TASK (1)\n\n\ud83d\udfe2 **[Tech Debt] Increase brain_smoke_test timeout to 6**\n   1d old | Suggested: schedule\n   ID: `comm_20260108_224853_3`\n\n",
+  "tasks": {
+    "count": 1,
+    "items": [
+      "Test task for MCP validation"
+    ]
+  },
+  "events": [
+    {
+      "event_id": "evt-1768018082-57b9dfd4",
+      "timestamp": "2026-01-10T09:38:02+0530",
+      "type": "mcp_test",
+      "emitter": "Windsurf-Test",
+      "data": {},
+      "description": "Comprehensive MCP testing session - validating all 66 commands"
+    },
+    {
+      "event_id": "evt-1768018103-62fa4f08",
+      "timestamp": "2026-01-10T09:38:23+0530",
+      "type": "session_saved",
+      "emitter": "brain_save_session",
+      "data": {
+        "session_id": "mcp_comprehensive_testing_-_va_20260110_093823",
+        "context": "MCP Comprehensive Testing - Validating all 66 commands",
+        "active_task": "Testing Brain MCP functionality",
+        "depth": 2
+      },
+      "description": "Session saved: MCP Comprehensive Testing - Validating all 66 commands"
+    },
+    {
+      "event_id": "evt-1768018111-a98c9379",
+      "timestamp": "2026-01-10T09:38:31+0530",
+      "type": "depth_increased",
+      "emitter": "depth_tracker",
+      "data": {
+        "new_depth": 3,
+        "topic": "Testing depth tracking system",
+        "warning_level": "caution"
+      },
+      "description": ""
+    },
+    {
+      "event_id": "evt-1768018112-08f6bf2d",
+      "timestamp": "2026-01-10T09:38:32+0530",
+      "type": "depth_increased",
+      "emitter": "depth_tracker",
+      "data": {
+        "new_depth": 4,
+        "topic": "Validating nested depth levels",
+        "warning_level": "danger"
+      },
+      "description": ""
+    },
+    {
+      "event_id": "evt-1768018112-d9ca7b40",
+      "timestamp": "2026-01-10T09:38:32+0530",
+      "type": "depth_decreased",
+      "emitter": "depth_tracker",
+      "data": {
+        "new_depth": 3,
+        "returned_to": "Testing depth tracking system",
+        "popped_topic": "Validating nested depth levels"
+      },
+      "description": ""
+    },
+    {
+      "event_id": "evt-1768018112-25fec543",
+      "timestamp": "2026-01-10T09:38:32+0530",
+      "type": "depth_reset",
+      "emitter": "depth_tracker",
+      "data": {
+        "previous_depth": 3,
+        "new_session_id": "session-20260110-093832"
+      },
+      "description": ""
+    },
+    {
+      "event_id": "evt-1768018212-b81eabe8",
+      "timestamp": "2026-01-10T09:40:12+0530",
+      "type": "task_assigned",
+      "emitter": "nucleus_mcp",
+      "data": {
+        "task_id": "task-1768018212",
+        "target_agent": "developer",
+        "description": "Test agent trigger system via MCP",
+        "context_files": [],
+        "status": "pending"
+      },
+      "description": "Manual trigger for developer"
+    },
+    {
+      "event_id": "evt-1768018591-e65b72f5",
+      "timestamp": "2026-01-10T09:46:31+0530",
+      "type": "testing_complete",
+      "emitter": "Windsurf-Test-Complete",
+      "data": {
+        "commands_tested": 50,
+        "commands_total": 66,
+        "high_priority_issues": 3,
+        "issues_found": 6,
+        "pass_rate": 0.92
+      },
+      "description": "Comprehensive MCP testing complete: 50/66 commands tested, 92% pass rate, 6 issues identified (3 high priority). Full report saved to test/mcp_comprehensive_test_report.md"
+    },
+    {
+      "event_id": "f13cf526",
+      "timestamp": "2026-01-10T11:38:19.574441",
+      "emitter": "mcp_test",
+      "event_type": "test_event",
+      "severity": "NOTABLE",
+      "payload": {
+        "message": "MCP server test"
+      }
+    },
+    {
+      "event_id": "63d47b87",
+      "timestamp": "2026-01-10T11:38:25.521354",
+      "emitter": "mcp_test",
+      "event_type": "test_event",
+      "severity": "NOTABLE",
+      "payload": {
+        "message": "MCP server test"
+      }
+    }
+  ]
+}

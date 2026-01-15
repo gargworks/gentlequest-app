@@ -1,0 +1,21 @@
+
+# ==========================================
+# NUCLEUS AUTOMATION - Installed 2026-01-08
+# ==========================================
+
+# Health Check - Every 6 hours
+0 */6 * * * /Users/lokeshgarg/ai-mvp-backend/scripts/run_nucleus_job.sh health_check
+
+# Orchestrator (Daily Digest) - Every morning at 9 AM
+0 9 * * * /Users/lokeshgarg/ai-mvp-backend/scripts/run_nucleus_job.sh orchestrator
+
+# Meta-Optimizer - Every 72 hours (every 3rd day at midnight)
+0 0 */3 * * /Users/lokeshgarg/ai-mvp-backend/scripts/run_nucleus_job.sh meta_optimizer
+
+# Nightly Agent - Every night at 11 PM
+0 23 * * * /Users/lokeshgarg/ai-mvp-backend/scripts/run_nucleus_job.sh nightly
+
+# ==========================================
+# END NUCLEUS AUTOMATION
+# ==========================================
+

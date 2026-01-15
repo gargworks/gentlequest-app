@@ -1,0 +1,139 @@
+{
+  "timestamp": "2026-01-12T06:00:00.916172",
+  "satellite": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502  \ud83e\udde0 NUCLEUS SATELLITE VIEW                              \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502                                                         \u2502\n\u2502  \ud83d\udccd DEPTH: \ud83d\udfe2 DEPTH: \u25cb\u25cb\u25cb\u25cb\u25cb (0/5)                          \u2502\n\u2502     (root)                                               \u2502\n\u2502                                                         \u2502\n\u2502  \ud83d\udcc8 ACTIVITY (7d): \u2581\u2581\u2588\u2581\u2583\u2581\u2581  (93 events, peak: 01-08) \u2502\n\u2502                                                         \u2502\n\u2502  \ud83c\udfe5 HEALTH                                              \u2502\n\u2502     Artifacts: 77 active | 1 archived                          \u2502\n\u2502                                                         \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f",
+  "metrics": "## \ud83d\udcca Coordination Metrics (Last 7 Days)\n\n**\ud83d\ude80 Velocity:** 3 items closed\n**\u23f1\ufe0f Speed:** 0.0 days avg to close\n\n**\ud83d\udcc8 Closure Rates by Type:**\n- task: 100%\n\n**\ud83e\udde0 Current Load:**\n- Total Open: 1\n- Red Tier: 0\n",
+  "health": "## \ud83c\udfaf Commitment Health\n\n**Open loops:** 1\n- \ud83d\udfe2 Green: 1\n- \ud83d\udfe1 Yellow: 0\n- \ud83d\udd34 Red: 0\n\n**By type:** task: 1\n\n**Mental load:** \ud83d\udfe2 LOW\n**Advice:** Looking good, maintain momentum\n\n**Last scan:** 2026-01-10T20:24",
+  "open_loops": "## \ud83d\udccb Open Loops (6 total)\n\n### \ud83d\udd27 TASK (5)\n\n\ud83d\udfe2 **[Tech Debt] Increase brain_smoke_test timeout to 6**\n   1d old | Suggested: schedule\n   ID: `comm_20260108_224853_3`\n\n\ud83d\udfe2 **Finalize project proposal and submit to stakeholde**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231606_4`\n\n\ud83d\udfe2 **Add unit tests for all of the core utils, especial**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231610_5`\n\n\ud83d\udfe2 **Review the new documentation on GentleQuest and up**\n   0d old | Suggested: do_now\n   ID: `comm_20260110_231825_7`\n\n\ud83d\udfe2 **Follow up with the team regarding the status of th**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231910_8`\n\n### \u2611\ufe0f TODO (1)\n\n\ud83d\udfe2 **Track new commitment**\n   0d old | Suggested: schedule\n   ID: `comm_20260110_231612_6`\n\n",
+  "tasks": {
+    "count": 6,
+    "items": [
+      "[Tech Debt] Increase brain_smoke_test timeout to 60s to hand",
+      "Finalize project proposal and submit to stakeholders.",
+      "Add unit tests for all of the core utils, especially the mat",
+      "Track new commitment",
+      "Review the new documentation on GentleQuest and update the f"
+    ]
+  },
+  "events": [
+    {
+      "event_id": "aut-37a377c7",
+      "timestamp": "2026-01-11T15:19:39.397032",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "sent",
+        "mission": "Autopilot: Content Generation"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-6f400bee",
+      "timestamp": "2026-01-11T15:19:44.398305",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "complete",
+        "mission": "Autopilot: Content Generation"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-a319d133",
+      "timestamp": "2026-01-11T15:19:54.401290",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "sent",
+        "mission": "Autopilot: Trend Analysis"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-329b9d41",
+      "timestamp": "2026-01-11T15:19:59.406991",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "complete",
+        "mission": "Autopilot: Trend Analysis"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-24157960",
+      "timestamp": "2026-01-11T15:20:09.413351",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "sent",
+        "mission": "Autopilot: Content Generation"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-79eef939",
+      "timestamp": "2026-01-11T15:20:14.418505",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "complete",
+        "mission": "Autopilot: Content Generation"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-bd75206f",
+      "timestamp": "2026-01-11T15:20:24.424700",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "sent",
+        "mission": "Autopilot: Trend Analysis"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "aut-531e5577",
+      "timestamp": "2026-01-11T15:20:29.430751",
+      "emitter": "autopilot",
+      "event_type": "mission_status",
+      "severity": "ROUTINE",
+      "payload": {
+        "status": "complete",
+        "mission": "Autopilot: Trend Analysis"
+      },
+      "metadata": {}
+    },
+    {
+      "event_id": "evt-1768134611-863ed5b5",
+      "timestamp": "2026-01-11T18:00:11+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-11T18:00:01.190701"
+      },
+      "description": "Health check: healthy"
+    },
+    {
+      "event_id": "evt-1768156210-a7e7d1b2",
+      "timestamp": "2026-01-12T00:00:10+0530",
+      "type": "health_status",
+      "emitter": "health_check",
+      "data": {
+        "status": "healthy",
+        "issues_count": 0,
+        "timestamp": "2026-01-12T00:00:00.991400"
+      },
+      "description": "Health check: healthy"
+    }
+  ]
+}
