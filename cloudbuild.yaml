@@ -39,7 +39,9 @@ steps:
       - '--add-cloudsql-instances'
       - '$PROJECT_ID:us-central1:gentlequest-db'
       - '--set-env-vars'
-      - 'ENVIRONMENT=production,DATABASE_URL=postgresql://gentlequest:gentlequest2026@/gentlequest?host=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
+      - 'ENVIRONMENT=production,DB_USER=gentlequest,DB_NAME=gentlequest,DB_HOST=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
+      - '--set-secrets'
+      - 'DB_PASSWORD=gentlequest-db-pass:latest'
 
   # 6. Deploy Nucleus HUD to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'

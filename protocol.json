@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gentlequest.app/protocol.json",
+  "title": "GentleQuest Protocol",
+  "description": "Machine-readable single source of truth",
+  "version": "1.0.0",
+  "created": "2026-01-16",
+  "valid_until": "2026-12-31",
+  "integrity": {
+    "hash_algorithm": "sha256",
+    "hash": "COMPUTE_ON_COMMIT",
+    "source_file": "PROTOCOL.md",
+    "last_verified": "2026-01-16"
+  },
+  "identity": {
+    "name": "GentleQuest",
+    "type": "mental_health_companion",
+    "tagline": "Your gentle companion for mental wellness"
+  },
+  "production": {
+    "url": "https://gentlequest.onrender.com",
+    "service_id": "srv-d2r3i1fdiees73dqtov0",
+    "provider": "render",
+    "region": "oregon",
+    "health_endpoint": "/api/health",
+    "ping_endpoint": "/api/ping"
+  },
+  "repository": {
+    "path": "/Users/lokeshgarg/ai-mvp-backend",
+    "vcs": "git",
+    "remote": "origin",
+    "branch": "main"
+  },
+  "stack": {
+    "backend": {
+      "language": "python",
+      "version": "3.11",
+      "framework": "flask",
+      "framework_version": "3.0.x"
+    },
+    "frontend": {
+      "framework": "flutter",
+      "version": "3.x",
+      "platform": "web"
+    },
+    "database": {
+      "type": "postgresql",
+      "version": "15+",
+      "provider": "render"
+    },
+    "cache": {
+      "type": "redis",
+      "version": "7+",
+      "provider": "external"
+    },
+    "ai_providers": [
+      {
+        "name": "gemini",
+        "role": "primary",
+        "model": "gemini-1.5-flash"
+      },
+      {
+        "name": "openai",
+        "role": "fallback_1",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "name": "perplexity",
+        "role": "fallback_2",
+        "model": "llama-3.1-sonar-small-128k-online"
+      }
+    ]
+  },
+  "endpoints": {
+    "core": [
+      {"path": "/api/health", "method": "GET", "purpose": "health_check", "rate_limit": null},
+      {"path": "/api/ping", "method": "GET", "purpose": "keep_alive", "rate_limit": null},
+      {"path": "/api/chat", "method": "POST", "purpose": "ai_chat", "rate_limit": "30/min"},
+      {"path": "/api/chat_stream", "method": "GET", "purpose": "sse_streaming", "rate_limit": "120/min"},
+      {"path": "/api/mood", "method": "POST", "purpose": "log_mood", "rate_limit": "120/min"},
+      {"path": "/api/mood/history", "method": "GET", "purpose": "mood_history", "rate_limit": "120/min"},
+      {"path": "/api/mood/analytics", "method": "GET", "purpose": "mood_analytics", "rate_limit": "120/min"},
+      {"path": "/api/quests", "method": "GET", "purpose": "get_quests", "rate_limit": "120/min"},
+      {"path": "/api/quests/complete", "method": "POST", "purpose": "complete_quest", "rate_limit": "120/min"},
+      {"path": "/api/progress", "method": "GET", "purpose": "get_progress", "rate_limit": "120/min"},
+      {"path": "/api/community/feed", "method": "GET", "purpose": "community_feed", "rate_limit": "120/min"},
+      {"path": "/api/assessment/<type>", "method": "POST", "purpose": "self_assessment", "rate_limit": "120/min"}
+    ],
+    "community": [
+      {"path": "/api/community/flags", "method": "GET", "purpose": "feature_flags"},
+      {"path": "/api/community/reaction", "method": "POST", "purpose": "add_reaction"},
+      {"path": "/api/community/report", "method": "POST", "purpose": "report_content"},
+      {"path": "/api/community/post", "method": "POST", "purpose": "create_post"},
+      {"path": "/api/community/post/<id>", "method": "DELETE", "purpose": "delete_post"}
+    ],
+    "admin": [
+      {"path": "/api/brain/status", "method": "GET", "purpose": "brain_status"},
+      {"path": "/api/brain/alert", "method": "POST", "purpose": "send_alert"},
+      {"path": "/api/enterprise/status", "method": "GET", "purpose": "enterprise_status"},
+      {"path": "/api/enterprise/metrics", "method": "GET", "purpose": "enterprise_metrics"}
+    ],
+    "total_count": 59
+  },
+  "secrets": {
+    "required": [
+      "SECRET_KEY",
+      "DATABASE_URL",
+      "GEMINI_API_KEY"
+    ],
+    "recommended": [
+      "REDIS_URL",
+      "OPENAI_API_KEY",
+      "PPLX_API_KEY"
+    ],
+    "optional": [
+      "SENTRY_DSN_BACKEND",
+      "ADMIN_API_TOKEN"
+    ],
+    "storage": "render_dashboard",
+    "never_commit": true
+  },
+  "rate_limits": {
+    "global_per_day": 5000,
+    "global_per_hour": 1000,
+    "chat_per_minute": 120,
+    "mood_per_minute": 120,
+    "key_type": "session_id"
+  },
+  "retention": {
+    "messages_days": 30,
+    "sessions_days": 14,
+    "analytics_days": 90,
+    "error_logs_days": 14
+  },
+  "timeouts": {
+    "ai_response_seconds": 30,
+    "database_query_seconds": 5,
+    "health_check_seconds": 10
+  },
+  "performance": {
+    "target_response_time_ms": 500,
+    "max_message_length": 10000,
+    "max_context_messages": 20
+  },
+  "crisis_detection": {
+    "enabled": true,
+    "priority": "P0",
+    "countries": [
+      {
+        "code": "IN",
+        "name": "India",
+        "hotline": "iCall",
+        "number": "9152987821"
+      },
+      {
+        "code": "US",
+        "name": "United States",
+        "hotline": "988 Lifeline",
+        "number": "988"
+      },
+      {
+        "code": "UK",
+        "name": "United Kingdom",
+        "hotline": "Samaritans",
+        "number": "116 123"
+      },
+      {
+        "code": "CA",
+        "name": "Canada",
+        "hotline": "Crisis Line",
+        "number": "1-833-456-4566"
+      },
+      {
+        "code": "AU",
+        "name": "Australia",
+        "hotline": "Lifeline",
+        "number": "13 11 14"
+      },
+      {
+        "code": "NZ",
+        "name": "New Zealand",
+        "hotline": "Lifeline",
+        "number": "0800 543 354"
+      },
+      {
+        "code": "SG",
+        "name": "Singapore",
+        "hotline": "SOS",
+        "number": "1800-221-4444"
+      },
+      {
+        "code": "PH",
+        "name": "Philippines",
+        "hotline": "NCMH",
+        "number": "0917-899-8727"
+      },
+      {
+        "code": "ZA",
+        "name": "South Africa",
+        "hotline": "SADAG",
+        "number": "0800 567 567"
+      },
+      {
+        "code": "IE",
+        "name": "Ireland",
+        "hotline": "Samaritans",
+        "number": "116 123"
+      },
+      {
+        "code": "DE",
+        "name": "Germany",
+        "hotline": "Telefonseelsorge",
+        "number": "0800 111 0 111"
+      }
+    ]
+  },
+  "files": {
+    "protocol": {
+      "human": "PROTOCOL.md",
+      "machine": "protocol.json"
+    },
+    "backend": {
+      "entry": "app.py",
+      "dependencies": "requirements.txt",
+      "dockerfile": "Dockerfile",
+      "render_config": "render.yaml"
+    },
+    "frontend": {
+      "entry": "ai_buddy_web/lib/main.dart",
+      "dependencies": "ai_buddy_web/pubspec.yaml"
+    },
+    "specs": {
+      "openapi": "docs/openapi.yaml",
+      "env_schema": "docs/schemas/environment.schema.json"
+    },
+    "automation": {
+      "doc_freshness": "scripts/check_doc_freshness.py",
+      "deploy_runbook": "runbooks/deploy_production.py",
+      "doc_tests": "tests/test_docs.py",
+      "ci_workflow": ".github/workflows/docs-validation.yml"
+    },
+    "documentation": {
+      "index": ".brain/artifacts/synthesis/MASTER_CONTEXT_INDEX.md",
+      "architecture": ".brain/artifacts/synthesis/ARCHITECTURE_MAP.md",
+      "operations": ".brain/artifacts/synthesis/OPERATIONS_PLAYBOOK.md",
+      "api": ".brain/artifacts/synthesis/API_CONTRACTS.md",
+      "critical_paths": ".brain/artifacts/synthesis/CRITICAL_PATHS.md",
+      "decisions": ".brain/artifacts/synthesis/DECISION_LOG.md",
+      "environment": ".brain/artifacts/synthesis/ENVIRONMENT_MATRIX.md",
+      "tech_debt": ".brain/artifacts/synthesis/TECH_DEBT_REGISTRY.md",
+      "testing": ".brain/artifacts/synthesis/TESTING_STRATEGY.md",
+      "security": ".brain/artifacts/synthesis/SECURITY_CHECKLIST.md",
+      "ai_providers": ".brain/artifacts/synthesis/AI_PROVIDER_SPECS.md",
+      "methodology": ".brain/artifacts/synthesis/GOLD_STANDARD_METHODOLOGY.md",
+      "extension_guide": ".brain/artifacts/synthesis/EXTENSION_GUIDE.md"
+    },
+    "historical_artifacts": {
+      "mega_context": ".brain/artifacts/synthesis/MEGA_CONTEXT_CAPTURE_2026.md",
+      "technical_appendix": ".brain/artifacts/synthesis/TECHNICAL_APPENDIX_JAN2026.md",
+      "exploration_summary": ".brain/artifacts/synthesis/CODEBASE_EXPLORATION_SUMMARY_JAN2026.md",
+      "consolidation_report": ".brain/artifacts/synthesis/20251230_consolidation_report.md",
+      "founders_desk": ".brain/artifacts/synthesis/founders_desk_20251226.md",
+      "session_reports_dir": ".brain/artifacts/synthesis/",
+      "digests_dir": ".brain/artifacts/synthesis/"
+    }
+  },
+  "commands": {
+    "health_check": "curl https://gentlequest.onrender.com/api/health",
+    "run_backend": "flask run --port 5055",
+    "run_frontend": "cd ai_buddy_web && flutter run -d chrome",
+    "run_tests": "pytest tests/ -v",
+    "deploy": "git push origin main",
+    "deploy_runbook": "python runbooks/deploy_production.py --execute",
+    "check_freshness": "python scripts/check_doc_freshness.py --dir .brain/artifacts/synthesis/ -v",
+    "validate_protocol": "python scripts/validate_protocol.py"
+  },
+  "verification": {
+    "daily": [
+      "health_check_200",
+      "ci_green"
+    ],
+    "weekly": [
+      "error_logs_review",
+      "rate_limit_stats",
+      "keep_alive_working"
+    ],
+    "monthly": [
+      "tech_debt_update",
+      "doc_freshness",
+      "dependency_check"
+    ],
+    "quarterly": [
+      "security_review",
+      "secret_rotation",
+      "crisis_hotline_verify",
+      "full_doc_review"
+    ]
+  },
+  "decision_authority": {
+    "code_changes": {
+      "authority": "any_developer",
+      "approval": "pr_review"
+    },
+    "api_changes": {
+      "authority": "backend_lead",
+      "approval": "protocol_update"
+    },
+    "schema_changes": {
+      "authority": "architect",
+      "approval": "protocol_update"
+    },
+    "secret_changes": {
+      "authority": "founder",
+      "approval": "render_dashboard"
+    },
+    "deploy_production": {
+      "authority": "any_with_access",
+      "approval": "none"
+    },
+    "rollback": {
+      "authority": "any_with_access",
+      "approval": "none_emergency"
+    },
+    "protocol_changes": {
+      "authority": "founder_only",
+      "approval": "git_commit"
+    }
+  },
+  "agents": {
+    "codenames": [
+      "CORE_SYN",
+      "VISION_ONE",
+      "LOGIC_ARCH",
+      "CODE_FORCE",
+      "INTEL_SCRAPER",
+      "GATE_KEEPER"
+    ],
+    "requirements": [
+      "identify_with_codename",
+      "consult_protocol_before_major_changes",
+      "log_to_events_jsonl",
+      "respect_decision_authority",
+      "never_modify_secrets"
+    ]
+  }
+}

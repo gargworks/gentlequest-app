@@ -38,14 +38,24 @@ def generate_embedding(text: str) -> Optional[List[float]]:
         if len(text) > max_chars:
             text = text[:max_chars]
 
-        # Use Nucleus V1 Client (DualEngineLLM)
-        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-        
-        llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-        result = llm.embed_content(text, task_type="retrieval_document")
-        
-        if result and 'embedding' in result:
-            return result['embedding']
+        # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+            result = llm.embed_content(text, task_type="retrieval_document")
+            if result and 'embedding' in result:
+                return result['embedding']
+        except ImportError:
+            # Fallback to native google.generativeai
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            result = genai.embed_content(
+                model=EMBEDDING_MODEL,
+                content=text,
+                task_type="retrieval_document"
+            )
+            if result and 'embedding' in result:
+                return result['embedding']
         
         return None
         
@@ -64,14 +74,24 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
         return None
     
     try:
-        # Use Nucleus V1 Client (DualEngineLLM)
-        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-        
-        llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-        result = llm.embed_content(query, task_type="retrieval_query")
-        
-        if result and 'embedding' in result:
-            return result['embedding']
+        # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
+            result = llm.embed_content(query, task_type="retrieval_query")
+            if result and 'embedding' in result:
+                return result['embedding']
+        except ImportError:
+            # Fallback to native google.generativeai
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            result = genai.embed_content(
+                model=EMBEDDING_MODEL,
+                content=query,
+                task_type="retrieval_query"
+            )
+            if result and 'embedding' in result:
+                return result['embedding']
             
         return None
         

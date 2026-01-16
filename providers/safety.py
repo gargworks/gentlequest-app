@@ -31,11 +31,16 @@ def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
     """
 
     try:
-        # Use Nucleus V1 Client (DualEngineLLM)
-        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-        
-        llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
-        response = llm.generate_content(prompt)
+        # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+            response = llm.generate_content(prompt)
+        except ImportError:
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(prompt)
 
         text = response.text.strip()
         

@@ -1,0 +1,611 @@
+openapi: 3.1.0
+info:
+  title: GentleQuest API
+  version: 1.0.0
+  description: |
+    Mental health companion API for GentleQuest application.
+    
+    ## Authentication
+    Session-based using `session_id` in request body (UUID format).
+    
+    ## Rate Limits
+    - Global: 5000/day, 1000/hour per IP
+    - Chat/Mood: 120/minute per session_id
+    
+    ## AI Provider Chain
+    Gemini (primary) → OpenAI (fallback) → Perplexity (fallback)
+  contact:
+    name: GentleQuest Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://gentlequest.onrender.com
+    description: Production
+  - url: http://localhost:5055
+    description: Local Development
+
+tags:
+  - name: Health
+    description: System health and status
+  - name: Chat
+    description: AI chat interactions
+  - name: Mood
+    description: Mood tracking and analytics
+  - name: Quests
+    description: Wellness quests and gamification
+  - name: Progress
+    description: User progress and achievements
+  - name: Community
+    description: Community features (Phase 0)
+  - name: Assessment
+    description: Self-assessment tools
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/ping:
+    get:
+      tags: [Health]
+      summary: Lightweight ping (keep-alive)
+      operationId: ping
+      description: No database or Redis check. For external monitoring.
+      responses:
+        '200':
+          description: Service alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "alive"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/chat:
+    post:
+      tags: [Chat]
+      summary: Send chat message
+      operationId: sendChatMessage
+      description: |
+        Send a message to the AI companion and receive a response.
+        
+        **Crisis Detection:** Messages are scanned for crisis keywords.
+        If detected, response includes country-specific resources.
+        
+        **Rate Limit:** 120 requests/minute per session_id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            example:
+              message: "I'm feeling anxious today"
+              session_id: "550e8400-e29b-41d4-a716-446655440000"
+              country: "US"
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/chat/stream:
+    post:
+      tags: [Chat]
+      summary: Stream chat response (SSE)
+      operationId: streamChatMessage
+      description: |
+        Server-Sent Events stream for real-time AI responses.
+        
+        Events:
+        - `token`: Partial response token
+        - `done`: Stream complete
+        - `error`: Error occurred
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  data: {"type": "token", "content": "I"}
+                  data: {"type": "token", "content": " hear"}
+                  data: {"type": "done"}
+
+  /api/mood:
+    post:
+      tags: [Mood]
+      summary: Log mood entry
+      operationId: logMood
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoodLogRequest'
+      responses:
+        '200':
+          description: Mood logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoodLogResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/mood/history:
+    get:
+      tags: [Mood]
+      summary: Get mood history
+      operationId: getMoodHistory
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 90
+      responses:
+        '200':
+          description: Mood history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoodHistoryResponse'
+
+  /api/mood/analytics:
+    get:
+      tags: [Mood]
+      summary: Get mood analytics
+      operationId: getMoodAnalytics
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Mood analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoodAnalyticsResponse'
+
+  /api/quests:
+    get:
+      tags: [Quests]
+      summary: Get available quests
+      operationId: getQuests
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [Mindfulness, Activity, Social, Learning, Challenge]
+      responses:
+        '200':
+          description: Quest list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestListResponse'
+
+  /api/quests/complete:
+    post:
+      tags: [Quests]
+      summary: Complete a quest
+      operationId: completeQuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestCompleteRequest'
+      responses:
+        '200':
+          description: Quest completed, XP awarded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestCompleteResponse'
+
+  /api/progress:
+    get:
+      tags: [Progress]
+      summary: Get user progress
+      operationId: getProgress
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressResponse'
+
+  /api/community/feed:
+    get:
+      tags: [Community]
+      summary: Get community feed
+      operationId: getCommunityFeed
+      description: Phase 0 - Returns curated content templates only.
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        '200':
+          description: Community feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityFeedResponse'
+
+  /api/assessment/check-in:
+    post:
+      tags: [Assessment]
+      summary: Submit self-assessment
+      operationId: submitAssessment
+      description: Once-daily XP award for completing assessment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+      responses:
+        '200':
+          description: Assessment recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResponse'
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message, session_id]
+      properties:
+        message:
+          type: string
+          maxLength: 10000
+          description: User message to AI companion
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: ISO 3166-1 alpha-2 country code for crisis resources
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: AI companion response
+        crisis_detected:
+          type: boolean
+          default: false
+          description: Whether crisis keywords were detected
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrisisResource'
+          description: Country-specific crisis resources (if crisis detected)
+
+    CrisisResource:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "National Suicide Prevention Lifeline"
+        number:
+          type: string
+          example: "988"
+        country:
+          type: string
+          example: "US"
+
+    MoodLogRequest:
+      type: object
+      required: [session_id, mood_value]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        mood_value:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Mood rating (1=very low, 10=excellent)
+        note:
+          type: string
+          maxLength: 500
+          description: Optional mood note
+
+    MoodLogResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        mood_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    MoodHistoryResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              mood_value:
+                type: integer
+              note:
+                type: string
+
+    MoodAnalyticsResponse:
+      type: object
+      properties:
+        average_mood:
+          type: number
+          format: float
+        trend:
+          type: string
+          enum: [improving, stable, declining]
+        streak_days:
+          type: integer
+        total_entries:
+          type: integer
+
+    QuestListResponse:
+      type: object
+      properties:
+        quests:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quest'
+
+    Quest:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        xp_reward:
+          type: integer
+        duration_minutes:
+          type: integer
+        completed:
+          type: boolean
+
+    QuestCompleteRequest:
+      type: object
+      required: [session_id, quest_id]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        quest_id:
+          type: string
+
+    QuestCompleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        xp_awarded:
+          type: integer
+        total_xp:
+          type: integer
+        level:
+          type: integer
+
+    ProgressResponse:
+      type: object
+      properties:
+        total_xp:
+          type: integer
+        level:
+          type: integer
+        quests_completed:
+          type: integer
+        current_streak:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: string
+
+    CommunityFeedResponse:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              content:
+                type: string
+              category:
+                type: string
+              reactions:
+                type: object
+        page:
+          type: integer
+        has_more:
+          type: boolean
+
+    AssessmentRequest:
+      type: object
+      required: [session_id, responses]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        responses:
+          type: array
+          items:
+            type: object
+            properties:
+              question_id:
+                type: string
+              answer:
+                type: integer
+
+    AssessmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        xp_awarded:
+          type: integer
+        already_completed_today:
+          type: boolean
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        database:
+          type: string
+          enum: [connected, disconnected]
+        redis:
+          type: string
+          enum: [connected, disconnected]
+        ai_provider:
+          type: string
+        endpoints:
+          type: array
+          items:
+            type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid session_id format"
+            code: "INVALID_SESSION"
+
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until rate limit resets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Rate limit exceeded"
+            code: "RATE_LIMITED"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Internal server error"
+            code: "INTERNAL_ERROR"

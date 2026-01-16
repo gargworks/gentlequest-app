@@ -357,3 +357,25 @@
 - health_check: Add more explicit tool usage examples to prompt [pending_approval]
 - orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
 - autopilot: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-16 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| health_check | 0.0% | 0.0% | 0 |
+| critic | 0.0% | 0.0% | 0 |
+
+### Issues Identified (2)
+- **health_check**: low_success_rate (0.0%)
+- **critic**: low_success_rate (0.0%)
+
+### Recommendations (2)
+- **health_check**: Add more explicit tool usage examples to prompt
+- **critic**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- critic: Add more explicit tool usage examples to prompt [pending_approval]

@@ -304,12 +304,18 @@ def get_gemini_response(
 
                 for model_name in models_order:
                     try:
-                        # Use Nucleus V1 Client (DualEngineLLM)
-                        # We import here to avoid circular imports if any, but ideally top-level is fine.
-                        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-                        
-                        llm = DualEngineLLM(model_name, api_key=api_key)
-                        response = llm.generate_content(prompt)
+                        # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
+                        response = None
+                        try:
+                            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+                            llm = DualEngineLLM(model_name, api_key=api_key)
+                            response = llm.generate_content(prompt)
+                        except ImportError:
+                            # Fallback to native google.generativeai when mcp_server_nucleus unavailable
+                            import google.generativeai as genai
+                            genai.configure(api_key=api_key)
+                            model = genai.GenerativeModel(model_name)
+                            response = model.generate_content(prompt)
                         
                         if not response or not getattr(response, "text", None):
                             _debug(f"empty_response model={model_name}")
@@ -526,21 +532,24 @@ DO NOT mention crisis hotlines - system handles that separately."""
 
         api_key = _GEMINI_KEYS[key_idx]
         
-        # Use Dual-Engine abstraction (now V1 Native)
+        # Use Dual-Engine abstraction with native fallback
         try:
-            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            
-            model_name = "gemini-2.5-flash"
-            llm = DualEngineLLM(model_name, api_key=api_key)
-            
-            # Generate content - LLM Client handles the 'tools' kwarg adaptation
-            response = llm.generate_content(full_prompt, tools=WELLNESS_TOOLS_CONFIG)
-            
+            try:
+                from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+                model_name = "gemini-2.5-flash"
+                llm = DualEngineLLM(model_name, api_key=api_key)
+                response = llm.generate_content(full_prompt, tools=WELLNESS_TOOLS_CONFIG)
+            except ImportError:
+                # Fallback to native google.generativeai when mcp_server_nucleus unavailable
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel("gemini-1.5-flash", tools=WELLNESS_TOOLS_CONFIG)
+                response = model.generate_content(full_prompt)
         except Exception as e:
-             _debug(f"LLM Client execution failed: {e}")
-             # Fallback to text-only if tools fail (Safety)
-             response = get_gemini_response(message, mode, session_id, risk_level)
-             return response, []
+            _debug(f"LLM Client execution failed: {e}")
+            # Fallback to text-only if tools fail (Safety)
+            response = get_gemini_response(message, mode, session_id, risk_level)
+            return response, []
 
         if not response.candidates:
             _debug("no candidates in response")

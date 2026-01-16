@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gentlequest.app/schemas/environment.schema.json",
+  "title": "GentleQuest Environment Configuration",
+  "description": "JSON Schema for validating GentleQuest environment variables",
+  "type": "object",
+  "required": [
+    "SECRET_KEY",
+    "DATABASE_URL"
+  ],
+  "properties": {
+    "SECRET_KEY": {
+      "type": "string",
+      "minLength": 32,
+      "description": "Flask secret key for session signing",
+      "sensitive": true
+    },
+    "DATABASE_URL": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^postgres(ql)?://",
+      "description": "PostgreSQL connection string",
+      "sensitive": true
+    },
+    "REDIS_URL": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^redis(s)?://",
+      "description": "Redis connection string for sessions/caching",
+      "sensitive": true
+    },
+    "AI_PROVIDER": {
+      "type": "string",
+      "enum": ["gemini", "openai", "perplexity"],
+      "default": "gemini",
+      "description": "Primary AI provider"
+    },
+    "GEMINI_API_KEY": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Google Gemini API key",
+      "sensitive": true
+    },
+    "GEMINI_API_KEYS": {
+      "type": "string",
+      "description": "Comma-separated Gemini API keys for rotation",
+      "sensitive": true
+    },
+    "OPENAI_API_KEY": {
+      "type": "string",
+      "pattern": "^sk-",
+      "description": "OpenAI API key (fallback 1)",
+      "sensitive": true
+    },
+    "PPLX_API_KEY": {
+      "type": "string",
+      "description": "Perplexity API key (fallback 2)",
+      "sensitive": true
+    },
+    "CORS_ORIGINS": {
+      "type": "string",
+      "description": "Comma-separated allowed CORS origins",
+      "default": "https://gentlequest.onrender.com"
+    },
+    "ENVIRONMENT": {
+      "type": "string",
+      "enum": ["development", "staging", "production"],
+      "default": "production"
+    },
+    "LOG_LEVEL": {
+      "type": "string",
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR"],
+      "default": "INFO"
+    },
+    "RATE_LIMIT_ENABLED": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true"
+    },
+    "RATE_LIMIT_GLOBAL": {
+      "type": "string",
+      "pattern": "^\\d+/\\w+$",
+      "default": "5000/day",
+      "description": "Global rate limit"
+    },
+    "RATE_LIMIT_CHAT": {
+      "type": "string",
+      "pattern": "^\\d+/\\w+$",
+      "default": "120/minute",
+      "description": "Chat endpoint rate limit per session"
+    },
+    "MESSAGE_RETENTION_DAYS": {
+      "type": "string",
+      "pattern": "^\\d+$",
+      "default": "30",
+      "description": "Days to retain chat messages"
+    },
+    "SESSION_RETENTION_DAYS": {
+      "type": "string",
+      "pattern": "^\\d+$",
+      "default": "14",
+      "description": "Days to retain sessions"
+    },
+    "ANALYTICS_RETENTION_DAYS": {
+      "type": "string",
+      "pattern": "^\\d+$",
+      "default": "90",
+      "description": "Days to retain analytics data"
+    },
+    "ENABLE_STREAMING": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Enable SSE streaming for chat"
+    },
+    "ENABLE_ANALYTICS": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Enable analytics telemetry"
+    },
+    "SENTRY_DSN_BACKEND": {
+      "type": "string",
+      "format": "uri",
+      "description": "Sentry DSN for error tracking",
+      "sensitive": true
+    },
+    "ADMIN_API_TOKEN": {
+      "type": "string",
+      "minLength": 32,
+      "description": "Token for admin API endpoints",
+      "sensitive": true
+    },
+    "PORT": {
+      "type": "string",
+      "pattern": "^\\d+$",
+      "default": "5055",
+      "description": "Server port"
+    },
+    "WORKERS": {
+      "type": "string",
+      "pattern": "^\\d+$",
+      "default": "4",
+      "description": "Gunicorn worker count"
+    }
+  },
+  "additionalProperties": true
+}

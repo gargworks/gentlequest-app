@@ -1,0 +1,6 @@
+{
+  "displayName": "DB Auth Failure",
+  "conditionMatchedLog": {
+    "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"gentlequest-backend\" AND textPayload:\"FATAL: password authentication failed\""
+  }
+}

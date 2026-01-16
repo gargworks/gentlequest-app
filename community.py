@@ -72,21 +72,16 @@ def _moderate_post(body: str) -> Tuple[str, Optional[str]]:
     try:
         prompt = _MODERATION_PROMPT.format(body=body[:500])
         
-        # Dual-Engine Migration
-        from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-        llm = DualEngineLLM("gemini-2.0-flash", api_key=api_key)
-        
-        # Generation config is passed differently in V1
-        # DualEngineLLM.generate_content handles kwargs mapping if needed
-        # but for simple temperature/tokens it's best to rely on defaults or simple kwargs
-        
-        resp = llm.generate_content(
-            prompt,
-            # Note: DualEngineLLM doesn't natively expose generation_config kwargs in __init__
-            # but generate_content might pass them through if configured. 
-            # For V1 migration, we trust the defaults or update llm_client if strict config needed.
-            # Assuming generate_content accepts kwargs or we can just send prompt.
-        )
+        # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
+        try:
+            from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
+            llm = DualEngineLLM("gemini-2.0-flash", api_key=api_key)
+            resp = llm.generate_content(prompt)
+        except ImportError:
+            # Fallback to native google.generativeai when mcp_server_nucleus unavailable
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            resp = model.generate_content(prompt)
         
         raw = (resp.text or "").strip().upper()
         if "CRISIS" in raw:

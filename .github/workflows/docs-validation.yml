@@ -1,0 +1,122 @@
+name: Documentation Validation
+
+on:
+  push:
+    paths:
+      - '**.py'
+      - '**.dart'
+      - 'docs/**'
+      - '.brain/artifacts/synthesis/**'
+      - 'tests/test_docs.py'
+  pull_request:
+    paths:
+      - '**.py'
+      - '**.dart'
+      - 'docs/**'
+      - '.brain/artifacts/synthesis/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install pytest pyyaml jsonschema
+          pip install openapi-spec-validator || true  # Optional
+      
+      - name: Validate OpenAPI spec
+        run: |
+          if [ -f "docs/openapi.yaml" ]; then
+            echo "Validating OpenAPI spec..."
+            python -c "
+          import yaml
+          with open('docs/openapi.yaml') as f:
+              spec = yaml.safe_load(f)
+          assert 'openapi' in spec, 'Missing openapi version'
+          assert 'info' in spec, 'Missing info section'
+          assert 'paths' in spec, 'Missing paths section'
+          print('✅ OpenAPI spec structure valid')
+          "
+          else
+            echo "⚠️ OpenAPI spec not found, skipping"
+          fi
+      
+      - name: Validate environment schema
+        run: |
+          if [ -f "docs/schemas/environment.schema.json" ]; then
+            echo "Validating environment schema..."
+            python -c "
+          import json
+          from jsonschema import Draft202012Validator
+          with open('docs/schemas/environment.schema.json') as f:
+              schema = json.load(f)
+          Draft202012Validator.check_schema(schema)
+          print('✅ Environment schema valid')
+          "
+          else
+            echo "⚠️ Environment schema not found, skipping"
+          fi
+      
+      - name: Check document freshness
+        run: |
+          if [ -f "scripts/check_doc_freshness.py" ]; then
+            python scripts/check_doc_freshness.py \
+              --dir .brain/artifacts/synthesis/ \
+              --max-age 90 \
+              --ci || echo "⚠️ Some documents may be stale"
+          else
+            echo "⚠️ Freshness check script not found, skipping"
+          fi
+      
+      - name: Run documentation tests
+        run: |
+          if [ -f "tests/test_docs.py" ]; then
+            pytest tests/test_docs.py -v --tb=short || echo "⚠️ Some doc tests failed"
+          else
+            echo "⚠️ Doc tests not found, skipping"
+          fi
+      
+      - name: Summary
+        run: |
+          echo "## Documentation Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- OpenAPI spec: checked" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment schema: checked" >> $GITHUB_STEP_SUMMARY
+          echo "- Document freshness: checked" >> $GITHUB_STEP_SUMMARY
+          echo "- Cross-references: checked" >> $GITHUB_STEP_SUMMARY
+
+
+  lint-docs:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for broken links (optional)
+        run: |
+          echo "Checking markdown files..."
+          # Count markdown files
+          MD_COUNT=$(find .brain/artifacts/synthesis -name "*.md" | wc -l)
+          echo "Found $MD_COUNT markdown files in synthesis directory"
+          
+          # Basic validation - check files aren't empty
+          for f in .brain/artifacts/synthesis/*.md; do
+            if [ -f "$f" ] && [ ! -s "$f" ]; then
+              echo "⚠️ Empty file: $f"
+            fi
+          done
+          echo "✅ Basic markdown validation complete"

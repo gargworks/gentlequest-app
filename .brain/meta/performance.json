@@ -1,6 +1,6 @@
 {
   "initialized": "2025-12-26T21:20:00+05:30",
-  "last_updated": "2026-01-13T00:00:02.748550",
+  "last_updated": "2026-01-16T00:00:02.861638",
   "agents": {
     "health_check": {
       "completed": 0,
@@ -9,14 +9,7 @@
       "success_rate": 0.0,
       "escalation_rate": 0.0
     },
-    "orchestrator": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "autopilot": {
+    "critic": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,

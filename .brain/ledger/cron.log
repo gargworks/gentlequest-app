@@ -372,3 +372,28 @@ Warning: FastMCP not installed. Running in standalone/verification mode.
 Warning: FastMCP not installed. Running in standalone/verification mode.
 ⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
 ✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-16 08:00:03,422 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-16 08:00:03,468 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-16 08:00:03,470 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-16 08:00:03,470 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops']
+2026-01-16 08:00:03,501 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-16 08:00:05,216 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-16 08:00:05,223 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
