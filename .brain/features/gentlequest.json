@@ -1,7 +1,7 @@
 {
   "product": "gentlequest",
-  "last_updated": "2026-01-06T19:39:04+0530",
-  "total_features": 1,
+  "last_updated": "2026-01-16T21:21:14+0530",
+  "total_features": 10,
   "features": [
     {
       "id": "integration_test_feature",
@@ -22,6 +22,224 @@
       "created_at": "2026-01-06T19:39:04+0530",
       "last_validated": "2026-01-06T19:39:04+0530",
       "validation_result": "passed"
+    },
+    {
+      "id": "phq_9_assessment",
+      "name": "PHQ-9 Assessment",
+      "description": "PHQ-9 depression screening with scoring and severity interpretation",
+      "product": "gentlequest",
+      "source": "providers/clinical_assessments.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "POST /api/assessment/phq9 with responses array",
+        "Verify score calculation",
+        "Check severity interpretation"
+      ],
+      "expected_result": "Returns total_score, severity level, and recommendations",
+      "created_at": "2026-01-16T21:18:54+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "clinical",
+        "assessment",
+        "phq9",
+        "depression"
+      ]
+    },
+    {
+      "id": "gad_7_assessment",
+      "name": "GAD-7 Assessment",
+      "description": "GAD-7 anxiety screening with scoring and severity interpretation",
+      "product": "gentlequest",
+      "source": "providers/clinical_assessments.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "POST /api/assessment/gad7 with responses array",
+        "Verify score calculation",
+        "Check severity interpretation"
+      ],
+      "expected_result": "Returns total_score, severity level, and recommendations",
+      "created_at": "2026-01-16T21:18:55+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "clinical",
+        "assessment",
+        "gad7",
+        "anxiety"
+      ]
+    },
+    {
+      "id": "assessment_history_api",
+      "name": "Assessment History API",
+      "description": "Retrieve PHQ-9/GAD-7 assessment history for a session",
+      "product": "gentlequest",
+      "source": "app.py + providers/clinical_assessments.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "GET /api/assessment/history with X-Session-ID header",
+        "Verify returns assessment records"
+      ],
+      "expected_result": "Returns array of past assessments with scores and timestamps",
+      "created_at": "2026-01-16T21:18:58+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "clinical",
+        "api",
+        "history",
+        "reporting"
+      ]
+    },
+    {
+      "id": "crisis_detection_11_countries",
+      "name": "Crisis Detection (11 Countries)",
+      "description": "Real-time crisis keyword detection with geo-specific crisis resources for 11 countries",
+      "product": "gentlequest",
+      "source": "app.py + crisis_detection.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "Send message with crisis keywords",
+        "Verify crisis resources appear",
+        "Check country-specific numbers"
+      ],
+      "expected_result": "Crisis resources with country-specific hotlines displayed to user",
+      "created_at": "2026-01-16T21:19:05+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "safety",
+        "crisis",
+        "geo-specific",
+        "11-countries"
+      ]
+    },
+    {
+      "id": "admin_analytics_dashboard",
+      "name": "Admin Analytics Dashboard",
+      "description": "Web dashboard showing intervention analytics, completion rates, and mood improvement",
+      "product": "gentlequest",
+      "source": "app.py + templates/admin_dashboard.html",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "Navigate to /api/admin/analytics",
+        "Verify dashboard loads",
+        "Check metrics display"
+      ],
+      "expected_result": "Dashboard shows total interventions, completion rate, mood improvement, intervention breakdown",
+      "created_at": "2026-01-16T21:19:08+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "admin",
+        "dashboard",
+        "analytics",
+        "reporting"
+      ]
+    },
+    {
+      "id": "quest_gamification_system",
+      "name": "Quest Gamification System",
+      "description": "Gamified micro-challenges with XP rewards, streaks, and badges",
+      "product": "gentlequest",
+      "source": "Flutter frontend",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "Complete a quest in the app",
+        "Verify XP awarded",
+        "Check streak tracking"
+      ],
+      "expected_result": "Quest completion awards XP, updates streak, progress toward badges",
+      "created_at": "2026-01-16T21:19:11+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "gamification",
+        "engagement",
+        "quests",
+        "xp"
+      ]
+    },
+    {
+      "id": "luna_ai_companion_chat",
+      "name": "Luna AI Companion Chat",
+      "description": "AI-powered conversational companion using Gemini with CBT/DBT/ACT techniques",
+      "product": "gentlequest",
+      "source": "app.py + providers/gemini.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "POST /api/chat with message",
+        "Verify response is empathetic",
+        "Check function calling works"
+      ],
+      "expected_result": "Empathetic AI response with optional function calls for actions",
+      "created_at": "2026-01-16T21:19:45+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "core",
+        "chat",
+        "ai",
+        "gemini",
+        "cbt",
+        "dbt",
+        "act"
+      ]
+    },
+    {
+      "id": "mood_tracking",
+      "name": "Mood Tracking",
+      "description": "Daily mood logging with history and trend visualization",
+      "product": "gentlequest",
+      "source": "app.py + Flutter frontend",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "POST /api/mood with mood data",
+        "GET /api/mood/history",
+        "Verify trends displayed"
+      ],
+      "expected_result": "Mood saved and retrievable with trend visualization",
+      "created_at": "2026-01-16T21:19:48+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "tracking",
+        "mood",
+        "analytics",
+        "visualization"
+      ]
+    },
+    {
+      "id": "self_assessment_daily_check_in",
+      "name": "Self-Assessment Daily Check-in",
+      "description": "Quick daily self-assessment with XP rewards (once per day)",
+      "product": "gentlequest",
+      "source": "app.py",
+      "version": "1.0.0",
+      "status": "production",
+      "how_to_test": [
+        "POST /api/self_assessment with assessment data",
+        "Verify XP awarded",
+        "Confirm daily limit enforced"
+      ],
+      "expected_result": "Assessment saved, 10 XP awarded, blocked if already done today",
+      "created_at": "2026-01-16T21:21:14+0530",
+      "last_validated": null,
+      "validation_result": null,
+      "tags": [
+        "assessment",
+        "daily",
+        "xp",
+        "engagement"
+      ]
     }
   ]
 }

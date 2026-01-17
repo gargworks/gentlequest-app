@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 # Add mcp-server-nucleus to path
-sys.path.append(str(Path.cwd() / "mcp-server-nucleus/src"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus import commitment_ledger
 from mcp_server_nucleus.runtime import storage

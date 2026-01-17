@@ -52,10 +52,22 @@ def _check_memory_tables_exist() -> bool:
         return False
     
     try:
-        # Check if table exists
+        engine = db.session.bind
+        dialect = engine.dialect.name if engine else 'postgresql'
+        
+        # Check config too
+        from flask import current_app
+        db_url = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
+        
+        if dialect == 'sqlite' or 'sqlite' in db_url:
+            # pgvector not available on SQLite usually
+            _memory_tables_ready = False
+            return False
+
+        # Check if table exists (Postgres)
         result = db.session.execute(text("""
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
+                SELECT 1 FROM information_schema.tables 
                 WHERE table_name = 'memory_summaries'
             )
         """)).scalar()
@@ -67,7 +79,7 @@ def _check_memory_tables_exist() -> bool:
         # Check if pgvector extension is available
         result = db.session.execute(text("""
             SELECT EXISTS (
-                SELECT FROM pg_extension WHERE extname = 'vector'
+                SELECT 1 FROM pg_extension WHERE extname = 'vector'
             )
         """)).scalar()
         
@@ -278,7 +290,7 @@ def retrieve_relevant_memories(
                     1 - (embedding <=> CAST(:query_embedding AS vector)) as similarity
                 FROM memory_summaries
                 WHERE session_id = :session_id
-                  AND (expires_at IS NULL OR expires_at > NOW())
+                  AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 ORDER BY embedding <=> CAST(:query_embedding AS vector)
                 LIMIT :limit
             """),
@@ -353,7 +365,7 @@ def cleanup_expired_memories() -> int:
     """Remove expired memories. Call periodically."""
     try:
         result = db.session.execute(
-            text("DELETE FROM memory_summaries WHERE expires_at < NOW()")
+            text("DELETE FROM memory_summaries WHERE expires_at < CURRENT_TIMESTAMP")
         )
         db.session.commit()
         return result.rowcount

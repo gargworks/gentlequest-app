@@ -41,12 +41,16 @@ def get_session_interventions(session_id: str, limit: int = 10) -> List[Dict[str
         
         interventions = []
         for row in result:
+            ts = row.timestamp
+            if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
+                ts = ts.isoformat()
+            
             interventions.append({
                 "intervention_id": row.intervention_id,
                 "issue": row.issue if hasattr(row, 'issue') else None,
                 "offer_stage": row.offer_stage if hasattr(row, 'offer_stage') else 1,
                 "outcome": row.outcome if hasattr(row, 'outcome') else "offered",
-                "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                "timestamp": ts,
             })
         
         return interventions
@@ -272,10 +276,14 @@ def get_recent_messages(session_id: str, limit: int = 5) -> List[Dict[str, Any]]
         # We want to preserve that order.
         
         for row in reversed(list(result)):
+            ts = row.timestamp
+            if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
+                ts = ts.isoformat()
+
             messages.append({
                 "role": "user" if row.is_user else "assistant",
                 "content": row.content,
-                "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                "timestamp": ts,
             })
             
         return messages

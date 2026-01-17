@@ -766,6 +766,24 @@ class ApiService {
     }
   }
 
+  /// Generic GET
+  Future<dynamic> get(String path, {Map<String, dynamic>? params}) async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      final response = await _dio.get(path, queryParameters: params);
+      return response.data;
+    });
+  }
+
+  /// Generic POST
+  Future<dynamic> post(String path, {dynamic data}) async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      final response = await _dio.post(path, data: data);
+      return response.data;
+    });
+  }
+
   /// Dispose resources
   void dispose() {
     _dio.close();

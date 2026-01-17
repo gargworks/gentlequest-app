@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
 
-sys.path.append("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 # Mock fastmcp logic again or reuse robust init
 # For now, we rely on the robust init we added earlier
 

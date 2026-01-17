@@ -4,7 +4,7 @@ import os
 # Add src to path
 # Assuming script is run from project root or scripts folder
 # We need to target /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src
-sys.path.append("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus.runtime.factory import ContextFactory
 from mcp_server_nucleus.runtime.agent import EphemeralAgent

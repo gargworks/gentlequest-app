@@ -6,7 +6,7 @@ import multiprocessing
 import logging
 
 # Add the src directory to the path so we can import the module
-sys.path.append(os.path.abspath("mcp-server-nucleus/src"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus.runtime.locking import get_lock
 

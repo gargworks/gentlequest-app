@@ -8,7 +8,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 # Add src to path
-sys.path.append(os.path.abspath("mcp-server-nucleus/src"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus.runtime.factory import ContextFactory
 from mcp_server_nucleus.runtime.agent import EphemeralAgent

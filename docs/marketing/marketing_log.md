@@ -83,3 +83,18 @@
 | 2026-01-12 | Trend 🧪 | **Trend:** Mock Trend 1<br>**Insight:** AI is taking over<br>**Action:** Write about it | New Opportunity | |
 | 2026-01-12 | Trend 🧪 | **Trend:** Mock Trend 2<br>**Insight:** Devs love CLI<br>**Action:** Build more CLIs | New Opportunity | |
 | 2026-01-12 | Trend 🧪 | **Trend:** Mock Trend 3<br>**Insight:** Python 3.14 is futuristic<br>**Action:** Upgrade now | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Your Brain, Local-First. | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** AI Babysitter Thread | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Dashboard Fix Verification | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Draft | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Roast my "Anti-Productivity" tool | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Your Brain, Local-First. | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** AI Babysitter Thread | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Dashboard Fix Verification | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Draft | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Roast my "Anti-Productivity" tool | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Your Brain, Local-First. | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** AI Babysitter Thread | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Dashboard Fix Verification | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Draft | New Opportunity | |
+| 2026-01-17 | Reddit/Inbox | **POSTED** Roast my "Anti-Productivity" tool | New Opportunity | |

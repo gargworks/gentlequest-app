@@ -5,15 +5,16 @@ import 'dart:async';
 import '../models/quest.dart';
 
 class QuestProvider with ChangeNotifier {
-  static const String _questsKey = 'user_quests';
-
+  final ApiService _apiService = ApiService();
   List<Quest> _quests = [];
   int _totalXP = 0;
   int _level = 1;
+  bool _isLoading = false;
 
   List<Quest> get quests => _quests;
   int get totalXP => _totalXP;
   int get level => _level;
+  bool get isLoading => _isLoading;
 
   // Getters for different quest categories
   List<Quest> get unlockedQuests =>
@@ -23,94 +24,38 @@ class QuestProvider with ChangeNotifier {
   List<Quest> get completedQuests =>
       _quests.where((q) => q.status == QuestStatus.completed).toList();
 
-  // Initialize with default quests
+  // Initialize
   QuestProvider() {
     loadQuests();
   }
 
   Future<void> loadQuests() async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final questsJson = prefs.getString(_questsKey);
-
-      if (questsJson != null) {
-        // Load saved quests
-        final List<dynamic> decoded = json.decode(questsJson);
-        _quests = decoded.map((q) {
-          // Find matching default quest for icon and other defaults
-          final defaultQuest = defaultQuests.firstWhere(
-            (quest) => quest.id == q['id'],
-            orElse: () => Quest(
-              id: q['id'],
-              title: q['title'],
-              description: q['description'],
-              xpReward: q['xpReward'],
-              category: QuestCategory.values[q['categoryIndex']],
-              icon: Icons.help_outline,
-              target: q['target'],
-            ),
-          );
-
-          return Quest(
-            id: q['id'],
-            title: q['title'],
-            description: q['description'],
-            xpReward: q['xpReward'],
-            category: QuestCategory.values[q['categoryIndex']],
-            icon: defaultQuest.icon,
-            progress: q['progress'],
-            target: q['target'],
-            status: QuestStatus.values[q['statusIndex']],
-            completedAt: q['completedAt'] != null
-                ? DateTime.parse(q['completedAt'])
-                : null,
-          );
-        }).toList();
+      final response = await _apiService.get('/api/quests');
+      
+      if (response != null && response['quests'] != null) {
+        final List<dynamic> questsJson = response['quests'];
+        _quests = questsJson.map((q) => Quest.fromJson(q)).toList();
+        
+        if (response['profile'] != null) {
+          _totalXP = response['profile']['xp'] ?? 0;
+          _level = response['profile']['level'] ?? 1;
+        }
       } else {
-        // First time - initialize with default quests
+        // Fallback to defaults if backend fails or returns empty
         _quests = List<Quest>.from(defaultQuests);
-        await _saveQuests();
       }
 
-      _calculateXPAndLevel();
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading quests: $e');
+      debugPrint('Error loading quests from backend: $e');
       _quests = List<Quest>.from(defaultQuests);
+      _isLoading = false;
+      notifyListeners();
     }
-  }
-
-  Future<void> _saveQuests() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> questsJson = _quests
-          .map(
-            (q) => {
-              'id': q.id,
-              'title': q.title,
-              'description': q.description,
-              'xpReward': q.xpReward,
-              'categoryIndex': q.category.index,
-              'progress': q.progress,
-              'target': q.target,
-              'statusIndex': q.status.index,
-              'completedAt': q.completedAt?.toIso8601String(),
-            },
-          )
-          .toList();
-
-      await prefs.setString(_questsKey, json.encode(questsJson));
-    } catch (e) {
-      debugPrint('Error saving quests: $e');
-    }
-  }
-
-  void _calculateXPAndLevel() {
-    _totalXP = _quests
-        .where((q) => q.status == QuestStatus.completed)
-        .fold(0, (sum, q) => sum + q.xpReward);
-
-    _level = (_totalXP / 1000).floor() + 1;
   }
 
   Future<void> updateQuestProgress(String questId, int newProgress) async {
@@ -121,38 +66,37 @@ class QuestProvider with ChangeNotifier {
     final updatedProgress = newProgress.clamp(0, quest.target);
     final isCompleted = updatedProgress >= quest.target;
 
+    // Optimistic update
     _quests[index] = quest.copyWith(
       progress: updatedProgress,
       status: isCompleted ? QuestStatus.completed : QuestStatus.inProgress,
       completedAt: isCompleted ? DateTime.now() : quest.completedAt,
     );
-
-    _checkForUnlocks();
-    await _saveQuests();
-    _calculateXPAndLevel();
     notifyListeners();
-  }
 
-  void _checkForUnlocks() {
-    // Unlock social quest when mindfulness quest is completed
-    if (_quests.any(
-      (q) => q.id == 'mindfulness_1' && q.status == QuestStatus.completed,
-    )) {
-      final socialQuestIndex = _quests.indexWhere((q) => q.id == 'social_1');
-      if (socialQuestIndex != -1 &&
-          _quests[socialQuestIndex].status == QuestStatus.locked) {
-        _quests[socialQuestIndex] = _quests[socialQuestIndex].copyWith(
-          status: QuestStatus.unlocked,
-        );
+    try {
+      if (isCompleted) {
+        final result = await _apiService.post('/api/quests/$questId/complete');
+        if (result != null && result['success'] == true) {
+          _totalXP = result['new_total_xp'] ?? _totalXP;
+          _level = result['new_level'] ?? _level;
+        }
+      } else {
+        // Currently backend doesn't have a dedicated partial progress endpoint for quests,
+        // but it tracks status. We might want to add /api/quests/<id>/progress later.
+        // For now, only completion is synced.
       }
+    } catch (e) {
+      debugPrint('Error updating quest on backend: $e');
+      // Rollback or handle error
     }
+    
+    notifyListeners();
   }
 
   Future<void> resetQuests() async {
-    _quests = List<Quest>.from(defaultQuests);
-    await _saveQuests();
-    _calculateXPAndLevel();
-    notifyListeners();
+    // Backend doesn't have a reset yet, just re-load
+    await loadQuests();
   }
 
   List<Quest> getQuestsByCategory(QuestCategory category) {

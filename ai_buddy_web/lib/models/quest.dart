@@ -33,6 +33,7 @@ class Quest {
     int? progress,
     QuestStatus? status,
     DateTime? completedAt,
+    int? target, // Added copyWith support for target
   }) {
     return Quest(
       id: id,
@@ -42,10 +43,72 @@ class Quest {
       category: category,
       icon: icon,
       progress: progress ?? this.progress,
-      target: target,
+      target: target ?? this.target,
       status: status ?? this.status,
       completedAt: completedAt ?? this.completedAt,
     );
+  }
+
+  factory Quest.fromJson(Map<String, dynamic> json) {
+    // Map backend status to frontend enum
+    QuestStatus status = QuestStatus.unlocked;
+    final backendStatus = json['status']?.toString().toLowerCase();
+    if (backendStatus == 'completed') {
+      status = QuestStatus.completed;
+    } else if (backendStatus == 'in_progress') {
+      status = QuestStatus.inProgress;
+    } else if (backendStatus == 'locked') {
+      status = QuestStatus.locked;
+    }
+
+    // Map backend type to frontend category
+    QuestCategory category = QuestCategory.mindfulness;
+    final backendType = json['type']?.toString().toLowerCase();
+    switch (backendType) {
+      case 'activity':
+        category = QuestCategory.activity;
+        break;
+      case 'social':
+        category = QuestCategory.social;
+        break;
+      case 'learning':
+        category = QuestCategory.learning;
+        break;
+      case 'challenge':
+        category = QuestCategory.challenge;
+        break;
+      default:
+        category = QuestCategory.mindfulness;
+    }
+
+    return Quest(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      xpReward: json['xp_reward'] ?? 0,
+      category: category,
+      icon: getIconForCategory(category),
+      progress: json['progress'] ?? 0,
+      target: json['target'] ?? 1, // Default target 1 if missing
+      status: status,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'])
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'xp_reward': xpReward,
+      'type': category.name,
+      'status': status.name,
+      'progress': progress,
+      'target': target,
+      'completed_at': completedAt?.toIso8601String(),
+    };
   }
 
   double get progressPercentage => (progress / target).clamp(0.0, 1.0);

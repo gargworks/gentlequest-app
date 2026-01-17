@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 # Add src to path
-sys.path.append(os.path.abspath("mcp-server-nucleus/src"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus.runtime.daemon import DaemonManager
 from mcp_server_nucleus.runtime.export import DataExporter

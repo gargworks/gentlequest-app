@@ -17,6 +17,10 @@ git clone https://github.com/LKGargProjects/ai-mental-health-assistant.git
 cd ai-mental-health-assistant
 pip install -r requirements.txt
 
+# Seed Database
+python3 scripts/seed_resources.py
+python3 scripts/seed_quests.py
+
 # Run locally
 python3 app.py
 ```

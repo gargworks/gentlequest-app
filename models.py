@@ -149,3 +149,87 @@ class ClinicalAssessment(db.Model):
     def __repr__(self):
         return f"<ClinicalAssessment id={self.id} type={self.assessment_type} score={self.total_score}>"
 
+
+class Quest(db.Model):
+    """Gamification mechanics: Quests for users to complete."""
+    __tablename__ = "quests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    quest_type = db.Column(db.String(20), nullable=False)  # task, tip, check_in, progress
+    xp_reward = db.Column(db.Integer, default=10)
+    difficulty = db.Column(db.Integer, default=1)
+    week_number = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Quest id={self.id} title={self.title}>"
+
+
+class QuestProgress(db.Model):
+    """Tracking user progress on quests."""
+    __tablename__ = "quest_progress"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    quest_id = db.Column(db.Integer, db.ForeignKey("quests.id"), nullable=False)
+    status = db.Column(db.String(20), default="available")  # available, in_progress, completed, expired
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+
+    quest = db.relationship("Quest", backref="user_attempts")
+
+    def __repr__(self):
+        return f"<QuestProgress session={self.session_id} quest={self.quest_id} status={self.status}>"
+
+
+class UserProfile(db.Model):
+    """User gamification profile."""
+    __tablename__ = "user_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), unique=True, nullable=False)
+    xp = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    streak_days = db.Column(db.Integer, default=0)
+    last_activity_date = db.Column(db.DateTime)
+    badges = db.Column(db.String(500), default="")  # Comma-separated list
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<UserProfile session={self.session_id} xp={self.xp} level={self.level}>"
+
+
+class Resource(db.Model):
+    """Educational and crisis resources for users."""
+    __tablename__ = "resources"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
+    url = db.Column(db.String(500))
+    category = db.Column(db.String(50), nullable=False)  # crisis, self_help, university, external
+    country = db.Column(db.String(10))
+    university_id = db.Column(db.Integer)
+    tags = db.Column(db.String(500))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Resource id={self.id} title={self.title}>"
+
+
+class UserResourceInteraction(db.Model):
+    """Tracking user interactions with resources."""
+    __tablename__ = "user_resource_interactions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<UserResourceInteraction session={self.session_id} resource={self.resource_id}>"

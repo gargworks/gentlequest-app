@@ -17,7 +17,7 @@ import threading
 import uuid
 
 # Add mcp-server-nucleus to python path for local imports
-sys.path.append(os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src")))
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Tuple
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -313,10 +313,10 @@ class Config:
             "postgresql://ai_buddy:ai_buddy_password@db:5432/mental_health",
         )
     else:
-        # Local development
+        # Local development - use persistent SQLite by default
         DATABASE_URL = os.getenv(
             "DATABASE_URL",
-            "postgresql://ai_buddy:ai_buddy_password@localhost:5432/mental_health",
+            "sqlite:///instance/mental_health.db",
         )
 
     # Redis configuration
@@ -466,7 +466,7 @@ def create_app() -> Flask:
 
         app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mental_health.db"
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///instance/mental_health.db"
 
     # SQLAlchemy reliability options
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -777,26 +777,49 @@ def create_app() -> Flask:
                 db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS outcome VARCHAR(20) DEFAULT 'offered'"))
                 
                 # Analytics columns
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(50)"))
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER"))
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_before INTEGER"))
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER"))
-                
-                # Add constraints for mood ratings (1-10 scale)
-                db.session.execute(text("""
-                    DO $$ BEGIN
-                        ALTER TABLE intervention_outcomes 
-                        ADD CONSTRAINT mood_before_range CHECK (mood_before BETWEEN 1 AND 10);
-                    EXCEPTION WHEN duplicate_object THEN NULL;
-                    END $$;
-                """))
-                db.session.execute(text("""
-                    DO $$ BEGIN
-                        ALTER TABLE intervention_outcomes 
-                        ADD CONSTRAINT mood_after_range CHECK (mood_after BETWEEN 1 AND 10);
-                    EXCEPTION WHEN duplicate_object THEN NULL;
-                    END $$;
-                """))
+                # Analytics columns
+                # SQLite compatible column adding
+                for col_def in [
+                    "exercise_type VARCHAR(50)",
+                    "time_spent_seconds INTEGER",
+                    "mood_before INTEGER",
+                    "mood_after INTEGER"
+                ]:
+                    try:
+                        col_name = col_def.split()[0]
+                        # Check if column exists
+                        result = db.session.execute(text(f"SELECT {col_name} FROM intervention_outcomes LIMIT 1"))
+                    except Exception:
+                        # Column doesn't exist, add it
+                        try:
+                            db.session.rollback() # Clear error
+                            db.session.execute(text(f"ALTER TABLE intervention_outcomes ADD COLUMN {col_def}"))
+                        except Exception as e:
+                            app.logger.warning(f"Failed to add column {col_def}: {e}")
+
+                # Add constraints (Skip for SQLite as it doesnt support ALTER TABLE ADD CONSTRAINT easily)
+                if 'sqlite' not in str(db.engine.url):
+                    try:
+                         db.session.execute(text("""
+                            DO $$ BEGIN
+                                ALTER TABLE intervention_outcomes 
+                                ADD CONSTRAINT mood_before_range CHECK (mood_before BETWEEN 1 AND 10);
+                            EXCEPTION WHEN duplicate_object THEN NULL;
+                         """))
+                    except Exception as e:
+                        app.logger.warning(f"Failed to add constraint: {e}")
+
+                if 'sqlite' not in str(db.engine.url):
+                    try:
+                        db.session.execute(text("""
+                            DO $$ BEGIN
+                                ALTER TABLE intervention_outcomes 
+                                ADD CONSTRAINT mood_after_range CHECK (mood_after BETWEEN 1 AND 10);
+                            EXCEPTION WHEN duplicate_object THEN NULL;
+                            END $$;
+                        """))
+                    except Exception as e:
+                         app.logger.warning(f"Failed to add mood_after constraint: {e}")
             except Exception as e:
                 app.logger.warning(f"Column migration warning: {e}")
             
@@ -975,56 +998,50 @@ def create_app() -> Flask:
 
 
 def _init_database(app: Flask) -> None:
-    """Initialize database with tables"""
+    """Initialize database with tables (Cross-dialect: Postgres/SQLite)"""
     with app.app_context():
         try:
-            # Create tables if they don't exist
-            db.session.execute(
-                text(
-                    """
+            engine = db.session.bind
+            dialect = engine.dialect.name if engine else "postgresql"
+            
+            # Helper for auto-incrementing primary key
+            db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+            is_sqlite = "sqlite" in dialect or "sqlite" in db_uri
+            pk_type = "INTEGER" if is_sqlite else "SERIAL"
+            pk_suffix = "PRIMARY KEY AUTOINCREMENT" if is_sqlite else "PRIMARY KEY"
+            # Core Tables
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS sessions (
                     id VARCHAR(255) PRIMARY KEY,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-                )
-            )
+            """))
 
-            db.session.execute(
-                text(
-                    """
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS chat_messages (
-                    id SERIAL PRIMARY KEY,
+                    id {pk_type} {pk_suffix},
                     session_id VARCHAR(255) REFERENCES sessions(id),
                     content TEXT NOT NULL,
                     is_user BOOLEAN NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     message_type VARCHAR(50) DEFAULT 'text'
                 )
-            """
-                )
-            )
+            """))
 
-            db.session.execute(
-                text(
-                    """
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS mood_entries (
-                    id SERIAL PRIMARY KEY,
+                    id {pk_type} {pk_suffix},
                     session_id VARCHAR(255) REFERENCES sessions(id),
                     mood_level INTEGER NOT NULL CHECK (mood_level >= 1 AND mood_level <= 5),
                     note TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-                )
-            )
+            """))
 
-            db.session.execute(
-                text(
-                    """
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS self_assessments (
-                    id SERIAL PRIMARY KEY,
+                    id {pk_type} {pk_suffix},
                     session_id VARCHAR(255) REFERENCES sessions(id),
                     mood INTEGER,
                     energy INTEGER,
@@ -1035,15 +1052,11 @@ def _init_database(app: Flask) -> None:
                     notes TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-                )
-            )
+            """))
 
-            db.session.execute(
-                text(
-                    """
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS crisis_detections (
-                    id SERIAL PRIMARY KEY,
+                    id {pk_type} {pk_suffix},
                     session_id VARCHAR(255) REFERENCES sessions(id),
                     message TEXT NOT NULL,
                     risk_level VARCHAR(50) NOT NULL,
@@ -1051,25 +1064,86 @@ def _init_database(app: Flask) -> None:
                     keywords TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-                )
-            )
+            """))
 
-            # Minimal analytics events table (no PII)
-            db.session.execute(
-                text(
-                    """
+            db.session.execute(text(f"""
                 CREATE TABLE IF NOT EXISTS analytics_events (
-                    id SERIAL PRIMARY KEY,
+                    id {pk_type} {pk_suffix},
                     session_id VARCHAR(255) REFERENCES sessions(id),
                     event_type VARCHAR(64) NOT NULL,
-                    metadata TEXT, -- store compact JSON string (no PII)
+                    metadata TEXT,
                     request_id VARCHAR(64),
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+            """))
+
+            # Resource System Tables (Gap 2)
+            db.session.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS resources (
+                    id {pk_type} {pk_suffix},
+                    title VARCHAR(255) NOT NULL,
+                    description TEXT,
+                    url TEXT,
+                    category VARCHAR(50),
+                    country VARCHAR(10),
+                    tags TEXT,
+                    is_active BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            )
+            """))
+
+            db.session.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS user_resource_interactions (
+                    id {pk_type} {pk_suffix},
+                    session_id VARCHAR(255) REFERENCES sessions(id),
+                    resource_id INTEGER REFERENCES resources(id),
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            # Alert System Tables (Gap 3)
+            db.session.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS university_counselors (
+                    id {pk_type} {pk_suffix},
+                    university_id INTEGER NOT NULL,
+                    name VARCHAR(200) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    phone VARCHAR(50),
+                    role VARCHAR(100),
+                    is_active BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
+                    receives_alerts BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
+                    alert_methods VARCHAR(100) DEFAULT 'email',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            db.session.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS counselor_alerts (
+                    id {pk_type} {pk_suffix},
+                    session_id VARCHAR(255) REFERENCES sessions(id),
+                    university_id INTEGER,
+                    severity VARCHAR(20) NOT NULL,
+                    trigger_message TEXT NOT NULL,
+                    conversation_excerpt TEXT,
+                    risk_keywords VARCHAR(500),
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    acknowledged_at TIMESTAMP,
+                    acknowledged_by VARCHAR(255),
+                    email_sent BOOLEAN DEFAULT {('FALSE' if dialect == 'postgresql' else '0')},
+                    sms_sent BOOLEAN DEFAULT {('FALSE' if dialect == 'postgresql' else '0')}
+                )
+            """))
+
+            db.session.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS alert_acknowledgments (
+                    id {pk_type} {pk_suffix},
+                    alert_id INTEGER REFERENCES counselor_alerts(id),
+                    counselor_id VARCHAR(255) NOT NULL,
+                    response_notes TEXT,
+                    action_taken VARCHAR(500),
+                    responded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
 
             db.session.commit()
             # Ensure SQLAlchemy models exist (creates missing tables only)
@@ -1463,6 +1537,30 @@ def _register_routes(app: Flask) -> None:
 
     # Security Headers
     _setup_security_headers(app)
+
+    # Register Blueprints
+    try:
+        from app_quest_routes import quest_bp
+        app.register_blueprint(quest_bp)
+        app.logger.info("Quest Blueprint registered successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to register Quest Blueprint: {e}")
+
+    # Register Resource Routes
+    try:
+        from app_resource_routes import register_resource_routes
+        register_resource_routes(app)
+        app.logger.info("Resource Routes registered successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to register Resource Routes: {e}")
+
+    # Register Alert Routes
+    try:
+        from app_alert_routes import register_alert_routes
+        register_alert_routes(app)
+        app.logger.info("Alert Routes registered successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to register Alert Routes: {e}")
 
     @app.route("/")
     def landing_page():
@@ -1962,13 +2060,15 @@ def _register_routes(app: Flask) -> None:
 
             chat_history = []
             for message in messages:
+                ts = message.timestamp
+                if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
+                    ts = ts.isoformat()
+                    
                 chat_history.append(
                     {
                         "content": message.content,
                         "is_user": message.is_user,
-                        "timestamp": (
-                            message.timestamp.isoformat() if message.timestamp else None
-                        ),
+                        "timestamp": ts,
                     }
                 )
 
@@ -2003,13 +2103,15 @@ def _register_routes(app: Flask) -> None:
 
             mood_history = []
             for entry in entries:
+                ts = entry.timestamp
+                if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
+                    ts = ts.isoformat()
+                    
                 mood_history.append(
                     {
                         "mood_level": entry.mood_level,
                         "note": _sanitize_note(entry.note),
-                        "timestamp": (
-                            entry.timestamp.isoformat() if entry.timestamp else None
-                        ),
+                        "timestamp": ts,
                     }
                 )
 
@@ -2414,7 +2516,18 @@ def _register_routes(app: Flask) -> None:
 
             # Weekly average
             week_ago = datetime.utcnow() - timedelta(days=7)
-            weekly_entries = [entry for entry in entries if entry.timestamp >= week_ago]
+            
+            def _get_ts(entry):
+                ts = entry.timestamp
+                if isinstance(ts, str):
+                    try:
+                        # SQLite might return "YYYY-MM-DD HH:MM:SS.mmmmmm"
+                        return datetime.fromisoformat(ts.replace(' ', 'T'))
+                    except:
+                        return datetime.min # Fallback
+                return ts
+
+            weekly_entries = [entry for entry in entries if _get_ts(entry) >= week_ago]
             weekly_average = (
                 sum(entry.mood_level for entry in weekly_entries) / len(weekly_entries)
                 if weekly_entries
@@ -2662,7 +2775,7 @@ def _get_or_create_session() -> str:
             # Create session in legacy table (authoritative for FK references)
             db.session.execute(
                 text(
-                    "INSERT INTO sessions (id, created_at, last_activity) VALUES (:session_id, NOW(), NOW())"
+                    "INSERT INTO sessions (id, created_at, last_activity) VALUES (:session_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
                 ),
                 {"session_id": session_id},
             )
@@ -2672,7 +2785,7 @@ def _get_or_create_session() -> str:
             # Touch last_activity to keep it fresh
             db.session.execute(
                 text(
-                    "UPDATE sessions SET last_activity = NOW() WHERE id = :session_id"
+                    "UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = :session_id"
                 ),
                 {"session_id": session_id},
             )
@@ -2684,7 +2797,7 @@ def _get_or_create_session() -> str:
             db.session.execute(
                 text(
                     "INSERT INTO user_sessions (id, created_at, last_active) "
-                    "VALUES (:session_id, NOW(), NOW()) "
+                    "VALUES (:session_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
                     "ON CONFLICT (id) DO UPDATE SET last_active = EXCLUDED.last_active"
                 ),
                 {"session_id": session_id},

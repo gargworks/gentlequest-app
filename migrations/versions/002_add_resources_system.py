@@ -1,0 +1,76 @@
+"""Add resources system
+
+Revision ID: 002_add_resources_system
+Revises: 001_add_quests_system
+Create Date: 2026-01-17 10:01:00.000000
+
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision = '002_add_resources_system'
+down_revision = '001_add_quests_system'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    # Create resource_category enum
+    op.execute("CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external')")
+    
+    # Create resources table
+    op.create_table(
+        'resources',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('title', sa.String(200), nullable=False),
+        sa.Column('description', sa.String(1000), nullable=False),
+        sa.Column('url', sa.String(500)),
+        sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory'), nullable=False),
+        sa.Column('country', sa.String(10)),
+        sa.Column('university_id', sa.Integer()),
+        sa.Column('tags', sa.String(500)),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('is_active', sa.Boolean(), server_default='true'),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('idx_resources_category', 'resources', ['category'])
+    op.create_index('idx_resources_country', 'resources', ['country'])
+    op.create_index('idx_resources_active', 'resources', ['is_active'])
+    
+    # Create full-text search index for resources
+    op.execute("""
+        CREATE INDEX idx_resources_search ON resources 
+        USING GIN(to_tsvector('english', title || ' ' || description || ' ' || COALESCE(tags, '')))
+    """)
+    
+    # Create user_resource_interactions table
+    op.create_table(
+        'user_resource_interactions',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('session_id', sa.String(255), nullable=False),
+        sa.Column('resource_id', sa.Integer(), nullable=False),
+        sa.Column('viewed_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('idx_interactions_session', 'user_resource_interactions', ['session_id'])
+    op.create_index('idx_interactions_resource', 'user_resource_interactions', ['resource_id'])
+    op.create_index('idx_interactions_viewed_at', 'user_resource_interactions', ['viewed_at'])
+
+
+def downgrade():
+    op.drop_index('idx_interactions_viewed_at', table_name='user_resource_interactions')
+    op.drop_index('idx_interactions_resource', table_name='user_resource_interactions')
+    op.drop_index('idx_interactions_session', table_name='user_resource_interactions')
+    op.drop_table('user_resource_interactions')
+    
+    op.execute('DROP INDEX IF EXISTS idx_resources_search')
+    op.drop_index('idx_resources_active', table_name='resources')
+    op.drop_index('idx_resources_country', table_name='resources')
+    op.drop_index('idx_resources_category', table_name='resources')
+    op.drop_table('resources')
+    
+    op.execute('DROP TYPE IF EXISTS resourcecategory')

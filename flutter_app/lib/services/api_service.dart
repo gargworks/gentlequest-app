@@ -265,6 +265,31 @@ class ApiService {
       throw Exception('Failed to delegate task: ${response.statusCode}');
     }
   }
+
+  // --- Generic REST Methods ---
+  Future<dynamic> get(String path, {Map<String, String>? params}) async {
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: params);
+    final response = await http.get(uri);
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> post(String path, {dynamic body}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl$path'),
+      headers: {'Content-Type': 'application/json'},
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return _handleResponse(response);
+  }
+
+  dynamic _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return null;
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('API Error (${response.statusCode}): ${response.body}');
+    }
+  }
 }
 
 

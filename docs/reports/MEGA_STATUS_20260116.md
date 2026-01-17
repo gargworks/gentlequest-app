@@ -39,3 +39,11 @@ The system infrastructure has been successfully stabilized. The critical routing
 - **Routing**: Use `Host` header inspection in Flask rather than complex Nginx configs for simplicity.
 - **MCP**: Use shell wrapper (`debug_nucleus.sh`) to guarantee environment consistency for FastMCP.
 - **Templates**: "Code as Source" approach for all persona templates (zipped in repo).
+
+## 6. Jan 17 Update: Critical Fixes & Validation Halt
+*   **Event**: Product Self-Test failed (Wrong Frontend + Backend Crash).
+*   **Action**: "Fix-It Sprint" initiated.
+*   **Fixes Applied**:
+    *   Hardened `sys.path` in 9 scripts and `app.py` to fix `ModuleNotFoundError`.
+    *   Updated `supervisord.conf` with `PYTHONPATH`.
+*   **Strategic Shift**: University Outreach DELAYED to Feb 7 pending Wysa Comparison & Codebase Stabilization.

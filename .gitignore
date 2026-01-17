@@ -97,3 +97,4 @@ ai_buddy_web/android/key.properties
 !*.md
 secret/service_account.json
 backend_config.env
+venv_39/

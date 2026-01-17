@@ -334,11 +334,18 @@ def init_assessment_tables(conn):
     """
     
     try:
-        # Check if conn is sqlite3
-        # Robust check: if psycopg2 is missing, we assume SQLite
-        # Also check connection class string just in case
+        # Robust check: if psycopg2 is missing, we assume SQLite fallback
+        # or check the connection's module/type
         is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
         
+        # Check dialect via metadata if possible
+        try:
+            from models import db
+            if db.engine.dialect.name == 'sqlite':
+                is_sqlite = True
+        except:
+            pass
+
         cur = conn.cursor()
         try:
             if is_sqlite:
@@ -380,9 +387,16 @@ def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
     except ImportError:
         psycopg = None
 
-    # Check if conn is sqlite3
-    # Robust check: look at connection type string
+    # Robust check: look at connection type string and SQLAlchemy dialect
     is_sqlite = 'sqlite' in str(type(conn)).lower()
+    
+    try:
+        from models import db
+        if db.engine.dialect.name == 'sqlite':
+            is_sqlite = True
+    except:
+        pass
+
     is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
     
     # Default to Postgres if not clearly SQLite, unless strictly SQLite
@@ -472,6 +486,13 @@ def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]
             return d
 
         is_sqlite = 'sqlite' in str(type(conn)).lower()
+        try:
+            from models import db
+            if db.engine.dialect.name == 'sqlite':
+                is_sqlite = True
+        except:
+            pass
+
         is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
 
         if is_sqlite:

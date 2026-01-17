@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 # Setup paths
-sys.path.append("mcp-server-nucleus/src")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 from mcp_server_nucleus.runtime.factory import ContextFactory
 
 def verify_plugins():

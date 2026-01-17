@@ -1,0 +1,190 @@
+name: GentleQuest CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-mock
+      
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+        run: |
+          alembic upgrade head
+      
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ENVIRONMENT: test
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term -v
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+      
+      - name: Check code quality
+        run: |
+          pip install flake8 black
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check .
+  
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Cache Flutter packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ai_buddy_web/.dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+      
+      - name: Install dependencies
+        run: |
+          cd ai_buddy_web
+          flutter pub get
+      
+      - name: Run tests
+        run: |
+          cd ai_buddy_web
+          flutter test
+      
+      - name: Analyze code
+        run: |
+          cd ai_buddy_web
+          flutter analyze
+      
+      - name: Check formatting
+        run: |
+          cd ai_buddy_web
+          flutter format --set-exit-if-changed .
+  
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  deploy-staging:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Render (Staging)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_STAGING: ${{ secrets.RENDER_SERVICE_ID_STAGING }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_STAGING/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}'
+  
+  deploy-production:
+    needs: [backend-tests, frontend-tests, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Render (Production)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_PROD: ${{ secrets.RENDER_SERVICE_ID_PROD }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_PROD/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}'
+      
+      - name: Wait for deployment
+        run: sleep 60
+      
+      - name: Smoke test production
+        run: |
+          curl -f https://gentlequest.onrender.com/api/health || exit 1
+          echo "✅ Production health check passed"

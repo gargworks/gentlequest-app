@@ -1,0 +1,63 @@
+{
+  "university_id": 2,
+  "name": "University of Michigan",
+  "domain": "umich.edu",
+  "enrollment": 45000,
+  "caps_contact": {
+    "email": "caps@umich.edu",
+    "phone": "+17345551234",
+    "hours": "Mon-Fri 8am-5pm, 24/7 crisis line",
+    "director": "Dr. Jane Smith"
+  },
+  "waitlist": {
+    "average_weeks": 8,
+    "current_count": 2000,
+    "peak_months": ["January", "September", "November"]
+  },
+  "branding": {
+    "logo_url": "https://brand.umich.edu/assets/brand/logos/logo.png",
+    "primary_color": "#00274C",
+    "secondary_color": "#FFCB05",
+    "app_name": "UMich Mental Health Support"
+  },
+  "crisis_resources": [
+    {
+      "name": "UMich CAPS Crisis Line",
+      "phone": "+17345551234",
+      "available": "24/7",
+      "type": "crisis"
+    },
+    {
+      "name": "UMich Counseling Center",
+      "url": "https://caps.umich.edu",
+      "hours": "Mon-Fri 8am-5pm",
+      "type": "university"
+    },
+    {
+      "name": "UMich Wellness",
+      "url": "https://uhs.umich.edu/wellness",
+      "type": "university"
+    }
+  ],
+  "counselors": [
+    {
+      "name": "Dr. Jane Smith",
+      "email": "jsmith@umich.edu",
+      "phone": "+17345551235",
+      "role": "Director",
+      "alert_methods": ["email", "sms"]
+    },
+    {
+      "name": "Dr. John Doe",
+      "email": "jdoe@umich.edu",
+      "role": "Crisis Counselor",
+      "alert_methods": ["email"]
+    }
+  ],
+  "pilot_config": {
+    "start_date": "2026-02-15",
+    "duration_weeks": 12,
+    "target_students": 200,
+    "invitation_batches": 2
+  }
+}

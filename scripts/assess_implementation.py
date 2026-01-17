@@ -73,7 +73,7 @@ def main():
         print(f"❌ Task Check Failed: {tasks_msg}")
     
     # 3. Check Tool Implementation (Static Analysis)
-    server_init = Path("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py")
+    server_init = Path(__file__).parent.parent / "mcp-server-nucleus" / "src" / "mcp_server_nucleus" / "__init__.py"
     has_tool = False
     if server_init.exists():
         content = server_init.read_text()

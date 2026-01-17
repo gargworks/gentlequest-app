@@ -3,7 +3,7 @@ import os
 import sys
 
 # Ensure we can import from src
-sys.path.append("mcp-server-nucleus/src")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp-server-nucleus", "src")))
 
 from mcp_server_nucleus.runtime.capabilities.memory_ops import MemoryOps
 
