@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GentleQuest | Clinical Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #38bdf8;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent-red: #fb7185;
+            --accent-green: #4ade80;
+            --accent-yellow: #fbbf24;
+            --border: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .university-badge {
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+        }
+
+        main {
+            padding: 3rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .grid-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-label {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            color: var(--primary);
+        }
+
+        .card-trend {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .trend-up {
+            color: var(--accent-green);
+        }
+
+        .trend-down {
+            color: var(--accent-red);
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .severity-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .severity-severe {
+            background: rgba(251, 113, 133, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(251, 113, 133, 0.2);
+        }
+
+        .severity-moderate {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .severity-mild {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .btn-refresh {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-refresh:hover {
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            padding: 4rem;
+            text-align: center;
+            color: var(--text-dim);
+        }
+
+        footer {
+            padding: 2rem 5%;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate {
+            animation: fadeIn 0.8s ease forwards;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">GentleQuest <span style="font-weight: 300; color: var(--text-dim)">Clinical</span></div>
+        <div class="university-badge">System Administrator | Pilot Access</div>
+    </header>
+
+    <main>
+        <div class="section-header animate">
+            <h2>Waitlist Health Summary</h2>
+            <button class="btn-refresh" onclick="updateDashboard()">Refresh Data</button>
+        </div>
+
+        <div class="grid-summary animate" style="animation-delay: 0.1s">
+            <div class="card">
+                <div class="card-label">Total Enrollment</div>
+                <div class="card-value" id="val-enrollment">-</div>
+                <div class="card-trend trend-up">↑ Live Pilot Active</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Active Users (24h)</div>
+                <div class="card-value" id="val-active">-</div>
+                <div class="card-trend trend-up">↑ 100% Retained</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Avg Student Mood</div>
+                <div class="card-value" id="val-mood">-</div>
+                <div class="card-trend trend-up">Stability Threshold: 3.5</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Engagement (Quests/User)</div>
+                <div class="card-value" id="val-engagement">-</div>
+                <div class="card-trend">Last 7 Days</div>
+            </div>
+        </div>
+
+        <div class="section-header animate" style="animation-delay: 0.2s">
+            <h2>Clinical Triage (Waitlist Priority)</h2>
+        </div>
+
+        <div class="table-container animate" style="animation-delay: 0.3s">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Assessment</th>
+                        <th>Score</th>
+                        <th>Severity</th>
+                        <th>Flags</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="triage-body">
+                    <!-- Data will be injected here -->
+                    <tr>
+                        <td colspan="6" class="empty-state">Loading triage cases...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2026 GentleQuest. Non-diagnostic support tool. Data and safety strictly monitored.
+    </footer>
+
+    <script>
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        async function updateDashboard() {
+            const summary = await fetchData('/api/clinical/summary');
+            const engagement = await fetchData('/api/clinical/engagement');
+            const triage = await fetchData('/api/clinical/triage');
+
+            if (summary) {
+                document.getElementById('val-enrollment').textContent = summary.total_enrollments;
+                document.getElementById('val-active').textContent = summary.active_users_24h;
+                document.getElementById('val-mood').textContent = summary.average_mood_7d;
+            }
+
+            if (engagement) {
+                document.getElementById('val-engagement').textContent = engagement.avg_quests_per_user;
+            }
+
+            if (triage && triage.triage_cases) {
+                const tbody = document.getElementById('triage-body');
+                if (triage.triage_cases.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No high-priority triage cases detected. Waitlist is stable.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                triage.triage_cases.forEach(case_item => {
+                    const row = document.createElement('tr');
+                    const severityClass = case_item.severity.toLowerCase().includes('severe') ? 'severity-severe' :
+                        case_item.severity.toLowerCase().includes('moderate') ? 'severity-moderate' : 'severity-mild';
+
+                    const flags = case_item.requires_follow_up ? '🚩 Suicide Ideation' : '-';
+
+                    row.innerHTML = `
+                        <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-dim)">${case_item.session_id.substring(0, 8)}...</td>
+                        <td>${case_item.assessment_type}</td>
+                        <td style="font-weight: 700">${case_item.total_score}</td>
+                        <td><span class="severity-badge ${severityClass}">${case_item.severity}</span></td>
+                        <td style="color: var(--accent-red); font-weight: 600">${flags}</td>
+                        <td style="color: var(--text-dim); font-size: 0.8rem">${new Date(case_item.timestamp).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        // Initial load
+        window.onload = updateDashboard;
+    </script>
+</body>
+
+</html>

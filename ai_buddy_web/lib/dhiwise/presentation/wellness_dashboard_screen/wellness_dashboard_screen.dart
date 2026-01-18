@@ -13,7 +13,8 @@ import '../../../widgets/assessment_splash.dart';
 import '../../../quests/quests_engine.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:provider/provider.dart';
-import '../../../providers/progress_provider.dart';
+import '../../../providers/quest_provider.dart';
+import '../../../models/quest.dart' as model;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../navigation/route_observer.dart';
 import '../../../widgets/keyboard_dismissible_scaffold.dart';
@@ -338,9 +339,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     // Visual feedback
     try {
       if (_enableSoftXpPop && awarded) {
-        _showXpChipPop(_startBtnKey, amount: QuestsEngine.xpOther);
+        _showXpChipPop(_startBtnKey, amount: 10);
       }
       _showCheckRipple(_startBtnKey);
+      // Trigger celebration
+      if (mounted) {
+        _randomizeConfetti();
+        _confettiController.play();
+      }
 
       // Celebration message
       if (mounted) {
@@ -463,8 +469,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         }
       }
     }
-    // No hardcoded fallbacks: single source of truth is engine/JSON
+  // No hardcoded fallbacks: single source of truth is engine/JSON
     return null;
+  }
+
+  String? _titleFor(String? questId) {
+    if (questId == null) return null;
+    try {
+      final q = context.read<QuestProvider>().quests.firstWhere((e) => e.id == questId);
+      return q.title;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _subtitleFor(String? questId) {
+    if (questId == null) return null;
+    try {
+      final q = context.read<QuestProvider>().quests.firstWhere((e) => e.id == questId);
+      return q.description;
+    } catch (_) {
+      return null;
+    }
   }
 
   // Keys to compute positions for XP chip animation
@@ -494,14 +520,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Gentle pulse for near-time attention
   late AnimationController _pulseController;
 
-  // Week 0 QuestsEngine (minimal glue, no UI changes)
-  QuestsEngine? _questsEngine;
-  Map<String, dynamic>?
-      _todayData; // {'todayItems': List<Quest>, 'progress': {stepsLeft, xpEarned}}
-
   // RouteObserver subscription guard
   bool _routeSubscribed = false;
-  // IDs for the 4 displayed cards (derived from todayItems; UI copy remains static)
+  // IDs for the 4 displayed cards (derived from backend quests)
   String? _qTask1Id; // preferred: Focus reset variant
   String? _qTask2Id; // preferred: Study sprint variant
   String? _qResId; // a RESOURCE item
@@ -626,95 +647,23 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   }
 
   Future<void> _initQuests() async {
-    final engine = QuestsEngine();
-    if (kDebugMode && _debugSelectorTest) {
-      // Lightweight selector assertions (determinism and variety)
-      // ignore: invalid_use_of_visible_for_testing_member
-      assert(() {
-        engine.debugRunSelectorChecks();
-        return true;
-      }());
-    }
-    final data = await engine.getTodayData();
     if (!mounted) return;
+    final questProvider = context.read<QuestProvider>();
+    await questProvider.loadQuests();
+    if (!mounted) return;
+    
     setState(() {
-      _questsEngine = engine;
-      _todayData = data;
       _computeDisplayedQuestIds();
-      // Sync local completion flags from engine's persisted map
-      final comp =
-          (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-      _task1Done = _qTask1Id != null ? (comp[_qTask1Id] ?? false) : false;
-      _task2Done = _qTask2Id != null ? (comp[_qTask2Id] ?? false) : false;
-      // Keep curated Explore categories (MECE); no dynamic override
+      // Sync local completion flags from provider
+      _task1Done = _qTask1Id != null && 
+          questProvider.quests.any((q) => q.id == _qTask1Id && q.isCompleted);
+      _task2Done = _qTask2Id != null && 
+          questProvider.quests.any((q) => q.id == _qTask2Id && q.isCompleted);
     });
-    if (kDebugMode) {
-      try {
-        final items = (data['todayItems'] as List?) ?? const [];
-        final ids = items
-            .map((e) => e is Quest ? e.id : (e is Map ? e['quest_id'] : '?'))
-            .toList();
-        final comp =
-            (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-        final prog =
-            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
-        debugPrint(
-            '[Quests][INIT] todayItems=${ids.join(', ')} comp=${comp.toString()} progress=${prog.toString()}');
-      } catch (_) {}
-    }
-
-    // Push progress summary to existing ProgressProvider (no widget changes)
-    final progress = data['progress'] as Map<String, dynamic>?;
-    if (progress != null && mounted) {
-      final stepsLeft = (progress['stepsLeft'] ?? 0) as int;
-      final xpEarned = (progress['xpEarned'] ?? 0) as int;
-      context
-          .read<ProgressProvider>()
-          .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
-      // Also push lifetime XP for Explore header (backward compatible)
-      try {
-        final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
-        context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
-      } catch (_) {}
-    }
   }
 
   Future<void> _refreshToday() async {
-    if (_questsEngine == null) return _initQuests();
-    final data = await _questsEngine!.getTodayData();
-    if (!mounted) return;
-    setState(() {
-      _todayData = data;
-      _computeDisplayedQuestIds();
-      // Sync local completion flags from engine's persisted map
-      final comp =
-          (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-      _task1Done = _qTask1Id != null ? (comp[_qTask1Id] ?? false) : false;
-      _task2Done = _qTask2Id != null ? (comp[_qTask2Id] ?? false) : false;
-    });
-    final progress = data['progress'] as Map<String, dynamic>?;
-    if (progress != null) {
-      final stepsLeft = (progress['stepsLeft'] ?? 0) as int;
-      final xpEarned = (progress['xpEarned'] ?? 0) as int;
-      context
-          .read<ProgressProvider>()
-          .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
-      // Keep lifetime XP in sync
-      try {
-        final lifetimeXp = _questsEngine?.computeLifetimeXp() ?? 0;
-        context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
-      } catch (_) {}
-    }
-    if (kDebugMode) {
-      try {
-        final comp =
-            (data['completedToday'] as Map?)?.cast<String, bool>() ?? const {};
-        final prog =
-            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
-        debugPrint(
-            '[Quests][REFRESH] comp=${comp.toString()} progress=${prog.toString()}');
-      } catch (_) {}
-    }
+    await _initQuests();
   }
 
   // Refresh Explore: reload catalog and update curated categories while preserving current filter
@@ -742,113 +691,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   }
 
   // Choose IDs from today's items to back the 4 static cards.
+  // Choose IDs from backend quests to back the 4 static cards.
   void _computeDisplayedQuestIds() {
-    final items =
-        (_todayData?['todayItems'] as List?)?.cast<dynamic>() ?? const [];
-    // Helper to extract fields safely from either Quest or Map
-    String? idOf(dynamic j) {
-      if (j is Quest) return j.id;
-      if (j is Map<String, dynamic>) return j['quest_id'] as String?;
-      return null;
+    final quests = context.read<QuestProvider>().quests;
+    if (quests.isEmpty) return;
+
+    // Mapping logic: distribute available quests to slots
+    if (quests.isNotEmpty) {
+      _qTask1Id = quests[0].id;
+      _qTask2Id = quests.length > 1 ? quests[1].id : quests[0].id;
+      _qResId = quests.length > 2 ? quests[2].id : quests[0].id;
+      _qTipId = quests.length > 3
+          ? quests[3].id
+          : (quests.length > 2 ? quests[2].id : quests[0].id);
     }
-
-    bool isTag(dynamic j, QuestTag tag) {
-      if (j is Quest) return j.tag == tag;
-      if (j is Map<String, dynamic>) {
-        final t = (j['tag'] ?? '').toString().toUpperCase();
-        switch (tag) {
-          case QuestTag.task:
-            return t == 'TASK';
-          case QuestTag.tip:
-            return t == 'TIP';
-          case QuestTag.resource:
-            return t == 'RESOURCE';
-          case QuestTag.reminder:
-            return t == 'REMINDER';
-          case QuestTag.checkin:
-            return t == 'CHECK-IN' || t == 'CHECKIN';
-          case QuestTag.progress:
-            return t == 'PROGRESS';
-        }
-      }
-      return false;
-    }
-
-    String titleOf(dynamic j) {
-      if (j is Quest) return j.title;
-      if (j is Map<String, dynamic>) return (j['title']?.toString() ?? '');
-      return '';
-    }
-
-    // Pick two TASKs: prefer ones resembling current UI labels
-    final tasks = items.where((e) => isTag(e, QuestTag.task)).toList();
-    dynamic focusCandidate = tasks.firstWhere(
-      (e) => titleOf(e).toLowerCase().contains('focus'),
-      orElse: () => tasks.isNotEmpty ? tasks.first : null,
-    );
-    dynamic sprintCandidate = tasks.firstWhere(
-      (e) => titleOf(e).toLowerCase().contains('study'),
-      orElse: () =>
-          tasks.length > 1 ? tasks[1] : (tasks.isNotEmpty ? tasks.first : null),
-    );
-    _qTask1Id = idOf(focusCandidate);
-    // Ensure task2 is different from task1 when possible
-    final t2 =
-        (idOf(sprintCandidate) != null && idOf(sprintCandidate) != _qTask1Id)
-            ? sprintCandidate
-            : (tasks.firstWhere(
-                (e) => idOf(e) != null && idOf(e) != _qTask1Id,
-                orElse: () => null,
-              ));
-    _qTask2Id = idOf(t2);
-
-    // Pools for non-task cards
-    final resources = items.where((e) => isTag(e, QuestTag.resource)).toList();
-    final tips = items.where((e) => isTag(e, QuestTag.tip)).toList();
-    final checks = items
-        .where((e) => isTag(e, QuestTag.checkin) || isTag(e, QuestTag.progress))
-        .toList();
-
-    // Pick one RESOURCE (preferred), else TIP, else CHECK/PROGRESS
-    dynamic resPick;
-    if (resources.isNotEmpty) {
-      resPick = resources.first;
-    } else if (tips.isNotEmpty) {
-      resPick = tips.first;
-    } else if (checks.isNotEmpty) {
-      resPick = checks.first;
-    }
-    _qResId = idOf(resPick);
-
-    // Pick one TIP distinct from resource (if possible); else CHECK/PROGRESS distinct; else null
-    dynamic tipPick;
-    if (tips.isNotEmpty) {
-      tipPick = tips.firstWhere(
-        (e) => idOf(e) != null && idOf(e) != _qResId,
-        orElse: () => tips.first,
-      );
-      // If only one TIP and it's same as res, try checks
-      if (idOf(tipPick) == _qResId && checks.isNotEmpty) {
-        tipPick = checks.firstWhere(
-          (e) => idOf(e) != null && idOf(e) != _qResId,
-          orElse: () => checks.first,
-        );
-      }
-    } else if (checks.isNotEmpty) {
-      tipPick = checks.firstWhere(
-        (e) => idOf(e) != null && idOf(e) != _qResId,
-        orElse: () => checks.first,
-      );
-    }
-    _qTipId = idOf(tipPick);
-
-    // Debug: note when only one TASK is present today
-    if (kDebugMode && (_qTask1Id != null && _qTask2Id == null)) {
-      try {
-        debugPrint(
-            '[QA][Quests] only_one_task=true task1=$_qTask1Id task2=null');
-      } catch (_) {}
-    }
+  }
   }
 
   void _scheduleMidnightRefresh() {
@@ -2061,7 +1918,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         } catch (_) {}
                       }
                       try {
-                        await QuestsEngine.debugResetAll();
+                        await context.read<QuestProvider>().loadQuests();
                       } catch (_) {}
                       try {
                         await _refreshToday();
@@ -2274,40 +2131,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   }
 
   Widget _buildProgressSection() {
-    // Prefer engine-backed values via ProgressProvider once today data is loaded; fallback to UI-only
-    final pp = context.watch<ProgressProvider>();
-    final bool hasEngineData = _todayData != null;
-    final int completedLocal = (_task1Done ? 1 : 0) + (_task2Done ? 1 : 0);
-    // Keep Today tab unchanged: show Steps Left as before
-    final int stepsLeft = hasEngineData
-        ? pp.stepsLeft
-        : (_baseSteps - completedLocal).clamp(0, _baseSteps);
-    final int xpEarned =
-        hasEngineData ? pp.xpEarned : (_baseXp + (completedLocal * 10));
-    // CHANGED: Use total active days for "No-Guilt" tracking
-    final int streak = (_questsEngine != null)
-        ? _questsEngine!.computeTotalActiveDays()
-        : 0;
-    // Record is same as streak in "Total Days" model, or we can just hide it.
-    // We set it to 0 to ensure the "strict greater" check below fails and hides the label.
-    final int recordStreak = 0; 
-    
-    // Responsive label and pluralization
-    final double _w = MediaQuery.of(context).size.width;
-    final bool _narrow = _w < 420;
-    final String _dayWord = streak == 1 ? 'day' : 'days';
-    final String _recordLabel = _narrow ? 'record' : 'record';
-    // Only show record when it's strictly greater than current streak (Never true now)
-    final String _streakRecordLabel =
-        (recordStreak > streak) ? '($_recordLabel $recordStreak)' : '';
-    // Lifetime XP -> Level and progress
-    final int lifetimeXp = pp.lifetimeXp;
+    final questProvider = context.watch<QuestProvider>();
+    final int streak = questProvider.streak;
+    final int lifetimeXp = questProvider.totalXP;
+    final int level = questProvider.level;
+    final int xpEarned = 0; // Baseline for today's display
+
+    // Level progress based on 100 XP per level (standard)
     const int _xpPerLevel = 100;
-    final int level = (lifetimeXp ~/ _xpPerLevel) + 1; // Level 1 at 0..99 XP
     final double levelProgress =
         ((lifetimeXp % _xpPerLevel) / _xpPerLevel).clamp(0.0, 1.0);
-    // Hide Total XP pill when lifetime equals today's XP (first-day clean UI)
-    final bool showTotalPill = lifetimeXp > xpEarned;
+    // Hide Total XP pill when 0 (baseline)
+    final bool showTotalPill = lifetimeXp > 0;
     // Persist previous progress for smooth animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _prevLevelProgress = levelProgress;
@@ -2359,9 +2194,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             Expanded(
                 child: ProgressCardWidget(
                     imagePath: ImageConstant.imgImage65x52,
-                    value: '$streak days total', // No-Guilt Label
-                    label: _streakRecordLabel,
-                    backgroundColor: Color(0xFFE0F2E9),
+                    value: '$streak days total',
+                    label: '',
+                    backgroundColor: const Color(0xFFE0F2E9),
                     valueWidget: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
                       transitionBuilder: (child, anim) =>
@@ -2398,8 +2233,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               child: ProgressCardWidget(
                   imagePath: ImageConstant.imgImage63x65,
                   value: 'Level $level',
-                  label: '+$xpEarned today',
-                  backgroundColor: Color(0xFFE8E7F8),
+                  label: '',
+                  backgroundColor: const Color(0xFFE8E7F8),
                   valueWidget: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
                     transitionBuilder: (child, anim) =>
@@ -2573,6 +2408,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           ),
           SizedBox(height: 20.h),
           // Card 1 (TASK)
+          // Card 1 (TASK)
           RecommendationCardWidget(
               containerKey: _task1CardKey,
               category: 'TASK',
@@ -2586,41 +2422,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               doneImagePath: 'assets/images/quests/task_focus_done.svg',
               completed: _task1Done,
               onTap: () async {
-                // One-and-done: ignore taps once completed (use Undo to revert)
                 if (_task1Done) return;
-                // Ensure engine is ready
-                if (_questsEngine == null) {
-                  await _initQuests();
-                }
-                // Must have a selected quest from today's items; do not fall back to a non-today ID
                 final questId = _qTask1Id;
-                if (questId == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Focus task not available today')),
-                    );
-                  }
-                  return;
-                }
+                if (questId == null) return;
                 final dur = _durationFor(questId);
                 if (dur != null && dur > 0) {
                   await _openTimerSheet(
                       questId: questId,
                       cardKey: _task1CardKey,
-                      title: 'Focus reset',
+                      title: _titleFor(questId) ?? 'Focus reset',
                       durationMin: dur);
                   return;
                 }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Focus duration missing')),
-                  );
-                }
-                return;
               }),
           SizedBox(height: 24.h),
-          // Card 2 (TASK) - show only when a second TASK exists today
+          // Card 2 (TASK)
           if (_qTask2Id != null)
             RecommendationCardWidget(
                 containerKey: _task2CardKey,
@@ -2628,50 +2444,31 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 title: _task2Dur != null
                     ? 'Study sprint (${_task2Dur} min)'
                     : 'Study sprint',
-                subtitle: 'Timer + no‑phone rule',
+                subtitle: 'Timer + no-phone rule',
                 imagePath: 'assets/images/quests/task_study.svg',
                 doneImagePath: 'assets/images/quests/task_study_done.svg',
                 completed: _task2Done,
                 onTap: () async {
-                  if (_task2Done) return; // one-and-done; use Undo to revert
-                  // Ensure engine is ready
-                  if (_questsEngine == null) {
-                    await _initQuests();
-                  }
+                  if (_task2Done) return;
                   final questId = _qTask2Id;
-                  if (questId == null) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Study sprint not available today')),
-                      );
-                    }
-                    return;
-                  }
+                  if (questId == null) return;
                   final dur = _durationFor(questId);
                   if (dur != null && dur > 0) {
                     await _openTimerSheet(
                         questId: questId,
                         cardKey: _task2CardKey,
-                        title: 'Study sprint',
+                        title: _titleFor(questId) ?? 'Study sprint',
                         durationMin: dur);
                     return;
                   }
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Study sprint duration missing')),
-                    );
-                  }
-                  return;
                 }),
           SizedBox(height: 24.h),
           // Card 3 (RESOURCE)
           RecommendationCardWidget(
               containerKey: _resCardKey,
               category: 'RESOURCE',
-              title: 'Calm music',
-              subtitle: 'Lo‑fi playlist',
+              title: _titleFor(_qResId) ?? 'Calm music',
+              subtitle: _subtitleFor(_qResId) ?? 'Lo‑fi playlist',
               imagePath: 'assets/images/quests/resource_headphone_match_v8.svg',
               doneImagePath:
                   'assets/images/quests/resource_headphone_match_v8_done.svg',
@@ -2788,8 +2585,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           RecommendationCardWidget(
               containerKey: _tipCardKey,
               category: 'TIP',
-              title: 'One tiny step',
-              subtitle: 'Pick the easiest task first',
+              title: _titleFor(_qTipId) ?? 'One tiny step',
+              subtitle: _subtitleFor(_qTipId) ?? 'Pick the easiest task first',
               imagePath: 'assets/images/quests/tip_generic.svg',
               doneImagePath: 'assets/images/quests/tip_generic_done.svg',
               completed: tipDone,
@@ -3473,17 +3270,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Explore tab content (header + category filters + placeholder grid)
   Widget _buildExploreSection() {
-    final pp = context.watch<ProgressProvider>();
+    final qp = context.watch<QuestProvider>();
     final List<String> cats = <String>{'All', ..._exploreCats}.toList();
     final List<String> visible = _exploreFilter == 'All'
         ? _exploreCats
         : _exploreCats.where((c) => c == _exploreFilter).toList();
-    // Keep XP display consistent with Today tab (use provider's xpEarned)
-    final int xpToday = pp.xpEarned;
-    final int lifetimeXp = pp.lifetimeXp;
+    // Keep XP display consistent with Today tab
+    final int xpToday = 0; // derivation would require tracking daily start XP
+    final int lifetimeXp = qp.totalXP;
     // Streak values for header (No-Guilt)
-    final engineForHeader = _questsEngine;
-    final int streakDays = engineForHeader?.computeTotalActiveDays() ?? 0;
+    final int streakDays = qp.streak;
     final int recordStreak = 0; // Unused in header
     // Responsive tweaks
     final double _w = MediaQuery.of(context).size.width;
@@ -3504,8 +3300,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Category chips + compact metrics on the same row
         Builder(builder: (context) {
-          final int energyLeft = _questsEngine?.exploreEnergyLeft() ?? 0;
-          const int energyLimit = QuestsEngine.exploreDailyLimit;
+          final int energyLeft = 3; // Derive from qp if backend supports energy
+          const int energyLimit = 3;
           final bool energyEmpty = energyLeft <= 0;
           final Color energyFg = energyEmpty
               ? const Color(0xFF8C9CAA)

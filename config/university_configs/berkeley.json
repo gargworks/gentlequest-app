@@ -1,0 +1,14 @@
+{
+    "university_name": "UC Berkeley",
+    "decision_maker": {
+        "name": "Dr. Guy Nicolette",
+        "role": "Assistant Vice Chancellor",
+        "email": "uhs@berkeley.edu"
+    },
+    "pain_points": [
+        "Massive student population density",
+        "Resource scarcity",
+        "Activism burnout"
+    ],
+    "custom_pitch": "At a scale like Berkeley's, 1:1 therapy for everyone isn't math-compatible. We offer the scalable layer zero."
+}

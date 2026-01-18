@@ -1,0 +1,14 @@
+{
+    "university_name": "Columbia University",
+    "decision_maker": {
+        "name": "Dr. Melanie Bernitz",
+        "role": "Senior VP, Columbia Health",
+        "email": "health@columbia.edu"
+    },
+    "pain_points": [
+        "NYC cost of living stress",
+        "Graduate student union tensions",
+        "Urban isolation"
+    ],
+    "custom_pitch": "City life is relentless. GentleQuest gives your students a safe, quiet digital space to decompress."
+}

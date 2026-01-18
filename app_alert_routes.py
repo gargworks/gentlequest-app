@@ -5,9 +5,8 @@ Add these routes to app.py in _register_routes() function
 
 from flask import request, jsonify, current_app
 from datetime import datetime
-from models import db
+from models import db, CounselorAlert, AlertAcknowledgment, Message
 from sqlalchemy import text
-from providers.alert_manager import AlertManager
 
 
 def register_alert_routes(app):
@@ -23,49 +22,34 @@ def register_alert_routes(app):
             status = request.args.get('status')  # 'acknowledged', 'pending'
             severity = request.args.get('severity')  # 'low', 'medium', 'high', 'critical'
             
-            where_clauses = ["university_id = :university_id"]
-            params = {"university_id": university_id}
+            query = CounselorAlert.query.filter_by(university_id=university_id)
             
             if status == 'pending':
-                where_clauses.append("acknowledged_at IS NULL")
+                query = query.filter(CounselorAlert.acknowledged_at == None)
             elif status == 'acknowledged':
-                where_clauses.append("acknowledged_at IS NOT NULL")
+                query = query.filter(CounselorAlert.acknowledged_at != None)
             
             if severity:
-                where_clauses.append("severity = :severity")
-                params['severity'] = severity
+                query = query.filter(CounselorAlert.severity == severity)
             
-            where_sql = " AND ".join(where_clauses)
-            
-            alerts = db.session.execute(
-                text(f"""
-                    SELECT id, session_id, severity, trigger_message, sent_at, 
-                           acknowledged_at, acknowledged_by, email_sent, sms_sent
-                    FROM counselor_alerts
-                    WHERE {where_sql}
-                    ORDER BY sent_at DESC
-                    LIMIT 100
-                """),
-                params
-            ).fetchall()
+            alerts = query.order_by(CounselorAlert.sent_at.desc()).limit(100).all()
             
             def format_date(dt):
                 if not dt: return None
-                if isinstance(dt, str): return dt
                 return dt.isoformat()
 
             alert_list = []
             for a in alerts:
                 alert_list.append({
-                    'id': a[0],
-                    'session_id': a[1],
-                    'severity': a[2],
-                    'trigger_message': a[3],
-                    'sent_at': format_date(a[4]),
-                    'acknowledged_at': format_date(a[5]),
-                    'acknowledged_by': a[6],
-                    'email_sent': a[7],
-                    'sms_sent': a[8]
+                    'id': a.id,
+                    'session_id': a.session_id,
+                    'severity': a.severity,
+                    'trigger_message': a.trigger_message,
+                    'sent_at': format_date(a.sent_at),
+                    'acknowledged_at': format_date(a.acknowledged_at),
+                    'acknowledged_by': a.acknowledged_by,
+                    'email_sent': a.email_sent,
+                    'sms_sent': a.sms_sent
                 })
             
             return jsonify({
@@ -84,72 +68,46 @@ def register_alert_routes(app):
         
         try:
             # Get alert
-            alert = db.session.execute(
-                text("""
-                    SELECT id, session_id, severity, trigger_message, conversation_excerpt,
-                           risk_keywords, sent_at, acknowledged_at, acknowledged_by
-                    FROM counselor_alerts
-                    WHERE id = :id
-                """),
-                {"id": alert_id}
-            ).fetchone()
-            
+            alert = CounselorAlert.query.get(alert_id)
             if not alert:
                 return jsonify({"error": "Alert not found"}), 404
             
-            # Get full conversation
-            messages = db.session.execute(
-                text("""
-                    SELECT content, is_user, timestamp
-                    FROM messages
-                    WHERE session_id = :session_id
-                    ORDER BY timestamp ASC
-                """),
-                {"session_id": alert[1]}
-            ).fetchall()
+            # Get full conversation for that session
+            messages = Message.query.filter_by(session_id=alert.session_id).order_by(Message.timestamp.asc()).all()
             
             # Get acknowledgments
-            acks = db.session.execute(
-                text("""
-                    SELECT counselor_id, response_notes, action_taken, responded_at
-                    FROM alert_acknowledgments
-                    WHERE alert_id = :alert_id
-                    ORDER BY responded_at DESC
-                """),
-                {"alert_id": alert_id}
-            ).fetchall()
+            acks = AlertAcknowledgment.query.filter_by(alert_id=alert_id).order_by(AlertAcknowledgment.responded_at.desc()).all()
             
             def format_date(dt):
                 if not dt: return None
-                if isinstance(dt, str): return dt
                 return dt.isoformat()
 
             return jsonify({
                 "alert": {
-                    'id': alert[0],
-                    'session_id': alert[1],
-                    'severity': alert[2],
-                    'trigger_message': alert[3],
-                    'conversation_excerpt': alert[4],
-                    'risk_keywords': alert[5],
-                    'sent_at': format_date(alert[6]),
-                    'acknowledged_at': format_date(alert[7]),
-                    'acknowledged_by': alert[8]
+                    'id': alert.id,
+                    'session_id': alert.session_id,
+                    'severity': alert.severity,
+                    'trigger_message': alert.trigger_message,
+                    'conversation_excerpt': alert.conversation_excerpt,
+                    'risk_keywords': alert.risk_keywords,
+                    'sent_at': format_date(alert.sent_at),
+                    'acknowledged_at': format_date(alert.acknowledged_at),
+                    'acknowledged_by': alert.acknowledged_by
                 },
                 "conversation": [
                     {
-                        "role": "student" if m[1] else "luna",
-                        "content": m[0],
-                        "timestamp": format_date(m[2])
+                        "role": "student" if m.is_user else "luna",
+                        "content": m.content,
+                        "timestamp": format_date(m.timestamp)
                     }
                     for m in messages
                 ],
                 "acknowledgments": [
                     {
-                        "counselor_id": ack[0],
-                        "notes": ack[1],
-                        "action": ack[2],
-                        "timestamp": format_date(ack[3])
+                        "counselor_id": ack.counselor_id,
+                        "notes": ack.response_notes,
+                        "action": ack.action_taken,
+                        "timestamp": format_date(ack.responded_at)
                     }
                     for ack in acks
                 ]
@@ -174,38 +132,22 @@ def register_alert_routes(app):
                 return jsonify({"error": "Counselor ID required"}), 400
             
             # Verify alert exists
-            alert = db.session.execute(
-                text("SELECT id FROM counselor_alerts WHERE id = :id"),
-                {"id": alert_id}
-            ).fetchone()
-            
+            alert = CounselorAlert.query.get(alert_id)
             if not alert:
                 return jsonify({"error": "Alert not found"}), 404
             
             # Update alert
-            db.session.execute(
-                text("""
-                    UPDATE counselor_alerts 
-                    SET acknowledged_at = CURRENT_TIMESTAMP, acknowledged_by = :counselor_id
-                    WHERE id = :id
-                """),
-                {"id": alert_id, "counselor_id": counselor_id}
-            )
+            alert.acknowledged_at = datetime.utcnow()
+            alert.acknowledged_by = counselor_id
             
             # Create acknowledgment record
-            db.session.execute(
-                text("""
-                    INSERT INTO alert_acknowledgments (alert_id, counselor_id, response_notes, action_taken)
-                    VALUES (:alert_id, :counselor_id, :notes, :action)
-                """),
-                {
-                    "alert_id": alert_id,
-                    "counselor_id": counselor_id,
-                    "notes": response_notes,
-                    "action": action_taken
-                }
+            ack = AlertAcknowledgment(
+                alert_id=alert_id,
+                counselor_id=counselor_id,
+                response_notes=response_notes,
+                action_taken=action_taken
             )
-            
+            db.session.add(ack)
             db.session.commit()
             
             return jsonify({"success": True})

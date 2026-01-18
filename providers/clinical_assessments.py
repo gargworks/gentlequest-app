@@ -1,13 +1,7 @@
-"""
-Clinical Assessments for GentleQuest
-PHQ-9 (Depression) and GAD-7 (Anxiety) validated screening tools.
-"""
-
-from typing import Dict, List, Tuple, Optional
-from datetime import datetime
+import os
 import json
-# psycopg2 imports moved to functions to allow running without postgres driver
-
+from datetime import datetime
+from typing import Dict, List, Tuple, Optional
 
 # ============================================================================
 # PHQ-9 (Patient Health Questionnaire-9)
@@ -77,22 +71,15 @@ GAD7_SEVERITY_THRESHOLDS = [
 def score_phq9(responses: List[int]) -> Dict:
     """
     Score PHQ-9 assessment.
-    
-    Args:
-        responses: List of 9 integers (0-3) for each question
-        
-    Returns:
-        Dict with total_score, severity, message, and question 9 flag
     """
-    if len(responses) != 9:
-        raise ValueError(f"PHQ-9 requires exactly 9 responses, got {len(responses)}")
-    
-    if not all(0 <= r <= 3 for r in responses):
-        raise ValueError("All responses must be between 0 and 3")
+    valid, error = validate_responses("phq9", responses)
+    if not valid:
+        if "must be integers" in (error or ""):
+            raise TypeError(error)
+        raise ValueError(error)
     
     total_score = sum(responses)
     
-    # Determine severity
     severity = "minimal"
     message = ""
     for low, high, sev, msg in PHQ9_SEVERITY_THRESHOLDS:
@@ -101,7 +88,6 @@ def score_phq9(responses: List[int]) -> Dict:
             message = msg
             break
     
-    # Check question 9 (suicidal ideation) - requires special attention
     q9_score = responses[8]
     requires_follow_up = q9_score > 0
     
@@ -120,22 +106,15 @@ def score_phq9(responses: List[int]) -> Dict:
 def score_gad7(responses: List[int]) -> Dict:
     """
     Score GAD-7 assessment.
-    
-    Args:
-        responses: List of 7 integers (0-3) for each question
-        
-    Returns:
-        Dict with total_score, severity, and message
     """
-    if len(responses) != 7:
-        raise ValueError(f"GAD-7 requires exactly 7 responses, got {len(responses)}")
-    
-    if not all(0 <= r <= 3 for r in responses):
-        raise ValueError("All responses must be between 0 and 3")
+    valid, error = validate_responses("gad7", responses)
+    if not valid:
+        if "must be integers" in (error or ""):
+            raise TypeError(error)
+        raise ValueError(error)
     
     total_score = sum(responses)
     
-    # Determine severity
     severity = "minimal"
     message = ""
     for low, high, sev, msg in GAD7_SEVERITY_THRESHOLDS:
@@ -159,66 +138,32 @@ def score_gad7(responses: List[int]) -> Dict:
 # ============================================================================
 
 def get_phq9_recommendations(severity: str, has_suicidal_ideation: bool) -> List[str]:
-    """Get recommendations based on PHQ-9 severity."""
     recommendations = []
-    
     if has_suicidal_ideation:
-        recommendations.append("🆘 If you're having thoughts of self-harm, please reach out to a crisis helpline or trusted person immediately.")
+        recommendations.append("\ud83c\udd98 If you're having thoughts of self-harm, please reach out to a crisis helpline or trusted person immediately.")
     
     if severity == "minimal":
-        recommendations.extend([
-            "Continue maintaining your mental wellness habits",
-            "Practice regular self-care and check in with yourself",
-        ])
+        recommendations.extend(["Continue maintaining your mental wellness habits"])
     elif severity == "mild":
-        recommendations.extend([
-            "Consider talking to someone you trust about how you're feeling",
-            "Try incorporating stress-reduction activities like exercise or meditation",
-            "Monitor your symptoms over the next few weeks",
-        ])
+        recommendations.extend(["Monitor your symptoms over the next few weeks"])
     elif severity == "moderate":
-        recommendations.extend([
-            "Consider speaking with a counselor or therapist",
-            "Reach out to a primary care provider",
-            "Continue using Luna for daily support",
-        ])
+        recommendations.extend(["Consider speaking with a counselor or therapist"])
     elif severity in ("moderately_severe", "severe"):
-        recommendations.extend([
-            "We strongly recommend consulting a mental health professional",
-            "Consider reaching out to a crisis helpline if needed",
-            "Talk to someone you trust about how you're feeling",
-        ])
+        recommendations.extend(["We strongly recommend consulting a mental health professional"])
     
     return recommendations
 
 
 def get_gad7_recommendations(severity: str) -> List[str]:
-    """Get recommendations based on GAD-7 severity."""
     recommendations = []
-    
     if severity == "minimal":
-        recommendations.extend([
-            "Continue your current wellness practices",
-            "Stay mindful of any changes in your anxiety levels",
-        ])
+        recommendations.extend(["Continue your current wellness practices"])
     elif severity == "mild":
-        recommendations.extend([
-            "Try breathing exercises when feeling anxious",
-            "Practice grounding techniques",
-            "Consider reducing caffeine and improving sleep habits",
-        ])
+        recommendations.extend(["Try breathing exercises when feeling anxious"])
     elif severity == "moderate":
-        recommendations.extend([
-            "Consider speaking with a mental health professional",
-            "Practice relaxation techniques daily",
-            "Use Luna's breathing and grounding exercises regularly",
-        ])
+        recommendations.extend(["Consider speaking with a mental health professional"])
     elif severity == "severe":
-        recommendations.extend([
-            "We recommend consulting a mental health professional",
-            "Talk to someone you trust about your anxiety",
-            "Consider cognitive behavioral therapy (CBT)",
-        ])
+        recommendations.extend(["We recommend consulting a mental health professional"])
     
     return recommendations
 
@@ -228,7 +173,6 @@ def get_gad7_recommendations(severity: str) -> List[str]:
 # ============================================================================
 
 def get_assessment_questions(assessment_type: str) -> Dict:
-    """Get questions and options for an assessment type."""
     if assessment_type == "phq9":
         return {
             "type": "phq9",
@@ -252,7 +196,6 @@ def get_assessment_questions(assessment_type: str) -> Dict:
 
 
 def validate_responses(assessment_type: str, responses: List[int]) -> Tuple[bool, Optional[str]]:
-    """Validate responses for an assessment."""
     if assessment_type == "phq9":
         if len(responses) != 9:
             return False, f"PHQ-9 requires 9 responses, got {len(responses)}"
@@ -262,288 +205,65 @@ def validate_responses(assessment_type: str, responses: List[int]) -> Tuple[bool
     else:
         return False, f"Unknown assessment type: {assessment_type}"
     
-    if not all(isinstance(r, int) and 0 <= r <= 3 for r in responses):
-        return False, "All responses must be integers between 0 and 3"
+    if not all(isinstance(r, int) for r in responses):
+        return False, "All responses must be integers"
+    
+    if not all(0 <= r <= 3 for r in responses):
+        return False, "All responses must be between 0 and 3"
     
     return True, None
 
 
 # ============================================================================
-# PERSISTENCE (DATABASE)
+# PERSISTENCE (ORM)
 # ============================================================================
 
-def init_assessment_tables(conn):
+def save_assessment_result(session_id: str, assessment_data: Dict) -> int:
     """
-    Initialize clinical assessments table if it doesn't exist.
+    Save an assessment result using SQLAlchemy ORM.
     """
-    # psycopg2 check removed to allow SQLite fallback logic below
-    try:
-        import psycopg2
-    except ImportError:
-        psycopg2 = None
+    from models import db, ClinicalAssessment
+    
+    assessment = ClinicalAssessment(
+        session_id=session_id,
+        assessment_type=assessment_data.get('assessment_type'),
+        responses=assessment_data.get('responses', []),
+        total_score=assessment_data.get('total_score'),
+        severity=assessment_data.get('severity'),
+        requires_follow_up=assessment_data.get('requires_follow_up', False),
+        assessment_metadata={
+            "message": assessment_data.get('message'),
+            "follow_up_reason": assessment_data.get('follow_up_reason'),
+            "recommendations": assessment_data.get('recommendations', [])
+        }
+    )
+    
+    db.session.add(assessment)
+    db.session.commit()
+    return assessment.id
 
-    create_table_sql = """
-    CREATE TABLE IF NOT EXISTS clinical_assessments (
-        id SERIAL PRIMARY KEY,
-        session_id TEXT NOT NULL,
-        assessment_type TEXT NOT NULL,  -- 'phq9' or 'gad7'
-        total_score INTEGER NOT NULL,
-        severity TEXT NOT NULL,
-        responses JSONB NOT NULL,       -- Stored as list of integers
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        metadata JSONB DEFAULT '{}'::jsonb
-    );
-    
-    CREATE WITH INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
-    """
-    # Note: postgres doesn't support CREATE WITH INDEX directly like that for idx, 
-    # but we can do CREATE INDEX separately.
-    
-    # Correct SQL for Postgres:
-    create_table_sql_pg = """
-    CREATE TABLE IF NOT EXISTS clinical_assessments (
-        id SERIAL PRIMARY KEY,
-        session_id TEXT NOT NULL,
-        assessment_type TEXT NOT NULL,
-        total_score INTEGER NOT NULL,
-        severity TEXT NOT NULL,
-        responses JSONB NOT NULL,
-        requires_follow_up BOOLEAN DEFAULT FALSE,
-        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        assessment_metadata JSONB DEFAULT '{}'::jsonb
-    );
-    
-    CREATE INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
-    CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON clinical_assessments(timestamp);
-    """
 
-    create_table_sql_sqlite = """
-    CREATE TABLE IF NOT EXISTS clinical_assessments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id TEXT NOT NULL,
-        assessment_type TEXT NOT NULL,
-        total_score INTEGER NOT NULL,
-        severity TEXT NOT NULL,
-        responses TEXT NOT NULL,
-        requires_follow_up BOOLEAN DEFAULT 0,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        assessment_metadata TEXT DEFAULT '{}'
-    );
-    CREATE INDEX IF NOT EXISTS idx_assessments_session_id ON clinical_assessments(session_id);
-    CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON clinical_assessments(timestamp);
+def get_assessment_history(session_id: str, limit: int = 10) -> List[Dict]:
     """
+    Retrieve assessment history for a session using SQLAlchemy ORM.
+    """
+    from models import ClinicalAssessment
     
-    try:
-        # Robust check: if psycopg2 is missing, we assume SQLite fallback
-        # or check the connection's module/type
-        is_sqlite = (psycopg2 is None) or ('sqlite' in str(type(conn)).lower())
+    history = ClinicalAssessment.query.filter_by(session_id=session_id)\
+        .order_by(ClinicalAssessment.timestamp.desc())\
+        .limit(limit).all()
         
-        # Check dialect via metadata if possible
-        try:
-            from models import db
-            if db.engine.dialect.name == 'sqlite':
-                is_sqlite = True
-        except:
-            pass
-
-        cur = conn.cursor()
-        try:
-            if is_sqlite:
-                cur.executescript(create_table_sql_sqlite)
-            else:
-                cur.execute(create_table_sql_pg)
-        finally:
-            cur.close()
-            
-        conn.commit()
-        print("✅ Clinical assessments table initialized.")
-    except Exception as e:
-        conn.rollback()
-        print(f"❌ Error initializing assessment tables: {e}")
-        raise e
-
-
-def save_assessment_result(conn, session_id: str, assessment_data: Dict) -> int:
-    """
-    Save an assessment result to the database.
-    
-    Args:
-        conn: Database connection
-        session_id: User's session ID
-        assessment_data: Dictionary returned by score_phq9 or score_gad7
-                         (must contain assessment_type, total_score, severity)
-        
-    Returns:
-        The ID of the inserted record.
-    """
-    
-    try:
-        import psycopg2
-    except ImportError:
-        psycopg2 = None
-
-    try:
-        import psycopg
-    except ImportError:
-        psycopg = None
-
-    # Robust check: look at connection type string and SQLAlchemy dialect
-    is_sqlite = 'sqlite' in str(type(conn)).lower()
-    
-    try:
-        from models import db
-        if db.engine.dialect.name == 'sqlite':
-            is_sqlite = True
-    except:
-        pass
-
-    is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
-    
-    # Default to Postgres if not clearly SQLite, unless strictly SQLite
-    if is_sqlite:
-        insert_sql = """
-        INSERT INTO clinical_assessments 
-        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """
-    else:
-        # Postgres (psycopg2 or psycopg3) uses %s
-        insert_sql = """
-        INSERT INTO clinical_assessments 
-        (session_id, assessment_type, total_score, severity, responses, assessment_metadata, timestamp, requires_follow_up)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id;
-        """
-
-    # Extract needed fields
-    assessment_type = assessment_data.get('assessment_type')
-    total_score = assessment_data.get('total_score')
-    severity = assessment_data.get('severity')
-    responses = json.dumps(assessment_data.get('responses', [])) 
-    requires_follow_up = assessment_data.get('requires_follow_up', False)
-    timestamp = datetime.utcnow()
-    
-    assessment_metadata = json.dumps({
-        "message": assessment_data.get('message'),
-        "requires_follow_up": requires_follow_up,
-        "follow_up_reason": assessment_data.get('follow_up_reason'),
-        "recommendations": assessment_data.get('recommendations', [])
-    })
-    
-    try:
-        cursor = conn.cursor()
-        params = (
-            session_id, 
-            assessment_type, 
-            total_score, 
-            severity, 
-            responses, 
-            assessment_metadata,
-            timestamp,
-            requires_follow_up
-        )
-
-        if is_sqlite:
-             # SQLite execution
-            cursor.execute(insert_sql, params)
-            new_id = cursor.lastrowid
-        else:
-            # Postgres execution
-            cursor.execute(insert_sql, params)
-            new_id = cursor.fetchone()[0]
-            
-        conn.commit()
-        return new_id
-    except Exception as e:
-        conn.rollback()
-        print(f"❌ Error saving assessment: {e}")
-        raise e
-
-
-def get_assessment_history(conn, session_id: str, limit: int = 10) -> List[Dict]:
-    """
-    Retrieve assessment history for a session.
-    """
-    try:
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-    except ImportError:
-        psycopg2 = None
-        RealDictCursor = None
-
-    try:
-        import psycopg
-        from psycopg.rows import dict_row
-    except ImportError:
-        psycopg = None
-
-    try:
-        # SQLite Helper to return dicts
-        def dict_factory(cursor, row):
-            d = {}
-            for idx, col in enumerate(cursor.description):
-                d[col[0]] = row[idx]
-            return d
-
-        is_sqlite = 'sqlite' in str(type(conn)).lower()
-        try:
-            from models import db
-            if db.engine.dialect.name == 'sqlite':
-                is_sqlite = True
-        except:
-            pass
-
-        is_postgres = (psycopg2 is not None) or (psycopg is not None) or ('psycopg' in str(type(conn)).lower())
-
-        if is_sqlite:
-            conn.row_factory = dict_factory
-            cursor = conn.cursor()
-            sql = "SELECT * FROM clinical_assessments WHERE session_id = ? ORDER BY timestamp DESC LIMIT ?"
-            cursor.execute(sql, (session_id, limit))
-            return cursor.fetchall()
-        else:
-             # Postgres logic
-             if psycopg2:
-                with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                     cur.execute(
-                        "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
-                        (session_id, limit)
-                    )
-                     return cur.fetchall()
-             elif psycopg:
-                # Psycopg 3 logic
-                with conn.cursor(row_factory=dict_row) as cur:
-                     cur.execute(
-                        "SELECT * FROM clinical_assessments WHERE session_id = %s ORDER BY timestamp DESC LIMIT %s",
-                        (session_id, limit)
-                    )
-                     return cur.fetchall()
-
-    except Exception as e:
-        print(f"⚠️ Error fetching history: {e}")
-        return []
-
-    sql = """
-    SELECT id, assessment_type, total_score, severity, created_at, metadata
-    FROM clinical_assessments
-    WHERE session_id = %s
-    ORDER BY created_at DESC
-    LIMIT %s;
-    """
-    
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (session_id, limit))
-            rows = cur.fetchall()
-            
-            # Convert rows to serializable dicts
-            history = []
-            for row in rows:
-                row_dict = dict(row)
-                if row_dict.get('created_at'):
-                    row_dict['created_at'] = row_dict['created_at'].isoformat()
-                history.append(row_dict)
-            return history
-    except Exception as e:
-        print(f"❌ Error getting assessment history: {e}")
-        return []
+    results = []
+    for item in history:
+        results.append({
+            "id": item.id,
+            "session_id": item.session_id,
+            "assessment_type": item.assessment_type,
+            "total_score": item.total_score,
+            "severity": item.severity,
+            "responses": item.responses,
+            "requires_follow_up": item.requires_follow_up,
+            "timestamp": item.timestamp.isoformat() if item.timestamp else None,
+            "assessment_metadata": item.assessment_metadata
+        })
+    return results

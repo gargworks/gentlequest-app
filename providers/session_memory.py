@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Any
 from sqlalchemy import text
 from flask import current_app
 
-from models import db
+from models import db, InterventionOutcome, Message
 
 
 # ============================================================================
@@ -23,33 +23,19 @@ def get_session_interventions(session_id: str, limit: int = 10) -> List[Dict[str
         List of {issue, intervention_type, intervention_id, outcome, timestamp}
     """
     try:
-        result = db.session.execute(
-            text("""
-                SELECT 
-                    intervention_id,
-                    issue,
-                    offer_stage,
-                    outcome,
-                    timestamp
-                FROM intervention_outcomes
-                WHERE session_id = :session_id
-                ORDER BY timestamp DESC
-                LIMIT :limit
-            """),
-            {"session_id": session_id, "limit": limit}
-        ).fetchall()
+        results = InterventionOutcome.query.filter_by(session_id=session_id)\
+            .order_by(InterventionOutcome.timestamp.desc())\
+            .limit(limit).all()
         
         interventions = []
-        for row in result:
-            ts = row.timestamp
-            if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
-                ts = ts.isoformat()
+        for row in results:
+            ts = row.timestamp.isoformat() if row.timestamp and hasattr(row.timestamp, 'isoformat') else None
             
             interventions.append({
                 "intervention_id": row.intervention_id,
-                "issue": row.issue if hasattr(row, 'issue') else None,
-                "offer_stage": row.offer_stage if hasattr(row, 'offer_stage') else 1,
-                "outcome": row.outcome if hasattr(row, 'outcome') else "offered",
+                "issue": row.issue,
+                "offer_stage": row.offer_stage,
+                "outcome": row.outcome,
                 "timestamp": ts,
             })
         
@@ -81,20 +67,16 @@ def record_intervention_shown(
         True if recorded successfully
     """
     try:
-        db.session.execute(
-            text("""
-                INSERT INTO intervention_outcomes 
-                (session_id, intervention_id, issue, offer_stage, outcome, completed, timestamp)
-                VALUES (:session_id, :intervention_id, :issue, :offer_stage, 'offered', FALSE, :timestamp)
-            """),
-            {
-                "session_id": session_id,
-                "intervention_id": intervention_id,
-                "issue": issue,
-                "offer_stage": offer_stage,
-                "timestamp": datetime.utcnow(),
-            }
+        outcome = InterventionOutcome(
+            session_id=session_id,
+            intervention_id=intervention_id,
+            issue=issue,
+            offer_stage=offer_stage,
+            outcome='offered',
+            completed=False,
+            timestamp=datetime.utcnow()
         )
+        db.session.add(outcome)
         db.session.commit()
         return True
         
@@ -122,19 +104,12 @@ def get_intervention_variety(session_id: str, issue: str) -> Dict[str, Any]:
         }
     """
     try:
-        # Get previous interventions for this specific issue
-        result = db.session.execute(
-            text("""
-                SELECT intervention_id, offer_stage, outcome
-                FROM intervention_outcomes
-                WHERE session_id = :session_id 
-                AND issue = :issue
-                ORDER BY timestamp DESC
-            """),
-            {"session_id": session_id, "issue": issue}
-        ).fetchall()
+        # Get previous interventions for this specific issue via ORM
+        results = InterventionOutcome.query.filter_by(session_id=session_id, issue=issue)\
+            .order_by(InterventionOutcome.timestamp.desc())\
+            .all()
         
-        previous = [{"id": r.intervention_id, "stage": r.offer_stage, "outcome": r.outcome} for r in result]
+        previous = [{"id": r.intervention_id, "stage": r.offer_stage, "outcome": r.outcome} for r in results]
         count = len(previous)
         
         # Determine next offer stage
@@ -202,39 +177,24 @@ def update_intervention_outcome(
         True if updated successfully
     """
     try:
-        # Update the most recent matching intervention
-        db.session.execute(
-            text("""
-                UPDATE intervention_outcomes
-                SET outcome = :outcome,
-                    completed = :completed,
-                    exercise_type = COALESCE(:exercise_type, exercise_type),
-                    time_spent_seconds = COALESCE(:time_spent, time_spent_seconds),
-                    mood_before = COALESCE(:mood_before, mood_before),
-                    mood_after = COALESCE(:mood_after, mood_after),
-                    effectiveness_rating = COALESCE(:rating, effectiveness_rating),
-                    feedback = COALESCE(:feedback, feedback)
-                WHERE id = (
-                    SELECT id FROM intervention_outcomes
-                    WHERE session_id = :session_id 
-                    AND intervention_id = :intervention_id
-                    ORDER BY timestamp DESC
-                    LIMIT 1
-                )
-            """),
-            {
-                "session_id": session_id,
-                "intervention_id": intervention_id,
-                "outcome": outcome,
-                "completed": outcome == "completed",
-                "exercise_type": exercise_type,
-                "time_spent": time_spent_seconds,
-                "mood_before": mood_before,
-                "mood_after": mood_after,
-                "rating": effectiveness_rating,
-                "feedback": feedback,
-            }
-        )
+        # Update the most recent matching intervention via ORM
+        outcome_entry = InterventionOutcome.query.filter_by(
+            session_id=session_id, 
+            intervention_id=intervention_id
+        ).order_by(InterventionOutcome.timestamp.desc()).first()
+
+        if not outcome_entry:
+            return False
+
+        outcome_entry.outcome = outcome
+        outcome_entry.completed = (outcome == "completed")
+        if exercise_type: outcome_entry.exercise_type = exercise_type
+        if time_spent_seconds: outcome_entry.time_spent_seconds = time_spent_seconds
+        if mood_before: outcome_entry.mood_before = mood_before
+        if mood_after: outcome_entry.mood_after = mood_after
+        if effectiveness_rating: outcome_entry.effectiveness_rating = effectiveness_rating
+        if feedback: outcome_entry.feedback = feedback
+        
         db.session.commit()
         return True
         
@@ -256,29 +216,17 @@ def get_recent_messages(session_id: str, limit: int = 5) -> List[Dict[str, Any]]
         List of {role: 'user'|'assistant', content: str, timestamp: str}
     """
     try:
-        # Use messages table instead of broken conversation_logs
-        result = db.session.execute(
-            text("""
-                SELECT content, is_user, timestamp
-                FROM messages
-                WHERE session_id = :session_id
-                ORDER BY timestamp DESC
-                LIMIT :limit
-            """),
-            {"session_id": session_id, "limit": limit * 2} # Query more to get turns
-        ).fetchall()
+        # Use Message ORM model (mapped to chat_messages table)
+        results = Message.query.filter_by(session_id=session_id)\
+            .order_by(Message.timestamp.desc())\
+            .limit(limit * 2).all()
         
         messages = []
         # Result is chronological DESC (newest first). 
         # We need to reverse to get oldest -> newest
         
-        # Also, raw messages might be [User, AI, User, AI]
-        # We want to preserve that order.
-        
-        for row in reversed(list(result)):
-            ts = row.timestamp
-            if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
-                ts = ts.isoformat()
+        for row in reversed(results):
+            ts = row.timestamp.isoformat() if row.timestamp and hasattr(row.timestamp, 'isoformat') else None
 
             messages.append({
                 "role": "user" if row.is_user else "assistant",

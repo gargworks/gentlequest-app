@@ -1,0 +1,18 @@
+{
+    "university_name": "Massachusetts Institute of Technology (MIT)",
+    "decision_maker": {
+        "name": "Dr. Rheeda Walker",
+        "role": "Head of Student Mental Health",
+        "email": "mentalhealth@mit.edu"
+    },
+    "pain_points": [
+        "Severe academic rigor",
+        "Imposter syndrome",
+        "Isolation in labs"
+    ],
+    "custom_pitch": "MIT students respect systems that just work. GentleQuest provides logic-driven CBT tools that appeal to the analytical mind.",
+    "outreach": {
+        "mascot": "Beavers",
+        "custom_intro": "I know you're likely in Building E23-353 right now—I've been following MIT's approach to logic-driven wellness, and I wanted to share something that speaks the same language as your students."
+    }
+}

@@ -17,24 +17,48 @@ class QuestEngine:
 
         # 2. Ensure Quests exist for this week
         week, year = QuestGenerator.get_week_number()
-        # This will create them if missing, or return existing
-        quests_data = QuestGenerator.generate_weekly_quests(week, year)
+        try:
+            # This will create them if missing, or return existing
+            quests_data = QuestGenerator.generate_weekly_quests(week, year)
+        except Exception as e:
+            # FALLBACK logic for production resilience
+            print(f"Quest Generation Failed: {e}. Using hardcoded resilience set.")
+            quests_data = [
+                {
+                    'id': 999, 
+                    'title': 'One Tiny Step', 
+                    'description': 'Log your energy level for today. Just one click.', 
+                    'xp_reward': 20, 
+                    'type': 'daily', 
+                    'difficulty': 'easy',
+                    'target': 1
+                },
+                {
+                    'id': 998, 
+                    'title': 'Box Breathing', 
+                    'description': '4 seconds in, 4 hold, 4 out, 4 hold. Repeat twice.', 
+                    'xp_reward': 30, 
+                    'type': 'exercise', 
+                    'difficulty': 'easy',
+                    'target': 2
+                }
+            ]
+        
+        # 3. Build status map and batch-query progress
+        quest_ids = [q['id'] for q in quests_data]
+        all_progress = QuestProgress.query.filter(
+            QuestProgress.session_id == session_id,
+            QuestProgress.quest_id.in_(quest_ids)
+        ).all()
+        
+        progress_map = {p.quest_id: p for p in all_progress}
         
         results = []
-        
-        # 3. Build status map
-        # Convert dicts to objects or iterate dicts
         for q_data in quests_data:
             quest_id = q_data['id']
-            progress = QuestProgress.query.filter_by(
-                session_id=session_id, quest_id=quest_id
-            ).first()
+            progress = progress_map.get(quest_id)
             
             status = progress.status if progress else "available"
-            
-            # Auto-create availability if missing? 
-            # Ideally we lazily create QuestProgress only on start/complete, 
-            # but UI needs to know status. "available" is default.
             
             results.append({
                 "id": quest_id,
@@ -43,7 +67,9 @@ class QuestEngine:
                 "xp_reward": q_data['xp_reward'],
                 "status": status,
                 "type": q_data['type'],
-                "difficulty": q_data['difficulty']
+                "difficulty": q_data['difficulty'],
+                "target": q_data.get('target', 1),
+                "progress": progress.progress if progress and hasattr(progress, 'progress') else 0
             })
             
         return {
@@ -83,7 +109,7 @@ class QuestEngine:
                 
             if progress.status == "completed":
                 return {
-                    "success": True, 
+                    "success": False, 
                     "message": "Already completed",
                     "xp_earned": 0,
                     "new_total_xp": profile.xp,

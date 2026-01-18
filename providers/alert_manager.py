@@ -6,9 +6,7 @@ Manages counselor alerts for crisis events with email/SMS delivery
 import os
 from typing import Optional, Dict, List
 from datetime import datetime, timedelta
-from models import db
-from sqlalchemy import text
-
+from models import db, CounselorAlert, Message
 
 class AlertSeverity:
     LOW = "low"
@@ -47,19 +45,13 @@ class AlertManager:
         
         # Check if alert sent in last hour for this session
         one_hour_ago = datetime.utcnow() - timedelta(hours=1)
-        recent_alert = db.session.execute(
-            text("""
-                SELECT severity FROM counselor_alerts 
-                WHERE session_id = :session_id 
-                AND sent_at > :one_hour_ago 
-                ORDER BY sent_at DESC 
-                LIMIT 1
-            """),
-            {"session_id": session_id, "one_hour_ago": one_hour_ago}
-        ).fetchone()
+        recent_alert = CounselorAlert.query.filter(
+            CounselorAlert.session_id == session_id,
+            CounselorAlert.sent_at > one_hour_ago
+        ).order_by(CounselorAlert.sent_at.desc()).first()
         
         if recent_alert:
-            recent_severity = recent_alert[0]
+            recent_severity = recent_alert.severity
             # Only send if new alert is more severe
             severity_order = {AlertSeverity.LOW: 0, AlertSeverity.MEDIUM: 1, 
                             AlertSeverity.HIGH: 2, AlertSeverity.CRITICAL: 3}
@@ -72,24 +64,17 @@ class AlertManager:
     @staticmethod
     def get_conversation_excerpt(session_id: str, num_messages: int = 5) -> str:
         """Get last N messages for context"""
-        messages = db.session.execute(
-            text("""
-                SELECT content, is_user 
-                FROM messages 
-                WHERE session_id = :session_id 
-                ORDER BY timestamp DESC 
-                LIMIT :limit
-            """),
-            {"session_id": session_id, "limit": num_messages}
-        ).fetchall()
+        messages = Message.query.filter_by(session_id=session_id)\
+            .order_by(Message.timestamp.desc())\
+            .limit(num_messages).all()
         
         excerpt = []
         for msg in reversed(messages):
-            role = "Student" if msg[1] else "Luna"
-            content = msg[0][:200] + "..." if len(msg[0]) > 200 else msg[0]
+            role = "Student" if msg.is_user else "Luna"
+            content = msg.content[:200] + "..." if len(msg.content) > 200 else msg.content
             excerpt.append(f"{role}: {content}")
         
-        return "\n".join(excerpt)
+        return "\\n".join(excerpt)
     
     @staticmethod
     def create_alert(session_id: str, trigger_message: str, risk_level: str, 
@@ -105,27 +90,19 @@ class AlertManager:
         if not AlertManager.should_send_alert(severity, session_id):
             return None
         
-        result = db.session.execute(
-            text("""
-                INSERT INTO counselor_alerts 
-                (session_id, university_id, severity, trigger_message, conversation_excerpt, risk_keywords)
-                VALUES (:session_id, :university_id, :severity, :trigger_message, :excerpt, :keywords)
-                RETURNING id
-            """),
-            {
-                "session_id": session_id,
-                "university_id": university_id or 1,
-                "severity": severity,
-                "trigger_message": trigger_message[:500],
-                "excerpt": AlertManager.get_conversation_excerpt(session_id),
-                "keywords": ','.join(keywords) if keywords else ''
-            }
+        alert = CounselorAlert(
+            session_id=session_id,
+            university_id=university_id or 1,
+            severity=severity,
+            trigger_message=trigger_message[:500],
+            conversation_excerpt=AlertManager.get_conversation_excerpt(session_id),
+            risk_keywords=','.join(keywords) if keywords else ''
         )
         
-        alert_id = result.scalar()
+        db.session.add(alert)
         db.session.commit()
         
-        return alert_id
+        return alert.id
     
     @staticmethod
     def send_email_alert(alert_id: int, counselor_email: str, counselor_name: str) -> bool:

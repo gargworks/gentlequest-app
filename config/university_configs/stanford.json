@@ -1,0 +1,18 @@
+{
+    "university_name": "Stanford University",
+    "decision_maker": {
+        "name": "Dr. Bina Patel",
+        "role": "Director, CAPS",
+        "email": "bina.patel@stanford.edu"
+    },
+    "pain_points": [
+        "High pressure environment",
+        "Engineering/CS burnout",
+        "Wait times for non-crisis check-ins"
+    ],
+    "custom_pitch": "Given Stanford's focus on innovation, GentleQuest's AI-first approach aligns with your students' tech-forward expectations.",
+    "outreach": {
+        "mascot": "Cardinal",
+        "custom_intro": "I've been following how the Farm is leading the way in integrating technology into student wellness—I'm reaching out to Stanford because I think our AI 'waiting room' approach aligns perfectly with that vision of innovation."
+    }
+}

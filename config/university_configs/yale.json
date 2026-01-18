@@ -1,0 +1,20 @@
+{
+    "university_name": "Yale University",
+    "decision_maker": {
+        "name": "Dr. Paul Genecin",
+        "role": "Director, Yale Health",
+        "email": "studenthealth@yale.edu"
+    },
+    "pain_points": [
+        "Residential College pressure",
+        "Arts/Drama intensity",
+        "Legacy expectations"
+    ],
+    "custom_pitch": "Yale's community is tight-knit. We help students navigate the social pressures of the residential colleges privately.",
+    "outreach": {
+        "mascot_name": "Handsome Dan",
+        "wellness_center_building": "55 Lock Street",
+        "custom_intro": "I'm writing this from the perspective of someone who has watched the queues at 55 Lock Street grow, and I know that the residential college deans are carrying too much of the triage burden."
+    },
+    "internal_code": "YALE-HEALTH-2026"
+}

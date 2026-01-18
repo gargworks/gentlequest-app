@@ -720,10 +720,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      Icons.arrow_upward_rounded,
+                                      Icons.send_rounded,
                                       color: Colors.white,
-                                      size: 32.h,
+                                      size: 20.h,
                                     ),
+                                    // Backup Icon: Arrow Up
+                                    // child: Icon(
+                                    //   Icons.arrow_upward_rounded,
+                                    //   color: Colors.white,
+                                    //   size: 32.h,
+                                    // ),
                                   ),
                                 ),
                               ),

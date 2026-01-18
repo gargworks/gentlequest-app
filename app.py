@@ -15,6 +15,7 @@ import requests
 import time
 import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 # Add mcp-server-nucleus to python path for local imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "mcp-server-nucleus", "src")))
@@ -35,18 +36,17 @@ from flask_cors import CORS
 from flask_session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from sqlalchemy import text
+from sqlalchemy import text as sql_text
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Import after environment setup
-from models import db, Message, ConversationLog, SelfAssessmentEntry
+from models import db, Message, ConversationLog, SelfAssessmentEntry, CrisisEvent, MoodEntry, UserSession, AnalyticsEvent
 from crisis_detection import detect_crisis_level
 from community import register_community_routes
 from providers.clinical_assessments import (
-    init_assessment_tables,
     get_assessment_questions,
     validate_responses,
     score_phq9,
@@ -54,8 +54,10 @@ from providers.clinical_assessments import (
     save_assessment_result,
     get_assessment_history
 )
+from providers.alert_manager import AlertManager
 
 # Import enterprise integration
+from api_clinical_dashboard import clinical_dashboard
 try:
     from integrations import integrate_with_app
 
@@ -71,6 +73,9 @@ try:
     SENTRY_AVAILABLE = True
 except Exception:
     SENTRY_AVAILABLE = False
+
+# Initialize background executor for async tasks (Scaling Crisis Detection)
+background_executor = ThreadPoolExecutor(max_workers=5)
 
 # Geography-specific crisis resources
 CRISIS_RESOURCES_BY_COUNTRY = {
@@ -281,6 +286,7 @@ def _get_environment_config(environment: str) -> Dict[str, Any]:
                 "https://www.gentlequest.com",
                 "https://gentlequest.app",
                 "https://www.gentlequest.app",
+                "https://app.gentlequest.app",
             ],
         },
     }
@@ -318,6 +324,23 @@ class Config:
             "DATABASE_URL",
             "sqlite:///instance/mental_health.db",
         )
+
+    # -------------------------------------------------------------------------
+    # GENTLEQUEST CLOUD SQL FIX (~Line 322)
+    # If DATABASE_URL is somehow missing but we have DB components (e.g. from Secrets),
+    # construct it dynamically for Cloud SQL.
+    # -------------------------------------------------------------------------
+    if not DATABASE_URL or "sqlite" in DATABASE_URL:
+        _db_user = os.getenv("DB_USER")
+        _db_pass = os.getenv("DB_PASSWORD")
+        _db_name = os.getenv("DB_NAME")
+        _db_host = os.getenv("DB_HOST")  # Expected: /cloudsql/project:region:instance
+
+        if _db_user and _db_pass and _db_name and _db_host:
+            # Construct PostgreSQL connection string for Unix Socket
+            # Format: postgresql+psycopg://user:pass@/dbname?host=/cloudsql/instance
+            DATABASE_URL = f"postgresql+psycopg://{_db_user}:{_db_pass}@/{_db_name}?host={_db_host}"
+    # -------------------------------------------------------------------------
 
     # Redis configuration
     if RENDER:
@@ -740,96 +763,8 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Brain state initialization skipped: {e}")
 
-    # Initialize Clinical Assessments Tables
-    try:
-        with app.app_context():
-            # SQLAlchemy engine raw connection
-            conn = db.engine.raw_connection()
-            try:
-                init_assessment_tables(conn)
-            finally:
-                conn.close()
-            app.logger.info("Clinical assessment tables initialized")
-    except Exception as e:
-        app.logger.warning(f"Clinical assessment initialization skipped: {e}")
-
-    # Initialize Agentic Intervention Tracking (ensure table schema)
-    try:
-        with app.app_context():
-            db.session.execute(text("""
-                CREATE TABLE IF NOT EXISTS intervention_outcomes (
-                    id SERIAL PRIMARY KEY,
-                    session_id VARCHAR(255) NOT NULL,
-                    intervention_id VARCHAR(100) NOT NULL,
-                    issue VARCHAR(50),
-                    offer_stage INTEGER DEFAULT 1,
-                    outcome VARCHAR(20) DEFAULT 'offered',
-                    completed BOOLEAN NOT NULL DEFAULT FALSE,
-                    effectiveness_rating FLOAT,
-                    feedback TEXT,
-                    timestamp TIMESTAMP NOT NULL
-                )
-            """))
-            # Add columns if they don't exist (for existing tables)
-            try:
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS issue VARCHAR(50)"))
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1"))
-                db.session.execute(text("ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS outcome VARCHAR(20) DEFAULT 'offered'"))
-                
-                # Analytics columns
-                # Analytics columns
-                # SQLite compatible column adding
-                for col_def in [
-                    "exercise_type VARCHAR(50)",
-                    "time_spent_seconds INTEGER",
-                    "mood_before INTEGER",
-                    "mood_after INTEGER"
-                ]:
-                    try:
-                        col_name = col_def.split()[0]
-                        # Check if column exists
-                        result = db.session.execute(text(f"SELECT {col_name} FROM intervention_outcomes LIMIT 1"))
-                    except Exception:
-                        # Column doesn't exist, add it
-                        try:
-                            db.session.rollback() # Clear error
-                            db.session.execute(text(f"ALTER TABLE intervention_outcomes ADD COLUMN {col_def}"))
-                        except Exception as e:
-                            app.logger.warning(f"Failed to add column {col_def}: {e}")
-
-                # Add constraints (Skip for SQLite as it doesnt support ALTER TABLE ADD CONSTRAINT easily)
-                if 'sqlite' not in str(db.engine.url):
-                    try:
-                         db.session.execute(text("""
-                            DO $$ BEGIN
-                                ALTER TABLE intervention_outcomes 
-                                ADD CONSTRAINT mood_before_range CHECK (mood_before BETWEEN 1 AND 10);
-                            EXCEPTION WHEN duplicate_object THEN NULL;
-                         """))
-                    except Exception as e:
-                        app.logger.warning(f"Failed to add constraint: {e}")
-
-                if 'sqlite' not in str(db.engine.url):
-                    try:
-                        db.session.execute(text("""
-                            DO $$ BEGIN
-                                ALTER TABLE intervention_outcomes 
-                                ADD CONSTRAINT mood_after_range CHECK (mood_after BETWEEN 1 AND 10);
-                            EXCEPTION WHEN duplicate_object THEN NULL;
-                            END $$;
-                        """))
-                    except Exception as e:
-                         app.logger.warning(f"Failed to add mood_after constraint: {e}")
-            except Exception as e:
-                app.logger.warning(f"Column migration warning: {e}")
-            
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_session ON intervention_outcomes(session_id)"))
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_issue ON intervention_outcomes(session_id, issue)"))
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_type ON intervention_outcomes(exercise_type)"))
-            db.session.commit()
-            app.logger.info("Agentic intervention tracking initialized")
-    except Exception as e:
-        app.logger.warning(f"Intervention tracking init skipped: {e}")
+    # Initialize Database via ORM
+    _init_database(app)
 
     # Initialize Enterprise Features
     enterprise_routes_registered = False
@@ -898,78 +833,6 @@ def create_app() -> Flask:
                 }
             )
 
-    # ============================================================================
-    # CLINICAL ASSESSMENTS (PHQ-9, GAD-7)
-    # ============================================================================
-    try:
-        from providers.clinical_assessments import (
-            score_phq9,
-            score_gad7,
-            get_assessment_questions,
-            validate_responses,
-        )
-        from models import ClinicalAssessment
-
-        @app.route("/api/assessment/<assessment_type>/questions", methods=["GET"])
-        def get_clinical_assessment_questions(assessment_type):
-            """Get questions for a clinical assessment (phq9 or gad7)."""
-            try:
-                questions = get_assessment_questions(assessment_type)
-                return jsonify({"success": True, **questions})
-            except ValueError as e:
-                return jsonify({"success": False, "error": str(e)}), 400
-
-        @app.route("/api/assessment/<assessment_type>", methods=["POST"])
-        def submit_clinical_assessment(assessment_type):
-            """Submit a clinical assessment (phq9 or gad7)."""
-            try:
-                data = request.get_json() or {}
-                session_id = data.get("session_id")
-                responses = data.get("responses", [])
-
-                if not session_id:
-                    return jsonify({"success": False, "error": "session_id required"}), 400
-
-                # Validate responses
-                valid, error_msg = validate_responses(assessment_type, responses)
-                if not valid:
-                    return jsonify({"success": False, "error": error_msg}), 400
-
-                # Score the assessment
-                if assessment_type == "phq9":
-                    result = score_phq9(responses)
-                elif assessment_type == "gad7":
-                    result = score_gad7(responses)
-                else:
-                    return jsonify({"success": False, "error": f"Unknown assessment: {assessment_type}"}), 400
-
-                # Store in database
-                assessment = ClinicalAssessment(
-                    session_id=session_id,
-                    assessment_type=assessment_type,
-                    responses=responses,
-                    total_score=result["total_score"],
-                    severity=result["severity"],
-                    requires_follow_up=result.get("requires_follow_up", False),
-                )
-                db.session.add(assessment)
-                db.session.commit()
-
-                return jsonify({
-                    "success": True,
-                    "assessment_id": assessment.id,
-                    **result,
-                })
-
-            except Exception as e:
-                app.logger.error(f"Clinical assessment error: {e}")
-                return jsonify({"success": False, "error": str(e)}), 500
-
-
-        app.logger.info("Clinical assessment routes registered (PHQ-9, GAD-7)")
-    except Exception as e:
-        app.logger.warning(f"Clinical assessment routes not registered: {e}")
-
     # Attach a request ID to each request and response for traceability
     @app.before_request
     def _attach_request_id():
@@ -998,303 +861,15 @@ def create_app() -> Flask:
 
 
 def _init_database(app: Flask) -> None:
-    """Initialize database with tables (Cross-dialect: Postgres/SQLite)"""
+    """Initialize database with tables (SQLAlchemy ORM)"""
     with app.app_context():
         try:
-            engine = db.session.bind
-            dialect = engine.dialect.name if engine else "postgresql"
-            
-            # Helper for auto-incrementing primary key
-            db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
-            is_sqlite = "sqlite" in dialect or "sqlite" in db_uri
-            pk_type = "INTEGER" if is_sqlite else "SERIAL"
-            pk_suffix = "PRIMARY KEY AUTOINCREMENT" if is_sqlite else "PRIMARY KEY"
-            # Core Tables
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS sessions (
-                    id VARCHAR(255) PRIMARY KEY,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS chat_messages (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    content TEXT NOT NULL,
-                    is_user BOOLEAN NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    message_type VARCHAR(50) DEFAULT 'text'
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS mood_entries (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    mood_level INTEGER NOT NULL CHECK (mood_level >= 1 AND mood_level <= 5),
-                    note TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS self_assessments (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    mood INTEGER,
-                    energy INTEGER,
-                    sleep INTEGER,
-                    stress INTEGER,
-                    social INTEGER,
-                    work INTEGER,
-                    notes TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS crisis_detections (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    message TEXT NOT NULL,
-                    risk_level VARCHAR(50) NOT NULL,
-                    risk_score DECIMAL(3,2) NOT NULL,
-                    keywords TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS analytics_events (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    event_type VARCHAR(64) NOT NULL,
-                    metadata TEXT,
-                    request_id VARCHAR(64),
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            # Resource System Tables (Gap 2)
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS resources (
-                    id {pk_type} {pk_suffix},
-                    title VARCHAR(255) NOT NULL,
-                    description TEXT,
-                    url TEXT,
-                    category VARCHAR(50),
-                    country VARCHAR(10),
-                    tags TEXT,
-                    is_active BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS user_resource_interactions (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    resource_id INTEGER REFERENCES resources(id),
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            # Alert System Tables (Gap 3)
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS university_counselors (
-                    id {pk_type} {pk_suffix},
-                    university_id INTEGER NOT NULL,
-                    name VARCHAR(200) NOT NULL,
-                    email VARCHAR(255) NOT NULL,
-                    phone VARCHAR(50),
-                    role VARCHAR(100),
-                    is_active BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
-                    receives_alerts BOOLEAN DEFAULT {('TRUE' if dialect == 'postgresql' else '1')},
-                    alert_methods VARCHAR(100) DEFAULT 'email',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS counselor_alerts (
-                    id {pk_type} {pk_suffix},
-                    session_id VARCHAR(255) REFERENCES sessions(id),
-                    university_id INTEGER,
-                    severity VARCHAR(20) NOT NULL,
-                    trigger_message TEXT NOT NULL,
-                    conversation_excerpt TEXT,
-                    risk_keywords VARCHAR(500),
-                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    acknowledged_at TIMESTAMP,
-                    acknowledged_by VARCHAR(255),
-                    email_sent BOOLEAN DEFAULT {('FALSE' if dialect == 'postgresql' else '0')},
-                    sms_sent BOOLEAN DEFAULT {('FALSE' if dialect == 'postgresql' else '0')}
-                )
-            """))
-
-            db.session.execute(text(f"""
-                CREATE TABLE IF NOT EXISTS alert_acknowledgments (
-                    id {pk_type} {pk_suffix},
-                    alert_id INTEGER REFERENCES counselor_alerts(id),
-                    counselor_id VARCHAR(255) NOT NULL,
-                    response_notes TEXT,
-                    action_taken VARCHAR(500),
-                    responded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
-            db.session.commit()
-            # Ensure SQLAlchemy models exist (creates missing tables only)
-            try:
-                db.create_all()
-                app.logger.info("SQLAlchemy models ensured (create_all)")
-            except Exception as e:
-                app.logger.warning(f"db.create_all() failed (non-fatal): {e}")
-
-            # Lightweight migration: ensure conversation_logs table and columns exist
-            try:
-                engine = db.session.bind
-                dialect = engine.dialect.name if engine else "unknown"
-
-                required_cols = {
-                    "session_id": "VARCHAR(36)",
-                    "user_message": "TEXT",
-                    "ai_response": "TEXT",
-                    "risk_level": "VARCHAR(20)",
-                    "risk_score": "DOUBLE PRECISION",
-                    "timestamp": "TIMESTAMP",
-                }
-
-                # Create table if missing in a dialect-aware way
-                if dialect == "postgresql":
-                    db.session.execute(
-                        text(
-                            """
-                        CREATE TABLE IF NOT EXISTS conversation_logs (
-                            id SERIAL PRIMARY KEY,
-                            session_id VARCHAR(36),
-                            user_message TEXT,
-                            ai_response TEXT,
-                            risk_level VARCHAR(20) DEFAULT 'low',
-                            risk_score DOUBLE PRECISION DEFAULT 0.0,
-                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                        """
-                        )
-                    )
-                elif dialect == "sqlite":
-                    db.session.execute(
-                        text(
-                            """
-                        CREATE TABLE IF NOT EXISTS conversation_logs (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            session_id TEXT,
-                            user_message TEXT,
-                            ai_response TEXT,
-                            risk_level TEXT DEFAULT 'low',
-                            risk_score REAL DEFAULT 0.0,
-                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                        )
-                        """
-                        )
-                    )
-                else:
-                    # Fallback generic DDL
-                    db.session.execute(
-                        text(
-                            """
-                        CREATE TABLE IF NOT EXISTS conversation_logs (
-                            id SERIAL PRIMARY KEY,
-                            session_id VARCHAR(36),
-                            user_message TEXT,
-                            ai_response TEXT,
-                            risk_level VARCHAR(20) DEFAULT 'low',
-                            risk_score DOUBLE PRECISION DEFAULT 0.0,
-                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                        """
-                        )
-                    )
-
-                # Determine existing columns
-                existing_cols = set()
-                if dialect == "postgresql":
-                    res = db.session.execute(
-                        text(
-                            """
-                        SELECT column_name FROM information_schema.columns
-                        WHERE table_name = 'conversation_logs'
-                        """
-                        )
-                    ).fetchall()
-                    existing_cols = {row[0] for row in res}
-                    # Add any missing columns safely
-                    for col, coltype in required_cols.items():
-                        if col not in existing_cols:
-                            db.session.execute(
-                                text(
-                                    f"ALTER TABLE conversation_logs ADD COLUMN IF NOT EXISTS {col} {coltype}"
-                                )
-                            )
-                elif dialect == "sqlite":
-                    res = db.session.execute(
-                        text("PRAGMA table_info(conversation_logs)")
-                    ).fetchall()
-                    # SQLite PRAGMA returns: cid, name, type, notnull, dflt_value, pk
-                    existing_cols = {row[1] for row in res}
-                    for col, coltype in required_cols.items():
-                        if col not in existing_cols:
-                            try:
-                                db.session.execute(
-                                    text(
-                                        f"ALTER TABLE conversation_logs ADD COLUMN {col} {coltype}"
-                                    )
-                                )
-                            except Exception:
-                                # Column may have been added concurrently; ignore
-                                pass
-                else:
-                    # Best-effort attempt to add columns without IF NOT EXISTS
-                    for col, coltype in required_cols.items():
-                        try:
-                            db.session.execute(
-                                text(
-                                    f"ALTER TABLE conversation_logs ADD COLUMN {col} {coltype}"
-                                )
-                            )
-                        except Exception:
-                            pass
-
-                db.session.commit()
-                app.logger.info(
-                    "conversation_logs schema ensured/migrated successfully"
-                )
-            except Exception as e:
-                try:
-                    db.session.rollback()
-                except Exception:
-                    pass
-                app.logger.error(f"conversation_logs migration failed (non-fatal): {e}")
-
-            app.logger.info("Database tables initialized successfully")
-
+            db.create_all()
+            app.logger.info("Database tables initialized successfully via SQLAlchemy")
         except Exception as e:
             app.logger.error(f"Database initialization error: {e}")
-            try:
-                db.session.rollback()
-            except Exception:
-                pass
             # Do NOT crash app during startup; continue and let health endpoint report DB status
-            env = str(
-                getattr(
-                    app.config, "ENVIRONMENT", app.config.get("ENVIRONMENT", "local")
-                )
-            ).lower()
-            app.logger.warning(
-                f"Continuing without DB tables (env={env}). Health checks will reflect DB status."
-            )
+            app.logger.warning("Continuing without full DB initialization. Check health endpoint.")
 
 
 def _init_extensions(app: Flask) -> None:
@@ -1401,8 +976,10 @@ def _rate_limit_key():
     return get_remote_address()
 
 
-def _setup_rate_limiter(app: Flask) -> Limiter:
+def _setup_rate_limiter(app: Flask) -> None:
     """Configure rate limiting"""
+    from extensions import limiter
+    
     # Choose storage based on Redis availability to avoid blocking when Redis is down
     storage_uri = "memory://"
     try:
@@ -1414,12 +991,15 @@ def _setup_rate_limiter(app: Flask) -> Limiter:
     except Exception:
         pass
 
-    return Limiter(
-        key_func=_rate_limit_key,
-        app=app,
-        default_limits=["5000 per day", "1000 per hour"],
-        storage_uri=storage_uri,
-    )
+    # Configure Limiter via app config
+    app.config["RATELIMIT_STORAGE_URI"] = storage_uri
+    app.config["RATELIMIT_DEFAULT"] = "5000 per day; 1000 per hour"
+    
+    limiter.init_app(app)
+    # Assign key_func manually as init_app doesn't accept it
+    limiter._key_func = _rate_limit_key
+    app.limiter = limiter
+    return limiter
 
 
 def _setup_cors(app: Flask) -> None:
@@ -1562,6 +1142,24 @@ def _register_routes(app: Flask) -> None:
     except Exception as e:
         app.logger.error(f"Failed to register Alert Routes: {e}")
 
+    # Register Clinical Dashboard
+    try:
+        app.register_blueprint(clinical_dashboard)
+        app.logger.info("Clinical Dashboard Blueprint registered successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to register Clinical Dashboard Blueprint: {e}")
+
+    @app.route("/clinical")
+    @app.route("/clinical-dashboard")
+    def serve_clinical_dashboard():
+        """Serve the Clinical Dashboard for university admins."""
+        return send_from_directory("static", "clinical-dashboard.html")
+
+    @app.route("/health")
+    def health_check():
+        """Simple health check for Render/K8s"""
+        return jsonify({"status": "healthy", "timestamp": datetime.utcnow().isoformat()}), 200
+
     @app.route("/")
     def landing_page():
         """Serve the 'Quiet Launch' landing page, or the App if strictly on 'app.*' domain."""
@@ -1589,18 +1187,19 @@ def _register_routes(app: Flask) -> None:
     def submit_assessment(assessment_type):
         """Submit and score an assessment"""
         try:
-            session_id = request.headers.get("X-Session-ID")
+            # Check header first, then JSON body for session_id (Standardizing across clients)
+            data = request.get_json() or {}
+            session_id = request.headers.get("X-Session-ID") or data.get("session_id")
+            
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 401
                 
-            data = request.get_json()
-            if not data or "responses" not in data:
+            responses = data.get("responses")
+            if responses is None:
                 return jsonify({"error": "Responses array required"}), 400
                 
-            # Allow single string "responses" if passed as JSON string (edge case)
-            responses = data["responses"]
-            
             # 1. Validate
+            from providers.clinical_assessments import validate_responses, score_phq9, score_gad7
             is_valid, error = validate_responses(assessment_type, responses)
             if not is_valid:
                 return jsonify({"error": error}), 400
@@ -1613,23 +1212,17 @@ def _register_routes(app: Flask) -> None:
             else:
                  return jsonify({"error": f"Unknown assessment type: {assessment_type}"}), 400
             
-            # 3. Save
-            result["responses"] = responses # Inject responses for saving
+            # 3. Save using Provider (ORM enabled)
+            from providers.clinical_assessments import save_assessment_result
+            new_id = save_assessment_result(session_id, result)
             
-            with app.app_context():
-                conn = db.engine.raw_connection()
-                try:
-                    assessment_id = save_assessment_result(conn, session_id, result)
-                    result["id"] = assessment_id
-                finally:
-                    conn.close()
-            
+            result["id"] = new_id
             return jsonify(result)
             
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
-            app.logger.error(f"Error submitting assessment: {e}")
+            app.logger.error(f"Error submitting assessment: {e}", exc_info=True)
             return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/api/assessment/history", methods=["GET"])
@@ -1639,14 +1232,8 @@ def _register_routes(app: Flask) -> None:
             session_id = request.headers.get("X-Session-ID")
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 401
-                            
-            with app.app_context():
-                conn = db.engine.raw_connection()
-                try:
-                    history = get_assessment_history(conn, session_id)
-                finally:
-                    conn.close()
-                    
+            from providers.clinical_assessments import get_assessment_history
+            history = get_assessment_history(session_id)
             return jsonify({"history": history})
         except Exception as e:
             app.logger.error(f"Error fetching history: {e}")
@@ -1877,6 +1464,9 @@ def _register_routes(app: Flask) -> None:
             # Get geography-specific crisis data
             crisis_data = get_crisis_response_and_resources(risk_level, country)
 
+            # Parallel Watchdog: Start deep clinical analysis in background (Scaling Crisis Detection)
+            background_executor.submit(_run_crisis_watchdog, current_app._get_current_object(), user_message, session_id, risk_level)
+
             # Extract exercise data from tool calls (if any)
             exercise_data = {}
             for tc in tool_calls:
@@ -1934,6 +1524,9 @@ def _register_routes(app: Flask) -> None:
             # Crisis detection first
             risk_level = detect_crisis_level(message)
             crisis_data = get_crisis_response_and_resources(risk_level, country)
+
+            # Parallel Watchdog: Start deep clinical analysis in background (Scaling Crisis Detection)
+            background_executor.submit(_run_crisis_watchdog, current_app._get_current_object(), message, session_id, risk_level)
 
             # Generate AI response with tool support (function calling)
             full_text, actual_risk, tool_calls = _process_chat_message(
@@ -2044,24 +1637,15 @@ def _register_routes(app: Flask) -> None:
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 400
 
-            # Get chat messages from database
-            messages = db.session.execute(
-                text(
-                    """
-                    SELECT content, is_user, timestamp 
-                    FROM chat_messages 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp ASC 
-                    LIMIT 50
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
+            # Get chat messages from database via Message model
+            messages = Message.query.filter_by(session_id=session_id)\
+                .order_by(Message.timestamp.asc())\
+                .limit(50).all()
 
             chat_history = []
             for message in messages:
                 ts = message.timestamp
-                if ts and not isinstance(ts, str) and hasattr(ts, 'isoformat'):
+                if ts and hasattr(ts, 'isoformat'):
                     ts = ts.isoformat()
                     
                 chat_history.append(
@@ -2087,19 +1671,10 @@ def _register_routes(app: Flask) -> None:
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 400
 
-            # Get mood entries from database
-            entries = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, note, timestamp 
-                    FROM mood_entries 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp DESC 
-                    LIMIT 50
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
+            # Get mood entries from database via MoodEntry model
+            entries = MoodEntry.query.filter_by(session_id=session_id)\
+                .order_by(MoodEntry.timestamp.desc())\
+                .limit(50).all()
 
             mood_history = []
             for entry in entries:
@@ -2178,28 +1753,18 @@ def _register_routes(app: Flask) -> None:
             # Sanitize note to mitigate basic XSS vectors (e.g., raw <script> tags)
             note = _sanitize_note(note_raw)
 
-            # Insert mood entry into database
-            db.session.execute(
-                text(
-                    """
-                    INSERT INTO mood_entries (session_id, mood_level, note, timestamp)
-                    VALUES (:session_id, :mood_level, :note, :timestamp)
-                """
-                ),
-                {
-                    "session_id": session_id,
-                    "mood_level": mood_level,
-                    "note": note,
-                    "timestamp": entry_timestamp,
-                },
+            # Add mood entry via MoodEntry model
+            entry = MoodEntry(
+                session_id=session_id,
+                mood_level=mood_level,
+                note=note,
+                timestamp=entry_timestamp
             )
+            db.session.add(entry)
             db.session.commit()
 
-            # Check valid feedback trigger (after 3rd check-in)
-            check_in_count = db.session.execute(
-                text("SELECT COUNT(*) FROM mood_entries WHERE session_id = :session_id"),
-                {"session_id": session_id},
-            ).scalar()
+            # Check valid feedback trigger (after 3rd check-in) via MoodEntry model
+            check_in_count = MoodEntry.query.filter_by(session_id=session_id).count()
             
             show_feedback_prompt = (check_in_count == 3)
 
@@ -2301,31 +1866,7 @@ def _register_routes(app: Flask) -> None:
             db.session.add(entry)
             db.session.commit()
 
-            # Best-effort mirror to legacy table for compatibility (non-fatal on error)
-            try:
-                db.session.execute(
-                    text(
-                        """
-                        INSERT INTO self_assessments (session_id, mood, energy, sleep, stress, social, work, notes, timestamp)
-                        VALUES (:session_id, :mood, :energy, :sleep, :stress, :social, :work, :notes, :timestamp)
-                        """
-                    ),
-                    {
-                        "session_id": session_id,
-                        "mood": cleaned_data.get("mood"),
-                        "energy": cleaned_data.get("energy"),
-                        "sleep": cleaned_data.get("sleep"),
-                        "stress": cleaned_data.get("stress"),
-                        "social": cleaned_data.get("social"),
-                        "work": cleaned_data.get("work"),
-                        "notes": cleaned_data.get("notes"),
-                        "timestamp": now_utc,
-                    },
-                )
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                app.logger.warning(f"Legacy self_assessments mirror skipped: {e}")
+
 
             # Award XP once per day for quick check-in (value can be tuned server-side)
             xp_awarded = 10
@@ -2360,18 +1901,13 @@ def _register_routes(app: Flask) -> None:
                 hour=0, minute=0, second=0, microsecond=0
             )
 
-            # Count mood entries by level for today (across ALL users, anonymous)
-            result = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, COUNT(*) as count
-                    FROM mood_entries
-                    WHERE timestamp >= :today_start
-                    GROUP BY mood_level
-                """
-                ),
-                {"today_start": today_start},
-            ).fetchall()
+            # Count mood entries by level for today (across ALL users, anonymous) via MoodEntry model
+            from sqlalchemy import func
+            result = db.session.query(
+                MoodEntry.mood_level, 
+                func.count(MoodEntry.id).label('count')
+            ).filter(MoodEntry.timestamp >= today_start)\
+             .group_by(MoodEntry.mood_level).all()
 
             # Build distribution
             distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
@@ -2462,18 +1998,10 @@ def _register_routes(app: Flask) -> None:
                 return jsonify({"error": "Session ID required"}), 400
 
             # Get mood entries from database
-            entries = db.session.execute(
-                text(
-                    """
-                    SELECT mood_level, note, timestamp 
-                    FROM mood_entries 
-                    WHERE session_id = :session_id 
-                    ORDER BY timestamp DESC 
-                    LIMIT 100
-                """
-                ),
-                {"session_id": session_id},
-            ).fetchall()
+            # Get mood entries from database via MoodEntry model
+            entries = MoodEntry.query.filter_by(session_id=session_id)\
+                .order_by(MoodEntry.timestamp.desc())\
+                .limit(100).all()
 
             if not entries:
                 return jsonify(
@@ -2616,18 +2144,14 @@ def _register_routes(app: Flask) -> None:
             # Store as compact JSON string in TEXT column to avoid dialect issues
             meta_json = json.dumps(metadata, separators=(",", ":"), ensure_ascii=False)
 
-            db.session.execute(
-                text(
-                    "INSERT INTO analytics_events (session_id, event_type, metadata, request_id, timestamp) "
-                    "VALUES (:session_id, :event_type, :metadata, :request_id, CURRENT_TIMESTAMP)"
-                ),
-                {
-                    "session_id": session_id,
-                    "event_type": event_type,
-                    "metadata": meta_json,
-                    "request_id": req_id,
-                },
+            # Store metadata
+            event = AnalyticsEvent(
+                session_id=session_id,
+                event_type=event_type,
+                event_metadata=metadata,
+                request_id=req_id
             )
+            db.session.add(event)
             db.session.commit()
             return jsonify({"ok": True}), 201
         except Exception as e:
@@ -2653,65 +2177,25 @@ def _register_routes(app: Flask) -> None:
 
             params: Dict[str, Any] = {"limit": limit}
             where_clause = ""
+            query = AnalyticsEvent.query
             if prefix:
-                where_clause = "WHERE event_type LIKE :prefix"
-                params["prefix"] = f"{prefix}%"
+                query = query.filter(AnalyticsEvent.event_type.like(f"{prefix}%"))
+            
+            events_list = query.order_by(AnalyticsEvent.id.desc()).limit(limit).all()
 
-            # Initialize timing and accumulator to avoid NameError and measure latency
-            start = time.monotonic()
-            events = []
+            response_events = []
+            for e in events_list:
+                response_events.append({
+                    "event_type": e.event_type,
+                    "metadata": e.event_metadata,
+                    "request_id": e.request_id,
+                    "timestamp": e.timestamp.isoformat() if e.timestamp else None
+                })
 
-            sql = text(
-                f"""
-                SELECT event_type, metadata, request_id,
-                       CAST("timestamp" AS TEXT) AS ts
-                FROM analytics_events
-                {where_clause}
-                ORDER BY id DESC
-                LIMIT :limit
-                """
-            )
-
-            # Execute with a short statement timeout on Postgres to avoid hangs
-            engine = db.session.bind
-            dialect = engine.dialect.name if engine else None
-            if dialect == "postgresql":
-                with engine.connect() as conn:
-                    with conn.begin():
-                        conn.execute(text("SET LOCAL statement_timeout = 2000"))
-                        result = conn.execute(sql, params)
-                        rows = list(result.mappings())
-            else:
-                result = db.session.execute(sql, params)
-                rows = list(result.mappings())
-
-            for r in rows:
-                meta = r.get("metadata")
-                ts_val = r.get("ts")
-                if isinstance(ts_val, datetime):
-                    ts_str = ts_val.isoformat()
-                elif ts_val is not None:
-                    ts_str = str(ts_val)
-                else:
-                    ts_str = None
-                events.append(
-                    {
-                        "event_type": r.get("event_type"),
-                        "metadata": meta,
-                        "request_id": r.get("request_id"),
-                        "timestamp": ts_str,
-                    }
-                )
-            elapsed_ms = int((time.monotonic() - start) * 1000)
-            app.logger.info(
-                f"analytics_recent fetched count={len(events)} elapsed_ms={elapsed_ms} prefix='{prefix}' limit={limit}"
-            )
-            return (
-                jsonify(
-                    {"events": events, "count": len(events), "elapsed_ms": elapsed_ms}
-                ),
-                200,
-            )
+            return jsonify({
+                "events": response_events,
+                "count": len(response_events)
+            })
         except Exception as e:
             app.logger.error(f"Analytics recent error: {e}")
             return jsonify({"error": "Failed to fetch analytics"}), 500
@@ -2763,58 +2247,140 @@ def _get_or_create_session() -> str:
         session_id = str(uuid.uuid4())
 
     try:
-        # First ensure legacy 'sessions' table has the row, since many FKs reference it
-        existing_legacy = db.session.execute(
-            text("SELECT id FROM sessions WHERE id = :session_id"),
-            {"session_id": session_id},
-        ).fetchone()
-
+        from models import UserSession
         from flask import current_app
 
-        if not existing_legacy:
-            # Create session in legacy table (authoritative for FK references)
-            db.session.execute(
-                text(
-                    "INSERT INTO sessions (id, created_at, last_activity) VALUES (:session_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-                ),
-                {"session_id": session_id},
-            )
-            db.session.commit()
-            current_app.logger.info(f"Created new session (sessions): {session_id}")
-        else:
-            # Touch last_activity to keep it fresh
-            db.session.execute(
-                text(
-                    "UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = :session_id"
-                ),
-                {"session_id": session_id},
-            )
-            db.session.commit()
-            current_app.logger.info(f"Using existing session (sessions): {session_id}")
+        session = db.session.get(UserSession, session_id)
 
-        # Best-effort: mirror to SQLAlchemy 'user_sessions' table if present
-        try:
-            db.session.execute(
-                text(
-                    "INSERT INTO user_sessions (id, created_at, last_active) "
-                    "VALUES (:session_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
-                    "ON CONFLICT (id) DO UPDATE SET last_active = EXCLUDED.last_active"
-                ),
-                {"session_id": session_id},
-            )
+        if not session:
+            # Create new session
+            new_session = UserSession(id=session_id)
+            db.session.add(new_session)
             db.session.commit()
-        except Exception as e:
-            # Non-fatal. This table may not exist in older deployments.
-            current_app.logger.warning(f"user_sessions mirror failed: {e}")
+            current_app.logger.info(f"Created new session: {session_id}")
+        else:
+            # Update last active timestamp
+            session.last_active = datetime.utcnow()
+            db.session.commit()
+            current_app.logger.info(f"Using existing session: {session_id}")
 
     except Exception as e:
-        # Use current_app for logging in request context
         from flask import current_app
-
         current_app.logger.error(f"Session management error: {e}")
-        # Continue without database session if needed
 
     return session_id
+
+
+
+def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
+    """
+    Directly call Gemini for structured data (skips chat persona/history).
+    Used for background analysis like crisis watchdog.
+    Attempts multiple models in order of preference/speed.
+    """
+    import google.generativeai as genai
+    import os
+    
+    api_keys = (os.getenv("GEMINI_API_KEY") or "").split(",")
+    if not api_keys[0]:
+        return "{}"
+        
+    # Simple rotation for background tasks
+    import random
+    api_key = random.choice(api_keys).strip()
+    
+    # Fallback chain: Newest/Fastest -> Stable -> Legacy
+    models_to_try = [
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
+        "gemini-pro"
+    ]
+    
+    full_content = prompt
+    if system_prompt:
+        full_content = f"{system_prompt}\n\n{prompt}"
+    
+    try:
+        genai.configure(api_key=api_key)
+        
+        last_error = None
+        for model_name in models_to_try:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(full_content)
+                if response and hasattr(response, "text"):
+                    return response.text
+            except Exception as e:
+                # Capture error and try next model
+                last_error = e
+                continue
+                
+        # If we get here, all models failed
+        if last_error:
+            print(f"DEBUG: All models failed in _call_llm_json. Last error: {last_error}")
+            
+        return "{}"
+    except Exception as e:
+        print(f"DEBUG: _call_llm_json setup error: {e}")
+        return "{}"
+
+def _run_crisis_watchdog(flask_app, message: str, session_id: str, sync_risk: str):
+    """
+    Background worker: Uses an LLM to analyze the message for subtle crisis signs.
+    If the LLM detects a higher risk than the synchronous keyword check, updates the record.
+    """
+    with flask_app.app_context():
+        try:
+            # 1. Skip if message is too short or already handled at 'crisis' level
+            if len(message) < 5 or sync_risk == "crisis":
+                return
+            
+            # 2. Call LLM for clinical analysis
+            system_prompt = (
+                "You are a clinical crisis detection specialist. Analyze student messages for subtle signs of crisis "
+                "(hopelessness, finality, self-harm intention) that keyword matching might miss."
+            )
+            
+            prompt = (
+                f"Analyze this message: \"{message}\".\n"
+                f"Respond ONLY with a valid JSON object: {{\"risk_level\": \"low\"|\"medium\"|\"high\"|\"crisis\", \"reason\": \"string\"}}"
+            )
+            
+            response_text = _call_llm_json(prompt, system_prompt)
+            
+            # Clean up response (LLMs sometimes wrap JSON in code blocks)
+            cleaned_json = response_text.strip()
+            if "```json" in cleaned_json:
+                cleaned_json = cleaned_json.split("```json")[1].split("```")[0].strip()
+            elif "```" in cleaned_json:
+                cleaned_json = cleaned_json.split("```")[1].split("```")[0].strip()
+            
+            try:
+                result = json.loads(cleaned_json)
+                llm_risk = result.get("risk_level", "low").lower()
+            except (json.JSONDecodeError, AttributeError):
+                flask_app.logger.warning(f"⚠️ Crisis Watchdog failed to parse JSON from provider: {response_text[:100]}")
+                return
+                
+            # 3. Only escalate if the LLM thinks it's high/crisis and sync check missed it
+            risk_hierarchy = {"low": 0, "medium": 1, "high": 2, "crisis": 3}
+            if risk_hierarchy.get(llm_risk, 0) > risk_hierarchy.get(sync_risk, 0):
+                new_event = CrisisEvent(
+                    session_id=session_id,
+                    message=message,
+                    risk_level=llm_risk,
+                    risk_score=1.0 if llm_risk == "crisis" else 0.5,
+                    keywords="LLM_WATCHDOG_DETECTION",
+                    intervention_taken="Escalated to CAPS Dashboard",
+                    escalated=True
+                )
+                db.session.add(new_event)
+                db.session.commit()
+                flask_app.logger.info(f"🛡️ Crisis Watchdog escalated risk: {sync_risk} -> {llm_risk} for session {session_id}")
+        except Exception as e:
+            flask_app.logger.error(f"❌ Crisis Watchdog error: {e}")
 
 
 def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List[Dict]]:
@@ -3010,6 +2576,17 @@ def _log_conversation(
         
         db.session.commit()
 
+        # Trigger Counselor Alert for High/Crisis risks
+        # AlertManager handles deduplication
+        if risk_level in ["high", "crisis"]:
+             AlertManager.create_alert(
+                session_id=session_id,
+                trigger_message=user_message,
+                risk_level=risk_level,
+                risk_score=1.0 if risk_level == "crisis" else 0.8,
+                keywords=["chat_risk_detected"]
+            )
+
     except Exception as e:
         from flask import current_app
         current_app.logger.error(f"Failed to log conversation: {e}")
@@ -3030,10 +2607,10 @@ def _check_database_health() -> str:
             # Run within a short transaction with a statement timeout
             with engine.connect() as conn:
                 with conn.begin():
-                    conn.execute(text("SET LOCAL statement_timeout = 2000"))
-                    conn.execute(text("SELECT 1"))
+                    conn.execute(sql_text("SET LOCAL statement_timeout = 2000"))
+                    conn.execute(sql_text("SELECT 1"))
         else:
-            db.session.execute(text("SELECT 1"))
+            db.session.execute(sql_text("SELECT 1"))
         return "healthy"
     except Exception as e:
         try:
@@ -3574,23 +3151,28 @@ def _log_crisis_detection(
 ) -> None:
     """Log crisis detection for monitoring"""
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO crisis_detections (session_id, message, risk_level, risk_score, keywords, timestamp)
-                VALUES (:session_id, :message, :risk_level, :risk_score, :keywords, :timestamp)
-            """
-            ),
-            {
-                "session_id": session_id,
-                "message": message,
-                "risk_level": risk_level,
-                "risk_score": risk_score,
-                "keywords": ",".join(keywords),
-                "timestamp": datetime.utcnow(),
-            },
+        event = CrisisEvent(
+            session_id=session_id,
+            message=message,
+            risk_level=risk_level,
+            risk_score=risk_score,
+            keywords=",".join(keywords),
+            timestamp=datetime.utcnow()
         )
+        db.session.add(event)
         db.session.commit()
+        
+        # Trigger Counselor Alert
+        # AlertManager handles severity determination and rate limiting
+        alert_id = AlertManager.create_alert(
+            session_id=session_id,
+            trigger_message=message,
+            risk_level=risk_level,
+            risk_score=risk_score,
+            keywords=keywords
+        )
+        if alert_id:
+            current_app.logger.info(f"Counselor Alert created: ID {alert_id}")
     except Exception as e:
         # Use current_app for logging in request context
         from flask import current_app
@@ -3607,19 +3189,15 @@ def _purge_old_data_inner():
     message_days = app.config.get("MESSAGE_RETENTION_DAYS", 30)
     if message_days > 0:
         cutoff = datetime.utcnow() - timedelta(days=message_days)
-        result = db.session.execute(
-            text("DELETE FROM messages WHERE timestamp < :cutoff"), {"cutoff": cutoff}
-        )
-        counts["messages"] = result.rowcount
+        result = Message.query.filter(Message.timestamp < cutoff).delete()
+        counts["messages"] = result
 
     # Purge old sessions
     session_days = app.config.get("SESSION_RETENTION_DAYS", 90)
     if session_days > 0:
         cutoff = datetime.utcnow() - timedelta(days=session_days)
-        result = db.session.execute(
-            text("DELETE FROM sessions WHERE created_at < :cutoff"), {"cutoff": cutoff}
-        )
-        counts["sessions"] = result.rowcount
+        result = UserSession.query.filter(UserSession.created_at < cutoff).delete()
+        counts["sessions"] = result
 
     return counts
 
@@ -3894,11 +3472,11 @@ def _register_additional_routes(app: Flask) -> None:
             
         try:
             # enable extensions
-            db.session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            db.session.execute(sql_text("CREATE EXTENSION IF NOT EXISTS vector"))
             db.session.commit()
             
             # verify
-            result = db.session.execute(text("SELECT * FROM pg_extension WHERE extname = 'vector'")).fetchone()
+            result = db.session.execute(sql_text("SELECT * FROM pg_extension WHERE extname = 'vector'")).fetchone()
             
             return jsonify({
                 "ok": True, 
@@ -3970,11 +3548,11 @@ def _register_additional_routes(app: Flask) -> None:
 
         try:
             # Check extensions
-            extensions = db.session.execute(text("SELECT extname FROM pg_extension")).fetchall()
+            extensions = db.session.execute(sql_text("SELECT extname FROM pg_extension")).fetchall()
             ext_list = [row[0] for row in extensions]
 
             # Check memory tables
-            tables = db.session.execute(text(
+            tables = db.session.execute(sql_text(
                 "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
             )).fetchall()
             table_list = [row[0] for row in tables]
@@ -3983,7 +3561,7 @@ def _register_additional_routes(app: Flask) -> None:
             brain_state_rows = 0
             if "brain_state" in table_list:
                 try:
-                    brain_state_rows = db.session.execute(text("SELECT count(*) FROM brain_state")).scalar()
+                    brain_state_rows = BrainState.query.count()
                 except:
                     pass
 

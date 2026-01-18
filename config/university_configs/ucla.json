@@ -1,0 +1,13 @@
+{
+    "university_name": "UCLA",
+    "decision_maker": {
+        "name": "Dr. Nicole Green",
+        "role": "Executive Director, CAPS",
+        "email": "caps@ucla.edu"
+    },
+    "pain_points": [
+        "Large commuter population",
+        "Social isolation vs party culture"
+    ],
+    "custom_pitch": "For the massive Bruin community, GentleQuest acts as a 24/7 digital triage center."
+}

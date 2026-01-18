@@ -9,7 +9,7 @@ class ProfileConfig {
   static String aiName = 'Alex';
   // Default asset path for AI avatar. Replace with your own asset (no badge baked-in) as needed.
   static String? aiAvatarAsset =
-      'assets/images/avatar_placeholder.png'; // e.g. 'assets/images/avatar_ai.png'
+      'assets/images/avatar_alex.png'; // e.g. 'assets/images/avatar_ai.png'
 
   // Current user
   static String userName = 'You';

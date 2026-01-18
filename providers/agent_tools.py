@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from flask import current_app
 from sqlalchemy import text
-from models import db
+from models import db, InterventionOutcome
 
 
 # ============================================================================
@@ -490,14 +490,25 @@ def _select_journaling_intervention(issue: str) -> Dict[str, Any]:
 
 def _get_user_effectiveness(user_id: str) -> Dict[str, float]:
     """
-    Get user's past intervention effectiveness scores
-
-    Returns:
-        {'breathing_calm_478': 0.85, 'grounding_54321': 0.6}
+    Get user's past intervention effectiveness scores via ORM
     """
-    # TODO: Query from intervention_outcomes table
-    # For now, return empty dict (no history)
-    return {}
+    try:
+        results = InterventionOutcome.query.filter_by(session_id=user_id)\
+            .filter(InterventionOutcome.effectiveness_rating != None)\
+            .all()
+        
+        # Aggregate effectiveness by intervention_id
+        stats = {}
+        counts = {}
+        for row in results:
+            iid = row.intervention_id
+            stats[iid] = stats.get(iid, 0) + row.effectiveness_rating
+            counts[iid] = counts.get(iid, 0) + 1
+            
+        return {iid: stats[iid]/counts[iid] for iid in stats}
+    except Exception as e:
+        current_app.logger.warning(f"Error fetching user effectiveness: {e}")
+        return {}
 
 
 def record_interaction_outcome(
@@ -518,24 +529,15 @@ def record_interaction_outcome(
         user_feedback: Free text feedback (optional)
     """
     try:
-        # Store in database
-        db.session.execute(
-            text(
-                """
-                INSERT INTO intervention_outcomes 
-                (session_id, intervention_id, completed, effectiveness_rating, feedback, timestamp)
-                VALUES (:session_id, :intervention_id, :completed, :rating, :feedback, :timestamp)
-            """
-            ),
-            {
-                "session_id": user_id,
-                "intervention_id": intervention_id,
-                "completed": completed,
-                "rating": effectiveness_rating,
-                "feedback": user_feedback,
-                "timestamp": datetime.utcnow(),
-            },
+        outcome = InterventionOutcome(
+            session_id=user_id,
+            intervention_id=intervention_id,
+            completed=completed,
+            effectiveness_rating=effectiveness_rating,
+            feedback=user_feedback,
+            timestamp=datetime.utcnow()
         )
+        db.session.add(outcome)
         db.session.commit()
 
         return {"success": True, "message": "Outcome recorded"}

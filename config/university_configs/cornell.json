@@ -1,0 +1,14 @@
+{
+    "university_name": "Cornell University",
+    "decision_maker": {
+        "name": "Dr. Julie Edwards",
+        "role": "Director, Skorton Center",
+        "email": "health@cornell.edu"
+    },
+    "pain_points": [
+        "Geographic isolation (Ithaca)",
+        "High suicide awareness naming 'The Gorges'",
+        "Academic pressure"
+    ],
+    "custom_pitch": "During long Ithaca winters, isolation sets in. Our 'Daily Quests' keep meaningful contact active every single day."
+}

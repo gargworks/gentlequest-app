@@ -1,122 +1,128 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/resource.dart';
 
 class ResourceCard extends StatelessWidget {
   final Resource resource;
-  final VoidCallback onTap;
+  final Function(int) onView;
 
   const ResourceCard({
     Key? key,
     required this.resource,
-    required this.onTap,
+    required this.onView,
   }) : super(key: key);
+
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse(resource.url);
+    if (!await launchUrl(url)) {
+      throw Exception('Could not launch $url');
+    }
+    onView(resource.id);
+  }
+
+  Color _getCategoryColor() {
+    switch (resource.category) {
+      case 'crisis':
+        return Colors.red.shade100;
+      case 'self_help':
+        return Colors.blue.shade100;
+      case 'university':
+        return Colors.purple.shade100;
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  IconData _getCategoryIcon() {
+    switch (resource.category) {
+      case 'crisis':
+        return Icons.warning_amber_rounded;
+      case 'self_help':
+        return Icons.self_improvement;
+      case 'university':
+        return Icons.school;
+      default:
+        return Icons.article;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: onTap,
+        onTap: _launchUrl,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  _buildCategoryIcon(),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _getCategoryColor(),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(_getCategoryIcon(), color: Colors.black54),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      resource.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          resource.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (resource.tags.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Wrap(
+                              spacing: 4,
+                              children: resource.tags.take(3).map((tag) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    "#$tag",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios,
-                      size: 16, color: Colors.grey),
+                  const Icon(Icons.open_in_new, size: 16, color: Colors.grey),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 resource.description,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (resource.tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: resource.tags.take(3).map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildCategoryIcon() {
-    IconData icon;
-    Color color;
-
-    switch (resource.category.toLowerCase()) {
-      case 'crisis':
-        icon = Icons.emergency;
-        color = Colors.red;
-        break;
-      case 'self_help':
-        icon = Icons.self_improvement;
-        color = Colors.blue;
-        break;
-      case 'university':
-        icon = Icons.school;
-        color = Colors.purple;
-        break;
-      case 'external':
-        icon = Icons.link;
-        color = Colors.green;
-        break;
-      default:
-        icon = Icons.help;
-        color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, color: color, size: 20),
     );
   }
 }

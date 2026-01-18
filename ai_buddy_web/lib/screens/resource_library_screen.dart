@@ -1,236 +1,201 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/resource_provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+
+import '../models/resource.dart';
 import '../widgets/resource_card.dart';
 
 class ResourceLibraryScreen extends StatefulWidget {
-  const ResourceLibraryScreen({Key? key}) : super(key: key);
+  final String apiBaseUrl;
+  final String sessionId;
+
+  const ResourceLibraryScreen({
+    Key? key,
+    required this.apiBaseUrl,
+    required this.sessionId,
+  }) : super(key: key);
 
   @override
-  State<ResourceLibraryScreen> createState() => _ResourceLibraryScreenState();
+  _ResourceLibraryScreenState createState() => _ResourceLibraryScreenState();
 }
 
-class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
+class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
+    with SingleTickerProviderStateMixin {
+  
+  late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+  
+  List<Resource> _resources = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ResourceProvider>(context, listen: false).fetchResources();
-    });
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabChange);
+    _fetchResources();
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      _fetchResources();
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _fetchResources();
+    });
+  }
+
+  String _getCurrentCategory() {
+    switch (_tabController.index) {
+      case 1:
+        return 'self_help';
+      case 2:
+        return 'crisis';
+      case 3:
+        return 'university';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _fetchResources() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final category = _getCurrentCategory();
+      final search = _searchController.text;
+      
+      String url = '${widget.apiBaseUrl}/api/resources?session_id=${widget.sessionId}';
+      if (category.isNotEmpty) url += '&category=$category';
+      if (search.isNotEmpty) url += '&search=$search';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {"X-Session-ID": widget.sessionId}
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _resources = (data['resources'] as List)
+              .map((r) => Resource.fromJson(r))
+              .toList();
+          _isLoading = false;
+        });
+      } else {
+        throw Exception("Failed to load resources: ${response.statusCode}");
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _trackView(int resourceId) async {
+    try {
+      await http.post(
+        Uri.parse('${widget.apiBaseUrl}/api/resources/$resourceId/view'),
+        headers: {"X-Session-ID": widget.sessionId}
+      );
+    } catch (e) {
+      print("Error tracking view: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Resources'),
-        elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        title: const Text("Library"),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: const [
+            Tab(text: "All"),
+            Tab(text: "Self-Help"),
+            Tab(text: "Crisis Support"),
+            Tab(text: "University"),
+          ],
+        ),
       ),
       body: Column(
         children: [
-          // Search bar
-          Container(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            padding: const EdgeInsets.all(16),
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search resources...',
+                hintText: "Search resources...",
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          Provider.of<ResourceProvider>(context, listen: false)
-                              .setSearch('');
-                        },
-                      )
-                    : null,
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
-              ),
-              onChanged: (value) {
-                Provider.of<ResourceProvider>(context, listen: false)
-                    .setSearch(value);
-              },
-            ),
-          ),
-
-          // Category chips
-          Container(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Consumer<ResourceProvider>(
-                builder: (context, provider, child) {
-                  return Row(
-                    children: [
-                      _buildCategoryChip('All', null, provider),
-                      const SizedBox(width: 8),
-                      _buildCategoryChip('Crisis', 'crisis', provider),
-                      const SizedBox(width: 8),
-                      _buildCategoryChip('Self-Help', 'self_help', provider),
-                      const SizedBox(width: 8),
-                      _buildCategoryChip('University', 'university', provider),
-                    ],
-                  );
-                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               ),
             ),
           ),
-
-          // Resource list
+          
+          // Resource List
           Expanded(
-            child: Consumer<ResourceProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (provider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text('Error: ${provider.error}'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => provider.fetchResources(),
-                          child: const Text('Retry'),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Error loading resources"),
+                            ElevatedButton(
+                              onPressed: _fetchResources,
+                              child: const Text("Retry"),
+                            )
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (provider.resources.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.search_off,
-                            size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text('No resources found'),
-                        if (provider.selectedCategory != null ||
-                            _searchController.text.isNotEmpty)
-                          TextButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              provider.clearFilters();
-                            },
-                            child: const Text('Clear filters'),
+                      )
+                    : _resources.isEmpty
+                        ? const Center(child: Text("No resources found"))
+                        : RefreshIndicator(
+                            onRefresh: _fetchResources,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: _resources.length,
+                              itemBuilder: (context, index) {
+                                return ResourceCard(
+                                  resource: _resources[index],
+                                  onView: _trackView,
+                                );
+                              },
+                            ),
                           ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () => provider.fetchResources(
-                    category: provider.selectedCategory,
-                    search: _searchController.text.isEmpty
-                        ? null
-                        : _searchController.text,
-                  ),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: provider.resources.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ResourceCard(
-                          resource: provider.resources[index],
-                          onTap: () => _viewResource(provider.resources[index]),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildCategoryChip(
-      String label, String? category, ResourceProvider provider) {
-    final isSelected = provider.selectedCategory == category;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        provider.setCategory(selected ? category : null);
-      },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-      checkmarkColor: Theme.of(context).primaryColor,
-    );
-  }
-
-  void _viewResource(resource) {
-    Provider.of<ResourceProvider>(context, listen: false)
-        .trackView(resource.id);
-
-    if (resource.url != null && resource.url!.isNotEmpty) {
-      // Open URL in browser
-      // TODO: Use url_launcher package
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(resource.title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(resource.description),
-              const SizedBox(height: 16),
-              Text('URL: ${resource.url}',
-                  style: const TextStyle(fontSize: 12, color: Colors.blue)),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Show detail dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(resource.title),
-          content: Text(resource.description),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 }

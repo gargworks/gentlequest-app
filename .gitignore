@@ -98,3 +98,6 @@ ai_buddy_web/android/key.properties
 secret/service_account.json
 backend_config.env
 venv_39/
+
+# Build artifacts
+release_v1.0.0.zip

@@ -1,0 +1,42 @@
+steps:
+  # 1. Build Container image with production requirements
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cp requirements-cloudrun.txt requirements.txt && \
+        docker build -t gcr.io/$PROJECT_ID/gentlequest-backend .
+
+  # 2. Push Container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gentlequest-backend']
+
+  # 3. Deploy Backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'gentlequest-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/gentlequest-backend'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+      # Commenting out Cloud SQL for now to reduce failure surface for MVP Check
+      # If needed, uncomment below:
+      - '--add-cloudsql-instances'
+      - '$PROJECT_ID:us-central1:gentlequest-db'
+      - '--set-env-vars'
+      # Production Config with Secrets and API Keys
+      - 'ENVIRONMENT=production,FLASK_APP=app.py,AI_DEBUG_LOGS=false'
+      - '--set-env-vars'
+      - 'GEMINI_API_KEY=AIzaSyAw4JrwD6yMmLBCAcQ2KcNix2xtctnJmA8'
+      - '--set-env-vars'
+      - 'DB_USER=gentlequest,DB_NAME=gentlequest,DB_HOST=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
+      - '--set-secrets'
+      - 'DB_PASSWORD=gentlequest-db-pass:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/gentlequest-backend'

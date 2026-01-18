@@ -4,8 +4,8 @@ Add these routes to app.py in _register_routes() function
 """
 
 from flask import request, jsonify, current_app
-from models import db
-from sqlalchemy import text
+from models import db, Resource, UserResourceInteraction
+from sqlalchemy import or_
 
 
 def register_resource_routes(app):
@@ -24,49 +24,37 @@ def register_resource_routes(app):
             country = request.args.get('country')
             search = request.args.get('search')
             
-            # Build query
-            where_clauses = ["is_active = true"]
-            params = {}
+            # Start query with ORM
+            query = Resource.query.filter_by(is_active=True)
             
             if category:
-                where_clauses.append("category = :category")
-                params['category'] = category
+                query = query.filter(Resource.category == category)
             
             if country:
-                where_clauses.append("(country = :country OR country IS NULL)")
-                params['country'] = country
+                query = query.filter(or_(Resource.country == country, Resource.country.is_(None)))
             
             if search:
-                where_clauses.append("""
-                    (LOWER(title) LIKE :search 
-                     OR LOWER(description) LIKE :search 
-                     OR LOWER(tags) LIKE :search)
-                """)
-                params['search'] = f'%{search.lower()}%'
+                search_term = f"%{search.lower()}%"
+                query = query.filter(
+                    or_(
+                        Resource.title.ilike(search_term),
+                        Resource.description.ilike(search_term),
+                        Resource.tags.ilike(search_term)
+                    )
+                )
             
-            where_sql = " AND ".join(where_clauses)
-            
-            resources = db.session.execute(
-                text(f"""
-                    SELECT id, title, description, url, category, country, tags
-                    FROM resources
-                    WHERE {where_sql}
-                    ORDER BY created_at DESC
-                    LIMIT 100
-                """),
-                params
-            ).fetchall()
+            resources = query.order_by(Resource.created_at.desc()).limit(100).all()
             
             resource_list = []
             for r in resources:
                 resource_list.append({
-                    'id': r[0],
-                    'title': r[1],
-                    'description': r[2],
-                    'url': r[3],
-                    'category': r[4],
-                    'country': r[5],
-                    'tags': r[6].split(',') if r[6] else []
+                    'id': r.id,
+                    'title': r.title,
+                    'description': r.description,
+                    'url': r.url,
+                    'category': r.category,
+                    'country': r.country,
+                    'tags': r.tags.split(',') if r.tags else []
                 })
             
             return jsonify({
@@ -87,23 +75,17 @@ def register_resource_routes(app):
             if not session_id:
                 return jsonify({"error": "Session ID required"}), 401
             
-            # Verify resource exists
-            resource = db.session.execute(
-                text("SELECT id FROM resources WHERE id = :id"),
-                {"id": resource_id}
-            ).fetchone()
-            
+            # Verify resource exists - Use ORM
+            resource = Resource.query.get(resource_id)
             if not resource:
                 return jsonify({"error": "Resource not found"}), 404
             
             # Track view
-            db.session.execute(
-                text("""
-                    INSERT INTO user_resource_interactions (session_id, resource_id)
-                    VALUES (:session_id, :resource_id)
-                """),
-                {"session_id": session_id, "resource_id": resource_id}
+            interaction = UserResourceInteraction(
+                session_id=session_id,
+                resource_id=resource_id
             )
+            db.session.add(interaction)
             db.session.commit()
             
             return jsonify({"success": True})
@@ -120,25 +102,19 @@ def register_resource_routes(app):
         
         try:
             if request.method == "GET":
-                resources = db.session.execute(
-                    text("""
-                        SELECT id, title, description, url, category, country, tags, is_active
-                        FROM resources
-                        ORDER BY created_at DESC
-                    """)
-                ).fetchall()
+                resources = Resource.query.order_by(Resource.created_at.desc()).all()
                 
                 resource_list = []
                 for r in resources:
                     resource_list.append({
-                        'id': r[0],
-                        'title': r[1],
-                        'description': r[2],
-                        'url': r[3],
-                        'category': r[4],
-                        'country': r[5],
-                        'tags': r[6].split(',') if r[6] else [],
-                        'is_active': r[7]
+                        'id': r.id,
+                        'title': r.title,
+                        'description': r.description,
+                        'url': r.url,
+                        'category': r.category,
+                        'country': r.country,
+                        'tags': r.tags.split(',') if r.tags else [],
+                        'is_active': r.is_active
                     })
                 
                 return jsonify({"resources": resource_list})
@@ -146,25 +122,18 @@ def register_resource_routes(app):
             elif request.method == "POST":
                 data = request.get_json()
                 
-                result = db.session.execute(
-                    text("""
-                        INSERT INTO resources (title, description, url, category, country, tags)
-                        VALUES (:title, :description, :url, :category, :country, :tags)
-                        RETURNING id
-                    """),
-                    {
-                        'title': data['title'],
-                        'description': data['description'],
-                        'url': data.get('url'),
-                        'category': data['category'],
-                        'country': data.get('country'),
-                        'tags': data.get('tags', '')
-                    }
+                resource = Resource(
+                    title=data['title'],
+                    description=data['description'],
+                    url=data.get('url'),
+                    category=data['category'],
+                    country=data.get('country'),
+                    tags=data.get('tags', '')
                 )
-                resource_id = result.scalar()
+                db.session.add(resource)
                 db.session.commit()
                 
-                return jsonify({"success": True, "id": resource_id}), 201
+                return jsonify({"success": True, "id": resource.id}), 201
             
             elif request.method == "PUT":
                 data = request.get_json()
@@ -173,30 +142,20 @@ def register_resource_routes(app):
                 if not resource_id:
                     return jsonify({"error": "Resource ID required"}), 400
                 
-                # Build update query dynamically
-                updates = []
-                params = {"id": resource_id}
+                resource = Resource.query.get(resource_id)
+                if not resource:
+                    return jsonify({"error": "Resource not found"}), 404
                 
                 if 'title' in data:
-                    updates.append("title = :title")
-                    params['title'] = data['title']
+                    resource.title = data['title']
                 if 'description' in data:
-                    updates.append("description = :description")
-                    params['description'] = data['description']
+                    resource.description = data['description']
                 if 'url' in data:
-                    updates.append("url = :url")
-                    params['url'] = data['url']
+                    resource.url = data['url']
                 if 'is_active' in data:
-                    updates.append("is_active = :is_active")
-                    params['is_active'] = data['is_active']
+                    resource.is_active = data['is_active']
                 
-                if updates:
-                    db.session.execute(
-                        text(f"UPDATE resources SET {', '.join(updates)} WHERE id = :id"),
-                        params
-                    )
-                    db.session.commit()
-                
+                db.session.commit()
                 return jsonify({"success": True})
             
             elif request.method == "DELETE":
@@ -205,11 +164,12 @@ def register_resource_routes(app):
                 if not resource_id:
                     return jsonify({"error": "Resource ID required"}), 400
                 
+                resource = Resource.query.get(resource_id)
+                if not resource:
+                    return jsonify({"error": "Resource not found"}), 404
+                
                 # Soft delete
-                db.session.execute(
-                    text("UPDATE resources SET is_active = false WHERE id = :id"),
-                    {"id": resource_id}
-                )
+                resource.is_active = False
                 db.session.commit()
                 
                 return jsonify({"success": True})

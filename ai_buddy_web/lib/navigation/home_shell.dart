@@ -4,7 +4,8 @@ import '../widgets/app_bottom_nav.dart';
 import 'home_tab_deeplink.dart';
 import '../screens/interactive_chat_screen.dart';
 import '../screens/mood_tracker_screen.dart';
-import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
+import '../screens/quest_screen/new_quest_screen.dart';
+import '../dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
 import '../widgets/community_feed_screen.dart';
 
 import '../widgets/crisis_resources.dart';
@@ -211,10 +212,7 @@ class _HomeShellState extends State<HomeShell> {
       buildTabNavigator(
         key: _questNavKey,
         active: _index == 2,
-        builder: (_) => WellnessDashboardScreen(
-          showBottomNav: false,
-          reselect: _questReselect,
-        ),
+        builder: (_) => const WellnessDashboardScreen(),
       ),
       buildTabNavigator(
         key: _communityNavKey,

@@ -1,0 +1,57 @@
+{
+    "university_id": 4,
+    "name": "Boston University",
+    "domain": "bu.edu",
+    "enrollment": 36000,
+    "caps_contact": {
+        "email": "shs-behavioral@bu.edu",
+        "phone": "+16173533569",
+        "hours": "Mon-Fri 9am-5pm",
+        "director": "Dr. Judy Platt"
+    },
+    "outreach": {
+        "mascot_name": "Rhett the Terrier",
+        "wellness_center_building": "930 Commonwealth Ave",
+        "custom_intro": "I'm reaching out specifically to my fellow BU Terriers—I've been following the renovation discussions around the Student Health Services at 930 Comm Ave and wanted to offer a solution that fits the \"24/7 Campus\" vitality."
+    },
+    "internal_code": "BU-SHS-2026",
+    "waitlist": {
+        "average_weeks": 4,
+        "current_count": 800,
+        "peak_months": [
+            "October",
+            "November",
+            "March"
+        ]
+    },
+    "branding": {
+        "logo_url": "https://www.bu.edu/brand/logo.png",
+        "primary_color": "#CC0000",
+        "secondary_color": "#ffffff",
+        "app_name": "BU SHS Support AI"
+    },
+    "crisis_resources": [
+        {
+            "name": "BU Behavioral Medicine Crisis Line",
+            "phone": "+16173533569",
+            "available": "24/7",
+            "type": "crisis"
+        },
+        {
+            "name": "BU Student Health Services",
+            "url": "https://www.bu.edu/shs/behavioral-medicine/",
+            "hours": "Mon-Fri 9am-5pm",
+            "type": "university"
+        }
+    ],
+    "counselors": [
+        {
+            "name": "Dr. BU Lead",
+            "email": "lead@bu.edu",
+            "role": "Director",
+            "alert_methods": [
+                "email"
+            ]
+        }
+    ]
+}

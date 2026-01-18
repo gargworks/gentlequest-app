@@ -13,6 +13,8 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 import threading
+import psycopg
+from psycopg.rows import dict_row
 from sqlalchemy import text
 
 # Import from app context
@@ -51,46 +53,51 @@ def _check_memory_tables_exist() -> bool:
         _memory_tables_ready = False
         return False
     
+    conn = None
     try:
-        engine = db.session.bind
-        dialect = engine.dialect.name if engine else 'postgresql'
-        
-        # Check config too
         from flask import current_app
         db_url = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
         
-        if dialect == 'sqlite' or 'sqlite' in db_url:
-            # pgvector not available on SQLite usually
+        # Robustly sanitize for psycopg (v3) which requires a clean postgresql:// URI
+        if '://' in db_url:
+            protocol, rest = db_url.split('://', 1)
+            if '+' in protocol:
+                protocol = protocol.split('+')[0]
+            db_url = f"{protocol}://{rest}"
+        
+        if 'sqlite' in db_url.lower():
             _memory_tables_ready = False
             return False
 
-        # Check if table exists (Postgres)
-        result = db.session.execute(text("""
-            SELECT EXISTS (
-                SELECT 1 FROM information_schema.tables 
-                WHERE table_name = 'memory_summaries'
-            )
-        """)).scalar()
-        
-        if not result:
-            _memory_tables_ready = False
-            return False
-        
-        # Check if pgvector extension is available
-        result = db.session.execute(text("""
-            SELECT EXISTS (
-                SELECT 1 FROM pg_extension WHERE extname = 'vector'
-            )
-        """)).scalar()
-        
-        _memory_tables_ready = bool(result)
-        return _memory_tables_ready
-        
+        # Use raw psycopg connection for check
+        conn = psycopg.connect(db_url)
+        with conn.cursor() as cur:
+            # Check if table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_name = 'memory_summaries'
+                )
+            """)
+            table_exists = cur.fetchone()[0]
+            
+            if not table_exists:
+                _memory_tables_ready = False
+                return False
+            
+            # Check if pgvector extension is available
+            cur.execute("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')")
+            extension_exists = cur.fetchone()[0]
+            
+            _memory_tables_ready = bool(extension_exists)
+            return _memory_tables_ready
+            
     except Exception as e:
         print(f"Memory table check error: {e}")
-        db.session.rollback()  # Important: don't let failed check abort transaction
         _memory_tables_ready = False
         return False
+    finally:
+        if conn: conn.close()
 
 
 # ============================================================================
@@ -104,30 +111,35 @@ def init_memory_tables(app) -> bool:
     
     Returns True if successful, False if pgvector not available.
     """
-    with app.app_context():
-        try:
-            engine = db.session.bind
-            dialect = engine.dialect.name if engine else 'unknown'
-            
-            # Try to enable pgvector extension
-            # Try to enable pgvector extension
+    db_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    
+    # Robustly sanitize for psycopg (v3) which requires a clean postgresql:// URI
+    if '://' in db_url:
+        protocol, rest = db_url.split('://', 1)
+        if '+' in protocol:
+            protocol = protocol.split('+')[0]
+        db_url = f"{protocol}://{rest}"
+
+    if 'sqlite' in db_url.lower():
+        app.logger.warning("Memory system: SQLite detected, skipping pgvector initialization")
+        return False
+
+    conn = None
+    try:
+        app.logger.info("🔄 Initializing PostgreSQL memory tables...")
+        conn = psycopg.connect(db_url)
+        with conn.cursor() as cur:
+            # 1. Enable pgvector
             try:
-                db.session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-                db.session.commit()
+                cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
+                conn.commit()
                 app.logger.info("Memory system: pgvector extension enabled")
             except Exception as e:
-                app.logger.warning(f"Memory system: pgvector creation skipped (might exist or permission denied): {e}")
-                db.session.rollback()
-                
-                # Check if it actually exists before giving up
-                exists = db.session.execute(text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector')")).scalar()
-                if not exists:
-                    app.logger.error("Memory system: pgvector extension missing and creation failed")
-                    return False
-                app.logger.info("Memory system: pgvector verified existing")
+                app.logger.warning(f"Memory system: pgvector creation skipped: {e}")
+                conn.rollback()
             
-            # Create memory_summaries table
-            db.session.execute(text("""
+            # 2. Create tables
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS memory_summaries (
                     id SERIAL PRIMARY KEY,
                     session_id VARCHAR(36) NOT NULL,
@@ -139,30 +151,30 @@ def init_memory_tables(app) -> bool:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     expires_at TIMESTAMP
                 )
-            """))
+            """)
             
-            # Create index for vector similarity search
-            db.session.execute(text("""
+            # 3. Create indices
+            cur.execute("""
                 CREATE INDEX IF NOT EXISTS memory_embedding_idx 
                 ON memory_summaries 
                 USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100)
-            """))
-            
-            # Create index for session lookups
-            db.session.execute(text("""
+            """)
+            cur.execute("""
                 CREATE INDEX IF NOT EXISTS memory_session_idx 
                 ON memory_summaries (session_id, memory_type)
-            """))
+            """)
             
-            db.session.commit()
-            app.logger.info("Memory system: tables initialized successfully")
+            conn.commit()
+            app.logger.info("✅ Memory system tables initialized successfully")
             return True
             
-        except Exception as e:
-            app.logger.error(f"Memory system initialization error: {e}")
-            db.session.rollback()
-            return False
+    except Exception as e:
+        app.logger.error(f"❌ Memory system initialization error: {e}")
+        if conn: conn.rollback()
+        return False
+    finally:
+        if conn: conn.close()
 
 
 # ============================================================================
@@ -190,6 +202,7 @@ def store_memory(
     if not MEMORY_ENABLED or not _check_memory_tables_exist():
         return False
     
+    raw_conn = None
     try:
         from providers.embeddings import generate_embedding, compute_text_hash
         
@@ -201,49 +214,41 @@ def store_memory(
         # Compute hash for deduplication
         content_hash = compute_text_hash(content)
         
-        # Check for duplicate (same session, same content hash)
-        existing = db.session.execute(
-            text("""
-                SELECT id FROM memory_summaries 
-                WHERE session_id = :session_id AND content_hash = :hash
-                LIMIT 1
-            """),
-            {"session_id": session_id, "hash": content_hash}
-        ).fetchone()
-        
-        if existing:
-            return True  # Already stored
-        
         # Calculate expiration
         retention_days = MEMORY_RETENTION.get(memory_type, 30)
         expires_at = datetime.utcnow() + timedelta(days=retention_days)
         
         # Store memory
         embedding_str = f"[{','.join(str(x) for x in embedding)}]"
+        metadata_json = json.dumps(metadata) if metadata else None
         
-        db.session.execute(
-            text("""
+        raw_conn = db.engine.raw_connection()
+        with raw_conn.cursor() as cur:
+            # Check for duplicate
+            cur.execute("""
+                SELECT id FROM memory_summaries 
+                WHERE session_id = %s AND content_hash = %s
+                LIMIT 1
+            """, (session_id, content_hash))
+            
+            if cur.fetchone():
+                return True  # Already stored
+            
+            cur.execute("""
                 INSERT INTO memory_summaries 
                 (session_id, memory_type, content, content_hash, embedding, metadata, expires_at)
-                VALUES (:session_id, :memory_type, :content, :hash, :embedding::vector, :metadata, :expires_at)
-            """),
-            {
-                "session_id": session_id,
-                "memory_type": memory_type,
-                "content": content,
-                "hash": content_hash,
-                "embedding": embedding_str,
-                "metadata": json.dumps(metadata) if metadata else None,
-                "expires_at": expires_at,
-            }
-        )
-        db.session.commit()
+                VALUES (%s, %s, %s, %s, %s::vector, %s::jsonb, %s)
+            """, (session_id, memory_type, content, content_hash, embedding_str, metadata_json, expires_at))
+            
+            raw_conn.commit()
         return True
         
     except Exception as e:
         print(f"Memory storage error: {e}")
-        db.session.rollback()
+        if raw_conn: raw_conn.rollback()
         return False
+    finally:
+        if raw_conn: raw_conn.close()
 
 
 # ============================================================================
@@ -269,6 +274,7 @@ def retrieve_relevant_memories(
     if not MEMORY_ENABLED or not PGVECTOR_ENABLED or not _check_memory_tables_exist():
         return []
     
+    raw_conn = None
     try:
         from providers.embeddings import generate_query_embedding
         
@@ -279,46 +285,47 @@ def retrieve_relevant_memories(
         
         embedding_str = f"[{','.join(str(x) for x in query_embedding)}]"
         
-        # Semantic search using cosine similarity
-        results = db.session.execute(
-            text("""
+        raw_conn = db.engine.raw_connection()
+        memories = []
+        
+        # Use dict_row for easy access
+        with raw_conn.cursor(row_factory=dict_row) as cur:
+            # Semantic search using cosine similarity
+            cur.execute("""
                 SELECT 
                     content,
                     memory_type,
                     metadata,
                     created_at,
-                    1 - (embedding <=> CAST(:query_embedding AS vector)) as similarity
+                    1 - (embedding <=> %s::vector) as similarity
                 FROM memory_summaries
-                WHERE session_id = :session_id
+                WHERE session_id = %s
                   AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-                ORDER BY embedding <=> CAST(:query_embedding AS vector)
-                LIMIT :limit
-            """),
-            {
-                "session_id": session_id,
-                "query_embedding": embedding_str,
-                "limit": limit,
-            }
-        ).fetchall()
-        
-        memories = []
-        for row in results:
-            # Only include if similarity is above threshold
-            if row.similarity and row.similarity > 0.3:
-                memories.append({
-                    "content": row.content,
-                    "type": row.memory_type,
-                    "metadata": json.loads(row.metadata) if row.metadata else None,
-                    "created_at": row.created_at.isoformat() if row.created_at else None,
-                    "similarity": round(row.similarity, 3),
-                })
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, (embedding_str, session_id, embedding_str, limit))
+            
+            results = cur.fetchall()
+            
+            for row in results:
+                # Only include if similarity is above threshold
+                sim = row.get('similarity') or 0
+                if sim > 0.3:
+                    memories.append({
+                        "content": row['content'],
+                        "type": row['memory_type'],
+                        "metadata": row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}'),
+                        "created_at": row['created_at'].isoformat() if hasattr(row['created_at'], 'isoformat') else str(row['created_at']),
+                        "similarity": round(float(sim), 3),
+                    })
         
         return memories
         
     except Exception as e:
         print(f"Memory retrieval error: {e}")
-        db.session.rollback()  # Prevent transaction cascade
         return []
+    finally:
+        if raw_conn: raw_conn.close()
 
 
 def get_memory_context_for_prompt(session_id: str, message: str) -> str:
@@ -348,31 +355,37 @@ def get_memory_context_for_prompt(session_id: str, message: str) -> str:
 
 def clear_user_memory(session_id: str) -> bool:
     """Clear all memories for a user (user-initiated)."""
+    raw_conn = None
     try:
-        db.session.execute(
-            text("DELETE FROM memory_summaries WHERE session_id = :session_id"),
-            {"session_id": session_id}
-        )
-        db.session.commit()
+        raw_conn = db.engine.raw_connection()
+        with raw_conn.cursor() as cur:
+            cur.execute("DELETE FROM memory_summaries WHERE session_id = %s", (session_id,))
+            raw_conn.commit()
         return True
     except Exception as e:
         print(f"Memory clear error: {e}")
-        db.session.rollback()
+        if raw_conn: raw_conn.rollback()
         return False
+    finally:
+        if raw_conn: raw_conn.close()
 
 
 def cleanup_expired_memories() -> int:
     """Remove expired memories. Call periodically."""
+    raw_conn = None
     try:
-        result = db.session.execute(
-            text("DELETE FROM memory_summaries WHERE expires_at < CURRENT_TIMESTAMP")
-        )
-        db.session.commit()
-        return result.rowcount
+        raw_conn = db.engine.raw_connection()
+        with raw_conn.cursor() as cur:
+            cur.execute("DELETE FROM memory_summaries WHERE expires_at < CURRENT_TIMESTAMP")
+            count = cur.rowcount
+            raw_conn.commit()
+            return count
     except Exception as e:
         print(f"Memory cleanup error: {e}")
-        db.session.rollback()
+        if raw_conn: raw_conn.rollback()
         return 0
+    finally:
+        if raw_conn: raw_conn.close()
 
 
 # ============================================================================

@@ -1,0 +1,18 @@
+{
+    "university_name": "Harvard University",
+    "decision_maker": {
+        "name": "Dr. Barbara Lewis",
+        "role": "Chief of CAMHS",
+        "email": "camhs@harvard.edu"
+    },
+    "pain_points": [
+        "Perfectionism",
+        "Elite competitive stress",
+        "Seasonal affective disorder"
+    ],
+    "custom_pitch": "Harvard students delay seeking help to avoid appearing 'weak'. A private, AI-based tool lowers that barrier to entry.",
+    "outreach": {
+        "mascot": "Crimson",
+        "custom_intro": "I've been following the current Students-First wellness shift happening across the Yard—I know how high the pressure can be there, and I wanted to share something built to bridge that gap."
+    }
+}

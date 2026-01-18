@@ -1,160 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:ai_buddy_web/models/quest.dart';
+import '../models/quest.dart';
 
 class QuestCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final double progress;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-  final bool showProgress;
-  final bool isLocked;
-  final int? xpReward;
+  final Quest quest;
+  final VoidCallback onTap;
+  final bool isLoading;
 
   const QuestCard({
-    super.key,
-    required this.title,
-    required this.description,
-    this.progress = 0.0,
-    required this.icon,
-    required this.color,
-    this.onTap,
-    this.showProgress = true,
-    this.isLocked = false,
-    this.xpReward,
-  });
+    Key? key,
+    required this.quest,
+    required this.onTap,
+    this.isLoading = false,
+  }) : super(key: key);
 
-  factory QuestCard.fromQuest(Quest quest, {VoidCallback? onTap}) {
-    return QuestCard(
-      title: quest.title,
-      description: quest.description,
-      progress: quest.target > 0 ? quest.progress / quest.target : 0.0,
-      icon: quest.icon,
-      color: _getCategoryColor(quest.category),
-      onTap: onTap,
-      showProgress: quest.status == QuestStatus.inProgress,
-      isLocked: quest.status == QuestStatus.locked,
-      xpReward: quest.xpReward,
-    );
+  Color _getDifficultyColor() {
+    switch (quest.difficulty) {
+      case 1:
+        return Colors.green.shade100;
+      case 2:
+        return Colors.orange.shade100;
+      case 3:
+        return Colors.red.shade100;
+      default:
+        return Colors.grey.shade100;
+    }
   }
 
-  static Color _getCategoryColor(QuestCategory category) {
-    switch (category) {
-      case QuestCategory.mindfulness:
-        return Colors.blue;
-      case QuestCategory.activity:
-        return Colors.green;
-      case QuestCategory.social:
-        return Colors.purple;
-      case QuestCategory.learning:
-        return Colors.orange;
-      case QuestCategory.challenge:
-        return Colors.red;
+  IconData _getTypeIcon() {
+    switch (quest.type) {
+      case 'task':
+        return Icons.check_circle_outline;
+      case 'tip':
+        return Icons.lightbulb_outline;
+      case 'check_in':
+        return Icons.assignment_turned_in_outlined;
+      case 'progress':
+        return Icons.trending_up;
+      default:
+        return Icons.star_border;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isCompleted = quest.isCompleted;
+
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: isLocked ? null : onTap,
+      elevation: isCompleted ? 0 : 2,
+      color: isCompleted ? Colors.grey.shade50 : Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        child: Opacity(
-          opacity: isLocked ? 0.6 : 1.0,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        side: isCompleted
+            ? BorderSide(color: Colors.grey.shade300)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: isCompleted ? null : onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              // Left: Icon container
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isCompleted ? Colors.grey.shade200 : _getDifficultyColor(),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isCompleted ? Icons.check : _getTypeIcon(),
+                  color: isCompleted ? Colors.grey : Colors.black87,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Middle: Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isLocked ? Icons.lock_outline : icon,
-                        color: color,
-                        size: 24,
+                    Text(
+                      quest.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        color: isCompleted ? Colors.grey : Colors.black87,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isLocked ? '???' : title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (xpReward != null) ...[
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Text(
-                                  '$xpReward XP',
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 4),
-                          Text(
-                            isLocked
-                                ? 'Complete previous quests to unlock'
-                                : description,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                    const SizedBox(height: 4),
+                    Text(
+                      quest.description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isCompleted ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (showProgress && progress > 0) ...[
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 3,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).primaryColor,
-                          ),
+                  ],
+                ),
+              ),
+              
+              // Right: Rewards or Loading
+              if (isLoading)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (!isCompleted)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.purple.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.bolt, size: 14, color: Colors.purple),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${quest.xpReward} XP",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple.shade700,
                         ),
                       ),
                     ],
-                  ],
-                ),
-                if (showProgress && progress > 0) ...[
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).primaryColor,
-                    ),
                   ),
-                ],
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

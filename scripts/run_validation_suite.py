@@ -2,8 +2,10 @@
 import requests
 import time
 
+import uuid
+
 BASE_URL = "http://localhost:5055"
-SESSION_ID = "validation_test"
+SESSION_ID = f"validation_{str(uuid.uuid4())[:8]}"
 
 SCENARIOS = [
     # Auth (3)
@@ -33,24 +35,35 @@ SCENARIOS = [
     {"id": 19, "name": "No false positive", "method": "POST", "endpoint": "/api/chat", "data": {"message": "dying to see that movie"}, "expected": 200},
     # Health (1)
     {"id": 20, "name": "Health check", "method": "GET", "endpoint": "/api/health", "expected": 200},
+    # Alerts (2) - Relies on Scenario 17 creating an alert
+    {"id": 21, "name": "Get alert history", "method": "GET", "endpoint": "/api/alerts/history", "params": {"university_id": 1}, "expected": 200},
+    {"id": 22, "name": "Acknowledge alert", "method": "POST", "endpoint": "/api/alerts/<alert_id>/acknowledge", "data": {"counselor_id": "auto_test", "response_notes": "Validated", "action_taken": "check"}, "expected": 200},
 ]
 
 def run_validation():
     results = {"passed": 0, "failed": 0, "errors": []}
     
+    dynamic_context = {}
+
     for scenario in SCENARIOS:
         try:
+            # Substitute dynamic values in endpoint path
+            endpoint = scenario["endpoint"]
+            for key, value in dynamic_context.items():
+                if f"<{key}>" in endpoint:
+                    endpoint = endpoint.replace(f"<{key}>", str(value))
+            
             headers = {"X-Session-ID": SESSION_ID}
             
             if scenario["method"] == "GET":
                 response = requests.get(
-                    f"{BASE_URL}{scenario['endpoint']}",
+                    f"{BASE_URL}{endpoint}",
                     headers=headers,
                     params=scenario.get("params", {})
                 )
             else:
                 response = requests.post(
-                    f"{BASE_URL}{scenario['endpoint']}",
+                    f"{BASE_URL}{endpoint}",
                     json=scenario.get("data", {}),
                     headers=headers
                 )
@@ -58,6 +71,21 @@ def run_validation():
             if response.status_code == scenario["expected"]:
                 results["passed"] += 1
                 print(f"✅ {scenario['id']:2d}. {scenario['name']}")
+                
+                # Logic to capture dynamic ID from Alert History to correct the next test
+                if scenario["id"] == 21: # Get alert history
+                    try:
+                        data = response.json()
+                        if data.get("alerts") and len(data["alerts"]) > 0:
+                            # Capture the FIRST alert ID
+                            alert_id = data["alerts"][0]["id"]
+                            dynamic_context["alert_id"] = alert_id
+                            print(f"   ℹ️ Captured alert_id: {alert_id}")
+                        else:
+                            print("   ⚠️ No alerts found in history to capture ID from.")
+                    except:
+                        pass
+                        
             else:
                 results["failed"] += 1
                 results["errors"].append(f"Scenario {scenario['id']}: Expected {scenario['expected']}, got {response.status_code}")

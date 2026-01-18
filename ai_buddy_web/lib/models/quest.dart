@@ -1,221 +1,39 @@
-import 'package:flutter/material.dart';
-
-enum QuestStatus { locked, unlocked, inProgress, completed }
-
-enum QuestCategory { mindfulness, activity, social, learning, challenge }
-
 class Quest {
-  final String id;
+  final int id;
   final String title;
   final String description;
+  final String type; // 'task', 'tip', 'check_in', 'progress'
   final int xpReward;
-  final QuestCategory category;
-  final IconData icon;
-  final DateTime? completedAt;
-  final int progress;
-  final int target;
-  final QuestStatus status;
+  final int difficulty;
+  final String status; // 'available', 'completed'
+  final int target; // e.g. 10 minutes
+  final int progress; // current progress
 
   Quest({
     required this.id,
     required this.title,
     required this.description,
+    required this.type,
     required this.xpReward,
-    required this.category,
-    required this.icon,
-    this.completedAt,
+    required this.difficulty,
+    required this.status,
+    this.target = 1,
     this.progress = 0,
-    required this.target,
-    this.status = QuestStatus.locked,
   });
 
-  Quest copyWith({
-    int? progress,
-    QuestStatus? status,
-    DateTime? completedAt,
-    int? target, // Added copyWith support for target
-  }) {
-    return Quest(
-      id: id,
-      title: title,
-      description: description,
-      xpReward: xpReward,
-      category: category,
-      icon: icon,
-      progress: progress ?? this.progress,
-      target: target ?? this.target,
-      status: status ?? this.status,
-      completedAt: completedAt ?? this.completedAt,
-    );
-  }
-
   factory Quest.fromJson(Map<String, dynamic> json) {
-    // Map backend status to frontend enum
-    QuestStatus status = QuestStatus.unlocked;
-    final backendStatus = json['status']?.toString().toLowerCase();
-    if (backendStatus == 'completed') {
-      status = QuestStatus.completed;
-    } else if (backendStatus == 'in_progress') {
-      status = QuestStatus.inProgress;
-    } else if (backendStatus == 'locked') {
-      status = QuestStatus.locked;
-    }
-
-    // Map backend type to frontend category
-    QuestCategory category = QuestCategory.mindfulness;
-    final backendType = json['type']?.toString().toLowerCase();
-    switch (backendType) {
-      case 'activity':
-        category = QuestCategory.activity;
-        break;
-      case 'social':
-        category = QuestCategory.social;
-        break;
-      case 'learning':
-        category = QuestCategory.learning;
-        break;
-      case 'challenge':
-        category = QuestCategory.challenge;
-        break;
-      default:
-        category = QuestCategory.mindfulness;
-    }
-
     return Quest(
-      id: json['id']?.toString() ?? '',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      xpReward: json['xp_reward'] ?? 0,
-      category: category,
-      icon: getIconForCategory(category),
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      type: json['type'] ?? 'task',
+      xpReward: json['xp_reward'] ?? 10,
+      difficulty: json['difficulty'] ?? 1,
+      status: json['status'] ?? 'available',
+      target: json['target'] ?? 1,
       progress: json['progress'] ?? 0,
-      target: json['target'] ?? 1, // Default target 1 if missing
-      status: status,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'])
-          : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'xp_reward': xpReward,
-      'type': category.name,
-      'status': status.name,
-      'progress': progress,
-      'target': target,
-      'completed_at': completedAt?.toIso8601String(),
-    };
-  }
-
-  double get progressPercentage => (progress / target).clamp(0.0, 1.0);
-
-  bool get isCompleted => status == QuestStatus.completed;
-
-  bool get canStart =>
-      status == QuestStatus.unlocked || status == QuestStatus.inProgress;
-
-  String get categoryName {
-    switch (category) {
-      case QuestCategory.mindfulness:
-        return 'Mindfulness';
-      case QuestCategory.activity:
-        return 'Activity';
-      case QuestCategory.social:
-        return 'Social';
-      case QuestCategory.learning:
-        return 'Learning';
-      case QuestCategory.challenge:
-        return 'Challenge';
-    }
-  }
-
-  Color get categoryColor {
-    switch (category) {
-      case QuestCategory.mindfulness:
-        return Colors.blue;
-      case QuestCategory.activity:
-        return Colors.green;
-      case QuestCategory.social:
-        return Colors.purple;
-      case QuestCategory.learning:
-        return Colors.orange;
-      case QuestCategory.challenge:
-        return Colors.red;
-    }
-  }
-
-  static IconData getIconForCategory(QuestCategory category) {
-    switch (category) {
-      case QuestCategory.mindfulness:
-        return Icons.self_improvement;
-      case QuestCategory.activity:
-        return Icons.directions_run;
-      case QuestCategory.social:
-        return Icons.people;
-      case QuestCategory.learning:
-        return Icons.school;
-      case QuestCategory.challenge:
-        return Icons.emoji_events;
-    }
-  }
+  bool get isCompleted => status == 'completed';
 }
-
-// Sample quests for demonstration
-final List<Quest> defaultQuests = [
-  Quest(
-    id: 'mindfulness_1',
-    title: 'Morning Meditation',
-    description: 'Complete a 5-minute meditation session',
-    xpReward: 50,
-    category: QuestCategory.mindfulness,
-    icon: Icons.self_improvement,
-    target: 1,
-    status: QuestStatus.unlocked,
-  ),
-  Quest(
-    id: 'activity_1',
-    title: 'Take a Walk',
-    description: 'Go for a 10-minute walk outside',
-    xpReward: 30,
-    category: QuestCategory.activity,
-    icon: Icons.directions_walk,
-    target: 10, // minutes
-    progress: 3,
-    status: QuestStatus.inProgress,
-  ),
-  Quest(
-    id: 'social_1',
-    title: 'Connect with a Friend',
-    description: 'Reach out to someone you care about',
-    xpReward: 40,
-    category: QuestCategory.social,
-    icon: Icons.people,
-    target: 1,
-    status: QuestStatus.locked,
-  ),
-  Quest(
-    id: 'learning_1',
-    title: 'Learn About Mental Health',
-    description: 'Read an article about mental wellness',
-    xpReward: 25,
-    category: QuestCategory.learning,
-    icon: Icons.menu_book,
-    target: 1,
-    status: QuestStatus.unlocked,
-  ),
-  Quest(
-    id: 'challenge_1',
-    title: '7-Day Streak',
-    description: 'Check in for 7 days in a row',
-    xpReward: 100,
-    category: QuestCategory.challenge,
-    icon: Icons.emoji_events,
-    target: 7,
-    progress: 2,
-    status: QuestStatus.inProgress,
-  ),
-];

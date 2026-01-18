@@ -1,0 +1,18 @@
+{
+    "university_name": "Princeton University",
+    "decision_maker": {
+        "name": "Dr. Calvin Chin",
+        "role": "Director, CPS",
+        "email": "cps@princeton.edu"
+    },
+    "pain_points": [
+        "Eating clubs social pressure",
+        "The 'Orange Bubble'",
+        "Highest impact-to-student ratio expectations"
+    ],
+    "custom_pitch": "Princeton expects the best support systems. GentleQuest offers that premium, always-on layer of care.",
+    "outreach": {
+        "mascot": "Tigers",
+        "custom_intro": "I'm reaching out to Princeton because I've been following the discussions around the 'Orange Bubble' and the 24/7 nature of student life there—I built this to match that same level of commitment to student care."
+    }
+}

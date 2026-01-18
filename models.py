@@ -4,12 +4,13 @@ import uuid
 import os
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
+from sqlalchemy import text
 
 db = SQLAlchemy()
 
 
 class UserSession(db.Model):
-    __tablename__ = "user_sessions"
+    __tablename__ = "sessions"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -18,23 +19,80 @@ class UserSession(db.Model):
     risk_level = db.Column(db.String(20), default="low")
 
 
-class Message(db.Model):
-    __tablename__ = "messages"
+class University(db.Model):
+    """University profile and customization settings."""
+    __tablename__ = "universities"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    name = db.Column(db.String(200), nullable=False)
+    domain = db.Column(db.String(100))
+    caps_email = db.Column(db.String(255))
+    caps_phone = db.Column(db.String(50))
+    caps_hours = db.Column(db.String(200))
+    waitlist_weeks = db.Column(db.Integer)
+    enrollment = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Branding
+    logo_url = db.Column(db.String(500))
+    primary_color = db.Column(db.String(7))
+    secondary_color = db.Column(db.String(7))
+    welcome_message = db.Column(db.Text)
+
+    # Integration
+    sso_enabled = db.Column(db.Boolean, server_default=text('0'), default=False)
+    sso_provider = db.Column(db.String(50))
+    sso_config = db.Column(JSON().with_variant(JSONB, "postgresql"))
+    lms_integration = db.Column(db.String(50))
+    custom_domain = db.Column(db.String(100))
+    
+    # Outreach
+    outreach_status = db.Column(db.String(50), default="pending")  # pending, drafted, sent, replied
+    contact_email = db.Column(db.String(255))  # Specific contact derived from script
+
+    def __repr__(self):
+        return f"<University id={self.id} name={self.name}>"
+
+
+class UniversityCounselor(db.Model):
+    """Counselor contact points for university-specific alerts."""
+    __tablename__ = "university_counselors"
+
+    id = db.Column(db.Integer, primary_key=True)
+    university_id = db.Column(db.Integer, db.ForeignKey("universities.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(50))
+    role = db.Column(db.String(100))
+    alert_methods = db.Column(db.String(200), default="email")  # comma-separated: email,sms
+    is_active = db.Column(db.Boolean, server_default=text('1'), default=True)
+    receives_alerts = db.Column(db.Boolean, server_default=text('1'), default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    university = db.relationship("University", backref="counselors")
+
+    def __repr__(self):
+        return f"<UniversityCounselor id={self.id} name={self.name} uni={self.university_id}>"
+
+
+class Message(db.Model):
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
     content = db.Column(db.Text, nullable=False)
     is_user = db.Column(db.Boolean, default=False)  # True for user, False for AI
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     risk_level = db.Column(db.String(20), default="none")
     resources = db.Column(db.Text)  # JSON string for crisis resources
+    message_type = db.Column(db.String(50), default="text")
 
 
 class ConversationLog(db.Model):
     __tablename__ = "conversation_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
     user_message = db.Column(db.Text, nullable=False)
     ai_response = db.Column(db.Text, nullable=False)
     risk_level = db.Column(db.String(20), default="low")
@@ -43,12 +101,15 @@ class ConversationLog(db.Model):
 
 
 class CrisisEvent(db.Model):
-    __tablename__ = "crisis_events"
+    __tablename__ = "crisis_detections"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    message = db.Column(db.Text)
+    risk_level = db.Column(db.String(50))
+    risk_score = db.Column(db.Float, default=0.0)
+    keywords = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    risk_level = db.Column(db.String(20))
     intervention_taken = db.Column(db.String(100))
     escalated = db.Column(db.Boolean, default=False)
 
@@ -57,7 +118,7 @@ class SelfAssessmentEntry(db.Model):
     __tablename__ = "self_assessment_entries"
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(
-        db.String(36), db.ForeignKey("user_sessions.id"), nullable=False
+        db.String(36), db.ForeignKey("sessions.id"), nullable=False
     )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     assessment_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
@@ -70,7 +131,7 @@ class MoodEntry(db.Model):
     __tablename__ = "mood_entries"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
     mood_level = db.Column(db.Integer, nullable=False)  # 1-5 scale
     note = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -83,13 +144,36 @@ class AnalyticsEvent(db.Model):
     __tablename__ = "analytics_events"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
     event_type = db.Column(db.String(50), nullable=False)
-    event_data = db.Column(JSON().with_variant(JSONB, "postgresql"))
+    event_metadata = db.Column('metadata', JSON().with_variant(JSONB, "postgresql"))
+    request_id = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<AnalyticsEvent id={self.id} type={self.event_type}>"
+
+
+class InterventionOutcome(db.Model):
+    __tablename__ = "intervention_outcomes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), db.ForeignKey("sessions.id"), nullable=False, index=True)
+    intervention_id = db.Column(db.String(100), nullable=False)
+    issue = db.Column(db.String(50), index=True)
+    offer_stage = db.Column(db.Integer, default=1)
+    outcome = db.Column(db.String(20), default='offered')
+    completed = db.Column(db.Boolean, default=False, nullable=False)
+    effectiveness_rating = db.Column(db.Float)
+    feedback = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    exercise_type = db.Column(db.String(50), index=True)
+    time_spent_seconds = db.Column(db.Integer)
+    mood_before = db.Column(db.Integer)
+    mood_after = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<InterventionOutcome id={self.id} session={self.session_id}>"
 
 
 class User(db.Model):
@@ -98,7 +182,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email}>"
@@ -108,28 +192,32 @@ class CommunityPost(db.Model):
     __tablename__ = "community_posts"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
-    content = db.Column(db.Text, nullable=False)
-    is_anonymous = db.Column(db.Boolean, default=True)
+    topic = db.Column(db.String(64))
+    body_redacted = db.Column(db.Text, nullable=False)
+    is_curated = db.Column(db.Boolean, default=True)
+    is_hidden = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    likes = db.Column(db.Integer, default=0)
+    reactions_relate = db.Column(db.Integer, default=0)
+    reactions_helped = db.Column(db.Integer, default=0)
+    reactions_strength = db.Column(db.Integer, default=0)
+    author_hash = db.Column(db.String(64))
 
     def __repr__(self):
         return f"<CommunityPost id={self.id}>"
-
-
-class CommunityComment(db.Model):
-    __tablename__ = "community_comments"
-
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("community_posts.id"))
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
-    content = db.Column(db.Text, nullable=False)
-    is_anonymous = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<CommunityComment id={self.id}>"
+#
+#
+# class CommunityComment(db.Model):
+#     __tablename__ = "community_comments"
+#
+#     id = db.Column(db.Integer, primary_key=True)
+#     post_id = db.Column(db.Integer, db.ForeignKey("community_posts.id"))
+#     session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+#     content = db.Column(db.Text, nullable=False)
+#     is_anonymous = db.Column(db.Boolean, default=True)
+#     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+#
+#     def __repr__(self):
+#         return f"<CommunityComment id={self.id}>"
 
 
 class ClinicalAssessment(db.Model):
@@ -137,7 +225,7 @@ class ClinicalAssessment(db.Model):
     __tablename__ = "clinical_assessments"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
     assessment_type = db.Column(db.String(20), nullable=False)  # 'phq9' or 'gad7'
     responses = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)  # List of integer responses
     total_score = db.Column(db.Integer, nullable=False)
@@ -160,6 +248,7 @@ class Quest(db.Model):
     quest_type = db.Column(db.String(20), nullable=False)  # task, tip, check_in, progress
     xp_reward = db.Column(db.Integer, default=10)
     difficulty = db.Column(db.Integer, default=1)
+    target = db.Column(db.Integer, default=1)  # Target value for progress (e.g. 10 minutes)
     week_number = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -173,7 +262,7 @@ class QuestProgress(db.Model):
     __tablename__ = "quest_progress"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
     quest_id = db.Column(db.Integer, db.ForeignKey("quests.id"), nullable=False)
     status = db.Column(db.String(20), default="available")  # available, in_progress, completed, expired
     started_at = db.Column(db.DateTime)
@@ -190,7 +279,7 @@ class UserProfile(db.Model):
     __tablename__ = "user_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), unique=True, nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), unique=True, nullable=False)
     xp = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     streak_days = db.Column(db.Integer, default=0)
@@ -213,10 +302,12 @@ class Resource(db.Model):
     url = db.Column(db.String(500))
     category = db.Column(db.String(50), nullable=False)  # crisis, self_help, university, external
     country = db.Column(db.String(10))
-    university_id = db.Column(db.Integer)
+    university_id = db.Column(db.Integer, db.ForeignKey("universities.id"), nullable=True)
     tags = db.Column(db.String(500))
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, server_default=text('1'), default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    university = db.relationship("University", backref="resources")
 
     def __repr__(self):
         return f"<Resource id={self.id} title={self.title}>"
@@ -227,9 +318,76 @@ class UserResourceInteraction(db.Model):
     __tablename__ = "user_resource_interactions"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
     resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<UserResourceInteraction session={self.session_id} resource={self.resource_id}>"
+
+
+class CounselorAlert(db.Model):
+    """Alerts sent to university counselors regarding student crisis messages."""
+    __tablename__ = "counselor_alerts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    university_id = db.Column(db.Integer, db.ForeignKey("universities.id"))
+    severity = db.Column(db.String(20), nullable=False)
+    trigger_message = db.Column(db.Text, nullable=False)
+    conversation_excerpt = db.Column(db.Text)
+    risk_keywords = db.Column(db.String(500))
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    acknowledged_at = db.Column(db.DateTime)
+    acknowledged_by = db.Column(db.String(255))
+    email_sent = db.Column(db.Boolean, server_default=text('0'), default=False)
+    sms_sent = db.Column(db.Boolean, server_default=text('0'), default=False)
+
+    def __repr__(self):
+        return f"<CounselorAlert id={self.id} severity={self.severity} session={self.session_id}>"
+
+
+class AlertAcknowledgment(db.Model):
+    """History of counselor actions taken on a specific alert."""
+    __tablename__ = "alert_acknowledgments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    alert_id = db.Column(db.Integer, db.ForeignKey("counselor_alerts.id"))
+    counselor_id = db.Column(db.String(255), nullable=False)
+    response_notes = db.Column(db.Text)
+    action_taken = db.Column(db.String(500))
+    responded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    alert = db.relationship("CounselorAlert", backref="acknowledgments")
+
+    def __repr__(self):
+        return f"<AlertAcknowledgment alert_id={self.alert_id} by={self.counselor_id}>"
+
+
+class BrainState(db.Model):
+    """Singleton model for database-backed brain state."""
+    __tablename__ = "brain_state"
+
+    id = db.Column(db.Integer, primary_key=True, default=1)
+    state_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<BrainState last_updated={self.last_updated}>"
+
+
+class BrainEvent(db.Model):
+    """Event log for brain activities."""
+    __tablename__ = "brain_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String(36), nullable=False)
+    event_type = db.Column(db.String(100), nullable=False)
+    emitter = db.Column(db.String(50), nullable=False)
+    severity = db.Column(db.String(20), default="NOTABLE")
+    payload = db.Column(JSON().with_variant(JSONB, "postgresql"))
+    event_metadata = db.Column('metadata', JSON().with_variant(JSONB, "postgresql"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<BrainEvent type={self.event_type} emitter={self.emitter}>"

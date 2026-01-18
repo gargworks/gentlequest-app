@@ -7,12 +7,19 @@
     "email": "caps@umich.edu",
     "phone": "+17345551234",
     "hours": "Mon-Fri 8am-5pm, 24/7 crisis line",
-    "director": "Dr. Jane Smith"
+    "director": "Dr. Todd Sevig"
+  },
+  "outreach": {
+    "mascot": "Wolverines"
   },
   "waitlist": {
     "average_weeks": 8,
     "current_count": 2000,
-    "peak_months": ["January", "September", "November"]
+    "peak_months": [
+      "January",
+      "September",
+      "November"
+    ]
   },
   "branding": {
     "logo_url": "https://brand.umich.edu/assets/brand/logos/logo.png",
@@ -45,13 +52,18 @@
       "email": "jsmith@umich.edu",
       "phone": "+17345551235",
       "role": "Director",
-      "alert_methods": ["email", "sms"]
+      "alert_methods": [
+        "email",
+        "sms"
+      ]
     },
     {
       "name": "Dr. John Doe",
       "email": "jdoe@umich.edu",
       "role": "Crisis Counselor",
-      "alert_methods": ["email"]
+      "alert_methods": [
+        "email"
+      ]
     }
   ],
   "pilot_config": {

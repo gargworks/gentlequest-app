@@ -15,7 +15,7 @@ sentry-sdk[flask]==1.45.0
 # Enterprise features
 cryptography==41.0.7
 stripe==7.8.0
-numpy==1.26.3
+numpy
 aioredis==2.0.1
 aiokafka==0.10.0
 asyncio==3.4.3

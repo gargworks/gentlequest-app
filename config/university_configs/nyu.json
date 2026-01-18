@@ -1,0 +1,54 @@
+{
+    "university_id": 3,
+    "name": "New York University",
+    "domain": "nyu.edu",
+    "enrollment": 52000,
+    "caps_contact": {
+        "email": "wellness.exchange@nyu.edu",
+        "phone": "+12124439999",
+        "hours": "24/7 Wellness Exchange",
+        "director": "Dr. Wong"
+    },
+    "outreach": {
+        "mascot": "Violets"
+    },
+    "waitlist": {
+        "average_weeks": 6,
+        "current_count": 1500,
+        "peak_months": [
+            "October",
+            "February",
+            "April"
+        ]
+    },
+    "branding": {
+        "logo_url": "https://www.nyu.edu/branding/logo.png",
+        "primary_color": "#57068c",
+        "secondary_color": "#ffffff",
+        "app_name": "NYU Wellness Exchange Support"
+    },
+    "crisis_resources": [
+        {
+            "name": "NYU Wellness Exchange",
+            "phone": "+12124439999",
+            "available": "24/7",
+            "type": "crisis"
+        },
+        {
+            "name": "NYU Counseling and Wellness",
+            "url": "https://www.nyu.edu/students/health-and-wellness/counseling-services.html",
+            "hours": "Mon-Fri 9am-9pm",
+            "type": "university"
+        }
+    ],
+    "counselors": [
+        {
+            "name": "Dr. Wellness Lead",
+            "email": "lead@nyu.edu",
+            "role": "Director",
+            "alert_methods": [
+                "email"
+            ]
+        }
+    ]
+}

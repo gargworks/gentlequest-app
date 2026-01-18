@@ -12,7 +12,7 @@ import json
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from sqlalchemy import text
-from models import db
+from models import db, BrainState, BrainEvent
 
 
 # Default state structure
@@ -40,45 +40,9 @@ DEFAULT_STATE = {
 
 def init_brain_tables() -> bool:
     """
-    Initialize brain state tables. Call during app startup.
-    Returns True if successful.
+    Deprecated: Brain tables are now managed via ORM and db.create_all().
     """
-    try:
-        # Create brain_state table (singleton row pattern)
-        db.session.execute(text("""
-            CREATE TABLE IF NOT EXISTS brain_state (
-                id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-                state_data JSONB NOT NULL,
-                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
-        
-        # Create brain_events table for event log
-        db.session.execute(text("""
-            CREATE TABLE IF NOT EXISTS brain_events (
-                id SERIAL PRIMARY KEY,
-                event_id VARCHAR(36) NOT NULL,
-                event_type VARCHAR(100) NOT NULL,
-                emitter VARCHAR(50) NOT NULL,
-                severity VARCHAR(20) DEFAULT 'NOTABLE',
-                payload JSONB,
-                metadata JSONB,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
-        
-        # Create index for event queries
-        db.session.execute(text("""
-            CREATE INDEX IF NOT EXISTS brain_events_type_idx ON brain_events (event_type)
-        """))
-        
-        db.session.commit()
-        return True
-        
-    except Exception as e:
-        print(f"Brain tables init error: {e}")
-        db.session.rollback()
-        return False
+    return True
 
 
 def get_brain_state() -> Dict[str, Any]:
@@ -87,12 +51,10 @@ def get_brain_state() -> Dict[str, Any]:
     Returns default state if not initialized.
     """
     try:
-        result = db.session.execute(text(
-            "SELECT state_data FROM brain_state WHERE id = 1"
-        )).fetchone()
+        state = BrainState.query.filter_by(id=1).first()
         
-        if result and result[0]:
-            return result[0]
+        if state and state.state_data:
+            return state.state_data
         
         # Initialize with defaults if empty
         _init_default_state()
@@ -100,21 +62,14 @@ def get_brain_state() -> Dict[str, Any]:
         
     except Exception as e:
         print(f"Get brain state error: {e}")
-        db.session.rollback()
         return DEFAULT_STATE.copy()
 
 
 def _init_default_state():
     """Insert default state if table is empty."""
     try:
-        db.session.execute(
-            text("""
-                INSERT INTO brain_state (id, state_data, last_updated)
-                VALUES (1, :state, CURRENT_TIMESTAMP)
-                ON CONFLICT (id) DO NOTHING
-            """),
-            {"state": json.dumps(DEFAULT_STATE)}
-        )
+        state = BrainState(id=1, state_data=DEFAULT_STATE.copy())
+        db.session.add(state)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -123,15 +78,19 @@ def _init_default_state():
 def set_brain_state(updates: Dict[str, Any]) -> bool:
     """
     Update brain state with new values (shallow merge).
-    
-    Args:
-        updates: Dictionary of fields to update
-        
-    Returns:
-        True if successful
     """
     try:
-        current = get_brain_state()
+        state = BrainState.query.filter_by(id=1).first()
+        
+        if not state:
+            state = BrainState(id=1, state_data=DEFAULT_STATE.copy())
+            db.session.add(state)
+            # Must commit to ensure it exists for subsequent queries if necessary
+            db.session.commit() 
+            state = BrainState.query.get(1)
+        
+        # Create a deep copy to ensure SQLAlchemy detects the change
+        current = json.loads(json.dumps(state.state_data)) if state.state_data else DEFAULT_STATE.copy()
         
         # Shallow merge updates
         for key, value in updates.items():
@@ -140,16 +99,9 @@ def set_brain_state(updates: Dict[str, Any]) -> bool:
             else:
                 current[key] = value
         
-        db.session.execute(
-            text("""
-                INSERT INTO brain_state (id, state_data, last_updated)
-                VALUES (1, :state, CURRENT_TIMESTAMP)
-                ON CONFLICT (id) DO UPDATE SET 
-                    state_data = :state,
-                    last_updated = CURRENT_TIMESTAMP
-            """),
-            {"state": json.dumps(current)}
-        )
+        state.state_data = current
+        state.last_updated = datetime.utcnow()
+        
         db.session.commit()
         return True
         
@@ -168,36 +120,20 @@ def emit_brain_event(
 ) -> str:
     """
     Emit an event to the brain event log.
-    
-    Args:
-        emitter: Agent or source name
-        event_type: Type of event
-        payload: Event data
-        severity: ROUTINE, NOTABLE, or CRITICAL
-        metadata: Optional additional metadata
-        
-    Returns:
-        Event ID
     """
     import uuid
     event_id = str(uuid.uuid4())[:8]
     
     try:
-        db.session.execute(
-            text("""
-                INSERT INTO brain_events 
-                (event_id, event_type, emitter, severity, payload, metadata)
-                VALUES (:id, :type, :emitter, :severity, :payload, :metadata)
-            """),
-            {
-                "id": event_id,
-                "type": event_type,
-                "emitter": emitter,
-                "severity": severity,
-                "payload": json.dumps(payload) if payload else None,
-                "metadata": json.dumps(metadata) if metadata else None
-            }
+        event = BrainEvent(
+            event_id=event_id,
+            event_type=event_type,
+            emitter=emitter,
+            severity=severity,
+            payload=payload,
+            event_metadata=metadata
         )
+        db.session.add(event)
         
         # Increment event counter
         _increment_event_counter()
@@ -208,7 +144,7 @@ def emit_brain_event(
     except Exception as e:
         print(f"Emit brain event error: {e}")
         db.session.rollback()
-        return event_id  # Return ID even on failure
+        return event_id
 
 
 def _increment_event_counter():
@@ -225,34 +161,20 @@ def _increment_event_counter():
 def get_recent_brain_events(count: int = 10) -> List[Dict[str, Any]]:
     """
     Get most recent events from the log.
-    
-    Args:
-        count: Number of events to return
-        
-    Returns:
-        List of event dictionaries
     """
     try:
-        results = db.session.execute(
-            text("""
-                SELECT event_id, event_type, emitter, severity, payload, metadata, created_at
-                FROM brain_events
-                ORDER BY created_at DESC
-                LIMIT :count
-            """),
-            {"count": count}
-        ).fetchall()
+        results = BrainEvent.query.order_by(BrainEvent.created_at.desc()).limit(count).all()
         
         events = []
-        for row in results:
+        for event in results:
             events.append({
-                "event_id": row[0],
-                "event_type": row[1],
-                "emitter": row[2],
-                "severity": row[3],
-                "payload": row[4] if row[4] else {},
-                "metadata": row[5] if row[5] else {},
-                "timestamp": row[6].isoformat() if row[6] else None
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "emitter": event.emitter,
+                "severity": event.severity,
+                "payload": event.payload or {},
+                "metadata": event.event_metadata or {},
+                "timestamp": event.created_at.isoformat() if event.created_at else None
             })
         
         return events

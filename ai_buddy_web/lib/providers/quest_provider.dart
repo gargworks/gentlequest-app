@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 import '../models/quest.dart';
+import '../services/api_service.dart';
 
 class QuestProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();

@@ -8,7 +8,8 @@ from typing import Dict, List, Optional, Any
 from sqlalchemy import text
 from flask import current_app
 
-from models import db
+from models import db, InterventionOutcome
+from sqlalchemy import func, case, and_
 
 
 # ============================================================================
@@ -33,23 +34,18 @@ def get_intervention_stats(days: int = 30) -> Dict[str, Any]:
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         
-        result = db.session.execute(
-            text("""
-                SELECT 
-                    COUNT(*) as total,
-                    COUNT(CASE WHEN outcome = 'started' THEN 1 END) as started,
-                    COUNT(CASE WHEN outcome = 'completed' THEN 1 END) as completed,
-                    COUNT(CASE WHEN outcome = 'skipped' THEN 1 END) as skipped,
-                    AVG(CASE 
-                        WHEN mood_after IS NOT NULL AND mood_before IS NOT NULL 
-                        THEN mood_after - mood_before 
-                    END) as avg_mood_improvement,
-                    AVG(time_spent_seconds) as avg_time_spent
-                FROM intervention_outcomes
-                WHERE timestamp >= :cutoff_date
-            """),
-            {"cutoff_date": cutoff_date}
-        ).fetchone()
+        result = db.session.query(
+            func.count(InterventionOutcome.id).label('total'),
+            func.count(case((InterventionOutcome.outcome == 'started', 1), else_=None)).label('started'),
+            func.count(case((InterventionOutcome.outcome == 'completed', 1), else_=None)).label('completed'),
+            func.count(case((InterventionOutcome.outcome == 'skipped', 1), else_=None)).label('skipped'),
+            func.avg(case(
+                (and_(InterventionOutcome.mood_after != None, InterventionOutcome.mood_before != None), 
+                 InterventionOutcome.mood_after - InterventionOutcome.mood_before),
+                else_=None
+            )).label('avg_mood_improvement'),
+            func.avg(InterventionOutcome.time_spent_seconds).label('avg_time_spent')
+        ).filter(InterventionOutcome.timestamp >= cutoff_date).fetchone()
         
         total = result.total or 0
         completed = result.completed or 0
@@ -98,26 +94,21 @@ def get_completion_rates_by_type(days: int = 30) -> Dict[str, Dict[str, Any]]:
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         
-        results = db.session.execute(
-            text("""
-                SELECT 
-                    exercise_type,
-                    COUNT(*) as total,
-                    COUNT(CASE WHEN outcome = 'completed' THEN 1 END) as completed,
-                    COUNT(CASE WHEN outcome = 'skipped' THEN 1 END) as skipped,
-                    AVG(CASE 
-                        WHEN mood_after IS NOT NULL AND mood_before IS NOT NULL 
-                        THEN mood_after - mood_before 
-                    END) as avg_mood_improvement,
-                    AVG(time_spent_seconds) as avg_time_spent
-                FROM intervention_outcomes
-                WHERE timestamp >= :cutoff_date
-                  AND exercise_type IS NOT NULL
-                GROUP BY exercise_type
-                ORDER BY total DESC
-            """),
-            {"cutoff_date": cutoff_date}
-        ).fetchall()
+        results = db.session.query(
+            InterventionOutcome.exercise_type,
+            func.count(InterventionOutcome.id).label('total'),
+            func.count(case((InterventionOutcome.outcome == 'completed', 1), else_=None)).label('completed'),
+            func.count(case((InterventionOutcome.outcome == 'skipped', 1), else_=None)).label('skipped'),
+            func.avg(case(
+                (and_(InterventionOutcome.mood_after != None, InterventionOutcome.mood_before != None), 
+                 InterventionOutcome.mood_after - InterventionOutcome.mood_before),
+                else_=None
+            )).label('avg_mood_improvement'),
+            func.avg(InterventionOutcome.time_spent_seconds).label('avg_time_spent')
+        ).filter(InterventionOutcome.timestamp >= cutoff_date)\
+         .filter(InterventionOutcome.exercise_type != None)\
+         .group_by(InterventionOutcome.exercise_type)\
+         .order_by(func.count(InterventionOutcome.id).desc()).all()
         
         stats = {}
         for row in results:
@@ -154,21 +145,15 @@ def get_mood_improvement_by_type(days: int = 30) -> Dict[str, float]:
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         
-        results = db.session.execute(
-            text("""
-                SELECT 
-                    exercise_type,
-                    AVG(mood_after - mood_before) as avg_improvement
-                FROM intervention_outcomes
-                WHERE timestamp >= :cutoff_date
-                  AND exercise_type IS NOT NULL
-                  AND mood_before IS NOT NULL
-                  AND mood_after IS NOT NULL
-                  AND outcome = 'completed'
-                GROUP BY exercise_type
-            """),
-            {"cutoff_date": cutoff_date}
-        ).fetchall()
+        results = db.session.query(
+            InterventionOutcome.exercise_type,
+            func.avg(InterventionOutcome.mood_after - InterventionOutcome.mood_before).label('avg_improvement')
+        ).filter(InterventionOutcome.timestamp >= cutoff_date)\
+         .filter(InterventionOutcome.exercise_type != None)\
+         .filter(InterventionOutcome.mood_before != None)\
+         .filter(InterventionOutcome.mood_after != None)\
+         .filter(InterventionOutcome.outcome == 'completed')\
+         .group_by(InterventionOutcome.exercise_type).all()
         
         return {
             row.exercise_type: float(row.avg_improvement or 0)
@@ -201,42 +186,33 @@ def get_user_engagement_metrics(session_id: Optional[str] = None, days: int = 30
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         
-        # Build query based on whether we're filtering by session
-        if session_id:
-            where_clause = "WHERE session_id = :session_id AND timestamp >= :cutoff_date"
-            params = {"session_id": session_id, "cutoff_date": cutoff_date}
-        else:
-            where_clause = "WHERE timestamp >= :cutoff_date"
-            params = {"cutoff_date": cutoff_date}
+        query = db.session.query(
+            func.count(InterventionOutcome.id).label('total'),
+            func.count(case((InterventionOutcome.outcome == 'completed', 1), else_=None)).label('completed'),
+            func.count(case((InterventionOutcome.outcome == 'skipped', 1), else_=None)).label('skipped'),
+            func.avg(InterventionOutcome.time_spent_seconds).label('avg_time'),
+            func.max(InterventionOutcome.mood_after - InterventionOutcome.mood_before).label('best_improvement')
+        ).filter(InterventionOutcome.timestamp >= cutoff_date)
         
-        result = db.session.execute(
-            text(f"""
-                SELECT 
-                    COUNT(*) as total,
-                    COUNT(CASE WHEN outcome = 'completed' THEN 1 END) as completed,
-                    COUNT(CASE WHEN outcome = 'skipped' THEN 1 END) as skipped,
-                    AVG(time_spent_seconds) as avg_time,
-                    MAX(mood_after - mood_before) as best_improvement
-                FROM intervention_outcomes
-                {where_clause}
-            """),
-            params
-        ).fetchone()
+        if session_id:
+            query = query.filter(InterventionOutcome.session_id == session_id)
+        
+        result = query.fetchone()
         
         # Get favorite intervention type
-        favorite_result = db.session.execute(
-            text(f"""
-                SELECT exercise_type, COUNT(*) as count
-                FROM intervention_outcomes
-                {where_clause}
-                  AND exercise_type IS NOT NULL
-                  AND outcome = 'completed'
-                GROUP BY exercise_type
-                ORDER BY count DESC
-                LIMIT 1
-            """),
-            params
-        ).fetchone()
+        fav_query = db.session.query(
+            InterventionOutcome.exercise_type,
+            func.count(InterventionOutcome.id).label('count')
+        ).filter(InterventionOutcome.timestamp >= cutoff_date)\
+         .filter(InterventionOutcome.exercise_type != None)\
+         .filter(InterventionOutcome.outcome == 'completed')
+        
+        if session_id:
+            fav_query = fav_query.filter(InterventionOutcome.session_id == session_id)
+            
+        favorite_result = fav_query.group_by(InterventionOutcome.exercise_type)\
+            .order_by(func.count(InterventionOutcome.id).desc())\
+            .first()
         
         return {
             'total_interventions': result.total or 0,
@@ -306,31 +282,25 @@ def get_best_intervention_for_user(session_id: str, issue: str = None) -> Option
         'breathing' | 'grounding' | 'journaling' | None
     """
     try:
-        # Get user's intervention history
-        query = """
-            SELECT 
-                exercise_type,
-                COUNT(CASE WHEN outcome = 'completed' THEN 1 END) as completed,
-                COUNT(*) as total,
-                AVG(CASE 
-                    WHEN mood_after IS NOT NULL AND mood_before IS NOT NULL 
-                    THEN mood_after - mood_before 
-                END) as avg_mood_improvement,
-                AVG(time_spent_seconds) as avg_time_spent
-            FROM intervention_outcomes
-            WHERE session_id = :session_id
-              AND exercise_type IS NOT NULL
-        """
-        
-        params = {"session_id": session_id}
+        # Get user's intervention history via ORM
+        base_query = db.session.query(
+            InterventionOutcome.exercise_type,
+            func.count(case((InterventionOutcome.outcome == 'completed', 1), else_=None)).label('completed'),
+            func.count(InterventionOutcome.id).label('total'),
+            func.avg(case(
+                (and_(InterventionOutcome.mood_after != None, InterventionOutcome.mood_before != None), 
+                 InterventionOutcome.mood_after - InterventionOutcome.mood_before),
+                else_=None
+            )).label('avg_mood_improvement'),
+            func.avg(InterventionOutcome.time_spent_seconds).label('avg_time_spent')
+        ).filter(InterventionOutcome.session_id == session_id)\
+         .filter(InterventionOutcome.exercise_type != None)
         
         if issue:
-            query += " AND issue = :issue"
-            params["issue"] = issue
+            base_query = base_query.filter(InterventionOutcome.issue == issue)
         
-        query += " GROUP BY exercise_type HAVING COUNT(*) >= 2"  # At least 2 tries
-        
-        results = db.session.execute(text(query), params).fetchall()
+        results = base_query.group_by(InterventionOutcome.exercise_type)\
+            .having(func.count(InterventionOutcome.id) >= 2).all()
         
         if not results:
             return None  # Not enough data, use default variety logic
