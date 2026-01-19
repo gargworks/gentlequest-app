@@ -33,5 +33,5 @@ nest_asyncio
 psycopg2-binary
 
 # Local Packages
-mcp-server-nucleus
+# mcp-server-nucleus (Imported via sys.path in app.py)
 
