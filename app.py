@@ -3679,11 +3679,16 @@ def run_auto_migrations(app):
     """Automatically add missing columns to existing tables for Agentic Wellness features."""
     migration_statements = [
         "ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS risk_level VARCHAR(20) DEFAULT 'none'",
+        "ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS resources TEXT",
+        "ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(50) DEFAULT 'text'",
         "ALTER TABLE quests ADD COLUMN IF NOT EXISTS target INTEGER DEFAULT 1",
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(50)",
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER",
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_before INTEGER",
-        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER"
+        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER",
+        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1",
+        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS effectiveness_rating FLOAT",
+        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS feedback TEXT"
     ]
     
     try:
