@@ -3675,12 +3675,42 @@ def _register_additional_routes(app: Flask) -> None:
                 "message": str(e)
             }), 200  # Return 200 even on error - this is a status check
 
+    def run_auto_migrations():
+        """Automatically add missing columns to existing tables for Agentic Wellness features."""
+        migration_statements = [
+            "ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS risk_level VARCHAR(20) DEFAULT 'none'",
+            "ALTER TABLE quests ADD COLUMN IF NOT EXISTS target INTEGER DEFAULT 1",
+            "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(50)",
+            "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER",
+            "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_before INTEGER",
+            "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER"
+        ]
+        
+        try:
+            with app.app_context():
+                for statement in migration_statements:
+                    try:
+                        db.session.execute(sql_text(statement))
+                        db.session.commit()
+                        app.logger.info(f"Migration successful: {statement}")
+                    except Exception as e:
+                        db.session.rollback()
+                        if "already exists" in str(e).lower() or "duplicate column" in str(e).lower():
+                            app.logger.info(f"Migration column already exists (ignored): {statement}")
+                        else:
+                            app.logger.warning(f"Migration error for '{statement}': {e}")
+        except Exception as e:
+            app.logger.error(f"Failed to initialize auto-migrations: {e}")
+
 # Create the application instance
 print("DEBUG: calling create_app()")
 app = create_app()
 print("DEBUG: app instance created successfully")
 
 if __name__ == "__main__":
+    # Run auto-migrations first
+    run_auto_migrations()
+    
     with app.app_context():
         try:
             db.create_all()
