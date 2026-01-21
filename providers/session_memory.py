@@ -103,49 +103,45 @@ def get_intervention_variety(session_id: str, issue: str) -> Dict[str, Any]:
             'previous_interventions': [...]
         }
     """
+    # Define issue buckets for variety tracking
+    WELLNESS_BUCKET = ["anxious", "anxiety", "nervous", "worried", "panic", "overwhelmed", "stressed", "stress", "pressure"]
+    MOOD_BUCKET = ["sad", "depressed", "down", "lonely", "hopeless"]
+    
     try:
-        # Get previous interventions for this specific issue via ORM
-        results = InterventionOutcome.query.filter_by(session_id=session_id, issue=issue)\
-            .order_by(InterventionOutcome.timestamp.desc())\
-            .all()
+        import logging
+        # Determine current category
+        issue_lower = (issue or "wellness").lower()
+        category_issues = [issue_lower]
+        if issue_lower in WELLNESS_BUCKET:
+            category_issues = WELLNESS_BUCKET
+        elif issue_lower in MOOD_BUCKET:
+            category_issues = MOOD_BUCKET
+
+        # Get all previous interventions in this category for this session
+        results = db.session.query(InterventionOutcome).filter(
+            InterventionOutcome.session_id == session_id,
+            InterventionOutcome.issue.in_(category_issues)
+        ).order_by(InterventionOutcome.timestamp.desc()).all()
         
         previous = [{"id": r.intervention_id, "stage": r.offer_stage, "outcome": r.outcome} for r in results]
+        
+        # Use total count in category for variety stage
         count = len(previous)
         
-        # Determine next offer stage
+        # Determine next offer stage (1-4)
         if count == 0:
-            return {
-                "offer_stage": 1,
-                "intervention_type": "breathing",
-                "previous_interventions": [],
-            }
+            return {"offer_stage": 1, "intervention_type": "breathing", "previous_interventions": []}
         elif count == 1:
-            return {
-                "offer_stage": 2,
-                "intervention_type": "grounding",
-                "previous_interventions": previous,
-            }
+            return {"offer_stage": 2, "intervention_type": "grounding", "previous_interventions": previous}
         elif count == 2:
-            return {
-                "offer_stage": 3,
-                "intervention_type": "journaling",
-                "previous_interventions": previous,
-            }
+            return {"offer_stage": 3, "intervention_type": "journaling", "previous_interventions": previous}
         else:
-            return {
-                "offer_stage": 4,
-                "intervention_type": "talk",
-                "previous_interventions": previous,
-            }
+            return {"offer_stage": 4, "intervention_type": "talk", "previous_interventions": previous}
             
     except Exception as e:
-        current_app.logger.warning(f"get_intervention_variety error: {e}")
-        # Fallback to stage 1
-        return {
-            "offer_stage": 1,
-            "intervention_type": "breathing",
-            "previous_interventions": [],
-        }
+        import logging
+        logging.error(f"🚨 get_intervention_variety error: {e}")
+        return {"offer_stage": 1, "intervention_type": "breathing", "previous_interventions": []}
 
 
 def update_intervention_outcome(

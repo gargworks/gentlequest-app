@@ -5,6 +5,11 @@ Optimized for single codebase usage across development, Docker, and Render produ
 
 import os
 print("DEBUG: app.py start imports")
+from dotenv import load_dotenv
+
+# Load environment variables explicitly from file location (Fix for missing API keys)
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
 import socket
 import re
 import logging
@@ -37,10 +42,8 @@ from flask_session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from sqlalchemy import text as sql_text
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+
 
 # Import after environment setup
 from models import db, Message, ConversationLog, SelfAssessmentEntry, CrisisEvent, MoodEntry, UserSession, AnalyticsEvent
@@ -1216,7 +1219,61 @@ def _register_routes(app: Flask) -> None:
             from providers.clinical_assessments import save_assessment_result
             new_id = save_assessment_result(session_id, result)
             
+            # AUTO-COMPLETE QUEST (Gamification Hook)
+            try:
+                from providers.quest_engine import QuestEngine
+                QuestEngine.complete_quest_for_assessment(session_id, assessment_type)
+            except Exception as qe:
+                app.logger.error(f"Failed to auto-complete quest: {qe}")
+
+            
             result["id"] = new_id
+
+            # 4. Trigger Alert if High Severity (Crisis Watchdog Integration)
+            severity = result.get("severity", "minimal")
+            requires_follow_up = result.get("requires_follow_up", False)
+            
+            # Map clinical severity to system risk levels
+            risk_level = "low"
+            risk_score = 0.0
+            should_alert = False
+            trigger_reason = f"Clinical Assessment: {assessment_type.upper()} Result"
+            
+            if assessment_type == "phq9":
+                if requires_follow_up: # Suicidality logic (Q9 > 0)
+                    risk_level = "crisis"
+                    risk_score = 1.0
+                    should_alert = True
+                    trigger_reason += f" - Suicide Ideation Detected (Q9)"
+                elif severity in ["severe", "moderately_severe"]:
+                    risk_level = "high"
+                    risk_score = 0.8
+                    should_alert = True
+                    trigger_reason += f" - {severity.replace('_', ' ').title()}"
+                    
+            elif assessment_type == "gad7":
+                if severity == "severe":
+                    risk_level = "high"  # GAD-7 Severe is significant but generally not immediate life threat like PHQ-9 Q9
+                    risk_score = 0.7
+                    should_alert = True
+                    trigger_reason += f" - Severe Anxiety"
+
+            if should_alert:
+                try:
+                    alert_id = AlertManager.create_alert(
+                        session_id=session_id,
+                        trigger_message=f"{trigger_reason}. Score: {result.get('total_score')}.",
+                        risk_level=risk_level,
+                        risk_score=risk_score,
+                        keywords=[assessment_type.upper(), severity, "clinical_assessment"]
+                    )
+                    if alert_id:
+                        # Attempt to send notification immediately
+                        AlertManager.send_alert(alert_id)
+                        app.logger.info(f"🚨 Clinical Alert Triggered: {alert_id} for session {session_id}")
+                except Exception as alert_err:
+                     app.logger.error(f"Failed to trigger clinical alert: {alert_err}")
+
             return jsonify(result)
             
         except ValueError as e:
@@ -1486,6 +1543,8 @@ def _register_routes(app: Flask) -> None:
             response_data = {
                 "response": ai_response,
                 "risk_level": risk_level,
+                "crisis_detected": risk_level == "crisis",
+                "crisis_level": risk_level,
                 "session_id": session_id,
                 "crisis_msg": crisis_data["crisis_msg"],
                 "crisis_numbers": crisis_data["crisis_numbers"],
@@ -1501,8 +1560,10 @@ def _register_routes(app: Flask) -> None:
             )
 
         except Exception as e:
+            import traceback
             app.logger.error(f"Chat endpoint error: {e}")
-            return jsonify({"error": "Internal server error"}), 500
+            # DEBUG: Return traceback to client to identify the crash
+            return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
     @app.route("/api/chat_stream", methods=["GET"])
     def chat_stream():
@@ -1616,8 +1677,6 @@ def _register_routes(app: Flask) -> None:
 
         except Exception as e:
             # Use app logger in request context
-            from flask import current_app
-
             current_app.logger.error(f"Chat stream error: {e}")
             # Fallback JSON error (non-SSE)
             return jsonify({"error": "Internal server error"}), 500
@@ -1728,11 +1787,18 @@ def _register_routes(app: Flask) -> None:
                 return jsonify({"error": "No data provided"}), 400
 
             mood_level = data.get("mood_level")
+            # Safe integer conversion
+            try:
+                if mood_level is not None:
+                    mood_level = int(mood_level)
+            except (ValueError, TypeError):
+                 return jsonify({"error": "Invalid mood level format"}), 400
+
             note_raw = data.get("note", "")
             timestamp = data.get("timestamp")
 
             if (
-                not mood_level
+                mood_level is None
                 or not isinstance(mood_level, int)
                 or mood_level < 1
                 or mood_level > 5
@@ -1892,7 +1958,7 @@ def _register_routes(app: Flask) -> None:
             return jsonify({"error": "Failed to process assessment"}), 500
 
     @app.route("/api/mood_pulse", methods=["GET"])
-    @app.limiter.limit("60 per minute")
+    @app.limiter.limit("30 per minute")
     def mood_pulse():
         """Get anonymous aggregate mood stats for today - 'You Are Not Alone' feature"""
         try:

@@ -264,30 +264,20 @@ def get_gemini_response(
             "gemini-pro",
         ]
 
-        # Outer loop over keys with round-robin start; skip blocked keys
-        now = datetime.now()
-        # Sticky session: choose starting key by hashing session_id, else fall back to round-robin
-        if len(_GEMINI_KEYS) > 1:
-            if session_id:
-                try:
-                    hval = int(
-                        hashlib.sha256(session_id.encode("utf-8")).hexdigest(), 16
-                    )
-                    start_idx = hval % len(_GEMINI_KEYS)
-                except Exception:
-                    start_idx = _next_key_index()
-            else:
-                start_idx = _next_key_index()
-        else:
-            start_idx = 0
+        # Outer loop over keys with hierarchal fallback (Primary -> Backup 1 -> Backup 2...)
+        # User requested "first key is always default" (Ephemeral Backup Strategy)
+        start_idx = 0 
         last_error = None
+        
+        # Exponential backoff multiplier
+        backoff_delay = 1.0
 
         for k_off in range(len(_GEMINI_KEYS)):
             key_idx = (start_idx + k_off) % len(_GEMINI_KEYS)
 
-            # Skip blocked keys within TTL window
+            # Skip blocked keys within TTL window (Resilience)
             until = _blocked_until.get(key_idx)
-            if until and now < until:
+            if until and datetime.now() < until:
                 _debug(f"skip_blocked key_index={key_idx} until={until}")
                 continue
 
@@ -373,6 +363,9 @@ Please remember that these intense feelings can pass, and there is hope for thin
                             _debug(
                                 f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS}"
                             )
+                            # Exponential Backoff Sleep before next key attempt
+                            time.sleep(backoff_delay)
+                            backoff_delay *= 2  # Double the wait for next attempt
                             break
                         # else: try next model under same key
                         continue
@@ -391,13 +384,16 @@ Please remember that these intense feelings can pass, and there is hope for thin
                     _debug(
                         f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS}"
                     )
+                    # Exponential Backoff Sleep before next key attempt
+                    time.sleep(backoff_delay)
+                    backoff_delay *= 2
 
             # Small jitter when rotating keys to avoid synchronized spikes
             time.sleep(random.uniform(0.05, 0.2))
 
         # If all keys/models failed
         if last_error:
-            return f"Error generating response: {str(last_error)}"
+            return f"Error generating response (All Bakcups Failed): {str(last_error)}"
         return "I'm having trouble connecting to my AI services. Please try again in a moment."
 
     except Exception as e:
@@ -538,12 +534,22 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
                 model_name = "gemini-2.5-flash"
                 llm = DualEngineLLM(model_name, api_key=api_key)
-                response = llm.generate_content(full_prompt, tools=WELLNESS_TOOLS_CONFIG)
+                # Pass system_prompt for persona and tool guidance
+                response = llm.generate_content(
+                    full_prompt, 
+                    tools=WELLNESS_TOOLS_CONFIG,
+                    system_instruction=system_prompt
+                )
             except ImportError:
                 # Fallback to native google.generativeai when mcp_server_nucleus unavailable
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel("gemini-1.5-flash", tools=WELLNESS_TOOLS_CONFIG)
+                # CRITICAL: Pass system_instruction to GenerativeModel
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash", 
+                    tools=WELLNESS_TOOLS_CONFIG,
+                    system_instruction=system_prompt
+                )
                 response = model.generate_content(full_prompt)
         except Exception as e:
             _debug(f"LLM Client execution failed: {e}")
