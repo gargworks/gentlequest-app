@@ -40,7 +40,7 @@ class University(db.Model):
     welcome_message = db.Column(db.Text)
 
     # Integration
-    sso_enabled = db.Column(db.Boolean, server_default=text('0'), default=False)
+    sso_enabled = db.Column(db.Boolean, server_default=text('false'), default=False)
     sso_provider = db.Column(db.String(50))
     sso_config = db.Column(JSON().with_variant(JSONB, "postgresql"))
     lms_integration = db.Column(db.String(50))
@@ -65,8 +65,8 @@ class UniversityCounselor(db.Model):
     phone = db.Column(db.String(50))
     role = db.Column(db.String(100))
     alert_methods = db.Column(db.String(200), default="email")  # comma-separated: email,sms
-    is_active = db.Column(db.Boolean, server_default=text('1'), default=True)
-    receives_alerts = db.Column(db.Boolean, server_default=text('1'), default=True)
+    is_active = db.Column(db.Boolean, server_default=text('true'), default=True)
+    receives_alerts = db.Column(db.Boolean, server_default=text('true'), default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     university = db.relationship("University", backref="counselors")
