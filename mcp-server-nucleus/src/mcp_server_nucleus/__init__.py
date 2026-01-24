@@ -76,8 +76,8 @@ except ImportError:
 # IMPORTANT: Uses the SAME singleton as orchestrator_v3.get_orchestrator()
 
 def get_orch():
-    """Get the orchestrator singleton (delegates to orchestrator_v3)."""
-    from .runtime.orchestrator_v3 import get_orchestrator
+    """Get the orchestrator singleton (Unified)."""
+    from .runtime.orchestrator_unified import get_orchestrator
     return get_orchestrator()
 
 # ============================================================
@@ -89,27 +89,7 @@ def get_orch():
 # _read_events imported from runtime.event_ops
 
 
-
-
-@mcp.tool()
-def brain_health() -> str:
-    """
-    Health check endpoint for monitoring and debugging.
-    Returns system status, version, and configuration.
-    """
-    try:
-        brain_path = get_brain_path()
-        data = {
-            "status": "healthy",
-            "version": "0.5.0",
-            "tools_registered": len(mcp.tools) if hasattr(mcp, 'tools') else 0,
-            "brain_path": str(brain_path),
-            "uptime_seconds": int(time.time() - START_TIME),
-            "python_version": sys.version.split()[0]
-        }
-        return make_response(True, data=data)
-    except Exception as e:
-        return make_response(False, error=str(e))
+# brain_health() defined later in file (line ~7155) - uses _brain_health_impl()
 
 @mcp.tool()
 def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
@@ -1228,21 +1208,14 @@ def brain_save_session(context: str, active_task: str = None,
                        pending_decisions: List[str] = None,
                        breadcrumbs: List[str] = None,
                        next_steps: List[str] = None) -> str:
-    """Save current session for later resumption.
-    
-    Call this when switching contexts or ending a work session.
-    The session captures your mental state so you can resume later.
-    
-    Args:
-        context: What you're working on (e.g., "Nucleus v0.5.0", "GentleQuest marketing")
-        active_task: Current task being worked on
-        pending_decisions: List of decisions that need resolution
-        breadcrumbs: List showing what led to current state
-        next_steps: Planned next steps
-    
-    Returns:
-        Standard JSON response with session ID
-    """
+    """Save current session for later resumption."""
+    return _save_session_impl(context, active_task, pending_decisions, breadcrumbs, next_steps)
+
+def _save_session_impl(context: str, active_task: str = None,
+                       pending_decisions: List[str] = None,
+                       breadcrumbs: List[str] = None,
+                       next_steps: List[str] = None) -> str:
+    """Implementation for saving session."""
     result = _save_session(context, active_task, pending_decisions, breadcrumbs, next_steps)
     if result.get("success"):
         return make_response(True, data=result)
@@ -1250,26 +1223,13 @@ def brain_save_session(context: str, active_task: str = None,
 
 @mcp.tool()
 def brain_resume_session(session_id: str = None) -> str:
-    """Resume a saved session.
-    
-    Restores context from a previous session, including:
-    - Active task
-    - Pending decisions
-    - Breadcrumbs (how you got here)
-    - Next steps
-    
-    Args:
-        session_id: Optional session ID to resume (defaults to most recent)
-    
-    Returns:
-        Standard JSON response with session context
-    """
+    """Resume a saved session."""
+    return _resume_session_impl(session_id)
+
+def _resume_session_impl(session_id: str = None) -> str:
+    """Implementation for resuming session."""
     result = _resume_session(session_id)
-    if result:  # _resume_session returns Dict on success, or raises/returns something else?
-        # Assuming Dict is success. If it was None/Empty, handle it?
-        # Check _resume_session implementation: returns the session data dict.
-        # If error, it might raise exception (handled by caller? No, I need try/except or assume valid)
-        # Actually standard practice here:
+    if result:
         return make_response(True, data=result)
     return make_response(False, error="Session not found")
 
@@ -1336,6 +1296,10 @@ def brain_propose_merges() -> Dict:
 @mcp.tool()
 def brain_emit_event(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
     """Emit a new event to the brain ledger."""
+    return _emit_event_impl(event_type, emitter, data, description)
+
+def _emit_event_impl(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
+    """Implementation for emitting events."""
     result = _emit_event(event_type, emitter, data, description)
     if result.startswith("Error"):
         return make_response(False, error=result)
@@ -1343,7 +1307,11 @@ def brain_emit_event(event_type: str, emitter: str, data: Dict[str, Any], descri
 
 @mcp.tool()
 def brain_read_events(limit: int = 10) -> List[Dict]:
-    """Read the most recent events from the ledger."""
+    """Read recent events."""
+    return _read_events_impl(limit)
+
+def _read_events_impl(limit: int = 10) -> str:
+    """Implementation for reading events."""
     events = _read_events(limit)
     return make_response(True, data={"events": events})
 
@@ -1398,17 +1366,11 @@ def brain_list_tasks(
     skill: Optional[str] = None,
     claimed_by: Optional[str] = None
 ) -> str:
-    """List tasks with optional filters.
-    
-    Args:
-        status: Filter by status (PENDING, READY, IN_PROGRESS, BLOCKED, DONE, FAILED, ESCALATED)
-        priority: Filter by priority (1=highest, 5=lowest)
-        skill: Filter by required skill
-        claimed_by: Filter by agent who claimed the task
-    
-    Returns:
-        Standard JSON response with list of matching tasks
-    """
+    """List tasks with optional filters."""
+    return _list_tasks_impl(status, priority, skill, claimed_by)
+
+def _list_tasks_impl(status=None, priority=None, skill=None, claimed_by=None) -> str:
+    """Implementation for listing tasks."""
     tasks = _list_tasks(status, priority, skill, claimed_by)
     return make_response(True, data=tasks)
 
@@ -1528,17 +1490,10 @@ def brain_escalate(task_id: str, reason: str) -> Dict:
 
 @mcp.tool()
 def brain_depth_push(topic: str) -> Dict:
-    """Go deeper into a subtopic. Tracks your position in the conversation tree.
-    
-    Use this when diving into a sub-problem or branching topic.
-    The system will warn (but not block) when you're getting deep.
-    
-    Args:
-        topic: What you're diving into (e.g., "Implementing auth system")
-    
-    Returns:
-        Current depth, breadcrumbs, and any warnings
-    """
+    """Go deeper into a subtopic."""
+    return _depth_push_impl(topic)
+
+def _depth_push_impl(topic: str) -> str:
     result = _depth_push(topic)
     return make_response(True, data=result)
 
@@ -5331,21 +5286,13 @@ def brain_apply_critique(review_path: str) -> Dict:
 
 
 @mcp.tool()
-def brain_orchestrate_swarm(mission: str, agents: List[str] = None) -> Dict:
-    """Initialize a multi-agent swarm for a complex mission.
-    
-    Args:
-        mission: High-level goal (e.g. "Refactor auth and review safety")
-        agents: List of agents to recruit (default: developer, critic)
-        
-    Returns:
-        Swarm session details
-    """
+async def brain_orchestrate_swarm(mission: str, agents: List[str] = None) -> Dict:
+    """Initialize a multi-agent swarm for a complex mission (Unified)."""
     try:
-        from .runtime.swarm import _orchestrate_swarm
-        return _orchestrate_swarm(mission, agents)
+        orch = get_orchestrator()
+        return await orch.start_mission(mission, agents=agents)
     except Exception as e:
-        return {"error": f"Tool execution failed: {str(e)}"}
+        return make_response(False, error=f"Swarm failed: {str(e)}")
 
 
 

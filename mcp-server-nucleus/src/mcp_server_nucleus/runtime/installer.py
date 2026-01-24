@@ -59,41 +59,12 @@ class Installer:
             # Looking at `verify_team.py`, `trusted_keys` was a list.
             # Looking at `nuke_protocol.py`, `load` takes `trusted_keys: Dict[str, str]`.
             
-            # DISCREPANCY DETECTED.
-            # TeamManager (Chat 26) stores `trusted_keys: List[str]`.
-            # NukeLoader (Chat 25) expects `Dict[key_id, pub_pem]`.
-            
             # FIX:
-            # I need to resolve the keys. 
-            # If the Team Config only has fingerprints (IDs), where are the actual Public Keys?
-            # 1. They could be in a `ledger/keystore.json` (Public keys).
-            # 2. Or TeamConfig should store the full PEMs.
+            # TeamManager stores `trusted_keys` as a List[str].
+            # NukeLoader expects `Dict[key_id, pub_pem]`.
+            # For MVP, we map the list to generated IDs or use the list index.
+            # In a real system, the KeyStore would map KeyID -> PEM.
             
-            # Simplify for MVP: Assume TeamConfig `trusted_keys` CAN be a dictionary or list.
-            # But `TeamManager` schema defined it as `List[str]`.
-            
-            # WORKAROUND:
-            # I will modify `Installer` to accept the keys directly OR
-            # I will allow `TeamManager` to return a mocked dictionary for now,
-            # OR I will simply pass a dummy dict if the list contains IDs, assuming the "ID" IS the key (insecure but allows progress).
-            
-            # BETTER MVP FIX:
-            # The `NukeLoader` verifies using `key_manager.verify(pub_pem, ...)`.
-            # So we NEED the PEM.
-            # I will assume `TeamManager` returns a list of PEM strings? No, that's ugly.
-            
-            # Let's assume for this test, we pass the known Public Key we used to sign.
-            # But the `Installer` must be autonomous.
-            
-            # I will update `TeamManager` (or just `team.json` in my test) to map KeyID -> PEM?
-            # No, `TeamConfig` model is strict.
-            
-            # Let's mock the "Trust Store" here. 
-            # In a real system, `TrustManager` would resolve ID -> Key.
-            # For now, I will treat the "trusted_keys" list as a list of PEMs for simplicity in this bridge? 
-            # Or create a `dict` where keys are just indices.
-            
-            # Let's try to convert the list to a dict.
             trusted_map = {f"trusted_{i}": key for i, key in enumerate(trusted_keys_list)}
             
             logger.info(f"Step 2: Installing {nuke_path}...")

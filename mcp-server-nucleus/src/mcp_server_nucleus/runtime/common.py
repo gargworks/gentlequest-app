@@ -7,12 +7,53 @@ Shared utilities and constants for the Nucleus runtime.
 import os
 import json
 import time
+import logging
+import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-# Constants
-# If needed
+# ============================================================
+# STRUCTURED LOGGING SYSTEM (AG-010)
+# ============================================================
+
+class JSONFormatter(logging.Formatter):
+    """Formats log records as JSON objects for machine readability."""
+    def format(self, record):
+        log_entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "line": record.lineno
+        }
+        if record.exc_info:
+            log_entry["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_entry)
+
+def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
+    """Setup structured logging for a component."""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    
+    # Avoid duplicate handlers
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        
+        # Use JSON if specified via env
+        if os.environ.get("NUCLEUS_LOG_JSON", "false").lower() == "true":
+            handler.setFormatter(JSONFormatter())
+        else:
+            handler.setFormatter(logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            ))
+        
+        logger.addHandler(handler)
+    return logger
+
+# Common logger
+logger = setup_nucleus_logging()
 
 def get_brain_path() -> Path:
     """Get the brain path from environment variable (read dynamically for testing)."""
@@ -41,7 +82,7 @@ def make_response(success: bool, data=None, error=None, error_code=None):
         "data": data,
         "error": error,
         "error_code": error_code,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     }, indent=2)
 
 def _get_state(path: Optional[str] = None) -> Dict:
@@ -65,8 +106,7 @@ def _get_state(path: Optional[str] = None) -> Dict:
             
         return state
     except Exception as e:
-        # logging?
-        print(f"Error reading state: {e}")
+        logger.error(f"Error reading state: {e}")
         return {}
 
 def _update_state(updates: Dict[str, Any]) -> str:

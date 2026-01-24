@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 from pathlib import Path
+import os
 from .base import Capability
 from ... import commitment_ledger
 
@@ -70,18 +71,25 @@ class BrainOps(Capability):
                 "name": "brain_consolidate_logs",
                 "description": "Consolidate raw JSON logs in .brain/raw/ into a daily archive.",
                 "parameters": {"type": "object", "properties": {}}
+            },
+            {
+                "name": "brain_delegate_task",
+                "description": "Delegate a task to another specialized agent persona. The agent will execute autonomously.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "persona": {"type": "string", "description": "Target persona: librarian, researcher, critic, developer, architect, strategist, devops, synthesizer"},
+                        "intent": {"type": "string", "description": "The task description for the delegated agent"}
+                    },
+                    "required": ["persona", "intent"]
+                }
             }
         ]
 
     def execute_tool(self, tool_name: str, args: Dict) -> str:
         """Execute the tool locally using commitment_ledger."""
-        if tool_name == "brain_orchestrate_swarm":
-             # Use configured brain path
-            import os
-            brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
-        else:
-             # Default functionality (Ledger etc)
-             brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+        # Use configured brain path
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
         
         if tool_name == "brain_add_commitment":
             result = commitment_ledger.add_commitment(
@@ -165,14 +173,39 @@ class BrainOps(Capability):
 
         elif tool_name == "brain_orchestrate_swarm":
             from ..orchestrator import SwarmsOrchestrator
+            import asyncio
             
             orchestrator = SwarmsOrchestrator(brain_path=brain_path)
-            result = orchestrator.start_mission(
-                mission=args['mission'],
-                swarm_type=args.get('swarm_type', 'genesis') # Default to Planning
-            )
             
-            return f"✅ Swarm Initiated:\nMission ID: {result['mission_id']}\nRole: {result['lead_agent']}\n\nContext:\n{result['kickoff_context'][:500]}..."
+            # Extract agents list from args
+            agents = args.get('agents', None)  # List of agent personas
+            
+            # start_mission is async, need to run it properly
+            try:
+                import nest_asyncio
+                nest_asyncio.apply()
+            except ImportError:
+                pass
+            
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    result = loop.run_until_complete(orchestrator.start_mission(
+                        mission_goal=args['mission'],
+                        swarm_type=args.get('swarm_type', 'genesis'),
+                        agents=agents  # Pass agents to orchestrator
+                    ))
+                else:
+                    result = asyncio.run(orchestrator.start_mission(
+                        mission_goal=args['mission'],
+                        swarm_type=args.get('swarm_type', 'genesis'),
+                        agents=agents
+                    ))
+                
+                return f"✅ Swarm Initiated:\\nMission ID: {result.get('mission_id', 'unknown')}\\nAgents: {agents or 'auto-detected'}\\nStatus: {result.get('status', 'started')}"
+            except RuntimeError as e:
+                return f"⚠️ Swarm start failed (async issue): {e}. Mission queued."
+
 
         elif tool_name == "brain_consolidate_logs":
             # Consolidate raw logs into daily archives

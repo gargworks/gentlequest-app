@@ -46,11 +46,11 @@ class EphemeralAgent:
 
     async def _run_llm(self, log: List[str]) -> str:
         """
-        MDR_005 / MDR_002: Real LLM Execution Loop with Critic
+        MDR_005 / MDR_002: Real LLM Execution Loop with Critic & Multi-Turn Support
         """
         log.append(">> Mode: LLM (Smart)")
         
-        # 1. Build Prompt
+        # 1. Build Base Prompt
         system_prompt = self.context.get('system_prompt', "You are an agent.")
         
         tools_desc = []
@@ -62,7 +62,7 @@ class EphemeralAgent:
         
         tools_block = "\n".join(tools_desc)
         
-        full_prompt = f"""{system_prompt}
+        base_prompt = f"""{system_prompt}
         
 AVAILABLE TOOLS:
 {tools_block}
@@ -79,49 +79,122 @@ CRITICAL RULES (MDR_002):
    }}
    ```
 """
-        # 2. Call LLM
-        try:
-            response = self.model.generate_content(full_prompt)
-            text = response.text
-            log.append(f"[LLM Output]: {text[:200]}...")
+        # 2. Multi-Turn Loop
+        max_turns = 5
+        turn = 0
+        current_history = []
+        
+        while turn < max_turns:
+            turn += 1
+            log.append(f"\n--- Turn {turn}/{max_turns} ---")
             
-            # 3. Parse and Execute
-            import re
-            match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
-            
-            if match:
-                tool_call = json.loads(match.group(1))
-                tool_name = tool_call.get("tool")
-                args = tool_call.get("args", {})
-                
-                log.append(f">> Tool detected: {tool_name}")
-                result = self._execute_tool(tool_name, args)
-                log.append(f"[Tool Result]: {result}")
-                
+            # Construct full prompt with history
+            history_str = "\n\n".join(current_history)
+            if history_str:
+                turn_prompt = f"{base_prompt}\n\n# EXECUTION HISTORY\n{history_str}\n\nNEXT STEP:"
             else:
-                # =======================================================
-                # MDR_002: THE ACTIVE CRITIC
-                # =======================================================
-                # If no tool call detected, and persona is NOT Synthesizer (writer),
-                # assume failure and CRITIQUE.
+                turn_prompt = base_prompt
+
+            try:
+                response = self.model.generate_content(turn_prompt)
                 
-                if self.context['persona'] != 'Synthesizer':
+                # Defensive: Handle None or malformed response
+                if response is None:
+                    log.append("[LLM Error]: Response is None (quota/network issue)")
+                    current_history.append("SYSTEM: LLM returned no response. Retrying...")
+                    continue
+                
+                text = getattr(response, 'text', None)
+                if text is None:
+                    # Try to extract from candidates
+                    if hasattr(response, 'candidates') and response.candidates:
+                        text = response.candidates[0].content.parts[0].text if response.candidates[0].content.parts else ""
+                    else:
+                        log.append("[LLM Error]: Response has no text content")
+                        current_history.append("SYSTEM: LLM response malformed. Retrying...")
+                        continue
+                
+                log.append(f"[LLM Output]: {text[:500]}...")
+                current_history.append(f"AI: {text}")
+
+                
+                # 3. Parse and Execute
+                import re
+                match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
+                
+                if match:
+                    tool_call = json.loads(match.group(1))
+                    tool_name = tool_call.get("tool")
+                    args = tool_call.get("args", {})
+                    
+                    log.append(f">> Tool detected: {tool_name}")
+                    result = self._execute_tool(tool_name, args)
+                    log.append(f"[Tool Result]: {str(result)[:1000]}...")
+                    current_history.append(f"TOOL_RESULT ({tool_name}): {result}")
+                else:
+                    # No tool call - check if it's the final answer
+                    if self.context['persona'] == 'Synthesizer' or "MISSION_COMPLETE" in text or "FINAL_ANSWER" in text:
+                         log.append("✅ Mission complete signal detected.")
+                         
+                         # GHOST COMPLETION FIX: Persist mission summary BEFORE returning
+                         try:
+                             brain_path = get_brain_path_internal()
+                             import time as _time
+                             timestamp = int(_time.time())
+                             session_id = self.context.get('session_id', f'unknown_{timestamp}')
+                             
+                             mission_dir = brain_path / "swarms" / session_id
+                             mission_dir.mkdir(parents=True, exist_ok=True)
+                             
+                             # Write summary.md
+                             summary_path = mission_dir / "summary.md"
+                             summary_content = f"""# Mission Summary
+
+**Persona:** {self.context['persona']}
+**Intent:** {self.context['intent']}
+**Completed At:** {_time.strftime('%Y-%m-%dT%H:%M:%S')}
+**Turns Used:** {turn}/{max_turns}
+
+## Final Output
+
+{text}
+
+## Execution Log
+
+```
+{chr(10).join(log[-10:])}
+```
+"""
+                             summary_path.write_text(summary_content)
+                             
+                             # Write mission_log.json
+                             log_path = mission_dir / "mission_log.json"
+                             mission_data = {
+                                 "session_id": session_id,
+                                 "persona": self.context['persona'],
+                                 "intent": self.context['intent'],
+                                 "completed_at": _time.strftime('%Y-%m-%dT%H:%M:%S'),
+                                 "turns_used": turn,
+                                 "max_turns": max_turns,
+                                 "history": current_history[-10:],
+                                 "status": "COMPLETE"
+                             }
+                             log_path.write_text(json.dumps(mission_data, indent=2))
+                             
+                             log.append(f"💾 Mission persisted to {mission_dir}")
+                         except Exception as persist_error:
+                             log.append(f"⚠️ Persistence warning: {persist_error}")
+                         
+                         break
+                         
+                    # MDR_002: THE ACTIVE CRITIC Intervention
                     log.append("⚠️ [CRITIC INTERVENTION] No tool call detected.")
                     
-                    # Retry once with critique
-                    critique_prompt = f"""{full_prompt}
-                    
-                    PREVIOUS RESPONSE:
-                    {text}
-                    
-                    SYSTEM CRITIC:
-                    You did not call a tool! You just talked. 
-                    You MUST output a JSON tool call block to execute the action.
-                    """
-                    
+                    critique_prompt = f"{turn_prompt}\n\nSYSTEM CRITIC: You did not call a tool! You MUST output a JSON tool call block or mark MISSION_COMPLETE if finished."
                     response_retry = self.model.generate_content(critique_prompt)
                     text_retry = response_retry.text
-                    log.append(f"[LLM Retry Output]: {text_retry[:200]}...")
+                    log.append(f"[LLM Retry Output]: {text_retry[:500]}...")
+                    current_history.append(f"AI (Retry): {text_retry}")
                     
                     match_retry = re.search(r'```json\s*(\{.*?\})\s*```', text_retry, re.DOTALL)
                     if match_retry:
@@ -131,13 +204,49 @@ CRITICAL RULES (MDR_002):
                         
                         log.append(f">> Tool detected (after critique): {tool_name}")
                         result = self._execute_tool(tool_name, args)
-                        log.append(f"[Tool Result]: {result}")
+                        log.append(f"[Tool Result]: {str(result)[:1000]}...")
+                        current_history.append(f"TOOL_RESULT ({tool_name}): {result}")
                     else:
+                         # Bug 5 Fix: Persist findings even on tool-call failure
                          log.append("❌ Agent failed to call tool after critique.")
+                         
+                         # Save orphan output before terminating
+                         try:
+                             brain_path = get_brain_path_internal()
+                             orphan_dir = brain_path / "swarms" / "orphan_outputs"
+                             orphan_dir.mkdir(parents=True, exist_ok=True)
+                             
+                             import time as _time
+                             timestamp = int(_time.time())
+                             output_file = orphan_dir / f"critic_failure_{self.context['persona']}_{timestamp}.md"
+                             
+                             findings = f"""# Orphan Agent Output
 
-        except Exception as e:
-            log.append(f"LLM Error: {e}")
-            
+**Persona:** {self.context['persona']}
+**Intent:** {self.context['intent']}
+**Timestamp:** {timestamp}
+
+## Agent Analysis (Not Persisted via Tool)
+
+{text_retry}
+
+## Execution History
+
+```
+{chr(10).join(current_history[-5:])}
+```
+"""
+                             output_file.write_text(findings)
+                             log.append(f"💾 Orphan output saved to {output_file}")
+                         except Exception as persist_error:
+                             log.append(f"⚠️ Failed to save orphan output: {persist_error}")
+                         
+                         break
+
+            except Exception as e:
+                log.append(f"LLM Error: {e}")
+                break
+                
         return "\n".join(log)
 
     def _run_heuristic(self, log: List[str]) -> str:

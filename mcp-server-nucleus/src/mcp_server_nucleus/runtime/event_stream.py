@@ -8,7 +8,7 @@ Location: mcp_server_nucleus/runtime/event_stream.py
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -69,7 +69,7 @@ def emit_event(
     
     event = {
         "event_id": f"{emitter[:3]}-{uuid.uuid4().hex[:8]}",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "emitter": emitter,
         "event_type": event_type,
         "severity": severity.value,

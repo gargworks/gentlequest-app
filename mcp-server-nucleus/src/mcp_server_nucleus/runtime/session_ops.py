@@ -34,10 +34,10 @@ def _get_depth_state_safe() -> Dict:
         pass
     return {"current_depth": 0, "levels": []}
 
-def _save_session(context: str, active_task: str = None,
-                  pending_decisions: List[str] = None,
-                  breadcrumbs: List[str] = None,
-                  next_steps: List[str] = None) -> Dict:
+def _save_session(context: str, active_task: Optional[str] = None,
+                  pending_decisions: Optional[List[str]] = None,
+                  breadcrumbs: Optional[List[str]] = None,
+                  next_steps: Optional[List[str]] = None) -> Dict[str, Any]:
     """Save current session for later resumption."""
     try:
         sessions_dir = _get_sessions_path()
@@ -117,7 +117,7 @@ def _prune_old_sessions(max_sessions: int = 10) -> None:
     except Exception:
         pass
 
-def _get_session(session_id: str) -> Dict:
+def _get_session(session_id: str) -> Dict[str, Any]:
     """Get a specific session by ID."""
     try:
         sessions_dir = _get_sessions_path()
@@ -133,7 +133,7 @@ def _get_session(session_id: str) -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _resume_session(session_id: str = None) -> Dict:
+def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
     """Resume a saved session."""
     try:
         if not session_id:
@@ -184,7 +184,7 @@ def _resume_session(session_id: str = None) -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _list_sessions() -> Dict:
+def _list_sessions() -> Dict[str, Any]:
     """List all saved sessions."""
     try:
         sessions_dir = _get_sessions_path()
@@ -210,7 +210,7 @@ def _list_sessions() -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _check_for_recent_session() -> Dict:
+def _check_for_recent_session() -> Dict[str, Any]:
     """Check for recent session."""
     try:
         active_path = _get_active_session_path()

@@ -1,38 +1,54 @@
 import unittest
 import json
 import tempfile
-import shutil
 import os
-import time
 from pathlib import Path
-from unittest.mock import patch
 
-# Import the module under test
+# Set up test environment BEFORE importing nucleus
+# This is the cleanest approach - use env var instead of complex mocking
+_test_dir = tempfile.mkdtemp()
+os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
+
+# Now import the module under test
 import mcp_server_nucleus as nucleus
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
-        # Create a temp brain directory
-        self.test_dir = tempfile.mkdtemp()
+        # Use the pre-created temp brain directory
+        self.test_dir = _test_dir
         self.brain_path = Path(self.test_dir)
-        (self.brain_path / "ledger").mkdir(parents=True)
-        (self.brain_path / "sessions").mkdir(parents=True)
-        (self.brain_path / "artifacts").mkdir(parents=True)
         
-        # Mock the get_brain_path to return our temp dir
-        self.patcher = patch('mcp_server_nucleus.get_brain_path', return_value=self.brain_path)
-        self.patcher.start()
+        # Ensure directories exist (may have been cleaned up)
+        (self.brain_path / "ledger").mkdir(parents=True, exist_ok=True)
+        (self.brain_path / "sessions").mkdir(parents=True, exist_ok=True)
+        (self.brain_path / "artifacts").mkdir(parents=True, exist_ok=True)
+        
+        # Initialize tasks.json for task tests
+        tasks_file = self.brain_path / "ledger" / "tasks.json"
+        if not tasks_file.exists():
+            tasks_file.write_text("[]")
+        
+        # Initialize events.jsonl for event tests
+        events_file = self.brain_path / "ledger" / "events.jsonl"
+        if not events_file.exists():
+            events_file.write_text("")
         
         # Mock depth state file for session
         (self.brain_path / "session").mkdir(parents=True, exist_ok=True)
         (self.brain_path / "session" / "depth.json").write_text(json.dumps({
             "current_depth": 0,
-            "levels": []
+            "levels": [],
+            "max_safe_depth": 5
         }))
 
     def tearDown(self):
-        self.patcher.stop()
-        shutil.rmtree(self.test_dir)
+        # Clean up test files but keep directory for next test
+        for f in (self.brain_path / "ledger").glob("*"):
+            f.unlink()
+        for f in (self.brain_path / "sessions").glob("*"):
+            f.unlink()
+        for f in (self.brain_path / "session").glob("*"):
+            f.unlink()
 
     def test_session_save_resume_cycle(self):
         """AG-007: Test session save and resume full cycle"""

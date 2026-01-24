@@ -36,11 +36,31 @@ from .budget import BudgetAuditor
 # ============================================================
 
 # Path to brain (can be overridden via env var)
-BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
+# NOTE: Default changed to absolute path to fix "Read-only file system" error
+# when MCP server runs from a different working directory.
+BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+
+# ============================================================
+# INTENT-BASED TIER ESCALATION (Enterprise Feature)
+# ============================================================
+# Keywords that trigger automatic escalation to CRITICAL job_type (premium tier)
+ESCALATION_KEYWORDS = ["CRITICAL", "SECURITY", "URGENT", "EMERGENCY", "HIGH-PRIORITY", "AUDIT"]
+
+def _should_escalate_tier(intent: str) -> bool:
+    """
+    Check if intent warrants tier escalation to CRITICAL.
+    This ensures high-stakes tasks always use premium models.
+    """
+    if not intent:
+        return False
+    intent_upper = intent.upper()
+    return any(keyword in intent_upper for keyword in ESCALATION_KEYWORDS)
+
 
 
 # ============================================================
 # PERSONA REGISTRY: 8 Personas (4 Fast + 4 Rich)
+# Each persona has a job_type for LLM tier routing
 # ============================================================
 
 PERSONAS = {
@@ -49,9 +69,10 @@ PERSONAS = {
         "name": "Librarian",
         "mode": "rich",
         "description": "Information Architect. Guardian of the Memory Bank.",
-        "capabilities": ["brain_ops", "memory_ops"],
+        "capabilities": ["brain_ops", "memory_ops", "code_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "librarian.md"
+        "agent_file": "librarian.md",
+        "job_type": "BACKGROUND"  # Low-cost operations
     },
     
     "devops": {
@@ -69,7 +90,8 @@ PERSONAS = {
         
         If you output text instead of tool calls, you have FAILED.
         """,
-        "agent_file": None  # Uses inline prompt
+        "agent_file": None,
+        "job_type": "ORCHESTRATION"  # Standard operations
     },
     
     # --- RICH PERSONAS (Nuanced, Load from .brain/agents/*.md) ---
@@ -77,18 +99,20 @@ PERSONAS = {
         "name": "Synthesizer",
         "mode": "rich",
         "description": "Meta-orchestrator. Sees across all domains. Founder's force multiplier.",
-        "capabilities": ["brain_ops", "depth_tracker", "memory_ops"],  # Orchestration tools
-        "system_prompt_fragment": None,  # Loaded from file
-        "agent_file": "synthesizer.md"
+        "capabilities": ["brain_ops", "depth_tracker", "memory_ops"],
+        "system_prompt_fragment": None,
+        "agent_file": "synthesizer.md",
+        "job_type": "ORCHESTRATION"  # Standard tier
     },
     
     "critic": {
         "name": "Critic",
         "mode": "rich",
         "description": "Quality gate. Code review, security audit, strategy validation.",
-        "capabilities": ["brain_ops", "proof_system", "memory_ops"],
+        "capabilities": ["brain_ops", "proof_system", "memory_ops", "code_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "critic.md"
+        "agent_file": "critic.md",
+        "job_type": "CRITICAL"  # Premium tier - needs high quality
     },
     
     "developer": {
@@ -97,7 +121,8 @@ PERSONAS = {
         "description": "Implementation specialist. Code execution, testing.",
         "capabilities": ["brain_ops", "code_ops", "proof_system"],
         "system_prompt_fragment": None,
-        "agent_file": "developer.md"
+        "agent_file": "developer.md",
+        "job_type": "ORCHESTRATION"  # Standard tier
     },
     
     "researcher": {
@@ -106,7 +131,8 @@ PERSONAS = {
         "description": "Information gatherer. Search, analysis, documentation.",
         "capabilities": ["brain_ops", "web_ops", "memory_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "researcher.md"
+        "agent_file": "researcher.md",
+        "job_type": "RESEARCH"  # Standard tier
     },
     
     "architect": {
@@ -115,7 +141,8 @@ PERSONAS = {
         "description": "System designer. Specs, architecture, depth tracking.",
         "capabilities": ["brain_ops", "depth_tracker", "memory_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "architect.md"
+        "agent_file": "architect.md",
+        "job_type": "CRITICAL"  # Premium tier - needs deep reasoning
     },
     
     "product_manager": {
@@ -124,7 +151,8 @@ PERSONAS = {
         "description": "User intent translator. Backlog grooming, spec creation.",
         "capabilities": ["brain_ops", "memory_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "product_manager.md"
+        "agent_file": "product_manager.md",
+        "job_type": "ORCHESTRATION"  # Standard tier
     },
 
     "strategist": {
@@ -133,7 +161,8 @@ PERSONAS = {
         "description": "Business strategy. Decisions, roadmap, positioning.",
         "capabilities": ["brain_ops", "memory_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "strategist.md"
+        "agent_file": "strategist.md",
+        "job_type": "CRITICAL"  # Premium tier - important decisions
     },
     "tech_lead": {
         "name": "Tech Lead",
@@ -141,7 +170,8 @@ PERSONAS = {
         "description": "Operational Commander. Execution Swarm Lead. Task breakdown and code review.",
         "capabilities": ["brain_ops", "code_ops", "proof_system", "depth_tracker"],
         "system_prompt_fragment": None,
-        "agent_file": "tech_lead.md"
+        "agent_file": "tech_lead.md",
+        "job_type": "CRITICAL"  # Premium tier
     },
 
     "product_owner": {
@@ -150,9 +180,11 @@ PERSONAS = {
         "description": "Value Maximizer. User Stories and Acceptance Criteria.",
         "capabilities": ["brain_ops", "memory_ops"],
         "system_prompt_fragment": None,
-        "agent_file": "product_owner.md"
+        "agent_file": "product_owner.md",
+        "job_type": "ORCHESTRATION"  # Standard tier
     },
 }
+
 
 
 # ============================================================
@@ -430,6 +462,7 @@ class ContextFactory:
             "intent_category": intent_category,
             "persona": persona["name"],
             "persona_mode": persona.get("mode", "fast"),
+            "job_type": persona.get("job_type", "ORCHESTRATION"),  # For LLM tier routing
             "capabilities": active_caps_names,
             "capability_instances": active_caps_instances,
             "tools": tools,
@@ -481,6 +514,8 @@ class ContextFactory:
             "intent_category": "direct",
             "persona": persona["name"],
             "persona_mode": persona.get("mode", "fast"),
+            # Intent-based escalation: CRITICAL keywords override persona's default job_type
+            "job_type": "CRITICAL" if _should_escalate_tier(intent) else persona.get("job_type", "ORCHESTRATION"),
             "capabilities": active_caps_names,
             "capability_instances": active_caps_instances,
             "tools": tools,

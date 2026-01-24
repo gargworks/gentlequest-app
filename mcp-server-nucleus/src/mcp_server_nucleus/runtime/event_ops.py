@@ -8,7 +8,7 @@ import json
 import time
 import uuid
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .common import get_brain_path
 
@@ -19,7 +19,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
         events_path = brain / "ledger" / "events.jsonl"
         
         event_id = f"evt-{int(time.time())}-{str(uuid.uuid4())[:8]}"
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         event = {
             "event_id": event_id,
@@ -54,7 +54,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
     except Exception as e:
         return f"Error emitting event: {str(e)}"
 
-def _read_events(limit: int = 10) -> List[Dict]:
+def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
     """Core logic for reading events."""
     try:
         brain = get_brain_path()

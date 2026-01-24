@@ -23,7 +23,7 @@ def _get_depth_path() -> Path:
     session_dir.mkdir(parents=True, exist_ok=True)
     return session_dir / "depth.json"
 
-def _get_depth_state() -> Dict:
+def _get_depth_state() -> Dict[str, Any]:
     """Get current depth tracking state."""
     try:
         depth_path = _get_depth_path()
@@ -48,7 +48,7 @@ def _get_depth_state() -> Dict:
         logger.error(f"Error getting depth state: {e}")
         return {"current_depth": 0, "levels": [], "max_safe_depth": 5}
 
-def _save_depth_state(state: Dict) -> str:
+def _save_depth_state(state: Dict[str, Any]) -> str:
     """Save depth tracking state."""
     try:
         depth_path = _get_depth_path()
@@ -59,7 +59,7 @@ def _save_depth_state(state: Dict) -> str:
     except Exception as e:
         return f"Error saving depth state: {str(e)}"
 
-def _depth_push(topic: str) -> Dict:
+def _depth_push(topic: str) -> Dict[str, Any]:
     """Go deeper into a subtopic. Returns current state with warnings."""
     try:
         state = _get_depth_state()
@@ -123,7 +123,7 @@ def _depth_push(topic: str) -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _depth_pop() -> Dict:
+def _depth_pop() -> Dict[str, Any]:
     """Come back up one level. Returns new state."""
     try:
         state = _get_depth_state()
@@ -170,7 +170,7 @@ def _depth_pop() -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _depth_show() -> Dict:
+def _depth_show() -> Dict[str, Any]:
     """Show current depth state with visual indicator."""
     try:
         state = _get_depth_state()
@@ -215,7 +215,7 @@ def _depth_show() -> Dict:
     except Exception as e:
         return {"error": str(e)}
 
-def _depth_reset() -> Dict:
+def _depth_reset() -> Dict[str, Any]:
     """Reset depth to 0 (root level). Clears all levels."""
     try:
         state = _get_depth_state()
@@ -246,7 +246,7 @@ def _format_depth_indicator(current: int, max_safe: int) -> str:
         
     return indicator
 
-def _generate_depth_map() -> Dict:
+def _generate_depth_map() -> Dict[str, Any]:
     """Generate a Mermaid diagram of the current exploration path."""
     try:
         state = _get_depth_state()

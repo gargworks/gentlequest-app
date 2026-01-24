@@ -65,76 +65,93 @@ class CodeOps(Capability):
     def _resolve_path(self, path_str: str) -> Path:
         """
         Self-Healing Path Resolver.
-        Handles the 'Brain in a Jar' paradox where memories contain absolute paths (e.g., /Users/lokeshgarg/...)
-        but the body is in a different universe (e.g., /app in Docker).
         """
         cwd = Path(os.getcwd())
-        original_path = Path(path_str)
+        path = Path(path_str)
         
-        # 1. Try the path as-is
-        if original_path.exists():
-            return original_path
-        
-        # 2. If absolute but missing, try making it relative to CWD
-        # Heuristic: If path contains 'ai-mvp-backend', strip everything before it
-        # or just take the relative path from the project root.
-        
-        # Fallback 1: Try treating it as relative to CWD even if it looks absolute
-        # (e.g. if we are in /app and path is /app/foo/bar, but maybe we are in /app/subdir)
-        if not original_path.is_absolute():
-            candidate = cwd / original_path
+        # 1. Try path as-is
+        if path.exists():
+            return path
+            
+        # 2. Try relative to CWD
+        if not path.is_absolute():
+            candidate = cwd / path
             if candidate.exists():
                 return candidate
+        
+        # 3. Try relative to Project Root (BRAIN_PATH.parent)
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+        project_root = brain_path.parent
+        
+        if not path.is_absolute():
+            candidate = project_root / path
+            if candidate.exists():
+                return candidate
+        else:
+            # If absolute but invalid, try re-rooting
+            # e.g. /gentlequest-blog/... -> PROJECT_ROOT/gentlequest-blog/...
+            if 'ai-mvp-backend' in path_str:
+                relative = path_str.split('ai-mvp-backend')[-1].lstrip('/')
+                candidate = project_root / relative
+                if candidate.exists():
+                    return candidate
+            else:
+                # Try just the relative part of the absolute path
+                # e.g. /foo/bar -> PROJECT_ROOT/foo/bar
+                relative = path_str.lstrip('/')
+                candidate = project_root / relative
+                if candidate.exists():
+                    return candidate
 
-        # Fallback 2: The "Sovereign Shift" (Mac -> Docker)
-        # If the filename exists in the current directory (recursively? No, too expensive).
-        # Let's try to match the *relative* structure.
-        # Assumption: The CWD *is* the project root.
-        
-        # If the path starts with /Users/..., try to find the intersection with CWD
-        # This is hard to guess generally. 
-        # Strategy: If the file doesn't exist, we return the path object anyway so the tool can error out naturally,
-        # UNLESS we can confidently map it.
-        
-        return original_path
+        return path
 
     def execute_tool(self, tool_name: str, args: Dict) -> str:
         """Execute local filesystem/shell operations."""
         cwd = os.getcwd()
         
         if tool_name == "code_read_file":
-            path_str = args['path']
-            # Manual Patch for Docker Compatibility
-            # If we are in Docker (/app) and path starts with /Users, rewrite it.
-            if os.path.exists('/.dockerenv') or os.getenv('K_SERVICE'): # Cloud Run check
-                 if path_str.startswith('/Users/'):
-                     # Extreme Heuristic: Assume mapped to /app
-                     # /Users/lokeshgarg/ai-mvp-backend/foo -> /app/foo
-                     # Find 'ai-mvp-backend' index?
-                     # Simpler: If CWD is /app, and path has 'ai-mvp-backend', replace everything before it with /app
-                     if 'ai-mvp-backend' in path_str:
-                         parts = path_str.split('ai-mvp-backend')
-                         relative = parts[1].lstrip('/')
-                         path_str = f"/app/{relative}"
-            
-            path = Path(path_str)
-            
-            if not path.is_absolute():
-                path = Path(cwd) / path
+            path = self._resolve_path(args['path'])
             
             if not path.exists():
                 return f"Error: File not found: {path} (in {cwd})"
             return path.read_text(encoding='utf-8')
             
         elif tool_name == "code_write_file":
-            path = Path(args['path'])
-            if not path.is_absolute():
-                path = Path(cwd) / path
+            path_str = args['path']
+            path = Path(path_str)
             
-            # Ensure parent exists
+            # ============================================================
+            # ENTERPRISE PATH RESOLUTION (Fix for Read-Only Filesystem Bug)
+            # ============================================================
+            # Problem: Agent subprocess may not have NUCLEUS_BRAIN_PATH set,
+            # causing relative paths like 'gentlequest-blog/...' to resolve to '/'
+            # Solution: Robust fallback chain with explicit validation
+            
+            PROJECT_ROOT = Path("/Users/lokeshgarg/ai-mvp-backend")
+            
+            if not path.is_absolute():
+                resolved_root = None
+                
+                # Option 1: Use NUCLEUS_BRAIN_PATH if valid
+                brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH", "")
+                if brain_path_str and ".brain" in brain_path_str:
+                    brain_path = Path(brain_path_str)
+                    if brain_path.exists():
+                        resolved_root = brain_path.parent
+                
+                # Option 2: Fallback to hardcoded PROJECT_ROOT
+                if not resolved_root:
+                    resolved_root = PROJECT_ROOT
+                
+                path = resolved_root / path
+                # Log resolution for debugging
+                print(f"[CodeOps] Path resolved: {path_str} → {path}")
+            
+            # Ensure parent directory exists
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(args['content'], encoding='utf-8')
             return f"✅ Wrote {len(args['content'])} bytes to {path}"
+
             
         elif tool_name == "code_run_command":
             cmd = args['command']

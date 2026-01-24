@@ -159,12 +159,12 @@ def _list_tasks(
 def _add_task(
     description: str,
     priority: int = 3,
-    blocked_by: List[str] = None,
-    required_skills: List[str] = None,
+    blocked_by: Optional[List[str]] = None,
+    required_skills: Optional[List[str]] = None,
     source: str = "synthesizer",
-    task_id: str = None,
+    task_id: Optional[str] = None,
     skip_dep_check: bool = False
-) -> Dict:
+) -> Dict[str, Any]:
     """Create a new task."""
     try:
         tasks = _get_tasks_list()
@@ -258,7 +258,7 @@ def _update_task(task_id: str, updates: Dict[str, Any]) -> Dict:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-def _claim_task(task_id: str, agent_id: str) -> Dict:
+def _claim_task(task_id: str, agent_id: str) -> Dict[str, Any]:
     """Atomically claim a task."""
     try:
         tasks = _get_tasks_list()
@@ -328,7 +328,7 @@ def _get_next_task(skills: List[str]) -> Optional[Dict]:
         logger.error(f"Error getting next task: {e}")
         return None
 
-def _escalate_task(task_id: str, reason: str) -> Dict:
+def _escalate_task(task_id: str, reason: str) -> Dict[str, Any]:
     """Escalate a task to request human help."""
     try:
         tasks = _get_tasks_list()

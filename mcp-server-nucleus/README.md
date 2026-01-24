@@ -4,48 +4,49 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **The Core of Your AI Agents** — Multi-agent orchestration MCP server
+> **The Operating System for AI Agents** — Stop re-explaining your project to Claude every time you open a new chat. Give your agents a persistent **Operational Memory**.
 
-`mcp-server-nucleus` connects your local "Nuclear Brain" agentic system with MCP-compatible clients like Claude Desktop, Cursor, and more.
+`mcp-server-nucleus` is an open-source MCP server that turns your AI assistants into a coordinated team. It provides **110+ MCP tools** for task orchestration, multi-agent swarms, session persistence, and enterprise-grade decision auditing — all stored in a local `.brain/` directory you own.
+
+## 🏛️ The Trinity Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  INTERFACE (Open)     │  ENGINE (Local)    │  BRAIN (Yours) │
+│  Python CLI           │  110+ MCP Tools    │  .brain/       │
+│  pip install          │  Task Orchestration│  Your Data     │
+│  MIT License          │  Swarm Coordination│  Zero Cloud    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## ✨ Features
 
-- **16 MCP Tools** for agent orchestration
-- **4 MCP Resources** for subscribable state
-- **3 MCP Prompts** for pre-built orchestration
-- **V2 Task Orchestration** — Priority queue, skill routing, dependency DAG
-- **Local Intelligence** — Directly manipulates your `.brain/` directory
-- **Event-Driven** — Emit and listen to system events
-- **Zero-Knowledge Default** — Your data stays local
+- **110+ MCP Tools** for agent orchestration, swarms, sessions, and federation
+- **V3.1 Task Engine** — Priority queue, skill routing, dependency DAG, slot pooling
+- **Multi-Agent Swarms** — Spawn recursive agent hierarchies for complex missions
+- **Session Persistence** — Save/resume work across conversations
+- **Health Monitoring** — Built-in `brain_health()` and `brain_version()` endpoints
+- **Event-Driven** — Full event ledger with `DecisionMade` audit trail
+- **Zero-Knowledge Default** — Your data stays local. No cloud required.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (2 Minutes)
 
-### Installation
-
-> ⚠️ **Requires Python 3.10+** — If `pip3` fails, use `python3.11 -m pip` instead.
-
+### 1. Install
 ```bash
-# Check your Python version first
-python3 --version
-
-# Install (use python3.11 if your default is older)
-python3.11 -m pip install mcp-server-nucleus
-
-# Verify installation
-nucleus-init --help
+pip install mcp-server-nucleus
 ```
 
-**Common error:** `No matching distribution found` → Your Python is too old. Install Python 3.10+ via Homebrew: `brew install python@3.11`
-
-### Initialize Your Brain (Smart Init!)
+### 2. Initialize (Smart Config)
+The `nucleus-init` command automatically detects your system and configures Claude Desktop for you.
 
 ```bash
-# Create a new .brain/ directory — auto-configures Claude Desktop!
+# Create your .brain/ and auto-configure Claude Desktop
 nucleus-init
-
-# For solo founders (minimal setup)
-nucleus-init --template=solo
 ```
+
+### 3. Ask Claude
+Restart Claude Desktop and try:
+> *"Use the cold_start prompt from nucleus to see our current sprint focus."*
 
 > **v0.2.2+**: Smart Init automatically detects Claude Desktop and adds the config for you!
 
@@ -114,33 +115,47 @@ Check your config pointer! You might be pointing to an old or temp brain.
 2. **Verify path:** Ensure `NUCLEAR_BRAIN_PATH` points to your active project (e.g., `/Users/me/my-project/.brain`)
 3. **Restart:** You MUST restart Claude Desktop after any config change.
 
-## 🛠 Available Tools
+## 🛠 Tool Categories (110+ Total)
 
-### Core Tools
-
+### 🎯 Core Orchestration
 | Tool | Description |
 |------|-------------|
-| `brain_emit_event` | Emit a new event to the ledger |
-| `brain_read_events` | Read recent events |
-| `brain_get_state` | Get current brain state |
-| `brain_update_state` | Update brain state |
-| `brain_read_artifact` | Read an artifact file |
-| `brain_write_artifact` | Write to an artifact file |
-| `brain_list_artifacts` | List all artifacts |
-| `brain_trigger_agent` | Trigger an agent with a task |
-| `brain_get_triggers` | Get all neural triggers |
-| `brain_evaluate_triggers` | Evaluate trigger activation |
+| `brain_session_start` | **START HERE** — Get priorities, tasks, and recommendations |
+| `brain_orchestrate` | The "God Command" — auto-claim and execute tasks |
+| `brain_health` | System health dashboard with component status |
+| `brain_version` | Version and capability info |
 
-### V2 Task Orchestration (New in v0.3.0)
-
+### 📋 Task Management
 | Tool | Description |
 |------|-------------|
-| `brain_list_tasks` | Query tasks with filters (status, priority, skill, claimed_by) |
-| `brain_get_next_task` | Get highest-priority unblocked task matching your skills |
-| `brain_claim_task` | Atomically claim a task (prevents race conditions) |
-| `brain_update_task` | Update task fields (status, priority, etc.) |
-| `brain_add_task` | Create a new task with full V2 schema |
+| `brain_add_task` | Create tasks with priority, skills, dependencies |
+| `brain_list_tasks` | Query with filters (status, priority, skill, claimed_by) |
+| `brain_get_next_task` | Get highest-priority unblocked task for your skills |
+| `brain_claim_task` | Atomically claim (prevents race conditions) |
+| `brain_update_task` | Update status, priority, etc. |
 | `brain_escalate` | Request human help when stuck |
+
+### 🐝 Swarm Coordination
+| Tool | Description |
+|------|-------------|
+| `brain_orchestrate_swarm` | Launch multi-agent missions |
+| `brain_spawn_agent` | Create ephemeral agents for specific tasks |
+| `brain_autopilot_sprint` | Orchestrate multiple slots in parallel |
+
+### 💾 Session & Memory
+| Tool | Description |
+|------|-------------|
+| `brain_save_session` | Persist context for later resumption |
+| `brain_resume_session` | Restore previous session state |
+| `brain_search_memory` | Search long-term memory |
+| `brain_read_memory` | Read memory categories |
+
+### 📊 Monitoring & Audit
+| Tool | Description |
+|------|-------------|
+| `brain_satellite_view` | Unified view of depth, activity, health |
+| `brain_metrics` | Velocity, closure rates, mental load |
+| `brain_open_loops` | All pending tasks, todos, drafts, decisions |
 
 **V2 Task Schema (11 fields):**
 ```json
@@ -242,7 +257,20 @@ Or click `brain://context` in Claude Desktop's sidebar.
 - **No cross-editor sync**: Artifacts created in one IDE's conversation don't automatically sync to another. Manual copy is required for important documents.
 - **Python 3.10+ required**: Won't work with older Python versions.
 
+## 🚀 What's New in v0.5.0
+
+- **110+ MCP Tools** (up from 16 in v0.3.0)
+- **V3.1 Task Engine** with slot pooling and tier routing
+- **Swarm Orchestration** for recursive multi-agent missions
+- **Session Persistence** across conversations
+- **Health Monitoring** endpoints for production use
+- **E2E Test Suite** — 8/8 critical path tests passing
+
 ## 📜 License
 
 MIT © Nucleus Team
+
+---
+
+**Built for the AI-native developer.** Star us on GitHub if Nucleus saves you from context amnesia! ⭐
 
