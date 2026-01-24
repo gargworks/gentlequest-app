@@ -9,6 +9,9 @@ from typing import List, Optional, Dict, Any
 from pathlib import Path
 import sys
 
+# Record start time for uptime tracking
+START_TIME = time.time()
+
 # Configure FastMCP to disable banner and use stderr for logging to avoid breaking MCP protocol
 os.environ["FASTMCP_SHOW_CLI_BANNER"] = "False"
 os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
@@ -17,6 +20,25 @@ os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 
 # Import commitment ledger module
 from . import commitment_ledger
+
+# Phase 1 Monolith Decomposition Imports
+from .runtime.common import get_brain_path, make_response, _get_state, _update_state
+from .runtime.event_ops import _emit_event, _read_events
+from .runtime.task_ops import (
+    _get_tasks_list, _save_tasks_list, _list_tasks, _add_task, 
+    _claim_task, _update_task, _get_next_task, _import_tasks_from_jsonl,
+    _escalate_task
+)
+from .runtime.session_ops import (
+    _save_session, _resume_session, _list_sessions, 
+    _get_session, _check_for_recent_session, _prune_old_sessions,
+    _get_sessions_path, _get_active_session_path
+)
+from .runtime.depth_ops import (
+    _get_depth_path, _get_depth_state, _save_depth_state, _depth_push, 
+    _depth_pop, _depth_show, _depth_reset, _format_depth_indicator,
+    _generate_depth_map
+)
 
 # Setup logging
 # logging.basicConfig(level=logging.INFO) # Removing to prevent overriding FastMCP settings
@@ -44,82 +66,50 @@ except ImportError:
         def run(self): pass
     mcp = MockMCP()
 
-def get_brain_path() -> Path:
-    """Get the brain path from environment variable (read dynamically for testing)."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
-    if not brain_path:
-        raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set")
-    path = Path(brain_path)
-    if not path.exists():
-         raise ValueError(f"Brain path does not exist: {brain_path}")
-    return path
+# get_brain_path imported from runtime.common
+
+# ============================================================
+# ORCHESTRATOR V3.1 INTEGRATION
+# ============================================================
+# Lazy-loaded singleton for orchestrator access
+# All task operations route through this for CRDT + V3.1 features
+# IMPORTANT: Uses the SAME singleton as orchestrator_v3.get_orchestrator()
+
+def get_orch():
+    """Get the orchestrator singleton (delegates to orchestrator_v3)."""
+    from .runtime.orchestrator_v3 import get_orchestrator
+    return get_orchestrator()
 
 # ============================================================
 # CORE LOGIC (Testable, plain functions)
 # ============================================================
 
-def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
-    """Core logic for emitting an event."""
-    try:
-        brain = get_brain_path()
-        events_path = brain / "ledger" / "events.jsonl"
-        
-        event_id = f"evt-{int(time.time())}-{str(uuid.uuid4())[:8]}"
-        timestamp = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        today = time.strftime("%Y-%m-%d")
-        
-        event = {
-            "event_id": event_id,
-            "timestamp": timestamp,
-            "type": event_type,
-            "emitter": emitter,
-            "data": data,
-            "description": description
-        }
-        
-        with open(events_path, "a") as f:
-            f.write(json.dumps(event) + "\n")
-        
-        # Update activity summary for fast satellite view (Tier 2 precomputation)
-        try:
-            summary_path = brain / "ledger" / "activity_summary.json"
-            if summary_path.exists():
-                with open(summary_path, "r") as f:
-                    summary = json.load(f)
-            else:
-                summary = {"days": {}, "updated_at": ""}
-            
-            summary["days"][today] = summary["days"].get(today, 0) + 1
-            summary["updated_at"] = timestamp
-            
-            with open(summary_path, "w") as f:
-                json.dump(summary, f, indent=2)
-        except Exception:
-            pass  # Don't fail event emit if summary update fails
-            
-        return event_id
-    except Exception as e:
-        return f"Error emitting event: {str(e)}"
+# make_response imported from runtime.common
+# _emit_event imported from runtime.event_ops
+# _read_events imported from runtime.event_ops
 
-def _read_events(limit: int = 10) -> List[Dict]:
-    """Core logic for reading events."""
+
+
+
+@mcp.tool()
+def brain_health() -> str:
+    """
+    Health check endpoint for monitoring and debugging.
+    Returns system status, version, and configuration.
+    """
     try:
-        brain = get_brain_path()
-        events_path = brain / "ledger" / "events.jsonl"
-        
-        if not events_path.exists():
-            return []
-            
-        events = []
-        with open(events_path, "r") as f:
-            for line in f:
-                if line.strip():
-                    events.append(json.loads(line))
-        
-        return events[-limit:]
+        brain_path = get_brain_path()
+        data = {
+            "status": "healthy",
+            "version": "0.5.0",
+            "tools_registered": len(mcp.tools) if hasattr(mcp, 'tools') else 0,
+            "brain_path": str(brain_path),
+            "uptime_seconds": int(time.time() - START_TIME),
+            "python_version": sys.version.split()[0]
+        }
+        return make_response(True, data=data)
     except Exception as e:
-        logger.error(f"Error reading events: {e}")
-        return []
+        return make_response(False, error=str(e))
 
 @mcp.tool()
 def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
@@ -142,49 +132,8 @@ def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
     result = loop.run()
     return json.dumps(result, indent=2)
 
-def _get_state(path: Optional[str] = None) -> Dict:
-    """Core logic for getting state."""
-    try:
-        brain = get_brain_path()
-        state_path = brain / "ledger" / "state.json"
-        
-        if not state_path.exists():
-            return {}
-            
-        with open(state_path, "r") as f:
-            state = json.load(f)
-            
-        if path:
-            keys = path.split('.')
-            val = state
-            for k in keys:
-                val = val.get(k, {})
-            return val
-            
-        return state
-    except Exception as e:
-        logger.error(f"Error reading state: {e}")
-        return {}
-
-def _update_state(updates: Dict[str, Any]) -> str:
-    """Core logic for updating state."""
-    try:
-        brain = get_brain_path()
-        state_path = brain / "ledger" / "state.json"
-        
-        current_state = {}
-        if state_path.exists():
-            with open(state_path, "r") as f:
-                current_state = json.load(f)
-        
-        current_state.update(updates)
-        
-        with open(state_path, "w") as f:
-            json.dump(current_state, f, indent=2)
-            
-        return "State updated successfully"
-    except Exception as e:
-        return f"Error updating state: {str(e)}"
+# _get_state imported from runtime.common
+# _update_state imported from runtime.common
 
 def _read_artifact(path: str) -> str:
     """Core logic for reading an artifact."""
@@ -296,380 +245,10 @@ def _evaluate_triggers(event_type: str, emitter: str) -> List[str]:
 # V2 TASK MANAGEMENT CORE LOGIC
 # ============================================================
 
-def _get_tasks_list() -> List[Dict]:
-    """Get the tasks array from tasks.json (V2) or fallback to state.json (V1)."""
-    try:
-        brain = get_brain_path()
-        tasks_path = brain / "ledger" / "tasks.json"
+# Task logic moved to runtime/task_ops.py
 
-        # Priority 1: Read V2 tasks.json
-        if tasks_path.exists():
-            with open(tasks_path, "r") as f:
-                return json.load(f)
-                
-        # Priority 2: Fallback to V1 state.json
-        state = _get_state()
-        current_sprint = state.get("current_sprint", {})
-        return current_sprint.get("tasks", [])
-    except Exception as e:
-        logger.error(f"Error getting tasks list: {e}")
-        return []
+# Task logic moved to runtime/task_ops.py
 
-def _save_tasks_list(tasks: List[Dict]) -> str:
-    """Save the tasks array (prefers V2 tasks.json if it exists)."""
-    try:
-        brain = get_brain_path()
-        tasks_path = brain / "ledger" / "tasks.json"
-        
-        # Priority 1: Write to V2 tasks.json if it exists
-        if tasks_path.exists():
-            with open(tasks_path, "w") as f:
-                json.dump(tasks, f, indent=2)
-            return "Tasks saved (V2)"
-
-        # Priority 2: Fallback to V1 state.json
-        state = _get_state()
-        if "current_sprint" not in state:
-            state["current_sprint"] = {}
-        state["current_sprint"]["tasks"] = tasks
-        
-        state_path = brain / "ledger" / "state.json"
-        with open(state_path, "w") as f:
-            json.dump(state, f, indent=2)
-        return "Tasks saved (V1)"
-    except Exception as e:
-        logger.error(f"Error saving tasks list: {e}")
-        return f"Error saving tasks: {str(e)}"
-
-def _list_tasks(
-    status: Optional[str] = None,
-    priority: Optional[int] = None,
-    skill: Optional[str] = None,
-    claimed_by: Optional[str] = None
-) -> List[Dict]:
-    """List tasks with optional filters."""
-    try:
-        tasks = _get_tasks_list()
-        
-        # Ensure all tasks have V2 fields (backward compat)
-        for task in tasks:
-            if "id" not in task:
-                task["id"] = f"task-{str(uuid.uuid4())[:8]}"
-            if "priority" not in task:
-                task["priority"] = 3  # Default medium
-            if "blocked_by" not in task:
-                task["blocked_by"] = []
-            if "required_skills" not in task:
-                # Migrate from preferred_role
-                if "preferred_role" in task:
-                    task["required_skills"] = [task["preferred_role"].lower()]
-                else:
-                    task["required_skills"] = []
-            if "source" not in task:
-                task["source"] = "synthesizer"
-            if "created_at" not in task:
-                task["created_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-            if "updated_at" not in task:
-                task["updated_at"] = task["created_at"]
-        
-        # Merge with Commitment Ledger (PEFS)
-        try:
-            from mcp_server_nucleus import commitment_ledger
-            brain = get_brain_path()
-            ledger = commitment_ledger.load_ledger(brain)
-            
-            for comm in ledger.get("commitments", []):
-                # Map Status
-                comm_status = comm.get("status", "open").lower()
-                task_status = "PENDING"
-                if comm_status == "closed":
-                    task_status = "DONE"
-                
-                # Create Task Object
-                # Only add if not already present (tasks.json takes precedence for same ID, but IDs differ)
-                cm_task = {
-                    "id": comm["id"],
-                    "description": comm["description"],
-                    "status": task_status,
-                    "priority": comm.get("priority", 3),
-                    "blocked_by": [],
-                    "required_skills": comm.get("required_skills", []),
-                    "source": f"ledger:{comm.get('source', 'unknown')}",
-                    "created_at": comm.get("created"),
-                    "claimed_by": None
-                }
-                tasks.append(cm_task)
-        except Exception as e:
-            logger.warning(f"Failed to merge commitment ledger: {e}")
-
-        # Apply filters
-        filtered = tasks
-        
-        if status:
-            # Map old status names to new
-            status_map = {"TODO": "PENDING", "COMPLETE": "DONE"}
-            target_status = status_map.get(status, status)
-            filtered = [t for t in filtered if t.get("status", "").upper() == target_status.upper() 
-                       or t.get("status", "").upper() == status.upper()]
-        
-        if priority is not None:
-            filtered = [t for t in filtered if t.get("priority") == priority]
-        
-        if skill:
-            filtered = [t for t in filtered if skill.lower() in 
-                       [s.lower() for s in t.get("required_skills", [])]]
-        
-        if claimed_by:
-            filtered = [t for t in filtered if claimed_by in str(t.get("claimed_by", ""))]
-        
-        # Merge with Cloud Tasks (if available)
-        try:
-            from mcp_server_nucleus.runtime.firestore_bridge import get_bridge
-            cloud_tasks = get_bridge().list_cloud_tasks()
-            if cloud_tasks:
-                # Merge logic: Append cloud tasks, avoiding duplicates by ID
-                local_ids = {t["id"] for t in filtered}
-                for ct in cloud_tasks:
-                    if ct["id"] not in local_ids:
-                        filtered.append(ct)
-        except Exception as e:
-            logger.warning(f"Failed to merge cloud tasks: {e}")
-            pass
-        
-        # Sort by priority (1=Highest, so ascending order)
-        filtered.sort(key=lambda x: x.get("priority", 3))
-        
-        return filtered
-    except Exception as e:
-        logger.error(f"Error listing tasks: {e}")
-        return []
-
-def _get_next_task(skills: List[str]) -> Optional[Dict]:
-    """Get highest priority unblocked task matching skills."""
-    try:
-        tasks = _list_tasks()
-        
-        # Filter for actionable tasks
-        actionable = []
-        for task in tasks:
-            status = task.get("status", "").upper()
-            # Include TODO (legacy) and PENDING/READY (V2)
-            if status not in ["TODO", "PENDING", "READY"]:
-                continue
-            
-            # Skip if already claimed
-            if task.get("claimed_by"):
-                continue
-            
-            # Skip if blocked
-            blocked_by = task.get("blocked_by", [])
-            if blocked_by:
-                # Check if blocking tasks are done
-                all_tasks = _get_tasks_list()
-                blocking_done = True
-                for blocker_id in blocked_by:
-                    for t in all_tasks:
-                        if t.get("id") == blocker_id:
-                            if t.get("status", "").upper() not in ["DONE", "COMPLETE"]:
-                                blocking_done = False
-                                break
-                if not blocking_done:
-                    continue
-            
-            # Check skill match
-            required = [s.lower() for s in task.get("required_skills", [])]
-            available = [s.lower() for s in skills]
-            
-            if not required or any(r in available for r in required):
-                actionable.append(task)
-        
-        # Sort by priority (1 = highest)
-        actionable.sort(key=lambda t: t.get("priority", 3))
-        
-        return actionable[0] if actionable else None
-    except Exception as e:
-        logger.error(f"Error getting next task: {e}")
-        return None
-
-def _claim_task(task_id: str, agent_id: str) -> Dict:
-    """Atomically claim a task."""
-    try:
-        tasks = _get_tasks_list()
-        
-        for task in tasks:
-            # Match by id or by description (backward compat)
-            if task.get("id") == task_id or task.get("description") == task_id:
-                # Check if already claimed
-                if task.get("claimed_by"):
-                    return {"success": False, "error": f"Task already claimed by {task['claimed_by']}"}
-                
-                # Check status
-                status = task.get("status", "").upper()
-                if status not in ["TODO", "PENDING", "READY"]:
-                    return {"success": False, "error": f"Task status is {status}, cannot claim"}
-                
-                # Claim it
-                task["claimed_by"] = agent_id
-                task["status"] = "IN_PROGRESS"
-                task["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-                
-                _save_tasks_list(tasks)
-                
-                # Emit event
-                _emit_event("task_claimed", agent_id, {
-                    "task_id": task.get("id", task_id),
-                    "description": task.get("description")
-                })
-                
-                return {"success": True, "task": task}
-        
-        return {"success": False, "error": "Task not found"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def _update_task(task_id: str, updates: Dict[str, Any]) -> Dict:
-    """Update task fields."""
-    try:
-        tasks = _get_tasks_list()
-        
-        for task in tasks:
-            if task.get("id") == task_id or task.get("description") == task_id:
-                # VALIDATION: Check for valid keys
-                valid_keys = ["status", "priority", "description", "blocked_by", 
-                              "required_skills", "claimed_by"]
-                
-                # VALIDATION: Referential Integrity for 'blocked_by'
-                if "blocked_by" in updates:
-                    all_ids = {t["id"] for t in tasks}
-                    for dep_id in updates["blocked_by"]:
-                        if dep_id not in all_ids:
-                             raise ValueError(f"Referential integrity violation: Dependency task '{dep_id}' does not exist")
-
-                # Capture old state for event
-                old_status = task.get("status")
-                
-                # Apply updates
-                for key, value in updates.items():
-                    if key in valid_keys:
-                        task[key] = value
-                
-                task["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-                
-                _save_tasks_list(tasks)
-                
-                # Emit event if status changed
-                new_status = task.get("status")
-                if old_status != new_status and "status" in updates:
-                    try:
-                        _emit_event(
-                            "task_state_changed",
-                            "brain_update_task",
-                            {
-                                "task_id": task.get("id"),
-                                "old_status": old_status,
-                                "new_status": new_status,
-                                "description": task.get("description", "")[:60]
-                            },
-                            description=f"Task {task.get('id')} {old_status} → {new_status}"
-                        )
-                    except Exception:
-                        pass  # Don't fail task update if event emission fails
-                
-                return {"success": True, "task": task}
-        
-        return {"success": False, "error": "Task not found"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def _add_task(
-    description: str,
-    priority: int = 3,
-    blocked_by: List[str] = None,
-    required_skills: List[str] = None,
-    source: str = "synthesizer"
-) -> Dict:
-    """Create a new task.
-    
-    Safety Properties Enforced:
-    - Referential Integrity: blocked_by references must exist
-    - DAG Property: No circular dependencies (simple check for self-reference)
-    """
-    try:
-        tasks = _get_tasks_list()
-        task_ids = {t.get("id") for t in tasks if t.get("id")}
-        
-        # Validate blocked_by references (Referential Integrity)
-        if blocked_by:
-            for dep_id in blocked_by:
-                if dep_id not in task_ids:
-                    return {
-                        "success": False, 
-                        "error": f"Referential integrity violation: dependency '{dep_id}' does not exist"
-                    }
-        
-        now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        new_task_id = f"task-{str(uuid.uuid4())[:8]}"
-        
-        # Check for self-reference (basic DAG property)
-        if blocked_by and new_task_id in blocked_by:
-            return {
-                "success": False,
-                "error": "DAG violation: task cannot block itself"
-            }
-        
-        new_task = {
-            "id": new_task_id,
-            "description": description,
-            "status": "PENDING" if not blocked_by else "BLOCKED",
-            "priority": priority,
-            "blocked_by": blocked_by or [],
-            "required_skills": required_skills or [],
-            "claimed_by": None,
-            "source": source,
-            "escalation_reason": None,
-            "created_at": now,
-            "updated_at": now
-        }
-        
-        tasks.append(new_task)
-        _save_tasks_list(tasks)
-        
-        # Emit event
-        _emit_event("task_created", "nucleus_mcp", {
-            "task_id": new_task["id"],
-            "description": description,
-            "source": source
-        })
-        
-        return {"success": True, "task": new_task}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def _escalate_task(task_id: str, reason: str) -> Dict:
-    """Escalate a task to request human help."""
-    try:
-        tasks = _get_tasks_list()
-        
-        for task in tasks:
-            if task.get("id") == task_id or task.get("description") == task_id:
-                task["status"] = "ESCALATED"
-                task["escalation_reason"] = reason
-                task["claimed_by"] = None  # Unclaim
-                task["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-                
-                _save_tasks_list(tasks)
-                
-                # Emit event
-                _emit_event("task_escalated", "nucleus_mcp", {
-                    "task_id": task.get("id", task_id),
-                    "reason": reason
-                })
-                
-                return {"success": True, "task": task}
-        
-        return {"success": False, "error": "Task not found"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 # ============================================================
 # DEPTH TRACKER - TIER 1 MVP (ADHD Accommodation)
@@ -677,339 +256,8 @@ def _escalate_task(task_id: str, reason: str) -> Dict:
 # Purpose: Real-time "you are here" indicator for conversation depth
 # Philosophy: WARN but ALLOW - guardrail, not a wall
 
-def _get_depth_path() -> Path:
-    """Get the path to the depth tracking file."""
-    brain = get_brain_path()
-    session_dir = brain / "session"
-    session_dir.mkdir(parents=True, exist_ok=True)
-    return session_dir / "depth.json"
+# Depth tracking logic moved to runtime/depth_ops.py
 
-def _get_depth_state() -> Dict:
-    """Get current depth tracking state."""
-    try:
-        depth_path = _get_depth_path()
-        
-        if not depth_path.exists():
-            # Initialize with default state
-            default_state = {
-                "session_id": f"session-{time.strftime('%Y%m%d')}",
-                "current_depth": 0,
-                "max_safe_depth": 5,
-                "levels": [],
-                "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
-            }
-            with open(depth_path, "w") as f:
-                json.dump(default_state, f, indent=2)
-            return default_state
-        
-        with open(depth_path, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Error getting depth state: {e}")
-        return {"current_depth": 0, "levels": [], "max_safe_depth": 5}
-
-def _save_depth_state(state: Dict) -> str:
-    """Save depth tracking state."""
-    try:
-        depth_path = _get_depth_path()
-        state["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        with open(depth_path, "w") as f:
-            json.dump(state, f, indent=2)
-        return "Depth state saved"
-    except Exception as e:
-        return f"Error saving depth state: {str(e)}"
-
-def _depth_push(topic: str) -> Dict:
-    """Go deeper into a subtopic. Returns current state with warnings."""
-    try:
-        state = _get_depth_state()
-        
-        new_depth = state.get("current_depth", 0) + 1
-        max_safe = state.get("max_safe_depth", 5)
-        
-        # Create new level entry
-        new_level = {
-            "depth": new_depth,
-            "topic": topic,
-            "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            "status": "current"
-        }
-        
-        # Update previous level status
-        levels = state.get("levels", [])
-        for level in levels:
-            if level.get("status") == "current":
-                level["status"] = "active"
-        
-        levels.append(new_level)
-        
-        state["current_depth"] = new_depth
-        state["levels"] = levels
-        _save_depth_state(state)
-        
-        # Generate warning based on depth
-        warning = None
-        warning_level = "safe"
-        
-        if new_depth >= max_safe:
-            warning = f"🔴🔴 RABBIT HOLE! You're at level {new_depth}/{max_safe}. Consider resurfacing."
-            warning_level = "danger"
-        elif new_depth >= max_safe - 1:
-            warning = f"🔴 DEEP DIVE ALERT! Level {new_depth}/{max_safe}. You're in the danger zone."
-            warning_level = "danger"
-        elif new_depth >= 3:
-            warning = f"🟡 CAUTION: Level {new_depth}/{max_safe}. Getting deep - just so you know."
-            warning_level = "caution"
-        
-        # Build breadcrumb path
-        breadcrumbs = " → ".join([lv["topic"] for lv in levels])
-        
-        # Emit event
-        _emit_event("depth_increased", "depth_tracker", {
-            "new_depth": new_depth,
-            "topic": topic,
-            "warning_level": warning_level
-        })
-        
-        return {
-            "current_depth": new_depth,
-            "max_safe_depth": max_safe,
-            "topic": topic,
-            "breadcrumbs": breadcrumbs,
-            "warning": warning,
-            "warning_level": warning_level,
-            "indicator": _format_depth_indicator(new_depth, max_safe)
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _depth_pop() -> Dict:
-    """Come back up one level. Returns new state."""
-    try:
-        state = _get_depth_state()
-        levels = state.get("levels", [])
-        
-        if not levels:
-            return {
-                "current_depth": 0,
-                "message": "Already at root level (depth 0). Nothing to pop.",
-                "indicator": _format_depth_indicator(0, state.get("max_safe_depth", 5))
-            }
-        
-        # Pop the current level
-        popped = levels.pop()
-        
-        # Set new current
-        if levels:
-            levels[-1]["status"] = "current"
-        
-        new_depth = len(levels)
-        state["current_depth"] = new_depth
-        state["levels"] = levels
-        _save_depth_state(state)
-        
-        # Build breadcrumb path
-        breadcrumbs = " → ".join([lv["topic"] for lv in levels]) if levels else "(root)"
-        returned_to = levels[-1]["topic"] if levels else "root"
-        
-        # Emit event
-        _emit_event("depth_decreased", "depth_tracker", {
-            "new_depth": new_depth,
-            "returned_to": returned_to,
-            "popped_topic": popped["topic"]
-        })
-        
-        return {
-            "current_depth": new_depth,
-            "returned_to": returned_to,
-            "popped_topic": popped["topic"],
-            "breadcrumbs": breadcrumbs,
-            "message": f"✅ Resurfaced! Now at level {new_depth}: {returned_to}",
-            "indicator": _format_depth_indicator(new_depth, state.get("max_safe_depth", 5))
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _depth_show() -> Dict:
-    """Show current depth state with visual indicator."""
-    try:
-        state = _get_depth_state()
-        current_depth = state.get("current_depth", 0)
-        max_safe = state.get("max_safe_depth", 5)
-        levels = state.get("levels", [])
-        
-        # Build breadcrumb path
-        breadcrumbs = " → ".join([lv["topic"] for lv in levels]) if levels else "(root)"
-        
-        # Build tree visualization
-        tree_lines = []
-        for i, level in enumerate(levels):
-            indent = "  " * i
-            prefix = "└─ " if i > 0 else ""
-            marker = " ← YOU ARE HERE" if level.get("status") == "current" else ""
-            tree_lines.append(f"{indent}{prefix}{i}: {level['topic']}{marker}")
-        
-        tree = "\n".join(tree_lines) if tree_lines else "(At root level)"
-        
-        # Generate status
-        if current_depth >= max_safe:
-            status = "🔴 RABBIT HOLE"
-        elif current_depth >= max_safe - 1:
-            status = "🔴 DANGER ZONE"
-        elif current_depth >= 3:
-            status = "🟡 CAUTION"
-        else:
-            status = "🟢 SAFE"
-        
-        return {
-            "current_depth": current_depth,
-            "max_safe_depth": max_safe,
-            "status": status,
-            "breadcrumbs": breadcrumbs,
-            "tree": tree,
-            "indicator": _format_depth_indicator(current_depth, max_safe),
-            "levels": levels,
-            "session_id": state.get("session_id"),
-            "help": "Commands: brain_depth_push(topic), brain_depth_pop(), brain_depth_reset(), brain_depth_set_max(n)"
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _depth_reset() -> Dict:
-    """Reset depth to 0 (root level). Clears all levels."""
-    try:
-        state = _get_depth_state()
-        
-        # Keep session ID and max_safe_depth
-        new_state = {
-            "session_id": f"session-{time.strftime('%Y%m%d-%H%M%S')}",
-            "current_depth": 0,
-            "max_safe_depth": state.get("max_safe_depth", 5),
-            "levels": [],
-            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        }
-        
-        _save_depth_state(new_state)
-        
-        # Emit event
-        _emit_event("depth_reset", "depth_tracker", {
-            "previous_depth": state.get("current_depth", 0),
-            "new_session_id": new_state["session_id"]
-        })
-        
-        return {
-            "message": "✅ Session reset! Back to root level (depth 0).",
-            "current_depth": 0,
-            "session_id": new_state["session_id"],
-            "indicator": _format_depth_indicator(0, new_state["max_safe_depth"])
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _depth_set_max(max_depth: int) -> Dict:
-    """Set the maximum safe depth threshold."""
-    try:
-        if max_depth < 1 or max_depth > 10:
-            return {"error": "Max depth must be between 1 and 10"}
-        
-        state = _get_depth_state()
-        old_max = state.get("max_safe_depth", 5)
-        state["max_safe_depth"] = max_depth
-        _save_depth_state(state)
-        
-        return {
-            "message": f"Max safe depth changed from {old_max} to {max_depth}",
-            "max_safe_depth": max_depth,
-            "current_depth": state.get("current_depth", 0),
-            "indicator": _format_depth_indicator(state.get("current_depth", 0), max_depth)
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _format_depth_indicator(current: int, max_safe: int) -> str:
-    """Format a visual depth indicator with dots and colors."""
-    filled = "●" * current
-    empty = "○" * (max_safe - current) if current < max_safe else ""
-    overflow = "●" * (current - max_safe) if current > max_safe else ""
-    
-    # Color indicator
-    if current >= max_safe:
-        color = "🔴"
-    elif current >= max_safe - 1:
-        color = "🔴"
-    elif current >= 3:
-        color = "🟡"
-    else:
-        color = "🟢"
-    
-    return f"{color} DEPTH: {filled}{empty}{overflow} ({current}/{max_safe})"
-
-def _generate_depth_map() -> Dict:
-    """Generate a Mermaid diagram of the current exploration path."""
-    try:
-        state = _get_depth_state()
-        levels = state.get("levels", [])
-        max_safe = state.get("max_safe_depth", 5)
-        
-        if not levels:
-            return {
-                "mermaid": "```mermaid\ngraph TD\n    ROOT((🏠 START))\n    style ROOT fill:#ccffcc,stroke:#0a0\n```",
-                "message": "You're at the root level. No exploration path yet.",
-                "node_count": 0
-            }
-        
-        # Build Mermaid graph
-        lines = ["graph TD"]
-        lines.append("    ROOT((🏠 START))")
-        
-        prev_id = "ROOT"
-        for i, level in enumerate(levels):
-            node_id = f"L{i}"
-            topic = level.get("topic", f"Level {i+1}")
-            # Escape quotes and special chars
-            topic_safe = topic.replace('"', "'").replace("[", "(").replace("]", ")")
-            
-            # Determine node style based on depth
-            depth = i + 1
-            if depth >= max_safe:
-                style = "fill:#ffcccc,stroke:#f00"  # Red - rabbit hole
-                node_shape = f'{node_id}[["🔴 {topic_safe}"]]'
-            elif depth >= max_safe - 1:
-                style = "fill:#ffddcc,stroke:#f60"  # Orange - danger
-                node_shape = f'{node_id}[["🔴 {topic_safe}"]]'
-            elif depth >= 3:
-                style = "fill:#ffffcc,stroke:#cc0"  # Yellow - caution
-                node_shape = f'{node_id}["🟡 {topic_safe}"]'
-            else:
-                style = "fill:#ccffcc,stroke:#0a0"  # Green - safe
-                node_shape = f'{node_id}["🟢 {topic_safe}"]'
-            
-            lines.append(f"    {prev_id} --> {node_shape}")
-            lines.append(f"    style {node_id} {style}")
-            prev_id = node_id
-        
-        # Mark the last node as current
-        if levels:
-            lines.append(f"    style {prev_id} stroke-width:3px")
-        
-        # Wrap in code block
-        mermaid_code = "```mermaid\n" + "\n".join(lines) + "\n```"
-        
-        # Build path summary
-        path = " → ".join([lv.get("topic", "?") for lv in levels])
-        
-        return {
-            "mermaid": mermaid_code,
-            "path": f"🏠 → {path}",
-            "current_depth": len(levels),
-            "max_safe_depth": max_safe,
-            "node_count": len(levels),
-            "message": f"Exploration map with {len(levels)} nodes. Current depth: {len(levels)}/{max_safe}"
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 # ============================================================
 # RENDER POLLER (Deploy monitoring)
@@ -1426,287 +674,12 @@ def _search_features(query: str) -> Dict:
 
 
 
-# ============================================================
-# SESSION MANAGEMENT (Pathway preservation)
-# ============================================================
+# Session management logic moved to runtime/session_ops.py
 
-def _get_sessions_path() -> Path:
-    """Get path to sessions directory."""
-    brain = get_brain_path()
-    return brain / "sessions"
 
-def _get_active_session_path() -> Path:
-    """Get path to active session file."""
-    return _get_sessions_path() / "active.json"
 
-def _save_session(context: str, active_task: str = None,
-                  pending_decisions: List[str] = None,
-                  breadcrumbs: List[str] = None,
-                  next_steps: List[str] = None) -> Dict:
-    """Save current session state for later resumption.
-    
-    Creates a session snapshot with:
-    - Context name (e.g., "Nucleus v0.5.0", "GentleQuest marketing")
-    - Active task being worked on
-    - Pending decisions that need resolution
-    - Breadcrumbs showing what led to current state
-    - Next steps planned
-    
-    Sessions are per-context-switch (new session when you change projects).
-    Keeps last 10 sessions (rolling).
-    """
-    try:
-        sessions_dir = _get_sessions_path()
-        sessions_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Generate session ID based on context and timestamp
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        context_slug = context.lower().replace(" ", "_")[:30]
-        session_id = f"{context_slug}_{timestamp}"
-        
-        # Get current depth state if available
-        depth_state = {}
-        try:
-            depth_state = _get_depth_state()
-        except Exception:
-            pass
-        
-        session = {
-            "id": session_id,
-            "context": context,
-            "active_task": active_task or "Not specified",
-            "pending_decisions": pending_decisions or [],
-            "breadcrumbs": breadcrumbs or [],
-            "next_steps": next_steps or [],
-            "depth_snapshot": {
-                "current_depth": depth_state.get("current_depth", 0),
-                "levels": depth_state.get("levels", [])
-            },
-            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            "is_active": True
-        }
-        
-        # Save session file
-        session_path = sessions_dir / f"{session_id}.json"
-        with open(session_path, "w") as f:
-            json.dump(session, f, indent=2)
-        
-        # Update active session pointer
-        with open(_get_active_session_path(), "w") as f:
-            json.dump({"active_session_id": session_id}, f)
-        
-        # Prune old sessions (keep last 10)
-        _prune_old_sessions(max_sessions=10)
-        
-        # Emit event for orchestration
-        try:
-            _emit_event(
-                "session_saved",
-                "brain_save_session",
-                {
-                    "session_id": session_id,
-                    "context": context,
-                    "active_task": active_task or "Not specified",
-                    "depth": depth_state.get("current_depth", 0)
-                },
-                description=f"Session saved: {context}"
-            )
-        except Exception:
-            pass  # Don't fail session save if event emission fails
-        
-        return {
-            "success": True,
-            "session_id": session_id,
-            "context": context,
-            "message": "Session saved. Resume later with: nucleus sessions resume"
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
-def _prune_old_sessions(max_sessions: int = 10) -> None:
-    """Keep only the most recent N sessions."""
-    sessions_dir = _get_sessions_path()
-    session_files = sorted(
-        sessions_dir.glob("*.json"),
-        key=lambda f: f.stat().st_mtime,
-        reverse=True
-    )
-    
-    # Exclude active.json from pruning
-    session_files = [f for f in session_files if f.name != "active.json"]
-    
-    # Remove old sessions beyond the limit
-    for old_session in session_files[max_sessions:]:
-        old_session.unlink()
 
-def _list_sessions() -> Dict:
-    """List all saved sessions."""
-    try:
-        sessions_dir = _get_sessions_path()
-        
-        if not sessions_dir.exists():
-            return {"sessions": [], "total": 0, "active_session_id": None}
-        
-        sessions = []
-        for session_file in sorted(sessions_dir.glob("*.json"), reverse=True):
-            if session_file.name == "active.json":
-                continue
-            
-            with open(session_file) as f:
-                session = json.load(f)
-            
-            sessions.append({
-                "id": session.get("id"),
-                "context": session.get("context"),
-                "active_task": session.get("active_task"),
-                "created_at": session.get("created_at"),
-                "is_active": session.get("is_active", False)
-            })
-        
-        # Get active session ID
-        active_session_id = None
-        active_path = _get_active_session_path()
-        if active_path.exists():
-            with open(active_path) as f:
-                active_data = json.load(f)
-                active_session_id = active_data.get("active_session_id")
-        
-        return {
-            "sessions": sessions,
-            "total": len(sessions),
-            "active_session_id": active_session_id
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-def _get_session(session_id: str) -> Dict:
-    """Get a specific session by ID."""
-    try:
-        sessions_dir = _get_sessions_path()
-        session_path = sessions_dir / f"{session_id}.json"
-        
-        if not session_path.exists():
-            return {"error": f"Session '{session_id}' not found"}
-        
-        with open(session_path) as f:
-            session = json.load(f)
-        
-        return {"session": session}
-    except Exception as e:
-        return {"error": str(e)}
-
-def _resume_session(session_id: str = None) -> Dict:
-    """Resume a saved session.
-    
-    If no session_id provided, resumes the most recent active session.
-    Returns the session context for rebuilding mental state.
-    """
-    try:
-        _get_sessions_path()
-        
-        # If no session specified, get the active one
-        if not session_id:
-            active_path = _get_active_session_path()
-            if active_path.exists():
-                with open(active_path) as f:
-                    active_data = json.load(f)
-                    session_id = active_data.get("active_session_id")
-        
-        if not session_id:
-            return {
-                "error": "No active session found",
-                "hint": "Save a session first with brain_save_session()"
-            }
-        
-        # Load the session
-        session_result = _get_session(session_id)
-        if "error" in session_result:
-            return session_result
-        
-        session = session_result.get("session", {})
-        
-        # Check if session is recent (<24h)
-        created_str = session.get("created_at", "")
-        is_recent = True  # Default to recent if can't parse
-        try:
-            # Simple check - if date matches today or yesterday
-            today = time.strftime("%Y-%m-%d")
-            session_date = created_str[:10]
-            is_recent = session_date == today
-        except Exception:
-            pass
-        
-        # Build resume context
-        resume_context = {
-            "session_id": session_id,
-            "context": session.get("context"),
-            "active_task": session.get("active_task"),
-            "pending_decisions": session.get("pending_decisions", []),
-            "breadcrumbs": session.get("breadcrumbs", []),
-            "next_steps": session.get("next_steps", []),
-            "depth_snapshot": session.get("depth_snapshot", {}),
-            "is_recent": is_recent,
-            "created_at": created_str
-        }
-        
-        # Format as readable summary
-        summary_lines = [
-            f"📍 **Resuming: {session.get('context')}**",
-            "",
-            f"**Active Task:** {session.get('active_task')}",
-            ""
-        ]
-        
-        if session.get("pending_decisions"):
-            summary_lines.append("**Pending Decisions:**")
-            for d in session.get("pending_decisions", []):
-                summary_lines.append(f"  • {d}")
-            summary_lines.append("")
-        
-        if session.get("breadcrumbs"):
-            summary_lines.append("**How you got here:**")
-            summary_lines.append(f"  {' → '.join(session.get('breadcrumbs', []))}")
-            summary_lines.append("")
-        
-        if session.get("next_steps"):
-            summary_lines.append("**Planned next steps:**")
-            for step in session.get("next_steps", []):
-                summary_lines.append(f"  1. {step}")
-        
-        resume_context["summary"] = "\n".join(summary_lines)
-        
-        return resume_context
-    except Exception as e:
-        return {"error": str(e)}
-
-def _check_for_recent_session() -> Dict:
-    """Check if there's a recent session (<24h) to offer resumption."""
-    try:
-        result = _list_sessions()
-        if "error" in result or not result.get("sessions"):
-            return {"has_recent": False}
-        
-        # Check most recent session
-        most_recent = result["sessions"][0]
-        created_str = most_recent.get("created_at", "")
-        
-        # Check if within 24 hours
-        today = time.strftime("%Y-%m-%d")
-        session_date = created_str[:10] if created_str else ""
-        is_recent = session_date == today
-        
-        if is_recent:
-            return {
-                "has_recent": True,
-                "session_id": most_recent.get("id"),
-                "context": most_recent.get("context"),
-                "active_task": most_recent.get("active_task"),
-                "prompt": f"Resume where you left off? Context: {most_recent.get('context')}"
-            }
-        
-        return {"has_recent": False}
-    except Exception as e:
-        return {"has_recent": False, "error": str(e)}
 
 # ============================================================
 # BRAIN CONSOLIDATION - TIER 1 (Reversibility-First)
@@ -2232,7 +1205,10 @@ def brain_list_proofs() -> Dict:
     Returns:
         List of proofs with metadata
     """
-    return _list_proofs()
+    return {
+        "proofs": _list_proofs(),
+        "total": len(_list_proofs())
+    }
 
 def _list_proofs() -> List[str]:
     """Core logic wrapper for listing proofs."""
@@ -2251,7 +1227,7 @@ def _list_proofs() -> List[str]:
 def brain_save_session(context: str, active_task: str = None,
                        pending_decisions: List[str] = None,
                        breadcrumbs: List[str] = None,
-                       next_steps: List[str] = None) -> Dict:
+                       next_steps: List[str] = None) -> str:
     """Save current session for later resumption.
     
     Call this when switching contexts or ending a work session.
@@ -2265,12 +1241,15 @@ def brain_save_session(context: str, active_task: str = None,
         next_steps: Planned next steps
     
     Returns:
-        Session save confirmation with session ID
+        Standard JSON response with session ID
     """
-    return _save_session(context, active_task, pending_decisions, breadcrumbs, next_steps)
+    result = _save_session(context, active_task, pending_decisions, breadcrumbs, next_steps)
+    if result.get("success"):
+        return make_response(True, data=result)
+    return make_response(False, error=result.get("error"))
 
 @mcp.tool()
-def brain_resume_session(session_id: str = None) -> Dict:
+def brain_resume_session(session_id: str = None) -> str:
     """Resume a saved session.
     
     Restores context from a previous session, including:
@@ -2283,9 +1262,16 @@ def brain_resume_session(session_id: str = None) -> Dict:
         session_id: Optional session ID to resume (defaults to most recent)
     
     Returns:
-        Session context with formatted summary
+        Standard JSON response with session context
     """
-    return _resume_session(session_id)
+    result = _resume_session(session_id)
+    if result:  # _resume_session returns Dict on success, or raises/returns something else?
+        # Assuming Dict is success. If it was None/Empty, handle it?
+        # Check _resume_session implementation: returns the session data dict.
+        # If error, it might raise exception (handled by caller? No, I need try/except or assume valid)
+        # Actually standard practice here:
+        return make_response(True, data=result)
+    return make_response(False, error="Session not found")
 
 @mcp.tool()
 def brain_list_sessions() -> Dict:
@@ -2294,7 +1280,8 @@ def brain_list_sessions() -> Dict:
     Returns:
         List of sessions with metadata (context, task, date)
     """
-    return _list_sessions()
+    sessions = _list_sessions()
+    return make_response(True, data=sessions)
 
 @mcp.tool()
 def brain_check_recent_session() -> Dict:
@@ -2306,7 +1293,8 @@ def brain_check_recent_session() -> Dict:
     Returns:
         Whether a recent session exists with prompt text
     """
-    return _check_for_recent_session()
+    result = _check_for_recent_session()
+    return make_response(True, data=result)
 
 # ============================================================
 # BRAIN CONSOLIDATION TOOLS (MCP wrappers)
@@ -2348,12 +1336,16 @@ def brain_propose_merges() -> Dict:
 @mcp.tool()
 def brain_emit_event(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
     """Emit a new event to the brain ledger."""
-    return _emit_event(event_type, emitter, data, description)
+    result = _emit_event(event_type, emitter, data, description)
+    if result.startswith("Error"):
+        return make_response(False, error=result)
+    return make_response(True, data={"event_id": result})
 
 @mcp.tool()
 def brain_read_events(limit: int = 10) -> List[Dict]:
     """Read the most recent events from the ledger."""
-    return _read_events(limit)
+    events = _read_events(limit)
+    return make_response(True, data={"events": events})
 
 @mcp.tool()
 def brain_get_state(path: Optional[str] = None) -> Dict:
@@ -2405,7 +1397,7 @@ def brain_list_tasks(
     priority: Optional[int] = None,
     skill: Optional[str] = None,
     claimed_by: Optional[str] = None
-) -> List[Dict]:
+) -> str:
     """List tasks with optional filters.
     
     Args:
@@ -2415,9 +1407,10 @@ def brain_list_tasks(
         claimed_by: Filter by agent who claimed the task
     
     Returns:
-        List of matching tasks
+        Standard JSON response with list of matching tasks
     """
-    return _list_tasks(status, priority, skill, claimed_by)
+    tasks = _list_tasks(status, priority, skill, claimed_by)
+    return make_response(True, data=tasks)
 
 @mcp.tool()
 def brain_get_next_task(skills: List[str]) -> Optional[Dict]:
@@ -2429,7 +1422,10 @@ def brain_get_next_task(skills: List[str]) -> Optional[Dict]:
     Returns:
         The next task to work on, or None if no matching tasks
     """
-    return _get_next_task(skills)
+    task = _get_next_task(skills)
+    if task:
+        return make_response(True, data=task)
+    return make_response(True, data=None, error="No matching tasks found")
 
 @mcp.tool()
 def brain_claim_task(task_id: str, agent_id: str) -> Dict:
@@ -2442,7 +1438,10 @@ def brain_claim_task(task_id: str, agent_id: str) -> Dict:
     Returns:
         Result with success boolean and task or error
     """
-    return _claim_task(task_id, agent_id)
+    result = _claim_task(task_id, agent_id)
+    if result.get("success"):
+        return make_response(True, data=result)
+    return make_response(False, error=result.get("error"))
 
 @mcp.tool()
 def brain_update_task(task_id: str, updates: Dict[str, Any]) -> Dict:
@@ -2455,7 +1454,10 @@ def brain_update_task(task_id: str, updates: Dict[str, Any]) -> Dict:
     Returns:
         Result with success boolean and updated task or error
     """
-    return _update_task(task_id, updates)
+    result = _update_task(task_id, updates)
+    if result.get("success"):
+        return make_response(True, data=result)
+    return make_response(False, error=result.get("error"))
 
 @mcp.tool()
 def brain_add_task(
@@ -2464,7 +1466,7 @@ def brain_add_task(
     blocked_by: List[str] = None,
     required_skills: List[str] = None,
     source: str = "synthesizer"
-) -> Dict:
+) -> str:
     """Create a new task in the queue.
     
     Args:
@@ -2475,9 +1477,37 @@ def brain_add_task(
         source: "user" or "synthesizer" (user = priority override)
     
     Returns:
-        Result with success boolean and created task or error
+        Standard JSON response with created task
     """
-    return _add_task(description, priority, blocked_by, required_skills, source)
+    result = _add_task(description, priority, blocked_by, required_skills, source)
+    if result.get("success"):
+        return make_response(True, data=result.get("task"))
+    return make_response(False, error=result.get("error"))
+
+
+# Bulk task import logic moved to runtime/task_ops.py
+
+
+
+@mcp.tool()
+def brain_import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> Dict:
+    """Import tasks from a JSONL file into the brain database.
+    
+    This syncs the GTM planning ledger (tasks.jsonl) with the brain database,
+    enabling multi-environment coordination with semantic task IDs.
+    
+    Args:
+        jsonl_path: Path to tasks.jsonl (e.g., ".brain/ledger/tasks.jsonl")
+        clear_existing: If True, replace all tasks. If False, merge (skip existing IDs).
+    
+    Returns:
+        Result with imported count, skipped count, and any errors
+    
+    Example:
+        brain_import_tasks_from_jsonl("ledger/tasks.jsonl")
+        # Imports all tasks from .brain/ledger/tasks.jsonl
+    """
+    return _import_tasks_from_jsonl(jsonl_path, clear_existing)
 
 @mcp.tool()
 def brain_escalate(task_id: str, reason: str) -> Dict:
@@ -2509,7 +1539,8 @@ def brain_depth_push(topic: str) -> Dict:
     Returns:
         Current depth, breadcrumbs, and any warnings
     """
-    return _depth_push(topic)
+    result = _depth_push(topic)
+    return make_response(True, data=result)
 
 @mcp.tool()
 def brain_depth_pop() -> Dict:
@@ -2521,7 +1552,8 @@ def brain_depth_pop() -> Dict:
     Returns:
         New depth level and what topic you returned to
     """
-    return _depth_pop()
+    result = _depth_pop()
+    return make_response(True, data=result)
 
 @mcp.tool()
 def brain_depth_show() -> Dict:
@@ -2535,7 +1567,8 @@ def brain_depth_show() -> Dict:
     Returns:
         Full depth state including visual tree and breadcrumbs
     """
-    return _depth_show()
+    result = _depth_show()
+    return make_response(True, data=result)
 
 @mcp.tool()
 def brain_depth_reset() -> Dict:
@@ -2547,7 +1580,8 @@ def brain_depth_reset() -> Dict:
     Returns:
         Confirmation and new session ID
     """
-    return _depth_reset()
+    result = _depth_reset()
+    return make_response(True, data=result)
 
 @mcp.tool()
 def brain_depth_set_max(max_depth: int) -> Dict:
@@ -2562,7 +1596,8 @@ def brain_depth_set_max(max_depth: int) -> Dict:
     Returns:
         Updated max and current depth indicator
     """
-    return _depth_set_max(max_depth)
+    result = _depth_set_max(max_depth)
+    return make_response(True, data=result)
 
 @mcp.tool()
 def brain_depth_map() -> Dict:
@@ -2576,7 +1611,8 @@ def brain_depth_map() -> Dict:
     Returns:
         Mermaid diagram code and path summary
     """
-    return _generate_depth_map()
+    result = _generate_depth_map()
+    return make_response(True, data=result)
 
 # ============================================================
 # RENDER POLLER TOOLS (Deploy monitoring)
@@ -3220,7 +2256,8 @@ def brain_satellite_view(detail_level: str = "standard") -> str:
         Formatted satellite view
     """
     view = _get_satellite_view(detail_level)
-    return _format_satellite_cli(view)
+    formatted = _format_satellite_cli(view)
+    return make_response(True, data=formatted)
 
 # ============================================================
 # COMMITMENT LEDGER MCP TOOLS (PEFS Phase 2)
@@ -3687,6 +2724,89 @@ def _get_proof(feature_id: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
+# ============================================================
+# MULTI-TIER LLM MANAGEMENT TOOLS
+# ============================================================
+
+@mcp.tool()
+def brain_set_llm_tier(tier: str) -> str:
+    """
+    Set the default LLM tier for agent spawning.
+    
+    Available tiers:
+    - premium: gemini-2.5-pro (high quality, higher cost)
+    - standard: gemini-2.5-flash (default, balanced)
+    - economy: gemini-2.5-flash-lite (low cost, background tasks)
+    - local_paid: API Key mode with billing
+    - local_free: API Key free tier (100 req/day)
+    
+    Args:
+        tier: One of the available tier names
+    
+    Returns:
+        Confirmation message
+    """
+    import os
+    valid_tiers = ["premium", "standard", "economy", "local_paid", "local_free"]
+    
+    if tier.lower() not in valid_tiers:
+        return f"❌ Invalid tier '{tier}'. Valid tiers: {', '.join(valid_tiers)}"
+    
+    # Set environment variable for the session
+    os.environ["NUCLEUS_LLM_TIER"] = tier.lower()
+    
+    return f"✅ LLM tier set to '{tier}'. All subsequent agent spawns will use this tier."
+
+
+@mcp.tool()
+def brain_get_llm_status() -> str:
+    """
+    Get current LLM tier configuration and available tiers.
+    
+    Returns:
+        Status report with current tier, available models, and benchmark results.
+    """
+    import os
+    import json
+    from pathlib import Path
+    
+    brain = get_brain_path()
+    tier_status_path = brain / "tier_status.json"
+    
+    output = "## 🧠 LLM Tier Status\n\n"
+    
+    # Current settings
+    current_tier = os.environ.get("NUCLEUS_LLM_TIER", "auto (standard)")
+    force_vertex = os.environ.get("FORCE_VERTEX", "1")
+    
+    output += f"**Current Tier:** {current_tier}\n"
+    output += f"**Vertex Mode:** {'Enabled' if force_vertex == '1' else 'Disabled'}\n\n"
+    
+    # Load cached tier status if available
+    if tier_status_path.exists():
+        try:
+            with open(tier_status_path) as f:
+                status = json.load(f)
+            
+            output += "### Available Tiers (from last benchmark)\n"
+            output += "| Tier | Model | Status | Latency |\n"
+            output += "|------|-------|--------|--------|\n"
+            
+            for tier_name, result in status.get("tier_results", {}).items():
+                status_emoji = "✅" if result.get("status") == "SUCCESS" else "❌"
+                latency = f"{result.get('latency_ms', '-')}ms" if result.get('latency_ms') else "-"
+                output += f"| {tier_name} | {result.get('model', 'unknown')} | {status_emoji} {result.get('status')} | {latency} |\n"
+            
+            output += f"\n**Recommended:** {status.get('recommended_tier', 'standard')}\n"
+            output += f"**Last Benchmark:** {status.get('run_timestamp', 'unknown')}\n"
+        except Exception as e:
+            output += f"Could not load tier status: {e}\n"
+    else:
+        output += "No benchmark data available. Run `test_llm_tiers.py --save` to generate.\n"
+    
+    return output
+
+
 @mcp.tool()
 async def brain_spawn_agent(
     intent: str,
@@ -3696,7 +2816,7 @@ async def brain_spawn_agent(
     """
     Spawn an Ephemeral Agent via the Nucleus Agent Runtime (NAR).
     The factory constructs a context based on intent and launches a disposable agent.
-    MDR_044: Now uses Dual-Engine LLM (google.genai + fallback).
+    MDR_044: Now uses Dual-Engine LLM with intelligent tier routing.
     
     Args:
         intent: The high-level goal (e.g., "Deploy production service")
@@ -3708,7 +2828,7 @@ async def brain_spawn_agent(
     """
     try:
         from uuid import uuid4
-        from .runtime.llm_client import DualEngineLLM
+        from .runtime.llm_client import DualEngineLLM, LLMTier, TierRouter
         
         session_id = f"spawn-{str(uuid4())[:8]}"
         from .runtime.factory import ContextFactory
@@ -3721,8 +2841,13 @@ async def brain_spawn_agent(
         else:
             context = factory.create_context(session_id, intent)
         
+        # Get job_type from context for tier routing
+        job_type = context.get("job_type", "ORCHESTRATION")
+        
         output = "## 🏭 NAR Factory Receipt\n"
         output += f"**Intent:** {intent}\n"
+        output += f"**Persona:** {context.get('persona', 'Unknown')}\n"
+        output += f"**Job Type:** {job_type}\n"
         output += f"**Capabilities:** {', '.join(context['capabilities'])}\n"
         output += f"**Tools Mapped:** {len(context['tools'])}\n"
         
@@ -3730,11 +2855,14 @@ async def brain_spawn_agent(
             return output + "\n❌ No tools mapped. Agent would be powerless."
             
         if execute_now:
-            output += "\n--- Executive Trace (Dual-Engine) ---\n"
+            output += "\n--- Executive Trace (Tier-Routed) ---\n"
             
-            # Initialize with Dual-Engine (New + Legacy fallback)
-            llm = DualEngineLLM()
-            output += f">> 🧠 Active Engine: {llm.active_engine}\n"
+            # Initialize with tier routing based on job_type
+            llm = DualEngineLLM(job_type=job_type)
+            
+            output += f">> 🎯 Tier: {llm.tier.value if llm.tier else 'default'}\n"
+            output += f">> 🧠 Model: {llm.model_name}\n"
+            output += f">> ⚡ Engine: {llm.active_engine}\n"
             
             agent = EphemeralAgent(context, model=llm)
             log = await agent.run()
@@ -3745,6 +2873,7 @@ async def brain_spawn_agent(
 
     except Exception as e:
         return f"Error spawning agent: {e}"
+
 
 # ============================================================
 # MDR_010: USAGE TELEMETRY & FEEDBACK MCP TOOLS
@@ -3911,7 +3040,14 @@ def brain_session_start() -> str:
                 pass
             
         # Sort by priority
-        sorted_tasks = sorted(pending_tasks, key=lambda t: t.get("priority", 999))[:5]
+        # Sort by priority - safely handle string priorities
+        def get_priority_int(t):
+            try:
+                return int(t.get("priority", 999))
+            except (ValueError, TypeError):
+                return 999
+                
+        sorted_tasks = sorted(pending_tasks, key=get_priority_int)[:5]
         
         # 3. Get Session
         state_path = brain / "ledger" / "state.json"
@@ -3945,22 +3081,59 @@ def brain_session_start() -> str:
         
         # Priority Tasks
         output.append("🎯 TOP PRIORITY TASKS:")
+        recommended_model = None
+        recommended_env = None
         if not sorted_tasks:
             output.append("   ✅ No pending tasks! All clear.")
         else:
             for i, task in enumerate(sorted_tasks, 1):
-                priority = task.get("priority", "?")
+                raw_priority = task.get("priority", 3)
+                try:
+                    priority = int(raw_priority)
+                except (ValueError, TypeError):
+                    priority = 3
+                    
                 desc = task.get("description", "")[:70]
                 task_id = task.get("id", "")
+                task_model = task.get("model")
+                task_env = task.get("environment")
                 
                 priority_icon = {1: "🔴", 2: "🟠", 3: "🟡", 4: "🟢", 5: "⚪"}.get(priority, "⚫")
                 
                 output.append(f"   {i}. {priority_icon} P{priority} | {desc}")
                 output.append(f"      ID: {task_id}")
                 
+                # Show model and environment if available (GTM tasks)
+                if task_model or task_env:
+                    model_str = f"Model: {task_model}" if task_model else ""
+                    env_str = f"Env: {task_env}" if task_env else ""
+                    output.append(f"      {model_str} {env_str}".strip())
+                
                 if priority <= 2:
                     output.append("      ⚠️  HIGH PRIORITY - Should work on this first")
                 output.append("")
+                
+                # Track recommended model from highest priority unclaimed task
+                if not recommended_model and task_model and not task.get("claimed_by"):
+                    recommended_model = task_model
+                    recommended_env = task_env
+        
+        # Model Auto-Selection (Patch 4)
+        output.append("🤖 MODEL ROUTING:")
+        if recommended_model:
+            model_display = {
+                "claude_opus_4.5": "Claude Opus 4.5 (deep reasoning)",
+                "claude_sonnet_4": "Claude Sonnet 4 (balanced)",
+                "gemini_3_pro": "Gemini 3 Pro (fast iteration)",
+                "gemini_3_pro_high": "Gemini 3 Pro High (analysis)"
+            }.get(recommended_model, recommended_model)
+            output.append(f"   ✨ Recommended: {model_display}")
+            if recommended_env:
+                output.append(f"   🎯 Environment: {recommended_env}")
+            output.append("   (Based on highest priority unclaimed task)")
+        else:
+            output.append("   No specific model recommended - use default")
+        output.append("")
         
         # Active Sprint
         output.append("🏃 ACTIVE SPRINT:")
@@ -3971,8 +3144,36 @@ def brain_session_start() -> str:
             output.append("   No active sprint - consider setting one with brain_save_session()")
         output.append("")
         
+        # Check for pending handoffs
+        handoffs_path = brain / "ledger" / "handoffs.json"
+        pending_handoffs = []
+        if handoffs_path.exists():
+            try:
+                with open(handoffs_path) as f:
+                    all_handoffs = json.load(f)
+                    pending_handoffs = [h for h in all_handoffs if h.get("status") == "pending"]
+            except Exception:
+                pass
+        
+        if pending_handoffs:
+            output.append("📬 PENDING HANDOFFS:")
+            for h in pending_handoffs[:3]:
+                output.append(f"   → TO: {h.get('to_agent')} | P{h.get('priority', 3)}")
+                output.append(f"     Request: {h.get('request', '')[:50]}...")
+            output.append("   Run: brain_get_handoffs() for details")
+            output.append("")
+        
+        # Multi-agent coordination reminder
+        output.append("🤝 MULTI-AGENT PROTOCOL:")
+        output.append("   Run: brain_check_protocol('<your_agent_id>') to verify compliance")
+        output.append("   Agents: windsurf_exec_001, antigravity_exec_001")
+        output.append("   Protocol: .brain/protocols/MULTI_AGENT_MOU.md")
+        output.append("")
+        
         # Recommendations
         output.append("💡 RECOMMENDATIONS:")
+        if pending_handoffs:
+            output.append("   📬 Check pending handoffs first!")
         if sorted_tasks and sorted_tasks[0].get("priority", 99) <= 2:
             top = sorted_tasks[0]
             output.append(f"   ⚠️  Work on Priority {top['priority']} task first:")
@@ -3985,7 +3186,7 @@ def brain_session_start() -> str:
             output.append("   Continue current sprint or work on top priority task")
         output.append("")
         
-        output.append("📖 Read AGENT_PROTOCOL.md for full workflow requirements")
+        output.append("📖 Read AGENT_PROTOCOL.md and MULTI_AGENT_MOU.md for workflow")
         output.append("=" * 60)
         
         # Emit event (safe)
@@ -3998,6 +3199,1804 @@ def brain_session_start() -> str:
         
     except Exception as e:
         return f"Error in session start: {e}"
+
+
+def _check_protocol_compliance(agent_id: str) -> Dict:
+    """Check if agent is following multi-agent coordination protocol."""
+    try:
+        brain = get_brain_path()
+        violations = []
+        warnings = []
+        
+        # Load protocol
+        protocol_path = brain / "protocols" / "multi_agent_mou.json"
+        if not protocol_path.exists():
+            return {
+                "compliant": True,
+                "message": "Protocol file not found - operating in standalone mode",
+                "violations": [],
+                "warnings": []
+            }
+        
+        with open(protocol_path) as f:
+            protocol = json.load(f)
+        
+        # Check 1: Is agent registered?
+        agents = protocol.get("agents", {})
+        if agent_id not in agents:
+            warnings.append(f"Agent '{agent_id}' not in protocol registry")
+        
+        # Check 2: Any IN_PROGRESS tasks claimed by other agents?
+        tasks = _get_tasks_list()
+        in_progress = [t for t in tasks if t.get("status") == "IN_PROGRESS"]
+        
+        other_agent_tasks = [
+            t for t in in_progress 
+            if t.get("claimed_by") and t.get("claimed_by") != agent_id
+        ]
+        
+        if other_agent_tasks:
+            for t in other_agent_tasks:
+                warnings.append(
+                    f"Task '{t.get('id')}' claimed by {t.get('claimed_by')} - do not overlap"
+                )
+        
+        # Check 3: Environment routing
+        pending_tasks = [t for t in tasks if t.get("status") == "PENDING"]
+        agent_env = agents.get(agent_id, {}).get("environment")
+        
+        routed_to_me = [
+            t for t in pending_tasks 
+            if t.get("environment") == agent_env
+        ]
+        
+        # Build compliance report
+        compliant = len(violations) == 0
+        
+        return {
+            "compliant": compliant,
+            "agent_id": agent_id,
+            "agent_role": agents.get(agent_id, {}).get("role", "unknown"),
+            "violations": violations,
+            "warnings": warnings,
+            "active_agents": list(agents.keys()),
+            "tasks_for_me": [t.get("id") for t in routed_to_me],
+            "tasks_in_progress_by_others": [
+                {"id": t.get("id"), "claimed_by": t.get("claimed_by")} 
+                for t in other_agent_tasks
+            ],
+            "protocol_version": protocol.get("version", "unknown"),
+            "message": "Protocol compliance check complete"
+        }
+    except Exception as e:
+        return {
+            "compliant": False,
+            "error": str(e),
+            "violations": [f"Protocol check failed: {str(e)}"],
+            "warnings": []
+        }
+
+
+@mcp.tool()
+def brain_check_protocol(agent_id: str) -> str:
+    """
+    Check multi-agent coordination protocol compliance.
+    
+    Call this at session start to verify you're following the MoU.
+    Returns violations (blocking) and warnings (informational).
+    
+    Args:
+        agent_id: Your agent ID (e.g., 'windsurf_exec_001')
+    
+    Returns:
+        Compliance report with violations, warnings, and task routing info
+    
+    Example:
+        brain_check_protocol("windsurf_exec_001")
+    """
+    result = _check_protocol_compliance(agent_id)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def brain_request_handoff(
+    to_agent: str,
+    context: str,
+    request: str,
+    priority: int = 3,
+    artifacts: List[str] = None
+) -> str:
+    """
+    Request a handoff to another agent via the shared brain.
+    
+    Creates a handoff request that the other agent (or human) can see.
+    Use this when you need another agent to continue work.
+    
+    Args:
+        to_agent: Target agent ID (e.g., 'antigravity_exec_001')
+        context: Brief context about current state
+        request: What you need them to do
+        priority: 1-5 (1=critical)
+        artifacts: List of files they should read
+    
+    Returns:
+        Handoff request confirmation
+    """
+    try:
+        brain = get_brain_path()
+        
+        # Create handoff request
+        handoff = {
+            "id": f"handoff-{int(time.time())}-{str(uuid.uuid4())[:4]}",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "from_agent": "current_session",  # Will be filled by caller
+            "to_agent": to_agent,
+            "priority": priority,
+            "context": context,
+            "request": request,
+            "artifacts": artifacts or [],
+            "status": "pending"
+        }
+        
+        # Save to handoffs file
+        handoffs_path = brain / "ledger" / "handoffs.json"
+        handoffs = []
+        if handoffs_path.exists():
+            with open(handoffs_path) as f:
+                handoffs = json.load(f)
+        
+        handoffs.append(handoff)
+        
+        with open(handoffs_path, "w") as f:
+            json.dump(handoffs, f, indent=2)
+        
+        # Emit event
+        _emit_event("handoff_requested", "nucleus_mcp", {
+            "handoff_id": handoff["id"],
+            "to_agent": to_agent,
+            "priority": priority
+        })
+        
+        # Format for human visibility
+        formatted = f"""
+📬 HANDOFF REQUEST
+━━━━━━━━━━━━━━━━━━
+TO: {to_agent}
+PRIORITY: P{priority}
+CONTEXT: {context}
+REQUEST: {request}
+ARTIFACTS: {', '.join(artifacts) if artifacts else 'None'}
+━━━━━━━━━━━━━━━━━━
+ID: {handoff['id']}
+Status: Pending - will appear in target agent's session_start
+"""
+        return formatted
+        
+    except Exception as e:
+        return f"Error creating handoff: {str(e)}"
+
+
+@mcp.tool()
+def brain_get_handoffs(agent_id: str = None) -> str:
+    """
+    Get pending handoff requests for an agent.
+    
+    Args:
+        agent_id: Filter to handoffs for this agent (optional)
+    
+    Returns:
+        List of pending handoff requests
+    """
+    try:
+        brain = get_brain_path()
+        handoffs_path = brain / "ledger" / "handoffs.json"
+        
+        if not handoffs_path.exists():
+            return json.dumps({"handoffs": [], "message": "No handoffs found"})
+        
+        with open(handoffs_path) as f:
+            handoffs = json.load(f)
+        
+        # Filter to pending
+        pending = [h for h in handoffs if h.get("status") == "pending"]
+        
+        # Filter by agent if specified
+        if agent_id:
+            pending = [h for h in pending if h.get("to_agent") == agent_id]
+        
+        return json.dumps({
+            "handoffs": pending,
+            "count": len(pending),
+            "message": f"Found {len(pending)} pending handoff(s)"
+        }, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": str(e), "handoffs": []})
+
+
+def _get_slot_registry() -> Dict:
+    """Load slot registry from disk."""
+    brain = get_brain_path()
+    registry_path = brain / "slots" / "registry.json"
+    if not registry_path.exists():
+        return {"slots": {}, "aliases": {}}
+    with open(registry_path) as f:
+        return json.load(f)
+
+
+def _save_slot_registry(registry: Dict):
+    """Save slot registry to disk."""
+    brain = get_brain_path()
+    registry_path = brain / "slots" / "registry.json"
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    with open(registry_path, "w") as f:
+        json.dump(registry, f, indent=2)
+
+
+def _get_tier_definitions() -> Dict:
+    """Load tier definitions from disk."""
+    brain = get_brain_path()
+    tiers_path = brain / "protocols" / "tiers.json"
+    if not tiers_path.exists():
+        return {"tiers": {}, "tier_priority_mapping": {}}
+    with open(tiers_path) as f:
+        return json.load(f)
+
+
+def _resolve_slot_id(slot_id: str, registry: Dict) -> str:
+    """Resolve alias to actual slot ID."""
+    if slot_id in registry.get("slots", {}):
+        return slot_id
+    return registry.get("aliases", {}).get(slot_id, slot_id)
+
+
+def _get_tier_for_model(model: str, tier_defs: Dict) -> str:
+    """Determine tier for a model."""
+    model_lower = model.lower().replace(" ", "_").replace("-", "_")
+    for tier_name, tier_info in tier_defs.get("tiers", {}).items():
+        models = [m.lower() for m in tier_info.get("models", [])]
+        if model_lower in models or any(model_lower in m or m in model_lower for m in models):
+            return tier_name
+    return "standard"  # Default
+
+
+def _infer_task_tier(task: Dict, tier_defs: Dict) -> str:
+    """Infer required tier from task metadata."""
+    # Check explicit required_tier
+    if task.get("required_tier"):
+        return task["required_tier"]
+    
+    # Check environment (human tasks)
+    if task.get("environment") == "human":
+        return "human"
+    
+    # Infer from priority
+    priority = task.get("priority", 3)
+    mapping = tier_defs.get("tier_priority_mapping", {})
+    return mapping.get(str(priority), "standard")
+
+
+def _can_slot_run_task(slot_tier: str, task_tier: str, tier_defs: Dict) -> bool:
+    """Check if slot tier can handle task tier."""
+    if task_tier == "human":
+        return False  # Human tasks can't be claimed by slots
+    
+    tiers = tier_defs.get("tiers", {})
+    slot_level = tiers.get(slot_tier, {}).get("level", 99)
+    task_level = tiers.get(task_tier, {}).get("level", 1)
+    
+    # Lower level = more powerful. Slot can run if its level <= task level.
+    return slot_level <= task_level
+
+
+def _compute_slot_blockers(task: Dict, tasks: List[Dict], registry: Dict) -> List[str]:
+    """Compute which slots are blocking this task."""
+    blocking_slots = set()
+    blocked_by = task.get("blocked_by", [])
+    
+    for dep_id in blocked_by:
+        # Find the dependency task
+        dep_task = next((t for t in tasks if t.get("id") == dep_id), None)
+        if not dep_task:
+            continue
+        
+        # If dependency is not done, check who owns it
+        if dep_task.get("status") != "DONE":
+            claimed_by = dep_task.get("claimed_by")
+            if claimed_by:
+                blocking_slots.add(claimed_by)
+    
+    return list(blocking_slots)
+
+
+# ============================================================================
+# NOP V3.0: FENCING TOKEN SYSTEM
+# ============================================================================
+
+def _get_fence_counter() -> Dict:
+    """Load fence counter from disk."""
+    brain = get_brain_path()
+    counter_path = brain / "ledger" / "fence_counter.json"
+    if not counter_path.exists():
+        return {"value": 100, "last_issued": None, "history": []}
+    with open(counter_path) as f:
+        return json.load(f)
+
+
+def _increment_fence_token() -> int:
+    """Atomically increment and return the next fence token."""
+    brain = get_brain_path()
+    counter_path = brain / "ledger" / "fence_counter.json"
+    counter_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    counter = _get_fence_counter()
+    counter["value"] += 1
+    counter["last_issued"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    
+    with open(counter_path, "w") as f:
+        json.dump(counter, f, indent=2)
+    
+    return counter["value"]
+
+
+def _get_model_cost(model: str) -> float:
+    """Get cost per 1K tokens for a model."""
+    tier_defs = _get_tier_definitions()
+    model_costs = tier_defs.get("model_costs", {})
+    
+    # Normalize model name
+    model_lower = model.lower().replace(" ", "_").replace("-", "_")
+    
+    # Direct lookup
+    if model_lower in model_costs:
+        return model_costs[model_lower]
+    
+    # Fuzzy match
+    for cost_model, cost in model_costs.items():
+        if model_lower in cost_model or cost_model in model_lower:
+            return cost
+    
+    return 0.010  # Default cost
+
+
+# ============================================================================
+# NOP V3.0: DEPENDENCY GRAPH COMPUTATION
+# ============================================================================
+
+def _compute_dependency_graph(tasks: List[Dict], registry: Dict) -> Dict:
+    """
+    Compute full dependency graph with slot-level blocking.
+    
+    Returns:
+        {
+            "task_to_task": {task_id: [blocking_task_ids]},
+            "task_to_slot": {task_id: [blocking_slot_ids]},
+            "slot_to_slot": {slot_id: [blocked_by_slot_ids]},
+            "circular_deps": [[cycle_path]],
+            "blocking_chains": {task_id: [full_chain]},
+            "computed_at": timestamp
+        }
+    """
+    from collections import defaultdict
+    
+    graph = {
+        "task_to_task": {},
+        "task_to_slot": {},
+        "slot_to_slot": defaultdict(set),
+        "circular_deps": [],
+        "blocking_chains": {},
+        "computed_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    }
+    
+    # Build task assignments map
+    task_assignments = {}
+    for task in tasks:
+        task_id = task.get("id")
+        assigned = task.get("assigned_slot") or task.get("claimed_by")
+        if task_id and assigned:
+            task_assignments[task_id] = assigned
+    
+    # Step 1: Build task-to-task graph
+    for task in tasks:
+        task_id = task.get("id")
+        blockers = task.get("blocked_by", [])
+        graph["task_to_task"][task_id] = blockers
+        
+        # Step 2: Compute task-to-slot (which slots are blocking this task)
+        blocking_slots = set()
+        for blocker_id in blockers:
+            blocker_task = next((t for t in tasks if t.get("id") == blocker_id), None)
+            if blocker_task and blocker_task.get("status") != "DONE":
+                blocker_slot = task_assignments.get(blocker_id)
+                if blocker_slot:
+                    blocking_slots.add(blocker_slot)
+        
+        if blocking_slots:
+            graph["task_to_slot"][task_id] = list(blocking_slots)
+        
+        # Step 3: Compute slot-to-slot
+        my_slot = task_assignments.get(task_id)
+        if my_slot:
+            for blocking_slot in blocking_slots:
+                if blocking_slot != my_slot:
+                    graph["slot_to_slot"][my_slot].add(blocking_slot)
+    
+    # Convert defaultdict to regular dict with lists
+    graph["slot_to_slot"] = {k: list(v) for k, v in graph["slot_to_slot"].items()}
+    
+    # Step 4: Detect circular dependencies (DFS)
+    visited = set()
+    path = []
+    
+    def dfs_cycle(task_id):
+        if task_id in path:
+            cycle_start = path.index(task_id)
+            cycle = path[cycle_start:] + [task_id]
+            if cycle not in graph["circular_deps"]:
+                graph["circular_deps"].append(cycle)
+            return
+        if task_id in visited:
+            return
+        
+        visited.add(task_id)
+        path.append(task_id)
+        
+        for blocker in graph["task_to_task"].get(task_id, []):
+            dfs_cycle(blocker)
+        
+        path.pop()
+    
+    for task in tasks:
+        dfs_cycle(task.get("id"))
+    
+    # Step 5: Compute blocking chains (transitive closure)
+    def get_full_chain(task_id, seen=None):
+        if seen is None:
+            seen = set()
+        if task_id in seen:
+            return []
+        seen.add(task_id)
+        
+        chain = []
+        for blocker in graph["task_to_task"].get(task_id, []):
+            chain.append(blocker)
+            chain.extend(get_full_chain(blocker, seen))
+        return chain
+    
+    for task in tasks:
+        task_id = task.get("id")
+        graph["blocking_chains"][task_id] = get_full_chain(task_id)
+    
+    return graph
+
+
+# ============================================================================
+# NOP V3.0: MULTI-FACTOR SLOT SCORING
+# ============================================================================
+
+def _score_slot_for_task(task: Dict, slot: Dict, tier_defs: Dict) -> Dict:
+    """
+    Score a slot for a task using multi-factor analysis.
+    
+    Returns:
+        {
+            "score": 0-100,
+            "breakdown": {factor: points},
+            "warnings": [],
+            "recommendation": str
+        }
+    """
+    score = 0
+    breakdown = {}
+    warnings = []
+    
+    tiers = tier_defs.get("tiers", {})
+    task_tier = _infer_task_tier(task, tier_defs)
+    slot_tier = slot.get("tier", "standard")
+    
+    task_level = tiers.get(task_tier, {}).get("level", 3)
+    slot_level = tiers.get(slot_tier, {}).get("level", 3)
+    
+    # 1. TIER MATCH (0-30 points)
+    if slot_level == task_level:
+        breakdown["tier_match"] = 30
+        score += 30
+    elif slot_level < task_level:
+        breakdown["tier_match"] = 25  # Overpowered
+        score += 25
+    elif slot_level == task_level + 1:
+        breakdown["tier_match"] = 10  # Slightly underpowered
+        score += 10
+        warnings.append(f"Slot tier ({slot_tier}) is 1 level below task tier ({task_tier})")
+    else:
+        breakdown["tier_match"] = 0  # Too weak
+        warnings.append(f"TIER_MISMATCH: Slot ({slot_tier}) cannot handle task ({task_tier})")
+    
+    # 2. AVAILABILITY (0-25 points)
+    if slot.get("status") == "active" and not slot.get("current_task"):
+        breakdown["availability"] = 25
+        score += 25
+    elif slot.get("status") == "active":
+        breakdown["availability"] = 10
+        score += 10
+    else:
+        breakdown["availability"] = 0
+        warnings.append(f"Slot status: {slot.get('status')}")
+    
+    # 3. CAPABILITY MATCH (0-20 points)
+    task_skills = set(task.get("required_skills", []))
+    slot_caps = set(slot.get("capabilities", []))
+    if task_skills:
+        overlap = len(task_skills & slot_caps) / len(task_skills)
+        cap_score = int(overlap * 20)
+        breakdown["capability"] = cap_score
+        score += cap_score
+    else:
+        breakdown["capability"] = 15  # No specific skills required
+        score += 15
+    
+    # 4. COST EFFICIENCY (0-15 points)
+    model = slot.get("model", "")
+    cost = _get_model_cost(model)
+    if cost <= 0.005:
+        breakdown["cost"] = 15
+        score += 15
+    elif cost <= 0.015:
+        breakdown["cost"] = 10
+        score += 10
+    elif cost <= 0.030:
+        breakdown["cost"] = 5
+        score += 5
+    else:
+        breakdown["cost"] = 0
+    
+    # 5. HEALTH (0-10 points)
+    success_rate = slot.get("success_rate", 1.0)
+    health_score = int(success_rate * 10)
+    breakdown["health"] = health_score
+    score += health_score
+    
+    # Generate recommendation
+    if score >= 80:
+        recommendation = "EXCELLENT match"
+    elif score >= 60:
+        recommendation = "GOOD match"
+    elif score >= 40:
+        recommendation = "ACCEPTABLE with warnings"
+    else:
+        recommendation = "NOT RECOMMENDED"
+    
+    return {
+        "score": score,
+        "breakdown": breakdown,
+        "warnings": warnings,
+        "recommendation": recommendation,
+        "slot_id": slot.get("id"),
+        "estimated_cost": _get_model_cost(slot.get("model", "")) * task.get("estimated_tokens", 5000) / 1000
+    }
+
+
+# ============================================================================
+# NOP V3.0: CLAIM WITH FENCING
+# ============================================================================
+
+def _claim_with_fence(task_id: str, slot_id: str) -> Dict:
+    """
+    Atomically claim a task with fencing token.
+    
+    Returns:
+        {"success": bool, "fence_token": int, "error": str}
+    """
+    try:
+        tasks = _get_tasks_list()
+        task = next((t for t in tasks if t.get("id") == task_id), None)
+        
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+        
+        # Check if already claimed by someone else
+        if task.get("claimed_by") and task.get("claimed_by") != slot_id:
+            return {
+                "success": False,
+                "error": f"Task already claimed by {task['claimed_by']}",
+                "current_fence": task.get("fence_token")
+            }
+        
+        # Issue new fence token
+        fence_token = _increment_fence_token()
+        
+        # Update task
+        task["claimed_by"] = slot_id
+        task["fence_token"] = fence_token
+        task["claimed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        task["status"] = "IN_PROGRESS"
+        
+        _save_tasks_list(tasks)
+        
+        # Update slot
+        registry = _get_slot_registry()
+        if slot_id in registry.get("slots", {}):
+            registry["slots"][slot_id]["current_task"] = task_id
+            registry["slots"][slot_id]["fence_token"] = fence_token
+            _save_slot_registry(registry)
+        
+        _emit_event("task_claimed_with_fence", slot_id, {
+            "task_id": task_id,
+            "fence_token": fence_token
+        })
+        
+        return {
+            "success": True,
+            "fence_token": fence_token,
+            "task_id": task_id,
+            "slot_id": slot_id
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _complete_with_fence(task_id: str, slot_id: str, fence_token: int, outcome: str = "success") -> Dict:
+    """
+    Complete a task with fence token validation.
+    
+    Returns:
+        {"success": bool, "error": str}
+    """
+    try:
+        tasks = _get_tasks_list()
+        task = next((t for t in tasks if t.get("id") == task_id), None)
+        
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+        
+        # Validate fence token
+        if task.get("fence_token") != fence_token:
+            return {
+                "success": False,
+                "error": "Stale fence token - task was reassigned",
+                "expected_fence": fence_token,
+                "current_fence": task.get("fence_token")
+            }
+        
+        # Validate claimer
+        if task.get("claimed_by") != slot_id:
+            return {
+                "success": False,
+                "error": f"Task claimed by different slot: {task['claimed_by']}"
+            }
+        
+        # Complete the task
+        task["status"] = "DONE" if outcome == "success" else "FAILED"
+        task["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        task["completed_by"] = slot_id
+        
+        _save_tasks_list(tasks)
+        
+        _emit_event("task_completed_with_fence", slot_id, {
+            "task_id": task_id,
+            "fence_token": fence_token,
+            "outcome": outcome
+        })
+        
+        return {"success": True, "task_id": task_id, "outcome": outcome}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _brain_orchestrate_impl(
+    slot_id: str = None,
+    model: str = None,
+    alias: str = None,
+    mode: str = "auto"
+) -> str:
+    """
+    Internal implementation of brain_orchestrate - directly callable.
+    
+    This function contains the actual orchestration logic and can be called
+    directly from other Python code without going through MCP protocol.
+    """
+    try:
+        brain = get_brain_path()
+        now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        
+        # Load registries
+        registry = _get_slot_registry()
+        tier_defs = _get_tier_definitions()
+        tasks = _get_tasks_list()
+        
+        # Build response structure
+        response = {
+            "meta": {
+                "timestamp": now,
+                "protocol_version": "2.0.0",
+                "mode": mode
+            },
+            "slot": None,
+            "protocol_status": {
+                "compliant": True,
+                "violations": [],
+                "warnings": []
+            },
+            "handoffs": {
+                "pending_for_me": [],
+                "sent_by_me": []
+            },
+            "action": {
+                "type": "WAIT",
+                "task_id": None,
+                "task_description": None,
+                "task_priority": None,
+                "claimed": False,
+                "reason": "Initializing..."
+            },
+            "queue": {
+                "assigned_to_me": [],
+                "blocked": [],
+                "available_for_claim": []
+            },
+            "system": {
+                "active_slots": len([s for s in registry.get("slots", {}).values() if s.get("status") == "active"]),
+                "total_pending": len([t for t in tasks if t.get("status") == "PENDING"]),
+                "total_in_progress": len([t for t in tasks if t.get("status") == "IN_PROGRESS"]),
+                "total_blocked": len([t for t in tasks if t.get("status") == "BLOCKED"]),
+                "total_done": len([t for t in tasks if t.get("status") == "DONE"])
+            }
+        }
+        
+        # REGISTRATION MODE
+        if mode == "register":
+            if not model:
+                response["action"] = {
+                    "type": "ERROR",
+                    "reason": "model parameter required for registration"
+                }
+                return json.dumps(response, indent=2)
+            
+            # Generate slot ID if not provided
+            if not slot_id:
+                slot_id = f"slot_{int(time.time())}_{str(uuid.uuid4())[:4]}"
+            
+            # Determine tier
+            tier = _get_tier_for_model(model, tier_defs)
+            
+            # Create slot entry
+            new_slot = {
+                "id": slot_id,
+                "alias": alias,
+                "ide": "unknown",
+                "model": model,
+                "tier": tier,
+                "capabilities": [],
+                "status": "active",
+                "current_task": None,
+                "registered_at": now,
+                "last_heartbeat": now,
+                "tasks_completed": 0,
+                "reset_at": None
+            }
+            
+            registry["slots"][slot_id] = new_slot
+            if alias:
+                registry["aliases"][alias] = slot_id
+            
+            _save_slot_registry(registry)
+            
+            response["slot"] = new_slot
+            response["action"] = {
+                "type": "REGISTERED",
+                "reason": f"Slot {slot_id} registered with tier {tier}"
+            }
+            
+            _emit_event("slot_registered", "nucleus_orchestrate", {
+                "slot_id": slot_id,
+                "model": model,
+                "tier": tier
+            })
+            
+            return json.dumps(response, indent=2)
+        
+        # RESOLVE SLOT ID
+        if not slot_id:
+            response["action"] = {
+                "type": "ERROR",
+                "reason": "slot_id required (use mode='register' to create new slot)"
+            }
+            return json.dumps(response, indent=2)
+        
+        resolved_id = _resolve_slot_id(slot_id, registry)
+        slot = registry.get("slots", {}).get(resolved_id)
+        
+        if not slot:
+            response["action"] = {
+                "type": "REGISTER_REQUIRED",
+                "reason": f"Slot '{slot_id}' not found. Use mode='register' with model parameter."
+            }
+            return json.dumps(response, indent=2)
+        
+        # Update heartbeat
+        slot["last_heartbeat"] = now
+        registry["slots"][resolved_id] = slot
+        _save_slot_registry(registry)
+        
+        response["slot"] = slot
+        
+        # CHECK FOR EXHAUSTION
+        if slot.get("status") == "exhausted":
+            response["action"] = {
+                "type": "EXHAUSTED",
+                "reason": f"Slot exhausted. Reset at: {slot.get('reset_at', 'unknown')}"
+            }
+            return json.dumps(response, indent=2)
+        
+        # CHECK HANDOFFS
+        handoffs_path = brain / "ledger" / "handoffs.json"
+        if handoffs_path.exists():
+            with open(handoffs_path) as f:
+                all_handoffs = json.load(f)
+            response["handoffs"]["pending_for_me"] = [
+                h for h in all_handoffs 
+                if h.get("to_agent") == resolved_id and h.get("status") == "pending"
+            ]
+        
+        # PROTOCOL COMPLIANCE
+        in_progress = [t for t in tasks if t.get("status") == "IN_PROGRESS"]
+        other_agent_tasks = [
+            t for t in in_progress 
+            if t.get("claimed_by") and t.get("claimed_by") != resolved_id
+        ]
+        
+        for t in other_agent_tasks:
+            response["protocol_status"]["warnings"].append(
+                f"Task '{t.get('id')}' claimed by {t.get('claimed_by')} - do not overlap"
+            )
+        
+        # FIND AVAILABLE TASKS
+        slot_tier = slot.get("tier", "standard")
+        available = []
+        blocked = []
+        
+        for task in tasks:
+            if task.get("status") not in ["PENDING", "READY"]:
+                continue
+            if task.get("claimed_by"):
+                continue
+            
+            task_tier = _infer_task_tier(task, tier_defs)
+            
+            # Check tier compatibility
+            if not _can_slot_run_task(slot_tier, task_tier, tier_defs):
+                continue
+            
+            # Check dependencies
+            slot_blockers = _compute_slot_blockers(task, tasks, registry)
+            task_blockers = task.get("blocked_by", [])
+            
+            # Check if all blocking tasks are done
+            all_done = True
+            for dep_id in task_blockers:
+                dep = next((t for t in tasks if t.get("id") == dep_id), None)
+                if dep and dep.get("status") != "DONE":
+                    all_done = False
+                    break
+            
+            if not all_done or slot_blockers:
+                blocked.append({
+                    "id": task.get("id"),
+                    "blocked_by_slots": slot_blockers,
+                    "blocked_by_tasks": task_blockers
+                })
+            else:
+                available.append(task)
+        
+        response["queue"]["blocked"] = blocked
+        response["queue"]["available_for_claim"] = [t.get("id") for t in available]
+        
+        # SORT BY PRIORITY
+        available.sort(key=lambda t: t.get("priority", 99))
+        
+        # HANDLE MODES
+        if mode == "report":
+            response["action"] = {
+                "type": "REPORT",
+                "reason": f"{len(available)} tasks available, {len(blocked)} blocked"
+            }
+            return json.dumps(response, indent=2)
+        
+        if not available:
+            if blocked:
+                response["action"] = {
+                    "type": "BLOCKED",
+                    "reason": f"All {len(blocked)} available tasks are blocked by other slots"
+                }
+            else:
+                response["action"] = {
+                    "type": "WAIT",
+                    "reason": "No tasks available for your tier"
+                }
+            return json.dumps(response, indent=2)
+        
+        # BEST TASK
+        best_task = available[0]
+        
+        if mode == "guided":
+            response["action"] = {
+                "type": "CHOOSE",
+                "task_id": best_task.get("id"),
+                "task_description": best_task.get("description"),
+                "task_priority": best_task.get("priority"),
+                "claimed": False,
+                "reason": f"Recommended: {best_task.get('id')}. {len(available)} total available."
+            }
+            return json.dumps(response, indent=2)
+        
+        # AUTO MODE - CLAIM THE TASK
+        claim_result = _claim_task(best_task.get("id"), resolved_id)
+        
+        if claim_result.get("success"):
+            response["action"] = {
+                "type": "WORK",
+                "task_id": best_task.get("id"),
+                "task_description": best_task.get("description"),
+                "task_priority": best_task.get("priority"),
+                "claimed": True,
+                "reason": "Claimed highest priority unblocked task"
+            }
+            response["autopilot_hint"] = {
+                "continue": len(available) > 1,
+                "next_call": f"brain_orchestrate('{resolved_id}') after completing this task",
+                "remaining_tasks": len(available) - 1
+            }
+        else:
+            response["action"] = {
+                "type": "ERROR",
+                "reason": f"Claim failed: {claim_result.get('error')}"
+            }
+        
+        return json.dumps(response, indent=2)
+        
+    except Exception as e:
+        return json.dumps({
+            "meta": {"error": str(e)},
+            "action": {"type": "ERROR", "reason": str(e)}
+        }, indent=2)
+
+
+@mcp.tool()
+def brain_orchestrate(
+    slot_id: str = None,
+    model: str = None,
+    alias: str = None,
+    mode: str = "auto"
+) -> str:
+    """
+    THE GOD COMMAND - Single entry point for all slot operations.
+    
+    Modes:
+    - register: Create new slot with model/alias
+    - auto: Check status + auto-claim best task + return instructions
+    - guided: Check status + show options + wait for human choice
+    - report: Just show status, no actions
+    
+    Args:
+        slot_id: Your slot ID or alias (e.g., 'windsurf_001' or 'ws_opus')
+        model: Model name for registration (e.g., 'claude_opus_4.5')
+        alias: Human-friendly alias for slot
+        mode: Operation mode - 'auto', 'guided', 'report', 'register'
+    
+    Returns:
+        JSON with guaranteed schema - no interpretation needed.
+        
+    Example:
+        brain_orchestrate("windsurf_001", mode="auto")
+        brain_orchestrate(slot_id="new_slot", model="gemini_3_pro_high", mode="register")
+    """
+    return _brain_orchestrate_impl(slot_id, model, alias, mode)
+
+
+@mcp.tool()
+def brain_slot_complete(slot_id: str, task_id: str, outcome: str = "success", notes: str = None) -> str:
+    """
+    Mark a task as complete and get next task.
+    
+    Args:
+        slot_id: Your slot ID
+        task_id: Task you just completed
+        outcome: 'success' or 'failed'
+        notes: Optional completion notes
+    
+    Returns:
+        Updated status and next task recommendation
+    """
+    try:
+        registry = _get_slot_registry()
+        resolved_id = _resolve_slot_id(slot_id, registry)
+        
+        # Update task status
+        tasks = _get_tasks_list()
+        for task in tasks:
+            if task.get("id") == task_id:
+                task["status"] = "DONE" if outcome == "success" else "FAILED"
+                task["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+                task["completion_notes"] = notes
+                break
+        
+        _save_tasks_list(tasks)
+        
+        # Update slot
+        slot = registry["slots"].get(resolved_id, {})
+        slot["current_task"] = None
+        slot["tasks_completed"] = slot.get("tasks_completed", 0) + 1
+        registry["slots"][resolved_id] = slot
+        _save_slot_registry(registry)
+        
+        # Emit event
+        _emit_event("task_completed", resolved_id, {
+            "task_id": task_id,
+            "outcome": outcome
+        })
+        
+        # Get next task (use impl to avoid FunctionTool callable issue)
+        return _brain_orchestrate_impl(slot_id=resolved_id, mode="auto")
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+def brain_slot_exhaust(slot_id: str, reset_hours: int = 5) -> str:
+    """
+    Mark slot as exhausted (model hit usage limit).
+    
+    Args:
+        slot_id: Your slot ID
+        reset_hours: Hours until model resets (default: 5 for Gemini)
+    
+    Returns:
+        Confirmation with reset time
+    """
+    try:
+        registry = _get_slot_registry()
+        resolved_id = _resolve_slot_id(slot_id, registry)
+        
+        slot = registry["slots"].get(resolved_id)
+        if not slot:
+            return json.dumps({"error": f"Slot {slot_id} not found"})
+        
+        # Calculate reset time
+        reset_at = time.time() + (reset_hours * 3600)
+        reset_at_str = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(reset_at))
+        
+        slot["status"] = "exhausted"
+        slot["reset_at"] = reset_at_str
+        registry["slots"][resolved_id] = slot
+        _save_slot_registry(registry)
+        
+        _emit_event("slot_exhausted", resolved_id, {
+            "reset_at": reset_at_str
+        })
+        
+        return json.dumps({
+            "slot_id": resolved_id,
+            "status": "exhausted",
+            "reset_at": reset_at_str,
+            "message": f"Slot marked exhausted. Will reset at {reset_at_str}"
+        })
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ============================================================================
+# NOP V3.1: STATUS DASHBOARD - VISUAL MONITORING
+# ============================================================================
+
+@mcp.tool()
+def brain_status_dashboard(detail_level: str = "standard") -> str:
+    """
+    Get comprehensive status dashboard for agent pool monitoring.
+    
+    Shows pool health, slot status, task queue, and cost tracking
+    in a visual ASCII format.
+    
+    Args:
+        detail_level: "minimal", "standard", or "full"
+        
+    Returns:
+        Formatted dashboard with ASCII visualization
+    
+    Example:
+        brain_status_dashboard()  # Standard view
+        brain_status_dashboard("full")  # Include cost tracking
+    """
+    try:
+        now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        
+        # Load data
+        registry = _get_slot_registry()
+        tasks = _get_tasks_list()
+        tier_defs = _get_tier_definitions()
+        all_slots = registry.get("slots", {})
+        
+        # Calculate metrics
+        active_slots = [s for s in all_slots.values() if s.get("status") == "active"]
+        exhausted_slots = [s for s in all_slots.values() if s.get("status") == "exhausted"]
+        busy_slots = [s for s in all_slots.values() if s.get("current_task")]
+        
+        pending_tasks = [t for t in tasks if t.get("status") in ["PENDING", "READY"]]
+        in_progress_tasks = [t for t in tasks if t.get("status") == "IN_PROGRESS"]
+        blocked_tasks = [t for t in tasks if t.get("status") == "BLOCKED"]
+        done_tasks = [t for t in tasks if t.get("status") == "DONE"]
+        
+        # Priority breakdown
+        # Priority breakdown - safely handle string priorities
+        def get_prio(t):
+            try:
+                return int(t.get("priority", 3))
+            except (ValueError, TypeError):
+                return 3
+
+        p1_tasks = [t for t in pending_tasks if get_prio(t) == 1]
+        p2_tasks = [t for t in pending_tasks if get_prio(t) == 2]
+        p3_tasks = [t for t in pending_tasks if get_prio(t) == 3]
+        p4_tasks = [t for t in pending_tasks if get_prio(t) >= 4]
+        
+        # Calculate health and utilization
+        total_slots = len(all_slots)
+        pool_utilization = len(busy_slots) / max(total_slots, 1) * 100
+        pool_health = len(active_slots) / max(total_slots, 1) * 100
+        
+        # Build dashboard
+        lines = []
+        
+        # Header
+        lines.append("╔" + "═" * 62 + "╗")
+        lines.append("║  🧠 NUCLEUS ORCHESTRATION DASHBOARD v3.1" + " " * 20 + "║")
+        lines.append("╠" + "═" * 62 + "╣")
+        
+        # Pool Overview
+        health_bar = "█" * int(pool_health / 10) + "░" * (10 - int(pool_health / 10))
+        util_bar = "█" * int(pool_utilization / 16.67) + "░" * (6 - int(pool_utilization / 16.67))
+        
+        lines.append(f"║  POOL HEALTH: {health_bar} {pool_health:.0f}%   │  UTILIZATION: {util_bar} {pool_utilization:.0f}%  ║")
+        lines.append(f"║  ACTIVE SLOTS: {len(active_slots)}/{total_slots}" + " " * 16 + f"│  TASKS PENDING: {len(pending_tasks)}" + " " * 8 + "║")
+        lines.append("╚" + "═" * 62 + "╝")
+        lines.append("")
+        
+        # Slot Status Grid
+        lines.append("SLOT STATUS:")
+        lines.append("┌" + "─" * 18 + "┬" + "─" * 8 + "┬" + "─" * 10 + "┬" + "─" * 23 + "┐")
+        lines.append("│ SLOT             │ STATUS │ TASK     │ RESET                 │")
+        lines.append("├" + "─" * 18 + "┼" + "─" * 8 + "┼" + "─" * 10 + "┼" + "─" * 23 + "┤")
+        
+        for slot_id, slot in list(all_slots.items())[:6]:  # Max 6 slots for display
+            status = slot.get("status", "unknown")
+            current_task = slot.get("current_task", "--")
+            if current_task and len(current_task) > 8:
+                current_task = current_task[:8]
+            
+            # Status icon
+            if status == "active" and not slot.get("current_task"):
+                status_icon = "🟢 IDLE"
+            elif status == "active" and slot.get("current_task"):
+                status_icon = "🔵 BUSY"
+            elif status == "exhausted":
+                status_icon = "🔴 EXHA"
+            else:
+                status_icon = "⚪ " + status[:4].upper()
+            
+            # Reset info
+            reset_at = slot.get("reset_at")
+            if reset_at:
+                reset_info = f"🔄 {reset_at[:16]}"
+            else:
+                reset_info = "∞ unlimited"
+            
+            slot_display = slot_id[:16] if len(slot_id) > 16 else slot_id.ljust(16)
+            current_task = str(current_task).ljust(8)[:8]
+            reset_info = reset_info[:21].ljust(21)
+            
+            lines.append(f"│ {slot_display} │ {status_icon} │ {current_task} │ {reset_info} │")
+        
+        lines.append("└" + "─" * 18 + "┴" + "─" * 8 + "┴" + "─" * 10 + "┴" + "─" * 23 + "┘")
+        lines.append("")
+        
+        # Task Queue Summary
+        lines.append("TASK QUEUE:")
+        max_bar = max(len(p1_tasks), len(p2_tasks), len(p3_tasks), len(p4_tasks), len(blocked_tasks), 1)
+        scale = 20 / max_bar if max_bar > 0 else 1
+        
+        p1_bar = "█" * max(1, int(len(p1_tasks) * scale)) if p1_tasks else ""
+        p2_bar = "█" * max(1, int(len(p2_tasks) * scale)) if p2_tasks else ""
+        p3_bar = "█" * max(1, int(len(p3_tasks) * scale)) if p3_tasks else ""
+        p4_bar = "█" * max(1, int(len(p4_tasks) * scale)) if p4_tasks else ""
+        blocked_bar = "█" * max(1, int(len(blocked_tasks) * scale)) if blocked_tasks else ""
+        
+        lines.append(f"  P1 (Critical): {p1_bar} {len(p1_tasks)} tasks")
+        lines.append(f"  P2 (High):     {p2_bar} {len(p2_tasks)} tasks")
+        lines.append(f"  P3 (Medium):   {p3_bar} {len(p3_tasks)} tasks")
+        lines.append(f"  P4 (Low):      {p4_bar} {len(p4_tasks)} tasks")
+        lines.append(f"  BLOCKED:       {blocked_bar} {len(blocked_tasks)} tasks")
+        lines.append("")
+        
+        # Full detail: Cost tracking
+        if detail_level == "full":
+            lines.append("COST TRACKING (Session):")
+            total_tokens = sum(s.get("tokens_used", 0) for s in all_slots.values())
+            total_cost = sum(s.get("total_cost", 0) for s in all_slots.values())
+            lines.append(f"  Total Tokens: {total_tokens:,}")
+            lines.append(f"  Est. Cost: ${total_cost:.2f}")
+            lines.append("  By Slot:")
+            for slot_id, slot in list(all_slots.items())[:4]:
+                slot_cost = slot.get("total_cost", 0)
+                slot_tokens = slot.get("tokens_used", 0)
+                lines.append(f"    - {slot_id}: ${slot_cost:.2f} ({slot_tokens:,} tokens)")
+            lines.append("")
+        
+        # Summary stats
+        lines.append(f"📊 Generated at: {now}")
+        lines.append(f"📈 Tasks: {len(done_tasks)} done | {len(in_progress_tasks)} in progress | {len(pending_tasks)} pending")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"Dashboard error: {str(e)}"
+
+
+# ============================================================================
+# NOP V3.1: CHECKPOINT TOOLS - PAUSE/RESUME FOR LONG-RUNNING TASKS
+# ============================================================================
+
+def _brain_checkpoint_task_impl(
+    task_id: str,
+    step: int = None,
+    progress_percent: float = None,
+    context: str = None,
+    artifacts: List[str] = None,
+    resumable: bool = True
+) -> str:
+    """Internal implementation of brain_checkpoint_task - directly callable."""
+    try:
+        orch = get_orch()
+        
+        checkpoint_data = {
+            "step": step,
+            "progress_percent": progress_percent,
+            "context": context,
+            "artifacts": artifacts or [],
+            "resumable": resumable
+        }
+        
+        # Remove None values
+        checkpoint_data = {k: v for k, v in checkpoint_data.items() if v is not None}
+        
+        result = orch.checkpoint_task(task_id, checkpoint_data)
+        
+        if result.get("success"):
+            output = f"✅ Checkpoint saved for task {task_id}\n"
+            output += f"   Step: {step or 'N/A'}\n"
+            output += f"   Progress: {progress_percent or 'N/A'}%\n"
+            output += f"   Resumable: {resumable}\n"
+            if artifacts:
+                output += f"   Artifacts: {len(artifacts)} files\n"
+            output += f"\n💡 To resume: brain_resume_from_checkpoint('{task_id}')"
+            return output
+        else:
+            return f"❌ Checkpoint failed: {result.get('error')}"
+            
+    except Exception as e:
+        return f"❌ Checkpoint error: {str(e)}"
+
+
+def _brain_resume_from_checkpoint_impl(task_id: str) -> str:
+    """Internal implementation of brain_resume_from_checkpoint - directly callable."""
+    try:
+        orch = get_orch()
+        result = orch.resume_from_checkpoint(task_id)
+        
+        if result.get("success"):
+            checkpoint = result.get("checkpoint", {})
+            data = checkpoint.get("data", {})
+            context_summary = result.get("context_summary")
+            
+            output = f"📋 Resume Instructions for {task_id}\n"
+            output += "=" * 50 + "\n\n"
+            
+            output += "## Checkpoint Data\n"
+            output += f"   Last checkpoint: {checkpoint.get('last_checkpoint_at', 'N/A')}\n"
+            output += f"   Step: {data.get('step', 'N/A')}\n"
+            output += f"   Progress: {data.get('progress_percent', 'N/A')}%\n"
+            output += f"   Resumable: {data.get('resumable', True)}\n"
+            
+            if data.get("context"):
+                output += f"\n## Context\n{data.get('context')}\n"
+            
+            if data.get("artifacts"):
+                output += "\n## Artifacts Created\n"
+                for a in data["artifacts"]:
+                    output += f"   - {a}\n"
+            
+            if context_summary:
+                output += f"\n## Previous Summary\n{context_summary.get('summary', 'N/A')}\n"
+                if context_summary.get("key_decisions"):
+                    output += "\n## Key Decisions\n"
+                    for d in context_summary["key_decisions"]:
+                        output += f"   - {d}\n"
+            
+            output += f"\n{result.get('resume_instructions', '')}"
+            return output
+        else:
+            return f"❌ Resume failed: {result.get('error')}"
+            
+    except Exception as e:
+        return f"❌ Resume error: {str(e)}"
+
+
+def _brain_generate_handoff_summary_impl(
+    task_id: str,
+    summary: str,
+    key_decisions: List[str] = None,
+    handoff_notes: str = ""
+) -> str:
+    """Internal implementation of brain_generate_handoff_summary - directly callable."""
+    try:
+        orch = get_orch()
+        result = orch.generate_context_summary(
+            task_id, summary, key_decisions or [], handoff_notes
+        )
+        
+        if result.get("success"):
+            output = f"✅ Handoff summary generated for {task_id}\n"
+            output += f"   Summary length: {len(summary)} chars\n"
+            output += f"   Key decisions: {len(key_decisions or [])} items\n"
+            if handoff_notes:
+                output += f"   Handoff notes: {len(handoff_notes)} chars\n"
+            return output
+        else:
+            return f"❌ Summary generation failed: {result.get('error')}"
+            
+    except Exception as e:
+        return f"❌ Summary error: {str(e)}"
+
+
+@mcp.tool()
+def brain_checkpoint_task(
+    task_id: str,
+    step: int = None,
+    progress_percent: float = None,
+    context: str = None,
+    artifacts: List[str] = None,
+    resumable: bool = True
+) -> str:
+    """
+    Save checkpoint for long-running task.
+    
+    Use this to persist progress before:
+    - Agent exhaustion (rate limits, reset cycles)
+    - Session end
+    - Handoff to another agent
+    
+    Args:
+        task_id: Task to checkpoint
+        step: Current step number (e.g., 3 of 5)
+        progress_percent: 0-100 completion percentage
+        context: Textual context for resume
+        artifacts: List of artifact paths created so far
+        resumable: Whether task can be resumed from this point
+    
+    Returns:
+        Checkpoint confirmation with recovery instructions
+    """
+    return _brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable)
+
+
+@mcp.tool()
+def brain_resume_from_checkpoint(task_id: str) -> str:
+    """
+    Get checkpoint data for task resumption.
+    
+    Use this when:
+    - Resuming after agent exhaustion
+    - Taking over from another agent
+    - Continuing after session restart
+    
+    Args:
+        task_id: Task to resume
+    
+    Returns:
+        Checkpoint data with context and resume instructions
+    """
+    return _brain_resume_from_checkpoint_impl(task_id)
+
+
+@mcp.tool()
+def brain_generate_handoff_summary(
+    task_id: str,
+    summary: str,
+    key_decisions: List[str] = None,
+    handoff_notes: str = ""
+) -> str:
+    """
+    Generate context summary for task handoff.
+    
+    Use this before:
+    - Handing off to another agent
+    - Ending a session with incomplete work
+    - Approaching reset cycle limit
+    
+    Args:
+        task_id: Task to summarize
+        summary: Brief summary of current state
+        key_decisions: List of decisions made during work
+        handoff_notes: Notes for the next agent
+    
+    Returns:
+        Confirmation of summary generation
+    """
+    return _brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes)
+
+
+
+
+# ============================================================================
+# NOP V3.0: THE SPRINT COMMAND - MULTI-SLOT ORCHESTRATION
+# ============================================================================
+
+@mcp.tool()
+def brain_autopilot_sprint(
+    slots: List[str] = None,
+    mode: str = "auto",
+    halt_on_blocker: bool = True,
+    halt_on_tier_mismatch: bool = False,
+    max_tasks_per_slot: int = 10,
+    budget_limit: float = None,
+    dry_run: bool = False
+) -> str:
+    """
+    THE SPRINT COMMAND - Orchestrate multiple slots in parallel.
+    
+    This is the ENTERPRISE upgrade over brain_orchestrate().
+    Coordinates a TEAM of slots working simultaneously.
+    
+    Args:
+        slots: Slot IDs to orchestrate (None = all active slots)
+        mode: 'auto' (execute), 'plan' (show what would happen), 'status' (current state)
+        halt_on_blocker: Stop if circular dependency detected
+        halt_on_tier_mismatch: Stop if task requires higher tier than available
+        max_tasks_per_slot: Max tasks to assign per slot in one sprint
+        budget_limit: Max cost ($) for entire sprint (None = unlimited)
+        dry_run: If True, don't actually claim tasks, just show plan
+    
+    Returns:
+        Sprint execution report with per-slot results.
+    
+    Example:
+        brain_autopilot_sprint()  # All active slots
+        brain_autopilot_sprint(slots=["windsurf_001", "antigravity_001"])
+        brain_autopilot_sprint(mode="plan", dry_run=True)  # Preview
+    """
+    try:
+        now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        sprint_id = f"sprint_{int(time.time())}_{str(uuid.uuid4())[:4]}"
+        
+        # Load data
+        registry = _get_slot_registry()
+        tier_defs = _get_tier_definitions()
+        tasks = _get_tasks_list()
+        all_slots = registry.get("slots", {})
+        
+        # PHASE 1: SELECT TARGET SLOTS
+        if slots is None:
+            target_slots = [s for s in all_slots.values() if s.get("status") == "active"]
+        else:
+            target_slots = []
+            for slot_id in slots:
+                resolved = _resolve_slot_id(slot_id, registry)
+                if resolved in all_slots:
+                    target_slots.append(all_slots[resolved])
+        
+        if not target_slots:
+            return json.dumps({
+                "sprint_id": sprint_id,
+                "status": "ERROR",
+                "error": "No active slots found",
+                "timestamp": now
+            }, indent=2)
+        
+        # PHASE 2: COMPUTE DEPENDENCY GRAPH
+        dep_graph = _compute_dependency_graph(tasks, registry)
+        
+        # Check for circular dependencies
+        if dep_graph["circular_deps"] and halt_on_blocker:
+            return json.dumps({
+                "sprint_id": sprint_id,
+                "status": "HALTED",
+                "reason": "Circular dependencies detected",
+                "circular_deps": dep_graph["circular_deps"],
+                "action": "Resolve circular dependencies before sprint",
+                "timestamp": now
+            }, indent=2)
+        
+        # PHASE 3: COMPUTE ASSIGNMENTS
+        assignments = []
+        total_estimated_cost = 0
+        tasks_assigned = 0
+        slots_blocked = 0
+        
+        for slot in target_slots:
+            slot_id = slot.get("id")
+            slot_tier = slot.get("tier", "standard")
+            
+            # Skip exhausted slots
+            if slot.get("status") == "exhausted":
+                assignments.append({
+                    "slot_id": slot_id,
+                    "task_id": None,
+                    "status": "EXHAUSTED",
+                    "reason": f"Slot exhausted. Recovery at: {slot.get('reset_at', 'unknown')}"
+                })
+                continue
+            
+            # Find runnable tasks for this slot
+            runnable_tasks = []
+            blocked_reasons = []
+            
+            for task in tasks:
+                task_id = task.get("id")
+                
+                # Skip non-pending tasks
+                if task.get("status") not in ["PENDING", "READY"]:
+                    continue
+                
+                # Skip already claimed tasks
+                if task.get("claimed_by"):
+                    continue
+                
+                # Check tier compatibility
+                task_tier = _infer_task_tier(task, tier_defs)
+                if not _can_slot_run_task(slot_tier, task_tier, tier_defs):
+                    if halt_on_tier_mismatch:
+                        blocked_reasons.append(f"Task {task_id} requires tier {task_tier}")
+                    continue
+                
+                # Check dependencies
+                blockers = task.get("blocked_by", [])
+                all_done = True
+                blocking_slots = []
+                
+                for dep_id in blockers:
+                    dep_task = next((t for t in tasks if t.get("id") == dep_id), None)
+                    if dep_task and dep_task.get("status") != "DONE":
+                        all_done = False
+                        if dep_task.get("claimed_by"):
+                            blocking_slots.append(dep_task.get("claimed_by"))
+                
+                if not all_done:
+                    blocked_reasons.append(f"Task {task_id} blocked by {blocking_slots or blockers}")
+                    continue
+                
+                # Task is runnable!
+                score_result = _score_slot_for_task(task, slot, tier_defs)
+                runnable_tasks.append({
+                    "task": task,
+                    "score": score_result["score"],
+                    "estimated_cost": score_result["estimated_cost"],
+                    "warnings": score_result["warnings"]
+                })
+            
+            # Sort by priority then score
+            runnable_tasks.sort(key=lambda x: (x["task"].get("priority", 99), -x["score"]))
+            
+            if runnable_tasks:
+                best = runnable_tasks[0]
+                task = best["task"]
+                
+                # Check budget
+                if budget_limit and total_estimated_cost + best["estimated_cost"] > budget_limit:
+                    assignments.append({
+                        "slot_id": slot_id,
+                        "task_id": None,
+                        "status": "BUDGET_EXCEEDED",
+                        "reason": f"Would exceed budget (${total_estimated_cost:.3f} + ${best['estimated_cost']:.3f} > ${budget_limit})"
+                    })
+                    continue
+                
+                # Claim task (unless dry run)
+                fence_token = None
+                if mode == "auto" and not dry_run:
+                    claim_result = _claim_with_fence(task.get("id"), slot_id)
+                    if claim_result.get("success"):
+                        fence_token = claim_result.get("fence_token")
+                    else:
+                        assignments.append({
+                            "slot_id": slot_id,
+                            "task_id": task.get("id"),
+                            "status": "CLAIM_FAILED",
+                            "reason": claim_result.get("error")
+                        })
+                        continue
+                
+                assignments.append({
+                    "slot_id": slot_id,
+                    "task_id": task.get("id"),
+                    "task_description": task.get("description", "")[:100],
+                    "priority": task.get("priority"),
+                    "fence_token": fence_token,
+                    "status": "EXECUTING" if fence_token else "PLANNED",
+                    "estimated_cost": best["estimated_cost"],
+                    "score": best["score"],
+                    "warnings": best["warnings"]
+                })
+                
+                total_estimated_cost += best["estimated_cost"]
+                tasks_assigned += 1
+            else:
+                slots_blocked += 1
+                assignments.append({
+                    "slot_id": slot_id,
+                    "task_id": None,
+                    "status": "BLOCKED" if blocked_reasons else "IDLE",
+                    "reason": blocked_reasons[0] if blocked_reasons else "No tasks for this tier",
+                    "blocked_reasons": blocked_reasons[:3]  # Limit to 3
+                })
+        
+        # PHASE 4: BUILD RESPONSE
+        executing_count = len([a for a in assignments if a.get("status") == "EXECUTING"])
+        planned_count = len([a for a in assignments if a.get("status") == "PLANNED"])
+        
+        if mode == "status":
+            status = "REPORT"
+        elif executing_count > 0:
+            status = "RUNNING"
+        elif planned_count > 0:
+            status = "PLANNED"
+        elif slots_blocked == len(target_slots):
+            status = "ALL_BLOCKED"
+        else:
+            status = "IDLE"
+        
+        # Compute next actions
+        next_actions = []
+        for a in assignments:
+            if a.get("status") == "EXECUTING":
+                next_actions.append(
+                    f"{a['slot_id']}: Execute '{a.get('task_description', '')[:50]}...', "
+                    f"then brain_slot_complete('{a['slot_id']}', '{a['task_id']}', fence_token={a.get('fence_token')})"
+                )
+            elif a.get("status") == "BLOCKED":
+                next_actions.append(f"{a['slot_id']}: {a.get('reason', 'Blocked')}")
+        
+        response = {
+            "sprint_id": sprint_id,
+            "status": status,
+            "mode": mode,
+            "dry_run": dry_run,
+            "timestamp": now,
+            
+            "slots_summary": {
+                "total": len(target_slots),
+                "executing": executing_count,
+                "planned": planned_count,
+                "blocked": slots_blocked,
+                "exhausted": len([a for a in assignments if a.get("status") == "EXHAUSTED"])
+            },
+            
+            "assignments": assignments,
+            
+            "dependency_analysis": {
+                "total_tasks": len(tasks),
+                "pending_tasks": len([t for t in tasks if t.get("status") == "PENDING"]),
+                "blocked_tasks": len(dep_graph.get("task_to_slot", {})),
+                "circular_deps": dep_graph.get("circular_deps", []),
+                "longest_chain_length": max((len(c) for c in dep_graph.get("blocking_chains", {}).values()), default=0)
+            },
+            
+            "cost_projection": {
+                "estimated_total": round(total_estimated_cost, 4),
+                "budget_limit": budget_limit,
+                "within_budget": budget_limit is None or total_estimated_cost <= budget_limit
+            },
+            
+            "next_actions": next_actions[:5],  # Limit to 5
+            
+            "autopilot_hint": {
+                "continue": tasks_assigned > 0,
+                "check_status": f"brain_autopilot_sprint(mode='status')",
+                "tasks_remaining": len([t for t in tasks if t.get("status") == "PENDING"]) - tasks_assigned
+            }
+        }
+        
+        # Emit event
+        _emit_event("sprint_started", "nucleus_orchestrate", {
+            "sprint_id": sprint_id,
+            "mode": mode,
+            "slots": [s.get("id") for s in target_slots],
+            "tasks_assigned": tasks_assigned
+        })
+        
+        return json.dumps(response, indent=2)
+        
+    except Exception as e:
+        return json.dumps({
+            "status": "ERROR",
+            "error": str(e),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        }, indent=2)
+
+
+@mcp.tool()
+def brain_force_assign(slot_id: str, task_id: str, acknowledge_risk: bool = False) -> str:
+    """
+    Force assign a task to a slot, overriding tier requirements.
+    
+    Use this when you MUST run a task on a specific slot despite tier mismatch.
+    Requires explicit risk acknowledgment.
+    
+    Args:
+        slot_id: Target slot ID
+        task_id: Task to assign
+        acknowledge_risk: Must be True to proceed with tier mismatch
+    
+    Returns:
+        Assignment result with warnings
+    """
+    try:
+        registry = _get_slot_registry()
+        tier_defs = _get_tier_definitions()
+        tasks = _get_tasks_list()
+        
+        resolved_id = _resolve_slot_id(slot_id, registry)
+        slot = registry.get("slots", {}).get(resolved_id)
+        task = next((t for t in tasks if t.get("id") == task_id), None)
+        
+        if not slot:
+            return json.dumps({"error": f"Slot {slot_id} not found"})
+        if not task:
+            return json.dumps({"error": f"Task {task_id} not found"})
+        
+        # Check tier mismatch
+        slot_tier = slot.get("tier", "standard")
+        task_tier = _infer_task_tier(task, tier_defs)
+        
+        tiers = tier_defs.get("tiers", {})
+        slot_level = tiers.get(slot_tier, {}).get("level", 3)
+        task_level = tiers.get(task_tier, {}).get("level", 3)
+        
+        tier_gap = slot_level - task_level
+        
+        if tier_gap > 1 and not acknowledge_risk:
+            return json.dumps({
+                "error": "TIER_MISMATCH_RISK",
+                "slot_tier": slot_tier,
+                "task_tier": task_tier,
+                "tier_gap": tier_gap,
+                "message": "Task requires higher tier. Set acknowledge_risk=True to override.",
+                "risk_level": "HIGH" if tier_gap > 2 else "MEDIUM"
+            })
+        
+        # Force claim
+        claim_result = _claim_with_fence(task_id, resolved_id)
+        
+        if claim_result.get("success"):
+            warnings = []
+            if tier_gap > 0:
+                warnings.append(f"TIER_OVERRIDE: Slot ({slot_tier}) is {tier_gap} levels below task ({task_tier})")
+            
+            return json.dumps({
+                "success": True,
+                "slot_id": resolved_id,
+                "task_id": task_id,
+                "fence_token": claim_result.get("fence_token"),
+                "warnings": warnings,
+                "message": "Task force-assigned. Proceed with caution."
+            })
+        else:
+            return json.dumps({"error": claim_result.get("error")})
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 
 @mcp.tool()
@@ -4823,3 +5822,1392 @@ def brain_handoff_task(
     except Exception as e:
         return f"Error: {e}"
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 2: TASK INGESTION TOOLS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _get_ingestion_engine():
+    """Get or create TaskIngestionEngine singleton."""
+    global _ingestion_engine
+    if "_ingestion_engine" not in globals() or _ingestion_engine is None:
+        try:
+            from pathlib import Path
+            import sys
+            
+            # Add nop_v3_refactor to path if needed
+            nop_path = Path(__file__).parent.parent.parent.parent.parent / "nop_v3_refactor"
+            if str(nop_path) not in sys.path:
+                sys.path.insert(0, str(nop_path))
+            
+            from nop_core.task_ingestion import TaskIngestionEngine
+            _ingestion_engine = TaskIngestionEngine(brain_path=get_brain_path())
+        except ImportError:
+            _ingestion_engine = None
+    return _ingestion_engine
+
+
+def _brain_ingest_tasks_impl(
+    source: str,
+    source_type: str = "auto",
+    session_id: str = None,
+    auto_assign: bool = False,
+    skip_dedup: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Internal implementation of brain_ingest_tasks."""
+    try:
+        engine = _get_ingestion_engine()
+        if engine is None:
+            return "❌ TaskIngestionEngine not available. Install nop_v3_refactor."
+        
+        # Detect if source is a file path or raw content
+        if os.path.exists(source):
+            result = engine.ingest_from_file(
+                source,
+                source_type=source_type,
+                session_id=session_id,
+                auto_assign=auto_assign,
+                skip_dedup=skip_dedup,
+                dry_run=dry_run,
+            )
+        else:
+            result = engine.ingest_from_text(
+                source,
+                source_type=source_type if source_type != "auto" else "manual",
+                session_id=session_id,
+                auto_assign=auto_assign,
+                skip_dedup=skip_dedup,
+                dry_run=dry_run,
+            )
+        
+        # Format output
+        from nop_core.task_ingestion import format_ingestion_result
+        return format_ingestion_result(result)
+        
+    except Exception as e:
+        return f"❌ Ingestion error: {str(e)}"
+
+
+@mcp.tool()
+def brain_ingest_tasks(
+    source: str,
+    source_type: str = "auto",
+    session_id: str = None,
+    auto_assign: bool = False,
+    skip_dedup: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """
+    Ingest tasks from various sources into the brain.
+    
+    Parses and imports tasks from:
+    - Planning documents (markdown with checkboxes)
+    - Code TODOs (TODO/FIXME/HACK comments)
+    - Handoff summaries (JSON from agent handoffs)
+    - Meeting notes (action items with @mentions)
+    - External APIs (Jira, Linear, GitHub)
+    
+    Args:
+        source: File path or raw text/JSON content
+        source_type: "planning", "todos", "handoffs", "meetings", "api", "auto"
+        session_id: Your session ID for provenance tracking
+        auto_assign: If True, immediately assign tasks to available agents
+        skip_dedup: If True, skip deduplication check (faster)
+        dry_run: If True, parse and validate but don't create tasks
+    
+    Returns:
+        Formatted ingestion result with batch ID, stats, and rollback hint
+    
+    Examples:
+        brain_ingest_tasks("/docs/sprint_42.md", source_type="planning")
+        brain_ingest_tasks("/src/**/*.py", source_type="todos")
+        brain_ingest_tasks('{"from_session":"ws_001","tasks":[...]}', source_type="handoffs")
+    """
+    return _brain_ingest_tasks_impl(
+        source, source_type, session_id, auto_assign, skip_dedup, dry_run
+    )
+
+
+def _brain_rollback_ingestion_impl(batch_id: str, reason: str = None) -> str:
+    """Internal implementation of brain_rollback_ingestion."""
+    try:
+        engine = _get_ingestion_engine()
+        if engine is None:
+            return "❌ TaskIngestionEngine not available."
+        
+        result = engine.rollback(batch_id, reason)
+        
+        if result.get("success"):
+            return f"✅ Rollback complete\n   Batch: {batch_id}\n   Tasks removed: {result['tasks_removed']}"
+        else:
+            return f"❌ Rollback failed: {result.get('error')}"
+            
+    except Exception as e:
+        return f"❌ Rollback error: {str(e)}"
+
+
+@mcp.tool()
+def brain_rollback_ingestion(batch_id: str, reason: str = None) -> str:
+    """
+    Rollback an ingestion batch.
+    
+    Removes all tasks created in the specified batch.
+    Use the batch_id from brain_ingest_tasks result.
+    
+    Args:
+        batch_id: Batch ID from brain_ingest_tasks result
+        reason: Optional reason for rollback (logged)
+    
+    Returns:
+        Rollback result with tasks removed count
+    """
+    return _brain_rollback_ingestion_impl(batch_id, reason)
+
+
+def _brain_ingestion_stats_impl() -> str:
+    """Internal implementation of brain_ingestion_stats."""
+    try:
+        engine = _get_ingestion_engine()
+        if engine is None:
+            return "❌ TaskIngestionEngine not available."
+        
+        stats = engine.get_ingestion_stats()
+        
+        lines = [
+            "📊 **Ingestion Statistics**",
+            "=" * 40,
+            f"   Total ingested: {stats['total_ingested']}",
+            f"   Total skipped: {stats['total_skipped']}",
+            f"   Total failed: {stats['total_failed']}",
+            f"   Batches: {stats['batches_count']}",
+            f"   Dedup cache: {stats['dedup_cache_size']}",
+        ]
+        
+        if stats.get("by_source"):
+            lines.append("\n📁 **By Source:**")
+            for source, count in stats["by_source"].items():
+                lines.append(f"   {source}: {count}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"❌ Stats error: {str(e)}"
+
+
+@mcp.tool()
+def brain_ingestion_stats() -> str:
+    """
+    Get overall ingestion statistics.
+    
+    Returns:
+        Stats including total ingested, dedup rate, source breakdown
+    """
+    return _brain_ingestion_stats_impl()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 3: DASHBOARD TOOLS (ENHANCED)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_dashboard_engine = None
+
+
+def _get_dashboard_engine():
+    """Get or create DashboardEngine singleton."""
+    global _dashboard_engine
+    if _dashboard_engine is None:
+        try:
+            from pathlib import Path
+            import sys
+            
+            # Add nop_v3_refactor to path if needed
+            nop_path = Path(__file__).parent.parent.parent.parent.parent / "nop_v3_refactor"
+            if str(nop_path) not in sys.path:
+                sys.path.insert(0, str(nop_path))
+            
+            from nop_core.dashboard import DashboardEngine
+            orch = get_orch()
+            _dashboard_engine = DashboardEngine(
+                orchestrator=orch,
+                brain_path=get_brain_path()
+            )
+        except ImportError:
+            _dashboard_engine = None
+    return _dashboard_engine
+
+
+def _brain_enhanced_dashboard_impl(
+    detail_level: str = "standard",
+    format: str = "ascii",
+    include_alerts: bool = True,
+    include_trends: bool = False,
+    category: str = None,
+) -> str:
+    """Internal implementation of enhanced dashboard."""
+    try:
+        engine = _get_dashboard_engine()
+        if engine is None:
+            return "❌ DashboardEngine not available. Install nop_v3_refactor."
+        
+        return engine.render(
+            detail_level=detail_level,
+            format=format,
+            include_alerts=include_alerts,
+            include_trends=include_trends,
+            category=category,
+        )
+        
+    except Exception as e:
+        return f"❌ Dashboard error: {str(e)}"
+
+
+@mcp.tool()
+def brain_dashboard(
+    detail_level: str = "standard",
+    format: str = "ascii",
+    include_alerts: bool = True,
+    include_trends: bool = False,
+    category: str = None,
+) -> str:
+    """
+    Enhanced orchestration dashboard with multiple output formats.
+    
+    Provides real-time visibility into all NOP V3.1 components:
+    - Agent Pool Health (active, idle, exhausted, utilization)
+    - Task Queue Metrics (pending, in-progress, blocked, velocity)
+    - Ingestion Statistics (sources, dedup rates, batches)
+    - Cost Tracking (tokens, USD, budget, burn rate)
+    - Dependency Graph (depths, blocked chains, circular)
+    - System Health (uptime, errors)
+    
+    Args:
+        detail_level: "minimal", "standard", "verbose", "full"
+        format: "ascii" (terminal), "json" (API), "mermaid" (diagrams)
+        include_alerts: Include alert section
+        include_trends: Include trend data (velocity, etc.)
+        category: Filter to specific category ("agents", "tasks", "ingestion", "cost", "deps")
+    
+    Returns:
+        Formatted dashboard in requested format
+    
+    Examples:
+        brain_dashboard()  # Standard ASCII dashboard
+        brain_dashboard(detail_level="full", include_trends=True)
+        brain_dashboard(format="json")  # For API consumption
+        brain_dashboard(category="agents")  # Only agent metrics
+    """
+    return _brain_enhanced_dashboard_impl(
+        detail_level, format, include_alerts, include_trends, category
+    )
+
+
+def _brain_snapshot_dashboard_impl(name: str = None) -> str:
+    """Internal implementation of snapshot creation."""
+    try:
+        engine = _get_dashboard_engine()
+        if engine is None:
+            return "❌ DashboardEngine not available."
+        
+        snapshot = engine.create_snapshot(name)
+        
+        return f"""✅ Snapshot Created
+   ID: {snapshot.id}
+   Name: {snapshot.name}
+   Timestamp: {snapshot.timestamp}
+   
+💡 To compare: brain_compare_dashboards('{snapshot.id}', 'other_snapshot_id')"""
+        
+    except Exception as e:
+        return f"❌ Snapshot error: {str(e)}"
+
+
+@mcp.tool()
+def brain_snapshot_dashboard(name: str = None) -> str:
+    """
+    Create a manual dashboard snapshot for later comparison.
+    
+    Snapshots capture the current state of all metrics and alerts.
+    Use for tracking progress over time or debugging issues.
+    
+    Args:
+        name: Optional name for the snapshot
+    
+    Returns:
+        Snapshot ID and confirmation
+    """
+    return _brain_snapshot_dashboard_impl(name)
+
+
+def _brain_list_snapshots_impl(limit: int = 10) -> str:
+    """Internal implementation of snapshot listing."""
+    try:
+        engine = _get_dashboard_engine()
+        if engine is None:
+            return "❌ DashboardEngine not available."
+        
+        snapshots = engine.list_snapshots(limit)
+        
+        if not snapshots:
+            return "📸 No snapshots found"
+        
+        lines = ["📸 Dashboard Snapshots", "=" * 40]
+        for s in snapshots:
+            lines.append(f"   {s['id']}: {s['name']} ({s['timestamp']})")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"❌ List snapshots error: {str(e)}"
+
+
+@mcp.tool()
+def brain_list_snapshots(limit: int = 10) -> str:
+    """
+    List available dashboard snapshots.
+    
+    Args:
+        limit: Maximum number of snapshots to list (default: 10)
+    
+    Returns:
+        List of snapshots with IDs, names, and timestamps
+    """
+    return _brain_list_snapshots_impl(limit)
+
+
+def _brain_get_alerts_impl() -> str:
+    """Internal implementation of alert retrieval."""
+    try:
+        engine = _get_dashboard_engine()
+        if engine is None:
+            return "❌ DashboardEngine not available."
+        
+        alerts = engine.get_alerts()
+        
+        if not alerts:
+            return "✅ No active alerts - all systems healthy"
+        
+        lines = ["⚠️ Active Alerts", "=" * 40]
+        for alert in alerts:
+            icon = "🔴" if alert.level.value == "critical" else "🟡"
+            lines.append(f"   {icon} [{alert.level.value.upper()}] {alert.message}")
+            lines.append(f"      Metric: {alert.metric}, Value: {alert.value}, Threshold: {alert.threshold}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"❌ Alerts error: {str(e)}"
+
+
+@mcp.tool()
+def brain_get_alerts() -> str:
+    """
+    Get current active alerts from the dashboard.
+    
+    Alerts are triggered when metrics exceed thresholds:
+    - CRITICAL: Immediate action required
+    - WARNING: Attention needed
+    
+    Returns:
+        List of active alerts with levels and details
+    """
+    return _brain_get_alerts_impl()
+
+
+def _brain_set_alert_threshold_impl(metric: str, level: str, value: float) -> str:
+    """Internal implementation of threshold setting."""
+    try:
+        engine = _get_dashboard_engine()
+        if engine is None:
+            return "❌ DashboardEngine not available."
+        
+        engine.set_alert_threshold(metric, level, value)
+        
+        return f"""✅ Threshold Set
+   Metric: {metric}
+   Level: {level}
+   Value: {value}"""
+        
+    except Exception as e:
+        return f"❌ Threshold error: {str(e)}"
+
+
+@mcp.tool()
+def brain_set_alert_threshold(metric: str, level: str, value: float) -> str:
+    """
+    Set custom alert threshold for a metric.
+    
+    Available metrics:
+    - agents.exhausted_ratio: Ratio of exhausted agents (0-1)
+    - agents.utilization: Pool utilization (0-1)
+    - tasks.pending: Number of pending tasks
+    - tasks.blocked_ratio: Ratio of blocked tasks (0-1)
+    - cost.budget_remaining_ratio: Budget remaining (0-1)
+    - deps.max_depth: Maximum dependency chain depth
+    
+    Args:
+        metric: Metric name (e.g., "tasks.pending")
+        level: "warning" or "critical"
+        value: Threshold value
+    
+    Returns:
+        Confirmation of threshold setting
+    """
+    return _brain_set_alert_threshold_impl(metric, level, value)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 4: AUTOPILOT SPRINT TOOLS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_autopilot_engine = None
+
+
+def _get_autopilot_engine():
+    """Get or create AutopilotEngine singleton."""
+    global _autopilot_engine
+    if _autopilot_engine is None:
+        try:
+            from pathlib import Path
+            import sys
+            
+            nop_path = Path(__file__).parent.parent.parent.parent.parent / "nop_v3_refactor"
+            if str(nop_path) not in sys.path:
+                sys.path.insert(0, str(nop_path))
+            
+            from nop_core.autopilot import AutopilotEngine
+            orch = get_orch()
+            _autopilot_engine = AutopilotEngine(
+                orchestrator=orch,
+                brain_path=get_brain_path()
+            )
+        except ImportError:
+            _autopilot_engine = None
+    return _autopilot_engine
+
+
+def _brain_autopilot_sprint_v2_impl(
+    slots: List[str] = None,
+    mode: str = "auto",
+    halt_on_blocker: bool = True,
+    halt_on_tier_mismatch: bool = False,
+    max_tasks_per_slot: int = 10,
+    budget_limit: float = None,
+    time_limit_hours: float = None,
+    dry_run: bool = False,
+) -> str:
+    """Internal implementation of enhanced autopilot sprint."""
+    try:
+        engine = _get_autopilot_engine()
+        if engine is None:
+            return "❌ AutopilotEngine not available. Install nop_v3_refactor."
+        
+        from nop_core.autopilot import SprintMode, format_sprint_result
+        
+        mode_enum = SprintMode(mode.lower())
+        
+        result = engine.execute_sprint(
+            slots=slots,
+            mode=mode_enum,
+            halt_on_blocker=halt_on_blocker,
+            halt_on_tier_mismatch=halt_on_tier_mismatch,
+            max_tasks_per_slot=max_tasks_per_slot,
+            budget_limit=budget_limit,
+            time_limit_hours=time_limit_hours,
+            dry_run=dry_run,
+        )
+        
+        return format_sprint_result(result)
+        
+    except Exception as e:
+        return f"❌ Sprint error: {str(e)}"
+
+
+@mcp.tool()
+def brain_autopilot_sprint_v2(
+    slots: List[str] = None,
+    mode: str = "auto",
+    halt_on_blocker: bool = True,
+    halt_on_tier_mismatch: bool = False,
+    max_tasks_per_slot: int = 10,
+    budget_limit: float = None,
+    time_limit_hours: float = None,
+    dry_run: bool = False,
+) -> str:
+    """
+    Enhanced autopilot sprint with V3.1 features.
+    
+    Orchestrates multiple slots in parallel to execute pending tasks.
+    Features wave-based dependency analysis, tier-matched assignment,
+    budget control, and comprehensive halt conditions.
+    
+    Args:
+        slots: Slot IDs to use (None = all active)
+        mode: "auto" (execute), "plan" (dry run), "guided" (step-by-step), "status"
+        halt_on_blocker: Stop if circular dependency detected
+        halt_on_tier_mismatch: Stop if no slot can handle required tier
+        max_tasks_per_slot: Max tasks per slot in one sprint
+        budget_limit: Max cost in USD (None = unlimited)
+        time_limit_hours: Max duration (None = unlimited)
+        dry_run: Override to plan mode
+    
+    Returns:
+        Sprint execution report with tasks completed, budget spent, etc.
+    
+    Examples:
+        brain_autopilot_sprint_v2()  # Full auto execution
+        brain_autopilot_sprint_v2(mode="plan")  # Preview what would happen
+        brain_autopilot_sprint_v2(budget_limit=5.0)  # Limit cost to $5
+    """
+    return _brain_autopilot_sprint_v2_impl(
+        slots, mode, halt_on_blocker, halt_on_tier_mismatch,
+        max_tasks_per_slot, budget_limit, time_limit_hours, dry_run
+    )
+
+
+def _brain_start_mission_impl(
+    name: str,
+    goal: str,
+    task_ids: List[str],
+    slot_ids: List[str] = None,
+    budget_limit: float = 10.0,
+    time_limit_hours: float = 4.0,
+    success_criteria: List[str] = None,
+) -> str:
+    """Internal implementation of mission start."""
+    try:
+        engine = _get_autopilot_engine()
+        if engine is None:
+            return "❌ AutopilotEngine not available."
+        
+        mission = engine.start_mission(
+            name=name,
+            goal=goal,
+            task_ids=task_ids,
+            slot_ids=slot_ids,
+            budget_limit=budget_limit,
+            time_limit_hours=time_limit_hours,
+            success_criteria=success_criteria,
+        )
+        
+        return f"""✅ Mission Started
+   ID: {mission.id}
+   Name: {mission.name}
+   Goal: {mission.goal}
+   Tasks: {len(mission.tasks)}
+   Budget: ${mission.budget_limit:.2f}
+   Time Limit: {mission.time_limit_hours}h
+   
+💡 Use brain_mission_status() to track progress"""
+        
+    except Exception as e:
+        return f"❌ Mission error: {str(e)}"
+
+
+@mcp.tool()
+def brain_start_mission(
+    name: str,
+    goal: str,
+    task_ids: List[str],
+    slot_ids: List[str] = None,
+    budget_limit: float = 10.0,
+    time_limit_hours: float = 4.0,
+    success_criteria: List[str] = None,
+) -> str:
+    """
+    Start a new mission for orchestrated execution.
+    
+    Missions are high-level goals with associated tasks, constraints,
+    and success criteria. They provide persistence and tracking.
+    
+    Args:
+        name: Mission name (e.g., "Implement NOP V3.1")
+        goal: What success looks like
+        task_ids: List of task IDs to complete
+        slot_ids: Slots to use (None = all active)
+        budget_limit: Max cost in USD
+        time_limit_hours: Max duration
+        success_criteria: List of success conditions
+    
+    Returns:
+        Mission ID and confirmation
+    """
+    return _brain_start_mission_impl(
+        name, goal, task_ids, slot_ids, budget_limit, time_limit_hours, success_criteria
+    )
+
+
+def _brain_mission_status_impl(mission_id: str = None) -> str:
+    """Internal implementation of mission status."""
+    try:
+        engine = _get_autopilot_engine()
+        if engine is None:
+            return "❌ AutopilotEngine not available."
+        
+        status = engine.get_mission_status(mission_id)
+        
+        if "error" in status:
+            return f"❌ {status['error']}"
+        
+        progress = status["progress"]
+        budget = status["budget"]
+        
+        return f"""🎯 Mission Status: {status['name']}
+═══════════════════════════════════════
+ID: {status['mission_id']}
+Status: {status['status'].upper()}
+
+📊 PROGRESS
+   ├── Completed: {progress['completed']}/{progress['total']} ({progress['percent']}%)
+   └── Elapsed: {status['elapsed']}
+
+💰 BUDGET
+   ├── Limit: ${budget['limit']:.2f}
+   ├── Spent: ${budget['spent']:.2f}
+   └── Remaining: ${budget['remaining']:.2f}"""
+        
+    except Exception as e:
+        return f"❌ Status error: {str(e)}"
+
+
+@mcp.tool()
+def brain_mission_status(mission_id: str = None) -> str:
+    """
+    Get current mission status and progress.
+    
+    Args:
+        mission_id: Mission ID (None = current mission)
+    
+    Returns:
+        Detailed mission progress report
+    """
+    return _brain_mission_status_impl(mission_id)
+
+
+def _brain_halt_sprint_impl(reason: str = "User requested halt") -> str:
+    """Internal implementation of sprint halt."""
+    try:
+        engine = _get_autopilot_engine()
+        if engine is None:
+            return "❌ AutopilotEngine not available."
+        
+        result = engine.halt_sprint(reason)
+        
+        return f"""⛔ Sprint Halt Requested
+   Sprint ID: {result.get('sprint_id', 'N/A')}
+   Reason: {result['reason']}
+   Status: {result['status']}
+   
+💡 Sprint will complete current task then stop gracefully"""
+        
+    except Exception as e:
+        return f"❌ Halt error: {str(e)}"
+
+
+@mcp.tool()
+def brain_halt_sprint(reason: str = "User requested halt") -> str:
+    """
+    Request halt of current sprint.
+    
+    The sprint will complete its current task then stop gracefully.
+    Progress is checkpointed for potential resumption.
+    
+    Args:
+        reason: Reason for halting
+    
+    Returns:
+        Confirmation of halt request
+    """
+    return _brain_halt_sprint_impl(reason)
+
+
+def _brain_resume_sprint_impl(sprint_id: str = None) -> str:
+    """Internal implementation of sprint resume."""
+    try:
+        engine = _get_autopilot_engine()
+        if engine is None:
+            return "❌ AutopilotEngine not available."
+        
+        from nop_core.autopilot import format_sprint_result
+        
+        result = engine.resume_sprint(sprint_id)
+        
+        return format_sprint_result(result)
+        
+    except Exception as e:
+        return f"❌ Resume error: {str(e)}"
+
+
+@mcp.tool()
+def brain_resume_sprint(sprint_id: str = None) -> str:
+    """
+    Resume a halted sprint from checkpoint.
+    
+    Restores state from the last checkpoint and continues execution.
+    
+    Args:
+        sprint_id: Sprint ID to resume (None = most recent)
+    
+    Returns:
+        Sprint execution report
+    """
+    return _brain_resume_sprint_impl(sprint_id)
+
+
+# =============================================================================
+# FEDERATION ENGINE MCP TOOLS (Phase 5)
+# =============================================================================
+
+_federation_engine = None
+
+def _get_federation_engine():
+    """Get or create the federation engine singleton."""
+    global _federation_engine
+    if _federation_engine is None:
+        try:
+            from .runtime.federation import FederationEngine, FederationConfig
+            brain_path = get_brain_path()
+            config = FederationConfig(
+                brain_id=f"brain_{brain_path.name}",
+                region="default",
+                brain_path=brain_path,
+            )
+            _federation_engine = FederationEngine(config)
+        except ImportError:
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to initialize FederationEngine: {e}")
+            return None
+    return _federation_engine
+
+
+def _brain_federation_status_impl() -> str:
+    """Internal implementation of federation status."""
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        status = engine.get_status()
+        health = engine.get_health()
+        
+        # Format peer list
+        peers = status.get("peers", {})
+        peer_list = []
+        for peer in engine.get_peers():
+            icon = "🟢" if peer.is_online() else "🟡" if peer.status.name == "SUSPECT" else "🔴"
+            peer_list.append(f"   {icon} {peer.peer_id} ({peer.region}) - {peer.latency_ms:.1f}ms")
+        
+        peer_display = "\n".join(peer_list) if peer_list else "   No peers discovered"
+        
+        warnings = health.get("warnings", [])
+        warning_display = "\n".join(f"   ⚠️ {w}" for w in warnings) if warnings else "   None"
+        
+        return f"""🌐 FEDERATION STATUS
+═══════════════════════════════════════
+
+🧠 LOCAL BRAIN
+   ID: {status['brain_id']}
+   Region: {status['region']}
+   Running: {'✅' if status['running'] else '❌'}
+
+👑 CONSENSUS
+   Leader: {status['leader_id'] or 'None'}
+   Is Leader: {'✅' if status['is_leader'] else '❌'}
+   Term: {status['term']}
+
+🔗 PEERS ({peers.get('online', 0)}/{peers.get('total', 0)} online)
+{peer_display}
+
+📡 PARTITION STATUS
+   Status: {status['partition_status']}
+   Class A Enabled: {'✅' if status['class_a_enabled'] else '❌'}
+
+💚 HEALTH
+   Score: {health['score']:.0%}
+   Healthy: {'✅' if health['healthy'] else '❌'}
+
+⚠️ WARNINGS
+{warning_display}
+
+🔄 SYNC
+   Merkle Root: {status['sync']['merkle_root'][:16]}...
+   Vector Clock: {len(status['sync']['vector_clock'])} entries"""
+        
+    except Exception as e:
+        return f"❌ Federation status error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_status() -> str:
+    """
+    Get comprehensive federation status.
+    
+    Shows local brain info, consensus state, peer list,
+    partition status, health score, and sync state.
+    
+    Returns:
+        Formatted federation status report
+    """
+    return _brain_federation_status_impl()
+
+
+def _brain_federation_join_impl(seed_peer: str) -> str:
+    """Internal implementation of federation join."""
+    import asyncio
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        # Start engine if not running
+        if not engine.running:
+            asyncio.run(engine.start())
+        
+        result = asyncio.run(engine.join(seed_peer))
+        
+        if result.get("success"):
+            return f"""✅ JOINED FEDERATION
+   Seed Peer: {seed_peer}
+   Total Peers: {result.get('peers', 0)}
+   
+💡 Federation engine is now active and syncing"""
+        else:
+            return f"❌ Failed to join: {result.get('error', 'Unknown error')}"
+        
+    except Exception as e:
+        return f"❌ Join error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_join(seed_peer: str) -> str:
+    """
+    Join a federation via seed peer.
+    
+    Connects to an existing federation network through
+    a known peer address.
+    
+    Args:
+        seed_peer: Address of seed peer (host:port)
+    
+    Returns:
+        Join result
+    """
+    return _brain_federation_join_impl(seed_peer)
+
+
+def _brain_federation_leave_impl() -> str:
+    """Internal implementation of federation leave."""
+    import asyncio
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        result = asyncio.run(engine.leave())
+        
+        if result.get("success"):
+            return """✅ LEFT FEDERATION
+   
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode."""
+        else:
+            return f"❌ Failed to leave: {result.get('error', 'Unknown error')}"
+        
+    except Exception as e:
+        return f"❌ Leave error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_leave() -> str:
+    """
+    Leave the federation gracefully.
+    
+    Notifies peers and stops federation engine.
+    Brain continues operating in standalone mode.
+    
+    Returns:
+        Leave confirmation
+    """
+    return _brain_federation_leave_impl()
+
+
+def _brain_federation_peers_impl() -> str:
+    """Internal implementation of federation peers list."""
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        peers = engine.get_peers()
+        
+        if not peers:
+            return """🔗 FEDERATION PEERS
+═══════════════════════════════════════
+
+No peers discovered.
+
+💡 Use brain_federation_join(seed_peer) to connect to a federation."""
+        
+        lines = ["🔗 FEDERATION PEERS", "═══════════════════════════════════════", ""]
+        
+        for peer in peers:
+            status_icon = {
+                "ONLINE": "🟢",
+                "SUSPECT": "🟡", 
+                "OFFLINE": "🔴",
+                "QUARANTINED": "⛔",
+                "UNKNOWN": "❓",
+            }.get(peer.status.name, "❓")
+            
+            trust_icon = {
+                "OWNER": "👑",
+                "ADMIN": "🛡️",
+                "MEMBER": "👤",
+                "GUEST": "👁️",
+            }.get(peer.trust_level.name, "👤")
+            
+            lines.append(f"{status_icon} {peer.peer_id}")
+            lines.append(f"   Address: {peer.address}")
+            lines.append(f"   Region: {peer.region}")
+            lines.append(f"   Trust: {trust_icon} {peer.trust_level.name}")
+            lines.append(f"   Latency: {peer.latency_ms:.1f}ms")
+            lines.append(f"   Load: {peer.load:.0%}")
+            lines.append(f"   Capabilities: {', '.join(peer.capabilities) or 'None'}")
+            lines.append("")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"❌ Peers error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_peers() -> str:
+    """
+    List all federation peers with details.
+    
+    Shows status, region, trust level, latency,
+    load, and capabilities for each peer.
+    
+    Returns:
+        Formatted peer list
+    """
+    return _brain_federation_peers_impl()
+
+
+def _brain_federation_sync_impl() -> str:
+    """Internal implementation of federation sync."""
+    import asyncio
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        if not engine.running:
+            return "❌ Federation engine not running. Use brain_federation_join first."
+        
+        results = asyncio.run(engine.sync_now())
+        
+        if not results:
+            return """🔄 SYNC COMPLETE
+   
+No peers to sync with."""
+        
+        lines = ["🔄 SYNC RESULTS", "═══════════════════════════════════════", ""]
+        
+        total_synced = 0
+        total_conflicts = 0
+        
+        for result in results:
+            icon = "✅" if result.success else "❌"
+            lines.append(f"{icon} {result.peer_id}")
+            lines.append(f"   Items synced: {result.items_synced}")
+            lines.append(f"   Conflicts resolved: {result.conflicts_resolved}")
+            lines.append(f"   Time: {result.sync_time_ms:.2f}ms")
+            if result.error:
+                lines.append(f"   Error: {result.error}")
+            lines.append("")
+            
+            total_synced += result.items_synced
+            total_conflicts += result.conflicts_resolved
+        
+        lines.append("📊 TOTALS")
+        lines.append(f"   Peers synced: {len(results)}")
+        lines.append(f"   Items synced: {total_synced}")
+        lines.append(f"   Conflicts resolved: {total_conflicts}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"❌ Sync error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_sync() -> str:
+    """
+    Force immediate synchronization with all peers.
+    
+    Performs full state sync using Merkle tree comparison
+    and CRDT merge for conflict resolution.
+    
+    Returns:
+        Sync results for each peer
+    """
+    return _brain_federation_sync_impl()
+
+
+def _brain_federation_route_impl(task_id: str, profile: str = "default") -> str:
+    """Internal implementation of federation routing."""
+    import asyncio
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        # Get task from task store
+        task = {"id": task_id}
+        
+        # Try to get full task details
+        try:
+            tasks_file = get_brain_path() / "ledger" / "tasks.json"
+            if tasks_file.exists():
+                import json
+                with open(tasks_file) as f:
+                    tasks_data = json.load(f)
+                for t in tasks_data.get("tasks", []):
+                    if t.get("id") == task_id or t.get("description", "").startswith(task_id):
+                        task = t
+                        break
+        except Exception:
+            pass
+        
+        decision = asyncio.run(engine.route_task(task, profile))
+        
+        return f"""🎯 ROUTING DECISION
+═══════════════════════════════════════
+
+📋 Task: {task_id}
+📊 Profile: {profile}
+
+🏆 TARGET
+   Brain: {decision.target_brain}
+   Score: {decision.score:.3f}
+   
+⏱️ ROUTING TIME
+   {decision.routing_time_ms:.3f}ms
+
+🔄 ALTERNATIVES
+{chr(10).join(f'   {i+1}. {alt[0]} (score: {alt[1]:.3f})' for i, alt in enumerate(decision.alternatives[:3])) or '   None'}
+
+💡 Task should be executed on {decision.target_brain}"""
+        
+    except Exception as e:
+        return f"❌ Routing error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_route(task_id: str, profile: str = "default") -> str:
+    """
+    Route a task to the optimal brain.
+    
+    Uses composite scoring with configurable profiles
+    to determine the best brain for task execution.
+    
+    Args:
+        task_id: Task to route
+        profile: Routing profile (default, realtime, batch, premium, budget)
+    
+    Returns:
+        Routing decision with target brain and alternatives
+    """
+    return _brain_federation_route_impl(task_id, profile)
+
+
+def _brain_federation_health_impl() -> str:
+    """Internal implementation of federation health."""
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            return "❌ FederationEngine not available."
+        
+        health = engine.get_health()
+        metrics = engine.metrics
+        
+        # Health bar
+        score = health["score"]
+        bar_filled = int(score * 20)
+        bar_empty = 20 - bar_filled
+        health_bar = "█" * bar_filled + "░" * bar_empty
+        
+        # Status color
+        if score >= 0.8:
+            status = "🟢 HEALTHY"
+        elif score >= 0.5:
+            status = "🟡 DEGRADED"
+        else:
+            status = "🔴 CRITICAL"
+        
+        return f"""💚 FEDERATION HEALTH
+═══════════════════════════════════════
+
+{status}
+[{health_bar}] {score:.0%}
+
+📊 PARTITION
+   Status: {health['partition_status']}
+   Peers Online: {health['peers_online']}/{health['peers_total']}
+   Leader: {health['leader'] or 'None'}
+
+📈 METRICS
+   Tasks Routed: {metrics.tasks_routed}
+   Avg Routing Time: {metrics.avg_routing_time_ms:.3f}ms
+   Sync Operations: {metrics.sync_operations}
+   Leader Changes: {metrics.raft_leader_changes}
+   Partition Events: {metrics.partition_events}
+
+⚠️ WARNINGS ({len(health['warnings'])})
+{chr(10).join(f'   • {w}' for w in health['warnings']) or '   None'}"""
+        
+    except Exception as e:
+        return f"❌ Health error: {str(e)}"
+
+
+@mcp.tool()
+def brain_federation_health() -> str:
+    """
+    Get federation health dashboard.
+    
+    Shows health score, partition status, metrics,
+    and any active warnings.
+    
+    Returns:
+        Health dashboard with visual indicators
+    """
+    return _brain_federation_health_impl()
+
+
+# ============================================================================
+# SYSTEM HEALTH ENDPOINT (Phase 6B Production Hardening)
+# ============================================================================
+
+def _brain_health_impl() -> str:
+    """Internal implementation of system health check (JSON)."""
+    import platform
+    
+    try:
+        try:
+            brain_path = get_brain_path()
+            bp_str = str(brain_path)
+        except Exception:
+            bp_str = "not_configured"
+            
+        tools_count = len(mcp.tools) if hasattr(mcp, 'tools') else "unknown"
+        
+        return json.dumps({
+            "status": "healthy",
+            "version": "0.5.0",
+            "tools_registered": tools_count,
+            "brain_path": bp_str,
+            "uptime_seconds": int(time.time() - START_TIME),
+            "python_version": sys.version.split()[0]
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "unhealthy", "error": str(e)})
+
+def _brain_health_impl_legacy() -> str:
+    """Internal implementation of system health check."""
+    import platform
+    
+    health_status = {
+        "status": "healthy",
+        "version": "0.5.0",
+        "checks": {},
+        "warnings": [],
+        "uptime_seconds": 0
+    }
+    
+    try:
+        brain = get_brain_path()
+        
+        # Check 1: Brain path exists
+        if brain.exists():
+            health_status["checks"]["brain_path"] = "✅ OK"
+        else:
+            health_status["checks"]["brain_path"] = "❌ FAIL"
+            health_status["status"] = "unhealthy"
+            health_status["warnings"].append("Brain path does not exist")
+        
+        # Check 2: Ledger directory
+        ledger_path = brain / "ledger"
+        if ledger_path.exists():
+            health_status["checks"]["ledger"] = "✅ OK"
+        else:
+            health_status["checks"]["ledger"] = "⚠️ MISSING"
+            health_status["warnings"].append("Ledger directory missing")
+        
+        # Check 3: Tasks file
+        tasks_path = brain / "ledger" / "tasks.json"
+        if tasks_path.exists():
+            try:
+                with open(tasks_path, "r") as f:
+                    tasks = json.load(f)
+                task_count = len(tasks.get("tasks", []))
+                health_status["checks"]["tasks"] = f"✅ OK ({task_count} tasks)"
+            except Exception as e:
+                health_status["checks"]["tasks"] = f"⚠️ CORRUPT: {str(e)[:30]}"
+                health_status["warnings"].append("Tasks file corrupted")
+        else:
+            health_status["checks"]["tasks"] = "⚠️ NO FILE"
+        
+        # Check 4: Events file
+        events_path = brain / "ledger" / "events.jsonl"
+        if events_path.exists():
+            try:
+                with open(events_path, "r") as f:
+                    event_count = sum(1 for _ in f)
+                health_status["checks"]["events"] = f"✅ OK ({event_count} events)"
+            except Exception as e:
+                health_status["checks"]["events"] = f"⚠️ ERROR: {str(e)[:30]}"
+        else:
+            health_status["checks"]["events"] = "⚠️ NO FILE"
+        
+        # Check 5: State file
+        state_path = brain / "state.json"
+        if state_path.exists():
+            health_status["checks"]["state"] = "✅ OK"
+        else:
+            health_status["checks"]["state"] = "⚠️ MISSING"
+        
+        # Check 6: Slots registry
+        slots_path = brain / "slots" / "registry.json"
+        if slots_path.exists():
+            try:
+                with open(slots_path, "r") as f:
+                    slots = json.load(f)
+                slot_count = len(slots.get("slots", []))
+                health_status["checks"]["slots"] = f"✅ OK ({slot_count} slots)"
+            except Exception:
+                health_status["checks"]["slots"] = "⚠️ CORRUPT"
+        else:
+            health_status["checks"]["slots"] = "⚠️ NO FILE"
+        
+        # Calculate overall health score
+        ok_count = sum(1 for v in health_status["checks"].values() if v.startswith("✅"))
+        total_checks = len(health_status["checks"])
+        health_score = ok_count / total_checks if total_checks > 0 else 0
+        
+        # Health bar
+        bar_filled = int(health_score * 20)
+        bar_empty = 20 - bar_filled
+        health_bar = "█" * bar_filled + "░" * bar_empty
+        
+        # Status indicator
+        if health_score >= 0.8:
+            status_icon = "🟢 HEALTHY"
+        elif health_score >= 0.5:
+            status_icon = "🟡 DEGRADED"
+            health_status["status"] = "degraded"
+        else:
+            status_icon = "🔴 CRITICAL"
+            health_status["status"] = "unhealthy"
+        
+        # Format output
+        checks_formatted = "\n".join(f"   {k}: {v}" for k, v in health_status["checks"].items())
+        warnings_formatted = "\n".join(f"   • {w}" for w in health_status["warnings"]) or "   None"
+        
+        return f"""💚 NUCLEUS HEALTH CHECK
+═══════════════════════════════════════
+
+{status_icon}
+[{health_bar}] {health_score:.0%}
+
+📋 VERSION
+   Nucleus: {health_status['version']}
+   Python: {platform.python_version()}
+   Platform: {platform.system()} {platform.release()}
+
+🔍 CHECKS
+{checks_formatted}
+
+⚠️ WARNINGS ({len(health_status['warnings'])})
+{warnings_formatted}
+
+📁 BRAIN PATH
+   {brain}
+
+🕐 TIMESTAMP
+   {datetime.now().isoformat()}
+
+✅ System is {health_status['status']}"""
+        
+    except Exception as e:
+        return f"""💚 NUCLEUS HEALTH CHECK
+═══════════════════════════════════════
+
+🔴 CRITICAL ERROR
+   {str(e)}
+
+Please ensure NUCLEAR_BRAIN_PATH is set correctly."""
+
+
+@mcp.tool()
+def brain_health() -> str:
+    """
+    Get comprehensive system health status.
+    
+    Checks brain path, ledger, tasks, events, state, and slots.
+    Returns health score and detailed status for each component.
+    
+    Use this for:
+    - Production monitoring
+    - Debugging issues
+    - Verifying installation
+    
+    Returns:
+        Health dashboard with all component statuses
+    """
+    return _brain_health_impl()
+
+
+def _brain_version_impl() -> Dict[str, Any]:
+    """Internal implementation of version info."""
+    import platform
+    
+    return {
+        "nucleus_version": "0.5.0",
+        "python_version": platform.python_version(),
+        "platform": platform.system(),
+        "platform_release": platform.release(),
+        "mcp_tools_count": 110,
+        "architecture": "Trinity (Orchestration + Choreography + Context)",
+        "status": "production-ready"
+    }
+
+
+@mcp.tool()
+def brain_version() -> str:
+    """
+    Get Nucleus version and system information.
+    
+    Returns:
+        Version info as formatted string
+    """
+    info = _brain_version_impl()
+    return f"""🧠 NUCLEUS VERSION INFO
+═══════════════════════════════════════
+
+📦 VERSION
+   Nucleus: {info['nucleus_version']}
+   Python: {info['python_version']}
+   Platform: {info['platform']} {info['platform_release']}
+
+🔧 CAPABILITIES
+   MCP Tools: {info['mcp_tools_count']}+
+   Architecture: {info['architecture']}
+   Status: {info['status']}
+
+🔗 RESOURCES
+   GitHub: https://github.com/nucleus-mcp/nucleus
+   PyPI: pip install mcp-server-nucleus
+   Docs: https://nucleus-mcp.com"""

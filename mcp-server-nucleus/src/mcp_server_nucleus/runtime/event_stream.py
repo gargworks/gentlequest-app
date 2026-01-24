@@ -69,7 +69,7 @@ def emit_event(
     
     event = {
         "event_id": f"{emitter[:3]}-{uuid.uuid4().hex[:8]}",
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
         "emitter": emitter,
         "event_type": event_type,
         "severity": severity.value,
