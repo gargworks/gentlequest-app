@@ -1375,47 +1375,36 @@ def _list_tasks_impl(status=None, priority=None, skill=None, claimed_by=None) ->
     return make_response(True, data=tasks)
 
 @mcp.tool()
-def brain_get_next_task(skills: List[str]) -> Optional[Dict]:
-    """Get the highest-priority unblocked task matching the given skills.
-    
-    Args:
-        skills: List of skills the agent has (e.g., ["python", "marketing"])
-    
-    Returns:
-        The next task to work on, or None if no matching tasks
-    """
+def brain_get_next_task(skills: List[str]) -> str:
+    """Get the highest-priority unblocked task."""
+    return _get_next_task_impl(skills)
+
+def _get_next_task_impl(skills: List[str]) -> str:
+    """Implementation for getting next task."""
     task = _get_next_task(skills)
     if task:
         return make_response(True, data=task)
     return make_response(True, data=None, error="No matching tasks found")
 
 @mcp.tool()
-def brain_claim_task(task_id: str, agent_id: str) -> Dict:
-    """Atomically claim a task to prevent race conditions.
-    
-    Args:
-        task_id: The task ID or description to claim
-        agent_id: The agent/thread ID claiming the task
-    
-    Returns:
-        Result with success boolean and task or error
-    """
+def brain_claim_task(task_id: str, agent_id: str) -> str:
+    """Atomically claim a task."""
+    return _claim_task_impl(task_id, agent_id)
+
+def _claim_task_impl(task_id: str, agent_id: str) -> str:
+    """Implementation for claiming a task."""
     result = _claim_task(task_id, agent_id)
     if result.get("success"):
         return make_response(True, data=result)
     return make_response(False, error=result.get("error"))
 
 @mcp.tool()
-def brain_update_task(task_id: str, updates: Dict[str, Any]) -> Dict:
-    """Update task fields (status, priority, description, etc.).
-    
-    Args:
-        task_id: The task ID or description to update
-        updates: Dictionary of fields to update
-    
-    Returns:
-        Result with success boolean and updated task or error
-    """
+def brain_update_task(task_id: str, updates: Dict[str, Any]) -> str:
+    """Update task fields."""
+    return _update_task_impl(task_id, updates)
+
+def _update_task_impl(task_id: str, updates: Dict[str, Any]) -> str:
+    """Implementation for updating a task."""
     result = _update_task(task_id, updates)
     if result.get("success"):
         return make_response(True, data=result)
@@ -1429,18 +1418,14 @@ def brain_add_task(
     required_skills: List[str] = None,
     source: str = "synthesizer"
 ) -> str:
-    """Create a new task in the queue.
-    
-    Args:
-        description: What needs to be done
-        priority: 1=highest, 5=lowest (default: 3)
-        blocked_by: List of task IDs that must complete first
-        required_skills: List of skills needed (e.g., ["python"])
-        source: "user" or "synthesizer" (user = priority override)
-    
-    Returns:
-        Standard JSON response with created task
-    """
+    """Create a new task in the queue."""
+    return _add_task_impl(description, priority, blocked_by, required_skills, source)
+
+def _add_task_impl(description: str, priority: int = 3, 
+                  blocked_by: List[str] = None,
+                  required_skills: List[str] = None,
+                  source: str = "synthesizer") -> str:
+    """Implementation for adding a task."""
     result = _add_task(description, priority, blocked_by, required_skills, source)
     if result.get("success"):
         return make_response(True, data=result.get("task"))
@@ -1452,24 +1437,16 @@ def brain_add_task(
 
 
 @mcp.tool()
-def brain_import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> Dict:
-    """Import tasks from a JSONL file into the brain database.
-    
-    This syncs the GTM planning ledger (tasks.jsonl) with the brain database,
-    enabling multi-environment coordination with semantic task IDs.
-    
-    Args:
-        jsonl_path: Path to tasks.jsonl (e.g., ".brain/ledger/tasks.jsonl")
-        clear_existing: If True, replace all tasks. If False, merge (skip existing IDs).
-    
-    Returns:
-        Result with imported count, skipped count, and any errors
-    
-    Example:
-        brain_import_tasks_from_jsonl("ledger/tasks.jsonl")
-        # Imports all tasks from .brain/ledger/tasks.jsonl
-    """
-    return _import_tasks_from_jsonl(jsonl_path, clear_existing)
+def brain_import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> str:
+    """Import tasks from a JSONL file."""
+    return _import_tasks_from_jsonl_impl(jsonl_path, clear_existing)
+
+def _import_tasks_from_jsonl_impl(jsonl_path: str, clear_existing: bool = False) -> str:
+    """Implementation for importing tasks."""
+    result = _import_tasks_from_jsonl(jsonl_path, clear_existing)
+    if result.get("success"):
+        return make_response(True, data=result)
+    return make_response(False, error=result.get("error"))
 
 @mcp.tool()
 def brain_escalate(task_id: str, reason: str) -> Dict:
@@ -1498,74 +1475,52 @@ def _depth_push_impl(topic: str) -> str:
     return make_response(True, data=result)
 
 @mcp.tool()
-def brain_depth_pop() -> Dict:
-    """Come back up one level in the conversation tree.
-    
-    Use this when you've finished a subtopic and want to return
-    to the parent context.
-    
-    Returns:
-        New depth level and what topic you returned to
-    """
+def brain_depth_pop() -> str:
+    """Come back up one level."""
+    return _depth_pop_impl()
+
+def _depth_pop_impl() -> str:
+    """Implementation for depth pop."""
     result = _depth_pop()
     return make_response(True, data=result)
 
 @mcp.tool()
-def brain_depth_show() -> Dict:
-    """Show current depth state with visual indicator and tree.
-    
-    Use this to see:
-    - Where you are in the conversation tree
-    - How deep you've gone
-    - The path you took to get here
-    
-    Returns:
-        Full depth state including visual tree and breadcrumbs
-    """
+def brain_depth_show() -> str:
+    """Show current depth state."""
+    return _depth_show_impl()
+
+def _depth_show_impl() -> str:
+    """Implementation for depth show."""
     result = _depth_show()
     return make_response(True, data=result)
 
 @mcp.tool()
-def brain_depth_reset() -> Dict:
-    """Reset depth to root level (0). Clears all levels.
-    
-    Use this when starting a completely new topic tree
-    or when you want to clear the current session.
-    
-    Returns:
-        Confirmation and new session ID
-    """
+def brain_depth_reset() -> str:
+    """Reset depth to root level."""
+    return _depth_reset_impl()
+
+def _depth_reset_impl() -> str:
+    """Implementation for depth reset."""
     result = _depth_reset()
     return make_response(True, data=result)
 
 @mcp.tool()
-def brain_depth_set_max(max_depth: int) -> Dict:
-    """Set the maximum safe depth threshold.
-    
-    Default is 5. Increase if you KNOW you need to go deep.
-    Warnings trigger at max-1, danger at max.
-    
-    Args:
-        max_depth: New max (1-10, default 5)
-    
-    Returns:
-        Updated max and current depth indicator
-    """
+def brain_depth_set_max(max_depth: int) -> str:
+    """Set the maximum safe depth."""
+    return _depth_set_max_impl(max_depth)
+
+def _depth_set_max_impl(max_depth: int) -> str:
+    """Implementation for setting max depth."""
     result = _depth_set_max(max_depth)
     return make_response(True, data=result)
 
 @mcp.tool()
-def brain_depth_map() -> Dict:
-    """Generate a visual exploration map of your current session.
-    
-    Returns a Mermaid diagram showing your exploration path as a tree.
-    Nodes are color-coded: 🟢 safe, 🟡 caution, 🔴 danger/rabbit hole.
-    
-    Use this to get a "Strategy Game" view of where you've been.
-    
-    Returns:
-        Mermaid diagram code and path summary
-    """
+def brain_depth_map() -> str:
+    """Generate exploration map."""
+    return _depth_map_impl()
+
+def _depth_map_impl() -> str:
+    """Implementation for depth map."""
     result = _generate_depth_map()
     return make_response(True, data=result)
 
