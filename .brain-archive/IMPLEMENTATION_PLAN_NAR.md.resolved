@@ -1,0 +1,45 @@
+# NAR Implementation Plan: The "Cognitive FaaS" Engine
+
+**Goal:** Build the operational kernel that spans/kills ephemeral agents on demand.
+
+## 1. Core Architecture
+We are building `nucleus.runtime`, a python module that can be imported or run as a service.
+
+### Components
+1.  **`CapabilityRegistry`**: The menu of all available tools (Render, Memory, Brain).
+2.  **`ContextFactory`**: The "Compiler" that selects subsets of tools for a specific intent.
+3.  **`EphemeralAgent`**: The variable runtime (a lightweight wrapper around an LLM client) that runs *until task completion* then vanishes.
+
+## 2. Directory Structure
+```
+src/
+  nucleus_runtime/
+    __init__.py
+    capabilities/      # Tool Definitions
+      render_ops.py
+      memory_ops.py
+      brain_ops.py
+    factory.py         # ContextFactory logic
+    agent.py           # EphemeralAgent logic
+    router.py          # The CEO logic
+```
+
+## 3. Implementation Steps
+
+- [ ] **Step 1: Scaffold**
+    - Create directory structure.
+    - Define base `Capability` class.
+- [ ] **Step 2: The Factory (Kernel)**
+    - Implement `ContextFactory.create_context(intent)`.
+    - It should map string intents ("deploy") to toolsets.
+- [ ] **Step 3: The Runtime (Agent)**
+    - Implement `EphemeralAgent.run(instruction)`.
+    - It must leverage the `Context` (system prompt + restricted tools).
+- [ ] **Step 4: The Interface (CEO)**
+    - Create `brain_spawn(intent)` MCP tool that wraps the runtime.
+
+## 4. Verification
+We will run a "Fire Drill":
+1.  User Intent: "Check if the server is up."
+2.  Factory matches to `[smoke_test]`.
+3.  Agent spawns, runs test, reports, dies.

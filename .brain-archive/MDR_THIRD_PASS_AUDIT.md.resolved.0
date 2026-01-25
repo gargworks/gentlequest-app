@@ -1,0 +1,114 @@
+# MDR Third-Pass: Agent Definition Gap Analysis
+
+> **Date:** 2026-01-07 07:50
+> **Findings:** MAJOR implementation gap discovered
+
+---
+
+## Critical Discovery: Agent Definitions vs Factory.py
+
+### The Gap
+
+| Source | Agents Defined | Prompt Depth |
+|:-------|:---------------|:-------------|
+| `.brain/agents/*.md` | 6 agents (400+ lines each) | Full protocols, checklists, handoffs |
+| [factory.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-nar/src/nucleus_nar/runtime/factory.py) PERSONAS | 4 personas (5-10 lines each) | Basic fragments only |
+
+### Agent Definition Files (NOT USED)
+
+| File | Lines | Contains |
+|:-----|:------|:---------|
+| [synthesizer.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/synthesizer.md) | 404 | Full God Mode protocol, event emission, sprint management |
+| [critic.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/critic.md) | 289 | Security checklist, code review checklist, handoff protocols |
+| [developer.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/developer.md) | ~300 | Implementation protocols |
+| [researcher.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/researcher.md) | ~300 | Research protocols |
+| [architect.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/architect.md) | ~300 | Architecture protocols |
+| [strategist.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/strategist.md) | ~300 | Strategy protocols |
+
+### Factory.py Personas (ACTUALLY USED)
+
+| Persona | Source | Prompt Fragment |
+|:--------|:-------|:----------------|
+| Synthesizer | factory.py only | "Think and write. Do NOT use tools..." |
+| Librarian | factory.py only | MDR_002 DIRECTIVE (tool-only) |
+| Architect | factory.py only | "Plan and query. Use depth tracking..." |
+| DevOps | factory.py only | MDR_002 DIRECTIVE (tool-only) |
+
+---
+
+## The Problem
+
+**The rich agent definitions in `.brain/agents/` are ORPHANED.**
+- They define detailed protocols (event emission, handoffs, checklists)
+- But `factory.py` doesn't load or use them
+- The ephemeral agents get minimal 5-line prompts instead
+
+---
+
+## Missing Implementation Per MDR_004 + MDR_005
+
+MDR_004 says: "Intent → Specialized Agent → Tool"
+MDR_005 says: "Context Factory spawns agents with bespoke context"
+
+**What's Missing:**
+1. Factory should load `.brain/agents/{persona}.md` as system prompt
+2. Or at minimum, inject the critical protocols from those files
+3. The Critic, Developer, Researcher, Strategist personas don't exist in factory.py at all
+
+---
+
+## Other Gaps Found in Third Pass
+
+### 1. OPEN_VS_PROPRIETARY.md vs .gitignore
+
+The policy says to add:
+```gitignore
+# MDR_008: Private Brain
+.brain/
+!.brain/.gitkeep
+```
+
+**Current .gitignore does NOT exclude `.brain/` folder.** Only specific files inside it.
+
+### 2. MDR_006 Implicit Requirements
+
+MDR_006 claims:
+- Cost drops 90% (only pay for active seconds)
+- Accuracy increases (context window always clean)
+- Scale: 1000 parallel tasks
+
+**No metrics or validation implemented to prove these claims.**
+
+### 3. Agent Hierarchy Not Implemented
+
+`synthesizer.md` describes:
+- "You are the ONLY agent that sees across all domains"
+- "You activate on ANY event in the event stream"
+- "Meta-Optimization every 72h (rewrite agent prompts)"
+
+**This God Mode / Orchestrator pattern is NOT in the factory.py implementation.**
+
+---
+
+## Summary: What's Actually Missing
+
+| Gap | Severity | Status |
+|:----|:---------|:-------|
+| Agent definitions not loaded by factory | HIGH | ❌ NOT IMPLEMENTED |
+| Critic/Developer/Researcher/Strategist personas missing | HIGH | ❌ MISSING |
+| .gitignore should exclude .brain/ | MEDIUM | ⚠️ PARTIAL |
+| MDR_006 metrics not validated | LOW | ❌ ASPIRATIONAL |
+| Synthesizer orchestrator pattern not implemented | HIGH | ❌ NOT IMPLEMENTED |
+
+---
+
+## Recommended Fix
+
+### Option A: Minimal (Load Existing Definitions)
+Update `factory.py` to read prompt from `.brain/agents/{persona.lower()}.md` if it exists.
+
+### Option B: Full (Implement Orchestrator)
+Implement the Synthesizer as a true orchestrator per `synthesizer.md`:
+- Event stream processing
+- Agent activation via event emission
+- 72h meta-optimization loop

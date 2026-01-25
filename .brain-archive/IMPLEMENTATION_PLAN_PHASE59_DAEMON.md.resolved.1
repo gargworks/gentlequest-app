@@ -1,0 +1,31 @@
+# Phase 59: Nucleus Daemon (Unified Runtime)
+**Goal:** Implement the "Presence-Aware" Daemon as a parallel service.
+**Strategy:** Non-Destructive Additive Build.
+
+## 1. Core Infrastructure (Additive)
+*   [ ] **Module:** Create `mcp_server_nucleus/daemon/` package (The Unified Runtime).
+*   [ ] **Service Class:** Implement `NucleusDaemon` with `asyncio` loop in `mcp_server_nucleus/daemon/runtime.py`.
+*   [ ] **Entry Point:** Use `python -m mcp_server_nucleus.daemon` (Native Module Execution).
+    *   *Note:* This explicitly moves away from `scripts/` to a first-class module structure.
+
+## 2. Presence Monitor (The Sensor)
+*   [ ] **Logic:** Implement `PresenceMonitor` in `mcp_server_nucleus/daemon/presence.py`.
+    *   **Check 1:** `EventsTail` check (Reading `events.jsonl` for `user_intent` or [interaction](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#103-134)).
+    *   **Check 2:** `ProcessMap` check (Using [ps](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/code_ops.py#7-128) to find [code](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4587-4663) or `cursor` processes).
+*   [ ] **State:** Maintain `UserStatus` (ONLINE/OFFLINE) in memory.
+
+## 3. Internal Orchestrator (The Runtime)
+*   [ ] **Integration:** Import [SwarmsOrchestrator](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/orchestrator.py#8-157) directly into `NucleusDaemon`.
+*   [ ] **Trigger:** When `UserStatus == OFFLINE` (> 5 mins):
+    *   Verify [state.json](file:///Users/lokeshgarg/ai-mvp-backend/autonomous_state.json) lock.
+    *   If free, Trigger `SwarmsOrchestrator.run_maintenance_loop()`.
+    *   *Goal:* Pure internal execution. No subprocess shell calls.
+
+## 4. Verification (The Proof)
+*   [ ] **Simulated Test:** `python scripts/verify_daemon.py`.
+    *   Mock "User Active" -> Daemon Sleeps.
+    *   Mock "User Offline" -> Daemon Wakes.
+
+## 5. Safety
+*   [ ] **Isolation:** The Daemon will use a separate log file `daemon.log`.
+*   [ ] **No Conflict:** It will respect the [state.json](file:///Users/lokeshgarg/ai-mvp-backend/autonomous_state.json) locking mechanism (Atomic Claims) so it plays nice with any manual scripts running.

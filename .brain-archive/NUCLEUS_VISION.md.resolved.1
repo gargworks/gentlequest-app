@@ -1,0 +1,114 @@
+# 🧠 Nucleus: The Agentic Operating System
+
+> **Vision:** A "Team of Teams" architecture where specialized agents collaborate, persist, and evolve to build software autonomously.
+
+---
+
+## 🏗️ How It Works (The Architecture)
+
+Nucleus is not just a chatbot; it is an **Event-Driven AI Operating System**. It turns a stateless LLM (Claude/Gemini) into a persistent, stateful entity.
+
+```mermaid
+graph TD
+    User[User / CLI / IDE] -->|Action| EventBus[Event Bus]
+    
+    subgraph "Nucleus Core (The Kernel)"
+        EventBus -->|Emit| Ledger[Event Ledger (.jsonl)]
+        Ledger -->|Trigger| Orchestrator[Orchestrator]
+        Orchestrator -->|Spawn| Factory[Context Factory]
+    end
+    
+    subgraph "Agent Runtime (NAR)"
+        Factory -->|Inject Context| Agent[Ephemeral Agent]
+        Agent -->|Execute| Tools[MCP Tools]
+        Tools -->|Result| Agent
+        Agent -->|Task Complete| EventBus
+    end
+    
+    subgraph "State Persistence"
+        Tools -->|Read/Write| Files[Filesystem]
+        Tools -->|Read/Write| BrainDB[.brain/ State]
+    end
+```
+
+### 1. The Event Bus (The Nervous System)
+Everything is an event.
+- User adds a task? `task_created`
+- Code pushed? `commit_pushed`
+- Deploy finished? `deploy_completed`
+
+### 2. The Context Factory (The Brain)
+Instead of one giant "God Prompt", Nucleus dynamically assembles context based on the intent.
+- **Intent:** "Fix a bug in database code."
+- **Factory:** Loads `DatabaseSchema`, `RecentLogs`, `PythonExpertPersona`.
+- **Result:** A specialized "Database Repair Agent" is born, lives for the task, and dies.
+
+### 3. The Orchestrator (The CEO)
+A meta-agent that wakes up (via Cron or Event), reads the Ledger, and decides:
+- "Who needs to work next?"
+- "Did we forget something?" (PEFS - Project Entity Fatigue System)
+- "Are we going in circles?" (Meta-Optimizer)
+
+---
+
+## 🚀 The Plan Forward (Nucleus Roadmap)
+
+We are moving from **"Single Player with Tools"** to **"Multi-Agent Swarm with Governance"**.
+
+### Phase 1: Foundation (✅ DONE)
+*   **Memory:** `.brain` folder, SQLite state, pgvector.
+*   **Sensors:** File watching, GCloud monitoring, Deploy polling.
+*   **Tools:** 60+ MCP tools for full system control.
+
+### Phase 2: Nucleus Agent Runtime (NAR) (🚧 IN PROGRESS)
+*Goal: Formalize the "Ephemeral Agent" lifecycle.*
+- [ ] **Context Factory v2:** Dynamic "RAG" for context. Don't shovel all files; retrieve relevant ones.
+- [ ] **Capability Registry:** Agents declare "I need `shell_access` and `git_ops`". System grants permissions.
+- [ ] **Structured Output:** Enforce strict JSON contracts for Agent-to-Agent talk.
+
+### Phase 3: "Team of Teams" (The Frontier)
+*Goal: Collaborative problem solving.*
+- [ ] **The Critic Loop:**
+    - *Coder Agent* writes code.
+    - *Reviewer Agent* (separate prompt) critiques it.
+    - *Coder Agent* fixes it.
+    - *Human* only sees the result.
+- [ ] **The Researcher-Writer Pair:**
+    - *Researcher* browses web, dumps raw notes.
+    - *Writer* takes notes, drafts content.
+    - *Publisher* formats and posts.
+
+### Phase 4: Self-Evolution (Meta-Learning)
+*Goal: The system improves its own code.*
+- [ ] **Pattern/Anti-Pattern Library:** System learns "Every time I edit [app.py](file:///Users/lokeshgarg/ai-mvp-backend/app.py), I break auth".
+- [ ] **Tool Writing:** System writes its own MCP tools to fill gaps.
+
+---
+
+### Phase 5: The "Hybrid Sync" Endgame (Local + Cloud)
+*Goal: Autonomy without losing Control.*
+
+You asked: *"Can we have an option to write locally? Or better control?"*
+**Answer: YES. This is the Hybrid Model.**
+
+| Layer | Where it runs | Role | Tools Available |
+|:---|:---|:---|:---|
+| **Local (Tactical)** | Your Laptop (Antigravity/Cursor) | **Writing Code, Debugging, fast feedback.** | [fs](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1506-1528), `shell`, `git`, `localhost` |
+| **Cloud (Strategic)** | Nucleus Server (Cloud Run) | **Monitoring, Trends, Slow Thinking.** | [gcloud](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/gcloud_ops.py#26-47), `twitter_api`, `reddit_api`, `deploy_ops` |
+
+**How they connect:**
+1.  **The Bridge:** Both share the same `.brain` state (synced via Git or Firestore).
+2.  **The Workflow:**
+    *   *Cloud Agent* sees a Reddit trend → creating a draft task in `.brain/tasks/`.
+    *   *You (Local)* see the task pop up in your CLI. You review it.
+    *   *You (Local)* write the code and push.
+    *   *Cloud Agent* detects the push, runs tests, and deploys.
+
+**Why defer full Cloud Autonomy?**
+*   **Safety:** You don't want an AI editing your local files while you sleep (yet).
+*   **Cost:** Running high-power coding agents 24/7 is expensive.
+*   **Context:** Local agents see your uncommitted code; Cloud agents don't.
+
+**Recommendation:**
+Master **Tier 1-3 (Local Native)** first. It gives you the "Control" you want.
+Then, enable **Tier 4 (Cloud Bridge)** sparingly for specific "Sensor" tasks (like checking Reddit), rather than moving *everything* to the cloud immediately.

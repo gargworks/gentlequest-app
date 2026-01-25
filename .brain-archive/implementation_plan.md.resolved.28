@@ -1,0 +1,35 @@
+# Mission 2: Research Interface (WebOps)
+
+## Goal
+Enable users to trigger "Deep Research" missions directly from the HUD.
+The user enters a topic (e.g., "Mcp servers"), and the **Researcher** agent performs a web search and saving the results.
+
+## User Review Required
+None. Internal Mission.
+
+## Proposed Changes
+
+### Backend
+#### [MODIFY] [server.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py)
+- Add `/api/research` endpoint (POST).
+- Input: `{"topic": "..."}`.
+- Logic: triggers [brain_spawn_agent(intent="Research {topic}", persona="researcher")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716).
+
+### Frontend
+#### [NEW] [ResearchWidget.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/ResearchWidget.tsx)
+- Input field ("Enter research topic...").
+- "Ignite" button.
+- Displays status ("Dispatching Researcher...").
+
+#### [MODIFY] [page.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/page.tsx)
+- Import `ResearchWidget`.
+- Add to the Grid layout (Column 3, below SwarmMonitor).
+
+## Verification Plan
+### Automated Tests
+- `curl -X POST -d '{"topic": "test"}' http://localhost:9999/api/research` -> 200 OK.
+### Manual Verification
+- Open HUD.
+- Type "Latest AI Trends".
+- Click Ignite.
+- See "Researcher" spawn in [SwarmMonitor](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/SwarmMonitor.tsx#14-81).

@@ -1,0 +1,314 @@
+# Rabbit Hole Closure Worksheet
+> **Date:** 2026-01-06  
+> **Purpose:** Close 8 open rabbit holes using PEFS 5-Minute Closure Framework  
+> **Method:** Review → Approve → Execute
+
+---
+
+## Instructions
+
+For each rabbit hole below:
+1. **Read the pre-filled recommendation** (based on context, urgency, dopamine level)
+2. **Choose ONE action:**
+   - ✅ **APPROVE** - Accept recommendation as-is
+   - ✏️ **MODIFY** - Adjust (time, reason, etc.)
+   - 🔄 **CHANGE** - Pick different closure option
+3. **Mark your choice** by adding `[X]` next to it
+
+**I will execute all approved decisions immediately after you submit.**
+
+---
+
+## Rabbit Hole #1: User Interviews (5 interviews)
+
+**Context:**
+- **Decided:** Dec 28 (Board unanimous decision)
+- **Aging:** 9 days (🔴 RED TIER)
+- **Blocks:** Entire Phase B strategy for Nucleus
+- **Novelty:** High (first-time user research)
+- **Dopamine:** Low (async coordination, waiting)
+
+### Pre-Filled Recommendation: SCHEDULE
+
+**Specific Action:** Schedule recruitment post to r/ClaudeAI for tomorrow (Jan 7) at 10 AM
+
+**Why this option:**
+- You struggle with "do now" for external work
+- Scheduling removes decision paralysis
+- Morning hours = higher energy for you
+- Post is already drafted (artifact exists)
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Post recruitment Jan 7, 10 AM)
+- [ ] ✏️ MODIFY: Schedule for different time: _______________
+- [ ] 🔄 CHANGE to: 
+  - [ ] Do now (post immediately)
+  - [ ] Archive to v0.5.0 (defer user validation)
+  - [ ] Kill (not needed, build without validation)
+  - [ ] Delegate to: _______________
+
+---
+
+## Rabbit Hole #2: Recruitment Posts (3 posts drafted)
+
+**Context:**
+- **Created:** Dec 28
+- **Aging:** 9 days (🔴 RED TIER)
+- **Blocks:** Rabbit Hole #1 (interviews)
+- **Novelty:** Low (repetitive posting task)
+- **Dopamine:** Very Low (feels like "work")
+
+### Pre-Filled Recommendation: DO NOW (with AI pre-start)
+
+**Specific Action:** I paste post #1 (r/ClaudeAI) into a draft message for you. You just click "send."
+
+**Why this option:**
+- Removes friction (I do the copy/paste)
+- Quick win (5 minutes max)
+- Unblocks interviews immediately
+- Pattern: "Low dopamine" = AI pre-starts work
+
+### Your Decision
+
+- [ ] ✅ APPROVE (I draft message, you send)
+- [ ] ✏️ MODIFY: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Schedule for: _______________
+  - [ ] Archive (defer)
+  - [ ] Kill (not posting)
+
+---
+
+## Rabbit Hole #3: Demo Video (fully scripted, not recorded)
+
+**Context:**
+- **Created:** Unknown date
+- **Aging:** Unknown (🟡 YELLOW TIER estimate)
+- **Blocks:** Marketing launch
+- **Novelty:** Medium (creative work, but structured)
+- **Dopamine:** Medium (creative = fun, but recording = tedious)
+
+### Pre-Filled Recommendation: SCHEDULE
+
+**Specific Action:** Block Jan 11 (Saturday) 2-4 PM for recording session
+
+**Why this option:**
+- Needs focus time (weekend better than weekday)
+- Script is ready (removes planning barrier)
+- 2-hour block = enough buffer
+- Pattern: Creative work needs dedicated time
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Jan 11, 2-4 PM recording)
+- [ ] ✏️ MODIFY: Different date/time: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (record today)
+  - [ ] Archive to v0.5.0 marketing push
+  - [ ] Kill (video not needed)
+  - [ ] Delegate to: _______________
+
+---
+
+## Rabbit Hole #4: MCP Failure Bug (Dec 28, unresolved)
+
+**Context:**
+- **Occurred:** Dec 28, 06:01-06:23 IST
+- **Aging:** 9 days (🔴 RED TIER)
+- **Blocks:** Dogfooding reliability
+- **Novelty:** High (debugging, root cause unknown)
+- **Dopamine:** Very Low (bugs = boring)
+
+### Pre-Filled Recommendation: ARCHIVE
+
+**Specific Action:** Move to "Technical Debt" backlog, schedule for v0.5.0 "Hardening Sprint"
+
+**Why this option:**
+- Workaround exists (direct file access works)
+- Deep debugging = time sink (rabbit hole risk)
+- Not blocking current work
+- Pattern: "Technical debt" gets batched, not ad-hoc
+
+**Reason to archive:** "MCP tools work via workaround. Root cause diagnosis deferred to v0.5.0 hardening sprint when we batch all technical debt."
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Archive to v0.5.0 Technical Debt)
+- [ ] ✏️ MODIFY: Different reason: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (debug for 2 hours max)
+  - [ ] Schedule debug session: _______________
+  - [ ] Kill (accept workaround forever)
+
+---
+
+## Rabbit Hole #5: E2E UX Testing (checklist created, not executed)
+
+**Context:**
+- **Created:** Dec 27
+- **Aging:** 10 days (🔴 RED TIER)
+- **Blocks:** Confidence in PyPI → Claude pipeline
+- **Novelty:** Low (manual testing, structured)
+- **Dopamine:** Very Low (QA work)
+
+### Pre-Filled Recommendation: KILL
+
+**Specific Action:** Accept that users will report bugs. Delete checklist.
+
+**Why this option:**
+- Already shipped to PyPI without this test
+- No critical bugs reported yet (signal: it works)
+- Manual testing = low ROI vs. real user feedback
+- Pattern: "Perfect is enemy of good"
+
+**Rationale:** "PyPI package already in production for 2+ weeks. Zero bug reports from users. Formal E2E test would be theatre at this point. If bugs exist, users will surface them."
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Kill checklist, trust user feedback)
+- [ ] ✏️ MODIFY: Different rationale: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (run full E2E test today)
+  - [ ] Schedule test: _______________
+  - [ ] Archive (maybe test later)
+
+---
+
+## Rabbit Hole #6: Cron Job for Nightly Agent (code exists, not enabled)
+
+**Context:**
+- **Created:** Unknown (Knowledge Activation Plan)
+- **Aging:** Unknown (🟡 YELLOW TIER estimate)
+- **Blocks:** Automated knowledge indexing
+- **Novelty:** Low (infrastructure task)
+- **Dopamine:** Very Low (DevOps work)
+
+### Pre-Filled Recommendation: SCHEDULE
+
+**Specific Action:** Jan 8 (Wednesday) 11 AM - 15-minute task to run [./scripts/setup_cron.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/setup_cron.sh)
+
+**Why this option:**
+- Quick task (literally one command)
+- Needs to be done (automation is core to PEFS)
+- Specific time = removes "when should I do this?"
+- Pattern: "Low dopamine infrastructure" = schedule short block
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Jan 8, 11 AM, run cron setup)
+- [ ] ✏️ MODIFY: Different time: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (run setup script right now)
+  - [ ] Archive (defer automation)
+  - [ ] Kill (manual nightly runs acceptable)
+
+---
+
+## Rabbit Hole #7: GentleQuest Test Checklists (multiple, status unclear)
+
+**Context:**
+- **Created:** Various dates
+- **Aging:** Unknown (🟡 YELLOW TIER estimate)
+- **Blocks:** GentleQuest confidence
+- **Novelty:** Medium (testing user-facing features)
+- **Dopamine:** Low (QA)
+
+### Pre-Filled Recommendation: DELEGATE
+
+**Specific Action:** Delegate review to "Product Manager Agent" (future Nucleus agent)
+
+**Why this option:**
+- Status unclear = needs audit first
+- Multiple checklists = batch review makes sense
+- Not urgent (GentleQuest is live, working)
+- Pattern: "Unclear status" = delegate investigation
+
+**Note:** This is a placeholder. Real action = **Archive for now**, create proper audit task later.
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Archive, audit in future sprint)
+- [ ] ✏️ MODIFY: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (review all checklists today)
+  - [ ] Schedule audit: _______________
+  - [ ] Kill (trust production, delete checklists)
+
+---
+
+## Rabbit Hole #8: Marketing Strategy Execution (multiple threads, weak follow-through)
+
+**Context:**
+- **Threads:** Reddit strategy, marketing voice, build-in-public
+- **Aging:** Weeks (🔴 RED TIER)
+- **Blocks:** Growth
+- **Novelty:** High (external-facing, creative)
+- **Dopamine:** Medium (posting = dopamine, but async coordination = low)
+
+### Pre-Filled Recommendation: ARCHIVE + SCHEDULE
+
+**Specific Action:** 
+1. Archive all "strategy" threads to `/deferred/marketing/` 
+2. Schedule ONE concrete post: "Build in Public #1" for Jan 9, 4 PM
+
+**Why this option:**
+- Too many open threads = paralysis
+- Pick ONE action to build momentum
+- "Build in Public" = low stakes, high learning
+- Pattern: "Execution beats strategy"
+
+**Reason:** "Marketing strategy documented. Next phase = execution. Starting with one 'Build in Public' post to learn posting rhythm before broader strategy."
+
+### Your Decision
+
+- [ ] ✅ APPROVE (Archive strategy, post "Build in Public" Jan 9)
+- [ ] ✏️ MODIFY: Different post or date: _______________
+- [ ] 🔄 CHANGE to:
+  - [ ] Do now (post something today)
+  - [ ] Kill (no marketing execution)
+  - [ ] Different approach: _______________
+
+---
+
+## Summary of Recommendations
+
+| # | Rabbit Hole | Closure Method | Execution Time |
+|:--|:------------|:---------------|:---------------|
+| 1 | User Interviews | SCHEDULE | Jan 7, 10 AM |
+| 2 | Recruitment Posts | DO NOW | Today (I draft, you send) |
+| 3 | Demo Video | SCHEDULE | Jan 11, 2-4 PM |
+| 4 | MCP Bug | ARCHIVE | To v0.5.0 Technical Debt |
+| 5 | E2E Testing | KILL | Delete checklist |
+| 6 | Cron Job | SCHEDULE | Jan 8, 11 AM |
+| 7 | GentleQuest Tests | ARCHIVE | Future audit sprint |
+| 8 | Marketing Execution | ARCHIVE + SCHEDULE | Jan 9, 4 PM (Build in Public) |
+
+**Net Result:**
+- 8 rabbit holes → 3 scheduled actions + 1 do-now + 3 archived + 1 killed
+- Mental load: HIGH → LOW
+- Open loops: 8 → 0
+- Guilt: Present → Removed (everything has meaningful closure)
+
+---
+
+## Next Steps After You Approve
+
+**I will:**
+1. Create calendar reminders (if you provide Calendar API access)
+2. Draft recruitment post for #2 (immediately)
+3. Move archived items to proper folders with documentation
+4. Delete E2E checklist (#5)
+5. Update commitment ledger with all closures
+6. Generate "closure receipt" showing what was done
+
+**You will:**
+1. Review this worksheet (5 minutes)
+2. Mark your approvals with [X]
+3. Submit back to me
+4. Execute any "do now" items I prepare
+5. **Feel relief** as loops close
+
+---
+
+**Ready to close these loops?** Mark your decisions and send back.

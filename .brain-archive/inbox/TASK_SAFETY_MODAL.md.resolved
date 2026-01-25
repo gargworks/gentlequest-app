@@ -1,0 +1,9 @@
+
+# Request: Crisis Safety Modal
+
+**Objective:** Create a modal that pops up when a user triggers a crisis flag (e.g. PHQ-9 > 0).
+**Components:**
+- Warning Header
+- Resource List (988, Emergency Room)
+- "I am safe" confirmation button.
+**Style:** Nucleus Theme (Neon).

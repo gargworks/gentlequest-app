@@ -1,0 +1,176 @@
+# Nucleus Event Taxonomy
+
+> **Purpose:** Standardized event types for agent orchestration  
+> **Status:** Foundation for event-driven architecture  
+> **Owner:** Orchestrator + Neural Triggers
+
+---
+
+## Event Categories
+
+### 1. Task Lifecycle Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `task_assigned` | brain_add_task | {task_id, skills, priority} | Developer, Tester |
+| `task_state_changed` | brain_update_task | {task_id, old_state, new_state} | Orchestrator |
+| `task_completed` | brain_update_task | {task_id, duration, result} | Synthesizer |
+| `task_failed` | brain_update_task | {task_id, error, attempts} | Developer, Escalator |
+| `task_blocked` | brain_update_task | {task_id, blocked_by, reason} | Orchestrator |
+
+### 2. Commitment Lifecycle Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `commitment_created` | brain_add_loop | {comm_id, type, tier, description} | Orchestrator |
+| `commitment_closed` | brain_close_commitment | {comm_id, method, age_days} | Synthesizer |
+| `commitment_escalated` | auto (tier change) | {comm_id, old_tier, new_tier} | Escalator |
+| `mental_load_high` | auto (scan) | {open_count, red_count, load_score} | Synthesizer |
+
+### 3. Deploy Lifecycle Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `deploy_started` | brain_start_deploy_poll | {service_id, commit_sha} | Orchestrator |
+| `deploy_succeeded` | brain_complete_deploy | {service_id, url, smoke_test} | Synthesizer |
+| `deploy_failed` | brain_complete_deploy | {service_id, error, rollback} | Developer, Escalator |
+| `smoke_test_failed` | brain_smoke_test | {url, endpoint, error} | Developer |
+
+### 4. Session Management Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `session_saved` | brain_save_session | {session_id, context, task} | Orchestrator |
+| `session_resumed` | brain_resume_session | {session_id, age_days} | Synthesizer |
+| `context_switch` | auto | {from_context, to_context, depth} | Depth Tracker |
+
+### 5. Health & System Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `health_check` | nucleus_health_check.py | {status, issues, recommendations} | Orchestrator |
+| `health_critical` | nucleus_health_check.py | {red_count, mental_load} | Escalator |
+| `brain_scan_complete` | brain_scan_commitments | {new_items, total_open} | Orchestrator |
+| `pattern_detected` | Pattern Matcher | {pattern_id, events, confidence} | Appropriate Agent |
+
+### 6. Sprint Lifecycle Events
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `sprint_started` | User/Manual | {sprint_id, goals, duration} | All Agents |
+| `sprint_completed` | User/Manual | {sprint_id, completed, remaining} | Synthesizer |
+| `milestone_reached` | auto | {milestone, progress} | Synthesizer |
+
+### 7. Meta Events (Future)
+
+| Event Type | Emitted By | Payload | Triggers |
+|:-----------|:-----------|:--------|:---------|
+| `agent_activated` | Factory | {agent, intent, confidence} | Meta-Optimizer |
+| `agent_completed` | Agent | {agent, result, duration} | Meta-Optimizer |
+| `optimization_cycle` | Meta-Optimizer | {insights, adjustments} | All Agents |
+| `learning_update` | Pattern Learner | {pattern, success_rate} | Orchestrator |
+
+---
+
+## Event Schema
+
+All events follow this structure:
+
+```json
+{
+  "event_id": "xxx-abc12345",
+  "timestamp": "2026-01-08T10:42:00Z",
+  "emitter": "brain_update_task",
+  "event_type": "task_state_changed",
+  "severity": "ROUTINE|NOTABLE|CRITICAL",
+  "payload": {
+    "task_id": "task-abc123",
+    "old_state": "PENDING",
+    "new_state": "IN_PROGRESS"
+  },
+  "metadata": {
+    "triggered_by": "user|system|agent",
+    "session_id": "session-xyz789"
+  }
+}
+```
+
+---
+
+## Severity Levels
+
+### ROUTINE
+- Auto-logged, no notifications
+- Examples: task_assigned, commitment_created
+- Handling: Orchestrator processes in batch
+
+### NOTABLE  
+- Included in Daily Digest
+- Examples: task_completed, deploy_succeeded
+- Handling: Synthesizer summarizes for report
+
+### CRITICAL
+- Immediate notification to founder
+- Examples: deploy_failed, health_critical, mental_load_high
+- Handling: Escalator triggers immediate action
+
+---
+
+## Agent Subscriptions (Defined)
+
+### Developer
+Subscribe to:
+- task_assigned (skills: python, javascript, testing)
+- task_failed (all)
+- deploy_failed (all)
+- smoke_test_failed (all)
+
+### Tester
+Subscribe to:
+- task_assigned (skills: testing, qa)
+- deploy_succeeded (run tests)
+
+### Reviewer
+Subscribe to:
+- task_completed (requires review)
+- implementation_complete (all)
+
+### Synthesizer
+Subscribe to:
+- task_completed (for digest)
+- deploy_succeeded (for digest)
+- session_saved (for continuity)
+- sprint_completed (for retrospective)
+- health_check (status != critical)
+
+### Escalator
+Subscribe to:  
+- task_failed (attempts >= 3)
+- deploy_failed (all CRITICAL)
+- health_critical (all)
+- commitment_escalated (tier == red)
+
+### Orchestrator
+Subscribe to:
+- ALL events (master coordinator)
+- Processes batches every 30 min
+
+### Meta-Optimizer
+Subscribe to:
+- agent_activated (all)
+- agent_completed (all)
+- optimization_cycle (self-trigger every 72h)
+
+---
+
+## Implementation Status
+
+| Event Type | Emitter Ready? | Orchestrator Ready? | Status |
+|:-----------|:---------------|:--------------------|:-------|
+| health_check | ✅ Yes | ✅ Yes | ACTIVE |
+| task_state_changed | 🔴 No | ✅ Yes | DORMANT |
+| commit_closed | 🔴 No | ✅ Yes | DORMANT |
+| deploy_succeeded | 🟡 Partial | ✅ Yes | PARTIAL |
+| session_saved | 🔴 No | ✅ Yes | DORMANT |
+
+**Priority:** Instrument emitters (5 functions) to activate dormant events

@@ -1,125 +1,32 @@
-# Nucleus v0.3.0: Solo Templat# Nucleus Implementation Plan
+# Production Fixes: Auth & Proxy
 
-## 1. Safety & Release (v0.2.6) ✅
-- [x] Auto-Backup before overwrite
-- [x] Stricter Active Brain detection
-- [x] Released to PyPI
+## Goal
+Resolve critical production issues blocking full functionality:
+1.  **Database Auth**: `gentlequest-backend` is failing to connect to Cloud SQL due to a password mismatch.
+2.  **Frontend Proxy**: `nucleus-hud`'s `/api/status` endpoint fails (503) because the Next.js rewrite rule points to `localhost`.
 
-## 2. Orchestration Automation (The Autopilot) 🚧
-**Objective:** Replace manual JSON editing with an intelligent background daemon.
+## User Review Required
+**Note**: We will reset the Cloud SQL user password for `gentlequest` to `gentlequest2026`. This should align with the current Cloud Run configuration.
 
-### Design: The "Client-Side" Autopilot
-*Principle: Server = State (Data), Autopilot = Compute (LLM).*
+## Proposed Changes
 
-- **Component:** `scripts/autopilot.py`
-- **Dependencies:** `mcp`, `anthropic` (or `openai`)
-- **Logic:**
-  1.  Watch [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) for changes (Event-Driven).
-  2.  If `type == "user_input"`, waking Synthesizer.
-  3.  Inject Context: [state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/.sync_state.json) + [thread_registry.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/meta/thread_registry.md).
-  4.  Execute Tool Use: `brain_delegate_task`.
+### Database Authentication
+- **Action**: SQL Password Reset
+    - Target: Cloud SQL Instance `gen-lang-client-0894185576:us-central1:gentlequest-db`
+    - User: `gentlequest`
+    - New Password: `gentlequest2026` (Matching `gentlequest-backend` Env Var)
 
-### Implementation Steps
-1.  Create `scripts/autopilot.py`.
-2.  Implement efficient event polling (cursor-based).
-3.  Add "Safety Switch" (Human-in-the-loop mode).
-
-## 3. Thread Identity System ✅
-- [x] Registry Schema
-- [x] Ledger Task Affinityle:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py)
-
-**Changes:**
-1. Add `--template` CLI argument (default: [default](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#120-158))
-2. Create `SOLO_TEMPLATE` constants (minimal structure)
-3. Route [init_brain()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#189-301) to template-specific logic
-
-**Solo Template Structure:**
-```
-.brain/
-├── ledger/
-│   └── state.json         ← Simplified
-├── meta/
-│   └── thread_registry.md ← NEW: Agent identity
-└── memory/
-    └── context.md         ← Project context
-```
-
----
-
-### [MODIFY] [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml)
-
-- Bump version: `0.2.4` → `0.3.0`
-
----
-
-### [MODIFY] [README.md](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/README.md)
-
-- Add template usage section
-- Document `nucleus-init --template=solo`
-
----
-
-### [MODIFY] [CHANGELOG.md](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/CHANGELOG.md)
-
-- Add v0.3.0 release notes
-
----
-
-## Solo Template Files
-
-**state.json (Simplified):**
-```json
-{
-  "version": "1.0.0",
-  "mode": "solo",
-  "current_focus": "Getting started",
-  "tasks": []
-}
-```
-
-**thread_registry.md:**
-```markdown
-# Thread Registry
-
-> **Protocol:** Agents check this file on activation to know their role.
-
-| Thread ID | Role | Focus |
-|:----------|:-----|:------|
-| *(Add your threads here)* | | |
-
-## How to Use
-1. Find your thread ID in your IDE's artifact path
-2. Add a row to this table
-3. Agent will self-identify on next activation
-```
-
----
+### Nucleus HUD Frontend (`tools/nucleus-hud`)
+#### [MODIFY] [next.config.ts](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/next.config.ts)
+- Update `rewrites` to use `process.env.NEXT_PUBLIC_API_URL` instead of hardcoded `localhost`.
+- Fallback to `localhost` for development.
 
 ## Verification Plan
 
-1. **Local Test:**
-   ```bash
-   cd mcp-server-nucleus
-   pip install -e .
-   nucleus-init --template=solo
-   ```
+### Database Recovery
+- Check `gentlequest-backend` logs for "password authentication failed" errors ceasing.
+- Run `curl https://nucleus.gentlequest.app/api/health` -> Expect `200 OK` and database status `healthy`.
 
-2. **Check Files Created:**
-   - [.brain/ledger/state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json) exists
-   - [.brain/meta/thread_registry.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/meta/thread_registry.md) exists
-   - No `agents/` folder (solo mode = registry only)
-
-3. **Publish:**
-   ```bash
-   hatch build
-   twine upload dist/*
-   ```
-
----
-
-## User Review Required
-
-> [!IMPORTANT]
-> Please confirm:
-> 1. Is the [solo](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#160-184) template structure correct?
-> 2. Should [default](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#120-158) template remain unchanged (current behavior)?
+### Frontend Proxy
+- Access `https://nucleus-hud-7an2ps6yna-uc.a.run.app/api/status`
+- Expect: 200 OK (Proxying to backend), not 503.

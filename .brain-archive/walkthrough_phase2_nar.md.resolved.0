@@ -1,0 +1,38 @@
+
+# Walkthrough: Nucleus Agent Runtime v2 (Context Factory)
+
+> **Date:** 2026-01-11
+> **Status:** ✅ Completed
+> **Target:** `mcp-server-nucleus`
+
+## 🎯 Goal
+Upgrade the Nucleus Agent Runtime (NAR) with **Dynamic Context Injection** (RAG-lite).
+This enables agents to automatically access relevant project documentation based on the user's intent, without requiring massive static prompts.
+
+## 🛠 Changes Implemented
+
+### 1. Context Rules Schema ([context_rules.json](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/context_rules.json))
+- Defined a JSON schema mapping **Keywords** to **File Paths**.
+- Initial Rules:
+  - [deploy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1166-1222), `cloud run` -> [cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml), [DEPLOYMENT.md](file:///Users/lokeshgarg/ai-mvp-backend/DEPLOYMENT.md)
+  - `database`, `schema` -> `DATABASE_SCHEMA.md`
+  - `api`, `endpoint` -> `OPENAPI_SPEC.md`
+
+### 2. Context Factory Upgrade ([factory.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py))
+- Implemented [_resolve_dynamic_context(intent)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py#308-357).
+- **Logic:**
+  1. Scans [context_rules.json](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/context_rules.json).
+  2. Matches intent keywords.
+  3. Reads file contents (with 10k char limit).
+  4. Injects into System Prompt under `# DYNAMIC CONTEXT INJECTION`.
+
+## ✅ Verification
+- **Test Script**: [tests/test_context_injection.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_context_injection.py) (Created & Passed).
+- **Results**:
+  - [deploy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1166-1222) intent -> Injected proper [cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml) context.
+  - `hello` intent -> Clean prompt (no noise).
+
+## 🚀 Impact
+- **Smarter Agents**: They know the infrastructure without being told.
+- **Cheaper Calls**: We don't load the entire wiki every time.
+- **Maintainable**: Just update [context_rules.json](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/context_rules.json) to teach the AI new tricks.

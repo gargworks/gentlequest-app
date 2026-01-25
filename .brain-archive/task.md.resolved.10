@@ -1,14 +1,229 @@
-# Strategy/Docs Track - Tasks
+# Nucleus Onboarding Sprint
 
-## Current: Automated LLM Bridge
+## Objective
+Enhance `nucleus-init` to provide a guided onboarding experience for new users.
 
-- [x] Sprint 1: Nuclear Activation (COMPLETE)
-- [x] Sprint 2: Hardening + Flywheel (COMPLETE)
-- [x] Sprint 3: MVP Genesis (COMPLETE)
-- [x] Build Hardened Cockpit v2 (COMPLETE)
-- [/] Build Automated LLM Bridge:
-  - [ ] Create `brain_executor.py` with Gemini API
-  - [ ] Agent identification via system prompt files
-  - [ ] Context building (task + state + files)
-  - [ ] Response capture → event emission
-  - [ ] Integration with flywheel
+---
+
+## Tasks
+
+### Phase 1: Implementation
+- [x] Add `DEFAULT_TASKS` to [cli.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py) (instructional seed tasks)
+- [x] Add `.brain/README.md` creation to both templates
+- [x] Improve CLI output with bolder "next steps" prompts
+
+### Phase 2: Verification
+- [x] Test `nucleus-init` locally (default template)
+- [x] Test `nucleus-init --template=solo` locally
+- [x] Verify tasks appear in Claude Desktop (Fixed in v0.3.2)
+- [x] **Regression Test:** Create unit tests for V2 task logic (`tests/test_brain_v2_logic.py`)
+
+### Phase 3: Ship
+- [x] Bump version to 0.3.1 (Broken) -> 0.3.2 (Fixed)
+- [x] Update CHANGELOG.md
+- [x] Commit and push
+- [x] Upload to PyPI (v0.3.2 live)
+
+### Phase 4: Infrastructure & Meta (Added)
+- [x] Create [DECISION_LOG.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/DECISION_LOG.md) for architectural continuity
+- [x] Create `RAW_MONOLOGUE_*.md` to preserve user context
+- [x] Create `backup-brain.sh` script (Git + Google Drive)
+- [x] Install weekly cron job (Sunday 11 PM) for automated backups
+
+### Phase 5: Workflow Design (2026-01-04)
+- [x] Capture Part 1 monologue (Definition of Done)
+- [x] Capture Part 2 monologue (Granularity & Satellite View)
+- [x] Capture Part 3 monologue (Dopamine & Validation)
+- [x] Capture Part 4 monologue (CEO/Chairman Model)
+- [x] Synthesize all 4 parts into structured insights
+- [x] Create NORTH_STAR_VISION.md (15 immutable principles)
+- [x] Create design translations (4 documents showing system behavior)
+  - SATELLITE_VIEW_DESIGN_TRANSLATION.md
+  - DEFINITION_OF_DONE_DESIGN_TRANSLATION.md
+  - DOPAMINE_VALIDATION_DESIGN_TRANSLATION.md
+  - CEO_CHAIRMAN_DESIGN_TRANSLATION.md
+- [x] Capture meta-observation: Brain Consolidation Principle (XVI)
+  - BRAIN_CONSOLIDATION_PRINCIPLE.md
+  - Updated NORTH_STAR_VISION.md with 16th immutable principle
+- [x] Link CEO model to existing Nucleus Protocol architecture
+  - CEO_ORCHESTRATION_REFINEMENT.md
+
+### Phase 6: Design Session (2026-01-05)
+- [x] Create tiered specs for v0.4.0 features
+  - SPEC_RENDER_POLLER.md
+  - SPEC_FEATURE_MAP.md
+  - SPEC_PROOF_SYSTEM.md
+  - SPEC_DEPTH_TRACKER.md (Priority #0)
+- [x] Create intent snapshots for future features
+  - INTENT_V0_5_0.md (Session Management)
+  - INTENT_V1_0_PLUS.md (CEO Orchestrator)
+- [x] Create master implementation plan
+  - IMPLEMENTATION_PLAN_V0_4_0.md
+- [x] Create foundational reference
+  - FOUNDATIONAL_REFERENCE_AGENTGRAPH.md
+- [x] Lock all clarifying questions
+  - CLARIFYING_QUESTIONS_TOMORROW.md (all decisions finalized)
+
+### Phase 7: Depth Tracker Tier 1 MVP (2026-01-05) ✅
+- [x] Add core logic functions to [__init__.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py) (8 functions)
+  - [_get_depth_path()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#575-581), [_get_depth_state()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#579-603), [_save_depth_state()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#604-614)
+  - [_depth_push()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#615-678), [_depth_pop()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#679-725), [_depth_show()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#729-773)
+  - [_depth_reset()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#774-805), [_depth_set_max()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#806-825), [_format_depth_indicator()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#826-843)
+- [x] Add MCP tool wrappers (5 tools)
+  - [brain_depth_push()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2534-2548), [brain_depth_pop()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2549-2560), [brain_depth_show()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2561-2574)
+  - [brain_depth_reset()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2575-2586), [brain_depth_set_max()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2587-2601)
+- [x] Add MCP resource (`brain://depth`)
+- [x] Add CLI commands (`nucleus depth show/up/reset/max/push`)
+- [x] Create unit tests (`tests/test_depth_tracker.py` - 13 tests)
+- [x] Manual testing in Claude Desktop (Verified by user log 2026-01-05)
+
+---
+
+## Next Steps
+
+1. **Depth Tracker MVP** - ✅ DONE (Live & Verified)
+2. **Render Poller** - 🚧 IN PROGRESS
+3. **Feature Map** - TBD
+4. **Proof System** - TBD
+
+### Phase 8: Render Poller (2026-01-05) ✅
+- [x] Create [brain_start_deploy_poll()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2620-2635) MCP tool
+- [x] Create [brain_check_deploy()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2636-2651) MCP tool  
+- [x] Create [brain_complete_deploy()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2652-2671) MCP tool
+- [x] Create [brain_smoke_test()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2672-2686) MCP tool
+- [x] Add smoke test with health check
+- [x] Log events to ledger
+- [x] Test with real GentleQuest deploy (needs restart)
+
+### Phase 9: Feature Map (2026-01-05) ✅
+- [x] Create `.brain/features/` directory structure
+- [x] Create `gentlequest.json` and `nucleus.json` files
+- [x] Implement `brain_add_feature()` core logic
+- [x] Implement `brain_list_features()` core logic
+- [x] Implement `brain_get_feature()` core logic
+- [x] Implement `brain_update_feature()` core logic
+- [x] Implement `brain_mark_validated()` core logic
+- [x] Add MCP tool wrappers (6 tools)
+- [ ] Add CLI commands
+- [x] Seed initial features (3 GentleQuest + 3 Nucleus)
+
+### Phase 10: Feature Map CLI (2026-01-05) ✅
+- [x] Add `nucleus features list` command
+- [x] Add `nucleus features test <id>` command
+- [x] Add `nucleus features search <query>` command
+
+### Phase 11: Proof System (2026-01-06) ✅
+- [x] Read spec and plan implementation
+- [x] Implement proof capture logic (3 core functions)
+- [x] Add MCP tools (3 tools)
+- [x] Add CLI commands (`nucleus features proof <id>`)
+- [x] Test with real feature validation (crisis_detection)
+
+### Phase 12: Session Management (2026-01-06) ✅
+- [x] Create `.brain/sessions/` directory structure
+- [x] Implement `_save_session()` core logic
+- [x] Implement `_resume_session()` core logic
+- [x] Implement `_list_sessions()` core logic
+- [x] Add MCP tools (4 tools)
+- [x] Add CLI commands (`nucleus sessions list/save/resume`)
+- [x] Test end-to-end
+
+### Phase 13: Brain Consolidation Tier 1 (2026-01-06) ✅
+- [x] Implement `_archive_resolved_files()` core logic
+- [x] Add `brain_archive_resolved` MCP tool wrapper
+- [x] Add `nucleus consolidate archive` CLI command
+- [x] Add `run_brain_consolidation()` to `nightly_agent.py`
+- [x] Create `tests/test_brain_consolidation.py` unit tests
+- [x] Run tests and verify (✅ Archived 274 files)
+- [x] Update walkthrough
+
+### Phase 14: Brain Consolidation Tier 2 (2026-01-06) ✅
+- [x] Implement `_detect_redundant_artifacts()` core logic
+- [x] Implement `_generate_merge_proposals()` core logic
+- [x] Add `brain_propose_merges` MCP tool wrapper
+- [x] Add `nucleus consolidate propose` CLI command
+- [ ] Test CLI command (requires pipx reinstall)
+
+### Phase 15: Brain Architecture Deep Synthesis (2026-01-06) ✅
+- [x] Map all brain contexts (Antigravity, Nucleus MCP, Project .brain)
+- [x] Analyze monologues for brain architecture vision
+- [x] Question biological brain metaphor vs machine/quantum alternatives
+- [x] Create unified BRAIN_ARCHITECTURE_SYNTHESIS.md
+- [x] Define consolidation scope across all contexts
+
+### Phase 16: Satellite View Dashboard (2026-01-06) ✅
+- [x] Review SATELLITE_VIEW_DESIGN_TRANSLATION.md
+- [x] Create refined SATELLITE_VIEW_REFINED.md with performance considerations
+- [x] Implement `nucleus status` CLI command (Tier 1 MVP)
+- [x] Add sparkline generation from events.jsonl
+- [x] Integrate depth + session + health into unified view
+- [x] Test end-to-end (verified with mock test)
+- [x] Tier 2: Activity summary precomputation in _emit_event()
+- [x] Tier 2: Fast path using activity_summary.json
+- [x] Tier 2: Sprint zoom level with tasks (--sprint flag)
+- [x] Tier 2: Full zoom level with session (--full flag)
+
+### Phase 17: PEFS Phase 1 - Rabbit Hole Closure (2026-01-06) ✅
+- [x] Comprehensive rabbit hole audit (8 items identified)
+- [x] PEFS design (3 documents: main, implementation tasks, Agentgraph integration)
+- [x] Professor Venkatraman integration (Agentgraph principles)
+- [x] Phase 1 execution: 8 rabbit holes closed
+  - [x] User interviews → DM strategy (5 personalized DMs drafted & sent)
+  - [x] Recruitment posts → Cancelled (rule violation risk, pivoted to DMs)
+  - [x] Demo video → Existing v0.2.6 video available
+  - [x] MCP bug → Archived to v0.5.0 Technical Debt
+  - [x] E2E testing → Killed (trusting user feedback)
+  - [x] Cron job → Installed (4 jobs: nightly, weekly, backup, monthly)
+  - [x] GentleQuest tests → Archived to future QA audit
+  - [x] Marketing execution → Scheduled Build in Public posts
+- [x] Rabbit hole killer script created (`scripts/rabbit_hole_killer.py`)
+- [x] Rabbit hole killer workflow documented
+- [x] All execution artifacts created (closure receipt, scheduled actions, archive log)
+- [ ] Install ripgrep and fd (`brew install ripgrep fd`)
+- [ ] Fix cron environment variables (add GEMINI_API_KEY to crontab)
+
+---
+
+## Next Steps: Phase 2 - PEFS Core Automation
+
+**Goal:** Build always-on rabbit hole prevention system
+
+**Features:**
+1. Commitment Ledger (central tracking database)
+2. Telegram Bot (daily reminders at 8 AM)
+3. Nightly Scanner (automatic commitment detection)
+4. Satellite View integration (visibility in `nucleus status`)
+
+### Phase 18: PEFS Phase 2 - Core Automation (2026-01-06) 🚧
+- [x] Commitment Ledger module (`commitment_ledger.py`)
+  - [x] Schema design (ledger.json with context dimensions)
+  - [x] Context analysis (novelty, dopamine, urgency, emotional_load)
+  - [x] Aging logic (green <3d, yellow <7d, red >7d)
+  - [x] Suggestion engine (do_now, schedule, archive, kill)
+  - [x] CRUD operations (add, update, close, list)
+- [x] Telegram Bot integration
+  - [x] Daily briefing script (`scripts/telegram_briefing.py`)
+  - [x] Commitment summary formatting
+  - [x] Mental load calculation
+  - [x] Red tier escalation
+- [x] Nightly Scanner
+  - [x] Updated `scripts/nightly_agent.py` with commitment scanning
+  - [x] Ripgrep integration for checklist detection
+  - [x] Auto-population of ledger
+  - [x] Aging update automation
+- [ ] MCP Tool Wrappers
+  - [ ] `brain_scan_commitments()`
+  - [ ] `brain_list_commitments(tier?)`
+  - [ ] `brain_close_commitment(id, method)`
+  - [ ] `brain_commitment_health()`
+- [ ] Satellite View Integration
+  - [ ] Add commitment health to `nucleus status`
+  - [ ] Show open loop count with tier breakdown
+- [ ] Testing
+  - [ ] Test nightly scanner
+  - [ ] Test Telegram bot (requires TELEGRAM_CHAT_ID)
+  - [ ] Test end-to-end workflow
+- [ ] Cron Setup
+  - [ ] Add Telegram briefing to crontab (8 AM daily)
+  - [ ] Fix environment variables in crontab
+

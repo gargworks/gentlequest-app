@@ -1,0 +1,71 @@
+# GentleQuest: The Nucleus Playbook
+**Context:** Building a Clinical-Grade Mental Health Assistant.
+**Objective:** How to use Nucleus to ship GentleQuest features faster and safer.
+
+---
+
+## 1. Safety First: The "Crisis Logic" Loop
+**Scenario:** You are modifying the `Crisis Detection` logic and want to ensure you haven't broken the safety filters.
+
+### Step-by-Step Workflow:
+1.  **Configure Health Check:** Tell the agent to update its environment:
+    > "Set `NUCLEUS_HEALTH_CMD` to run our safety unit tests: `pytest tests/test_safety.py`."
+2.  **Run the Scan:**
+    > "Run `brain_scan_health` to verify the current safety state."
+3.  **Self-Heal:** If it fails:
+    > "The safety check failed. Run `brain_generate_fix_plan` and fix the regex in `safety.py`."
+4.  **Confirm:** Ask for a new scan to ensure the fix worked.
+
+---
+
+## 2. Managing the Product: The Feature Map
+**Scenario:** You are moving from "Crisis Detection" to "Clinical Assessments".
+
+### Workflow:
+1.  **Update Progress:**
+    > "Update feature `crisis_detection` to [validated](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1410-1420). We just finished the hybrid keyword/LLM layer."
+2.  **Generate Proof:**
+    > "Please [brain_generate_proof](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2211-2238) for `crisis_detection` so we have a record of why we chose the hybrid approach."
+    *   *Result:* Creates [.brain/features/proofs/crisis_detection.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/features/proofs/crisis_detection.md) with your reasoning.
+3.  **Start New Feature:**
+    > "Add a new feature `clinical_assessments` to our map. Priority: High."
+
+---
+
+## 3. Deep Clinical Context: Memory
+**Scenario:** You are writing clinical content (e.g., PHQ-9 scoring) and don't want to re-explain the rules every time.
+
+### Workflow:
+1.  **Inject Knowledge:**
+    > "Please `brain_remember` that PHQ-9 scores of 10-14 indicate 'Moderate Depression' and require a specific intervention path."
+2.  **Recall During Coding:** Later, when writing the assessment logic:
+    > "Check `brain_recall` for PHQ-9 scoring rules and help me write the `if/else` block in the backend."
+    *   *Result:* The agent pulls the exact clinical thresholds you stored earlier.
+
+---
+
+## 4. Custom Clinical Tools
+**Scenario:** You need a tool that specifically checks if a response contains "Trigger Words" from a restricted clinical list.
+
+### Workflow:
+1.  **Create the Tool:** Drop a file into `.brain/tools/clinical_check.py`.
+2.  **Define it:** (The agent can do this for you!)
+    > "Create a Nucleus tool called `brain_check_clinical_triggers`. It should scan a string for a list of words we keep in `clinical_rules.json`."
+3.  **Active Usage:** You (or an autonomous agent) can now call this tool as part of every automated health check.
+
+---
+
+## 5. The "Context Switch" (IDE to Chat)
+**Scenario:** You were debugging the GentleQuest deployment in the terminal, but now you want to work on UI in the browser.
+
+### Workflow:
+1.  **Save the Moment:**
+    > "Save session as `backend-deployment-fix-v1`."
+2.  **Switch Context:** Go to your browser or another IDE.
+3.  **Resume:**
+    > "Resume session `backend-deployment-fix-v1`. What was the status of the Render smoke test?"
+    *   *Result:* You are instantly back in the same mental state with all file context intact.
+
+---
+
+*This is how Nucleus moves from 'General AI' to 'GentleQuest Engine'. It owns the facts and the status so you can focus on the logic.*

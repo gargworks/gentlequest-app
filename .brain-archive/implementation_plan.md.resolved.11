@@ -1,93 +1,52 @@
-# 🤖 Automation-First Approach
+# Phase 49: Google Cloud Automation (Frictionless)
 
-**Philosophy:** Don't delete features. Automate them. Track usage. Audit later.
+## Goal
+Automate infrastructure management and deployment using the detailed constraints:
+*   **Frictionless Auth:** Leverage existing local `gcloud` credentials (no new service account keys).
+*   **Declarative Config:** Define infrastructure state clearly.
+*   **Platform:** Google Cloud (via `gcloud` CLI).
 
----
+## 1. Environment Verification (The "Frictionless" Check)
+We must ensure the Agent can see the User's `gcloud` binary.
 
-## Current Automations (Already Running)
+*   **Step 1:** Locate `gcloud`.
+    *   *Check:* `which gcloud` (in login shell).
+    *   *Fallback:* User provides path or installation.
+*   **Step 2:** Verify Auth.
+    *   *Check:* `gcloud auth list`.
+    *   *Action:* If not logged in, request User to run `gcloud auth login`.
 
-| What | Schedule | Status |
-|:-----|:---------|:-------|
-| Nightly Agent | Cron 2am | ✅ Active |
-| Knowledge Indexer | Part of nightly | ✅ Active |
-| Daily Digest | Part of nightly | ✅ Active |
-| Events Logging | On every action | ✅ Active |
+## 2. Infrastructure Declaration ("Declaro")
+We will define the desired state in a simple config file, avoiding complex Terraform for now in favor of direct `gcloud` wrapping (simpler for this stage).
 
----
+*   **File:** `infra/gcp_config.yaml`
+    ```yaml
+    project: ai-mental-health-assistant
+    region: us-central1
+    services:
+      - name: gentlequest-backend
+        type: cloud-run
+        source: .
+        allow-unauthenticated: true
+    ```
 
-## What Should Be Automatic (But Isn't Yet)
+## 3. Automation Implementation
+Create a Python script `scripts/gcloud_manager.py` that acts as the controller.
 
-| Feature | Current Trigger | Make Automatic |
-|:--------|:----------------|:---------------|
-| Research queue | Manual `/research` | ✅ Nightly processes queue |
-| Ideas reminder | None | Add to Telegram summary if ideas > 3 |
-| Sprint progress | Manual check | Include in nightly digest |
+*   **Capabilities:**
+    *   [deploy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1122-1178): Wraps `gcloud run deploy`.
+    *   `logs`: Wraps `gcloud logging read`.
+    *   `secret`: Wraps `gcloud secrets versions access`.
+*   **Safety:**
+    *   Checks for dirty git state before deploy.
+    *   Verifies project ID matches config.
 
-**Good news:** Research queue is already integrated into nightly_agent.py. It will run automatically at 2am.
+## 4. Execution Plan
+1.  **Locate & Verify CLI** (Immediate).
+2.  **Create `infra/` folder & config**.
+3.  **Script `scripts/gcloud_manager.py`**.
+4.  **Test Deployment** (Dry Run).
 
----
-
-## Telegram: No Manual Commands Needed
-
-| Instead of... | It Does Automatically... |
-|:--------------|:-------------------------|
-| `/status` every day | Nightly sends you summary |
-| `/tasks` | Included in nightly summary |
-| Checking `/idea` inbox | Nightly reminds if pending |
-
-**You only need commands when you want to ADD something:**
-- `/idea` → capture thought
-- `/research` → queue task
-- `/sprint` → start new focus
-
----
-
-## Usage Tracking (Already Happening)
-
-Every action emits an event to [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl):
-
-```json
-{"event_type": "idea_captured", "timestamp": "..."}
-{"event_type": "research_queued", "timestamp": "..."}
-{"event_type": "sprint_started", "timestamp": "..."}
-```
-
-**After 2 weeks, we can query:**
-- How many ideas captured?
-- How many research tasks completed?
-- Which commands used most?
-
----
-
-## Audit Schedule
-
-| Date | Action |
-|:-----|:-------|
-| Jan 14, 2025 | Review events.jsonl for usage |
-| Jan 14, 2025 | Check which features have 0 usage |
-| Jan 14, 2025 | Decide what to deprecate |
-
----
-
-## Your Zero-Effort Daily Experience
-
-| Time | What Happens | Your Action |
-|:-----|:-------------|:------------|
-| **Anytime** | Have an idea | `/idea <thought>` via Telegram |
-| **Anytime** | Want research | `/research <topic>` via Telegram |
-| **2am** | Nightly agent runs | None (automatic) |
-| **Morning** | Telegram summary arrives | Read it |
-| **Morning** | Research results ready | Optional: review in `.brain/artifacts/research/` |
-
----
-
-## Summary
-
-| Before | After |
-|:-------|:------|
-| "Too many commands" | Use 2: `/idea`, `/research` |
-| "Nothing runs" | Everything runs at 2am |
-| "Don't know what exists" | Telegram summary tells you |
-| "Is this useful?" | Audit after 2 weeks |
-
-**No changes needed. System is already set up to run automatically.**
+## User Review
+*   **CLI Path:** If `gcloud` isn't in standard PATH, I will need you to provide it.
+*   **Auth:** You may need to run `gcloud auth login` once if expired.

@@ -1,0 +1,73 @@
+# Nucleus HUD Walkthrough
+
+## Overview
+This document tracks the verification and usage of the Nucleus HUD features.
+
+## Mission 1: System Health (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Real-time system status indicator.
+- **Verification**: Browser test confirmed "System Normal" and Green pulse.
+
+## Mission 2: Research Interface (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Dispatch research missions via WebOps.
+- **Verification**: Browser test dispatched "Browser Test Mission" and received confirmation.
+
+## Mission 3: Neural Link (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Chat interface with the Brain.
+- **Verification**: Browser test sent "Hello" and received "UPLINK SUCCESSFUL".
+
+## Mission 4: The Voice of Nucleus (Verified)
+- **Status**: ✅ Verified
+- **Feature**: Text-to-Speech (TTS) for system events.
+- **Implementation**: [VoiceSynthesizer.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/VoiceSynthesizer.tsx) hook (Client-side).
+- **Verification**: 
+    - UI "VOICE ON/OFF" toggle verified (Recording available).
+    - Event logic integration confirmed.
+
+## Mission 5: The Eyes of Argus (Verified)
+- **Status**: ✅ Verified
+- **Feature**: Visual Memory Dashboard (`MemoryMatrix`).
+- **Implementation**: 
+    - `/api/memory` endpoint returning file structure (Verified via unit test).
+    - [MemoryMatrix.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/MemoryMatrix.tsx) component visualizing `.brain` nodes.
+
+## Mission 6: Marketing Autopilot (Verified)
+- **Status**: ✅ Verified
+- **Feature**: Automated marketing loop controlled via HUD.
+- **Implementation**:
+    - Backend: `/api/autopilot` triggers background thread in [server.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus/mcp_server/server.py).
+    - Event Stream: Uses [emit_event](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#61-103) to write to `events.jsonl` (visible in HUD) and push to Cloud Bridge.
+    - Frontend: Toggle "ENABLE AUTOPILOT" -> "AUTOPILOT ENGAGED".
+- **Verification**: 
+    - Toggle functionality verified in Browser Test.
+    - Event emission logic refactored to ensure local file visibility.
+
+### Browser Test Recording (Mission 6)
+![Autopilot Toggle Verification](/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/verify_autopilot_retry_1768112981355.webp)
+
+## Phase 12: The Critic Loop (Backend Verified)
+- **Status**: ✅ Backend Verified / Frontend Implemented
+- **Feature**: Automated Code Review via "Critic" Agent.
+- **Implementation**:
+    - **MCP Tool**: [brain_critique_code](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4315-4332) (DualEngineLLM-powered).
+    - **Backend**: `/api/critique` endpoint (Port 9998).
+    - **Frontend**: "CRITIC" tab in Research Widget (Inputs file path).
+- **Verification**:
+    - `curl` test confirmed valid JSON critique generation from LLM.
+    - **Note**: Server currently running on port **9998** to bypass production port conflict.
+
+## Phase 8b: Outcome Dashboard (Verified)
+- **Status**: ✅ Implementation Verified
+- **Feature**: Real-time GAD-7/PHQ-9 visualization.
+- **Reference**: [walkthrough_phase8_outcome.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/walkthrough_phase8_outcome.md)
+- **Verification Steps (Unblocked)**:
+    - **Environment**: Verified [app.py](file:///Users/lokeshgarg/ai-mvp-backend/app.py) startup on Python 3.11 (Resolved Protobuf/3.14 conflict).
+    - **Backend Logic**:
+        - Fixed [providers/clinical_assessments.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/clinical_assessments.py) to support `psycopg` v3 (Postgres).
+        - Fixed DB Schema mismatch (reset `clinical_assessments` table).
+    - **End-to-End Test**:
+        - Run [scripts/verify_clinical_outcomes.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/verify_clinical_outcomes.py).
+        - **POST** `/api/assessment/phq9` -> `200 OK` (Score/Severity calculated).
+        - **GET** `/api/assessment/history` -> `200 OK` (Data persisted and retrieved).

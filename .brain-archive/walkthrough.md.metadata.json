@@ -1,6 +1,6 @@
 {
-  "artifactType":  "ARTIFACT_TYPE_WALKTHROUGH",
-  "summary":  "Documents the complete Knowledge University activation implementation. Shows what was built (indexer, compliance officer, cron setup), files created, and how to activate the system.",
-  "updatedAt":  "2025-12-30T02:58:42.602090Z",
-  "version":  "4"
+  "artifactType": "ARTIFACT_TYPE_WALKTHROUGH",
+  "summary": "Added final service status table.",
+  "updatedAt": "2026-01-15T04:59:54.632299Z",
+  "version": "79"
 }

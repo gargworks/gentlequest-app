@@ -1,0 +1,33 @@
+# Mission 1: HUD System Health Widget
+
+## Goal
+Add a real-time "System Health" indicator to the Nucleus HUD.
+This satisfies Pillar 2 (Visibility) of the Strategy.
+
+## User Review Required
+None. Internal Mission.
+
+## Proposed Changes
+
+### Backend
+#### [MODIFY] [server.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py)
+- Add conditional for `/api/health`.
+- Return `{"status": "green", "uptime": <seconds>, "version": "1.0"}`.
+
+### Frontend
+#### [NEW] [SystemHealth.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/SystemHealth.tsx)
+- React component.
+- Polls `/api/health` every 5 seconds.
+- Displays Green Dot / Red Dot.
+
+#### [MODIFY] [page.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/page.tsx)
+- Import `SystemHealth`.
+- Add to the Grid layout (top right?).
+
+## Verification Plan
+### Automated Tests
+- `curl http://localhost:9999/api/health` -> 200 OK.
+### Manual Verification
+- Open HUD.
+- See Green Dot.
+- Kill backend -> See Red Dot.

@@ -1,0 +1,30 @@
+# Nucleus Sync: Product Specifications
+**Vision:** Frictionless context synchronization across all agentic surfaces.
+
+## The 5-Tier Sync Model
+
+| Tier | Scope | Requirement | Implementation Strategy | Status |
+|:---|:---|:---|:---|:---|
+| **1** | **Across Chats** (Same Machine) | **Must Have** | **Filesystem SSOT** (Single Source of Truth). All chats read/write to `~/.gemini/.../brain`. | ✅ Supported (v0.4.0)* |
+| **2** | **Across IDEs** (Same Machine) | **Must Have** | **Filesystem SSOT**. VS Code / Cursor extensions connect to same MCP server/paths. | ✅ Supported (v0.4.0)* |
+| **3** | **Across CLI** (Same Machine) | **Must Have** | **Filesystem SSOT**. `nucleus-cli` tool reads same paths. | ✅ Supported (v0.4.0)* |
+| **4** | **Via GCloud** (Integration) | *Good to Have* | **CLI Wrapping**. Nucleus wraps `gcloud` to inject cloud state into local context. | 🚧 In Progress (Phase 49) |
+| **5** | **Cross-Device** (Different Cloud) | *Pro / Paid* | **Cloud Sync Service**. Replaces local FS with Managed DB (Firestore/Supabase). | 📅 Roadmap (v1.0+) |
+
+*\*Supported via [brain_session_start()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3976-4110) protocol. True "Real-Time" without polling requires File Watching (Phase 50).*
+
+## Technical Implementation (Tiers 1-3)
+**How it works Natively:**
+1.  **Shared State:** The `.brain/` folder IS the database.
+2.  **Concurrency:** Atomic file writes (JSON) ensure data integrity.
+3.  **Discovery:** Standard path (`~/.gemini/antigravity/brain/{id}`) means zero config for new tools.
+
+**The "Frictionless" Upgrade (Phase 50):**
+*   **Current:** Agents must *pull* state ([brain_session_start](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3976-4110)).
+*   **Future:** MCP Server *pushes* updates via **File Watchers** -> **MCP Notifications**.
+    *   *Result:* You edit a file in VS Code -> Chat Agent instantly sees "Context Updated".
+
+## Conclusion
+Nucleus **natively solves 1-3** today by design (Shared Filesystem).
+We are building **4** (Cloud Build / GCloud).
+We will sell **5** (Cloud SaaS).

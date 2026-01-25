@@ -1,0 +1,287 @@
+# GentleQuest + Nucleus: System Status & Path Forward
+
+> **Updated:** 2026-01-09 15:00 IST  
+> **Status:** ✅ Production Ready  
+> **Revision:** `gentlequest-backend-00021-znh`
+
+---
+
+## 🏗️ What We Have (Architecture Overview)
+
+```mermaid
+graph TB
+    subgraph "Frontend"
+        A[Flutter Web App] --> B[Nginx]
+    end
+    
+    subgraph "Backend"
+        B --> C[Gunicorn/Flask]
+        C --> D[Gemini LLM]
+        C --> E[Cloud SQL PostgreSQL]
+        C --> F[Memory System<br/>pgvector]
+    end
+    
+    subgraph "Nucleus MCP"
+        G[Claude Desktop] --> H[Nucleus MCP Server]
+        H --> I[Brain Folder<br/>State/Events/Artifacts]
+    end
+    
+    subgraph "Infrastructure"
+        J[Cloud Build] --> K[Container Registry]
+        K --> L[Cloud Run]
+        L --> E
+    end
+```
+
+---
+
+## 🎯 GentleQuest (Mental Health App)
+
+### Core Features
+
+| Feature | Status | How It Works |
+|:--------|:-------|:-------------|
+| **Chat API** | ✅ Live | `/api/chat` → Gemini 2.5 Flash → Agentic function calling |
+| **Safety Layer** | ✅ Live | Risk detection (low/medium/high), crisis numbers, breathing exercises |
+| **Memory System** | ✅ Live | pgvector semantic search, 768-dim embeddings, episodic/emotional/preference types |
+| **Session History** | ✅ Live | `/api/chat_history` with `X-Session-ID` header |
+| **Mood Tracking** | ✅ Live | `/api/mood_entry`, `/api/mood_history` |
+| **Analytics** | ✅ Live | `/api/analytics/*`, intervention outcomes tracked |
+| **Admin Dashboard** | ✅ Live | `/api/admin/analytics` - function calling stats, user metrics |
+
+### Agentic Interventions
+
+The system uses **Gemini function calling** to trigger wellness exercises:
+
+| Intervention | Trigger | Example |
+|:-------------|:--------|:--------|
+| **Breathing** | Anxiety, stress | 4-7-8 calming breath pattern |
+| **Grounding** | Panic, dissociation | 5-4-3-2-1 senses exercise |
+| **Journaling** | Rumination | Guided reflection prompts |
+| **Talk Mode** | 4th+ request | No exercise, just conversation |
+
+**Variety Logic:** Tracks what was shown → cycles through types → prevents repetition.
+
+### Live URLs
+
+| Endpoint | URL | Purpose |
+|:---------|:----|:--------|
+| **App** | https://gentlequest-backend-999376128638.us-central1.run.app | Flutter Web UI |
+| **Health** | `/health` | `{"status": "healthy", "database": "healthy"}` |
+| **Chat** | `/api/chat` | Main conversation endpoint |
+| **Memory** | `/api/memory/status` | `{"status": "active", "tables_initialized": true}` |
+
+---
+
+## 🧠 Nucleus MCP Server (AI Orchestration)
+
+### What Is It?
+
+Nucleus is an **MCP (Model Context Protocol) server** that gives Claude Desktop brain-like capabilities:
+- Persistent memory across sessions
+- Task management and prioritization  
+- Event-driven orchestration
+- Deploy monitoring and smoke testing
+
+### Installed Features
+
+| Feature | Status | Tools |
+|:--------|:-------|:------|
+| **Depth Tracker** | ✅ Live | `brain_depth_push/pop/show/reset` - Prevents rabbit holes |
+| **Task Queue** | ✅ Live | `brain_add_task/get_next_task/claim_task` - Priority-based work |
+| **Session Management** | ✅ Live | `brain_save/resume_session` - Context preservation |
+| **Event Stream** | ✅ Live | `brain_emit_event/read_events` - 201+ events logged |
+| **Render Poller** | ✅ Live | `brain_start_deploy_poll/check_deploy` - Deploy monitoring |
+| **Smoke Testing** | ✅ Live | `brain_smoke_test` - Health checks with latency |
+| **Feature Map** | ✅ Live | `brain_add/list/search_features` - Product inventory |
+| **Commitment Tracking** | ✅ Live | `brain_list_commitments/close_commitment` - Loop closure |
+| **File Sync** | ✅ Live | `brain_file_changes` - Cross-IDE sync |
+| **GCloud Integration** | ✅ Live | `brain_gcloud_status/services` - Cloud awareness |
+| **Voice (TTS)** | ✅ Live | `VoiceSynthesizer` - Audio announcements |
+| **Visual Memory** | ✅ Live | `MemoryMatrix` - RAG Visualization |
+| **Autopilot** | ✅ Live | `marketing_autopilot_loop` - Background automation |
+
+### Orchestration Pipeline
+
+```
+Event Emission → Trigger Matching → Agent Spawning → Digest Generation
+```
+
+**8 Active Triggers:**
+- `task_created` → Synthesizer
+- `commit_pushed` → Critic
+- `deploy_complete` → Verifier
+- `session_saved` → Archivist
+- etc.
+
+---
+
+## 📁 Key Files & Locations
+
+### GentleQuest Backend
+
+| File | Purpose |
+|:-----|:--------|
+| `app.py` | Main Flask app (3800+ lines) |
+| `providers/gemini.py` | LLM chat engine with function calling |
+| `providers/memory.py` | pgvector semantic memory |
+| `providers/session_memory.py` | Intervention tracking |
+| `providers/safety.py` | Content moderation |
+| `start.sh` | Container startup (Gunicorn → wait → Nginx) |
+| `cloudbuild.yaml` | CI/CD pipeline definition |
+
+### Nucleus MCP
+
+| File | Purpose |
+|:-----|:--------|
+| `mcp-server-nucleus/src/mcp_server_nucleus/__init__.py` | MCP tools (61 functions) |
+| `mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py` | DualEngineLLM adapter |
+| `.brain/state.json` | Brain state persistence |
+| `.brain/ledger/events.jsonl` | Event stream (201+ events) |
+| `.brain/ledger/triggers.json` | Orchestration rules |
+
+---
+
+## 🔧 Today's Fixes (2026-01-09)
+
+### Phase 52-53: Production Issues Resolved
+
+| Issue | Root Cause | Fix |
+|:------|:-----------|:----|
+| **502 Bad Gateway** | Nginx started before Gunicorn (65s app init) | `start.sh` reordered: Gunicorn → wait port 5055 → Nginx |
+| **Memory "tables_initialized: false"** | `DATABASE_URL` overwritten | Restored all env vars together |
+| **Session history "error"** | Same as above | Fixed with DATABASE_URL |
+
+### Files Modified
+
+- `start.sh` — Startup order fix + netcat wait
+- `Dockerfile` — Added `netcat-openbsd`
+- Cloud Run env vars — Restored `ENVIRONMENT`, `DATABASE_URL`, `GEMINI_API_KEY`
+
+---
+
+## 🚀 Path Forward: Next Frontiers
+
+### Tier 1: Immediate (This Week)
+
+| Priority | Task | Effort | Impact |
+|:---------|:-----|:-------|:-------|
+| 1 | **Marketing Launch** (IndieHackers, Reddit) | Low | High |
+| 2 | **App Store Submission** (iOS/Android) | Medium | High |
+| 3 | **Telegram Bot Setup** | Low | Medium |
+
+### Tier 2: Short Term (This Month)
+
+| Priority | Task | Effort | Impact |
+|:---------|:-----|:-------|:-------|
+| 4 | **User Authentication** (Firebase/Supabase) | Medium | High |
+| 5 | **Session Persistence** (Login-based history) | Medium | High |
+| 6 | **Redis Integration** (Faster sessions) | Low | Medium |
+| 7 | **Custom Domain** (gentlequest.app) | Low | Medium |
+
+### Tier 3: Medium Term (This Quarter)
+
+| Priority | Task | Effort | Impact |
+|:---------|:-----|:-------|:-------|
+| 8 | **B2B White-Label** (Enterprise customization) | High | High |
+| 9 | **Clinical Assessments** (PHQ-9, GAD-7) | Medium | High |
+| 10 | **Therapist Dashboard** | High | High |
+| 11 | **Mobile Native Apps** (Flutter iOS/Android builds) | Medium | Medium |
+
+### Tier 4: Long Term Vision
+
+| Area | Vision |
+|:-----|:-------|
+| **AI Evolution** | Multi-modal support (voice, image journaling) |
+| **Safety** | Real-time crisis detection with escalation to professionals |
+| **Research** | Anonymized efficacy studies, academic partnerships |
+| **Scale** | Multi-region deployment, 1M+ users |
+
+---
+
+## 📊 Current Metrics
+
+### Production Health
+
+| Metric | Value |
+|:-------|:------|
+| **Revision** | `gentlequest-backend-00021-znh` |
+| **Memory** | 1 GiB |
+| **Workers** | 4 Gunicorn |
+| **Database** | Cloud SQL PostgreSQL 15 |
+| **Vector Extension** | pgvector (active) |
+| **Cold Start** | ~65s (acceptable) |
+
+### Nucleus Stats
+
+| Metric | Value |
+|:-------|:------|
+| **Events in Stream** | 201+ |
+| **Active Triggers** | 8 |
+| **Sessions Saved** | 4+ |
+| **MCP Functions** | 61 |
+
+---
+
+## 🎓 How Each Component Works
+
+### 1. Chat Flow
+
+```
+User Message → Flask /api/chat 
+    → Session Memory (get context)
+    → Gemini 2.5 Flash (function calling enabled)
+    → Safety Check (risk level)
+    → [Optional] Intervention Selection
+    → Response + Exercise (if triggered)
+    → Memory Observer (extract learnings async)
+```
+
+### 2. Memory System
+
+```python
+# Store: User says "I can't sleep"
+store_memory(session_id, "User has sleep issues", "episodic")
+# → Generates 768-dim embedding via Gemini
+# → Stores in memory_summaries with cosine index
+
+# Retrieve: User says "I'm tired"
+memories = retrieve_relevant_memories(session_id, "I'm tired")
+# → Finds "User has sleep issues" via semantic similarity
+```
+
+### 3. Nucleus Event Loop
+
+```
+Action → Auto-emit event → Trigger match → Agent spawned
+         (e.g., task_created)  (Synthesizer)  (Runs autonomously)
+```
+
+---
+
+## ✅ What's Working
+
+- [x] Chat with real LLM responses
+- [x] Safety detection and crisis handling
+- [x] Breathing/grounding exercises
+- [x] Memory storage and retrieval
+- [x] Session tracking
+- [x] Analytics logging
+- [x] Mood tracking
+- [x] Cloud SQL database
+- [x] Automated deployments (Cloud Build)
+- [x] Nucleus MCP integration
+
+---
+
+## ⏳ What's Pending (Not Blocking)
+
+- [ ] Redis (using filesystem fallback)
+- [ ] Telegram notifications (needs chat ID)
+- [ ] User authentication (anonymous sessions work)
+- [ ] Custom domain (using Cloud Run URL)
+- [ ] App Store submission (Flutter builds ready)
+
+---
+
+**System Status: PRODUCTION READY** 🎉

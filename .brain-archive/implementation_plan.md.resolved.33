@@ -1,0 +1,49 @@
+# implementation_plan_phase12.md
+
+# Phase 12: The Critic Loop (Self-Evolution)
+
+## Goal
+To implement the "Critic Loop" described in Nucleus Vision, enabling the system to self-correct code before asking for human review.
+
+> **Vision Ref:** "Phase 3: Team of Teams... The Critic Loop: Coder writes -> Reviewer critiques -> Coder fixes."
+
+## User Review Required
+> [!IMPORTANT]
+> This phase will introduce *automatic code modification* based on LLM critique. We will start with a "Suggest Only" mode before enabling "Auto-Apply".
+
+## Proposed Changes
+
+### 1. The Persona (New)
+#### [NEW] [.brain/agents/critic.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/.brain/agents/critic.md)
+- Define the "Senior Reviewer" persona.
+- **Capabilities**: Read code, Linting (if available), Static Analysis (Regex).
+- **Style**: Ruthless, security-focused, best-practice oriented.
+
+### 2. The Tools (New)
+#### [MODIFY] [mcp-server-nucleus/src/mcp_server_nucleus/__init__.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py)
+- `brain_critique_code(file_path: str, context: str) -> str`:
+    - Reads file.
+    - Sends to LLM with "Critic" system prompt.
+    - Returns structured critique (Issues, Severity, Suggestion).
+- `brain_apply_critique(file_path: str, critique_id: str) -> str`:
+    - Takes a specific critique and applies the fix (Concept/Placeholder for now).
+
+### 3. The Integration (Workflows)
+#### [MODIFY] [server.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py)
+- Add `POST /api/critique` endpoint to trigger a review on a specific file via the HUD.
+
+#### [MODIFY] [ResearchWidget.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/ResearchWidget.tsx)
+- Rename to "OperationsWidget"?
+- Add "Code Review" tab/button to trigger critique on active file.
+
+## Verification Plan
+
+### Automated Tests
+- Create [tests/test_critic_loop.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_critic_loop.py):
+    1. Create a "bad" python file (syntax error or bad practice).
+    2. Call `brain_critique_code`.
+    3. Assert the response identifies the error.
+
+### Manual Verification
+- Use the HUD to trigger a critique on [server.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/orchestrator_server.py) itself.
+- Verify the "Critic" speaks via TTS (Mission 4 Integration).

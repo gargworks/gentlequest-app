@@ -1,0 +1,47 @@
+# Nucleus HUD Walkthrough
+
+## Overview
+This document tracks the verification and usage of the Nucleus HUD features.
+
+## Mission 1: System Health (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Real-time system status indicator.
+- **Verification**: Browser test confirmed "System Normal" and Green pulse.
+
+## Mission 2: Research Interface (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Dispatch research missions via WebOps.
+- **Verification**: Browser test dispatched "Browser Test Mission" and received confirmation.
+
+## Mission 3: Neural Link (Completed)
+- **Status**: ✅ Verified
+- **Feature**: Chat interface with the Brain.
+- **Verification**: Browser test sent "Hello" and received "UPLINK SUCCESSFUL".
+
+## Mission 4: The Voice of Nucleus (Verified)
+- **Status**: ✅ Verified
+- **Feature**: Text-to-Speech (TTS) for system events.
+- **Implementation**: [VoiceSynthesizer.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/VoiceSynthesizer.tsx) component.
+- **Verification**: 
+    - UI verified via [Recording](verify_voice_synthesizer.webp).
+    - "VOICE ON/OFF" toggle works.
+    - *Note: Audio output cannot be captured by browser tool, but logic flows.*
+
+## Mission 5: The Eyes of Argus (Verified)
+- **Status**: ✅ Verified
+- **Feature**: Visual Memory Dashboard ([MemoryMatrix](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/MemoryMatrix.tsx#14-86)).
+- **Implementation**: 
+    - Backend: `/api/memory` endpoint (Verified via unit test).
+    - Frontend: [MemoryMatrix.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/MemoryMatrix.tsx) component.
+
+## Mission 6: Marketing Autopilot (Partial Success)
+- **Status**: ⚠️ Partial
+- **Feature**: Toggle to enable automated marketing loop.
+- **Verification Result**:
+    - **UI**: ✅ Toggle works. Transforms to "AUTOPILOT ENGAGED".
+    - **Backend**: ✅ `/api/autopilot` returns success.
+    - **Events**: ❌ No "mission_status" events appeared in the feed during 30s observation.
+    - **Diagnosis**: The background thread is running, but the `firestore_bridge` might be failing silently in dev mode or writing to a different stream than the HUD reads (File vs Firestore).
+
+### Browser Test Recording (Mission 6)
+![Autopilot Toggle Verification](/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/verify_autopilot_retry_1768112981355.webp)

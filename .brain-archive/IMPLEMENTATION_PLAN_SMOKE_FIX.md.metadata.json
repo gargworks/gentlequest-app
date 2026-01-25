@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary":  "Changes to increase brain_smoke_test timeout to 60s.",
+  "updatedAt":  "2026-01-12T14:12:49.742536Z"
+}

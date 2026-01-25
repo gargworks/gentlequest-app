@@ -1,0 +1,93 @@
+# Nucleus Grand Verification Protocol: Project Omega
+
+**Objective:** Execute a single, continuous test case that exercises all Nucleus Development Phases (0-12) to quantify value and utility.
+
+## The Scenario: "Project Omega"
+We will simulate the lifecycle of a new feature, "Project Omega" (a simple "Hello World" variant), flowing through every system layer.
+
+## Execution Steps (Phases 0-12)
+
+### 1. Phase 0: Foundation (Journaling)
+- **Action:** Create [NUCLEUS_OMEGA_JOURNAL.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_OMEGA_JOURNAL.md) using the Standard Template.
+- **Metric:** Template adherence, Context preservation.
+
+### 2. Phase 2: Strategy (The Brain)
+- **Action:** Use [brain_manage_strategy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4345-4358) to add "Project Omega" to the Roadmap.
+- **Metric:** Roadmap update success, Semantic understanding.
+
+### 3. Phase 9/10: Feature Mapping
+- **Action:** Use [brain_add_feature](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2029-2054) to register "Omega" in the Feature Map.
+- **Metric:** JSON Schema validation, CLI `nucleus features list` visibility.
+
+### 4. Phase 3: The Coder (CodeOps)
+- **Action:** Use [brain_spawn_agent("engineer")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716) to generate [tools/omega/main.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/omega/main.py).
+- **Constraint:** The agent must write the file autonomously.
+- **Metric:** Code compilation/syntax, Task completion time.
+
+### 5. Phase 12: The Critic (Review)
+- **Action:** Use [brain_critique_code](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4473-4485) to review [tools/omega/main.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/omega/main.py).
+- **Metric:** Issue detection count (Force a bug in the prompt to test detection), Critique Score.
+
+### 6. Phase 4: Voice (Sensory)
+- **Action:** Emit a custom event `omega_launched` and verify TTS Log (or HUD visibility).
+- **Metric:** Event propagation latency.
+
+### 7. Phase 5: Vision (Sensory)
+- **Action:** Query `/api/memory` and verify [tools/omega/main.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/omega/main.py) is visualized.
+- **Metric:** File system sync speed.
+
+### 8. Phase 6: Autopilot (Marketing)
+- **Action:** Trigger [marketing_autopilot_loop](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py#510-564) (simulated) to acknowledge the new feature.
+- **Metric:** Log entry creation.
+
+### 9. Phase 7: Depth Tracker
+- **Action:** Use [brain_depth_push("Verifying Omega")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2439-2453) and [brain_depth_show](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2466-2479).
+- **Metric:** Context depth state accuracy.
+
+## Metrics Dashboard
+| Phase | Tool Used | Status | Latency | Value (1-10) | Notes |
+|-------|-----------|--------|---------|--------------|-------|
+| 0 | Manual/Template | Pending | | | |
+| 2 | [brain_manage_strategy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4345-4358) | Pending | | | |
+| 9/10 | [brain_add_feature](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2029-2054) | Pending | | | |
+| 3 | [brain_spawn_agent](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716) | Pending | | | |
+| 12 | [brain_critique_code](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4473-4485) | Pending | | | |
+| 4 | [emit_event](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/event_stream.py#55-93) | Pending | | | |
+| 5 | `/api/memory` | Pending | | | |
+| 6 | [autopilot](file:///Users/lokeshgarg/ai-mvp-backend/scripts/autopilot_v2.py#199-266) | Pending | | | |
+| 7 | `brain_depth_*` | Pending | | | |
+
+## Comparative Analysis (The "Value Check")
+To prove Nucleus adds value over generic coding:
+
+### Task A (Control Group - Generic Mode)
+**Objective:** Create `app/about/page.tsx` (Simple static page).
+**Constraint:** use **ONLY** standard Antigravity tools (`view_file`, `write_to_file`). **NO** Nucleus tools (`brain_*`).
+**Metrics:**
+- Tool Calls: [Count]
+- Context Updates: 0 (System is unaware)
+- Quality Check: Manual (Self-Review)
+
+### Task B (Nucleus Mode)
+**Objective:** Create `app/contact/page.tsx` (Simple static form).
+**Constraint:** MUST use Nucleus Workflow:
+1.  **Strategy:** Add to Roadmap ([brain_manage_strategy](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4345-4358)).
+2.  **Feature:** Register Feature ([brain_add_feature](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2029-2054)).
+3.  **Coder:** Spawn Agent ([brain_spawn_agent](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716)).
+4.  **Critic:** Review Code ([brain_critique_code](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4473-4485)).
+5.  **Sensory:** Emit Event ([emit_event](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/event_stream.py#55-93)).
+**Metrics:**
+- Tool Calls: [Count]
+- Context Updates: Automatic (Strategy/Feature/Event logs updated)
+- Quality Check: Automated (Critic Score)
+
+## Utilization Audit (The "Fat Trimming")
+After execution, we will analyze `events.jsonl` and tool logs to categorize every Phase 0-12 feature:
+- **Vital:** Critical to workflow (High Value).
+- **Useful:** Good to have, but not blocking.
+- **Underutilized:** Available but not used (Why?).
+- **Dead Weight:** Not used, adds friction (Candidate for removal).
+
+## Success Criteria
+1.  **Nucleus Task** results in higher quality code (Critic-verified) and preserved context (Strategy updated).
+2.  **Utilization Audit** identifies at least 1 "Underutilized" feature to improve or deprecate.

@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_OTHER",
+  "summary":  "Clarification on how 'Librarian' pattern enforces guardrails rather than breaking them. Explains that bridging user behavior (files) to system requirements (tools) is the most robust way to ensure adoption.",
+  "updatedAt":  "2026-01-06T13:22:20.321145Z"
+}

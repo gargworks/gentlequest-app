@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary":  "Plan to unblock app.py by switching runtime to Python 3.11.\nIncludes dependency installation and verification.",
+  "updatedAt":  "2026-01-11T22:31:26.659770Z"
+}

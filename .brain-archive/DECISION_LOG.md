@@ -33,3 +33,13 @@
 - **Phase 2 (Roadmap):** "Autopilot" (Background Daemon).
 **Reasoning:** Avoids scope creep. Focus on optimizing the "Human-in-the-loop" experience first.
 **Status:** Accepted.
+
+---
+
+## [004] "Nuclear Hazard Switch" (Python Version)
+**Date:** 2026-01-06
+**Context:** Nucleus CLI requires Python 3.10+, but GentleQuest (production backend) relies on Python 3.9.6. Upgrading system Python risks destabilizing the main product.
+**Decision:** **Do NOT upgrade system Python.**
+- **Constraint:** Maintain system Python at 3.9.6 to match production.
+- **Mitigation:** Use isolated environments (e.g., `pipx`) or internal Agent environments for newer tools.
+- **Status:** **PERMANENT LOCK.**

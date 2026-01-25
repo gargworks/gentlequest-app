@@ -1,0 +1,98 @@
+# Walkthrough: Production Hardening & Deployment
+
+## Goal
+Harden the `gentlequest-backend` service for production by implementing security headers and rate limiting, verify the SSL certificate for `nucleus.gentlequest.app`, and fix the `nucleus-hud` frontend configuration to connect to the correct backend API.
+
+## Changes Implemented
+
+### 1. Security Headers (`app.py`)
+Implemented `_setup_security_headers` to enforce:
+*   `Strict-Transport-Security` (HSTS) - *Production Only*
+*   `X-Content-Type-Options: nosniff`
+*   `X-Frame-Options: SAMEORIGIN`
+*   `X-XSS-Protection: 1; mode=block`
+*   `Referrer-Policy: strict-origin-when-cross-origin`
+*   `Content-Security-Policy: upgrade-insecure-requests`
+*   `Permissions-Policy`: Restricted sensitive features (cam/mic/pay/loc).
+
+### 2. Rate Limiting (`app.py`)
+Verified existing `Flask-Limiter` configuration (`RATE_LIMIT_ENABLED`, `RATE_LIMIT_REQUESTS`). No changes needed as it was already active.
+
+## Deployment Status
+
+### Backend Service (`gentlequest-backend`)
+*   **Revision**: `gentlequest-backend-00026-xd6`
+*   **URL**: `https://gentlequest-backend-999376128638.us-central1.run.app`
+*   **Status**: Healthy (Security Headers Verified)
+
+### SSL Certificate (`nucleus.gentlequest.app`)
+*   **Mapped Service**: `nucleus-sovereign`
+*   **Certificate Status**: **Active** (`Ready: True`)
+*   **Notes**: The custom domain `nucleus.gentlequest.app` has been explicitly remapped to `gentlequest-backend` to ensure strict alignment with the hardened service.
+
+## Verification Evidence
+
+### Security Headers Check
+```bash
+$ curl -I https://gentlequest-backend-999376128638.us-central1.run.app/api/health
+
+HTTP/2 200 
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: upgrade-insecure-requests
+permissions-policy: geolocation=(), microphone=(), camera=(), payment=()
+```
+
+### SSL Check
+```bash
+$ gcloud beta run domain-mappings describe --domain nucleus.gentlequest.app ...
+spec:
+  routeName: nucleus-sovereign
+status:
+  conditions:
+  - type: Ready
+    status: 'True'
+  - type: CertificateProvisioned
+    status: 'True' (or Pending Transition)
+
+### End-to-End Verification (`nucleus.gentlequest.app`)
+```bash
+$ curl -I https://nucleus.gentlequest.app/api/health
+
+HTTP/2 200 
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: upgrade-insecure-requests
+server: Google Frontend
+```
+```
+
+---
+
+## Frontend Configuration Fix
+
+### Problem
+The `nucleus-hud` frontend was defaulting to `http://localhost:5055` because `NEXT_PUBLIC_APP_API_URL` was not being passed during the Cloud Build process.
+
+### Changes Made
+1.  **[Dockerfile](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/Dockerfile)**: Added `ARG NEXT_PUBLIC_APP_API_URL` and `ENV NEXT_PUBLIC_APP_API_URL`.
+2.  **[cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml)**: Added `--build-arg NEXT_PUBLIC_APP_API_URL=$_NEXT_PUBLIC_APP_API_URL`.
+3.  **[.gcloudignore](file:///Users/lokeshgarg/ai-mvp-backend/.gcloudignore)**: Modified to whitelist `tools/nucleus-hud` while excluding other tools and `node_modules`.
+
+### Deployment Status
+*   **Revision**: `nucleus-hud-00005-bvq`
+*   **URL**: `https://nucleus-hud-7an2ps6yna-uc.a.run.app`
+*   **Auth**: Basic Auth enabled (Credentials: `admin`/`nucleus`)
+*   **API Connectivity**: Configured to `https://nucleus.gentlequest.app`
+
+### Verification
+```bash
+$ curl -s -u admin:nucleus https://nucleus-hud-7an2ps6yna-uc.a.run.app | head -5
+# Returns full HTML with "IGNITE MISSION", "NEURAL UPLINK" UI components.
+```

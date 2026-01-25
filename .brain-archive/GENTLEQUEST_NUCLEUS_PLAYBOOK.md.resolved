@@ -1,0 +1,99 @@
+# GentleQuest: The Nucleus Playbook
+**Context:** Building a Clinical-Grade Mental Health Assistant.
+**Objective:** How to use Nucleus to ship GentleQuest features faster and safer.
+
+---
+
+## 1. Safety First: The "Crisis Logic" Loop
+**Scenario:** You are modifying the `Crisis Detection` logic and want to ensure you haven't broken the safety filters.
+
+### Step-by-Step Workflow:
+1.  **Configure Health Check:** Tell the agent to update its environment:
+    > "Set `NUCLEUS_HEALTH_CMD` to run our safety unit tests: `pytest tests/test_safety.py`."
+2.  **Run the Scan:**
+    > "Run `brain_scan_health` to verify the current safety state."
+3.  **Self-Heal:** If it fails:
+    > "The safety check failed. Run `brain_generate_fix_plan` and fix the regex in `safety.py`."
+4.  **Confirm:** Ask for a new scan to ensure the fix worked.
+
+---
+
+## 2. Managing the Product: The Feature Map
+**Scenario:** You are moving from "Crisis Detection" to "Clinical Assessments".
+
+### Workflow:
+1.  **Update Progress:**
+    > "Update feature `crisis_detection` to [validated](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1410-1420). We just finished the hybrid keyword/LLM layer."
+2.  **Generate Proof:**
+    > "Please [brain_generate_proof](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2211-2238) for `crisis_detection` so we have a record of why we chose the hybrid approach."
+    *   *Result:* Creates [.brain/features/proofs/crisis_detection.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/features/proofs/crisis_detection.md) with your reasoning.
+3.  **Start New Feature:**
+    > "Add a new feature `clinical_assessments` to our map. Priority: High."
+
+---
+
+## 3. Deep Clinical Context: Memory
+**Scenario:** You are writing clinical content (e.g., PHQ-9 scoring) and don't want to re-explain the rules every time.
+
+### Workflow:
+1.  **Inject Knowledge:**
+    > "Please `brain_remember` that PHQ-9 scores of 10-14 indicate 'Moderate Depression' and require a specific intervention path."
+2.  **Recall During Coding:** Later, when writing the assessment logic:
+    > "Check `brain_recall` for PHQ-9 scoring rules and help me write the `if/else` block in the backend."
+    *   *Result:* The agent pulls the exact clinical thresholds you stored earlier.
+
+---
+
+## 4. Custom Clinical Tools
+**Scenario:** You need a tool that specifically checks if a response contains "Trigger Words" from a restricted clinical list.
+
+### Workflow:
+1.  **Create the Tool:** Drop a file into `.brain/tools/clinical_check.py`.
+2.  **Define it:** (The agent can do this for you!)
+    > "Create a Nucleus tool called `brain_check_clinical_triggers`. It should scan a string for a list of words we keep in `clinical_rules.json`."
+3.  **Active Usage:** You (or an autonomous agent) can now call this tool as part of every automated health check.
+
+---
+
+## 5. The "Autopilot" Feature Killer (The Golden Path) 🚀
+**Objective:** Take a feature from "Idea" to "Production" with minimal manual intervention.
+
+### Sequence to "Kill the Ticket":
+1.  **Initialize:** [brain_add_feature](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2103-2128) + [brain_depth_push](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2513-2527).
+2.  **Generate:** Ask the agent to implement the logic.
+3.  **Self-Heal (Sequential):** 
+    *   `brain_scan_health` (Detect issue).
+    *   `brain_generate_fix_plan` (Plan repair).
+    *   Agent executes the fix.
+    *   `brain_scan_health` (Verify fix).
+4.  **Produce Evidence:** [brain_generate_proof](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2211-2238).
+5.  **Deploy (GCloud/Render):** [brain_gcloud_status](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4092-4118) -> [brain_gcloud_services](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4120-4153) (Verify target) -> Ask the agent to trigger the deployment.
+6.  **Verify Production:** [brain_smoke_test("https://gentlequest-api.render.com")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2664-2678).
+7.  **Close Loop:** [brain_update_feature(status="validated")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2155-2181) + [brain_depth_pop](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2528-2539).
+
+---
+
+## 6. Multi-Platform Ticket Killing (Antigravity + GCloud)
+**Objective:** Seamlessly manage tickets in the Brain while executing on the Cloud.
+
+| Phase | Core Command / Prompt | Nucleus Action |
+| :--- | :--- | :--- |
+| **Backlog Audit** | *"List pending tasks across all products."* | [brain_list_tasks(status=PENDING)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2416-2435) |
+| **Cloud Context** | *"Show GCloud status and active services."* | [brain_gcloud_status](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4092-4118) |
+| **Ticket Pickup** | *"Pick up task ID 42. Push depth."* | Sets focus + `depth: 1` |
+| **E2E Execution** | *"Implement the assessments API and deploy."* | Code Gen -> Tool Usage -> Deploy |
+| **Validation** | *"Generate proof and mark task 42 as complete."* | [brain_generate_proof](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2211-2238) + [brain_update_task](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2461-2473) |
+
+---
+
+*This is the 'Nuclear Option' for productivity. By chaining these tools, you move from "doing work" to "orchestrating outcomes".*
+
+---
+
+## 7. The "Emergency" Autopilot (Crisis Fixer)
+If Production is down:
+1.  [brain_smoke_test](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2664-2678) -> Returns 5xx error.
+2.  `brain_scan_health` -> Identifies the backend crash log.
+3.  `brain_generate_fix_plan` -> Maps the fix to the error log.
+4.  *"Execute fix and redeploy."* -> Agent patches code and pushes to GCloud/Render.
+5.  [brain_smoke_test](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2664-2678) -> 200 OK. Feature Map updated.

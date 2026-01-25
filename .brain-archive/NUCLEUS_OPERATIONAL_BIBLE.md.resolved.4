@@ -1,0 +1,141 @@
+# 📖 NUCLEUS OPERATIONAL BIBLE
+> **Version:** 1.0 (Phase 2/3 Release)
+> **Date:** 2026-01-10
+> **Scope:** Phase 2 (Cloud Bridge) & Phase 3 (Autonomous Coding)
+> **Audience:** Human Operators & AI Agents (Lead Architect, Synthesizer)
+
+---
+
+## 🌌 1. System Overview
+**The Nucleus** is a "Dual-Engine" AI operating system designed to automate the lifecycle of software development and business operations.
+
+*   **Engine 1 (Local):** Mac-based CLI, heavy lifting, file system access, git operations.
+*   **Engine 2 (Cloud):** Google Cloud Run, 24/7 orchestration, event collection, web dashboard.
+
+This document details exactly how to operate the **Bridge (Phase 2)** and the **Hands (Phase 3)** of this system.
+
+---
+
+## ☁️ 2. Phase 2: Cloud Autonomy (The Bridge)
+**Goal:** Run critical infrastructure 24/7 without requiring the local machine to be open, while maintaining a secure link to local operations.
+
+### 2.1 Architecture
+*   **Marketing Dashboard:** A lightweight HTML/JS app serving [marketing_log.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/marketing/marketing_log.md) and [strategy.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/marketing/strategy.md).
+    *   **Live URL:** [https://marketing-dashboard-7an2ps6yna-uc.a.run.app](https://marketing-dashboard-7an2ps6yna-uc.a.run.app)
+    *   **Host:** Cloud Run (`marketing-dashboard` service).
+    *   **Auth:** Firebase Authentication (Service Account + ID Tokens).
+    *   **Build:** Google Cloud Build (Triggered via [scripts/deploy_dashboard.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/deploy_dashboard.sh)).
+*   **Status Report Tool:** A Python function [brain_synthesize_status_report()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/synthesizer.py#29-137) that generates a "State of the Union".
+    *   **Input:** [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md), [NUCLEUS_VISION.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_VISION.md), logs, cron schedule.
+    *   **Output:** Markdown roadmap with emoji-coded status.
+
+### 2.2 Deployment Protocol
+To deploy changes to the Cloud Dashboard:
+
+1.  **Verify Project ID:**
+    ```bash
+    gcloud config get-value project
+    # Must match: gen-lang-client-0894185576
+    ```
+2.  **Execute Deployment Script:**
+    ```bash
+    ./scripts/deploy_dashboard.sh
+    ```
+    *   *Mechanism:* Uses [cloudbuild_dashboard.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild_dashboard.yaml) to build a Docker image and push to GCR.
+    *   *Dynamic Config:* The script automatically injects the active `${PROJECT_ID}`.
+
+### 2.3 Troubleshooting Log (Artifacts of War)
+During implementation, we encountered and solved the following roadblocks:
+
+| Roadblock | Symptom | Solution (The Fix) |
+|-----------|---------|--------------------|
+| **Hardcoded Project ID** | Build failure: `denied: Artifact Registry API...` | **Fix:** Replaced hardcoded string with dynamic `$(gcloud config get-value project)` in [deploy_dashboard.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/deploy_dashboard.sh) and `${PROJECT_ID}` substitution in [cloudbuild_dashboard.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild_dashboard.yaml). |
+| **Missing Build Context** | Docker error: `COPY docs/marketing/ failed` | **Fix:** Removed `docs/` from [.gcloudignore](file:///Users/lokeshgarg/ai-mvp-backend/.gcloudignore) to allow upload of static markdown files. |
+| **FastMCP Missing** | Runtime Warning in logs | **Fix:** System degrades gracefully to "Standalone Mode" (Standard Lib only) as designed. No action needed. |
+| **Missing Vision File** | Status Report failed: `NUCLEUS_VISION.md not found` | **Fix:** Copied master vision file from `.gemini/antigravity/...` to local `.brain/` folder. |
+| **Missing Tools** | `Nightly Agent` failed | **Fix:** Installed `ripgrep` (`brew install ripgrep`) and `python-telegram-bot`. |
+| **Cloud Run Binding** | Deploy failed: `Container failed to start...` | **Fix:** Changed [server.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus/mcp_server/server.py) to bind to `0.0.0.0` instead of `127.0.0.1`. |
+| **Firebase Domain** | Login failed: `auth/unauthorized-domain` | **Fix:** Add Cloud Run domain to Firebase Console > Authentication > Settings > Authorized Domains. |
+
+---
+
+## 🤖 3. Phase 3: The Coder Agent (The Hands)
+**Goal:** Fully autonomous code modification. The Agent can read, write, and execute code on the local filesystem.
+
+### 3.1 Architecture components
+*   **[CodeOps](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/code_ops.py#7-128) Capability:** ([capabilities/code_ops.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/code_ops.py))
+    *   `code_read_file(path)`: Reads content.
+    *   `code_write_file(path, content)`: Writes content (creates dirs).
+    *   `code_run_command(command, timeout)`: Executes shell commands (e.g., `git`, `pytest`).
+*   **`Developer` Persona:** ([.brain/agents/developer.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/developer.md))
+    *   **Role:** Senior Engineer.
+    *   **Permissions:** `brain_ops`, `code_ops`, `proof_system`.
+    *   **Prime Directive:** "Write production-quality code. Test everything."
+
+### 3.2 How to Invoke (The Prompt)
+You do not need to "trick" the system. We have built a dedicated **Direct Line**.
+
+**For Human Operators:**
+> "Spawn a developer to [Task Description]"
+
+**For LLM Agents (Python Call):**
+```python
+from mcp_server_nucleus import brain_spawn_agent
+
+await brain_spawn_agent(
+    intent="Refactor utils.py to include a retry decorator.",
+    persona="developer",  # <--- CRITICAL: Forces Developer Persona
+    execute_now=True
+)
+```
+
+### 3.3 Safety Protocols 🛡️
+1.  **Watchdog:** The `FileMonitor` (Phase 50) watches for file changes. If the agent goes rogue, the local user sees the changes instantly.
+2.  **Git Safety:** The agent is trained to check `git status` before big changes (though this is a soft constraint, not hard).
+3.  **Timeout:** Shell commands timeout after 30s by default to prevent infinite loops.
+
+---
+
+## 🧠 4. Phase 4: The Neural Network (Team of Teams)
+**Goal:** Specialized agents working in concert. You do not just have "an AI", you have a **Staff**.
+
+### 4.1 The Crew Registry
+| Persona | Role | Capabilities | Primary Trigger |
+| :--- | :--- | :--- | :--- |
+| **Product Manager** | Translates "vague ideas" into "specs". | `brain_ops` | *"Groom this backlog"* |
+| **Researcher** | Searches the web for answers. | `web_ops` (New!) | *"Research competitors"* |
+| **Architect** | Designs the system structure. | `depth_tracker` | *"Design architecture"* |
+| **Developer** | Writes the code. | `code_ops` | *"Implement this feature"* |
+| **Synthesizer** | The Boss. Orchestrates the others. | `brain_ops` | *"Coordinate the team"* |
+
+### 4.2 New Capabilities
+*   **WebOps:** ([capabilities/web_ops.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/web_ops.py))
+    *   `web_search(query)`: Simulates Google Search.
+    *   `web_read_page(url)`: Scrapes text from a URL.
+
+---
+
+## 📜 5. Master Instruction Prompt (LLM Context)
+*If you are an AI reading this Document, ingest the following instructions:*
+
+1.  **You have Hands:** If the user asks for code changes, DO NOT just output a code block. **Use the [brain_spawn_agent](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716) tool** with `persona="developer"` to actually apply the changes to the file system.
+2.  **You have Eyes:** If the user asks for status, **Use the [brain_synthesize_status_report](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/synthesizer.py#29-137) tool**. Do not hallucinate progress. Read the live report.
+3.  **Deploy Wisely:** If asked to deploy, **Use `run_command`** to trigger [./scripts/deploy_dashboard.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/deploy_dashboard.sh). Do not try to reinvent the build steps.
+4.  **Check Maintenance:** Before major work, run a quick `grep` on [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) to see if "Maintenance" tasks are pending. A broken tool is a useless tool.
+
+---
+
+## 📂 5. Key File Locations
+| Component | Path | Description |
+|-----------|------|-------------|
+| **Task List** | `.brain/task.md` | Single source of truth for work. |
+| **Vision** | [.brain/NUCLEUS_VISION.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/NUCLEUS_VISION.md) | The "Why". Immutable principles. |
+| **Coder Logic** | `mcp_server_nucleus/.../capabilities/code_ops.py` | The filesystem tools. |
+| **Developer Prompt** | [.brain/agents/developer.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/developer.md) | The Coder's personality & constraints. |
+| **Status Logic** | `mcp_server_nucleus/.../capabilities/synthesizer.py` | The Report Generator. |
+| **Deploy Script** | [scripts/deploy_dashboard.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/deploy_dashboard.sh) | Cloud Run deployment. |
+
+---
+
+*Verified Operational by Lokesh Garg & Antigravity Agent.*
+*Session ID: 16387*

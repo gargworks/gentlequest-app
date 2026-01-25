@@ -1,0 +1,61 @@
+
+# IMPLEMENTATION PLAN: The .nuke Protocol (Phase 60)
+
+## Goal
+Define a portable, encrypted container format (`.nuke`) that bundles an Agent's:
+1.  **Code** (Tools/Logic)
+2.  **Memory** (Vector Embeddings/Ledger)
+3.  **Identity** (Signatures/DID)
+4.  **Policy** (Mission Parameters)
+
+This allows "Lokesh-GPT" to be moved from a MacBook to a Raspberry Pi or Cloud Run without losing context.
+
+## The .nuke Architecture
+A `.nuke` file is simply a standard ZIP archive with a strict structure.
+
+### Structure
+```
+agent.nuke (zip)
+├── manifest.json       # Metadata (DID, Version, Permissions) - SIGNED
+├── policy.json         # Bounded Autonomy config
+├── personality.md      # System Prompt / Persona
+├── /tools              # Python Capabilities (*.py)
+├── /memory             # SQLite/JSONL export of relevant memories
+└── signature.sig       # Cryptographic signature of the archive hash
+```
+
+## Security (The Trust Wrapper)
+*   **Import Rule:** A Daemon ONLY imports a `.nuke` file if:
+    1.  The `manifest.json` signature matches the `signature.sig`.
+    2.  The `author_did` is in the user's `trusted_dids.json`.
+    *   *Default:* Only trust self (`did:nucleus:...`).
+
+## Implementation Steps
+
+### 1. `NukePacker` (Export)
+*   Selects an Agent (e.g., "Scholar").
+*   Bundles its definition (`scholar.md`).
+*   Bundles linked tools.
+*   Exports specific memory slices (optional).
+*   Signs the bundle with [IdentityKey](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/hooks.py#104-127).
+
+### 2. `NukeLoader` (Import)
+*   Verifies signature.
+*   Unpacks to `.brain/agents/imported/`.
+*   Unpacks tools to `.brain/tools/imported/` (sandboxed namespace).
+*   Registers capabilities in [ContextFactory](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py#219-557).
+
+## Proposed Changes
+
+### [NEW] `mcp_server_nucleus/runtime/nuke_protocol.py`
+*   `class NukePacker`: Zip creation + Signing.
+*   `class NukeLoader`: Verification + Unzip.
+
+### [MODIFY] [mcp_server_nucleus/runtime/hooks.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/hooks.py)
+*   Update [IdentityKey](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/hooks.py#104-127) to support [verify(message, signature)](file:///Users/lokeshgarg/ai-mvp-backend/scripts/verify_daemon_swarm.py#19-81).
+
+## Verification Plan
+1.  **Pack:** Create `test_agent.nuke` from the `Librarian`.
+2.  **Tamper:** Modify a byte in the zip.
+3.  **Fail Load:** Verify loader rejects it.
+4.  **Success Load:** Verify loader accepts valid file and registers tool.

@@ -1,0 +1,24 @@
+# Recursive MDR Verification Loop
+
+> **Started:** 2026-01-07 08:38
+> **Goal:** Converge on "nothing missing" after 3-5+ passes
+> **Then:** End-to-end Nucleus testing
+
+---
+
+## Convergence Criteria
+- Pass finds ZERO new gaps
+- 3 consecutive passes with no new findings = CONVERGED
+
+---
+
+## Pass Tracking
+
+### Pass 1 (08:38)
+**Question:** "Have you made it through to all these documents in mdr folder?"
+
+**Method:** Re-read ALL 10 MDR files line-by-line
+**Findings:** [Pending]
+**New Gaps Found:** [Pending]
+
+---

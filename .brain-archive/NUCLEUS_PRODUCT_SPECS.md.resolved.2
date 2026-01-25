@@ -1,0 +1,59 @@
+# Nucleus Sync: Product Specifications (The Bible)
+**Vision:** Frictionless context synchronization across all agentic surfaces.
+
+> **THE MOTTO (North Star):**
+> 1.  **Local across Chats** (Must Have)
+> 2.  **Across IDEs on Local** (Must Have)
+> 3.  **Across IDEs and CLI** (Must Have)
+> 4.  **Across IDEs and CLI smoothly via GCloud** (Good to Have)
+> 5.  **Across Devices** (Pro Paid Tier)
+>
+> *We will adhere to this as our bible until every way is realized.*
+
+## The 5-Tier Sync Model
+
+| Tier | Scope | Requirement | Implementation Strategy | Status |
+|:---|:---|:---|:---|:---|
+| **1** | **Local Across Chats** | **Must Have** | **Filesystem Event Bus**. MCP Server watches `.brain/` for changes and pushes notifications to Chat Client. | 📅 Phase 50 |
+| **2** | **Local Across IDEs** | **Must Have** | **Filesystem Event Bus**. VS Code Extension listens for same file change events. | 📅 Phase 50 |
+| **3** | **Local Across CLI** | **Must Have** | **Atomic File Transactions**. CLI tools (`nucleus`) lock files to ensure safe concurrent writes. | ✅ v0.4.0 |
+| **4** | **Via GCloud** | *Good to Have* | **GCloud Ops Capability**. Nucleus MCP wraps local `gcloud` CLI to read/write cloud state into the Brain. | 🚧 Phase 49 |
+| **5** | **Cross-Device** | *Pro / Paid* | **Cloud Sync Service**. Replaces local `.brain` with Managed DB (Firestore) + WebSocket Sync. | 🔮 Roadmap |
+
+## Technical Implementation Guide
+
+### Tiers 1-3: The "Local Native" Engine
+*Problem:* How do Chat A and IDE B know state changed without polling?
+*Solution:* **File Watching (The "Native" Feature).**
+1.  **Architecture:** `mcp-server-nucleus` spawns a background thread looking at `~/.gemini/antigravity/brain`.
+2.  **Mechanism:**
+    *   Chat A writes to [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md).
+    *   File Watcher detects change (`MOVED_TO`).
+    *   MCP Server emits `notifications/resource/updated` to all connected clients (IDE B).
+    *   IDE B refreshes view instantly.
+*   **No Friction:** User does nothing. Agent does nothing. It just syncs.
+
+### Tier 4: The "GCloud Integration"
+*Problem:* How does the Brain know deploy status without the user checking console?
+*Solution:* **GCloud Capability.**
+1.  **Architecture:** New class `GCloudOps` in the MCP Server.
+2.  **Mechanism:**
+    *   Agent calls `brain_check_infrastructure()`.
+    *   Tool executes `gcloud run services list --format=json`.
+    *   Returns structured data to Brain.
+*   **Result:** Brain has "Infrastructure Awareness" using your local auth.
+
+### Tier 5: The "Pro Tier" (SaaS)
+*Problem:* I switched to my laptop. Context is gone.
+*Solution:* **Nucleus Cloud.**
+1.  **Architecture:** [config.json](file:///Users/lokeshgarg/ai-mvp-backend/infra/gcp_config.json) changes `storage_driver` from `filesystem` to `cloud`.
+2.  **Mechanism:**
+    *   MCP Server connects to `wss://api.nucleus.dev/sync`.
+    *   State is stored in managed cloud DB.
+    *   Laptop connects -> Pulls latest state instantly.
+*   **Value:** Business continuity across devices.
+
+## Verification Checklist
+- [ ] Tier 1-3: Can I open 2 chats, update task in one, and see it in the other **without typing**? (Requires File Watching).
+- [ ] Tier 4: Can the Agent list my Cloud Run services using **my** terminal's `gcloud` auth?
+- [ ] Tier 5: Can I throw my computer in a river and resume work on a new one?

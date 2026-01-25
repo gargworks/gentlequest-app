@@ -1,317 +1,262 @@
-# MCP Brain Tools Server - Implementation Plan
+# Implementation Plan: Brain Consolidation Feature
 
-> **Goal:** Build a production-ready, sellable MCP server for multi-agent orchestration
-> **Target:** 100% feature utilization in God Mode + PyPI distribution
-
----
-
-## Market Assessment
-
-### Existing MCP Marketplaces
-| Platform | Type | Submission |
-|----------|------|------------|
-| **MCP.so** | Main community directory | GitHub issue |
-| **mcpmarket.com** | Commercial marketplace | Direct submission |
-| **glama.ai** | AI tools marketplace | Application |
-| **MCP Registry** | Official Anthropic registry | GitHub PR |
-
-### Competing Products (Multi-Agent/Orchestration)
-| Product | Focus | Gap We Fill |
-|---------|-------|-------------|
-| None found | — | **First MCP for multi-agent orchestration** |
-| LangGraph MCP | Graphs | No portable brain |
-| CrewAI | Teams | No event-driven triggers |
-
-### Unique Value Proposition
-**"Nuclear Brain MCP" - The first MCP server for solo founders to run autonomous AI agents**
-- Event-driven agent orchestration via LLM
-- Portable `.brain/` folder architecture
-- Works with Claude, Gemini, OpenAI in any MCP-compatible client
+> **Version:** v0.4.0 (Nucleus MCP Feature)  
+> **Date:** 2026-01-06  
+> **Status:** 🟡 Awaiting Approval
 
 ---
 
-## Proposed Package Structure
+## Goal
 
-```
-mcp-server-nuclear-brain/
-├── pyproject.toml                 # Package config
-├── README.md                      # Documentation
-├── LICENSE                        # MIT
-├── src/
-│   └── mcp_server_nuclear_brain/
-│       ├── __init__.py
-│       ├── __main__.py           # Entry point
-│       ├── server.py             # FastMCP server
-│       ├── tools/                # MCP Tools
-│       │   ├── events.py         # emit_event, read_events
-│       │   ├── state.py          # get_state, update_state
-│       │   ├── agents.py         # trigger_agent, list_agents
-│       │   ├── triggers.py       # get_triggers, evaluate_trigger
-│       │   └── artifacts.py      # read_artifact, write_artifact
-│       ├── resources/            # MCP Resources
-│       │   ├── brain_state.py    # state.json as resource
-│       │   └── events_stream.py  # events.jsonl as resource
-│       └── prompts/              # MCP Prompts
-│           └── synthesizer.py    # Synthesizer activation prompt
-├── tests/
-│   ├── test_tools.py
-│   ├── test_resources.py
-│   └── test_integration.py
-└── examples/
-    ├── claude_desktop_config.json
-    └── vscode_mcp.json
-```
-
----
-
-## MCP Tools Specification
-
-### Core Tools
-
-#### 1. `brain_emit_event`
-```python
-@mcp.tool()
-def brain_emit_event(
-    emitter: str,           # "synthesizer", "researcher", etc.
-    event_type: str,        # "task_completed", "sprint_started", etc.
-    severity: str,          # "ROUTINE", "NOTABLE", "CRITICAL"
-    payload: dict           # Event-specific data
-) -> str:
-    """Emit an event to the Neural Brain event stream."""
-    # Returns event_id
-```
-
-#### 2. `brain_read_events`
-```python
-@mcp.tool()
-def brain_read_events(
-    count: int = 10,        # Number of recent events
-    event_type: str = None, # Filter by type
-    emitter: str = None     # Filter by emitter
-) -> list:
-    """Read recent events from the event stream."""
-```
-
-#### 3. `brain_get_state`
-```python
-@mcp.tool()
-def brain_get_state(
-    path: str = None        # JSON path like "current_sprint.focus"
-) -> dict:
-    """Get current brain state or specific path."""
-```
-
-#### 4. `brain_update_state`
-```python
-@mcp.tool()
-def brain_update_state(
-    updates: dict           # Fields to update
-) -> bool:
-    """Update brain state with new values."""
-```
-
-#### 5. `brain_trigger_agent`
-```python
-@mcp.tool()
-def brain_trigger_agent(
-    agent: str,             # "researcher", "architect", etc.
-    task_description: str,
-    expected_output: str,
-    context_files: list = None
-) -> str:
-    """Emit task_assigned event for an agent."""
-    # Returns task_id
-```
-
-#### 6. `brain_get_triggers`
-```python
-@mcp.tool()
-def brain_get_triggers() -> list:
-    """Get all defined neural triggers."""
-```
-
-#### 7. `brain_evaluate_triggers`
-```python
-@mcp.tool()
-def brain_evaluate_triggers(
-    event_type: str,
-    emitter: str
-) -> list:
-    """Evaluate which agents should activate for an event."""
-```
-
-### Artifact Tools
-
-#### 8. `brain_read_artifact`
-```python
-@mcp.tool()
-def brain_read_artifact(
-    path: str               # Relative to .brain/artifacts/
-) -> str:
-    """Read an artifact file."""
-```
-
-#### 9. `brain_write_artifact`
-```python
-@mcp.tool()
-def brain_write_artifact(
-    path: str,              # Relative to .brain/artifacts/
-    content: str
-) -> bool:
-    """Write content to an artifact file."""
-```
-
-#### 10. `brain_list_artifacts`
-```python
-@mcp.tool()
-def brain_list_artifacts(
-    folder: str = None      # "research", "strategy", etc.
-) -> list:
-    """List all artifacts or filter by folder."""
-```
-
----
-
-## MCP Resources Specification
-
-### 1. `brain://state`
-Live state.json content - subscribable
-
-### 2. `brain://events`
-Recent events stream - subscribable
-
-### 3. `brain://agents/{name}`
-Agent system prompt content
-
-### 4. `brain://triggers`
-Trigger definitions
-
----
-
-## MCP Prompts Specification
-
-### 1. `activate_synthesizer`
-```
-Read .brain/ state and execute current sprint as Synthesizer.
-Available tools: brain_emit_event, brain_read_events, brain_trigger_agent, etc.
-```
-
-### 2. [start_sprint](file:///Users/lokeshgarg/ai-mvp-backend/agent_manager.py#602-644)
-```
-Initialize a new sprint with goal: {goal}
-Use brain_update_state and brain_emit_event to set up.
-```
-
----
-
-## Production-Ready Requirements
-
-### 1. Configuration
-```bash
-# Environment variables
-NUCLEAR_BRAIN_PATH=/path/to/.brain    # Required
-NUCLEAR_BRAIN_LOG_LEVEL=INFO          # Optional
-NUCLEAR_BRAIN_TELEGRAM_TOKEN=xxx      # Optional: alerts
-```
-
-### 2. Security
-- File access restricted to `.brain/` directory only
-- No arbitrary code execution
-- Audit log for all tool calls
-
-### 3. Error Handling
-- Graceful degradation if .brain/ doesn't exist
-- Clear error messages for missing files
-- Validation of all inputs
-
-### 4. Distribution
-```bash
-# Install from PyPI
-pip install mcp-server-nuclear-brain
-
-# Run server
-python -m mcp_server_nuclear_brain
-
-# Or via uvx
-uvx mcp-server-nuclear-brain
-```
-
----
-
-## Verification Plan
-
-### Automated Tests
-```bash
-# Unit tests for all tools
-pytest tests/test_tools.py -v
-
-# Integration tests with mock MCP client
-pytest tests/test_integration.py -v
-```
-
-### Manual Verification
-
-#### Test 1: Claude Desktop Integration
-1. Install package: `pip install -e .`
-2. Add to Claude Desktop config:
-   ```json
-   {
-     "mcpServers": {
-       "nuclear-brain": {
-         "command": "python",
-         "args": ["-m", "mcp_server_nuclear_brain"],
-         "env": {"NUCLEAR_BRAIN_PATH": "/path/to/.brain"}
-       }
-     }
-   }
-   ```
-3. Restart Claude Desktop
-4. Ask Claude: "List all brain events"
-5. Verify it calls `brain_read_events` tool
-
-#### Test 2: Event Emission
-1. Ask Claude: "Emit a task_completed event for researcher with description 'Completed market research'"
-2. Check [.brain/ledger/events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) for new event
-3. Verify event_id returned
-
-#### Test 3: Full Orchestration
-1. Ask Claude: "As Synthesizer, start a sprint with goal 'Build RAG layer'"
-2. Verify:
-   - [state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json) updated with sprint
-   - `sprint_started` event emitted
-   - [task_assigned](file:///Users/lokeshgarg/ai-mvp-backend/brain_events.py#364-395) events for appropriate agents
-
----
-
-## Monetization Options
-
-| Option | Description |
-|--------|-------------|
-| **Open Source Core** | Free on PyPI, MCP.so listing |
-| **Premium Features** | Telegram alerts, cloud sync, analytics |
-| **Enterprise License** | Self-hosted with SLA support |
-| **SaaS** | Hosted MCP server with dashboard |
-
----
-
-## Timeline
-
-| Phase | Duration | Deliverable |
-|-------|----------|-------------|
-| 1. Core Server | 2 hours | Basic MCP server with 5 tools |
-| 2. Full Tools | 2 hours | All 10 tools + resources |
-| 3. Tests | 1 hour | Unit + integration tests |
-| 4. Packaging | 1 hour | PyPI-ready package |
-| 5. Distribution | 30 min | Submit to MCP.so, registry |
-
-**Total: ~6 hours to production-ready, sellable MCP server**
+Implement Brain Consolidation as a **Nucleus MCP feature set**, enabling any editor (Antigravity, Cursor, Windsurf, Claude Desktop) to manage brain artifact hygiene.
 
 ---
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Before proceeding, please confirm:
-> 1. **Package name:** `mcp-server-nuclear-brain` (or alternative?)
-> 2. **Distribution:** Open-source on PyPI + commercial add-ons?
-> 3. **Priority tools:** Which 5 tools should be built first?
+> This plan proposes adding 4 MCP tools and 4 CLI commands to Nucleus. The Phase 1 tool ([brain_archive_resolved](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2058-2072)) runs automatically in [nightly_agent.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py). Phases 2-4 are on-demand.
+
+---
+
+## Feature Hierarchy (4 Tiers)
+
+| Tier | Name | Automation | Risk | Reversible? |
+|:-----|:-----|:-----------|:-----|:------------|
+| **1** | Archive Resolved | Automated (nightly) | ✅ Zero | Yes (move) |
+| **2** | Propose Merges | On-demand (CEO) | 🟡 Low | Yes (proposals only) |
+| **3** | Execute Merges | Human-triggered | 🟡 Low | Yes (originals archived) |
+| **4** | Prune Archive | Manual only | 🔴 High | ❌ No (true delete) |
+
+---
+
+## Proposed Changes
+
+### Nucleus MCP Server
+
+#### [MODIFY] [__init__.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py)
+
+Add 4 new core logic functions and 4 MCP tool wrappers:
+
+**Core Functions:**
+```python
+# Tier 1: Archive
+def _archive_resolved_files() -> dict:
+    """Move *.resolved.* files to archive/resolved/"""
+    
+# Tier 2: Propose (Future)
+def _propose_merges() -> list:
+    """Detect redundant docs and suggest merges"""
+
+# Tier 3: Execute (Future)
+def _execute_merge(proposal_id: str) -> dict:
+    """Execute an approved merge, archive originals"""
+
+# Tier 4: Prune (Future - Deferred)
+def _prune_archive(days: int, confirm: bool) -> dict:
+    """Delete files older than N days (requires confirm=True)"""
+```
+
+**MCP Tools:**
+- [brain_archive_resolved()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2058-2072) - Tier 1 (implement now)
+- `brain_propose_merges()` - Tier 2 (stub for future)
+- `brain_execute_merge()` - Tier 3 (stub for future)
+- `brain_prune_archive()` - Tier 4 (stub for future, requires manual confirm)
+
+---
+
+#### [MODIFY] [cli.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py)
+
+Add [consolidate](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#844-916) subparser with commands:
+
+```bash
+nucleus consolidate archive   # Tier 1: Archive resolved files now
+nucleus consolidate propose   # Tier 2: Show merge proposals
+nucleus consolidate execute   # Tier 3: Execute approved merges
+nucleus consolidate prune     # Tier 4: Prune old archive (requires --confirm)
+```
+
+---
+
+### Nightly Agent Integration
+
+#### [MODIFY] [nightly_agent.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py)
+
+Add call to [_archive_resolved_files()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#1747-1826) in the nightly routine:
+
+```python
+def run_brain_consolidation():
+    """Tier 1: Automated nightly cleanup"""
+    # Import from nucleus or call via CLI
+    result = subprocess.run(["nucleus", "consolidate", "archive"], capture_output=True)
+    if result.returncode == 0:
+        emit_event("brain_consolidated", "ROUTINE", {"output": result.stdout.decode()})
+```
+
+---
+
+## Hierarchy vs. Structuring (Clarification)
+
+| Concern | Part of Consolidation? | Notes |
+|:--------|:----------------------|:------|
+| **Moving [.resolved](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md.resolved) files** | ✅ Yes (Tier 1) | This plan |
+| **Merging redundant docs** | ✅ Yes (Tier 2-3) | Future |
+| **Creating folder hierarchy** | ❌ No (Structuring) | Different feature |
+| **Renaming files** | ❌ No (Structuring) | Different feature |
+| **Cross-linking docs** | ❌ No (Knowledge Graph) | Different feature |
+
+**Structuring** (folder hierarchy, naming conventions) is a **separate feature** that we can spec out later. Consolidation is specifically about **reducing redundancy and noise**.
+
+---
+
+## Cross-Editor Support
+
+Since this is an **MCP feature**, it works everywhere:
+
+| Editor | Access Method |
+|:-------|:-------------|
+| Antigravity | MCP tools directly |
+| Claude Desktop | MCP tools directly |
+| Cursor | CLI (`nucleus consolidate archive`) |
+| Windsurf | CLI (`nucleus consolidate archive`) |
+| VS Code | CLI (`nucleus consolidate archive`) |
+| Terminal | CLI (`nucleus consolidate archive`) |
+
+---
+
+## Verification Plan
+
+### Automated Tests
+
+**File:** [tests/test_brain_consolidation.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/tests/test_brain_consolidation.py) (NEW)
+
+```python
+class TestBrainConsolidation(unittest.TestCase):
+    def test_archive_resolved_moves_files(self):
+        """Create fake .resolved files, run archive, verify moved"""
+        
+    def test_archive_resolved_creates_directory(self):
+        """Verify archive/resolved/ is created if missing"""
+        
+    def test_archive_resolved_skips_non_resolved_files(self):
+        """Verify primary files (task.md) are NOT moved"""
+```
+
+**Run:** `python -m pytest tests/test_brain_consolidation.py -v`
+
+### Manual Verification
+
+1. **Before:** Count files in `.brain/` folder
+2. **Run:** `nucleus consolidate archive`
+3. **After:** Verify:
+   - `.brain/archive/resolved/` exists
+   - `.resolved.*` files moved there
+   - Primary files (`task.md`, `NORTH_STAR_VISION.md`) untouched
+
+---
+
+## Implementation Order
+
+1. [x] Create this implementation plan
+2. [ ] Add `_archive_resolved_files()` to `__init__.py`
+3. [ ] Add `brain_archive_resolved` MCP tool wrapper
+4. [ ] Add `consolidate` CLI subparser to `cli.py`
+5. [ ] Add `run_brain_consolidation()` to `nightly_agent.py`
+6. [ ] Create `tests/test_brain_consolidation.py`
+7. [ ] Run tests and verify
+8. [ ] Update walkthrough
+
+---
+
+## Files Changed
+
+| File | Change |
+|:-----|:-------|
+| `__init__.py` | Add 4 core functions + 1 MCP tool (Tier 1) |
+| `cli.py` | Add `consolidate` subparser with `archive` command |
+| `nightly_agent.py` | Add `run_brain_consolidation()` call |
+| `tests/test_brain_consolidation.py` | NEW (3 unit tests) |
+
+---
+
+# Tier 2: Propose Merges (CEO-Assisted)
+
+> **Status:** 🟡 Building Now
+
+## Goal
+
+Detect redundant/overlapping artifacts in the brain folder and generate merge proposals for human review.
+
+## Detection Strategies
+
+### 1. Filename Pattern Detection
+Find files with similar names that likely overlap:
+```
+implementation_plan.md ↔ IMPLEMENTATION_PLAN_V0_4_0.md
+design_exploration.md ↔ consolidation_proposal.md
+```
+
+### 2. Content Similarity Detection (Future)
+Use text similarity (Levenshtein, cosine) to detect >70% overlap. **Defer to Tier 2b** - filename detection is sufficient for MVP.
+
+## Implementation
+
+### Core Functions
+
+```python
+def _detect_redundant_artifacts() -> Dict:
+    """Scan brain for potential merge candidates based on filename patterns."""
+    
+def _generate_merge_proposals() -> Dict:
+    """Create structured merge proposal document."""
+```
+
+### MCP Tool
+
+```python
+@mcp.tool()
+def brain_propose_merges() -> Dict:
+    """Generate merge proposals for redundant artifacts."""
+```
+
+### CLI Command
+
+```bash
+nucleus consolidate propose  # Show merge proposals
+```
+
+## Merge Proposal Output Format
+
+```markdown
+## Brain Consolidation Proposals (2026-01-06)
+
+### Merge Candidates
+
+1. **OLD:** `implementation_plan.md`
+   **NEW:** `IMPLEMENTATION_PLAN_V0_4_0.md`
+   **Reason:** Superseded by versioned plan
+   **Suggested Action:** Archive old
+
+2. **SIMILAR:** `SYNTHESIS_PART1_*.md`, `SYNTHESIS_PART2_*.md`, etc.
+   **Reason:** Related synthesis docs
+   **Suggested Action:** Consider consolidating into single SYNTHESIS_ALL.md
+
+### Archive Candidates
+
+1. `design_exploration.md`
+   - Last modified: 30+ days ago
+   - Not referenced by any doc
+   - Suggested: Move to archive/
+```
+
+## Risk Level
+
+🟡 **Low** - Proposals only, human reviews before any action taken.
+
+## Files to Change
+
+| File | Change |
+|:-----|:-------|
+| `__init__.py` | Add `_detect_redundant_artifacts()`, `_generate_merge_proposals()`, `brain_propose_merges` |
+| `cli.py` | Add `propose` subcommand to `consolidate` |
+

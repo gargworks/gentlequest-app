@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_OTHER",
+  "summary":  "System architecture and prioritization framework. Defines the hierarchy: Session (primary) → Brain (storage) → PEFS (safety net). Includes Eisenhower matrix integration for urgent/important prioritization.",
+  "updatedAt":  "2026-01-06T12:45:51.634314Z"
+}

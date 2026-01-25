@@ -1,0 +1,42 @@
+# 🔐 Walkthrough: Implementing "Iron Man" Authentication
+
+**Goal:** Secure the Nucleus Marketing Dashboard so only "Stark Industries" (Garg Enterprises) can access it.
+**Status:** ✅ COMPLETE
+
+## 1. The Architecture (Iron Man Strategy)
+
+We successfully moved from "Unsecured" (Garage Mode) to "Secured" (Street Legal).
+
+*   **The Engine:** [server.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus/mcp_server/server.py) (Localhost)
+*   **The Key:** `service_account.json` (The Ignition)
+*   **The Driver:** `gargenterprises2019@gmail.com` (Verified via Google Auth)
+
+## 2. Changes Implemented
+
+### Frontend ([index.html](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/index.html))
+*   Added **Google Sign-In** button.
+*   Implemented [login()](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/index.html#249-253) / [logout()](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/index.html#254-257) flows.
+*   **Security:** Frontend now grabs a Firebase ID Token and sends it with every API request (`Authorization: Bearer <token>`).
+
+### Backend ([server.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus/mcp_server/server.py))
+*   Added [verify_token()](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py#81-99) middleware.
+*   Initializes `firebase_admin` with the secret Service Account.
+*   **Enforcement:** Blocks any request to `/api/ingest` that doesn't have a valid signature from the CEO.
+
+## 3. Verification Results
+
+| Test Step | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- |
+| **Server Start** | "🔒 Firebase Admin Initialized" | `🔒 Firebase Admin Initialized` | ✅ PASS |
+| **Load Page** | Content Hidden, Login Button Visible | Confirmed | ✅ PASS |
+| **Google Login** | Popup appears, User authenticates | Logged in as `gargenterprises...` | ✅ PASS |
+| **API Request** | Backend accepts token, writes to file | Written to [marketing_log.md](file:///Users/lokeshgarg/ai-mvp-backend/docs/marketing/marketing_log.md) | ✅ PASS |
+
+> **Proof:** The log file successfully recorded: `| 2026-01-10 | Twitter/X | auth test | ...`
+
+## 4. Next Steps
+Now that the "Suit" is secure, we can safely enable:
+1.  **Cloud Deployment:** Deploying this to the web (Render/GCP) so you can access it from your phone.
+2.  **Fluid Sync:** Enabling the "Autopilot" to run wild while you are asleep.
+
+**The Nucleus is now SECURE.** 🛡️

@@ -1,0 +1,36 @@
+# Implementation Plan - Phase 49: Marketing Autopilot Hardening (Market Entry)
+
+## Goal
+Operationalize the "Marketing Autopilot" by creating a robust CLI/Daemon (`marketing_autopilot.py`) that manages the Listen-Strategize-Draft-Publish loop. This replaces the manual `cheatsheet.md` process and `simulation` scripts.
+
+## User Review Required
+- [ ] Confirm if "Market Entry" includes sending the actual Beta emails (I can draft them, but user must send).
+- [ ] Confirm if `marketing_log.md` is the single source of truth for "Listener" data.
+
+## Proposed Changes
+
+### 1. New Script: `scripts/marketing_autopilot.py`
+- **Class**: `MarketingAutopilot`
+- **Commands**:
+    - `listen`: (Placeholder/Input) Reads `listening_dump.md` or prompts user to paste content, then structured-logs it to `marketing_log.md`.
+    - `scout`: Uses `search_web` tool (via LLM) or Perplexity API (if avail) to find trends, logs to `marketing_log.md`.
+    - `strategize`: Wraps `auto_strategy_sync.py`.
+    - `draft`: Scans `marketing_log.md` for "New Opportunity", generates drafts using `strategy.md` context, appends to `drafts.md`.
+    - `publish`: (CLI) Lists pending drafts, allows "Mark as Posted", updates log.
+    - `daemon`: Runs the loop every X hours.
+
+### 2. Update `tools/marketing-dashboard/server.py`
+- [ ] Ensure `/api/ingest` writes to `marketing_log.md` in the format `marketing_autopilot.py` expects.
+
+### 3. Documentation
+- [ ] Update `marketing_autopilot_cheatsheet.md` to point to the new CLI.
+
+## Verification Plan
+
+### Automated Tests
+- `python3 scripts/marketing_autopilot.py --test` (Mock run).
+
+### Manual Verification
+1. Run `python3 scripts/marketing_autopilot.py scout` -> Check log.
+2. Run `python3 scripts/marketing_autopilot.py draft` -> Check `drafts.md`.
+3. Run `python3 scripts/marketing_autopilot.py publish` -> Mark as done.

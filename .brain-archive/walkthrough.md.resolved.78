@@ -1,0 +1,31 @@
+# Walkthrough - Production Recovery (2026-01-15)
+
+## Overview
+Successfully resolved critical production issues affecting `gentlequest-backend` database connectivity and `nucleus-hud` frontend API proxying.
+
+## Changes Verified
+
+### 1. Database Authentication
+- **Issue**: `FATAL: password authentication failed for user 'gentlequest'`.
+- **Fix**: Reset Cloud SQL user password to match the `gentlequest-backend` environment variable.
+- **Verification**:
+  - Command: `curl https://nucleus.gentlequest.app/api/health`
+  - Result: `{"database": "healthy", ...}` (Confirmed healthy connection).
+
+### 2. Frontend Proxy Configuration
+- **Issue**: `nucleus-hud` was failing to proxy API requests (503) because it defaulted to `localhost`.
+- **Fix**:
+  - Updated [cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml) to inject `NEXT_PUBLIC_APP_API_URL` as a build-time argument and runtime environment variable.
+  - Updated running service with: `gcloud run services update nucleus-hud --set-env-vars NEXT_PUBLIC_API_URL=...,NEXT_PUBLIC_APP_API_URL=...`
+- **Verification**:
+  - Command: `curl -u admin:nucleus https://nucleus-hud-999376128638.us-central1.run.app/api/health`
+  - Result: JSON response from backend (Proxy confirmed working).
+
+## Artifacts Updated
+- [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md): Marked production fixes as complete.
+- [cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml): Added `NEXT_PUBLIC_*` environment variables for future deployments.
+- `tools/nucleus-hud/next.config.ts`: Verified rewrite logic uses `process.env`.
+
+## Next Steps
+- Monitor `gentlequest-backend` logs for any recurring auth issues (none expected).
+- User can now proceed with IIP deployment or other feature work.

@@ -1,0 +1,61 @@
+# 🧬 Nucleus Phase 2 & 3: The Coder & The Cloud
+
+**Status:** ✅ COMPLETE
+**Date:** 2026-01-10
+
+> 📖 **[NUCLEUS OPERATIONAL BIBLE](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_OPERATIONAL_BIBLE.md)**  
+> **READ THIS FIRST.** This is the comprehensive manual for operating the new systems.
+
+---
+
+## 🚀 1. Phase 2: Cloud Autonomy (The Bridge)
+We have successfully deployed the **Marketing Dashboard** to Google Cloud Run.
+This provides a 24/7 web interface for monitoring the Marketing Log and Strategy.
+
+*   **URL:** [Live Dashboard](https://marketing-dashboard-7an2ps6yna-uc.a.run.app)
+*   **Auth:** Secured via Firebase (Google Sign-In).
+*   **Infrastructure:** Cloud Build -> Cloud Run (`us-central1`).
+
+## 🤖 2. Phase 3: The Coder Agent (The Hands)
+We have implemented the **Level 5 Autonomous Coder**.
+The agent can now modify the local filesystem to implement features, fix bugs, and refactor code.
+
+*   **Capability:** [CodeOps](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/code_ops.py#7-128) (Read/Write/Exec).
+*   **Persona:** `Developer` (Senior Engineer).
+*   **Invocation:** [brain_spawn_agent(intent="...", persona="developer")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3661-3716).
+
+## 🧠 3. Phase 4: The Neural Network (Live)
+We have assembled the specialized **"Team of Teams"**.
+
+*   **Staff:** Product Manager, Researcher, Architect, Developer, Synthesizer.
+*   **New Capabilities:** [WebOps](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/web_ops.py#7-68) (Web Search), `Product Management` (Backlog Grooming).
+*   **Orchestration:** [triggers.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/triggers.json) updated. `brain_delegate_task` enabled (via `nest_asyncio`).
+
+## 4. Verification
+*   **Cloud Run:** Deployment pipeline fixed (Project ID injection, Port Binding).
+*   **Coder Agent:** Verified via [tests/test_coder_agent.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_coder_agent.py) (autonomous script creation).
+*   **Delegation:** Verified via [tests/test_delegation.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_delegation.py) (Librarian spawn).
+*   **Team Execution:** Verified via [tests/test_team_execution.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_team_execution.py) (Event -> PM spawn).
+*   **Fluid Sync:** Verified via [tests/test_fluid_sync.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_fluid_sync.py) (Cloud Trigger -> Synthesizer Handoff).
+*   **Maintenance:** `ripgrep` and `telegram-bot` installed. System is Green.
+
+---
+
+## 5. Phase 5: The Nucleus HUD (The Face)
+We have initialized the "Heads-Up Display" for the Operating System.
+This interface allows "Fluid Sync" by visualizing the internal brain state.
+
+*   **Status:** Initialized 🚧
+*   **Location:** `tools/nucleus-hud`
+*   **Stack:** Next.js 14 + Tailwind CSS (Dark Mode).
+*   **Integration:**
+    *   **Backend:** `server.py` upgraded to `ThreadingHTTPServer` to support multiple connections.
+    *   **API:** New endpoint `/api/events` streams `.brain/ledger/events.jsonl` via SSE.
+    *   **Frontend:** `EventStream.tsx` visualizes real-time "Cortical Activity".
+
+## 6. Next Steps
+1.  **Run the HUD:** `cd tools/nucleus-hud && npm run dev`
+2.  **Run the Brain:** `python3 tools/marketing-dashboard/server.py`
+3.  **Use the Coder:** Assign real tasks (e.g., "Add analytics to the dashboard").
+4.  **Monitor Cloud:** Check the Cloud Run URL.
+5.  **Read the Bible:** Familiarize yourself with `NUCLEUS_OPERATIONAL_BIBLE.md`.

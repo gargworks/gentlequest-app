@@ -1,0 +1,54 @@
+# Implementation Plan: Firebase Authentication
+
+To enable **Fluid Sync** (Cross-Device & Cloud Access), we need to secure the Marketing Dashboard and Nucleus Server using Firebase Authentication.
+
+## Goal
+Replace open/local access with Identity-Aware access.
+- **Frontend**: Users log in with Google/Email to access the Dashboard.
+- **Backend**: API verifies ID tokens before processing requests.
+
+## User Review Required
+> [!IMPORTANT]
+> **Firebase Project Setup Required**
+> You will need a Firebase Project. 
+> 1. Go to [console.firebase.google.com](https://console.firebase.google.com)
+> 2. Create/Select a project.
+> 3. Enable **Authentication** (Google Provider or Email/Password).
+> 4. Copy the **Web App Config** for `firebase_config.js`.
+> 5. Generate a **Service Account Key** (`service_account.json`) for the backend.
+
+## Proposed Changes
+
+### 1. Setup & Configuration
+#### [NEW] `tools/marketing-dashboard/firebase_config.js`
+- Placeholder file for Firebase Web Config.
+- **Action**: User populates this.
+
+#### [NEW] `secret/service_account.json` (GitIgnored)
+- Path for the backend credential.
+
+### 2. Frontend (Marketing Dashboard)
+#### [MODIFY] [tools/marketing-dashboard/index.html](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/index.html)
+- Import Firebase SDK (v9/v10 compat or CDN).
+- Add `Login` / `Logout` buttons.
+- Wrap `fetch('/api/ingest')` to include `Authorization: Bearer <token>` header.
+- Hide "Agent Portal" until logged in.
+
+### 3. Backend (Nucleus Server)
+#### [MODIFY] [tools/marketing-dashboard/server.py](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py)
+- Import `firebase_admin` and `firebase_admin.auth`.
+- Initialize App with `service_account.json` (or Application Default Credentials).
+- Add Middleware to [do_POST](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py#57-131) to verify `Authorization` header.
+- Return `401 Unauthorized` if invalid.
+
+### 4. Dependencies
+- Install `firebase-admin` in `.venv`.
+
+## Verification Plan
+
+### Manual Verification
+1.  **Start Server**: `python3 tools/marketing-dashboard/server.py`
+2.  **Open Dashboard**: Verify Login Button appears.
+3.  **Login**: Sign in (needs Firebase Config).
+4.  **Action**: Submit a mock insight.
+5.  **Verify**: Server logs "✅ Ingested..." only if token is valid.

@@ -1,0 +1,38 @@
+# Nucleus Autopilot: The Vision & Roadmap
+**Status:** 🚧 PLANNED (v0.6+)
+**Goal:** Evolution from "Manual Tools" to "Autonomous OS".
+
+---
+
+## 1. The Gap: CLI vs Runtime
+We have excellent **Tools** (Logic), but we lack **Autonomy** (Driver).
+*   **Current Reality:** You must manually run scripts ([swarm_relay.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/swarm_relay.py)) to trigger multi-agent flows.
+*   **Target Reality:** The Server itself spawns agents based on events (e.g., "User went offline").
+
+---
+
+## 2. Examples of "Doing it Properly"
+We strive for **Native Integration**, not "Scripts in a Trenchcoat".
+
+### A. The "Fluid Sync" Service (Planned)
+*   **Bad Way:** A python script that polls every 10s.
+*   **Proper Way:** A native `PresenceMonitor` in the MCP Server that subscribes to IDE heartbeat events and seamlessly switches modes.
+
+### B. The "Swarm" Runtime (Planned)
+*   **Bad Way:** `subprocess.run(["python", "worker.py"])`
+*   **Proper Way:** `asyncio.create_task(agent.run())` within the server process, sharing memory and state.
+
+---
+
+## 3. What Exists Today (The Toolkit)
+We have built the **LEGO Bricks**, but we haven't built the **Car**.
+*   ✅ **Orchestrator Logic:** [SwarmsOrchestrator](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/orchestrator.py#8-157) class (Can plan missions).
+*   ✅ **Relay Script:** [scripts/swarm_relay.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/swarm_relay.py) (Proof of concept for chaining agents).
+*   ✅ **Personas:** [ContextFactory](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py#219-557) (Can instantiate specialized agents).
+
+## 4. Next Steps (Roadmap)
+1.  **Refactor Orchestrator:** Move it from a "Class" to a "Running Service".
+2.  **Implement Presence:** Add real heartbeat detection to the server.
+3.  **Kill the Scripts:** Replace `scripts/*.py` with `nucleus start --autonomous`.
+
+*Status: Foundation Built. Autonomy Pending.*

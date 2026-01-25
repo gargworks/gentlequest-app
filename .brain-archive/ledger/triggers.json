@@ -1,0 +1,34 @@
+{
+    "triggers": [
+        {
+            "id": "trigger-synthesis",
+            "event_type": "user_intent",
+            "target_agent": "synthesizer",
+            "description": "Synthesizer triages incoming user intent."
+        },
+        {
+            "id": "trigger-grooming",
+            "event_type": "spec_needed",
+            "target_agent": "product_manager",
+            "description": "PM grooms backlog and writes specs."
+        },
+        {
+            "id": "trigger-design",
+            "event_type": "spec_ready",
+            "target_agent": "architect",
+            "description": "Architect designs system from PM specs."
+        },
+        {
+            "id": "trigger-implementation",
+            "event_type": "design_ready",
+            "target_agent": "developer",
+            "description": "Developer implements code from Architecture design."
+        },
+        {
+            "id": "trigger-deployment",
+            "event_type": "deployment_request",
+            "target_agent": "devops",
+            "description": "DevOps handles deployment related requests."
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+# design_journal_phase12.md
+
+## Context
+Nucleus can now Speak, See, and act Autonomously (Phases 1-11).
+However, it largely trusts the code it generates or the code the user writes.
+To become a true "Senior Engineer" equivalent, it needs the ability to **Reject** bad code.
+
+## Problem
+Currently, quality control is manual. If the "Developer" agent writes buggy code, we only find out when running it.
+We lack a "Gatekeeper" or "Supervisor" loop.
+
+## Solution: The Critic Loop
+We will introduce a distinct Persona: **The Critic**.
+*   **Role**: It does NOT write code. It ONLY reviews it.
+*   **Personality**: Pedantic, security-conscious, skeptical.
+*   **Trigger**: Explicit request (`brain_critique_code`) or Automatic (pre-commit hook).
+
+## Design Specification
+
+### 1. The Persona ([.brain/agents/critic.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/agents/critic.md))
+```markdown
+# Agent: The Critic
+# Role: Senior Code Reviewer / Security Auditor
+# Prime Directive: PREVENT BROKEN WINDOWS.
+# Instructions:
+1. You never write code. You only critique it.
+2. Look for: Logic errors, Security flaws, Performance bottlenecks, Style violations (PEP8).
+3. Be concise. Use bullet points.
+```
+
+### 2. The Interaction Model
+```mermaid
+sequenceDiagram
+    User->>Nucleus: Check this file
+    Nucleus->>Critic: Reads file content
+    Critic->>Nucleus: Returns { status: "PASS" | "FAIL", issues: [] }
+    Nucleus->>HUD: Displays Review Card
+    Nucleus->>Voice: "Code Review Complete. 2 Critical Issues found."
+```
+
+### 3. The Data Structure (Critique Object)
+```json
+{
+  "file": "server.py",
+  "score": 85,
+  "status": "NEEDS_IMPROVEMENT",
+  "issues": [
+    { "line": 45, "severity": "CRITICAL", "message": "Potential SQL Injection", "suggestion": "Use parameterized queries" }
+  ]
+}
+```
+
+## MVP Scope (Phase 12)
+1.  **Define Persona**: Create the [.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) file.
+2.  **Logic**: Implement `brain_critique_code` which fetches the file and prompts the LLM using the Critic Persona.
+3.  **UI**: Display the result in the HUD (using the existing Event Log for MVP, or a new "Review" modal late).
+
+*Session 18832*

@@ -1,0 +1,59 @@
+# Strategic Vision: Nucleus as Recursive Aggregator
+
+**Date:** 2026-01-12
+**Status:** FINAL (Aligned with MCP Standard & Perplexity Analysis)
+**Related Phases:** 57 (Marketplace), 60 (Aggregation)
+
+## 1. The Definition
+> **"Nucleus is a host-runtime *wrapped in a server-shaped interface* for upstream compatibility."**
+
+We are **not** replacing the standard. We are the **Host-Grade Aggregation Layer** that makes the fragmented MCP ecosystem usable for autonomous agents.
+
+## 2. Architectural Nuance: "Server Outward, Host Inward"
+*Perplexity Insight: This mirrors MCP’s separation of concerns: servers stay focused; hosts own orchestration.*
+
+1.  **Outward (Upstream):** To a client like Claude Desktop or Windsurf, `mcp-server-nucleus` appears as a single, standard MCP Server.
+2.  **Inward (Downstream):** Internally, Nucleus acts as a **Host/Runtime**. It terminates the upstream connection and "fans out" to:
+    *   **Native Capabilities:** (Memory, BrainOps)
+    *   **Developer Hooks:** (Local Plugins via `.brain/tools/*.py`)
+    *   **Mounted Servers:** (External MCP servers via `npx`)
+
+## 3. The "Mount Registry" (Formerly Marketplace)
+
+### Developer Hooks (Internal API)
+*   **Mechanism:** Drop [.py](file:///Users/lokeshgarg/ai-mvp-backend/app.py) files into `.brain/tools/`.
+*   **Role:** "Developer Hooks" for private, ad-hoc extensions (e.g., custom scripts, internal API wrappers).
+
+### Mount Catalog (Public Ecosystem)
+*   **Mechanism:** `nucleus mount @modelcontextprotocol/server-postgres <db_url>`
+*   **Role:** We leverage the existing NPM/PyPI ecosystem. We do not build a proprietary store.
+*   **Example:** Mounting Postgres runs the official MCP server via `npx`, but Nucleus mediates the approval, scopes, and context sharing.
+
+## 4. The Moat: Governance & Orchestration
+> **"MCP standardizes connectivity; Nucleus standardizes governance + orchestration across connected tools."**
+
+As identified in the SWOT analysis, our unique value proposition is **Governance**. We provide the controls that many *thin hosts/clients* don’t provide by default:
+
+*   **Explicit Consent:** We require explicit user approval before executing any `mount` or `install` command, showing the full untruncated command.
+*   **Default Deny:** Every mount starts in a "no network / no filesystem" profile and only expands via explicit grants.
+*   **Sandboxing:** We enforce privilege minimization for mounted local servers.
+*   **Isolation:** We maintain per-server isolation boundaries—Nucleus decides exactly what context (Memory) each server sees.
+
+## 5. Strategic SWOT Analysis
+
+### Strengths
+- **Clear Positioning:** "Recursive Aggregator" aligns with MCP's Host-Client-Server specs.
+- **Ecosystem Leverage:** We ride the wave of existing MCP servers rather than rebuilding integrations.
+- **Trust Narrative:** We own the "Governance Point" (Consent & Control).
+
+### Weaknesses
+- **Complexity:** The "Server/Host duality" can be confusing to explain.
+- **Security Risks:** Mounting arbitrary servers implies executing commands; requires strict consent UX.
+
+### Opportunities
+- **The "Toolchain Layer":** Become the default runtime for Agents, like `npm` for JS.
+- **Safer Mounting:** Build a "One-Click Safe Mount" flow that handles the security/consent UX better than raw clients.
+
+### Threats
+- **Downstream Security:** If a mounted server is malicious, Nucleus might be blamed.
+- **Ecosystem Capture:** Major clients (Claude) might build their own "OS layer", disintermediating us unless our **Memory/Policy Moat** is deep enough.

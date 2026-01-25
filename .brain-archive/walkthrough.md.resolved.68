@@ -1,0 +1,65 @@
+
+# Phase 59: Nucleus Daemon (The Sovereign Runtime) 🧠🔒
+
+**Date:** 2026-01-13
+**Status:** ✅ COMPLETE
+**Objective:** Transform Nucleus from a set of scripts into a "Living Organism" (Host-Isolated, Preemptive, Sovereign).
+
+## 1. The Architecture (The Vessel)
+
+We have successfully constructed the **Sovereign Runtime** consisting of 6 key organs:
+
+1.  **The Spine ([BrainLock](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/locking.py#23-49))**: Atomic, crash-proof locking using `fcntl`.
+    *   *Result:* No more race conditions or corrupted `state.json`.
+2.  **The Brain ([DirectivesLoader](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/policy.py#44-119))**: Adaptive Policy Engine reading `directives.md`.
+    *   *Result:* Daemon behavior is governed by high-level user intent.
+3.  **The Heart ([DaemonManager](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/daemon.py#36-118))**: A persistent `asyncio` service managing the lifecycle.
+    *   *Result:* Single-instance execution using PID locks.
+4.  **The Muscles ([SwarmsOrchestrator](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/orchestrator.py#47-159))**: Upgraded to **Preemptive Async** execution.
+    *   *Result:* Swarms run in the background; user regains control immediately.
+5.  **The Wallet ([BudgetAuditor](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/budget.py#18-90))**: A "Hard Fuse" tracking spend.
+    *   *Result:* Prevents runaway costs (Safety vs infinite loops).
+6.  **The Eject Button ([DataExporter](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/export.py#21-67))**: Full Brain Dump capabilities.
+    *   *Result:* **Anti-Sherlock Defense**. You are never platform-locked.
+
+## 2. Changes Implemented
+
+### New Core Modules (`mcp_server_nucleus/runtime/`)
+| Module | Role | Status |
+| :--- | :--- | :--- |
+| [daemon.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/daemon.py) | The Kernel (Service Loop) | ✅ Active |
+| [locking.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/locking.py) | Atomic Safety Layer | ✅ Verified |
+| [policy.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/policy.py) | Directives & Mission Parameters | ✅ JSON-based |
+| [orchestrator.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/orchestrator.py) | Preemptive Swarm Manager | ✅ Async |
+| [export.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/export.py) | Data Portability Engine | ✅ Verified |
+| [watcher.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/watcher.py) | Event-Driven Monitor | ✅ Polling |
+
+### Key Refactors
+- **[commitment_ledger.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/commitment_ledger.py)**: Now uses [BrainLock](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/locking.py#23-49) for all write transactions.
+- **`swarms.py` (Orchestrator)**: Completely rewritten from blocking Sync to Preemptive Async.
+
+## 3. Verification Findings
+
+### Test A: Safety & Locking
+*   **Script:** [scripts/verify_locks.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/verify_locks.py)
+*   **Result:** Process 2 correctly waited for Process 1 to release the lock.
+*   **Verdict:** **Pass**.
+
+### Test B: End-to-End Activation
+*   **Script:** [scripts/verify_daemon_swarm.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/verify_daemon_swarm.py)
+*   **Flow:**
+    1.  Daemon Initialized ✅
+    2.  Mission Triggered ("Verify Sovereignty") ✅
+    3.  Output: `Status: started` (Immediate return) ✅
+    4.  Mission Loop: Logged "loop started" (Async confirmation) ✅
+    5.  Data Export: `sovereign_dump_*.zip` created ✅
+
+## 4. Strategic Implications
+
+**We have crossed the Rubicon.**
+Nucleus is no longer just a "Tool" you run. It is a **Service** that runs *for* you.
+It thinks (Directives), it acts (Muscles), and it protects itself (Locking/Budget).
+
+**Next Steps:**
+1.  **Phase 57 (Marketplace):** Now we can safely load external agents into this robust runtime.
+2.  **Phase 60 (Immortality):** The "Vessel" is ready to carry the "Cargo" (Ancestral Wisdom).

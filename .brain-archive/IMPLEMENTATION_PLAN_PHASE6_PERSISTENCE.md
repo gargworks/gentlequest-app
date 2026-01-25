@@ -1,0 +1,46 @@
+# Implementation Plan - Phase 6: Swarm Persistence
+
+## Goal
+Ensure that the state of active Swarms (missions, roles, status) is persisted to disk (`.brain/swarms/state.json`) so that:
+1.  The state survives across tool calls (transient agent instantiation).
+2.  The Nucleus HUD can query and visualize active swarms.
+
+## Proposed Changes
+
+### 1. Update `SwarmsOrchestrator` (`orchestrator.py`)
+- **Add `state_file`**: Define path to `.brain/swarms/state.json`.
+- **Implement `_load_state()`**: Read JSON on init.
+- **Implement `_save_state()`**: Write JSON on updates (`start_mission`, `update_status`).
+- **Modify `start_mission()`**: Save to disk after initialization.
+
+### 2. Verify `server.py`
+- Check how `/api/swarms` retrieves data.
+- Ensure it uses `SwarmsOrchestrator` to read the *persisted* state (or reads JSON directly).
+
+### 3. Verification
+- **Test Script**: `tests/test_swarm_persistence.py`.
+    - Instantiate Orchestrator A, start mission.
+    - Instantiate Orchestrator B, read missions.
+    - Assert mission exists in B.
+
+## Detailed Design
+
+```python
+class SwarmsOrchestrator:
+    def __init__(self, brain_path):
+        self.state_file = brain_path / "swarms" / "state.json"
+        self._load_state()
+
+    def _load_state(self):
+        if self.state_file.exists():
+            self._active_missions = json.loads(self.state_file.read_text())
+        else:
+            self._active_missions = {}
+
+    def _save_state(self):
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        self.state_file.write_text(json.dumps(self._active_missions, indent=2))
+```
+
+## User Review Required
+None. Internal architecture change.

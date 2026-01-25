@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_OTHER",
+  "summary":  "Instructions to fix cron environment variables by exporting GEMINI_API_KEY and TELEGRAM_BOT_TOKEN to cron environment. Includes shell script to automate this.",
+  "updatedAt":  "2026-01-06T11:43:15.461358Z"
+}

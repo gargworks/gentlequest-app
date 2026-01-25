@@ -1,0 +1,45 @@
+# Mission 4: The Voice of Nucleus (Implementation Plan)
+
+## Goal
+Enable the Nucleus HUD to "speak" critical updates using the Web Speech API (Client-side). This adds a sensory dimension to the feedback loop, allowing the operator to hear mission status without looking at the screen.
+
+## User Review Required
+> [!NOTE]
+> This implementation will use the browser's native `window.speechSynthesis` API. Voices and quality vary by browser/OS.
+> It will create a second SSE connection to the server (one for visual logs, one for audio triggers). This is acceptable for MVP but may need consolidation later.
+
+## Proposed Changes
+
+### Frontend (Nucleus HUD)
+
+#### [NEW] [VoiceSynthesizer.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/VoiceSynthesizer.tsx)
+A new React component that:
+1. Connects to `/api/events` (SSE).
+2. Filters events for "speakable" moments:
+    - `mission_status` = `sent` (e.g., "Research mission dispatched: [Topic]")
+    - `mission_status` = `complete` (e.g., "Mission complete.")
+    - `event_type` = `emergency`
+    - `event_type` = `user_message` (optional, maybe echo back?)
+    - `event_type` = `agent_response` (The agent speaking back!)
+3. Provides a UI toggle to Mute/Unmute.
+4. Visualizes "Speaking" state (e.g., a pulsating icon).
+
+#### [MODIFY] [page.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/page.tsx)
+- Import `VoiceSynthesizer`.
+- Add it to the Header section (near System Health).
+
+## Verification Plan
+
+### Automated Verification
+- **Browser Test**: I will create a browser tool test that:
+    1. Loads the HUD.
+    2. Checks for the "Voice Active" icon.
+    3. Triggers a research mission (which emits an event).
+    4. Checks if the "Voice Active" icon changes state (e.g., turns into "Speaking" or animates).
+    *Note: I cannot verify actual audio output via the tools, but I can verify the logic fires.*
+
+### Manual Verification
+1. Open HUD in Chrome/Edge.
+2. Click the "Speaker" icon to ensure it's on.
+3. Use the "Hack Box" (or Research Widget) to fire a mission.
+4. **Listen**: Expect to hear "Research Mission Dispatched: [Topic]".

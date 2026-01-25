@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary":  "Implementation plan for Phase 49: Marketing Autopilot Hardening.\nFocuses on creating `marketing_autopilot.py` to operationalize the Listen/Draft/Publish loop.",
+  "updatedAt":  "2026-01-11T18:55:11.813869Z"
+}

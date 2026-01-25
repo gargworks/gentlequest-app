@@ -1,0 +1,56 @@
+# TDR-001: Unified Agentic Runtime (Nucleus Daemon)
+**Status:** PROPOSED
+**Date:** 2026-01-12
+**Context:** GentleQuest / Nucleus Autopilot
+
+## 1. Context & Problem
+Currently, Nucleus's "Autonomy" features are fragmented across multiple shell scripts:
+*   [scripts/autopilot_v2.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/autopilot_v2.py): Polling loop for general tasks.
+*   [scripts/marketing_autopilot.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/marketing_autopilot.py): Polling loop for marketing.
+*   [scripts/swarm_relay.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/swarm_relay.py): Orchestrator runner.
+
+**Issues:**
+*   **Manual Friction:** User must remember to run specific scripts.
+*   **No Awareness:** Scripts fight for resources and ignore user presence (Offline vs Online).
+*   **Fragility:** Process management is entirely on the user (Terminals).
+
+## 2. Decision
+We will build a **Unified Agentic Runtime (UAR)** embedded within a new service: `nucleus-daemon`.
+
+**Constraint: Non-Destructive Adoption**
+*   We will **NOT** deprecate or delete any existing scripts ([swarm_relay.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/swarm_relay.py), etc.) at this stage.
+*   The Daemon will run in **Parallel Beta** mode.
+*   The CLI command will be additive: `python scripts/nucleus_daemon.py`.
+
+## 3. Architecture: The Kernel-Worker Model
+We will adopt a **Host-Isolated Execution** model.
+
+### 3.1. The Nucleus Kernel
+The central management layer that coordinates between the MCP Server and the Background Daemon.
+*   **Atomic State:** Implements cross-process file locking (`flock`) on the [state.json](file:///Users/lokeshgarg/ai-mvp-backend/autonomous_state.json) ledger.
+    *   **Fault Tolerance:** Uses **Leased Locks** (TTL 30s). If a process crashes holding a lock, the Kernel breaks it after 30s to prevent Deadlocks (Zombie Locks).
+*   **Shared Heartbeat:** A shared memory or file-based "Interactive Heartbeat" that tracks activity across all Nucleus entry points (MCP, HUD, CLI).
+
+### 3.2. The Persistent Daemon (`mcp_server_nucleus.daemon`)
+*   **Presence Sensor:** Distinguishes between "App is Open" and "User is Active" via heartbeat.last mtime check.
+*   **Preemptive Execution:** Runs agents in managed asyncio tasks.
+    *   **Interrupts:** Uses `asyncio.wait_for` on LLM/Tool calls to inject Heartbeat checks. If "User Active", raises `CommandInterrupt` to yield immediately.
+
+## 4. Implementation Stages
+1.  **Stage 0 (Safety):** Atomic Ledger Upgrade (Locking discipline).
+2.  **Stage A (Kernel/Daemon):** Create the background service module.
+3.  **Stage B (Presence):** Implement the Telemetry Heartbeat (Interactive monitoring).
+4.  **Stage C (Preemption):** Implement the "Auto-Yield" logic for the agent runtime.
+5.  **Stage D (Unified CLI):** `nucleus start --autonomous` launcher.
+
+## 5. Verification
+*   **Test:** Simulating "Offline" signal triggers a task claim.
+*   **Test:** Simulating "Online" signal pauses the daemon.
+
+## 6. Consequences
+*   **Positive:** "It just works." No more script hunting.
+*   **Negative:** Higher complexity in the main server codebase (Async concurrency).
+
+---
+**Request for Approval:**
+Does this architectural shift align with the "Double Diamond" outcome you expect?

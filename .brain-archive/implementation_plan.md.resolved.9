@@ -1,372 +1,80 @@
-# Gemini CLI Grunt Worker
+# GenAI Migration Plan: providers/gemini.py (Core Chat)
 
-## Goal
-
-Build a background system that executes "grunt work" tasks using Gemini CLI, freeing you to focus on critical thinking with Claude Opus 4.5.
-
----
-
-## Architecture Overview
-
-### Architecture Overview
-
-**The Connectivity Gap:** Render (where Telegram lives) cannot write to your Mac's filesystem.
-**The Solution:** Use **GitHub Issues** as the persistent queue.
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│                        TRIGGER SOURCES                         │
-├────────────┬─────────────┬─────────────────────────────────────┤
-│ Telegram   │ Manual CLI  │                                     │
-│ /grunt     │ grunt.py    │                                     │
-└─────┬──────┴──────┬──────┘                                     │
-      │             │                                            │
-      ▼             ▼                                            │
-┌────────────────────────────────────────────────────────────────┐
-│                      TASK QUEUE                                │
-│   GitHub Repository Issues                                     │
-│   - Label: `grunt-work`                                        │
-│   - Body: Task description                                     │
-│   - Comments: Results/Updates                                  │
-└─────────────────────────────┬──────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│                    GRUNT WORKER DAEMON                         │
-│   scripts/grunt_worker.py (Running on Mac)                     │
-│                                                                │
-│   1. Poll GitHub for open issues with label `grunt-work`       │
-│   2. Claim task (comment "Processing...")                      │
-│   3. Classify & Select context files (.brain/ + repo)          │
-│   4. Execute via Gemini CLI (Premium Model)                    │
-│   5. Post result as Issue Comment                              │
-│   6. Close Issue                                               │
-└────────────────────────────────────────────────────────────────┘
-```
+> **Status:** PLANNING
+> **Goal:** Migrate [providers/gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) to use `google.genai` via [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) adapter.
 
 ---
 
-## Work Type Classification
+## 🔍 Context and Problem
 
-### Types of Grunt Work
+[providers/gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) is the core chat engine for GentleQuest. It currently uses `google.generativeai` (legacy SDK) directly.
 
-| Type | Description | Context Files Needed |
-|:-----|:------------|:---------------------|
-| `research` | Market research, competitor analysis | context.md |
-| `summarize` | Summarize docs, PRs, articles | context.md + target doc |
-| [test](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py#158-187) | Generate unit tests | context.md + target file + existing tests |
-| `boilerplate` | CRUD endpoints, widgets, models | context.md + patterns + spec |
-| `docs` | README, API docs, comments | context.md + target file |
-| `refactor` | Code cleanup, formatting | target file + style guide |
+**Complexity:**
+1.  **Key Rotation:** Validates and rotates multiple API keys.
+2.  **Tool Use:** Uses "Agentic Wellness Tools" (function calling).
+3.  **Crisis Handling:** Hand-crafted prompts and filtering.
+4.  **Legacy Dependency:** Tightly coupled to `genai.GenerativeModel` and legacy response objects.
 
-### Classification Logic
+**Dependency:**
+- [mcp_server_nucleus/runtime/llm_client.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py) (DualEngineLLM) - Adapter mechanism.
 
+---
+
+## 🏗️ Technical Strategy: "Dual-Engine Injection"
+
+We will **NOT** rewrite [gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) to use `google.genai` directly (too risky for Key Rotation + Tools).
+Instead, we will inject [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) as the model abstraction.
+
+### 1. The Wrapper Pattern
+
+**Old Code:**
 ```python
-TASK_PATTERNS = {
-    "research": ["research", "find", "analyze", "compare", "investigate"],
-    "summarize": ["summarize", "tldr", "overview", "digest"],
-    "test": ["test", "unittest", "spec", "coverage"],
-    "boilerplate": ["create", "generate", "scaffold", "build", "widget", "endpoint"],
-    "docs": ["document", "readme", "docstring", "api doc"],
-    "refactor": ["refactor", "cleanup", "format", "lint"]
-}
-
-def classify_task(task_description: str) -> str:
-    description_lower = task_description.lower()
-    for task_type, keywords in TASK_PATTERNS.items():
-        if any(kw in description_lower for kw in keywords):
-            return task_type
-    return "general"
+model = genai.GenerativeModel(model_name, tools=[...])
+response = model.generate_content(prompt)
 ```
 
----
-
-## Context Selection Strategy
-
-### Per-Task-Type Context
-
+**New Code:**
 ```python
-CONTEXT_MAP = {
-    "research": [
-        ".brain/memory/context.md",
-    ],
-    "summarize": [
-        ".brain/memory/context.md",
-        # + target document passed in task
-    ],
-    "test": [
-        ".brain/memory/context.md",
-        ".brain/knowledge_index.json",
-        "tests/conftest.py",  # existing test patterns
-        # + target file passed in task
-    ],
-    "boilerplate": [
-        ".brain/memory/context.md",
-        ".brain/knowledge_index.json",
-        # + pattern examples passed in task
-    ],
-    "docs": [
-        ".brain/memory/context.md",
-        # + target file passed in task
-    ],
-    "refactor": [
-        ".brain/memory/context.md",
-        # + target file passed in task
-    ],
-    "general": [
-        ".brain/memory/context.md",
-        ".brain/ledger/state.json",
-    ]
-}
+# Use Adapter. It handles Engine selection (New vs Legacy).
+# We MUST pass the specific rotated api_key to it.
+llm = DualEngineLLM(model_name, api_key=api_key)
+
+# Pass tools. DualEngineLLM detects tools and FORCES Legacy Engine.
+# This ensures existing tool definitions (Legacy format) continue to work.
+response = llm.generate_content(prompt, tools=[...])
 ```
 
----
+### 2. Handling Key Rotation
 
-## Gemini Model Selection
+[DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) logic was just patched to respect `self.api_key` for legacy initialization.
+This allows [gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) to continue its robust round-robin key rotation:
+1.  Select [api_key](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py#88-103) from pool.
+2.  Instantiate [DualEngineLLM(..., api_key=api_key)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112).
+3.  Execute request.
+4.  Catch errors and rotate key index if needed.
 
-### Model Priority (Premium First)
+### 3. Handling Response Objects
 
-```python
-MODELS = [
-    "gemini-2.0-flash-exp",      # Best, experimental
-    "gemini-1.5-pro-latest",     # Fallback, very capable
-    "gemini-1.5-flash-latest",   # Fast fallback
-]
-
-# Start with best model
-current_model_index = 0
-
-def get_model():
-    return MODELS[current_model_index]
-
-def handle_rate_limit():
-    global current_model_index
-    if current_model_index < len(MODELS) - 1:
-        current_model_index += 1
-        return True  # Try next model
-    return False  # All models rate limited, stop
-```
-
-### Rate Limit Detection
-
-```python
-def is_rate_limited(response) -> bool:
-    return "429" in str(response) or "quota" in str(response).lower()
-```
+-   **Tools Present:** [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) uses Legacy Engine -> Returns Legacy Response object.
+    -   [gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) logic (iterating `parts`) works as-is.
+-   **No Tools (Crisis Mode):** [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) uses New Engine (if enabled) -> Returns New Response object?
+    -   **Risk:** New SDK response object has different structure (`response.text` exists on both, but candidates differ).
+    -   **Mitigation:** [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) wraps simple text responses. For robust compatibility, we might force Legacy for *all* calls in [gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) initially, or verify `response.text` access.
 
 ---
 
-## Queue Structure (GitHub API)
+## ✅ Verification Plan
 
-Instead of a local JSON file, we use `gh` CLI or `requests` to manage issues.
+1.  **Static Analysis:** Ensure imports are correct.
+2.  **Unit Test:** Run [test_wellness_direct.py](file:///Users/lokeshgarg/ai-mvp-backend/test_wellness_direct.py) (if available) or create a targeted test script.
+3.  **Manual Simulation:**
+    -   Call [get_gemini_response("I am sad")](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py#187-397) -> Should trigger tool.
+    -   Call [get_gemini_response("Hello")](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py#187-397) -> Should be chat.
 
-- **New Task**: `gh issue create --title "Grunt: <Task>" --body "<Details>" --label "grunt-work"`
-- **Poll**: `gh issue list --label "grunt-work" --state open --json number,title,body`
-- **Complete**: `gh issue comment <id> --body "✅ Result..."` and `gh issue close <id>`
+## 📝 Roadmap
 
----
-
-## Grunt Worker Script
-
-### File: `scripts/grunt_worker.py`
-
-```python
-#!/usr/bin/env python3
-"""
-Grunt Worker - Background task execution via Gemini CLI & GitHub Issues
-
-Usage:
-    python grunt_worker.py daemon     # Run continuously
-"""
-
-import subprocess
-import time
-import os
-from pathlib import Path
-
-# ... (Context & Classification logic same as above) ...
-
-def get_pending_tasks():
-    """Get open issues with label 'grunt-work' via gh CLI."""
-    cmd = ["gh", "issue", "list", "--label", "grunt-work", "--state", "open", "--json", "number,title,body"]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode == 0:
-        return json.loads(result.stdout)
-    return []
-
-def post_comment(issue_number, body):
-    subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", body])
-
-def close_issue(issue_number):
-    subprocess.run(["gh", "issue", "close", str(issue_number)])
-
-def process_task(task):
-    """Process a single GitHub issue task."""
-    print(f"⚙️ Processing issue #{task['number']}: {task['title']}")
-    
-    # Notify start
-    post_comment(task['number'], "🤖 Gemini Grunt Worker engaged. Analyzing...")
-    
-    task_desc = f"{task['title']}\n{task['body']}"
-    task_type = classify_task(task_desc)
-    context_files = get_context_files(task_type, [])
-    model = get_model()
-    
-    stdout, stderr, code = run_gemini_cli({'description': task_desc}, context_files, model)
-    
-    if code == 0 and stdout:
-        # Post result
-        result_msg = f"## ✅ Task Completed\n\n**Type:** {task_type}\n**Model:** {model}\n\n### Output\n\n```\n{stdout}\n```"
-        post_comment(task['number'], result_msg)
-        close_issue(task['number'])
-        print(f"✅ Completed #{task['number']}")
-    else:
-        # Report error
-        error_msg = f"## ❌ Task Failed\n\nError: {stderr[:500]}"
-        post_comment(task['number'], error_msg)
-        print(f"❌ Failed #{task['number']}")
-
-def daemon():
-    print("🤖 Grunt Worker Daemon Started (Polling GitHub Issues)...")
-    while True:
-        try:
-            tasks = get_pending_tasks()
-            for task in tasks:
-                process_task(task)
-        except Exception as e:
-            print(f"⚠️ Error polling: {e}")
-        
-        time.sleep(60)  # Poll every minute
-```
-
----
-
-## Telegram Integration
-
-### New Command: `/grunt`
-
-```python
-# In brain_telegram.py
-
-def handle_grunt_command(task_description: str) -> str:
-    """Handle /grunt <task description> command."""
-    if not task_description:
-        return "❌ Usage: /grunt Create mood chart widget"
-    
-    # Add to queue
-    queue = load_grunt_queue()
-    task_id = f"grunt-{uuid.uuid4().hex[:8]}"
-    
-    task = {
-        "id": task_id,
-        "created": datetime.now(timezone.utc).isoformat(),
-        "status": "pending",
-        "type": classify_task(task_description),
-        "description": task_description,
-        "context_files": [],
-        "priority": 1,
-        "output_path": None,
-        "error": None
-    }
-    
-    queue['tasks'].append(task)
-    save_grunt_queue(queue)
-    
-    return f"""🔧 Grunt task queued!
-
-ID: `{task_id}`
-Type: {task['type']}
-Task: {task_description[:50]}
-
-Will be processed when grunt worker is running."""
-```
-
----
-
-## Files to Create
-
-| File | Purpose |
-|:-----|:--------|
-| `scripts/grunt_worker.py` | Main daemon script |
-| `.brain/ledger/grunt_queue.json` | Task queue |
-| `.brain/artifacts/grunt/` | Output directory |
-| Update [brain_telegram.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_telegram.py) | Add `/grunt` command |
-
----
-
-## Usage Flow
-
-### 1. Queue a Task
-
-```bash
-# Via Telegram
-/grunt Create a Flutter widget for mood history chart following breathing_exercise_widget.dart pattern
-
-# Via CLI
-python scripts/grunt_worker.py add "Create mood chart widget"
-```
-
-### 2. Start Worker
-
-```bash
-# One-time run
-python scripts/grunt_worker.py run
-
-# Daemon mode (continuous)
-python scripts/grunt_worker.py daemon
-```
-
-### 3. Get Results
-
-- Output saved to `.brain/artifacts/grunt/{task_id}.md`
-- Telegram notification when complete
-- Review and copy to project
-
----
-
-## Safety Features
-
-| Feature | Implementation |
-|:--------|:---------------|
-| **Rate limit handling** | Pause on 429, switch models |
-| **Timeout** | 5 min max per task |
-| **Error capture** | Log stderr, notify on failure |
-| **Token tracking** | Count tokens used (future) |
-| **Premium only** | Start with best model always |
-
----
-
-## Build Order
-
-1. **Phase 1: Core** (30 min)
-   - Create `grunt_queue.json` structure
-   - Create `grunt_worker.py` with basic queue processing
-   - Test locally with simple task
-
-2. **Phase 2: Classification** (20 min)
-   - Add task type detection
-   - Add context file selection
-   - Test with different task types
-
-3. **Phase 3: Telegram** (20 min)
-   - Add `/grunt` command
-   - Add completion notifications
-   - Deploy and test
-
-4. **Phase 4: Polish** (20 min)
-   - Add daemon mode
-   - Add rate limit handling
-   - Add model fallback
-
----
-
-## Decision Points for Review
-
-> [!IMPORTANT]
-> 1. Should the worker run as a daemon or be triggered on-demand?
-> 2. Should completed tasks auto-archive after 7 days?
-> 3. Should we add a `/grunt status` command to check queue?
-
----
-
-## Estimated Total Time: ~90 minutes
+1.  [x] Patch [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112) to support explicit API keys in Legacy mode.
+2.  [ ] Update [providers/gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) to import [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112).
+3.  [ ] Replace `genai.GenerativeModel` with [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#13-112).
+4.  [ ] Verify "Tools Detected" log message (confirming fallback).
+5.  [ ] Verify Chat Response.

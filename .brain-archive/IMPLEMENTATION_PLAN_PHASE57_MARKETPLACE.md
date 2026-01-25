@@ -1,0 +1,49 @@
+# Phase 57: Tool Marketplace (Plugin System)
+
+## Goal
+Allow users to essentially "install" new tools by dropping Python files into a specific directory (`.brain/tools`). The Nucleus Runtime will dynamically load these tools and make them available to agents.
+
+## Architecture
+
+### 1. The Plugin Directory
+Location: `.brain/tools/`
+Format: Python files (`*.py`).
+
+### 2. The Plugin Contract
+External tools must follow this simple contract:
+```python
+from mcp_server_nucleus.runtime.capabilities.base import Capability
+
+class MyTool(Capability):
+    name = "my_tool"
+    description = "A custom tool."
+    # ... implement get_tools() and execute_tool() ...
+
+def get_capability() -> Capability:
+    """Entry point for the loader."""
+    return MyTool()
+```
+
+### 3. `PluginLoader`
+A new utility in `runtime/plugin_loader.py` that:
+- Scans `.brain/tools/*.py`.
+- Dynamically imports the module.
+- Looks for `get_capability()` function.
+- Returns the instantiated `Capability`.
+
+### 4. `ContextFactory` Updates
+- In `__init__`, call `PluginLoader.load_all()`.
+- Register the discovered capabilities.
+
+## Proposed Changes
+
+### [NEW] [mcp-server-nucleus/src/mcp_server_nucleus/runtime/plugin_loader.py](mcp-server-nucleus/src/mcp_server_nucleus/runtime/plugin_loader.py)
+- Implements dynamic import logic using `importlib`.
+
+### [MODIFY] [mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py](mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py)
+- Update `_register_defaults` to include loaded plugins.
+
+## Verification
+1.  **Test Tool**: Create `.brain/tools/echo_tool.py`.
+2.  **Verify**: Run a script that lists capabilities and ensures `echo_tool` is present.
+3.  **Execute**: Run an agent test that calls the echo tool.

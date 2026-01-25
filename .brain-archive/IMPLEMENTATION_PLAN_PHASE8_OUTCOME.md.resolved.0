@@ -1,0 +1,28 @@
+# Implementation Plan: Phase 8 - Outcome Dashboard Integration
+
+## Goal
+Connect the disparate "Clinical Components" in the Nucleus HUD to the real GentleQuest API.
+Specifically, verify that [NucleusWellnessChart](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/outcome/NucleusWellnessChart.tsx#14-94) renders real GAD-7/PHQ-9 data from the database.
+
+## User Review Required
+> [!IMPORTANT]
+> This integration requires the Nucleus HUD to have access to the GentleQuest API URL.
+> Default is `http://localhost:5000` (Local) or Production URL.
+
+## Proposed Changes
+
+### 1. Frontend Integration (`tools/nucleus-hud`)
+- **Modify `NucleusWellnessChart.tsx`**:
+    - Add `useEffect` to fetch data from `/api/assessment/history`.
+    - Add `sessionId` input (or default to a known test session).
+    - Transform API response (`[{type, score, timestamp}]`) to Chart Format (`[{name: "Date", score: 12}]`).
+    - Support toggling between GAD-7 (Anxiety) and PHQ-9 (Depression).
+
+### 2. Configuration
+- Ensure `API_URL` environment variable is set correctly in HUD.
+
+## Verification
+- **Manual Test**:
+    1. Submit a GAD-7 assessment via Postman/Curl (or the App).
+    2. Open HUD `/clinical`.
+    3. Verify the new point appears on the chart.

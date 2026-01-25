@@ -1,0 +1,160 @@
+# Agent Workflow Protocol (MANDATORY)
+
+## Purpose
+This document defines the REQUIRED workflow for AI agents working with the Nucleus Brain. It prevents the failure pattern of "ad-hoc work → claim victory → find more tasks when pushed".
+
+## The Core Rule
+**The Brain drives work. Work does not Update the brain retroactively.**
+
+---
+
+## Session Start Protocol (REQUIRED)
+
+Every work session MUST begin with these steps:
+
+### 1. Call [brain_session_start()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3976-4110)
+This tool returns:
+- Current satellite view
+- Top 5 pending tasks by priority
+- Active sprint (if any)
+- Session recommendations
+
+**If this tool shows Priority 1-2 tasks, you MUST work on those first** unless user explicitly overrides.
+
+### 2. Confirm Sprint
+- If there's an active sprint, stay focused on it
+- If no sprint and starting significant work, call [brain_save_session()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2341-2362) to create one
+- If user request conflicts with sprint, SHOW THEM THE CONFLICT and let them decide
+
+### 3. Claim Task (for multi-agent systems)
+- If working in parallel with other agents, call [brain_claim_task()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2525-2537)
+- This prevents race conditions
+
+---
+
+## During Work Protocol
+
+### Check Before Claiming "Done"
+Before saying "this is complete" or "ready for next task":
+
+1. Call [brain_list_tasks(status="PENDING")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2493-2512)
+2. Verify your work actually completed a task
+3. Update that task: [brain_update_task(task_id, {"status": "DONE"})](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2500-2512)
+
+### Never Claim Victory Without Brain Confirmation
+❌ WRONG: "GenAI migration complete!"
+✅ RIGHT: Query Brain tasks, see 9 pending, report honestly
+
+---
+
+## Session End Protocol
+
+### When User Says "What's Left?"
+1. Call [brain_list_tasks(status="PENDING")](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2493-2512)
+2. Call [brain_satellite_view()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3310-3325)
+3. Report EXACTLY what the Brain says, not what you remember working on
+
+### When Finishing Work
+1. Update task status in Brain
+2. Call [brain_save_session()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2341-2362) if significant work was done
+3. Return current status from Brain, not your opinion
+
+---
+
+## Context Hygiene (Anti-Hallucination)
+
+- Do NOT infer active tasks from open browser tabs. Treat tabs as passive context only. Ask before creating tasks.
+
+## Tool-First Execution (No Suggestion Mode)
+
+**RULE:** When work needs to be done, **USE THE TOOL**. Do not describe what *could* be done.
+
+| Scenario | ❌ Wrong (Suggestion) | ✅ Right (Execution) |
+|:---------|:---------------------|:--------------------|
+| New task identified | "You could add a task..." | [brain_add_task()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2551-2572) |
+| Task completed | "This task is done..." | [brain_update_task(status=DONE)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2500-2512) |
+| Important event | "This should be logged..." | [brain_emit_event()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2439-2443) |
+| Session ending | "You might want to save..." | [brain_save_session()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2341-2362) |
+| Commitment found | "There's a TODO here..." | [brain_scan_commitments()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3330-3346) |
+
+**Rationale:** The Brain is only useful if it reflects reality. Suggestions create drift. Execution creates truth.
+
+---
+
+## Failure Patterns to Avoid
+
+### ❌ Ad-Hoc Pattern (OLD WAY)
+```
+User: "Migrate GenAI"
+Agent: *grep for files*
+Agent: *work on what I find*
+Agent: "Done! Everything migrated!"
+User: "What's left?"
+Agent: *grep again* "Oh, 9 more files..."
+```
+
+### ✅ Brain-First Pattern (NEW WAY)
+```
+User: "Migrate GenAI"
+Agent: *call brain_session_start()*
+Agent: "Brain shows Priority 1: Deploy Landing Page from yesterday"
+Agent: "Also shows 9 pending GenAI tasks"
+Agent: "Should I work on Priority 1 first, or proceed with GenAI as you requested?"
+User: "Do GenAI"
+Agent: *work on GenAI*
+Agent: *update_task as each completes*
+Agent: "Completed 4/9 GenAI tasks. 5 remain (providers/)."
+```
+
+---
+
+## Enforcement
+
+### System-Level
+- Tool [brain_session_start()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3976-4110) added to codebase
+- This protocol document in Brain artifacts
+- [brain_get_state()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2449-2453) updated to warn if no active session
+
+### Agent-Level (YOU)
+- Read this document at start of significant work sessions
+- Follow the protocol or risk repeating the "victory conquest" failure
+- When in doubt, query Brain first
+
+---
+
+## Quick Reference
+
+**Starting Work:**
+```python
+brain_session_start()  # See what's actually priority
+brain_satellite_view() # Get current state
+```
+
+**During Work:**
+```python
+brain_update_task(task_id, {"status": "IN_PROGRESS"})
+# ... do work ...
+brain_update_task(task_id, {"status": "DONE"})
+```
+
+**When Asked "What's Left?":**
+```python
+brain_list_tasks(status="PENDING")  # Truth from Brain
+# Report this, not your memory
+```
+
+**Ending Session:**
+```python
+brain_save_session(
+    context="GenAI Migration",
+    active_task="Migrating providers/",
+    next_steps=["Complete providers/gemini.py", ...]
+)
+```
+
+---
+
+## Remember
+The Brain is not a logger. It's a controller.
+You are not the boss. The Brain is the boss.
+Work flows FROM Brain, not TO Brain.

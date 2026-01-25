@@ -1,0 +1,56 @@
+# Phase 53: Fix Remaining Production Issues
+
+## Open Items (Prioritized)
+
+### High Priority (Immediate)
+1. **Memory Tables Migration** - GentleQuest pgvector tables not initialized
+2. **Session History Route** - Returns "Session ID required" even with valid ID
+
+### Medium Priority (Short Term)  
+3. **google.genai Migration** - 8 files still using deprecated API
+4. **brain_list_services** - Implementation pending (Render integration)
+
+### Low Priority (Cleanup)
+5. **Archive Marathon Test Task** - `task-dc8bdba9`
+6. **Close Duplicate Tasks** - Consolidate migration tasks
+
+---
+
+## Proposed Changes
+
+### 1. Memory Tables Migration
+**Issue:** `tables_initialized: false` on `/api/memory/status`
+
+#### [MODIFY] [app.py](file:///Users/lokeshgarg/ai-mvp-backend/app.py)
+- Ensure `Memory.init_tables()` is called during startup
+- Check if pgvector extension is properly enabled
+
+---
+
+### 2. Session History Route
+**Issue:** `/api/chat_history?session_id=X` returns `{"error": "Session ID required"}`
+
+#### Investigation Required
+- Check route parameter handling (query vs path)
+- Verify Flask route definition
+
+---
+
+### 3. google.genai Migration (Deferred)
+**Files:** 8 remaining
+**Status:** Dual-Engine adapter already exists in [llm_client.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py)
+**Plan:** Apply DualEngineLLM pattern to remaining files
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+curl https://gentlequest-backend-999376128638.us-central1.run.app/api/memory/status
+curl "https://gentlequest-backend-999376128638.us-central1.run.app/api/chat_history?session_id=test"
+```
+
+### Manual Verification
+- Verify memory tables show `tables_initialized: true`
+- Verify session history returns message array

@@ -1,0 +1,49 @@
+# Google GenAI Migration Walkthrough
+
+## Summary
+Successfully migrated the **GentleQuest** backend from the legacy `google-generativeai` (v0.x) library to the modernized `google-genai` (v1.0+) library. This involved refactoring the core [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#26-139) client to be V1-native and updating all dependent providers and scripts.
+
+## Changes Overview
+
+### 1. Unified LLM Client
+- Refactored [mcp_server_nucleus/runtime/llm_client.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py) to use `google-genai` exclusively.
+- Removed "Legacy" engine fallback logic.
+- Implemented correct strict tool configuration for V1 SDK.
+
+### 2. Core Providers Migrated
+The following providers now rely solely on the unified client:
+- [providers/gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) (Main Chat & Tool Calling)
+- [providers/embeddings.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/embeddings.py) (Vector Embeddings)
+- [providers/memory.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/memory.py) (Summarization & RAG)
+- [providers/safety.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/safety.py) (Moderation Guardrails)
+
+### 3. Scripts & Features Migrated
+- [community.py](file:///Users/lokeshgarg/ai-mvp-backend/community.py): AI Moderation now uses V1.
+- [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py): Autonomous agents now use V1.
+- [scripts/test_critic_llm.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/test_critic_llm.py): Critic tests updated.
+- [test_wellness_direct.py](file:///Users/lokeshgarg/ai-mvp-backend/test_wellness_direct.py): Wellness function verified.
+
+## Verification
+
+### Automated Function Calling Test
+We verified the V1 client's ability to handle ambiguous vs. clear intent with the "Wellness Intervention" tool.
+
+**Test:** [test_wellness_direct.py](file:///Users/lokeshgarg/ai-mvp-backend/test_wellness_direct.py)
+**Result:**
+- Input: "I'm feeling very anxious right now" -> ✅ **Function Called** (`get_wellness_intervention`)
+- Input: "I am stressed" -> ⚠️ **Clarification Asked** (Correct behavior, missing parameters)
+
+### Brain Status Check
+We verified the autonomous agent runtime is healthy.
+**Test:** `brain status`
+**Result:**
+```
+Gemini API: Available
+Agents: synthesizer, researcher, strategist, architect, developer, critic
+Pending Tasks: 0
+```
+
+## Next Steps
+The system is now fully running on `google-genai` v1.0+.
+- Monitor logs for any edge cases in production.
+- Future work: Implement `features/image.py` using V1 if needed.

@@ -1,105 +1,43 @@
-# Nucleus v0.3.0: Solo Template Implementation Plan
+# Google Cloud Automation: The Native Way (Cloud Build)
 
-> **Goal:** Add `--template=solo` option to `nucleus-init` CLI
+## why this is better
+*   **Zero Scripts:** No Python, no pip, no wrappers.
+*   **Universal:** Works on any machine with `gcloud`.
+*   **Scalable:** This exact config works for local dev AND production CI/CD.
 
----
+## The Config (`cloudbuild.yaml`)
+We define the deployment logic ONCE in the standard format.
 
-## Proposed Changes
+```yaml
+steps:
+  # 1. Build Container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/gentlequest-backend', '.']
 
-### [MODIFY] [cli.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py)
+  # 2. Push Container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gentlequest-backend']
 
-**Changes:**
-1. Add `--template` CLI argument (default: [default](file:///Users/lokeshgarg/ai-mvp-backend/app.py#3175-3197))
-2. Create `SOLO_TEMPLATE` constants (minimal structure)
-3. Route [init_brain()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py#55-180) to template-specific logic
-
-**Solo Template Structure:**
-```
-.brain/
-├── ledger/
-│   └── state.json         ← Simplified
-├── meta/
-│   └── thread_registry.md ← NEW: Agent identity
-└── memory/
-    └── context.md         ← Project context
-```
-
----
-
-### [MODIFY] [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml)
-
-- Bump version: `0.2.4` → `0.3.0`
-
----
-
-### [MODIFY] [README.md](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/README.md)
-
-- Add template usage section
-- Document `nucleus-init --template=solo`
-
----
-
-### [MODIFY] [CHANGELOG.md](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/CHANGELOG.md)
-
-- Add v0.3.0 release notes
-
----
-
-## Solo Template Files
-
-**state.json (Simplified):**
-```json
-{
-  "version": "1.0.0",
-  "mode": "solo",
-  "current_focus": "Getting started",
-  "tasks": []
-}
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'gentlequest-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/gentlequest-backend'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
 ```
 
-**thread_registry.md:**
-```markdown
-# Thread Registry
-
-> **Protocol:** Agents check this file on activation to know their role.
-
-| Thread ID | Role | Focus |
-|:----------|:-----|:------|
-| *(Add your threads here)* | | |
-
-## How to Use
-1. Find your thread ID in your IDE's artifact path
-2. Add a row to this table
-3. Agent will self-identify on next activation
+## The Command
+One line to rule them all:
+```bash
+gcloud builds submit
 ```
-
----
 
 ## Verification Plan
-
-1. **Local Test:**
-   ```bash
-   cd mcp-server-nucleus
-   pip install -e .
-   nucleus-init --template=solo
-   ```
-
-2. **Check Files Created:**
-   - [.brain/ledger/state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json) exists
-   - [.brain/meta/thread_registry.md](file:///Users/lokeshgarg/ai-mvp-backend/.brain/meta/thread_registry.md) exists
-   - No `agents/` folder (solo mode = registry only)
-
-3. **Publish:**
-   ```bash
-   hatch build
-   twine upload dist/*
-   ```
-
----
-
-## User Review Required
-
-> [!IMPORTANT]
-> Please confirm:
-> 1. Is the `solo` template structure correct?
-> 2. Should [default](file:///Users/lokeshgarg/ai-mvp-backend/app.py#3175-3197) template remain unchanged (current behavior)?
+1.  Create `cloudbuild.yaml`.
+2.  Run `gcloud builds submit --dry-run` (or actual submit if ready).

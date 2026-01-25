@@ -1,0 +1,19 @@
+
+# Implementation Plan - Phase 9 (Knowledge Retrieval)
+
+## Goal
+Enable agents to search and read "Long-term Memory" (.brain/memory/).
+
+## Changes
+### `mcp_server_nucleus/runtime/memory.py` [NEW]
+- `_search_memory(query)`: Uses `subprocess.run(["rg", ...])` to search `.brain/memory/` and `decisions.md`.
+- `_read_memory(category)`: logic to return content of `context.md`, `patterns.md`, `learnings.md`.
+
+### `mcp_server_nucleus/__init__.py` [MODIFY]
+- Register `brain_search_memory` tool.
+- Register `brain_read_memory` tool.
+
+## Verification
+- Create `tests/test_memory.py`.
+- Write dummy content to `.brain/memory/test_mem.md`.
+- Assert `_search_memory` finds it.

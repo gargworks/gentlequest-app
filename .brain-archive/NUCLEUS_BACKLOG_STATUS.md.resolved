@@ -1,0 +1,23 @@
+
+# Nucleus Backlog Status
+> **Date:** 2026-01-11
+> **Status:** Cleaned & Optimized
+
+## Summary
+- **Total Open Commitments:** ~77 (down from 455+)
+- **Filtered Out:**
+  - `archive/*` (Stale plans)
+  - `SPEC_*.md` (Static Requirements)
+  - [NUCLEUS_VISION.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_VISION.md) (High-level vision)
+- **Active Source:** [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) (~1 item: PWA) + various design notes.
+
+## Remaining Sources
+- [ENGINEERING_PLAYBOOK.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/ENGINEERING_PLAYBOOK.md)
+- [SYSTEM_STATUS.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/SYSTEM_STATUS.md)
+- [NUCLEUS_PRODUCT_SPECS.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_PRODUCT_SPECS.md)
+- Miscellaneous design documents.
+
+## Action Items
+1. **Restart Nucleus MCP Server**: To pick up the Code Fixes (merged ledger) and the Cleaned Backlog.
+2. **Review Open Loops**: Use [brain_list_tasks(PENDING)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2342-2361) (after restart) to see the 77 items.
+3. **Execute Phase 50**: Implement Offline PWA architecture.

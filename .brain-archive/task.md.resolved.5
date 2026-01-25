@@ -1,13 +1,160 @@
-# Strategy/Docs Track - Tasks
+# Nucleus Onboarding Sprint
 
-## Current: Automated Flywheel Implementation
+## Objective
+Enhance `nucleus-init` to provide a guided onboarding experience for new users.
 
-- [x] Bootstrap script and Synthesizer prompt
-- [x] Create 5 worker agent prompts
-- [x] Execute Sprint 1 tasks (all 3 complete)
-- [/] Build automated flywheel:
-  - [ ] Create `agent_manager.py`
-  - [ ] Update [brain_bootstrap.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_bootstrap.py) for flywheel mode
-  - [ ] Refactor agent prompts for automation
-  - [ ] Add set-and-forget protocol
-- [ ] User activation and testing
+---
+
+## Tasks
+
+### Phase 1: Implementation
+- [x] Add `DEFAULT_TASKS` to [cli.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/cli.py) (instructional seed tasks)
+- [x] Add `.brain/README.md` creation to both templates
+- [x] Improve CLI output with bolder "next steps" prompts
+
+### Phase 2: Verification
+- [x] Test `nucleus-init` locally (default template)
+- [x] Test `nucleus-init --template=solo` locally
+- [x] Verify tasks appear in Claude Desktop (Fixed in v0.3.2)
+- [x] **Regression Test:** Create unit tests for V2 task logic ([tests/test_brain_v2_logic.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/tests/test_brain_v2_logic.py))
+
+### Phase 3: Ship
+- [x] Bump version to 0.3.1 (Broken) -> 0.3.2 (Fixed)
+- [x] Update CHANGELOG.md
+- [x] Commit and push
+- [x] Upload to PyPI (v0.3.2 live)
+
+### Phase 4: Infrastructure & Meta (Added)
+- [x] Create [DECISION_LOG.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/DECISION_LOG.md) for architectural continuity
+- [x] Create `RAW_MONOLOGUE_*.md` to preserve user context
+- [x] Create [backup-brain.sh](file:///Users/lokeshgarg/ai-mvp-backend/scripts/backup-brain.sh) script (Git + Google Drive)
+- [x] Install weekly cron job (Sunday 11 PM) for automated backups
+
+### Phase 5: Workflow Design (2026-01-04)
+- [x] Capture Part 1 monologue (Definition of Done)
+- [x] Capture Part 2 monologue (Granularity & Satellite View)
+- [x] Capture Part 3 monologue (Dopamine & Validation)
+- [x] Capture Part 4 monologue (CEO/Chairman Model)
+- [x] Synthesize all 4 parts into structured insights
+- [x] Create NORTH_STAR_VISION.md (15 immutable principles)
+- [x] Create design translations (4 documents showing system behavior)
+  - SATELLITE_VIEW_DESIGN_TRANSLATION.md
+  - DEFINITION_OF_DONE_DESIGN_TRANSLATION.md
+  - DOPAMINE_VALIDATION_DESIGN_TRANSLATION.md
+  - CEO_CHAIRMAN_DESIGN_TRANSLATION.md
+- [x] Capture meta-observation: Brain Consolidation Principle (XVI)
+  - BRAIN_CONSOLIDATION_PRINCIPLE.md
+  - Updated NORTH_STAR_VISION.md with 16th immutable principle
+- [x] Link CEO model to existing Nucleus Protocol architecture
+  - CEO_ORCHESTRATION_REFINEMENT.md
+
+### Phase 6: Design Session (2026-01-05)
+- [x] Create tiered specs for v0.4.0 features
+  - SPEC_RENDER_POLLER.md
+  - SPEC_FEATURE_MAP.md
+  - SPEC_PROOF_SYSTEM.md
+  - SPEC_DEPTH_TRACKER.md (Priority #0)
+- [x] Create intent snapshots for future features
+  - INTENT_V0_5_0.md (Session Management)
+  - INTENT_V1_0_PLUS.md (CEO Orchestrator)
+- [x] Create master implementation plan
+  - IMPLEMENTATION_PLAN_V0_4_0.md
+- [x] Create foundational reference
+  - FOUNDATIONAL_REFERENCE_AGENTGRAPH.md
+- [x] Lock all clarifying questions
+  - CLARIFYING_QUESTIONS_TOMORROW.md (all decisions finalized)
+
+### Phase 7: Depth Tracker Tier 1 MVP (2026-01-05) ✅
+- [x] Add core logic functions to [__init__.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/tests/__init__.py) (8 functions)
+  - [_get_depth_path()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#554-560), [_get_depth_state()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#561-585), [_save_depth_state()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#586-596)
+  - [_depth_push()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#597-660), [_depth_pop()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#661-707), [_depth_show()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#708-752)
+  - [_depth_reset()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#753-784), [_depth_set_max()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#785-804), [_format_depth_indicator()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#805-822)
+- [x] Add MCP tool wrappers (5 tools)
+  - [brain_depth_push()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2513-2527), [brain_depth_pop()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2528-2539), [brain_depth_show()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2540-2553)
+  - [brain_depth_reset()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2554-2565), [brain_depth_set_max()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2566-2580)
+- [x] Add MCP resource (`brain://depth`)
+- [x] Add CLI commands (`nucleus depth show/up/reset/max/push`)
+- [x] Create unit tests ([tests/test_depth_tracker.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/tests/test_depth_tracker.py) - 13 tests)
+- [x] Manual testing in Claude Desktop (Verified by user log 2026-01-05)
+
+---
+
+## Next Steps
+
+1. **Depth Tracker MVP** - ✅ DONE (Live & Verified)
+2. **Render Poller** - 🚧 IN PROGRESS
+3. **Feature Map** - TBD
+4. **Proof System** - TBD
+
+### Phase 8: Render Poller (2026-01-05) ✅
+- [x] Create [brain_start_deploy_poll()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2599-2614) MCP tool
+- [x] Create [brain_check_deploy()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2615-2630) MCP tool  
+- [x] Create [brain_complete_deploy()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2631-2650) MCP tool
+- [x] Create [brain_smoke_test()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2651-2665) MCP tool
+- [x] Add smoke test with health check
+- [x] Log events to ledger
+- [x] Test with real GentleQuest deploy (needs restart)
+
+### Phase 9: Feature Map (2026-01-05) ✅
+- [x] Create `.brain/features/` directory structure
+- [x] Create `gentlequest.json` and `nucleus.json` files
+- [x] Implement `brain_add_feature()` core logic
+- [x] Implement `brain_list_features()` core logic
+- [x] Implement `brain_get_feature()` core logic
+- [x] Implement `brain_update_feature()` core logic
+- [x] Implement `brain_mark_validated()` core logic
+- [x] Add MCP tool wrappers (6 tools)
+- [ ] Add CLI commands
+- [x] Seed initial features (3 GentleQuest + 3 Nucleus)
+
+### Phase 10: Feature Map CLI (2026-01-05) ✅
+- [x] Add `nucleus features list` command
+- [x] Add `nucleus features test <id>` command
+- [x] Add `nucleus features search <query>` command
+
+### Phase 11: Proof System (2026-01-06) ✅
+- [x] Read spec and plan implementation
+- [x] Implement proof capture logic (3 core functions)
+- [x] Add MCP tools (3 tools)
+- [x] Add CLI commands (`nucleus features proof <id>`)
+- [x] Test with real feature validation (crisis_detection)
+
+### Phase 12: Session Management (2026-01-06) ✅
+- [x] Create `.brain/sessions/` directory structure
+- [x] Implement `_save_session()` core logic
+- [x] Implement `_resume_session()` core logic
+- [x] Implement `_list_sessions()` core logic
+- [x] Add MCP tools (4 tools)
+- [x] Add CLI commands (`nucleus sessions list/save/resume`)
+- [x] Test end-to-end
+
+### Phase 13: Brain Consolidation Tier 1 (2026-01-06) ✅
+- [x] Implement `_archive_resolved_files()` core logic
+- [x] Add `brain_archive_resolved` MCP tool wrapper
+- [x] Add `nucleus consolidate archive` CLI command
+- [x] Add `run_brain_consolidation()` to `nightly_agent.py`
+- [x] Create `tests/test_brain_consolidation.py` unit tests
+- [x] Run tests and verify (✅ Archived 274 files)
+- [x] Update walkthrough
+
+### Phase 14: Brain Consolidation Tier 2 (2026-01-06) ✅
+- [x] Implement `_detect_redundant_artifacts()` core logic
+- [x] Implement `_generate_merge_proposals()` core logic
+- [x] Add `brain_propose_merges` MCP tool wrapper
+- [x] Add `nucleus consolidate propose` CLI command
+- [ ] Test CLI command (requires pipx reinstall)
+
+### Phase 15: Brain Architecture Deep Synthesis (2026-01-06) ✅
+- [x] Map all brain contexts (Antigravity, Nucleus MCP, Project .brain)
+- [x] Analyze monologues for brain architecture vision
+- [x] Question biological brain metaphor vs machine/quantum alternatives
+- [x] Create unified BRAIN_ARCHITECTURE_SYNTHESIS.md
+- [x] Define consolidation scope across all contexts
+
+### Phase 16: Satellite View Dashboard (2026-01-06) 🎯
+- [x] Review SATELLITE_VIEW_DESIGN_TRANSLATION.md
+- [x] Create refined SATELLITE_VIEW_REFINED.md with performance considerations
+- [ ] Implement `nucleus status` CLI command (Tier 1 MVP)
+- [ ] Add sparkline generation from events.jsonl
+- [ ] Integrate depth + session + health into unified view
+- [ ] Test end-to-end

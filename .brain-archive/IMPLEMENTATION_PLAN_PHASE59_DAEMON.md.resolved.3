@@ -1,0 +1,32 @@
+# Phase 59: Nucleus Daemon (Unified Runtime)
+**Goal:** Implement the "Presence-Aware" Daemon as a parallel service.
+**Strategy:** Non-Destructive Additive Build.
+
+## 1. Stage 0: Safety & Atomicity
+*   [ ] **Locking:** Implement `BrainLock` utility using `fcntl` (UNIX).
+*   [ ] **Fault Tolerance:** Implement `check_stale_locks()` to auto-break locks older than 30s (Lease Management).
+*   [ ] **Validation:** Update [commitment_ledger.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/commitment_ledger.py) to use `with BrainLock(...)` context manager.
+
+## 2. Stage A: The Nucleus Daemon (Kernel)
+*   [ ] **Package:** Initialize `mcp_server_nucleus/daemon/`.
+*   [ ] **Lifecycle:** Implement `DaemonManager` to handle signal propagation (SIGTERM).
+*   [ ] **Heartbeat:** Implement `InteractiveHeartbeat`.
+    *   *Mechanism:* `touch ~/.brain/heartbeat.last` on every `server.call_tool()`.
+
+## 3. Stage B: Preemptive Orchestrator
+*   [ ] **Execution:** Modify [SwarmsOrchestrator](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/orchestrator.py#8-157) to support `async` non-blocking agent runs.
+*   [ ] **Preemption:** Implement `MonitorTask` that kills agent runs if `heartbeat.last` is updated during execution.
+*   [ ] **Handoff:** Implement logic for the Daemon to "Soft Yield" (Pause task) vs "Hard Yield" (Stop and re-queue).
+
+## 4. Stage C: Non-Destructive CLI
+*   [ ] **Module Entry:** Implement `mcp_server_nucleus.daemon.__main__`.
+*   [ ] **Verification:** `verify_kernel_handoff.py` (Script to simulate human-agent task contention).
+
+## 4. Verification (The Proof)
+*   [ ] **Simulated Test:** `python scripts/verify_daemon.py`.
+    *   Mock "User Active" -> Daemon Sleeps.
+    *   Mock "User Offline" -> Daemon Wakes.
+
+## 5. Safety
+*   [ ] **Isolation:** The Daemon will use a separate log file `daemon.log`.
+*   [ ] **No Conflict:** It will respect the [state.json](file:///Users/lokeshgarg/ai-mvp-backend/autonomous_state.json) locking mechanism (Atomic Claims) so it plays nice with any manual scripts running.

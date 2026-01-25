@@ -1,6 +1,6 @@
 {
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Plan for shipping Nucleus MCP v0.3 with solo template support. Includes CLI changes, template files, versioning, and release steps.",
-  "updatedAt":  "2026-01-03T03:09:03.424292Z",
-  "version":  "12"
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Plan to resolve database authentication failure in `gentlequest-backend` and fix API proxy configuration in `nucleus-hud`.",
+  "updatedAt": "2026-01-14T23:08:22.694654Z",
+  "version": "46"
 }

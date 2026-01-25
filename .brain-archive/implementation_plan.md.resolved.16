@@ -1,0 +1,39 @@
+# Phase 55: Google GenAI Migration
+
+## Goal Description
+Migrate all remaining Python files from the legacy `google-generativeai` (v0.x) library to the modernized `google-genai` (v1.0+) library. This unifies the codebase on a single, robust client (DualEngineLLM) and eliminates technical debt.
+
+## Proposed Changes
+
+### 1. Core Providers (Critical)
+**Goal:** Migrate foundational logic used by the entire app.
+- [ ] [providers/gemini.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/gemini.py) (Main LLM provider)
+- [ ] [providers/embeddings.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/embeddings.py) (Vector ops)
+- [ ] [providers/memory.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/memory.py) (Memory context)
+- [ ] [providers/safety.py](file:///Users/lokeshgarg/ai-mvp-backend/providers/safety.py) (Safety filters)
+
+### 2. Nucleus Runtime (Critical)
+**Goal:** Clean up the "Dual Engine" adapter to be "Single Engine" (V1 native).
+- [ ] [mcp_server_nucleus/runtime/llm_client.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py) (Remove legacy fallbacks)
+
+### 3. Scripts & Tests (Cleanup)
+- [ ] [brain_executor.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_executor.py)
+- [ ] [community.py](file:///Users/lokeshgarg/ai-mvp-backend/community.py)
+- [ ] [test_wellness_direct.py](file:///Users/lokeshgarg/ai-mvp-backend/test_wellness_direct.py)
+- [ ] [test_minimal_function.py](file:///Users/lokeshgarg/ai-mvp-backend/test_minimal_function.py)
+- [ ] [test_config_direct.py](file:///Users/lokeshgarg/ai-mvp-backend/test_config_direct.py)
+- [ ] [scripts/test_critic_llm.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/test_critic_llm.py)
+
+## Verification Plan
+
+### Automated Tests
+Run the updated scripts to ensure functional parity:
+```bash
+python3 test_wellness_direct.py
+python3 scripts/test_critic_llm.py
+```
+
+### Manual Verification
+- Verify `brain status` still works via MCP.
+- Verify `marketing_engine` (already V1) remains stable.
+

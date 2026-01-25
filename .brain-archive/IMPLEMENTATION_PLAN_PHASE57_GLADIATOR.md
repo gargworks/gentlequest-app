@@ -1,0 +1,60 @@
+# IMPLEMENTATION_PLAN_PHASE57_GLADIATOR: The Master Build
+
+**Session:** Chat 13 (The Master Plan Synthesis)
+**Date:** 2026-01-13
+**Status:** 🔒 LOCKED (Execution Blueprint)
+
+---
+
+## 1. The Strategic Synthesis
+We have stress-tested the vision through 12 Simulations.
+*   **Vision:** "Visa Network for Trust" (Not an App Store).
+*   **Architecture:** "Manifest-over-Git" (No zip uploads).
+*   **Security:** "Zero Trust + Air Gap" (Network vs Files).
+*   **GTM:** "DevOps Beachhead" (Private Registries first).
+
+---
+
+## 2. The 20-Step Execution Roadmap (The Build)
+We will execute these 20 steps in 20 atomic chat sessions.
+
+### 🧱 PART A: FOUNDATION (Identity & Trust)
+*   **Chat 15: The Keymaster** -> Implement `TrustProfile` & Ed25519 Key Management (`nucleus keygen`).
+*   **Chat 16: The Manifest** -> Define `manifest.schema.json` & Validator (Identity, Capabilities, Lifecycle).
+*   **Chat 17: The Stamp** -> Implement `NukePacker` (Git Commit Hashing & Signing).
+*   **Chat 18: The Vault** -> Implement `BudgetGuard` v2 (Zero-Default Wallet & Ledger).
+
+### ⚙️ PART B: MECHANICS (The Engine)
+*   **Chat 19: The Sandbox** -> Upgrade `PluginLoader` to enforce "Air Gap" (Network/File exclusions).
+*   **Chat 20: The Fetcher** -> Implement `brain install @git_url` (Cloning & Hash Verification).
+*   **Chat 21: The Gatekeeper** -> Implement `CapabilityGrant` UX (Semantic Permission Requests).
+*   **Chat 22: The Heartbeat** -> Implement `TombstoneProtocol` (Lifecycle checks & Dormancy).
+
+### 🔐 PART C: REGISTRY (The Private Cloud)
+*   **Chat 23: The Client** -> Implement `RegistryClient` (Fetching `registry.json` from URL).
+*   **Chat 24: The Auth** -> Implement `PrivateSource` (Git Auth/SST handling for private repos).
+*   **Chat 25: The Publisher** -> Implement `brain publish --private` (Workflow for S3/Git upload).
+*   **Chat 26: The Team** -> Implement `TeamSync` (Sharing Trust Roots via config).
+
+### 🖥️ PART D: INTERFACE (The HUD)
+*   **Chat 27: The Seeker** -> Implement `brain search` (CLI Indexing & Querying).
+*   **Chat 28: The Dashboard** -> Implement `MarketplaceHUD` (React UI for browsing).
+*   **Chat 29: The Inspector** -> Implement `ManifestViewer` (Details, Risk Score, Audit Log).
+*   **Chat 30: The Bridge** -> Implement `OneClickInstall` (Protocol Handler `nucleus://`).
+
+### 💰 PART E: ECONOMY (The Context)
+*   **Chat 31: The Broker** -> Implement `ContextBroker` (Permissioned Reading of User Memories).
+*   **Chat 32: The First Agent** -> Build `@nucleus/ops` (The Clean "Ops Agent" for DevOps Beachhead).
+*   **Chat 33: The Second Agent** -> Build `@nucleus/researcher` (The "First Party Utility").
+*   **Chat 34: The Launch** -> System-wide Integration Test & Release 1.0.
+
+---
+
+## 3. The Rules of The Build
+
+1.  **Atomic Commits:** Each Chat must result in a working, verifiable component.
+2.  **Test First:** Every step starts with a `verify_step.py`.
+3.  **No shortcuts:** If the "Titan" wouldn't approve, we don't merge.
+
+**Next Step (Chat 14): The Final Lock.**
+We review this plan one last time. If we proceed, we do not turn back.

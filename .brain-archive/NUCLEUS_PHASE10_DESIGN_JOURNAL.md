@@ -1,0 +1,32 @@
+# ♟️ Design Journal - Phase 10: The Strategist (Business Alignment)
+
+## 1. Context
+We have technical agents (Developer, Critic, DevOps).
+We have orchestration agents (Synthesizer, Librarian).
+But we lack a "Business Owner" agent who ensures we are building the *right* product.
+
+## 2. Problem
+The `Developer` might build a perfect "Nuclear Fusion Reactor" when the user asked for a "Toaster".
+There is no agent responsible for:
+- Reading `strategy.md`.
+- Updating `roadmap.md`.
+- Checking if a feature aligns with business goals.
+
+## 3. Solution (The Strategist)
+Introduce the **Strategist** persona.
+- **Role**: CEO / CPO hybrid.
+- **Responsibility**: Maintain `strategy.md` and `roadmap.md`.
+- **Tools**:
+    - `brain_manage_strategy(action, content)`: Update strategy docs.
+    - `brain_update_roadmap(action, item)`: modify roadmap items.
+
+## 4. Architecture
+*   **Persona**: `Strategist` (Level 4 - Strategic Autonomy).
+*   **Source of Truth**: `.brain/strategy.md`, `.brain/roadmap.md`.
+*   **Interaction**: The `Synthesizer` consults the `Strategist` before starting a Sprint.
+
+## 5. Implementation Plan
+1.  **Define Persona**: `.brain/agents/strategist.md`.
+2.  **Tools**: `brain_manage_strategy`, `brain_update_roadmap`.
+3.  **Integration**: Verify `factory.py` has Strategist registered (it does, just need to update tools).
+4.  **Verification**: Ask Strategist to "Review our roadmap against the strategy".

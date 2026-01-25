@@ -1,0 +1,38 @@
+# Implementation Plan - Fix Backend Auth & Frontend Proxy
+
+## Goal Description
+Fix the `FATAL: password authentication failed` error in `gentlequest-backend` by resetting the Cloud SQL user password to match the deployed configuration. Fix `nucleus-hud` frontend connectivity issues by ensuring correct build arguments and proxy configuration.
+
+## User Review Required
+> [!IMPORTANT]
+> This plan involves resetting the database password for the `gentlequest` user to `gentlequest2026`. This will restart the backend connection but should not cause data loss.
+
+## Proposed Changes
+
+### Backend (Database Auth)
+#### [MODIFY] Cloud SQL User
+- Run `gcloud sql users set-password` to set the password for user `gentlequest` to `gentlequest2026` on instance `gentlequest-db`.
+
+### Frontend (Nucleus HUD)
+#### [MODIFY] [cloudbuild.yaml](file:///Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml)
+- Ensure `NEXT_PUBLIC_APP_API_URL` is correctly passed as a build argument to the `nucleus-hud` build step.
+- Verify `NEXT_PUBLIC_API_URL` is also passed correctly.
+
+#### [MODIFY] [tools/nucleus-hud/next.config.ts](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/next.config.ts)
+- Update the rewrite rule to explicitly handle the production URL if needed, although client-side requests using the full URL should bypass this.
+- Ensure the `backendUrl` fallback logic is robust.
+
+## Verification Plan
+
+### Automated Tests
+- **Backend Health Check**:
+  - Run `curl https://nucleus.gentlequest.app/api/health` and verify it returns `200 OK` and `database: healthy`.
+- **Frontend Connectivity**:
+  - Open `https://nucleus-hud-7an2ps6yna-uc.a.run.app` (or the deployed URL).
+  - Login with [admin](file:///Users/lokeshgarg/ai-mvp-backend/app.py#2606-2620) / `nucleus`.
+  - Verify that the Dashboard loads and fetches data from the backend (no 503 errors on `/api/status` or other endpoints).
+
+### Manual Verification
+- **Cloud Run Logs**:
+  - Check `gentlequest-backend` logs for "Database connection successful" or similar positive messages.
+  - Check `nucleus-hud` logs for successful API forwarding.

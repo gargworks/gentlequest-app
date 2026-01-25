@@ -1,0 +1,114 @@
+# Brain Sync Protocol (Cross-Thread)
+
+## Problem Statement
+Work done in Thread A isn't visible to Thread B because:
+1. Each Claude Desktop thread has independent MCP connection
+2. Manual [brain_emit_event()](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2439-2443) calls are inconsistent
+3. [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) updates happen but events don't always fire
+
+## Solution: Automatic Event Emission
+
+### Phase 1: Antigravity Hook (Client-Side)
+Make Antigravity ALWAYS log significant actions:
+
+```python
+# In Antigravity's internal system
+def on_file_edit(file_path, change_type):
+    # Automatic event emission
+    brain_emit_event(
+        event_type="file_modified",
+        emitter="antigravity",
+        data={"file": file_path, "type": change_type}
+    )
+
+def on_task_complete(task_name):
+    # Automatic Brain update
+    brain_update_task(task_name, {"status": "DONE"})
+    brain_emit_event(
+        event_type="task_completed",
+        emitter="antigravity",
+        data={"task": task_name}
+    )
+```
+
+### Phase 2: MCP Server Hook (Server-Side)
+Add automatic logging to Nucleus MCP tools:
+
+```python
+# In mcp-server-nucleus/__init__.py
+@mcp.tool()
+def brain_update_task(task_id: str, updates: dict):
+    result = _update_task(task_id, updates)
+    
+    # AUTOMATIC EVENT EMISSION
+    _emit_event(
+        event_type="task_state_changed",
+        emitter="nucleus_mcp",
+        data={"task_id": task_id, "updates": updates}
+    )
+    
+    return result
+```
+
+### Phase 3: File Watcher (Background Sync)
+Run a background process that watches Brain files:
+
+```python
+# scripts/brain_sync.py
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class BrainSyncHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+        if event.src_path.endswith("task.md"):
+            # Emit event when task.md changes
+            emit_event("task_file_modified")
+```
+
+## Implementation Plan
+
+### Immediate (Can do now)
+1. **Update [AGENT_PROTOCOL.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/AGENT_PROTOCOL.md)** - Mandate event emission after every action
+2. **Create wrapper script** - [brain_sync.py](file:///Users/lokeshgarg/ai-mvp-backend/brain_sync.py) that other threads run on startup
+
+### Short-term (Next session)
+1. **Modify Nucleus MCP** - Add automatic event hooks to all `brain_*` tools
+2. **Test cross-thread** - Open 2 Claude Desktop windows, verify sync
+
+### Long-term (Future)
+1. **Real-time sync** - WebSocket or polling mechanism
+2. **Conflict resolution** - Handle concurrent edits
+
+## Immediate Action: Wrapper Pattern
+
+Create `scripts/brain_sync_before_work.py`:
+```python
+#!/usr/bin/env python3
+"""Call this at start of every Antigravity session"""
+from mcp_server_nucleus import brain_satellite_view, brain_emit_event
+
+# Announce thread start
+brain_emit_event(
+    event_type="thread_started",
+    emitter="antigravity",
+    data={"timestamp": datetime.now().isoformat()}
+)
+
+# Show current state
+print(brain_satellite_view())
+```
+
+## Usage
+**Current (Manual):**
+```
+Thread A: Does work
+Thread A: (forgets to emit events)
+Thread B: Starts, sees stale state
+```
+
+**Fixed (Automatic):**
+```
+Thread A: Does work → Automatic event emission
+Thread B: Starts → Calls brain_sync_before_work.py → Sees latest state
+```

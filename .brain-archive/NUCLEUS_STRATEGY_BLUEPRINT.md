@@ -75,8 +75,43 @@
 
 ## 8. Roadmap to Dominance
 1.  **Phase 1 (Now):** Win the "Solo Founder" market (Windsurf/Cursor users).
+    *   **Milestone:** Project Omega (Grand Verification Protocol) - Proving E2E coherence.
+    *   **Milestone:** Contact Page (Nucleus Verification) - Demonstrating Workflow Value.
+    *   **Milestone:** `brain_list_services` (Productivity) - Render Integration.
 2.  **Phase 2:** The "Autopilot" (Background Daemon).
 3.  **Phase 3:** "Nucleus Cloud" (Sync your team state across devices).
+
+---
+
+## 9. Operational Protocols (Inbox Protocol)
+
+### A. The Parallel Thread Workflow
+**Status:** Active
+**Purpose:** Trigger Nucleus (Flash Model) asynchronously without taking focus from the Main Agent.
+
+#### 1. The Workflow
+1.  **Draft the Prompt:** Write a markdown file describing your task.
+2.  **Drop the File:** Save it to `<brain_path>/inbox/TASK_NAME.md`.
+3.  **Monitor:** Watch the `.brain/ledger/events.jsonl` log or the console output of the `nucleus_gateway` daemon.
+4.  **Receive:** Nucleus will write the result (code/files) directly to the codebase and move the request file to `.brain/inbox/archive/`.
+
+#### 2. The Prompt Template (Verbatim)
+Use this structure for the `.md` file to ensure context-aware execution:
+```markdown
+# Task: [Task Name]
+**Objective:** [One sentence goal]
+**Context:** [Relevant files or constraints, e.g. "Use globals.css"]
+**Output:** [What you want, e.g. "Create components/Foo.tsx"]
+
+## Details
+[Any specific requirements, logic, or copy]
+```
+
+#### 3. Monitoring & Interaction
+*   **Progress:** You will see "event: task_received" and then "event: task_completed" in `events.jsonl` (or terminal output).
+*   **Interaction:** You do not "chat" with the parallel thread. You "Plan & Receive".
+    *   *If the result is wrong:* Don't argue. Update the Prompt File (add constraints) and drop it again as `TASK_NAME_v2.md`.
+    *   *If the result is right:* Integrate the code.
 
 ---
 *Generated: 2026-01-03 | Status: STRATEGIC GOLDMINE*

@@ -1,0 +1,5 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_WALKTHROUGH",
+  "summary":  "Documentation of the successful deployment of the Nucleus Sovereign Container to Google Cloud Run, including the resolution of port binding issues, GCS volume mount configuration, and verification results.",
+  "updatedAt":  "2026-01-14T06:24:55.186314Z"
+}

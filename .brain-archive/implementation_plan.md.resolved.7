@@ -1,211 +1,115 @@
-# Ultimate Orchestration Architecture — First Principles Analysis
-> **Goal:** Find the *best possible* architecture, regardless of effort.
-> **Date:** December 29, 2025
+# Migration Plan: google.generativeai → google.genai
+
+> **Priority:** Medium (deprecated but functional)
+> **Affected Files:** 9
+> **Estimated Time:** 30-45 minutes
 
 ---
 
-## 🎯 The Problem Statement
+## Background
 
-You want:
-1. **Parallelism** — Multiple agents working simultaneously
-2. **Best model per task** — Opus for reasoning, Gemini for speed, etc.
-3. **Single interface** — Don't manage 10 windows
-4. **Unified state** — All agents read/write `.brain/`
-5. **Event-driven** — Triggers cause automatic action
-6. **Minimal cognitive load** — You focus on decisions, not coordination
+During the marathon session, we discovered that `google.generativeai` is deprecated and showing FutureWarning in all outputs. Google recommends migrating to the new `google.genai` package.
 
 ---
 
-## 🧠 First Principles
+## Affected Files
 
-### What Are "Agents" Really?
-Agents are just: **Prompt + Context + Model + Output Target**
+### Core Runtime
+1. [mcp-server-nucleus/src/mcp_server_nucleus/runtime/agent.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/agent.py) (lines 10-11)
 
-### What Is "Orchestration" Really?
-Orchestration is just: **Event → Route → Execute → Store**
+### Scripts
+2. [scripts/test_critic_llm.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/test_critic_llm.py) (line 21)
+3. [scripts/autopilot.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/autopilot.py) (lines 18-20)
+4. [scripts/autopilot_v2.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/autopilot_v2.py) (lines 31-33)
+5. [scripts/nightly_agent.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py) (line 29)
 
-### What Is the Bottleneck?
-**You.** You are the slowest part of the system.
+### Application Code
+6. `community.py` (imports genai)
+7. [scripts/run_research.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/run_research.py) (line 110 - error message)
 
----
-
-## 📊 Architecture Comparison
-
-| # | Architecture | Parallelism | Model Flexibility | Effort | Cognitive Load |
-|:--|:-------------|:------------|:-----------------|:-------|:---------------|
-| A | Manual Multi-Thread (Current) | ✅ High | ❌ One model per IDE | ✅ Zero | ❌ High |
-| B | Windsurf Only | ❌ None | ❌ Fixed | ✅ Zero | ✅ Low |
-| C | Gemini CLI + IDE Hybrid | ✅ Medium | 🟡 Two models | 🟡 Medium | 🟡 Medium |
-| D | CrewAI / LangGraph | ✅ High | 🟡 Framework choice | 🔴 High | ✅ Low |
-| E | Cron + IDE | 🟡 Scheduled | 🟡 Two models | ✅ Low | ✅ Low |
-| **F** | **Nucleus Gateway** | ✅ High | ✅ Any model | 🔴 High | ✅ Low |
+### Additional Files (from grep)
+8-9. Other scripts with genai usage
 
 ---
 
-## 💡 The Best Possible Architecture: **Nucleus Gateway**
+## Migration Steps
 
-### Concept
-A **model-agnostic orchestrator** that:
-1. Listens for events (from you, cron, or triggers)
-2. Routes to the *best* model for that task
-3. Executes with the right agent prompt
-4. Writes to `.brain/` (unified state)
-5. You interact via Antigravity/Windsurf/Telegram/CLI
-
-### Architecture Diagram
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         NUCLEUS GATEWAY                               │
-│                    (Your Personal AI Backend)                         │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐              │
-│   │ Antigravity │    │  Telegram   │    │    CLI      │              │
-│   │   (IDE)     │    │    Bot      │    │  Commands   │              │
-│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘              │
-│          │                  │                  │                      │
-│          └──────────────────┼──────────────────┘                      │
-│                             ▼                                         │
-│                    ┌─────────────────┐                                │
-│                    │  NUCLEUS MCP    │ ← Events/Commands              │
-│                    │  (Coordinator)  │                                │
-│                    └────────┬────────┘                                │
-│                             │                                         │
-│              ┌──────────────┼──────────────┐                          │
-│              ▼              ▼              ▼                          │
-│      ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                  │
-│      │   Claude    │ │   Gemini    │ │   OpenAI    │                  │
-│      │   Opus 4    │ │   2.5 Pro   │ │   o1-pro    │                  │
-│      │             │ │             │ │             │                  │
-│      │ • Complex   │ │ • Fast      │ │ • Reasoning │                  │
-│      │ • Code      │ │ • Research  │ │ • Math      │                  │
-│      │ • Review    │ │ • Summary   │ │ • Logic     │                  │
-│      └──────┬──────┘ └──────┬──────┘ └──────┬──────┘                  │
-│             │               │               │                         │
-│             └───────────────┼───────────────┘                         │
-│                             ▼                                         │
-│                    ┌─────────────────┐                                │
-│                    │    .brain/      │                                │
-│                    │  (Shared State) │                                │
-│                    └─────────────────┘                                │
-│                                                                       │
-└──────────────────────────────────────────────────────────────────────┘
+### Phase 1: Install New Package
+```bash
+pip3 install google-genai
 ```
 
----
+### Phase 2: Update Imports (Pattern)
+```python
+# OLD
+import google.generativeai as genai
+from google.generativeai.types import GenerateContentResponse
 
-## 🔧 How It Would Work
-
-### Task Routing Rules (configurable)
-
-```yaml
-# .brain/routing.yaml
-routes:
-  - pattern: "research_*"
-    model: gemini-2.5-pro
-    reason: "Fast, good at summarization"
-  
-  - pattern: "code_*"
-    model: claude-opus-4
-    reason: "Best at complex code"
-  
-  - pattern: "review_*"
-    model: claude-opus-4
-    reason: "Needs careful analysis"
-  
-  - pattern: "strategy_*"
-    model: openai-o1
-    reason: "Deep reasoning"
-  
-  - default:
-    model: gemini-2.5-pro
-    reason: "Fast, cheap"
+# NEW
+import google.genai as genai
+# Types may have moved - need to verify
 ```
 
-### Execution Flow
+### Phase 3: API Compatibility Check
 
-```
-1. You (via Antigravity): "Research PHQ-9 implementation patterns"
-   
-2. Nucleus MCP receives request
-   
-3. Gateway checks routing rules: "research_*" → gemini-2.5-pro
-   
-4. Gateway calls Gemini API with:
-   - System: contents of .brain/agents/researcher.md
-   - User: Your request
-   - MCP: Nucleus tools available
-   
-5. Gemini executes, writes to .brain/artifacts/research/phq9.md
-   
-6. Gateway emits event: task_completed
-   
-7. You get notification (Telegram or in IDE)
-```
+Need to verify if the following still work:
+- `genai.configure(api_key=...)`
+- `genai.GenerativeModel(model_name=...)`
+- `model.generate_content(...)`
+- Response types and methods
+
+### Phase 4: Test Each File
+
+1. **agent.py** - Critical (affects all agents)
+2. **nightly_agent.py** - Critical (fixed this marathon)
+3. **test_critic_llm.py** - Test utility
+4. **autopilot.py** - Legacy (may not be in use)
+5. **community.py** - Production (GentleQuest moderation)
 
 ---
 
-## 📦 What We'd Build
+## Risk Assessment
 
-| Component | Status | Effort |
-|:----------|:-------|:-------|
-| **Nucleus MCP** | ✅ Done | - |
-| **Agent definitions** | ✅ Done | - |
-| **Routing config** | 🔨 New | 2 hours |
-| **Gateway service** | 🔨 New | 1-2 days |
-| **Multi-model API layer** | 🔨 New | 4 hours |
-| **Telegram notifications** | 🟡 Partial | 2 hours |
-
-**Total: ~2-3 days of focused work**
+| Risk | Level | Mitigation |
+|:-----|:------|:-----------|
+| API Breaking Changes | Medium | Test each file after migration |
+| Production Impact | Low | GentleQuest uses it but has fallbacks |
+| Agent Failures | Medium | Test nightly_agent and orchestrator |
 
 ---
 
-## ⚖️ Trade-offs
+## Rollback Plan
 
-### Pros
-- ✅ True parallelism (background processing)
-- ✅ Best model for each task
-- ✅ Single interface (use whatever IDE you want)
-- ✅ Unified state (everything in `.brain/`)
-- ✅ Extensible (add new models easily)
-- ✅ Portable (it's YOUR service, runs anywhere)
-
-### Cons
-- ❌ API costs (~$10-30/day with heavy use)
-- ❌ Initial build effort (2-3 days)
-- ❌ Self-hosted complexity
-- ❌ Debugging multi-model outputs
+If migration fails:
+1. Revert all import changes
+2. Continue using deprecated library (still works)
+3. Document issues for future attempt
 
 ---
 
-## 🚀 Build vs Buy Decision
+## Proposed Approach
 
-| Option | Description | Recommendation |
-|:-------|:------------|:---------------|
-| **Build Gateway** | Create this architecture now | Only if agent automation is critical for GentleQuest shipping |
-| **Defer Gateway** | Ship GentleQuest first, build later | ✅ Recommended for immediate term |
-| **Buy (CrewAI)** | Use existing framework | Learning curve, less flexible |
+### Option A: Migrate Now (Recommended)
+- Install google-genai
+- Update imports one file at a time
+- Test after each change
+- Keep google-generativeai as fallback
 
----
+### Option B: Defer
+- Document as tech debt
+- Wait for breaking change forcing migration
+- Lower priority than other work
 
-## 🏁 Recommendation
-
-**This IS the "better than all" architecture.** But the question is timing.
-
-### If You Want Maximum Productivity NOW:
-1. Build the Gateway (2-3 days)
-2. Configure routing rules
-3. Run background agents while you code
-4. Get 3x throughput
-
-### If You Want to Ship GentleQuest FIRST:
-1. Use existing tools (Antigravity/Windsurf)
-2. Manual 3-lane model
-3. Build Gateway in Phase B
+**Decision:** Proceed with Option A during this session
 
 ---
 
-## ❓ Decision Point
+## Next Steps
 
-**Which path: Build Gateway now, or defer to Phase B?**
+1. Install google-genai package
+2. Research API differences (check official docs)
+3. Create test script to verify compatibility
+4. Migrate agent.py first (most critical)
+5. Test nightly_agent works
+6. Migrate remaining files
+7. Run comprehensive tests

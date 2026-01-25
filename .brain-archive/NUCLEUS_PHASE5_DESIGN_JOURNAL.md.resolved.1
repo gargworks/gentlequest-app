@@ -1,0 +1,73 @@
+# Nucleus Phase 5: Application Development (Design Journal)
+
+**Date:** 2026-01-11
+**Status:** COMPLETE
+**Author:** Nucleus Coder (Antigravity)
+
+## 1. Executive Summary
+Phase 5 focused on giving Nucleus a "Face". We transitioned from a pure CLI/Backend system to a hybrid system with a web interface ("Fluid Sync"). The goal was to visualize the "Neural Feed" (Events) and the "Mission Plan" (Tasks) in real-time.
+
+## 2. The Problem
+*   **Visibility Issue:** The user had no way to see what the brain was doing without tailing logs.
+*   **Control Issue:** Checking [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) required opening a text editor.
+*   **Accessibility:** "Fluid Sync" requires interchangeable control from any device.
+
+## 3. The Solution: Nucleus HUD (The "Console")
+We built a lightweight, high-performance web dashboard aka the "Heads-Up Display" (HUD).
+
+### Architecture
+*   **Frontend:** Next.js 14 (App Router) + Tailwind CSS + Lucide Icons.
+*   **Backend:** Python `http.server` (ThreadingHTTPServer) + SSE (Server-Sent Events).
+*   **Deployment:** Google Cloud Run (Single container or separate services). *Final decision: Separate services for decoupled scaling.*
+
+### Key Components
+
+#### A. The Neural Feed ([EventStream.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/EventStream.tsx))
+*   **Tech:** Server-Sent Events (SSE) via `/api/events`.
+*   **Design:** Matrix-style scrolling terminal.
+*   **Features:**
+    *   Auto-scrolls to new events.
+    *   Color-coded by severity (Green=INFO, Yellow=WARNING, Red=ERROR).
+    *   Live connection status indicator.
+
+#### B. The Mission Plan ([TaskBoard.tsx](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/app/components/TaskBoard.tsx))
+*   **Tech:** JSON API via `/api/tasks?format=json`.
+*   **Design:** Grouped list by Phase/Status.
+*   **Features:**
+    *   Parses markdown [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) into structured JSON.
+    *   Displays checkboxes and progress.
+    *   Read-only view (for now).
+
+#### C. The Brain Server ([server.py](file:///Users/lokeshgarg/ai-mvp-backend/nucleus/mcp_server/server.py))
+*   **Upgraded:** From simple file server to ThreadingHTTPServer.
+*   **Endpoints:**
+    *   `GET /api/events`: SSE Stream (yields [events.jsonl](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/events.jsonl) tail).
+    *   `GET /api/tasks?format=json`: Returns parsed [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md).
+    *   `GET /`: Serves static files or redirects.
+
+## 4. Challenges & Decisions
+
+### Challenge 1: SSE in Python
+*   **Problem:** SimpleHTTPServer is single-threaded; SSE blocks the thread.
+*   **Solution:** Upgraded to [ThreadingHTTPServer](file:///Users/lokeshgarg/ai-mvp-backend/tools/marketing-dashboard/server.py#42-44). Implemented a generator-based response handler.
+
+### Challenge 2: Docker Context
+*   **Problem:** [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) resides in the Agent's Artifact Directory (`.gemini/...`), not the repo.
+*   **Solution:** Implemented "Brain Sync" - explicitly copying artifacts to `.brain/` before deployment.
+*   **Problem:** [.dockerignore](file:///Users/lokeshgarg/ai-mvp-backend/.dockerignore) excluded `.brain` by default.
+*   **Solution:** Whitelisted `.brain` and [tools](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/web_ops.py#16-42) in [.dockerignore](file:///Users/lokeshgarg/ai-mvp-backend/.dockerignore) and [.gcloudignore](file:///Users/lokeshgarg/ai-mvp-backend/.gcloudignore).
+
+### Challenge 3: Next.js Build
+*   **Problem:** Next.js 16 requires Node 20+, Dockerfile used Node 18.
+*   **Solution:** Upgraded Dockerfile to `node:20-alpine`.
+*   **Problem:** Docker build failed on `COPY`.
+*   **Solution:** Enabled `output: "standalone"` in [next.config.ts](file:///Users/lokeshgarg/ai-mvp-backend/tools/nucleus-hud/next.config.ts).
+
+## 5. Outcome
+The Nucleus HUD is live and operational.
+*   **Backend:** https://gentlequest-backend-7an2ps6yna-uc.a.run.app
+*   **Frontend:** https://nucleus-hud-7an2ps6yna-uc.a.run.app
+
+## 6. Next Steps
+*   **Phase 6:** Self-Evolution (Automated code improvements).
+*   **Mobile Review:** Verify HUD on mobile devices.

@@ -1,0 +1,63 @@
+# Nucleus Autopilot: Current State & Future Roadmap
+**Vision:** Moving from "Tool-Call Assistant" to "Autonomous Goal-Killer".
+
+---
+
+## 🏗️ 1. Current State: "The Pull-Based Workhorse"
+Today, Autopilot is **Task-Driven** and **Semi-Autonomous**. It relies on the **Commitment Ledger** (the Brain's memory of what needs to be done).
+
+### How it works today (The Loop):
+1.  **Work Discovery:** The Autopilot script ([autopilot_v2.py](file:///Users/lokeshgarg/ai-mvp-backend/scripts/autopilot_v2.py)) periodically scans [.brain/ledger/state.json](file:///Users/lokeshgarg/ai-mvp-backend/.brain/ledger/state.json).
+2.  **Task Selection:** It filters by `priority` and `required_skills`.
+3.  **Claiming:** It marks the task as `IN_PROGRESS` and assigns its `AGENT_ID`.
+4.  **Execution (Reasoning):** It uses [DualEngineLLM](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/llm_client.py#37-211) (Gemini) to analyze the task and determine if it can:
+    *   **Finish it:** If it's a reasoning task, it provides the answer.
+    *   **Escalate it:** If it needs to edit code or needs your permission for a "Dangerous Command", it flags it for human help.
+5.  **Audit:** Every action is logged to the Brain, ensuring you haven't lost context when you "Plug In" again.
+
+### Specialized Autopilots:
+*   **Marketing Autopilot:** Specifically designed to scout trends and draft blog posts/tweets automatically while you sleep.
+*   **Self-Healing Loop:** Triggers when health checks fail, using `brain_generate_fix_plan` to analyze broken code and suggest patches.
+
+---
+
+## 🗺️ 2. The Future: "The CEO Orchestrator"
+The goal is to move from "Checking a List" to "Managing a Team".
+
+### The Planned Evolution:
+#### Phase A: "The Desk Agent" (Current Focus)
+The agent lives in your IDE and helps you write code. It is reactive (Wait for user prompt).
+
+#### Phase B: "The Swarm Orchestrator" (In Design)
+Nucleus becomes a **Recursive Runtime**.
+*   **Agent Spawning:** [brain_spawn_agent(task_description)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3735-3790) allows the CEO agent to split a big task into 5 small tasks and "hire" 5 ephemeral sub-agents to do them in parallel.
+*   **Tool Clustering:** Sub-agents only see the tools they need (e.g., a "DevOps Agent" only sees GCloud tools).
+
+#### Phase C: "Fluid Sync" (The Holy Grail)
+*   **Presence Awareness:** The system detects your heartbeat.
+    *   **Online:** It stays in the background, assisting you with `depth_tracker`.
+    *   **Offline:** It moves to "Active Work" mode. It starts picking up tickets, running deployments to staging, and verifying smoke tests.
+*   **PR-Based Intervention:** Instead of editing your active file, it opens a Pull Request. You wake up to a "Clean Inbox" where the agent has already fixed 3 bugs and deployed them to the dev environment.
+
+---
+
+## 🚦 3. How to "Fire" it Today
+If you want to unleash the currently built Autopilot on GentleQuest:
+
+1.  **Create the Loop:** Add tasks to your brain via [brain_add_loop](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#3515-3572) or [brain_add_feature](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#2103-2128).
+2.  **Set the Skills:** Ensure the task has `required_skills: ["python"]`.
+3.  **Run the Daemon:**
+    ```bash
+    python3 scripts/autopilot_v2.py
+    ```
+4.  **Observe:** Watch the terminal. It will claim a task, think about it, and either complete it or ask you to take the wheel.
+
+---
+
+## 🔮 Summary: The "Nuclear" Vision
+Nucleus isn't just a server; it's an **Autonomous Operating System**.
+*   **Now:** It's your Assistant.
+*   **Soon:** It's your DevOps Team.
+*   **Finally:** It's your Co-Founder.
+
+*Status: Phase 19/60 - Foundation Complete. Orchestration Layer Awakening.*

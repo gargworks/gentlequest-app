@@ -1,0 +1,55 @@
+
+# Design Journal: Nucleus Orchestrator (Team of Teams)
+
+> **Date:** 2026-01-11
+> **Phase:** 5 (Scale Up)
+
+## 🎯 Vision
+Move beyond single-agent "spawns" to a persistent **Orchestrator** that manages a "Team of Teams".
+The Orchestrator (Mission Control) breaks high-level goals into sub-missions and assigns them to specialized Swarms.
+
+## 🏗 Architecture: The Hive
+
+### 1. The Components
+- **Mission Control (Orchestrator)**: The root node. Holds the Master Plan.
+  - *Persona*: "Director".
+  - *Tool*: `brain_assign_mission(swarm_id, mission)`.
+  
+- **Genesis Swarm (Planning)**:
+  - *Roles*: Architect, Product Owner, Strategist.
+  - *Output*: `IMPLEMENTATION_PLAN.md` + [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) updates.
+
+- **Execution Swarm (Building)**:
+  - *Roles*: Tech Lead, Developer, Fixer.
+  - *Output*: Code changes + Walkthroughs.
+
+- **Quality Swarm (Verifying)**:
+  - *Roles*: Critic, QA, Security.
+  - *Output*: Pass/Fail Verdicts.
+
+### 2. The Protocol (`swarm_protocol.md`)
+We need a standard way for swarms to communicate.
+- **Async Messaging**: Agents verify task completion via the `Ledger` (File System), not direct chat (to avoid context overflow).
+- **Handoffs**: 
+  - Genesis -> Execution (via `IMPLEMENTATION_PLAN.md`).
+  - Execution -> Quality (via `walkthrough.md`).
+  - Quality -> Mission Control (via [VERIFICATION_REPORT.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/NUCLEUS_GRAND_VERIFICATION_REPORT.md)).
+
+## 🧠 Cognitive Architecture Upgrade
+- **Context Factory v3**: Needs to support "Shared Swarm Context" (e.g., all agents in Execution Swarm see the Plan).
+- **Orchestrator Loop**: A daemon or cron that checks [task.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/task.md) status and spawns swarms?
+  - *MVP*: The User IS the Orchestrator, identifying as "Mission Control". We provide the tools for the User to dispatch swarms easily.
+
+## 📝 Implementation Steps (MVP)
+1. **Define Swarms**: Create `.brain/swarms/genesis.md`, `.brain/swarms/execution.md`.
+2. **Orchestration Tool**: [brain_orchestrate_swarm(mission: str, swarm_type: str)](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py#4362-4378).
+   - This tool spawns a "Lead Agent" for that swarm with a specific context.
+3. **Pilot Mission**: "Refactor Auth System" (Hypothetical) -> assigned to Genesis Swarm.
+
+## ⚠️ Risks
+- **Context Fragmentation**: If agents don't read the shared plan, they diverge.
+- **Cost**: Running 3-4 agents per mission is expensive. (Mitigation: Use "Fast" models for routine work).
+
+## 🚀 Decision
+For Phase 5 MVP, we will implement the **Orchestration Tool** and the **Genesis Swarm** definition.
+We will test it by asking the Genesis Swarm to "Plan a new feature".

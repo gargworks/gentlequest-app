@@ -1,0 +1,6 @@
+{
+  "artifactType":  "ARTIFACT_TYPE_OTHER",
+  "summary":  "Blog Export Protocol with all Oracle audit fixes applied: path validation, cross-platform compatibility, error handling, kill switch, auto-provenance update, and correct tool naming.",
+  "updatedAt":  "2026-01-14T09:29:16.597922Z",
+  "version":  "2"
+}

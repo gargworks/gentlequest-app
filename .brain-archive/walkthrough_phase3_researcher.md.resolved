@@ -1,0 +1,37 @@
+
+# Walkthrough: Deep Research Agent (Phase 3)
+
+> **Date:** 2026-01-11
+> **Status:** ✅ Completed
+> **Target:** `mcp-server-nucleus`
+
+## 🎯 Goal
+Activate the **Deep Research Agent** by enabling real web search (DuckDuckGo) and page reading (BeautifulSoup) capabilities.
+This replaces the previous "Simulation Mode" with actual internet access.
+
+## 🛠 Changes Implemented
+
+### 1. WebOps Upgrade ([web_ops.py](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/capabilities/web_ops.py))
+- **Search**: Integrated `duckduckgo-search` (v4+) for real query results.
+- **Reading**: Integrated `beautifulsoup4` for clean text extraction from HTML.
+- **Dependencies**: Added to [pyproject.toml](file:///Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/pyproject.toml) and verified in `.venv`.
+
+### 2. Researcher Persona ([.brain/agents/researcher.md](file:///Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/.brain/agents/researcher.md))
+- Created a **Deep Research Protocol**.
+- Defined the "Looping" strategy:
+  1. Plan Query.
+  2. Search & Select.
+  3. Read & Extract.
+  4. Synthesize & Cite.
+
+## ✅ Verification
+- **Test Script**: [tests/test_researcher.py](file:///Users/lokeshgarg/ai-mvp-backend/tests/test_researcher.py) (Passed).
+- **Execution**:
+  - `web_search("python 3.12 features")` -> Returned real StackOverflow/Python.org links.
+  - `web_read_page("python.org")` -> Extracted "Welcome to Python.org".
+
+## 🚀 How to use
+```bash
+nucleus spawn "Research the latest breaking changes in Next.js 15"
+```
+The agent will now actually browse the web to answer.
