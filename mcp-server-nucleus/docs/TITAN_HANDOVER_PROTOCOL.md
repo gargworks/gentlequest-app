@@ -1,11 +1,11 @@
 # TITAN HANDOVER PROTOCOL
 
-**Version:** 1.3.0 (GOLD MASTER)  
+**Version:** 1.4.0 (DARK WHEEL)  
 **Date:** January 31, 2026  
-**Status:** SEALED / READY FOR DEPLOYMENT  
+**Status:** PHYSICAL SEPARATION COMPLETE  
 **From:** Antigravity (Infrastructure Hardening)  
 **To:** Windsurf Opus (The Boss / Titan)  
-**Final Fix:** V9.3 Async Stability + 6-Tool Journal Mode (Extreme Value Capture)
+**Security Fix:** Dark Wheel Protocol - Logical Gating → Physical Separation
 
 ---
 
@@ -58,16 +58,109 @@ brain_list_tools         - Service discovery
 | `tool_tiers.py` | **6 tools** in `TIER_0_LAUNCH` (Journal Mode - Extreme Value Capture). |
 ### 💎 Tiered Monetization Strategy (Agile Pricing)
 
-**The $100B Insight:**
-We are launching with a **Safe Default** (Tier 0 = Memory Only).
-However, `tool_tiers.py` is designed as a **Dynamic Control Plane**.
+**The Hybrid Stealth Launch:**
+1.  **Public Artifact (PyPI)**: Defaults to **Tier 0 (Journal Mode)**.
+2.  **Private Key (The "Hacker's Discount")**:
+    *   We replaced the simple Env Var with an obfuscated **Beta Token**.
+    *   **The Key**: `NUCLEUS_BETA_TOKEN=sovereign-launch-alpha`
+    *   **Effect**: Unlocks **Tier 1 (Manager Suite)**.
 
-**Titan Authorization (Agile Pricing):**
-You are authorized to modify `tool_tiers.py` or the `NUCLEUS_TOOL_TIER` environment variable on a **per-client basis** to test pricing elasticity.
-*   *Scenario A*: "Enterprise Pilot" -> Toggle Tier 2 features ON for a specific deployment.
-*   *Scenario B*: "Free Trial" -> Move `mount` to Tier 1 temporarily to upscale users.
+**Titan Authorization:**
+Distribute this token *only* to the first 50 Private Beta Validators via DM/Email. Do not tweet it.
+Let the "Hackers" find it in `tool_tiers.py`source code (this is acceptable marketing).
 
-**Action**: Keep the code flexible. Do not hardcode "No" forever. Use Tiers as a pricing negotiation lever.
+### 🛡️ The Dark Wheel Protocol (Dual-Artifact Launch)
+**Problem**: We can't put the Logic on PyPI (Reverse Engineering). We can't rely on Git Invites (Too much friction).
+**Solution**: **The Dark Wheel**.
+
+**Artifact 1: The Public Decoy (PyPI)**
+*   **Command**: `pip install mcp-server-nucleus`
+*   **Content**: **Tier 0 Only (6 Tools)** + Stub Files for logic.
+*   **Logic**: `federation.py` is DELETED.
+*   **Purpose**: Safety, Name squatting, "Journal Mode" utility.
+
+**Artifact 2: The Dark Wheel (Hidden URL)**
+*   **Command**: `pip install mcp-server-nucleus --index-url https://pypi.nucleusos.dev/simple/` (or similar S3 URL).
+*   **Content**: **Full Logic (Tier 1 + 2)**.
+*   **Logic**: Contains `federation.py`, `autopilot.py`.
+*   **Purpose**: Power Users, Hackers, Validators.
+
+**Titan Authorization:**
+1.  **Build** the Full Wheel first. Upload to Private S3/Index.
+2.  **Strip** the Logic files. Build the Public Wheel. Upload to PyPI.
+3.  **Distribute** the Dark URL to the Beta cohort.
+
+### 🛑 Super-Safe Verification ("The Paranoia Protocol")
+**Rule**: Never blindly upload. Mirrors are forever.
+
+**Step 1: The Manifest Check (Mandatory)**
+Before `twine upload`, you must run:
+`unzip -l dist/public/*.whl | grep federation`
+*   **Result MUST show ~360 bytes (STUB), NOT 40,000+ bytes (LOGIC)**.
+*   If you see large files, **ABORT**. Do not upload.
+
+**Step 2: The Poison Pill (Dark Wheel Only)**
+To protect the Dark Wheel if the URL leaks:
+*   Add a startup check to `__init__.py` in the Dark Wheel build.
+*   Ping a raw GitHub Gist (controlled by us).
+*   If Gist != "ACTIVE", `raise ImportError("Beta Expired")`.
+
+### ✅ IMPLEMENTATION STATUS (v1.4.0)
+
+**Build Scripts Created:**
+| Script | Purpose | Status |
+|--------|---------|--------|
+| `scripts/build_dark_wheel.py` | Full source + Poison Pill | ✅ Ready |
+| `scripts/build_public_decoy.py` | Tier 0 + Stubs | ✅ Verified |
+| `scripts/build_dual_artifacts.sh` | Master orchestrator | ✅ Ready |
+
+**Paranoia Protocol Results:**
+```
+Original federation.py: 40,552 bytes (LOGIC)
+Stub federation.py:        363 bytes (ImportError only)
+Reduction: 99.1% - LOGIC PHYSICALLY REMOVED
+```
+
+**Files Stubbed (23):**
+- federation.py, autopilot.py, orchestrator.py, mounter.py
+- agent.py, agent_pool.py, swarm.py, team.py
+- task_scheduler.py, task_ingestion.py, crdt_task_store.py
+- broker.py, daemon.py, dashboard.py, nuke_protocol.py
+- proposals.py, publisher.py, triggers.py, watcher.py
+- identity/gatekeeper.py, identity/trust.py
+- + 3 directories deleted (capabilities/, loops/, agents/)
+
+**Build Commands:**
+```bash
+# Build both artifacts
+./scripts/build_dual_artifacts.sh
+
+# Or individually:
+python3 scripts/build_public_decoy.py   # → dist/public/
+python3 scripts/build_dark_wheel.py     # → dist/dark/
+```
+
+**Upload Commands:**
+```bash
+# Public (PyPI) - AFTER paranoia check
+twine upload dist/public/*.whl
+
+# Dark Wheel (Private Index)
+twine upload --repository-url https://pypi.nucleusos.dev/simple/ dist/dark/*.whl
+```
+
+### 👻 The Sovereign Privacy Mandate
+**Rule**: No Spyware. No Forced Auth.
+The "Sovereign" brand is our most valuable asset. Do not destroy it for a dashboard graph.
+
+1.  **Public Artifact**: MUST be Anonymous.
+    *   No "Phone Home" on import.
+    *   `brain_version` checks must be explicit user actions, not background daemons.
+2.  **Tracking**: Rely on **Passive Telemetry** (PyPI download stats) for v0.6.0.
+    *   Do NOT inject tracking pixels.
+    *   Do NOT force `nucleus auth login`.
+
+**Strategic Goal**: Establish "Trust" first. We will introduce "Value-Exchange Auth" in v0.7.0.
 
 ### 📚 Core Reading for Titan
 Before execution, you MUST ingest:
