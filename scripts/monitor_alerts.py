@@ -20,22 +20,18 @@ def monitor_alerts(interval_seconds=60):
     try:
         while True:
             with app.app_context():
+                from models import CounselorAlert
                 # Pending alerts
-                pending = db.session.execute(text("""
-                    SELECT id, session_id, severity, trigger_message, sent_at
-                    FROM counselor_alerts
-                    WHERE acknowledged_at IS NULL
-                    ORDER BY sent_at DESC
-                    LIMIT 10
-                """)).fetchall()
+                pending = CounselorAlert.query.filter(
+                    CounselorAlert.acknowledged_at == None
+                ).order_by(CounselorAlert.sent_at.desc()).limit(10).all()
                 
                 if pending:
                     print(f"\n⚠️  {len(pending)} PENDING ALERTS:")
                     for alert in pending:
-                        alert_id, session_id, severity, trigger, sent_at = alert
-                        age_minutes = (datetime.utcnow() - sent_at).total_seconds() / 60
-                        print(f"  [{severity.upper()}] ID:{alert_id} Session:{session_id[:8]}... Age:{age_minutes:.0f}min")
-                        print(f"    Trigger: {trigger[:60]}...")
+                        age_minutes = (datetime.utcnow() - alert.sent_at).total_seconds() / 60
+                        print(f"  [{alert.severity.upper()}] ID:{alert.id} Session:{alert.session_id[:8]}... Age:{age_minutes:.0f}min")
+                        print(f"    Trigger: {alert.trigger_message[:60]}...")
                 else:
                     print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ No pending alerts")
                 

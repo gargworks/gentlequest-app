@@ -10,42 +10,30 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
-
-# Set up test brain path before importing
-TEST_DIR = tempfile.mkdtemp(prefix="nucleus_consolidation_test_")
-os.environ["NUCLEAR_BRAIN_PATH"] = TEST_DIR
+from unittest.mock import patch
 
 
 class TestBrainConsolidation(unittest.TestCase):
     """Test cases for brain consolidation feature."""
     
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up test brain directory structure."""
-        cls.brain_path = Path(TEST_DIR)
-        cls.ledger_path = cls.brain_path / "ledger"
-        cls.ledger_path.mkdir(parents=True, exist_ok=True)
+        self.test_dir = tempfile.mkdtemp(prefix="nucleus_consolidation_test_")
+        self.brain_path = Path(self.test_dir)
+        self.ledger_path = self.brain_path / "ledger"
+        self.ledger_path.mkdir(parents=True, exist_ok=True)
         
         # Create events.jsonl for emit_event
-        (cls.ledger_path / "events.jsonl").touch()
-    
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up test directory."""
-        shutil.rmtree(TEST_DIR)
-    
-    def setUp(self):
-        """Reset test files before each test."""
-        # Clean up any archive from previous tests
-        archive_dir = self.brain_path / "archive" / "resolved"
-        if archive_dir.exists():
-            shutil.rmtree(archive_dir)
+        (self.ledger_path / "events.jsonl").touch()
         
-        # Clean up any test files
-        for f in self.brain_path.glob("*.resolved*"):
-            f.unlink()
-        for f in self.brain_path.glob("*.metadata.json"):
-            f.unlink()
+        # Patch get_brain_path where it's used in __init__.py
+        self.patcher = patch('mcp_server_nucleus.get_brain_path', return_value=self.brain_path)
+        self.mock_brain_path = self.patcher.start()
+    
+    def tearDown(self):
+        """Clean up test directory."""
+        self.patcher.stop()
+        shutil.rmtree(self.test_dir)
     
     def test_archive_resolved_moves_files(self):
         """Test that .resolved.* files are moved to archive."""

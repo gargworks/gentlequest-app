@@ -231,6 +231,86 @@ Submit daily self-assessment (once per day).
 
 ---
 
+### 🏥 Clinical Assessments
+
+#### GET /api/assessment/:type/questions
+Get questions for a specific assessment type (phq9 or gad7).
+
+**Parameters:**
+- `type`: `phq9` or `gad7`
+
+**Response:**
+```json
+{
+  "type": "phq9",
+  "name": "PHQ-9 Depression Screening",
+  "description": "Over the last 2 weeks...",
+  "questions": [
+    {
+      "id": 0,
+      "text": "Little interest or pleasure in doing things"
+    }
+  ],
+  "options": [
+    {"value": 0, "label": "Not at all"}
+  ],
+  "total_questions": 9
+}
+```
+
+#### POST /api/assessment/:type
+Submit and score an assessment.
+
+**Parameters:**
+- `type`: `phq9` or `gad7`
+
+**Headers:**
+- `X-Session-ID`: Required
+
+**Request:**
+```json
+{
+  "responses": [1, 0, 2, 3, 0, 0, 1, 0, 0]
+}
+```
+
+**Response:**
+```json
+{
+  "assessment_type": "phq9",
+  "total_score": 7,
+  "max_score": 27,
+  "severity": "mild",
+  "message": "Your symptoms suggest mild depression.",
+  "requires_follow_up": false,
+  "recommendations": ["Monitor your symptoms..."],
+  "responses": [1, 0, 2, 3, 0, 0, 1, 0, 0]
+}
+```
+
+#### GET /api/assessment/history
+Get history of past assessments.
+
+**Headers:**
+- `X-Session-ID`: Required
+
+**Response:**
+```json
+{
+  "history": [
+    {
+      "id": 1,
+      "assessment_type": "phq9",
+      "total_score": 7,
+      "severity": "mild",
+      "timestamp": "2025-01-01T00:00:00"
+    }
+  ]
+}
+```
+
+---
+
 ### 🚨 Crisis Detection
 
 #### POST /api/crisis_detection

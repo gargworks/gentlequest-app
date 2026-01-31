@@ -43,24 +43,128 @@
     "timestamp": "2026-01-14T16:29:17.726808",
     "confidence": 50,
     "instruction": "def export_blog_post(post_id, format=\"markdown\"):\n      \"\"\"Exports a blog post to a specified format.\"\"\"\n\n      try:\n        post_id = int(post_id)\n      except ValueError:\n        return None, \"Invalid post_id: must be an integer\"\n\n      post_data = get_post_data(post_id)\n      if not post_data:\n        return None, \"Post not found\"\n\n      # Validate and sanitize the format parameter\n      allowed_formats = [\"markdown\", \"html\"]\n      if format not in allowed_formats:\n        return None, \"Invalid format\"\n\n      if format == \"markdown\":\n        exported_content = convert_to_markdown(post_data)\n      elif format == \"html\":\n        exported_content = convert_to_html(post_data)\n\n      filename = f\"post_{post_id}.{format}\"\n\n      # add try catch around the writing process to prevent any file system related issues crashing the system.\n      try:\n        with open(filename, \"w\") as f:\n          f.write(exported_content)\n      except Exception as e:\n        return None, f\"Error writing to file: {e}\"\n\n      return filename, None",
-    "status": "pending"
+    "status": "applied",
+    "result": "Error executing fix: Expecting ',' delimiter: line 6 column 60 (char 197)",
+    "applied_at": "2026-01-25T23:34:22.255488"
   },
   {
     "timestamp": "2026-01-15T10:50:47.323370",
     "confidence": 50,
     "instruction": "**Refinement:** This proposition is outside the scope of the Anti-Hallucination Protocol. It requires further refinement into specific claims that can be verified against the Protocol's knowledge base. It needs to be tied to a specific feature or code element within the Oracle Protocol. For example, how does \"owning AI memory\" relate to the Gladiator Simulator's memory management, or the Kernel's state? Without that connection, it cannot be audited.",
-    "status": "pending"
+    "status": "applied",
+    "result": "Error: File /Users/lokeshgarg/ai-mvp-backend/blog.py not found.",
+    "applied_at": "2026-01-25T23:34:50.467852"
   },
   {
     "timestamp": "2026-01-15T10:50:55.847945",
     "confidence": 50,
     "instruction": "**Refinement:** The proposition needs to be refined with specific examples, architectures, and security concerns to be auditable. The proponent should provide a detailed explanation including:\n    *   A specific AI system or use case.\n    *   The type of memory being discussed.\n    *   A comparison of security and performance tradeoffs between cloud and local memory ownership.\n    *   A demonstration of how owning memory addresses potential hallucination risks or improves safety.",
-    "status": "pending"
+    "status": "applied",
+    "result": "Error: File /Users/lokeshgarg/ai-mvp-backend/agent.py not found.",
+    "applied_at": "2026-01-25T23:36:12.059924"
   },
   {
     "timestamp": "2026-01-15T10:51:03.670947",
     "confidence": 50,
     "instruction": "**Refinement:** The prompt should be modified to focus on aspects directly related to the Core Oracle Protocol v3.4 and Gladiator Simulator, such as memory management techniques, hallucination mitigation strategies, or context switching mechanisms. It should avoid introducing external concepts like cloud vs. local memory ownership without explicit grounding in the existing codebase or design.",
-    "status": "pending"
+    "status": "applied",
+    "result": "Error: File /Users/lokeshgarg/ai-mvp-backend/agent.py not found.",
+    "applied_at": "2026-01-25T23:37:01.978839"
+  },
+  {
+    "timestamp": "2026-01-18T21:32:31.200886",
+    "confidence": 98,
+    "instruction": "Peter Thiel (Zero to One, Monopoly, Secrets)\nCritique: What's the secret? Why will this succeed where others have failed? The assumption is that the \"Share to Explain\" utility, by virtue of being easily shared on Spotify, will create a monopoly on song meaning explanations. I disagree. It's too easily copied. What defensible advantage does it create? Also, the absence of external metadata APIs seems like a constraint, not a feature. It limits our ability to provide authoritative explanations and increases the risk of spreading misinformation. What stops competitors with better data? This feels like a zero, not a one.\nVerdict: FAIL\n\n## Final Decision\nKILL\nKey Risk Identifier: Lack of Defensible Advantage, High Reliance on Unverified User Input\n\n## Truth Verification\n**Strategy Applied:** Strategy #5: Skeptical Persona - Each Titan adopted a highly critical, questioning stance to uncover hidden flaws and challenge the underlying assumptions of the proposition.\n**Confidence Score:** 98",
+    "status": "applied",
+    "result": "\u2705 Wrote 0 chars to /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/share_to_spotify.py.",
+    "applied_at": "2026-01-25T23:38:13.810231"
+  },
+  {
+    "timestamp": "2026-01-18T23:13:50.193273",
+    "confidence": 98,
+    "instruction": "Peter Thiel (Zero to One, Monopoly, Secrets)\nCritique: This approach is all about avoiding work and leveraging someone else's existing infrastructure. That's not how you build a monopoly. That's how you become a commodity. Where's the secret sauce? Where's the defensible technology? If anyone can just plug into the Nucleus Brain Ledger, then anyone can copy us. We need to build something unique, something that's hard to replicate. Zero DB maintenance is a siren song that leads to mediocrity. To go from zero to one, we must create something they cannot. This sounds like a very easy copy!\nVerdict: FAIL\n\n## Final Decision\nKILL\nKey Risk Identifier: Over-reliance on a single, external platform (Nucleus) creates a single point of failure, limits scalability and future platform independence, and offers no defensible technology or unique value proposition.\n\n## Truth Verification\n**Strategy Applied:** Strategy #5: Skeptical Persona (adopting the role of a critical reviewer uncovers several assumptions)\n**Confidence Score:** 98",
+    "status": "applied",
+    "result": "Error executing fix: Invalid control character at: line 5 column 266 (char 342)",
+    "applied_at": "2026-01-25T23:39:42.680519"
+  },
+  {
+    "timestamp": "2026-01-18T23:14:08.286737",
+    "confidence": 100,
+    "instruction": "Peter Thiel (Zero to One, Monopoly, Secrets)\nCritique: This \"Emotional Archeology\" tool sounds like a solution in search of a problem. What's the unique value proposition? What secret are we exploiting that no one else sees? \"Vibe Tokens\" and cross-app intelligence... where's the defensibility? What prevents a competitor from simply copying our approach? SQLite is open source; JWTs are a standard. We need a real technological advantage to build a monopoly, not just clever engineering.\nVerdict: FAIL\n\n## Final Decision\n**Synthesized Verdict:** KILL\n**Key Risk Identifier:** Over-engineered solution with unclear user value, scalability issues, and lack of a defensible competitive advantage.\n\n## Truth Verification\n**Strategy Applied:** Strategy #5: Skeptical Persona. Each Titan adopted a critical perspective to identify potential flaws in the proposition.\n**Confidence Score:** 100",
+    "status": "applied",
+    "result": "Error: Target content not found in /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/agent.py. Refusing to patch.",
+    "applied_at": "2026-01-25T23:40:17.293664"
+  },
+  {
+    "timestamp": "2026-01-18T23:14:21.365628",
+    "confidence": 98,
+    "instruction": "Peter Thiel (Zero to One, Monopoly, Secrets)\nCritique: This is a crowded space. Many productivity apps offer music integration. What's our secret? The ADHD angle could be interesting, but the \"Song Meaning AI\" feels like a distraction. The real secret is understanding *why* certain songs work for specific individuals, but we need a defensible moat around that knowledge and the security for it.\nVerdict: FAIL\n\n## Final Decision\nSynthesized Verdict: KILL\nKey Risk Identifier: PII Security, Lack of Differentiation\n\n## Truth Verification\nStrategy Applied: Strategy #5: Skeptical Persona\nConfidence Score: 98",
+    "status": "applied",
+    "result": "Error: File /Users/lokeshgarg/ai-mvp-backend/memoir/engram.py not found.",
+    "applied_at": "2026-01-25T23:40:56.642138"
+  },
+  {
+    "timestamp": "2026-01-25T23:34:06.651792",
+    "confidence": 50,
+    "instruction": "**Refinement:**\n\n    *   **Eliminate the superlative \"only\":** Reword the claim to avoid implying exclusivity without verifiable proof.  Example: \"Nucleus is a Sovereign OS layer designed to orchestrate tools like CrewAI, LangChain, Cursor, and Windsurf while prioritizing user ownership.\"\n    *   **Remove the disparaging comment about Maximem:** Avoid subjective and potentially inaccurate comparisons. Focus on highlighting the strengths of Nucleus without negatively characterizing competitors.\n    *   **Provide specific examples or citations:**  Support claims about Nucleus' capabilities and user ownership mechanisms with concrete examples or links to relevant documentation/code.\n    *   **Acknowledge potential alternatives:** Include a statement that acknowledges the existence of other solutions and the potential for further developments in the field.",
+    "status": "applied",
+    "result": "\u2705 Wrote 47 chars to /Users/lokeshgarg/ai-mvp-backend/memoir/engram.py.",
+    "applied_at": "2026-01-25T23:41:23.606183"
+  },
+  {
+    "timestamp": "2026-01-25T23:34:35.431172",
+    "confidence": 50,
+    "instruction": "",
+    "status": "applied",
+    "result": "Error: Target content not found in /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/agent.py. Refusing to patch.",
+    "applied_at": "2026-01-25T23:42:18.481894"
+  },
+  {
+    "timestamp": "2026-01-25T23:35:49.380231",
+    "confidence": 50,
+    "instruction": "from cryptography.hazmat.primitives import hashes\n    from cryptography.hazmat.primitives.asymmetric import padding\n    from cryptography.hazmat.primitives import serialization\n    # Assume private_key is loaded securely (e.g., from a KMS)\n    # Add signature to decision\n    def sign_decision(self, decision_data: str, private_key):\n        message = decision_data.encode('utf8')\n        signature = private_key.sign(\n            message,\n            padding.PSS(\n                mgf=padding.MGF1(hashes.SHA256()),\n                salt_length=padding.PSS.MAX_LENGTH\n            ),\n            hashes.SHA256()\n        )\n        return signature.hex()\n\n    class DecisionMade:\n        def __init__(self, reason, details):\n            self.reason = reason\n            self.details = details\n            self.decision_data = f\"{reason}:{details}\"\n            #Sign the decision\n            #THIS IS INSECURE: key in code. REMOVE THIS\n            with open(\"private_key.pem\", \"rb\") as key_file:\n                private_key = serialization.load_pem_private_key(\n                    key_file.read(),\n                    password=None,\n                )\n            self.signature = sign_decision(self.decision_data, private_key)",
+    "status": "applied",
+    "result": "Error: Target content not found in /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/agent.py. Refusing to patch.",
+    "applied_at": "2026-01-25T23:43:41.266363"
+  },
+  {
+    "timestamp": "2026-01-25T23:40:25.674231",
+    "confidence": 50,
+    "instruction": "# Example of adding input sanitization and provenance (illustrative):\n\nfrom dataclasses import dataclass\nfrom typing import Any, Dict, List, Optional\nimport bleach  # Import bleach for sanitization\n\n@dataclass\nclass DecisionMade:\n    \"\"\"\n    Represents a decision made by an agent, including its reasoning.\n    \"\"\"\n    agent_id: str\n    task_id: str\n    decision: Any\n    rationale: str\n    provenance: List[str]  # Add provenance field\n    metadata: Optional[Dict[str, Any]] = None\n\n# Example within _persist_engram (illustrative)\n\ndef _persist_engram(self, agent_id: str, task_id: str, decision: Any, rationale: str, provenance: List[str], metadata: Optional[Dict[str, Any]] = None):\n    \"\"\"\n    Persists an engram (decision) to the ledger.\n    \"\"\"\n    try:\n        # Sanitize the rationale to prevent injection attacks\n        sanitized_rationale = bleach.clean(rationale, strip=True)  # Sanitize rationale\n\n        # Construct the engram data\n        engram_data = {\n            \"agent_id\": agent_id,\n            \"task_id\": task_id,\n            \"decision\": decision,\n            \"rationale\": sanitized_rationale, # Use sanitized rationale\n            \"provenance\": provenance, # Include provenance\n            \"metadata\": metadata\n        }\n\n        # Append the engram to the ledger file\n        with open(self.engram_ledger_path, \"a\") as ledger_file:\n            ledger_file.write(json.dumps(engram_data) + \"\\n\")\n\n        self.log.debug(f\"Engram persisted to ledger for agent {agent_id}, task {task_id}\")\n\n    except Exception as e:\n        self.log.error(f\"Error persisting engram: {e}\")\n        # Consider adding retry logic or error handling for persistence failures",
+    "status": "applied",
+    "result": "\u2705 Wrote 1109 chars to /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/brain/knowledge/DOMAIN_GROUND_TRUTH.md.",
+    "applied_at": "2026-01-27T08:42:33.387242"
+  },
+  {
+    "timestamp": "2026-01-27T08:42:26.545225",
+    "confidence": 50,
+    "instruction": "",
+    "status": "applied",
+    "result": "Error: Target content not found in /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/brain/knowledge/DOMAIN_GROUND_TRUTH.md. Refusing to patch.",
+    "applied_at": "2026-01-27T08:42:48.838908"
+  },
+  {
+    "timestamp": "2026-01-27T08:42:41.978544",
+    "confidence": 50,
+    "instruction": "",
+    "status": "applied",
+    "result": "\u2705 Wrote 1143 chars to /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/brain/knowledge/DOMAIN_GROUND_TRUTH.md.",
+    "applied_at": "2026-01-27T08:43:03.593555"
+  },
+  {
+    "timestamp": "2026-01-27T08:42:55.861957",
+    "confidence": 50,
+    "instruction": "",
+    "status": "applied",
+    "result": "\u2705 Wrote 2529 chars to /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/brain/knowledge/DOMAIN_GROUND_TRUTH.md.",
+    "applied_at": "2026-01-27T08:43:21.314627"
+  },
+  {
+    "timestamp": "2026-01-27T08:43:11.712064",
+    "confidence": 50,
+    "instruction": "",
+    "status": "applied",
+    "result": "\u2705 Wrote 3749 chars to /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/brain/knowledge/DOMAIN_GROUND_TRUTH.md.",
+    "applied_at": "2026-01-27T08:43:38.552926"
   }
 ]

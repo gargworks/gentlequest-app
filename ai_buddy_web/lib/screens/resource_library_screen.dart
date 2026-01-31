@@ -11,10 +11,10 @@ class ResourceLibraryScreen extends StatefulWidget {
   final String sessionId;
 
   const ResourceLibraryScreen({
-    Key? key,
+    super.key,
     required this.apiBaseUrl,
     required this.sessionId,
-  }) : super(key: key);
+  });
 
   @override
   _ResourceLibraryScreenState createState() => _ResourceLibraryScreenState();
@@ -22,11 +22,10 @@ class ResourceLibraryScreen extends StatefulWidget {
 
 class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
     with SingleTickerProviderStateMixin {
-  
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-  
+
   List<Resource> _resources = [];
   bool _isLoading = true;
   String? _error;
@@ -82,15 +81,14 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
     try {
       final category = _getCurrentCategory();
       final search = _searchController.text;
-      
-      String url = '${widget.apiBaseUrl}/api/resources?session_id=${widget.sessionId}';
+
+      String url =
+          '${widget.apiBaseUrl}/api/resources?session_id=${widget.sessionId}';
       if (category.isNotEmpty) url += '&category=$category';
       if (search.isNotEmpty) url += '&search=$search';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {"X-Session-ID": widget.sessionId}
-      );
+      final response = await http
+          .get(Uri.parse(url), headers: {"X-Session-ID": widget.sessionId});
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -114,9 +112,8 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
   Future<void> _trackView(int resourceId) async {
     try {
       await http.post(
-        Uri.parse('${widget.apiBaseUrl}/api/resources/$resourceId/view'),
-        headers: {"X-Session-ID": widget.sessionId}
-      );
+          Uri.parse('${widget.apiBaseUrl}/api/resources/$resourceId/view'),
+          headers: {"X-Session-ID": widget.sessionId});
     } catch (e) {
       print("Error tracking view: $e");
     }
@@ -160,7 +157,7 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
               ),
             ),
           ),
-          
+
           // Resource List
           Expanded(
             child: _isLoading

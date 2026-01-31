@@ -2,6 +2,7 @@
 description: Deploy GentleQuest to Google Cloud Run via Cloud Build
 ---
 
+
 # Deploy GentleQuest to GCP
 
 ## Prerequisites
@@ -9,47 +10,40 @@ description: Deploy GentleQuest to Google Cloud Run via Cloud Build
 - Project configured: `gcloud config set project gen-lang-client-0894185576`
 - APIs enabled: `run.googleapis.com`, `cloudbuild.googleapis.com`
 
-## Steps
+## 🚀 Scenario A: Full Deployment (Flutter + Backend)
+**Use when:** You have modified Dart code (Flutter), Assets, or Web Config.
 
-1. Navigate to project directory:
-```bash
-cd ~/ai-mvp-backend
-```
+1. **Rebuild Flutter Web:**
+   Must run locally to regenerate `static/` folder.
+   ```bash
+   cd ~/ai-mvp-backend/ai_buddy_web
+   flutter clean
+   flutter build web --release --base-href "/"
+   ```
 
-// turbo
-2. Submit build to Cloud Build:
-```bash
-gcloud builds submit --config=cloudbuild.yaml
-```
+2. **Update Static Assets:**
+   Copy the new build to the backend's static folder.
+   ```bash
+   cd ~/ai-mvp-backend
+   rm -rf static/*
+   cp -R ai_buddy_web/build/web/* static/
+   ```
 
-3. Wait for build to complete (~5-10 minutes).
+3. **Deploy:**
+   ```bash
+   gcloud builds submit --config=cloudbuild.backend.yaml
+   ```
 
-// turbo
-4. Verify deployment:
-```bash
-gcloud run services list
-```
+## ⚡️ Scenario B: Backend Only (Fast Path)
+**Use when:** You *ONLY* modified Python code (`app.py`), Config, or Scripts.
+*WARNING: This will deploy the OLD/EXISTING `static/` folder. Do not use if you changed Frontend.*
 
-5. Test the service:
-```bash
-curl https://gentlequest-backend-7an2ps6yna-uc.a.run.app/api/health
-```
+1. **Deploy Directly:**
+   ```bash
+   cd ~/ai-mvp-backend
+   gcloud builds submit --config=cloudbuild.backend.yaml
+   ```
 
-## Troubleshooting
-
-### Permission Denied
-```bash
-gcloud projects add-iam-policy-binding gen-lang-client-0894185576 \
-  --member="user:gargenterprises2019@gmail.com" \
-  --role="roles/cloudbuild.builds.editor"
-```
-
-### API Not Enabled
-```bash
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com
-```
-
-## Links
-- [Cloud Build Console](https://console.cloud.google.com/cloud-build/builds?project=gen-lang-client-0894185576)
-- [Cloud Run Console](https://console.cloud.google.com/run?project=gen-lang-client-0894185576)
-- [cloudbuild.yaml](/Users/lokeshgarg/ai-mvp-backend/cloudbuild.yaml)
+## Verification
+1. **Live Check:** [https://app.gentlequest.app](https://app.gentlequest.app)
+2. **Cloud Run Console:** [Service Details](https://console.cloud.google.com/run?project=gen-lang-client-0894185576)

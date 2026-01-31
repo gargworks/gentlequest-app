@@ -5,6 +5,124 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-30
+
+### Added
+- **Decision System of Record (DSoR)**: Full decision provenance for agent actions
+  - `DecisionMade` events emitted before every tool execution
+  - Context hashing with SHA-256 for state verification
+  - Before/after snapshots for agent run lifecycle
+  
+- **IPC Authentication** (CVE-2026-001 remediation):
+  - Per-request auth tokens (30s TTL, single-use)
+  - HMAC-signed tokens linked to decisions
+  - Prevents socket impersonation attacks
+  
+- **Token Metering** (Pricing Rebellion remediation):
+  - All tool executions metered and linked to decisions
+  - Billing-ready consumption tracking
+  - Prevents usage bypass via CLI forks
+
+- **Context Manager** (`runtime/context_manager.py`):
+  - `ContextSnapshot`: Immutable world-state snapshots
+  - `compute_world_state_hash()`: Deterministic state hashing
+  - `verify_state_integrity()`: Before/after drift detection
+  
+- **DSoR MCP Tools** (5 new tools):
+  - `brain_list_decisions`: View decision ledger
+  - `brain_list_snapshots`: View context snapshots
+  - `brain_metering_summary`: Billing/audit summary
+  - `brain_ipc_tokens`: IPC token lifecycle
+  - `brain_dsor_status`: Comprehensive DSoR status
+
+### Security
+- **CVE-2026-001**: Sidecar Exploit - REMEDIATED
+- **Pricing Rebellion**: Usage metering bypass - REMEDIATED
+
+### Documentation
+- Created `docs/architecture/DSOR_V060.md` (full architecture spec)
+
+### Tests
+- Added `tests/test_dsor_v060.py` (16 tests)
+- **64 total tests** (16 DSoR + 48 existing)
+
+### Technical
+- **135 MCP tools** (5 new DSoR tools)
+- New runtime modules: `context_manager.py`, `ipc_auth.py`
+- Enhanced `agent.py` with decision emission and state verification
+
+---
+
+## [0.5.1] - 2026-01-26
+
+### Added
+- **Engram Ledger Tools**: Persistent cognitive memory for agent decisions
+  - `brain_write_engram`: Write memories with key, value, context, and intensity (1-10)
+  - `brain_query_engrams`: Query by context category and minimum intensity
+  - Context categories: Feature, Architecture, Brand, Strategy, Decision
+  
+- **Governance Dashboard**: `brain_governance_status` shows policy enforcement
+  - Reports Default-Deny, Isolation, and Audit policy status
+  - Counts audit log entries, engrams, and events
+  - Shows V9 security configuration
+
+- **Audit Trail Visibility**: `brain_audit_log` exposes cryptographic interaction log
+  - SHA-256 hashed entries for trust verification
+  - Shows emitter, type, timestamp, and hash
+
+- **Demo Script**: `scripts/demo_governance.py` for video recording
+  - Interactive CLI demonstration of all governance features
+  - Self-cleaning demo brain directory
+
+### Changed
+- **Category Pivot**: Rebranded from "Agent OS" to "Agent Control Plane"
+- **Terminology**: "Memory" → "Engram Ledger" throughout documentation
+- **PyPI Description**: Updated to "The Agent Control Plane - Default-Deny Security"
+
+### Fixed
+- Removed 4 duplicate tool definitions causing import warnings
+- Fixed `get_orchestrator` undefined reference in swarm tool
+
+### Documentation
+- Created `docs/GOVERNANCE_POLICIES.md` (Default-Deny, Isolation, Audit)
+- Created `docs/ENGRAM_SPECIFICATION.md` (data model, query patterns)
+- Updated README with Governance Moat table
+
+### Tests
+- Added 9 unit tests for Engram tools (`test_engram_tools.py`)
+- **27/27 core tests passing**
+
+## [0.5.0] - 2026-01-25
+
+### Added
+- **V3.1 Task Engine**: Slot pooling and tier routing
+  - `brain_status_dashboard`: ASCII visualization of pool health
+  - Checkpoint and context_summary fields for tasks
+  - Exhaustion tracking for slots
+
+- **Profiling Module**: `runtime/profiling.py`
+  - `@timed()` decorator for function timing
+  - `brain_metrics` tool for performance data
+  - Configurable via `NUCLEUS_PROFILING` env var
+
+- **Prometheus Metrics**: `runtime/prometheus.py`
+  - `brain_prometheus_metrics` tool for scraping
+  - Counters, histograms, and gauges
+  - JSON and Prometheus exposition formats
+
+- **Cryptographic Audit**: `runtime/event_ops.py`
+  - SHA-256 hashing of all interactions
+  - `interaction_log.jsonl` for trust verification
+
+- **Multi-Agent Protocol**: MoU enforcement
+  - `brain_check_protocol`: Verify agent compliance
+  - `brain_request_handoff`: Request task handoffs
+  - `brain_get_handoffs`: Get pending handoffs
+
+### Changed
+- Bumped to **120+ MCP Tools**
+- Integration tests now cover 18 critical paths
+
 ## [0.4.0] - 2026-01-08
 
 ### Added

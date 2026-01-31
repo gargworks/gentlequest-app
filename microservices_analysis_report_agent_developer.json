@@ -1,0 +1,274 @@
+[
+  {
+    "service_id": "srv-001",
+    "service_name": "FuGuMuDaService",
+    "dependencies": {
+      "aws_services": [
+        "VPC",
+        "DynamoDB",
+        "Kinesis"
+      ],
+      "communication_patterns": [
+        "REST API to ShippingQueue",
+        "Consumes from SQS_OrderService"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Python/FastAPI",
+      "containerization_status": "EKS Ready"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for DynamoDB and Kinesis. Potential for secrets in environment variables or configuration files for SQS_OrderService. Specific secret management (e.g., Secrets Manager, Parameter Store) not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 4,
+      "estimated_memory_gb": 2.0
+    },
+    "aws_sdk_usage": [
+      "DynamoDB SDK",
+      "Kinesis SDK",
+      "SQS SDK"
+    ]
+  },
+  {
+    "service_id": "srv-002",
+    "service_name": "SuIeCoPeService",
+    "dependencies": {
+      "aws_services": [
+        "Route53"
+      ],
+      "communication_patterns": [
+        "gRPC with RecommendationEngine"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Python/Flask",
+      "containerization_status": "Not Containerized"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for Route53. Potential for secrets in environment variables or configuration files for RecommendationEngine. Specific secret management (e.g., Secrets Manager, Parameter Store) not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 8,
+      "estimated_memory_gb": 16.0
+    },
+    "aws_sdk_usage": [
+      "Route53 SDK"
+    ]
+  },
+  {
+    "service_id": "srv-003",
+    "service_name": "RoUeToQeGuIoService",
+    "dependencies": {
+      "aws_services": [
+        "Parameter Store",
+        "EKS",
+        "Kinesis",
+        "DynamoDB",
+        "CloudWatch"
+      ],
+      "communication_patterns": [
+        "gRPC with AnalyticsTopic",
+        "GraphQL API to UserDB"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Node.js/Express",
+      "containerization_status": "Not Containerized"
+    },
+    "configuration_secrets_management": "Utilizes AWS Parameter Store for configuration and secrets management. Likely uses AWS SDK for Kinesis, DynamoDB, and CloudWatch. Potential for secrets in environment variables or configuration files for AnalyticsTopic and UserDB.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 8,
+      "estimated_memory_gb": 8.0
+    },
+    "aws_sdk_usage": [
+      "Parameter Store SDK",
+      "Kinesis SDK",
+      "DynamoDB SDK",
+      "CloudWatch SDK"
+    ]
+  },
+  {
+    "service_id": "srv-004",
+    "service_name": "BoZeKuEaVuService",
+    "dependencies": {
+      "aws_services": [
+        "Kinesis",
+        "S3",
+        "Secrets Manager"
+      ],
+      "communication_patterns": [
+        "Direct DB access to AnalyticsTopic"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Java/Spring Boot",
+      "containerization_status": "Not Containerized"
+    },
+    "configuration_secrets_management": "Utilizes AWS Secrets Manager for secrets management. Likely uses AWS SDK for Kinesis and S3. Potential for secrets in environment variables or configuration files for AnalyticsTopic.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 1,
+      "estimated_memory_gb": 8.0
+    },
+    "aws_sdk_usage": [
+      "Kinesis SDK",
+      "S3 SDK",
+      "Secrets Manager SDK"
+    ]
+  },
+  {
+    "service_id": "srv-005",
+    "service_name": "LoKaYiYoQuAaService",
+    "dependencies": {
+      "aws_services": [
+        "SQS",
+        "Kinesis"
+      ],
+      "communication_patterns": [
+        "REST API to SearchService"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Node.js/Koa",
+      "containerization_status": "Not Containerized"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for SQS and Kinesis. Potential for secrets in environment variables or configuration files for SearchService. Specific secret management (e.g., Secrets Manager, Parameter Store) not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 1,
+      "estimated_memory_gb": 16.0
+    },
+    "aws_sdk_usage": [
+      "SQS SDK",
+      "Kinesis SDK"
+    ]
+  },
+  {
+    "service_id": "srv-006",
+    "service_name": "MaYeYeCuService",
+    "dependencies": {
+      "aws_services": [
+        "RDS",
+        "Route53",
+        "Kinesis"
+      ],
+      "communication_patterns": [
+        "GraphQL API to PaymentQueue"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Python/Flask",
+      "containerization_status": "Not Containerized"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for RDS, Route53, and Kinesis. RDS credentials would require secure management, possibly via environment variables or a dedicated secret management solution not explicitly listed. Potential for secrets in environment variables or configuration files for PaymentQueue.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 0.5,
+      "estimated_memory_gb": 8.0
+    },
+    "aws_sdk_usage": [
+      "RDS SDK",
+      "Route53 SDK",
+      "Kinesis SDK"
+    ]
+  },
+  {
+    "service_id": "srv-007",
+    "service_name": "UiFoKiService",
+    "dependencies": {
+      "aws_services": [
+        "EC2",
+        "DynamoDB",
+        "EKS"
+      ],
+      "communication_patterns": [
+        "Direct DB access to PricingService",
+        "gRPC with AuthDB"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Python/FastAPI",
+      "containerization_status": "Dockerized"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for DynamoDB. Potential for secrets in environment variables or configuration files for PricingService and AuthDB. Credentials for direct DB access should be securely managed, potentially via a system not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 2,
+      "estimated_memory_gb": 16.0
+    },
+    "aws_sdk_usage": [
+      "DynamoDB SDK"
+    ]
+  },
+  {
+    "service_id": "srv-008",
+    "service_name": "FaTeCeSuFoFiService",
+    "dependencies": {
+      "aws_services": [
+        "CloudWatch"
+      ],
+      "communication_patterns": [
+        "gRPC with InventoryService"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Node.js/Express",
+      "containerization_status": "Dockerized"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for CloudWatch. Potential for secrets in environment variables or configuration files for InventoryService. Specific secret management (e.g., Secrets Manager, Parameter Store) not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 0.5,
+      "estimated_memory_gb": 16.0
+    },
+    "aws_sdk_usage": [
+      "CloudWatch SDK"
+    ]
+  },
+  {
+    "service_id": "srv-009",
+    "service_name": "HeAoMeViZiVaService",
+    "dependencies": {
+      "aws_services": [
+        "Parameter Store"
+      ],
+      "communication_patterns": [
+        "Consumes from SQS_InventoryService"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Python/Django",
+      "containerization_status": "Dockerized"
+    },
+    "configuration_secrets_management": "Utilizes AWS Parameter Store for configuration and secrets management. Likely uses AWS SDK for Parameter Store and SQS. Potential for secrets in environment variables or configuration files for SQS_InventoryService.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 8,
+      "estimated_memory_gb": 1.0
+    },
+    "aws_sdk_usage": [
+      "Parameter Store SDK",
+      "SQS SDK"
+    ]
+  },
+  {
+    "service_id": "srv-010",
+    "service_name": "PoHiZoRoYiZoService",
+    "dependencies": {
+      "aws_services": [
+        "DynamoDB",
+        "SNS",
+        "ECS"
+      ],
+      "communication_patterns": [
+        "Publishes to SNS_InventoryService",
+        "REST API to RecommendationEngine",
+        "REST API to PaymentQueue"
+      ]
+    },
+    "runtime_environment": {
+      "language_framework": "Node.js/NestJS",
+      "containerization_status": "EKS Ready"
+    },
+    "configuration_secrets_management": "Likely uses AWS SDK for DynamoDB and SNS. Potential for secrets in environment variables or configuration files for InventoryService, RecommendationEngine, and PaymentQueue. Specific secret management (e.g., Secrets Manager, Parameter Store) not explicitly listed.",
+    "cpu_memory_requirements": {
+      "estimated_cpu_cores": 0.5,
+      "estimated_memory_gb": 0.5
+    },
+    "aws_sdk_usage": [
+      "DynamoDB SDK",
+      "SNS SDK"
+    ]
+  }
+]

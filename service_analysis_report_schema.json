@@ -1,0 +1,340 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS Microservice Analysis Report Schema",
+  "description": "Detailed schema for analyzing a single AWS microservice.",
+  "type": "object",
+  "required": [
+    "service_name",
+    "service_id",
+    "aws_region",
+    "aws_account_id",
+    "service_type"
+  ],
+  "properties": {
+    "service_name": {
+      "type": "string",
+      "description": "Unique identifier for the microservice."
+    },
+    "service_id": {
+      "type": "string",
+      "description": "AWS ARN or other unique identifier for the service resource."
+    },
+    "description": {
+      "type": "string",
+      "description": "A brief description of the service's purpose."
+    },
+    "owner_team": {
+      "type": "string",
+      "description": "The team responsible for the service."
+    },
+    "aws_region": {
+      "type": "string",
+      "description": "AWS region where the service is deployed."
+    },
+    "aws_account_id": {
+      "type": "string",
+      "description": "AWS account ID where the service is deployed."
+    },
+    "service_type": {
+      "type": "string",
+      "description": "Type of AWS service (e.g., Lambda, ECS Service, RDS Instance, DynamoDB Table).",
+      "enum": [
+        "Lambda",
+        "ECS Service",
+        "RDS Instance",
+        "DynamoDB Table",
+        "S3 Bucket",
+        "SQS Queue",
+        "SNS Topic",
+        "Other"
+      ]
+    },
+    "inbound_dependencies": {
+      "type": "array",
+      "description": "List of services that depend on this microservice.",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_service_name",
+          "communication_protocol"
+        ],
+        "properties": {
+          "source_service_name": {
+            "type": "string"
+          },
+          "source_service_id": {
+            "type": "string",
+            "description": "ARN or ID of the dependent service."
+          },
+          "communication_protocol": {
+            "type": "string",
+            "description": "e.g., HTTP/S, SQS, SNS, Database Connection, gRPC."
+          },
+          "dependency_type": {
+            "type": "string",
+            "description": "e.g., API Call, Message Queue, Database Access."
+          }
+        }
+      }
+    },
+    "outbound_dependencies": {
+      "type": "array",
+      "description": "List of services this microservice depends on.",
+      "items": {
+        "type": "object",
+        "required": [
+          "target_service_name",
+          "communication_protocol"
+        ],
+        "properties": {
+          "target_service_name": {
+            "type": "string"
+          },
+          "target_service_id": {
+            "type": "string",
+            "description": "ARN or ID of the depended-upon service."
+          },
+          "communication_protocol": {
+            "type": "string",
+            "description": "e.g., HTTP/S, SQS, SNS, Database Connection, gRPC."
+          },
+          "dependency_type": {
+            "type": "string",
+            "description": "e.g., API Call, Message Queue, Database Access."
+          }
+        }
+      }
+    },
+    "resource_utilization": {
+      "type": "object",
+      "description": "Key resource utilization metrics over a specified period.",
+      "properties": {
+        "metrics_period": {
+          "type": "string",
+          "description": "Timeframe for metrics (e.g., 'last 7 days', 'last 30 days')."
+        },
+        "cpu_utilization": {
+          "type": "object",
+          "properties": {
+            "average_percent": {
+              "type": "number"
+            },
+            "peak_percent": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "default": "%"
+            }
+          }
+        },
+        "memory_utilization": {
+          "type": "object",
+          "properties": {
+            "average_mb": {
+              "type": "number"
+            },
+            "peak_mb": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "default": "MB"
+            }
+          }
+        },
+        "iops": {
+          "type": "object",
+          "description": "I/O operations per second (for relevant services like RDS/EBS).",
+          "properties": {
+            "read_average": {
+              "type": "number"
+            },
+            "write_average": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "default": "ops/sec"
+            }
+          }
+        },
+        "network_io": {
+          "type": "object",
+          "properties": {
+            "bytes_in_average_mbps": {
+              "type": "number"
+            },
+            "bytes_out_average_mbps": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "default": "Mbps"
+            }
+          }
+        },
+        "lambda_specific_metrics": {
+          "type": "object",
+          "properties": {
+            "invocations_average_per_minute": {
+              "type": "number"
+            },
+            "errors_average_per_minute": {
+              "type": "number"
+            },
+            "duration_average_ms": {
+              "type": "number"
+            },
+            "throttles_average_per_minute": {
+              "type": "number"
+            }
+          }
+        },
+        "dynamodb_specific_metrics": {
+          "type": "object",
+          "properties": {
+            "read_capacity_consumed_average": {
+              "type": "number"
+            },
+            "write_capacity_consumed_average": {
+              "type": "number"
+            },
+            "throttled_read_events_average": {
+              "type": "number"
+            },
+            "throttled_write_events_average": {
+              "type": "number"
+            }
+          }
+        },
+        "rds_specific_metrics": {
+          "type": "object",
+          "properties": {
+            "db_connections_average": {
+              "type": "number"
+            },
+            "free_storage_space_average_gb": {
+              "type": "number"
+            },
+            "disk_queue_depth_average": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Key configuration details of the service.",
+      "properties": {
+        "environment_variables": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "network_settings": {
+          "type": "object",
+          "properties": {
+            "vpc_id": {
+              "type": "string"
+            },
+            "subnet_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "security_group_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "is_publicly_accessible": {
+              "type": "boolean"
+            }
+          }
+        },
+        "iam_role_arn": {
+          "type": "string",
+          "description": "IAM Role ARN associated with the service."
+        },
+        "tags": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "logging_configuration": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "log_group_name": {
+              "type": "string"
+            },
+            "log_level": {
+              "type": "string"
+            }
+          }
+        },
+        "alarms_enabled": {
+          "type": "boolean",
+          "description": "Indicates if CloudWatch alarms are configured for the service."
+        },
+        "monitoring_dashboard_url": {
+          "type": "string",
+          "description": "URL to the primary monitoring dashboard (e.g., CloudWatch, Grafana)."
+        }
+      }
+    },
+    "migration_analysis": {
+      "type": "object",
+      "description": "Analysis of potential migration blockers and unique requirements.",
+      "properties": {
+        "potential_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of identified blockers (e.g., 'Legacy OS', 'Hardcoded IPs', 'Specific Hardware Requirements')."
+        },
+        "unique_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of unique operational requirements (e.g., 'Real-time processing', 'High throughput')."
+        },
+        "compliance_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Specific compliance standards this service must adhere to (e.g., 'PCI DSS', 'HIPAA')."
+        },
+        "data_residency_requirements": {
+          "type": "string",
+          "description": "Any specific data residency needs."
+        },
+        "manual_intervention_needed": {
+          "type": "boolean",
+          "description": "True if manual steps are likely required for migration."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-form notes or observations."
+        }
+      }
+    }
+  }
+}

@@ -358,6 +358,26 @@
 
 ---
 
+## XVIII. Jan 2026 Expansion: The Control Plane Pivot
+
+### From Perplexity/Mosaic Sessions:
+> "CLAUDE.md is static context (what). Nucleus is active control (why/who/when)."
+
+**The Pivot:**
+- **Category:** The **Agent Control Plane**.
+- **The Hook:** We don't just "store" memory; we **govern** execution.
+- **The Identity:** Nucleus Sovereign OS (N-SOS).
+
+**New Strategic Layers:**
+1.  **The Successor Narrative**: Siemens discontinued "Nucleus RTOS" in Nov 2023. We are the logical successor for the AI era. We occupy the vacant conceptual throne of the most reliable OS brand.
+2.  **Recursive Aggregator**: Nucleus is a "Server Outward, Host Inward." It terminates the connection for the client but acts as an orchestrator for local tools and mounted servers.
+3.  **Governance as Product**: The "moat" is the policy layer. **Default Deny** by default. Explicit approval for every high-stakes tool call. No local operation is blocked by cloud failure.
+
+**Immutable Principle:**
+> **Context is not Control. Nucleus is the governance layer that makes the MCP ecosystem trustworthy at scale. We are the driver, not the map.**
+
+---
+
 ## How to Use This Document
 
 

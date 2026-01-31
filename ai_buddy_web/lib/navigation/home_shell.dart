@@ -4,15 +4,15 @@ import '../widgets/app_bottom_nav.dart';
 import 'home_tab_deeplink.dart';
 import '../screens/interactive_chat_screen.dart';
 import '../screens/mood_tracker_screen.dart';
-import '../screens/quest_screen/new_quest_screen.dart';
 import '../dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
+import '../dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
 import '../widgets/community_feed_screen.dart';
 
 import '../widgets/crisis_resources.dart';
 import '../models/message.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/help_entrypoint.dart';
-// Removed Provider dependency for Help overlay risk plumbing
+import '../features/leopard/widgets/leopard_gate.dart';
 
 // Global deep-link controller for switching HomeShell tabs from anywhere
 // e.g., when handling a notification tap.
@@ -209,10 +209,14 @@ class _HomeShellState extends State<HomeShell> {
         builder: (_) =>
             MoodTrackerScreen(showBottomNav: false, reselect: _moodReselect),
       ),
+
       buildTabNavigator(
         key: _questNavKey,
         active: _index == 2,
-        builder: (_) => const WellnessDashboardScreen(),
+        builder: (_) => LeopardGate(
+          showBottomNav: false,
+          reselect: _questReselect,
+        ),
       ),
       buildTabNavigator(
         key: _communityNavKey,

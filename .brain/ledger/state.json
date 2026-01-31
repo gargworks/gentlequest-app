@@ -44,5 +44,9 @@
       "informational_call",
       "go_no_go_decision"
     ]
-  }
+  },
+  "batch_2_test_status": "in_progress",
+  "test_timestamp": "2026-01-24T03:13:30Z",
+  "last_test_tool": "brain_update_state",
+  "smoke_test_batch": 2
 }

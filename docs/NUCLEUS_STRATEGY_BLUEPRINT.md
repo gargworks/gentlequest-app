@@ -1,4 +1,4 @@
-# Nucleus Strategy Blueprint: The "Agent OS"
+# Nucleus Strategy Blueprint: The "Agent Control Plane"
 
 > **Core Insight:** The market is flooded with "Hard Drives" (Semantic Memory/Vector DBs) but lacks "Operating Systems" (Operational Memory/Process Management). Nucleus fills this gap.
 
@@ -28,7 +28,7 @@
 *   **Hook:** " The only MCP Server that turns a folder of scripts into a coordinated team."
 
 ## 4. Growth & Differentiation Strategy
-**"The Local-First Agent OS"**
+**"The Local-First Agent Control Plane"**
 *   **vs. Cloud (LangChain/CrewAI):** Nucleus is **Local**. No vendor lock-in. Your data is your files.
 *   **vs. Hard-coded (LangGraph):** Nucleus is **Data-Driven**. You change the team structure by editing a Markdown file (`thread_registry.md`), not refactoring Python code.
 
@@ -53,7 +53,7 @@
 | **Indie Hackers** | Solo Founders | "I built a PM for my AI co-worker" | Write a "Building in Public" post |
 | **Twitter/X** | AI Influencers | "MCP is the future. Here's mine." | Thread on the Protocol architecture |
 | **Windsurf/Cursor Discord** | Power Users | "Here's how I sync context across projects" | Tutorial on `.brain` setup |
-| **Hacker News** | Devs, Early Adopters | "Show HN: Nucleus, an Agent OS" | Launch Day post |
+| **Hacker News** | Devs, Early Adopters | "Show HN: Nucleus, an Agent Control Plane" | Launch Day post |
 
 ---
 

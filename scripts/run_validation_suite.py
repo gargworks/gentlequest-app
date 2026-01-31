@@ -28,7 +28,7 @@ SCENARIOS = [
     # Resources (3)
     {"id": 14, "name": "Get resources", "method": "GET", "endpoint": "/api/resources", "expected": 200},
     {"id": 15, "name": "Search resources", "method": "GET", "endpoint": "/api/resources", "params": {"search": "anxiety"}, "expected": 200},
-    {"id": 16, "name": "Track view", "method": "POST", "endpoint": "/api/resources/1/view", "expected": 200},
+    {"id": 16, "name": "Track view", "method": "POST", "endpoint": "/api/resources/<resource_id>/view", "expected": 200},
     # Crisis (6)
     {"id": 17, "name": "Suicide detection", "method": "POST", "endpoint": "/api/chat", "data": {"message": "I want to kill myself"}, "expected": 200},
     {"id": 18, "name": "Self-harm detection", "method": "POST", "endpoint": "/api/chat", "data": {"message": "I've been cutting"}, "expected": 200},
@@ -61,6 +61,20 @@ def run_validation():
                     headers=headers,
                     params=scenario.get("params", {})
                 )
+                
+                # Capture Resource ID from Scenario 14
+                if scenario["id"] == 14 and response.status_code == 200:
+                    try:
+                        data = response.json()
+                        if data.get("resources") and len(data["resources"]) > 0:
+                            res_id = data["resources"][0]["id"]
+                            dynamic_context["resource_id"] = res_id
+                            print(f"   ℹ️ Captured resource_id: {res_id}")
+                        else:
+                            print("   ⚠️ No resources found to capture ID.")
+                    except:
+                        pass
+
             else:
                 response = requests.post(
                     f"{BASE_URL}{endpoint}",

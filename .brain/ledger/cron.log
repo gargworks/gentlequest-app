@@ -422,3 +422,518 @@ Warning: FastMCP not installed. Running in standalone/verification mode.
 Warning: FastMCP not installed. Running in standalone/verification mode.
 ⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
 ✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-18 08:00:03,597 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-18 08:00:03,633 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-18 08:00:03,636 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-18 08:00:03,636 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops']
+2026-01-18 08:00:03,663 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-18 08:00:05,517 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-18 08:00:05,522 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+==============================================
+🌞 STARTING SUNDAY BUNDLE: Sun Jan 18 09:00:00 IST 2026
+==============================================
+Running Auto Strategy Sync...
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-18 09:00:02,258 - INFO - 🧠 Nucleus Brain: Starting Weekly Strategy Sync...
+2026-01-18 09:00:02,258 - INFO - 📂 Project Root: /Users/lokeshgarg/ai-mvp-backend
+2026-01-18 09:00:02,259 - INFO - 🛡️ Backup created: /Users/lokeshgarg/ai-mvp-backend/docs/marketing/strategy.old.md
+2026-01-18 09:00:02,259 - INFO - 🔄 Analyzing Marketing Logs & Synthesizing New Strategy...
+2026-01-18 09:00:02,313 - INFO - AFC is enabled with max remote calls: 10.
+2026-01-18 09:00:10,804 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/auto_strategy_sync.py", line 69, in <module>
+    main()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/auto_strategy_sync.py", line 43, in main
+    if result.get("status") == "success":
+AttributeError: 'NoneType' object has no attribute 'get'
+Running Weekly Summary...
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+📊 Weekly Summary Generator Starting...
+   Time: 2026-01-18T09:00:12.307482
+📖 Extracting last 7 days of digests...
+   Found 7 daily reports
+📈 Analyzing events...
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 239, in <module>
+    main()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 195, in main
+    events_summary = get_events_summary()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 107, in get_events_summary
+    if event_time > seven_days_ago:
+TypeError: can't compare offset-naive and offset-aware datetimes
+==============================================
+✅ SUNDAY BUNDLE COMPLETE: Sun Jan 18 09:00:12 IST 2026
+==============================================
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-19 08:00:02,364 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-19 08:00:02,408 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-19 08:00:02,410 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-19 08:00:02,410 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops']
+2026-01-19 08:00:02,460 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-19 08:00:03,839 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-19 08:00:03,858 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-20 08:00:01,893 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-20 08:00:01,998 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-20 08:00:02,000 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-20 08:00:02,000 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops']
+2026-01-20 08:00:02,036 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-20 08:00:03,767 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-20 08:00:03,771 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-21 08:00:02,290 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-21 08:00:02,340 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-21 08:00:02,342 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-21 08:00:02,342 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops']
+2026-01-21 08:00:02,386 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-21 08:00:03,876 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-21 08:00:03,888 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-23 08:00:02,106 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-23 08:00:02,468 - nucleus.llm - INFO - ✅ SDK: google.generativeai (legacy) available [DEPRECATED - will be removed]
+2026-01-23 08:00:02,469 - nucleus.llm - INFO - 🎯 SDK Selection: Using google-genai (new, preferred)
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-23 08:00:02,481 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-23 08:00:02,483 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-23 08:00:02,544 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-23 08:00:02,547 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-23 08:00:02,547 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-23 08:00:02,588 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-23 08:00:02,615 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-23 08:00:05,402 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-23 08:00:05,440 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-23 08:00:06,843 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-23 08:00:06,883 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-23 08:00:09,086 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-23 08:00:09,131 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-23 08:00:15,946 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-23 08:00:16,378 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-23 08:00:18,430 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-23 08:00:18,549 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-24 08:00:02,081 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-24 08:00:02,525 - nucleus.llm - INFO - ✅ SDK: google.generativeai (legacy) available [DEPRECATED - will be removed]
+2026-01-24 08:00:02,525 - nucleus.llm - INFO - 🎯 SDK Selection: Using google-genai (new, preferred)
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-24 08:00:02,535 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-24 08:00:02,535 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-24 08:00:02,585 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-24 08:00:02,588 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-24 08:00:02,588 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-24 08:00:02,623 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-24 08:00:02,639 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-24 08:00:05,441 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-24 08:00:05,453 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-24 08:00:06,736 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-24 08:00:06,786 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-24 08:00:07,588 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+2026-01-24 08:00:07,590 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-24 08:00:07,590 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-25 08:00:01,825 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-25 08:00:02,081 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/nightly_agent.py", line 31, in <module>
+    from mcp_server_nucleus.runtime.factory import ContextFactory
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py", line 37, in <module>
+    from .runtime.depth_ops import (
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/depth_ops.py", line 26, in <module>
+    def _get_depth_state() -> Dict[str, Any]:
+NameError: name 'Any' is not defined
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/telegram_briefing.py", line 19, in <module>
+    from mcp_server_nucleus import commitment_ledger
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py", line 37, in <module>
+    from .runtime.depth_ops import (
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/depth_ops.py", line 26, in <module>
+    def _get_depth_state() -> Dict[str, Any]:
+NameError: name 'Any' is not defined
+==============================================
+🌞 STARTING SUNDAY BUNDLE: Sun Jan 25 09:00:00 IST 2026
+==============================================
+Running Auto Strategy Sync...
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-25 09:00:01,946 - INFO - ✅ SDK: google-genai (new) available
+2026-01-25 09:00:02,203 - INFO - 🎯 SDK Selection: Using NEW
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/auto_strategy_sync.py", line 15, in <module>
+    from mcp_server_nucleus.runtime.capabilities.marketing_engine import brain_synthesize_strategy
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/__init__.py", line 37, in <module>
+    from .runtime.depth_ops import (
+  File "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src/mcp_server_nucleus/runtime/depth_ops.py", line 26, in <module>
+    def _get_depth_state() -> Dict[str, Any]:
+NameError: name 'Any' is not defined
+Running Weekly Summary...
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+📊 Weekly Summary Generator Starting...
+   Time: 2026-01-25T09:00:03.234440
+📖 Extracting last 7 days of digests...
+   Found 7 daily reports
+📈 Analyzing events...
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 239, in <module>
+    main()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 195, in main
+    events_summary = get_events_summary()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 107, in get_events_summary
+    if event_time > seven_days_ago:
+TypeError: can't compare offset-naive and offset-aware datetimes
+==============================================
+✅ SUNDAY BUNDLE COMPLETE: Sun Jan 25 09:00:03 IST 2026
+==============================================
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-26 08:00:02,312 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-26 08:00:02,634 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-26 08:00:02,646 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-26 08:00:02,647 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-26 08:00:02,689 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-26 08:00:02,689 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-26 08:00:02,691 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-26 08:00:02,691 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-26 08:00:02,726 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-26 08:00:02,755 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-26 08:00:05,268 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-26 08:00:05,307 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-26 08:00:06,424 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-26 08:00:06,472 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-26 08:00:07,845 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-26 08:00:07,870 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-26 08:00:09,078 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-26 08:00:09,097 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-26 08:00:10,409 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-26 08:00:10,432 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-27 08:00:02,371 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-27 08:00:02,743 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-27 08:00:02,758 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-27 08:00:02,759 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-27 08:00:02,806 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-27 08:00:02,806 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-27 08:00:02,809 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-27 08:00:02,809 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-27 08:00:02,896 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-27 08:00:02,958 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-27 08:00:04,363 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-27 08:00:04,649 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-27 08:00:05,913 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-27 08:00:05,959 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-27 08:00:07,231 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-27 08:00:07,272 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-27 08:00:09,167 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-27 08:00:09,226 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-27 08:00:10,387 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-27 08:00:10,421 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-28 08:00:01,872 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-28 08:00:02,115 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-28 08:00:02,127 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-28 08:00:02,127 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-28 08:00:02,167 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-28 08:00:02,167 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-28 08:00:02,169 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-28 08:00:02,169 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-28 08:00:02,202 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:02,220 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-28 08:00:04,950 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:04,959 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:06,689 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:06,702 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:08,098 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:08,153 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:09,150 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:09,156 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:10,478 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:10,520 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-28 08:00:11,312 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-28 08:00:11,366 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+Error consolidating /Users/lokeshgarg/ai-mvp-backend/.brain/raw/llm_interaction_20260118_095924_225178.json: Extra data: line 7 column 2 (char 1027)
+Error consolidating /Users/lokeshgarg/ai-mvp-backend/.brain/raw/llm_interaction_20260118_100144_789378.json: Extra data: line 7 column 3 (char 831)
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-29 08:00:03,890 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-29 08:00:04,186 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-29 08:00:04,203 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-29 08:00:04,204 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-29 08:00:04,257 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-29 08:00:04,257 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-29 08:00:04,260 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-29 08:00:04,260 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-29 08:00:04,302 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-29 08:00:04,326 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-29 08:00:06,736 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-29 08:00:06,754 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-29 08:00:07,952 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-29 08:00:07,982 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-29 08:00:10,213 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-29 08:00:10,239 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-29 08:00:11,752 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-29 08:00:12,090 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-29 08:00:13,795 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-29 08:00:13,828 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-30 08:00:04,222 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-30 08:00:04,510 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-30 08:00:04,525 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-30 08:00:04,525 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-30 08:00:04,592 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-30 08:00:04,592 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-30 08:00:04,594 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-30 08:00:04,594 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-30 08:00:04,628 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-30 08:00:04,654 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-30 08:00:07,689 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-30 08:00:07,830 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-30 08:00:09,191 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-30 08:00:09,376 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-30 08:00:10,124 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+2026-01-30 08:00:10,126 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-30 08:00:10,126 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-30 08:00:10,126 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+2026-01-31 08:00:04,119 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-31 08:00:05,785 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-01-31 08:00:06,092 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-01-31 08:00:06,167 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-01-31 08:00:06,168 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-01-31 08:00:06,232 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-31 08:00:06,232 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-01-31 08:00:06,234 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-01-31 08:00:06,234 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-01-31 08:00:06,267 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-31 08:00:06,300 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-01-31 08:00:08,956 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-31 08:00:09,029 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-31 08:00:10,288 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-31 08:00:10,360 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-31 08:00:11,552 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-31 08:00:11,601 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-31 08:00:13,046 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-01-31 08:00:13,095 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-01-31 08:00:15,872 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+2026-01-31 08:00:15,881 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-31 08:00:15,881 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-31 08:00:15,888 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)

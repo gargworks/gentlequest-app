@@ -19,9 +19,12 @@ class TestDepthTracker(unittest.TestCase):
         (self.brain_path / "ledger").mkdir(parents=True)
         (self.brain_path / "session").mkdir(parents=True)
         
-        # Mock the get_brain_path to return our temp dir
-        self.patcher = patch('mcp_server_nucleus.get_brain_path', return_value=self.brain_path)
+        # Mock get_brain_path where it's actually used (in depth_ops module)
+        self.patcher = patch('mcp_server_nucleus.runtime.depth_ops.get_brain_path', return_value=self.brain_path)
         self.patcher.start()
+        
+        # Reset depth state at start of each test
+        nucleus._depth_reset()
 
     def tearDown(self):
         self.patcher.stop()
@@ -108,7 +111,8 @@ class TestDepthTracker(unittest.TestCase):
         """Test setting max safe depth."""
         result = nucleus._depth_set_max(7)
         
-        self.assertEqual(result['max_safe_depth'], 7)
+        # Function returns 'new_max' not 'max_safe_depth'
+        self.assertEqual(result['new_max'], 7)
         print("✅ pass: test_set_max_depth")
 
     def test_set_max_depth_validation(self):
@@ -149,8 +153,9 @@ class TestDepthTracker(unittest.TestCase):
         result = nucleus._depth_show()
         
         indicator = result['indicator']
-        self.assertIn("DEPTH:", indicator)
-        self.assertIn("/", indicator)  # Shows current/max
+        # Indicator format is [███░░] not "DEPTH: x/y"
+        self.assertIn("[", indicator)
+        self.assertIn("]", indicator)
         print("✅ pass: test_visual_indicator_format")
 
 

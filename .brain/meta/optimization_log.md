@@ -379,3 +379,513 @@
 ### Actions Taken
 - health_check: Add more explicit tool usage examples to prompt [pending_approval]
 - critic: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-19 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| brain | 0.0% | 0.0% | 0 |
+| brain_save_session | 0.0% | 0.0% | 0 |
+| health_check | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| Antigravity-80f2cf | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| VISION_ONE | 0.0% | 0.0% | 0 |
+| windsurf_strategic_architect | 0.0% | 0.0% | 0 |
+
+### Issues Identified (9)
+- **brain**: low_success_rate (0.0%)
+- **brain_save_session**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **Antigravity-80f2cf**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **VISION_ONE**: low_success_rate (0.0%)
+- **windsurf_strategic_architect**: low_success_rate (0.0%)
+
+### Recommendations (9)
+- **brain**: Add more explicit tool usage examples to prompt
+- **brain_save_session**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **Antigravity-80f2cf**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **VISION_ONE**: Add more explicit tool usage examples to prompt
+- **windsurf_strategic_architect**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_save_session: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity-80f2cf: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- VISION_ONE: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_strategic_architect: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-22 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| brain | 0.0% | 0.0% | 0 |
+| brain_save_session | 0.0% | 0.0% | 0 |
+| health_check | 0.0% | 0.0% | 0 |
+| antigravity_001 | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| nucleus_orchestrate | 0.0% | 0.0% | 0 |
+| windsurf_exec_001 | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| ag_gemini_pro | 0.0% | 0.0% | 0 |
+| antigravity_exec_001 | 0.0% | 0.0% | 0 |
+| antigravity_002 | 0.0% | 0.0% | 0 |
+| brain_update_task | 0.0% | 0.0% | 0 |
+| request_scanner | 0.0% | 0.0% | 0 |
+| render_poller | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 1 |
+| Antigravity-80f2cf | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| VISION_ONE | 0.0% | 0.0% | 0 |
+| windsurf_strategic_architect | 0.0% | 0.0% | 0 |
+
+### Issues Identified (18)
+- **brain**: low_success_rate (0.0%)
+- **brain_save_session**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **antigravity_001**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **nucleus_orchestrate**: low_success_rate (0.0%)
+- **windsurf_exec_001**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **ag_gemini_pro**: low_success_rate (0.0%)
+- **antigravity_exec_001**: low_success_rate (0.0%)
+- **antigravity_002**: low_success_rate (0.0%)
+- **brain_update_task**: low_success_rate (0.0%)
+- **request_scanner**: low_success_rate (0.0%)
+- **render_poller**: low_success_rate (0.0%)
+- **Antigravity-80f2cf**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **VISION_ONE**: low_success_rate (0.0%)
+- **windsurf_strategic_architect**: low_success_rate (0.0%)
+
+### Recommendations (18)
+- **brain**: Add more explicit tool usage examples to prompt
+- **brain_save_session**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **antigravity_001**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **nucleus_orchestrate**: Add more explicit tool usage examples to prompt
+- **windsurf_exec_001**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **ag_gemini_pro**: Add more explicit tool usage examples to prompt
+- **antigravity_exec_001**: Add more explicit tool usage examples to prompt
+- **antigravity_002**: Add more explicit tool usage examples to prompt
+- **brain_update_task**: Add more explicit tool usage examples to prompt
+- **request_scanner**: Add more explicit tool usage examples to prompt
+- **render_poller**: Add more explicit tool usage examples to prompt
+- **Antigravity-80f2cf**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **VISION_ONE**: Add more explicit tool usage examples to prompt
+- **windsurf_strategic_architect**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_save_session: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_001: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_orchestrate: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_gemini_pro: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_002: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_update_task: Add more explicit tool usage examples to prompt [pending_approval]
+- request_scanner: Add more explicit tool usage examples to prompt [pending_approval]
+- render_poller: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity-80f2cf: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- VISION_ONE: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_strategic_architect: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-25 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| health_check | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| ag_001 | 0.0% | 0.0% | 0 |
+| claude_ai_batch_8 | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| brain_add_loop | 0.0% | 0.0% | 0 |
+| user | 0.0% | 0.0% | 0 |
+| render_poller | 0.0% | 0.0% | 0 |
+| depth_tracker | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| brain_update_task | 0.0% | 0.0% | 0 |
+| batch_3_smoke_test | 0.0% | 0.0% | 0 |
+| batch_2_smoke_test | 0.0% | 0.0% | 0 |
+| BRAIN_CONSOLIDATION | 0.0% | 0.0% | 0 |
+| brain_save_session | 0.0% | 0.0% | 0 |
+| antigravity_exec_001 | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 2 |
+| antigravity_001 | 0.0% | 0.0% | 0 |
+| nucleus_orchestrate | 0.0% | 0.0% | 0 |
+| windsurf_exec_001 | 0.0% | 0.0% | 0 |
+| ag_gemini_pro | 0.0% | 0.0% | 0 |
+| antigravity_002 | 0.0% | 0.0% | 0 |
+| request_scanner | 0.0% | 0.0% | 0 |
+| Antigravity-80f2cf | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| VISION_ONE | 0.0% | 0.0% | 0 |
+
+### Issues Identified (25)
+- **health_check**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **ag_001**: low_success_rate (0.0%)
+- **claude_ai_batch_8**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **brain_add_loop**: low_success_rate (0.0%)
+- **user**: low_success_rate (0.0%)
+- **render_poller**: low_success_rate (0.0%)
+- **depth_tracker**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **brain_update_task**: low_success_rate (0.0%)
+- **batch_3_smoke_test**: low_success_rate (0.0%)
+- **batch_2_smoke_test**: low_success_rate (0.0%)
+- **BRAIN_CONSOLIDATION**: low_success_rate (0.0%)
+- **brain_save_session**: low_success_rate (0.0%)
+- **antigravity_exec_001**: low_success_rate (0.0%)
+- **antigravity_001**: low_success_rate (0.0%)
+- **nucleus_orchestrate**: low_success_rate (0.0%)
+- **windsurf_exec_001**: low_success_rate (0.0%)
+- **ag_gemini_pro**: low_success_rate (0.0%)
+- **antigravity_002**: low_success_rate (0.0%)
+- **request_scanner**: low_success_rate (0.0%)
+- **Antigravity-80f2cf**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **VISION_ONE**: low_success_rate (0.0%)
+
+### Recommendations (25)
+- **health_check**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **ag_001**: Add more explicit tool usage examples to prompt
+- **claude_ai_batch_8**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **brain_add_loop**: Add more explicit tool usage examples to prompt
+- **user**: Add more explicit tool usage examples to prompt
+- **render_poller**: Add more explicit tool usage examples to prompt
+- **depth_tracker**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **brain_update_task**: Add more explicit tool usage examples to prompt
+- **batch_3_smoke_test**: Add more explicit tool usage examples to prompt
+- **batch_2_smoke_test**: Add more explicit tool usage examples to prompt
+- **BRAIN_CONSOLIDATION**: Add more explicit tool usage examples to prompt
+- **brain_save_session**: Add more explicit tool usage examples to prompt
+- **antigravity_exec_001**: Add more explicit tool usage examples to prompt
+- **antigravity_001**: Add more explicit tool usage examples to prompt
+- **nucleus_orchestrate**: Add more explicit tool usage examples to prompt
+- **windsurf_exec_001**: Add more explicit tool usage examples to prompt
+- **ag_gemini_pro**: Add more explicit tool usage examples to prompt
+- **antigravity_002**: Add more explicit tool usage examples to prompt
+- **request_scanner**: Add more explicit tool usage examples to prompt
+- **Antigravity-80f2cf**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **VISION_ONE**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_001: Add more explicit tool usage examples to prompt [pending_approval]
+- claude_ai_batch_8: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_add_loop: Add more explicit tool usage examples to prompt [pending_approval]
+- user: Add more explicit tool usage examples to prompt [pending_approval]
+- render_poller: Add more explicit tool usage examples to prompt [pending_approval]
+- depth_tracker: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_update_task: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_3_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_2_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- BRAIN_CONSOLIDATION: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_save_session: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_001: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_orchestrate: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_gemini_pro: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_002: Add more explicit tool usage examples to prompt [pending_approval]
+- request_scanner: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity-80f2cf: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- VISION_ONE: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-28 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| health_check | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| verifier | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| Antigravity | 0.0% | 0.0% | 0 |
+| synthesizer | 0.0% | 0.0% | 0 |
+| resilience_test | 0.0% | 0.0% | 0 |
+| test_emitter | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 3 |
+| ag_001 | 0.0% | 0.0% | 0 |
+| claude_ai_batch_8 | 0.0% | 0.0% | 0 |
+| brain_add_loop | 0.0% | 0.0% | 0 |
+| user | 0.0% | 0.0% | 0 |
+| render_poller | 0.0% | 0.0% | 0 |
+| depth_tracker | 0.0% | 0.0% | 0 |
+| brain_update_task | 0.0% | 0.0% | 0 |
+| batch_3_smoke_test | 0.0% | 0.0% | 0 |
+| batch_2_smoke_test | 0.0% | 0.0% | 0 |
+| BRAIN_CONSOLIDATION | 0.0% | 0.0% | 0 |
+| brain_save_session | 0.0% | 0.0% | 0 |
+| antigravity_exec_001 | 0.0% | 0.0% | 0 |
+| antigravity_001 | 0.0% | 0.0% | 0 |
+| nucleus_orchestrate | 0.0% | 0.0% | 0 |
+| windsurf_exec_001 | 0.0% | 0.0% | 0 |
+| ag_gemini_pro | 0.0% | 0.0% | 0 |
+| antigravity_002 | 0.0% | 0.0% | 0 |
+| request_scanner | 0.0% | 0.0% | 0 |
+
+### Issues Identified (28)
+- **health_check**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **verifier**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **Antigravity**: low_success_rate (0.0%)
+- **synthesizer**: low_success_rate (0.0%)
+- **resilience_test**: low_success_rate (0.0%)
+- **test_emitter**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **ag_001**: low_success_rate (0.0%)
+- **claude_ai_batch_8**: low_success_rate (0.0%)
+- **brain_add_loop**: low_success_rate (0.0%)
+- **user**: low_success_rate (0.0%)
+- **render_poller**: low_success_rate (0.0%)
+- **depth_tracker**: low_success_rate (0.0%)
+- **brain_update_task**: low_success_rate (0.0%)
+- **batch_3_smoke_test**: low_success_rate (0.0%)
+- **batch_2_smoke_test**: low_success_rate (0.0%)
+- **BRAIN_CONSOLIDATION**: low_success_rate (0.0%)
+- **brain_save_session**: low_success_rate (0.0%)
+- **antigravity_exec_001**: low_success_rate (0.0%)
+- **antigravity_001**: low_success_rate (0.0%)
+- **nucleus_orchestrate**: low_success_rate (0.0%)
+- **windsurf_exec_001**: low_success_rate (0.0%)
+- **ag_gemini_pro**: low_success_rate (0.0%)
+- **antigravity_002**: low_success_rate (0.0%)
+- **request_scanner**: low_success_rate (0.0%)
+
+### Recommendations (28)
+- **health_check**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **verifier**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **Antigravity**: Add more explicit tool usage examples to prompt
+- **synthesizer**: Add more explicit tool usage examples to prompt
+- **resilience_test**: Add more explicit tool usage examples to prompt
+- **test_emitter**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **ag_001**: Add more explicit tool usage examples to prompt
+- **claude_ai_batch_8**: Add more explicit tool usage examples to prompt
+- **brain_add_loop**: Add more explicit tool usage examples to prompt
+- **user**: Add more explicit tool usage examples to prompt
+- **render_poller**: Add more explicit tool usage examples to prompt
+- **depth_tracker**: Add more explicit tool usage examples to prompt
+- **brain_update_task**: Add more explicit tool usage examples to prompt
+- **batch_3_smoke_test**: Add more explicit tool usage examples to prompt
+- **batch_2_smoke_test**: Add more explicit tool usage examples to prompt
+- **BRAIN_CONSOLIDATION**: Add more explicit tool usage examples to prompt
+- **brain_save_session**: Add more explicit tool usage examples to prompt
+- **antigravity_exec_001**: Add more explicit tool usage examples to prompt
+- **antigravity_001**: Add more explicit tool usage examples to prompt
+- **nucleus_orchestrate**: Add more explicit tool usage examples to prompt
+- **windsurf_exec_001**: Add more explicit tool usage examples to prompt
+- **ag_gemini_pro**: Add more explicit tool usage examples to prompt
+- **antigravity_002**: Add more explicit tool usage examples to prompt
+- **request_scanner**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- verifier: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity: Add more explicit tool usage examples to prompt [pending_approval]
+- synthesizer: Add more explicit tool usage examples to prompt [pending_approval]
+- resilience_test: Add more explicit tool usage examples to prompt [pending_approval]
+- test_emitter: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_001: Add more explicit tool usage examples to prompt [pending_approval]
+- claude_ai_batch_8: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_add_loop: Add more explicit tool usage examples to prompt [pending_approval]
+- user: Add more explicit tool usage examples to prompt [pending_approval]
+- render_poller: Add more explicit tool usage examples to prompt [pending_approval]
+- depth_tracker: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_update_task: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_3_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_2_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- BRAIN_CONSOLIDATION: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_save_session: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_001: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_orchestrate: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_gemini_pro: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_002: Add more explicit tool usage examples to prompt [pending_approval]
+- request_scanner: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-01-31 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| brain_write_engram | 0.0% | 0.0% | 0 |
+| health_check | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 3 |
+| verifier | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| Antigravity | 0.0% | 0.0% | 0 |
+| synthesizer | 0.0% | 0.0% | 0 |
+| resilience_test | 0.0% | 0.0% | 0 |
+| test_emitter | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| ag_001 | 0.0% | 0.0% | 0 |
+| claude_ai_batch_8 | 0.0% | 0.0% | 0 |
+| brain_add_loop | 0.0% | 0.0% | 0 |
+| user | 0.0% | 0.0% | 0 |
+| render_poller | 0.0% | 0.0% | 0 |
+| depth_tracker | 0.0% | 0.0% | 0 |
+| brain_update_task | 0.0% | 0.0% | 0 |
+| batch_3_smoke_test | 0.0% | 0.0% | 0 |
+| batch_2_smoke_test | 0.0% | 0.0% | 0 |
+| BRAIN_CONSOLIDATION | 0.0% | 0.0% | 0 |
+| brain_save_session | 0.0% | 0.0% | 0 |
+| antigravity_exec_001 | 0.0% | 0.0% | 0 |
+| antigravity_001 | 0.0% | 0.0% | 0 |
+| nucleus_orchestrate | 0.0% | 0.0% | 0 |
+| windsurf_exec_001 | 0.0% | 0.0% | 0 |
+| ag_gemini_pro | 0.0% | 0.0% | 0 |
+| antigravity_002 | 0.0% | 0.0% | 0 |
+| request_scanner | 0.0% | 0.0% | 0 |
+
+### Issues Identified (29)
+- **brain_write_engram**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **verifier**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **Antigravity**: low_success_rate (0.0%)
+- **synthesizer**: low_success_rate (0.0%)
+- **resilience_test**: low_success_rate (0.0%)
+- **test_emitter**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **ag_001**: low_success_rate (0.0%)
+- **claude_ai_batch_8**: low_success_rate (0.0%)
+- **brain_add_loop**: low_success_rate (0.0%)
+- **user**: low_success_rate (0.0%)
+- **render_poller**: low_success_rate (0.0%)
+- **depth_tracker**: low_success_rate (0.0%)
+- **brain_update_task**: low_success_rate (0.0%)
+- **batch_3_smoke_test**: low_success_rate (0.0%)
+- **batch_2_smoke_test**: low_success_rate (0.0%)
+- **BRAIN_CONSOLIDATION**: low_success_rate (0.0%)
+- **brain_save_session**: low_success_rate (0.0%)
+- **antigravity_exec_001**: low_success_rate (0.0%)
+- **antigravity_001**: low_success_rate (0.0%)
+- **nucleus_orchestrate**: low_success_rate (0.0%)
+- **windsurf_exec_001**: low_success_rate (0.0%)
+- **ag_gemini_pro**: low_success_rate (0.0%)
+- **antigravity_002**: low_success_rate (0.0%)
+- **request_scanner**: low_success_rate (0.0%)
+
+### Recommendations (29)
+- **brain_write_engram**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **verifier**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **Antigravity**: Add more explicit tool usage examples to prompt
+- **synthesizer**: Add more explicit tool usage examples to prompt
+- **resilience_test**: Add more explicit tool usage examples to prompt
+- **test_emitter**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **ag_001**: Add more explicit tool usage examples to prompt
+- **claude_ai_batch_8**: Add more explicit tool usage examples to prompt
+- **brain_add_loop**: Add more explicit tool usage examples to prompt
+- **user**: Add more explicit tool usage examples to prompt
+- **render_poller**: Add more explicit tool usage examples to prompt
+- **depth_tracker**: Add more explicit tool usage examples to prompt
+- **brain_update_task**: Add more explicit tool usage examples to prompt
+- **batch_3_smoke_test**: Add more explicit tool usage examples to prompt
+- **batch_2_smoke_test**: Add more explicit tool usage examples to prompt
+- **BRAIN_CONSOLIDATION**: Add more explicit tool usage examples to prompt
+- **brain_save_session**: Add more explicit tool usage examples to prompt
+- **antigravity_exec_001**: Add more explicit tool usage examples to prompt
+- **antigravity_001**: Add more explicit tool usage examples to prompt
+- **nucleus_orchestrate**: Add more explicit tool usage examples to prompt
+- **windsurf_exec_001**: Add more explicit tool usage examples to prompt
+- **ag_gemini_pro**: Add more explicit tool usage examples to prompt
+- **antigravity_002**: Add more explicit tool usage examples to prompt
+- **request_scanner**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- brain_write_engram: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- verifier: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity: Add more explicit tool usage examples to prompt [pending_approval]
+- synthesizer: Add more explicit tool usage examples to prompt [pending_approval]
+- resilience_test: Add more explicit tool usage examples to prompt [pending_approval]
+- test_emitter: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_001: Add more explicit tool usage examples to prompt [pending_approval]
+- claude_ai_batch_8: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_add_loop: Add more explicit tool usage examples to prompt [pending_approval]
+- user: Add more explicit tool usage examples to prompt [pending_approval]
+- render_poller: Add more explicit tool usage examples to prompt [pending_approval]
+- depth_tracker: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_update_task: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_3_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- batch_2_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+- BRAIN_CONSOLIDATION: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_save_session: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_001: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_orchestrate: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_exec_001: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_gemini_pro: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_002: Add more explicit tool usage examples to prompt [pending_approval]
+- request_scanner: Add more explicit tool usage examples to prompt [pending_approval]

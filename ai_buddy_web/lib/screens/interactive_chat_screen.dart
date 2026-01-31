@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../navigation/home_tab_deeplink.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
@@ -798,13 +799,21 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      message.content,
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.w400,
-                        color: appTheme.colorFF1F29,
-                        height: 1.4,
+                    MarkdownBody(
+                      data: message.content,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w400,
+                          color: appTheme.colorFF1F29,
+                          height: 1.4,
+                        ),
+                        strong: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: appTheme.colorFF1F29,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                     // Hidden: do not render internal crisis debug content in UI
@@ -939,32 +948,49 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     }
   }
 
-  /// Simple smart-reply style suggestion chips - minimal, native to chat
   Widget _buildSuggestionChips() {
-    late final String label;
-    late final VoidCallback onTap;
+    final List<Widget> chips = [];
 
+    // Priority 1: Functional shortcuts (Check-in / Mood)
     if (!_todayCheckinDone) {
-      label = 'Quick check-in';
-      onTap = _openQuickCheckin;
+      chips.add(_buildChip('Quick check-in', _openQuickCheckin));
     } else if (!_todayMoodLogged) {
-      label = 'Log mood';
-      onTap = () {
+      chips.add(_buildChip('Log mood', () {
         _inputFocus.unfocus();
         homeTabDeepLink.value = AppTab.mood;
-      };
-    } else {
-      return const SizedBox.shrink();
+      }));
     }
+
+    // Priority 2: Conversation Starters (Always show if space permits or if functional ones are done)
+    // We'll show a random subset or fixed set to help the user get started.
+    final starters = [
+      'I\'m feeling anxious',
+      'Help me relax',
+      'I need to vent',
+      'Just chatting',
+    ];
+
+    for (final prompt in starters) {
+      chips.add(_buildChip(prompt, () {
+        _messageController.text = prompt;
+        _sendMessage();
+      }));
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.only(top: 6.h, bottom: 16.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 64.h),
-          Flexible(child: _buildChip(label, onTap)),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.only(left: 64.h, right: 16.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: chips
+              .expand((widget) => [widget, SizedBox(width: 8.h)])
+              .take(chips.length * 2 - 1) // Remove trailing spacer
+              .toList(),
+        ),
       ),
     );
   }

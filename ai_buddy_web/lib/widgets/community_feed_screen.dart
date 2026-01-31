@@ -256,7 +256,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value:
+                    initialValue:
                         (selectedTopic == null || selectedTopic == 'All')
                             ? null
                             : selectedTopic,

@@ -1,0 +1,311 @@
+[  +33 ms] executing: sysctl hw.optional.arm64
+[   +3 ms] Exit code 0 from: sysctl hw.optional.arm64
+[        ] hw.optional.arm64: 1
+[   +3 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +37 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +16 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[   +9 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +32 ms] Skipping pub get: version match.
+[ +168 ms] Found plugin url_launcher at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher-6.3.2/
+[   +2 ms] Found plugin url_launcher_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +2 ms] Found plugin url_launcher_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[   +1 ms] Found plugin url_launcher_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[        ] Found plugin url_launcher_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[   +1 ms] Found plugin url_launcher_ios at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[   +1 ms] Found plugin url_launcher_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[   +2 ms] Found plugin shared_preferences at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +1 ms] Found plugin path_provider_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +1 ms] Found plugin shared_preferences_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[   +1 ms] Found plugin shared_preferences_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +1 ms] Found plugin shared_preferences_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4/
+[        ] Found plugin shared_preferences_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10/
+[        ] Found plugin package_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1/
+[   +9 ms] Found plugin device_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/
+[   +4 ms] Found plugin sentry_flutter at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +4 ms] Found plugin in_app_review at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/in_app_review-2.0.11/
+[   +4 ms] Found plugin flutter_secure_storage at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4/
+[        ] Found plugin flutter_secure_storage_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2/
+[        ] Found plugin path_provider at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin flutter_secure_storage_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1/
+[   +1 ms] Found plugin flutter_secure_storage_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.1.3/
+[        ] Found plugin flutter_secure_storage_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.3/
+[   +4 ms] Found plugin flutter_local_notifications at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications-17.2.4/
+[   +2 ms] Found plugin flutter_local_notifications_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-4.0.1/
+[   +3 ms] Found plugin firebase_crashlytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_crashlytics-4.3.10/
+[   +1 ms] Found plugin firebase_core at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core-3.15.2/
+[        ] Found plugin firebase_core_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1/
+[   +1 ms] Found plugin firebase_analytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics-11.6.0/
+[        ] Found plugin firebase_analytics_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics_web-0.5.10+16/
+[   +5 ms] Found plugin sqflite at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +4 ms] Found plugin sqflite_darwin at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[   +3 ms] Found plugin app_links at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links-6.4.1/
+[        ] Found plugin app_links_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[        ] Found plugin app_links_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[        ] Found plugin gtk at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[  +38 ms] Found plugin url_launcher at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher-6.3.2/
+[        ] Found plugin url_launcher_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[        ] Found plugin url_launcher_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[        ] Found plugin url_launcher_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_ios at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin shared_preferences at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[        ] Found plugin path_provider_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[        ] Found plugin shared_preferences_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[        ] Found plugin shared_preferences_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[        ] Found plugin path_provider_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[        ] Found plugin shared_preferences_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4/
+[        ] Found plugin shared_preferences_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10/
+[        ] Found plugin package_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1/
+[   +1 ms] Found plugin device_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/
+[   +1 ms] Found plugin sentry_flutter at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +1 ms] Found plugin in_app_review at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/in_app_review-2.0.11/
+[   +1 ms] Found plugin flutter_secure_storage at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4/
+[        ] Found plugin flutter_secure_storage_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2/
+[        ] Found plugin path_provider at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin flutter_secure_storage_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1/
+[        ] Found plugin flutter_secure_storage_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.1.3/
+[        ] Found plugin flutter_secure_storage_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.3/
+[        ] Found plugin flutter_local_notifications at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications-17.2.4/
+[        ] Found plugin flutter_local_notifications_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-4.0.1/
+[        ] Found plugin firebase_crashlytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_crashlytics-4.3.10/
+[        ] Found plugin firebase_core at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core-3.15.2/
+[        ] Found plugin firebase_core_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1/
+[        ] Found plugin firebase_analytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics-11.6.0/
+[        ] Found plugin firebase_analytics_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics_web-0.5.10+16/
+[   +1 ms] Found plugin sqflite at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[        ] Found plugin sqflite_darwin at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[        ] Found plugin sqflite_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[        ] Found plugin app_links at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links-6.4.1/
+[        ] Found plugin app_links_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[        ] Found plugin app_links_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[        ] Found plugin gtk at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +5 ms] Skipping generating web_plugin_registrant.dart because it is up-to-date.
+[  +15 ms] Found plugin url_launcher at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher-6.3.2/
+[        ] Found plugin url_launcher_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[        ] Found plugin url_launcher_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[        ] Found plugin url_launcher_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_ios at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin shared_preferences at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[        ] Found plugin path_provider_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[        ] Found plugin shared_preferences_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[        ] Found plugin shared_preferences_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[        ] Found plugin path_provider_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[        ] Found plugin shared_preferences_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4/
+[        ] Found plugin shared_preferences_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10/
+[        ] Found plugin package_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1/
+[   +1 ms] Found plugin device_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/
+[        ] Found plugin sentry_flutter at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +1 ms] Found plugin in_app_review at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/in_app_review-2.0.11/
+[   +1 ms] Found plugin flutter_secure_storage at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4/
+[        ] Found plugin flutter_secure_storage_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2/
+[        ] Found plugin path_provider at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin flutter_secure_storage_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1/
+[        ] Found plugin flutter_secure_storage_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.1.3/
+[        ] Found plugin flutter_secure_storage_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.3/
+[        ] Found plugin flutter_local_notifications at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications-17.2.4/
+[        ] Found plugin flutter_local_notifications_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-4.0.1/
+[        ] Found plugin firebase_crashlytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_crashlytics-4.3.10/
+[        ] Found plugin firebase_core at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core-3.15.2/
+[        ] Found plugin firebase_core_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1/
+[        ] Found plugin firebase_analytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics-11.6.0/
+[        ] Found plugin firebase_analytics_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics_web-0.5.10+16/
+[   +1 ms] Found plugin sqflite at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[        ] Found plugin sqflite_darwin at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[        ] Found plugin sqflite_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[        ] Found plugin app_links at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links-6.4.1/
+[        ] Found plugin app_links_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[        ] Found plugin app_links_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[        ] Found plugin gtk at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +5 ms] Generating /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+[        ] Skipping generating GeneratedPluginRegistrant.java because it is up-to-date.
+[        ] Skipping generating GeneratedPluginRegistrant.h because it is up-to-date.
+[        ] Skipping generating GeneratedPluginRegistrant.m because it is up-to-date.
+[   +9 ms] executing: sysctl hw.optional.arm64
+[   +2 ms] Exit code 0 from: sysctl hw.optional.arm64
+[        ] hw.optional.arm64: 1
+[        ] executing: /usr/bin/arch -arm64e xcrun xcodebuild -version
+[ +197 ms] Exit code 0 from: /usr/bin/arch -arm64e xcrun xcodebuild -version
+[        ] Xcode 16.4
+           Build version 16F6
+[  +58 ms] Found plugin url_launcher at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher-6.3.2/
+[        ] Found plugin url_launcher_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[        ] Found plugin url_launcher_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[        ] Found plugin url_launcher_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_ios at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin shared_preferences at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[        ] Found plugin path_provider_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[        ] Found plugin shared_preferences_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[        ] Found plugin shared_preferences_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[        ] Found plugin path_provider_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[        ] Found plugin shared_preferences_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4/
+[        ] Found plugin shared_preferences_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10/
+[        ] Found plugin package_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1/
+[   +1 ms] Found plugin device_info_plus at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/device_info_plus-12.2.0/
+[        ] Found plugin sentry_flutter at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +1 ms] Found plugin in_app_review at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/in_app_review-2.0.11/
+[   +1 ms] Found plugin flutter_secure_storage at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4/
+[        ] Found plugin flutter_secure_storage_windows at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2/
+[        ] Found plugin path_provider at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_foundation at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin flutter_secure_storage_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1/
+[        ] Found plugin flutter_secure_storage_macos at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.1.3/
+[        ] Found plugin flutter_secure_storage_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.3/
+[        ] Found plugin flutter_local_notifications at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications-17.2.4/
+[        ] Found plugin flutter_local_notifications_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-4.0.1/
+[   +2 ms] Found plugin firebase_crashlytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_crashlytics-4.3.10/
+[        ] Found plugin firebase_core at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core-3.15.2/
+[        ] Found plugin firebase_core_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1/
+[        ] Found plugin firebase_analytics at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics-11.6.0/
+[        ] Found plugin firebase_analytics_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/firebase_analytics_web-0.5.10+16/
+[   +1 ms] Found plugin sqflite at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[        ] Found plugin sqflite_darwin at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[        ] Found plugin sqflite_android at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[        ] Found plugin app_links at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links-6.4.1/
+[        ] Found plugin app_links_web at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[        ] Found plugin app_links_linux at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[        ] Found plugin gtk at /Users/lokeshgarg/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[        ] generated_plugin_registrant.dart not found. Skipping.
+[        ] Compiling lib/main.dart for the Web...
+[   +2 ms] Initializing file store
+[        ] Done initializing file store
+[  +10 ms] Skipping target: web_entrypoint
+[        ] invalidated build due to missing files: /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/web/*/index.html, /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/web/flutter_bootstrap.js
+[        ] Skipping target: gen_localizations
+[        ] web_templated_files: Starting due to {InvalidatedReasonKind.outputMissing: The following outputs were missing: /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/build/web/*/index.html, InvalidatedReasonKind.inputMissing: The following inputs were missing: /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/web/*/index.html,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/web/flutter_bootstrap.js}
+[        ] web_static_assets: Starting due to {InvalidatedReasonKind.outputMissing: The following outputs were missing: /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/flutter.js,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm.js,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm_heavy.js,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm.js.symbols,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/canvaskit.js.symbols,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm_heavy.js.symbols,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm.wasm,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/chromium/canvaskit.js.symbols,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/chromium/canvaskit.js,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/chromium/canvaskit.wasm,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/canvaskit.js,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/canvaskit.wasm,/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/canvaskit/skwasm_heavy.wasm}
+[ +120 ms] web_static_assets: Complete
+[   +2 ms] dart2js: Starting due to {}
+[   +3 ms] executing: /opt/homebrew/share/flutter/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/opt/homebrew/share/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.35.1 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=20f8274939 -DFLUTTER_ENGINE_REVISION=1e9a811bf8 -DFLUTTER_DART_VERSION=3.9.0 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/1e9a811bf8e70466596bcf0ea3a8b5adb5f17f7f/ --native-null-assertions --no-source-maps -O4 --minify -o /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/app.dill --packages=/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/package_config.json --cfe-only /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/main.dart
+[   +3 ms] dart2wasm: Starting due to {}
+[   +1 ms] executing: /opt/homebrew/share/flutter/bin/cache/dart-sdk/bin/dart compile wasm --packages=/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/package_config.json --extra-compiler-option=--platform=/opt/homebrew/share/flutter/bin/cache/flutter_web_sdk/kernel/dart2wasm_platform.dill -Ddart.vm.profile=false -Ddart.vm.product=true --extra-compiler-option=--delete-tostring-package-uri=dart:ui --extra-compiler-option=--delete-tostring-package-uri=package:flutter --extra-compiler-option=--import-shared-memory --extra-compiler-option=--shared-memory-max-pages=32768 -DFLUTTER_VERSION=3.35.1 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=20f8274939 -DFLUTTER_ENGINE_REVISION=1e9a811bf8 -DFLUTTER_DART_VERSION=3.9.0 -DFLUTTER_WEB_USE_SKIA=false -DFLUTTER_WEB_USE_SKWASM=true -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/1e9a811bf8e70466596bcf0ea3a8b5adb5f17f7f/ --extra-compiler-option=--depfile=/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/dart2wasm.d -O2 --strip-wasm --no-source-maps --minify --extra-compiler-option=--dry-run -o /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/main.dart.wasm /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/main.dart
+[  +17 ms] web_templated_files: Complete
+[+6039 ms] Found incompatibilities with WebAssembly.
+
+           package:flutter_secure_storage_web/flutter_secure_storage_web.dart 5:1 - dart:html unsupported (0)
+           package:flutter_secure_storage_web/src/subtle.dart 21:1 - dart:html unsupported (0)
+           package:js/js.dart 10:1 - dart:js unsupported (1)
+           package:flutter_secure_storage_web/flutter_secure_storage_web.dart 6:1 - JS interop library 'dart:js_util' can't be imported when compiling to Wasm. (2)
+           package:flutter_secure_storage_web/src/subtle.dart 22:1 - JS interop library 'dart:js_util' can't be imported when compiling to Wasm. (2)
+           package:flutter_secure_storage_web/src/subtle.dart 26:1 - JS interop library 'package:js/js.dart' can't be imported when compiling to Wasm. (2)
+[   +1 ms] Wasm dry run findings:
+[        ] Found incompatibilities with WebAssembly.
+
+           package:flutter_secure_storage_web/flutter_secure_storage_web.dart 5:1 - dart:html unsupported (0)
+           package:flutter_secure_storage_web/src/subtle.dart 21:1 - dart:html unsupported (0)
+           package:js/js.dart 10:1 - dart:js unsupported (1)
+           package:flutter_secure_storage_web/flutter_secure_storage_web.dart 6:1 - JS interop library 'dart:js_util' can't be imported when compiling to Wasm. (2)
+           package:flutter_secure_storage_web/src/subtle.dart 22:1 - JS interop library 'dart:js_util' can't be imported when compiling to Wasm. (2)
+           package:flutter_secure_storage_web/src/subtle.dart 26:1 - JS interop library 'package:js/js.dart' can't be imported when compiling to Wasm. (2)
+
+[        ] Consider addressing these issues to enable wasm builds. See docs for more info: https://docs.flutter.dev/platform-integration/web/wasm
+
+[        ] Use --no-wasm-dry-run to disable these warnings.
+[  +14 ms] dart2wasm: Complete
+[ +862 ms] Compiled 49,244,841 input bytes (41,351,100 characters source) to 38,318,672 kernel bytes in 6.83 seconds
+           Dart file .dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/main.dart compiled to dill: .dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/app.dill.
+[        ] executing: /opt/homebrew/share/flutter/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/opt/homebrew/share/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.35.1 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=20f8274939 -DFLUTTER_ENGINE_REVISION=1e9a811bf8 -DFLUTTER_DART_VERSION=3.9.0 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/1e9a811bf8e70466596bcf0ea3a8b5adb5f17f7f/ --native-null-assertions --no-source-maps -O4 --minify -o /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/main.dart.js /Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/.dart_tool/flutter_build/9a1c2263c15bbda94342a01efc8ae80c/app.dill
+[+10198 ms] /opt/homebrew/share/flutter/packages/flutter/lib/src/widgets/widget_state.dart:1045:9:
+            Hint: This 'noSuchMethod' implementation is guaranteed to throw an exception. The generated code will be smaller if it is rewritten.
+            Rewrite to 'noSuchMethod(Invocation i) => super.noSuchMethod(i);'.
+              Never noSuchMethod(Invocation invocation) {
+                    ^
+            Compiled 55,226,192 input bytes (9,068,009 characters source) to 3,821,130 characters JavaScript in 10.1 seconds
+[  +36 ms] dart2js: Complete
+[ +566 ms] web_release_bundle: Starting due to {}
+[ +126 ms] Manifest contained wildcard assets. Inserting missing file into build graph to force rerun. for more information see #56466.
+[  +40 ms] shaderc command: [/opt/homebrew/share/flutter/bin/cache/artifacts/engine/darwin-x64/impellerc, --sksl, --iplr, --json, --sl=/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/build/web/assets/shaders/ink_sparkle.frag, --spirv=/Users/lokeshgarg/ai-mvp-backend/ai_buddy_web/build/web/assets/shaders/ink_sparkle.frag.spirv, --input=/opt/homebrew/share/flutter/packages/flutter/lib/src/material/shaders/ink_sparkle.frag, --input-type=frag, --include=/opt/homebrew/share/flutter/packages/flutter/lib/src/material/shaders, --include=/opt/homebrew/share/flutter/bin/cache/artifacts/engine/darwin-x64/shader_lib]
+[ +243 ms] web_release_bundle: Complete
+[ +375 ms] web_service_worker: Starting due to {}
+[ +353 ms] web_service_worker: Complete
+[ +279 ms] Persisting file store
+[   +4 ms] Done persisting file store
+[  +11 ms] Compiling lib/main.dart for the Web... (completed in 19.3s)
+[        ] ✓ Built build/web
+[  +16 ms] "flutter web" took 20,048ms.
+[   +2 ms] executing: sw_vers -productName
+[   +9 ms] Exit code 0 from: sw_vers -productName
+[        ] macOS
+[        ] executing: sw_vers -productVersion
+[   +7 ms] Exit code 0 from: sw_vers -productVersion
+[        ] 26.1
+[        ] executing: sw_vers -buildVersion
+[   +7 ms] Exit code 0 from: sw_vers -buildVersion
+[        ] 25B78
+[        ] executing: uname -m
+[   +3 ms] Exit code 0 from: uname -m
+[        ] arm64
+[  +22 ms] Running 1 shutdown hook
+[        ] Shutdown hooks complete
+[ +229 ms] exiting with code 0

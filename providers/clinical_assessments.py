@@ -100,6 +100,7 @@ def score_phq9(responses: List[int]) -> Dict:
         "requires_follow_up": requires_follow_up,
         "follow_up_reason": "Question 9 indicates thoughts of self-harm" if requires_follow_up else None,
         "recommendations": get_phq9_recommendations(severity, requires_follow_up),
+        "responses": responses,
     }
 
 
@@ -130,6 +131,7 @@ def score_gad7(responses: List[int]) -> Dict:
         "severity": severity,
         "message": message,
         "recommendations": get_gad7_recommendations(severity),
+        "responses": responses,
     }
 
 

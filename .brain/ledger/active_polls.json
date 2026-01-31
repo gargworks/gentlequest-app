@@ -1,3 +1,18 @@
 {
-  "polls": []
+  "polls": [
+    {
+      "poll_id": "poll-1768828661-0c3987b2",
+      "service_id": "srv-cqv3s8ggph6c7380k780",
+      "commit_sha": "6cd4654",
+      "started_at": "2026-01-19T18:47:41+0530",
+      "status": "polling"
+    },
+    {
+      "poll_id": "poll-1769225687-78269f7d",
+      "service_id": "srv-test-batch-4",
+      "commit_sha": "abc123def456ghi789",
+      "started_at": "2026-01-24T03:34:47+0000",
+      "status": "polling"
+    }
+  ]
 }

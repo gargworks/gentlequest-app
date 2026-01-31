@@ -9,18 +9,17 @@ class AlertInboxScreen extends StatefulWidget {
   final int universityId;
 
   const AlertInboxScreen({
-    Key? key,
+    super.key,
     required this.apiBaseUrl,
     required this.universityId,
-  }) : super(key: key);
+  });
 
   @override
   _AlertInboxScreenState createState() => _AlertInboxScreenState();
 }
 
-class _AlertInboxScreenState extends State<AlertInboxScreen> 
+class _AlertInboxScreenState extends State<AlertInboxScreen>
     with SingleTickerProviderStateMixin {
-  
   late TabController _tabController;
   List<CounselorAlert> _alerts = [];
   bool _isLoading = true;
@@ -54,8 +53,9 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
 
     try {
       final status = _tabController.index == 0 ? 'pending' : 'acknowledged';
-      final url = '${widget.apiBaseUrl}/api/alerts/history?university_id=${widget.universityId}&status=$status';
-      
+      final url =
+          '${widget.apiBaseUrl}/api/alerts/history?university_id=${widget.universityId}&status=$status';
+
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -76,7 +76,7 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
       });
     }
   }
-  
+
   void _onAlertTap(CounselorAlert alert) {
     // Navigate to details (placeholder for now)
     showDialog(
@@ -97,7 +97,8 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
                 child: const Text("Acknowledge Alert"),
               )
             else
-              const Text("✅ Already Acknowledged", style: TextStyle(color: Colors.green)),
+              const Text("✅ Already Acknowledged",
+                  style: TextStyle(color: Colors.green)),
           ],
         ),
         actions: [
@@ -113,15 +114,13 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
   Future<void> _acknowledgeAlert(int alertId) async {
     try {
       final url = '${widget.apiBaseUrl}/api/alerts/$alertId/acknowledge';
-      await http.post(
-        Uri.parse(url),
-        headers: {"Content-Type": "application/json"},
-        body: json.encode({
-          "counselor_id": "current_counselor", // Placeholder
-          "response_notes": "Acknowledged via dashboard",
-          "action_taken": "review_pending"
-        })
-      );
+      await http.post(Uri.parse(url),
+          headers: {"Content-Type": "application/json"},
+          body: json.encode({
+            "counselor_id": "current_counselor", // Placeholder
+            "response_notes": "Acknowledged via dashboard",
+            "action_taken": "review_pending"
+          }));
       Navigator.pop(context); // Close dialog
       _fetchAlerts(); // Refresh list
     } catch (e) {
@@ -162,10 +161,11 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inbox, size: 64, color: Colors.grey.shade300),
+                          Icon(Icons.inbox,
+                              size: 64, color: Colors.grey.shade300),
                           const SizedBox(height: 16),
                           Text(
-                            _tabController.index == 0 
+                            _tabController.index == 0
                                 ? "No pending alerts. All clear! 🎉"
                                 : "No resolved alerts yet.",
                             style: TextStyle(color: Colors.grey.shade600),

@@ -473,8 +473,11 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                widget.onComplete?.call();
-                Navigator.of(context).pop();
+                if (widget.onComplete != null) {
+                  widget.onComplete!();
+                } else {
+                  Navigator.of(context).pop();
+                }
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),

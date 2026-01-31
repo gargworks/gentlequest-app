@@ -1,7 +1,7 @@
 """
 Nucleus Agent Runtime - Event Stream
 =====================================
-The nervous system of the Agent OS.
+The nervous system of the Agent Control Plane.
 Events flow through here, triggering agent activation.
 
 Location: mcp_server_nucleus/runtime/event_stream.py
@@ -197,3 +197,17 @@ class EventTypes:
     BRAIN_INITIALIZED = "brain_initialized"
     DAILY_DIGEST_GENERATED = "daily_digest_generated"
     META_OPTIMIZATION_COMPLETE = "meta_optimization_complete"
+    
+    # v0.6.0 DSoR - Federation Events
+    FEDERATION_PEER_JOINED = "federation_peer_joined"
+    FEDERATION_PEER_LEFT = "federation_peer_left"
+    FEDERATION_PEER_SUSPECT = "federation_peer_suspect"
+    FEDERATION_LEADER_ELECTED = "federation_leader_elected"
+    FEDERATION_TASK_ROUTED = "federation_task_routed"
+    FEDERATION_STATE_SYNCED = "federation_state_synced"
+    
+    # v0.6.0 DSoR - Decision Provenance
+    DECISION_MADE = "decision_made"
+    CONTEXT_SNAPSHOT = "context_snapshot"
+    IPC_TOKEN_ISSUED = "ipc_token_issued"
+    IPC_TOKEN_CONSUMED = "ipc_token_consumed"

@@ -95,7 +95,7 @@ The Oracle applies this logic flow to determine WHICH strategy to apply:
 | 21 | Grounding | "Observe" state immediately before "Acting" | [2] |
 | 22 | Fuzzy Logic | Validate text where exact string match fails | [1] |
 | 23 | Sanity Checks | Hard-code bounds (e.g., max refund limits) | [2] |
-| 24 | Clean Context | Summarize often; long history breeds errors | [3] |
+| 24 | Checkpoints | Save state at major milestones (End of Day), not every task | [3] |
 
 ### IX. Process Isolation (Strategies 25-28)
 | # | Strategy | Mechanism | Source |

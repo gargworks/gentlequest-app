@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../config/feature_flags.dart';
 
 /// App-wide bottom navigation used across Talk, Mood, Quest screens
 /// Ensures consistent look and navigation behavior.
@@ -44,9 +45,10 @@ class AppBottomNav extends StatelessWidget {
                       activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(context, Icons.mood, 'Mood', AppTab.mood,
                       activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.emoji_events_outlined, 'Quest',
-                      AppTab.quest,
-                      activeLabelOnly: kActiveLabelOnlyDemo),
+                  if (FeatureFlags.enableLeopardMode)
+                    _buildItem(context, Icons.emoji_events_outlined, 'Quest',
+                        AppTab.quest,
+                        activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(context, Icons.people_outline, 'Community',
                       AppTab.community,
                       activeLabelOnly: kActiveLabelOnlyDemo),

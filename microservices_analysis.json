@@ -1,0 +1,52 @@
+[
+  {
+    "name": "MicroserviceA",
+    "codebase_path": "/mock_repos/microserviceA",
+    "runtime": "Python 3.9",
+    "dependencies": ["boto3", "requests", "flask"],
+    "configuration_secrets": ["DB_CONNECTION_STRING", "AWS_ACCESS_KEY_ID"],
+    "cpu_requirements": "medium",
+    "memory_requirements": "1GB",
+    "aws_sdk_usage": ["s3", "lambda", "sqs"]
+  },
+  {
+    "name": "MicroserviceB",
+    "codebase_path": "/mock_repos/microserviceB",
+    "runtime": "Node.js 16",
+    "dependencies": ["aws-sdk", "express", "axios"],
+    "configuration_secrets": ["API_KEY_STRIPE", "RDS_PASSWORD"],
+    "cpu_requirements": "low",
+    "memory_requirements": "512MB",
+    "aws_sdk_usage": ["dynamodb", "sns"]
+  },
+  {
+    "name": "MicroserviceC",
+    "codebase_path": "/mock_repos/microserviceC",
+    "runtime": "Java 11",
+    "dependencies": ["aws-java-sdk-s3", "spring-boot-starter-web"],
+    "configuration_secrets": ["KMS_KEY_ID", "SERVICE_ACCOUNT_PASSWORD"],
+    "cpu_requirements": "high",
+    "memory_requirements": "2GB",
+    "aws_sdk_usage": ["ec2", "rds", "iam"]
+  },
+  {
+    "name": "MicroserviceD",
+    "codebase_path": "/mock_repos/microserviceD",
+    "runtime": "Python 3.8",
+    "dependencies": ["boto3", "pandas"],
+    "configuration_secrets": ["REDIS_HOST", "SECRET_MANAGER_NAME"],
+    "cpu_requirements": "medium",
+    "memory_requirements": "1.5GB",
+    "aws_sdk_usage": ["secretsmanager", "cloudwatch"]
+  },
+  {
+    "name": "MicroserviceE",
+    "codebase_path": "/mock_repos/microserviceE",
+    "runtime": "Go 1.18",
+    "dependencies": ["github.com/aws/aws-sdk-go-v2"],
+    "configuration_secrets": ["MQ_USERNAME", "EVENT_BUS_ARN"],
+    "cpu_requirements": "low",
+    "memory_requirements": "256MB",
+    "aws_sdk_usage": ["eventbridge", "sns"]
+  }
+]

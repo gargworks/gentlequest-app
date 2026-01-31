@@ -1,6 +1,24 @@
 {
   "product": "nucleus",
-  "last_updated": "",
-  "total_features": 0,
-  "features": []
+  "last_updated": "2026-01-24T03:05:35+0000",
+  "total_features": 1,
+  "features": [
+    {
+      "id": "smoke_test_feature",
+      "name": "smoke_test_feature",
+      "description": "Dry run test feature for smoke testing",
+      "product": "nucleus",
+      "source": "smoke_test",
+      "version": "0.2.0",
+      "status": "staged",
+      "how_to_test": [
+        "Run smoke test",
+        "Verify registration"
+      ],
+      "expected_result": "Feature registered and queryable",
+      "created_at": "2026-01-24T03:04:44+0000",
+      "last_validated": "2026-01-24T03:05:35+0000",
+      "validation_result": "passed"
+    }
+  ]
 }

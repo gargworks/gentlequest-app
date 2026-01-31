@@ -381,7 +381,7 @@ Enhance `nucleus-init` to provide a guided onboarding experience for new users.
     - [x] **MDR_006: Fluid Sync (Autopilot) 🤖**
         - [x] **Decision:** Stick to Weekly Sync (Sunday Bundle) for stability.
         - [x] **Status:** Existing `run_sunday_bundle.sh` covers this. No new code needed.
-    - [x] **MDR_005: Agent OS Validation** (The "Nightly" fix)
+    - [x] **MDR_005: Agent Control Plane Validation** (The "Nightly" fix)
         - [x] Centralize `nightly_agent.py` logic into `commitment_ledger.py`
         - [x] Refactor `nightly_agent.py` to be a thin wrapper using `ContextFactory` and `EphemeralAgent`
     - [x] **Setup Firebase Project** (Created "GentleQuest" / "GargEnterprises" project)

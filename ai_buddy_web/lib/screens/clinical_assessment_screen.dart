@@ -91,8 +91,8 @@ class ClinicalAssessmentScreen extends StatelessWidget {
     );
   }
 
-  void _startAssessment(BuildContext context, String type) {
-    Navigator.of(context).push(
+  Future<void> _startAssessment(BuildContext context, String type) async {
+    final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
@@ -102,12 +102,16 @@ class ClinicalAssessmentScreen extends StatelessWidget {
           body: ClinicalAssessmentWidget(
             assessmentType: type,
             onComplete: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(true);
             },
           ),
         ),
       ),
     );
+
+    if (result == true && context.mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 }
 

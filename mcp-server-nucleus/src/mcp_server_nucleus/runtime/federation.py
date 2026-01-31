@@ -9,8 +9,13 @@ to coordinate across geographic regions with:
 - Composite task routing with pluggable strategies
 - Partition tolerance and automatic recovery
 
+v0.6.0 DSoR Integration:
+- DecisionMade events for all federation operations
+- Context hashing for state verification
+- IPC token security for cross-brain communication
+
 Author: NOP V3.1 Team
-Version: 1.0.0
+Version: 1.1.0-DSoR
 """
 
 from __future__ import annotations
@@ -29,6 +34,15 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+
+# v0.6.0 DSoR imports
+try:
+    from .context_manager import compute_context_hash, get_context_manager
+    from .ipc_auth import get_ipc_auth_manager
+    from .event_stream import emit_event, EventTypes
+    DSOR_AVAILABLE = True
+except ImportError:
+    DSOR_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -789,20 +803,67 @@ class FederationEngine:
         self.metrics.peers_total = len(self.state.peers)
         self.metrics.peers_online = len([p for p in self.state.peers.values() if p.is_online()])
         logger.info(f"Peer joined: {peer.peer_id}")
+        
+        # v0.6.0 DSoR: Emit federation event
+        if DSOR_AVAILABLE:
+            try:
+                emit_event(EventTypes.FEDERATION_PEER_JOINED, {
+                    "peer_id": peer.peer_id,
+                    "region": peer.region,
+                    "trust_level": peer.trust_level.name,
+                    "decision_id": str(uuid.uuid4()),
+                    "context_hash": self.sync.merkle_tree.get_root()
+                })
+            except Exception as e:
+                logger.debug(f"DSoR event emission failed: {e}")
     
     def _on_peer_left(self, peer_id: str) -> None:
         self.metrics.peers_online = len([p for p in self.state.peers.values() if p.is_online()])
         asyncio.create_task(self.recovery.handle_peer_failure(peer_id))
         logger.warning(f"Peer left: {peer_id}")
+        
+        # v0.6.0 DSoR: Emit federation event
+        if DSOR_AVAILABLE:
+            try:
+                emit_event(EventTypes.FEDERATION_PEER_LEFT, {
+                    "peer_id": peer_id,
+                    "decision_id": str(uuid.uuid4()),
+                    "context_hash": self.sync.merkle_tree.get_root()
+                })
+            except Exception as e:
+                logger.debug(f"DSoR event emission failed: {e}")
     
     def _on_peer_suspect(self, peer_id: str) -> None:
         self.metrics.peers_suspect = len([p for p in self.state.peers.values() if p.status == PeerStatus.SUSPECT])
         logger.warning(f"Peer suspect: {peer_id}")
+        
+        # v0.6.0 DSoR: Emit federation event
+        if DSOR_AVAILABLE:
+            try:
+                emit_event(EventTypes.FEDERATION_PEER_SUSPECT, {
+                    "peer_id": peer_id,
+                    "decision_id": str(uuid.uuid4())
+                })
+            except Exception as e:
+                logger.debug(f"DSoR event emission failed: {e}")
     
     def _on_leader_change(self, leader_id: Optional[str]) -> None:
         self.metrics.raft_leader_changes += 1
         self.metrics.raft_term = self.state.term
         logger.info(f"Leader changed to: {leader_id}")
+        
+        # v0.6.0 DSoR: Emit leader election event (critical decision)
+        if DSOR_AVAILABLE:
+            try:
+                emit_event(EventTypes.FEDERATION_LEADER_ELECTED, {
+                    "leader_id": leader_id,
+                    "term": self.state.term,
+                    "decision_id": str(uuid.uuid4()),
+                    "context_hash": self.sync.merkle_tree.get_root(),
+                    "is_self": leader_id == self.config.brain_id
+                })
+            except Exception as e:
+                logger.debug(f"DSoR event emission failed: {e}")
     
     async def start(self) -> None:
         self.running = True
@@ -870,6 +931,21 @@ class FederationEngine:
         """Route a task to the optimal brain."""
         decision = await self.routing.route_task(task, profile)
         self.metrics.tasks_routed += 1
+        
+        # v0.6.0 DSoR: Log routing decision with provenance
+        if DSOR_AVAILABLE:
+            try:
+                emit_event(EventTypes.FEDERATION_TASK_ROUTED, {
+                    "target_brain": decision.target_brain,
+                    "score": decision.score,
+                    "profile": profile,
+                    "decision_id": str(uuid.uuid4()),
+                    "routing_time_ms": decision.routing_time_ms,
+                    "alternatives_count": len(decision.alternatives)
+                })
+            except Exception as e:
+                logger.debug(f"DSoR routing event failed: {e}")
+        
         return decision
     
     async def sync_now(self) -> List[SyncResult]:

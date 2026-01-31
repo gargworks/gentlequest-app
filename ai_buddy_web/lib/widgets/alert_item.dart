@@ -6,10 +6,10 @@ class AlertItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const AlertItem({
-    Key? key,
+    super.key,
     required this.alert,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   Color _getSeverityColor() {
     switch (alert.severity) {
@@ -35,8 +35,8 @@ class AlertItem extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: _isAcknowledged 
-              ? Colors.grey.shade300 
+          backgroundColor: _isAcknowledged
+              ? Colors.grey.shade300
               : _getSeverityColor().withOpacity(0.2),
           child: Icon(
             Icons.warning_amber_rounded,
@@ -59,9 +59,8 @@ class AlertItem extends StatelessWidget {
             Row(
               children: [
                 _Badge(
-                  label: alert.severity.toUpperCase(), 
-                  color: _getSeverityColor()
-                ),
+                    label: alert.severity.toUpperCase(),
+                    color: _getSeverityColor()),
                 const SizedBox(width: 8),
                 Text(
                   "Session: ${alert.sessionId.substring(0, 8)}...",

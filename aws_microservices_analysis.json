@@ -1,0 +1,110 @@
+[{
+    "service_name": "user-service",
+    "language": "Node.js",
+    "framework": "Express",
+    "dependencies": ["aws-sdk", "pg", "redis"],
+    "aws_resource_type": "ECS Fargate",
+    "cpu_request": "1 vCPU",
+    "memory_request": "2 GB",
+    "environment_variables": ["DB_HOST", "DB_USER", "REDIS_HOST"],
+    "secrets": ["DB_PASSWORD"]
+  },
+  {
+    "service_name": "product-catalog-service",
+    "language": "Java",
+    "framework": "Spring Boot",
+    "dependencies": ["aws-java-sdk-s3", "spring-data-jpa", "mysql-connector-java"],
+    "aws_resource_type": "ECS Fargate",
+    "cpu_request": "2 vCPU",
+    "memory_request": "4 GB",
+    "environment_variables": ["DB_URL", "S3_BUCKET_NAME"],
+    "secrets": ["DB_PASSWORD"]
+  },
+  {
+    "service_name": "order-service",
+    "language": "Python",
+    "framework": "Flask",
+    "dependencies": ["boto3", "psycopg2-binary"],
+    "aws_resource_type": "Lambda",
+    "cpu_request": "N/A",
+    "memory_request": "512 MB",
+    "environment_variables": ["ORDERS_TABLE_NAME"],
+    "secrets": []
+  },
+  {
+    "service_name": "payment-service",
+    "language": "Go",
+    "framework": "Gin",
+    "dependencies": ["stripe-go", "aws-sdk-go"],
+    "aws_resource_type": "ECS Fargate",
+    "cpu_request": "1 vCPU",
+    "memory_request": "1 GB",
+    "environment_variables": ["STRIPE_API_VERSION"],
+    "secrets": ["STRIPE_SECRET_KEY"]
+  },
+  {
+    "service_name": "inventory-service",
+    "language": "Java",
+    "framework": "Quarkus",
+    "dependencies": ["mongodb-driver-sync", "quarkus-resteasy"],
+    "aws_resource_type": "EC2",
+    "cpu_request": "2 vCPU",
+    "memory_request": "4 GB",
+    "environment_variables": ["MONGO_DB_NAME", "MONGO_CONN_STRING"],
+    "secrets": []
+  },
+  {
+    "service_name": "shipping-service",
+    "language": "Node.js",
+    "framework": "Hapi",
+    "dependencies": ["aws-sdk", "fedex-api"],
+    "aws_resource_type": "ECS Fargate",
+    "cpu_request": "0.5 vCPU",
+    "memory_request": "1 GB",
+    "environment_variables": ["FEDEX_API_URL"],
+    "secrets": ["FEDEX_API_KEY"]
+  },
+  {
+    "service_name": "recommendation-engine",
+    "language": "Python",
+    "framework": "FastAPI",
+    "dependencies": ["scikit-learn", "pandas", "boto3"],
+    "aws_resource_type": "EC2",
+    "cpu_request": "4 vCPU",
+    "memory_request": "16 GB",
+    "environment_variables": ["MODEL_S3_PATH"],
+    "secrets": []
+  },
+  {
+    "service_name": "authentication-service",
+    "language": "Go",
+    "framework": "Echo",
+    "dependencies": ["jwt-go", "aws-sdk-go-v2-cognitoidentityprovider"],
+    "aws_resource_type": "Lambda",
+    "cpu_request": "N/A",
+    "memory_request": "256 MB",
+    "environment_variables": ["JWT_ISSUER", "COGNITO_USER_POOL_ID"],
+    "secrets": ["JWT_SECRET"]
+  },
+  {
+    "service_name": "notification-service",
+    "language": "Node.js",
+    "framework": "NestJS",
+    "dependencies": ["@aws-sdk/client-ses", "@aws-sdk/client-sns"],
+    "aws_resource_type": "Lambda",
+    "cpu_request": "N/A",
+    "memory_request": "512 MB",
+    "environment_variables": ["EMAIL_FROM_ADDRESS", "SMS_SENDER_ID"],
+    "secrets": []
+  },
+  {
+    "service_name": "search-service",
+    "language": "Java",
+    "framework": "Spring Boot",
+    "dependencies": ["spring-boot-starter-data-elasticsearch"],
+    "aws_resource_type": "ECS Fargate",
+    "cpu_request": "2 vCPU",
+    "memory_request": "8 GB",
+    "environment_variables": ["ELASTICSEARCH_HOST", "ELASTICSEARCH_PORT"],
+    "secrets": []
+  }]

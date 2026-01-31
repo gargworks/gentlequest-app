@@ -10,7 +10,7 @@
 
 ### What Is Nucleus?
 
-Nucleus is the **Operating System for AI Agents**—a persistent, declarative task orchestrator that transforms chatbots into co-workers.
+Nucleus is the **Agent Control Plane**—a persistent, declarative task orchestrator that transforms chatbots into governed, auditable co-workers.
 
 ### The Problem
 

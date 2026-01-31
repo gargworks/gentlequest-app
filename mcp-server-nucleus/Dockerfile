@@ -1,7 +1,7 @@
 # ============================================================================
 # Nucleus MCP Server - Production Dockerfile
 # Version: 0.5.0
-# Description: Operating System for AI Agents
+# Description: The Agent Control Plane for MCP Servers
 # ============================================================================
 
 # Build stage
@@ -30,7 +30,7 @@ FROM python:3.11-slim as production
 # Labels
 LABEL maintainer="Nucleus Team <hello@nucleus-mcp.com>"
 LABEL version="0.5.0"
-LABEL description="Nucleus MCP Server - Operating System for AI Agents"
+LABEL description="Nucleus MCP Server - The Agent Control Plane"
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \

@@ -1,0 +1,91 @@
+# Dockerfile.template
+# This template provides a standardized, multi-stage Dockerfile for microservices.
+# It prioritizes small image size, fast builds, and security.
+
+# --- STAGE 1: Builder Stage ---
+# Use a build-time base image with all necessary tools for compiling/building your application.
+# Replace 'node:lts-alpine' with the appropriate base image for your language (e.g., python:3.9-slim-buster, golang:1.18-alpine).
+ARG BUILD_IMAGE=node:lts-alpine
+FROM ${BUILD_IMAGE} as builder
+
+# Set working directory inside the container.
+WORKDIR /app
+
+# Copy dependency manifest files and install dependencies first for better caching.
+# This assumes a package manager like npm, yarn, pip, or go modules.
+# Adjust these lines based on your specific language/framework.
+# Example for Node.js:
+# COPY package.json package-lock.json ./ 
+# RUN npm ci --only=production
+# Example for Python:
+# COPY requirements.txt ./ 
+# RUN pip install --no-cache-dir -r requirements.txt
+# Example for Go:
+# COPY go.mod go.sum ./ 
+# RUN go mod download
+
+# Copy the rest of your application code.
+COPY . .
+
+# Build your application (if applicable).
+# Example for Node.js (TypeScript/Babel):
+# RUN npm run build
+# Example for Go:
+# RUN CGO_ENABLED=0 GOOS=linux go build -o /app/service_name -ldflags "-s -w" ./cmd/service_name
+# Ensure `service_name` is replaced with your actual executable name.
+
+
+# --- STAGE 2: Production Stage ---
+# Use a minimal runtime base image to reduce the final image size and attack surface.
+# Replace 'node:lts-alpine' with the smallest appropriate runtime image.
+# For static binaries (Go), 'scratch' or 'alpine' is ideal.
+# For Python, 'python:3.9-slim-buster' or 'distroless/python3' is good.
+ARG RUNTIME_IMAGE=node:lts-alpine
+FROM ${RUNTIME_IMAGE} as production
+
+# Set non-root user for security (if available in the base image).
+# For 'alpine' or 'debian-slim' based images, `adduser` might be available.
+# Example: RUN adduser --system --group --uid 1000 appuser
+# USER appuser
+
+# Set working directory.
+WORKDIR /app
+
+# Copy only the necessary build artifacts from the builder stage.
+# Adjust paths based on your build output.
+# Example for Node.js:
+# COPY --from=builder /app/node_modules ./node_modules
+# COPY --from=builder /app/dist ./dist
+# COPY --from=builder /app/package.json ./
+# Example for Python:
+# COPY --from=builder /usr/local/lib/python*/site-packages /usr/local/lib/python*/site-packages
+# COPY --from=builder /app/src ./src
+# Example for Go:
+# COPY --from=builder /app/service_name ./
+
+# Expose the port your application listens on.
+# Replace 8080 with your application's actual port.
+EXPOSE 8080
+
+# Define environment variables (e.g., for Cloud Run).
+# ENV PORT 8080
+# ENV NODE_ENV production
+
+# Health check (optional but recommended for robust deployments).
+# For HTTP services:
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget --quiet --tries=1 --timeout=1 -O /dev/null http://localhost:8080/health || exit 1
+
+# Command to run your application.
+# This should be the entrypoint for your service.
+# Example for Node.js:
+# CMD ["node", "dist/index.js"]
+# Example for Python:
+# CMD ["python", "src/app.py"]
+# Example for Go:
+# CMD ["./service_name"]
+
+# Best practices for Cloud Run:
+# - Listen on 0.0.0.0 and the PORT environment variable (default 8080).
+# - Be stateless.
+# - Handle signals properly (SIGTERM).
+# - Log to stdout/stderr.

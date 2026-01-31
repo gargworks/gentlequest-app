@@ -89,4 +89,10 @@ Optimize all blog content to be *cited* by AI agents (Gemini, Claude, Perplexity
 *   **Nucleus:**
     *   **New Opportunity:** Consider posting Nucleus (CLI tool) content to r/ClaudeAI (different audience, safer).
 
+**Updated Angles Based on Log:**
+
+*   **AI Integration (Unified):** The trend of AI taking over presents an opportunity. Position both GentleQuest and Nucleus as tools that help users navigate the increasing influence of AI in their lives and work.
+*   **CLI Focus (Nucleus):**  Developers' love for CLI tools should be leveraged for Nucleus adoption. Emphasize the Nucleus CLI tool in marketing materials and tutorials.
+*   **Local-First Brain (Nucleus):** Continue to push the 'Local-First Brain' angle for Nucleus as privacy concerns grow.
+*   **GentleQuest Product Angle:** "Roast my Anti-Productivity Tool" -- leaning into the counter-intuitive and lighthearted brand that GentleQuest is trying to establish.
 ```

@@ -1,0 +1,155 @@
+#!/bin/bash
+
+# deploy_cloud_run.sh.template
+# This script automates the deployment of a containerized service to Google Cloud Run.
+# It is designed to be called from a CI/CD pipeline (e.g., Cloud Build) or manually.
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# --- Configuration Variables ---
+# These variables can be overridden via environment variables or command-line arguments.
+# Default values are provided for convenience.
+
+SERVICE_NAME="${SERVICE_NAME:-my-service}"
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project)}"
+REGION="${REGION:-us-central1}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+IMAGE_REPO="${IMAGE_REPO:-gcr.io/${PROJECT_ID}/${SERVICE_NAME}}"
+# The full image path: e.g., gcr.io/my-project/my-service:latest
+FULL_IMAGE_PATH="${IMAGE_REPO}:${IMAGE_TAG}"
+
+# Cloud Run specific settings
+MEMORY="${MEMORY:-512Mi}"
+CPU="${CPU:-1}"
+CONCURRENCY="${CONCURRENCY:-80}"
+MIN_INSTANCES="${MIN_INSTANCES:-0}"
+MAX_INSTANCES="${MAX_INSTANCES:-10}"
+ALLOW_UNAUTHENTICATED="${ALLOW_UNAUTHENTICATED:-false}" # 'true' or 'false'
+
+# Service Account for the Cloud Run Revision. Must have necessary permissions.
+# By default, use the project's default compute service account.
+SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-$(gcloud projects describe ${PROJECT_ID} --format='value(projectNumber)')-compute@developer.gserviceaccount.com}"
+
+# Environment variables to set (e.g., "VAR1=value1,VAR2=value2")
+ENV_VARS="${ENV_VARS:-}"
+
+# Secrets to set (e.g., "VAR_NAME=SECRET_ID:VERSION")
+SECRETS="${SECRETS:-}"
+
+# --- Helper Functions ---
+log_info() {
+  echo "[INFO] $1"
+}
+
+log_error() {
+  echo "[ERROR] $1" >&2
+}
+
+# --- Argument Parsing (Basic) ---
+# This allows overriding variables via command line, e.g., ./deploy.sh --service-name=my-app
+for i in "$@"; do
+  case $i in
+    --service-name=*)
+      SERVICE_NAME="${i#*=}"
+      shift # past argument=value
+      ;;
+    --project-id=*)
+      PROJECT_ID="${i#*=}"
+      shift # past argument=value
+      ;;
+    --region=*)
+      REGION="${i#*=}"
+      shift # past argument=value
+      ;;
+    --image-tag=*)
+      IMAGE_TAG="${i#*=}"
+      shift # past argument=value
+      ;;
+    --image-repo=*)
+      IMAGE_REPO="${i#*=}"
+      shift # past argument=value
+      ;;
+    --memory=*)
+      MEMORY="${i#*=}"
+      shift # past argument=value
+      ;;
+    --cpu=*)
+      CPU="${i#*=}"
+      shift # past argument=value
+      ;;
+    --concurrency=*)
+      CONCURRENCY="${i#*=}"
+      shift # past argument=value
+      ;;
+    --min-instances=*)
+      MIN_INSTANCES="${i#*=}"
+      shift # past argument=value
+      ;;
+    --max-instances=*)
+      MAX_INSTANCES="${i#*=}"
+      shift # past argument=value
+      ;;
+    --allow-unauthenticated=*)
+      ALLOW_UNAUTHENTICATED="${i#*=}"
+      shift # past argument=value
+      ;;
+    --service-account=*)
+      SERVICE_ACCOUNT="${i#*=}"
+      shift # past argument=value
+      ;;
+    --env-vars=*)
+      ENV_VARS="${i#*=}"
+      shift # past argument=value
+      ;;
+    --secrets=*)
+      SECRETS="${i#*=}"
+      shift # past argument=value
+      ;;
+    -*|--*)
+      log_error "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      # positional arguments not supported for now
+      ;;
+  esac
+done
+
+log_info "Starting Cloud Run deployment for service: ${SERVICE_NAME}"
+log_info "Project: ${PROJECT_ID}"
+log_info "Region: ${REGION}"
+log_info "Image: ${FULL_IMAGE_PATH}"
+
+# --- Construct gcloud command ---
+CMD="gcloud run deploy ${SERVICE_NAME}"
+CMD+=" --image=${FULL_IMAGE_PATH}"
+CMD+=" --platform=managed"
+CMD+=" --region=${REGION}"
+CMD+=" --project=${PROJECT_ID}"
+CMD+=" --memory=${MEMORY}"
+CMD+=" --cpu=${CPU}"
+CMD+=" --concurrency=${CONCURRENCY}"
+CMD+=" --min-instances=${MIN_INSTANCES}"
+CMD+=" --max-instances=${MAX_INSTANCES}"
+CMD+=" --service-account=${SERVICE_ACCOUNT}"
+
+if [ "${ALLOW_UNAUTHENTICATED}" = "true" ]; then
+  CMD+=" --allow-unauthenticated"
+else
+  CMD+=" --no-allow-unauthenticated"
+fi
+
+if [ -n "${ENV_VARS}" ]; then
+  CMD+=" --set-env-vars=${ENV_VARS}"
+fi
+
+if [ -n "${SECRETS}" ]; then
+  CMD+=" --set-secrets=${SECRETS}"
+fi
+
+# --- Execute Deployment ---
+log_info "Executing command: ${CMD}"
+eval ${CMD}
+
+log_info "Cloud Run deployment for ${SERVICE_NAME} completed successfully."

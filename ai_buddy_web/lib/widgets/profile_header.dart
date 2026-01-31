@@ -7,12 +7,12 @@ class ProfileHeader extends StatelessWidget {
   final int streakDays;
 
   const ProfileHeader({
-    Key? key,
+    super.key,
     required this.level,
     required this.xp,
     required this.streakDays,
     this.nextLevelXp = 100, // Implied logic: Level = 1 + XP // 100
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +79,11 @@ class ProfileHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               // Streak Counter
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -90,7 +91,8 @@ class ProfileHeader extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
+                    const Icon(Icons.local_fire_department,
+                        color: Colors.orange, size: 20),
                     const SizedBox(width: 4),
                     Text(
                       "$streakDays Day Streak",
@@ -105,7 +107,7 @@ class ProfileHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // XP Bar
           Column(
             children: [
@@ -129,7 +131,8 @@ class ProfileHeader extends StatelessWidget {
                   value: progress,
                   minHeight: 8,
                   backgroundColor: Colors.white12,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
                 ),
               ),
             ],

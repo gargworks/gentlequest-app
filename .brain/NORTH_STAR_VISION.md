@@ -375,3 +375,11 @@
 ---
 
 **This document is the source code for all future design work. Protect it.**
+
+---
+
+## Raw Monologues (Wishlist Additions)
+
+> 2. How can nucleus tools support deep overalls and refactoring using self tools or take inputs of reviews from external LLM or human audits and import the to dos etc and implement the changes without amnesia in a linear yet integrative manner with precision. It'd tools would support it.
+
+> 3. Can nucleus turn into an AI Startup Engine for founders. That does all research, planning, framework, design thinking simulations, tech building, deployment, implementation, tech upgrades and refactoring, automate daily operations and reporting, reach outs, follow-ups, customer service, Crm, etc. (i.e.) everything on its own, reducing founders load for presenting everything in actionable decisions where it identified are suitable and/or irreversible. Rest of the operations and reversible decisions can be taken by it, keeping audit trail and reversibility in design. First we build it for ourselves and then make it for the world. This can be run by a 1 person in part time or a lean team who's job is to take decisions in their respective expertise and reponsibilities.

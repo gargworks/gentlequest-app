@@ -42,7 +42,7 @@ class DaemonManager:
         
         # Strategic Hooks (The Billion Dollar Extensions)
         self.identity = IdentityKey(brain_path)
-        self.pulse = AmbientTelemetry(brain_path)
+        self.pulse = AmbientTelemetry(brain_path, identity=self.identity)
         self.insight_exchange = InsightExchange(brain_path)
         self.grid = RemoteExecutionProtocol(brain_path)
         

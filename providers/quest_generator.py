@@ -22,28 +22,28 @@ class QuestGenerator:
     
     QUEST_TEMPLATES = {
         QuestType.TASK: [
-            {'title': '3-Minute Breathing Exercise', 'description': 'Practice box breathing: inhale 4s, hold 4s, exhale 4s, hold 4s. Repeat 5 times.', 'xp': 15, 'difficulty': 1, 'target': 1},
-            {'title': '5-4-3-2-1 Grounding', 'description': 'Name 5 things you see, 4 you hear, 3 you feel, 2 you smell, 1 you taste.', 'xp': 20, 'difficulty': 2, 'target': 1},
+            {'title': '3-Minute Breathing Exercise', 'description': 'Practice box breathing: inhale 4s, hold 4s, exhale 4s, hold 4s. Repeat 5 times.', 'xp': 25, 'difficulty': 1, 'target': 1},
+            {'title': '5-4-3-2-1 Grounding', 'description': 'Name 5 things you see, 4 you hear, 3 you feel, 2 you smell, 1 you taste.', 'xp': 25, 'difficulty': 2, 'target': 1},
             {'title': 'Gratitude Journaling', 'description': 'Write down 3 things you\'re grateful for today.', 'xp': 25, 'difficulty': 2, 'target': 1},
-            {'title': 'Progressive Muscle Relaxation', 'description': 'Tense and release each muscle group for 10 seconds, head to toe.', 'xp': 30, 'difficulty': 3, 'target': 1},
-            {'title': '10-Minute Walk', 'description': 'Take a 10-minute walk outside. Notice your surroundings.', 'xp': 20, 'difficulty': 1, 'target': 10},
+            {'title': 'Progressive Muscle Relaxation', 'description': 'Tense and release each muscle group for 10 seconds, head to toe.', 'xp': 25, 'difficulty': 3, 'target': 1},
+            {'title': '10-Minute Walk', 'description': 'Take a 10-minute walk outside. Notice your surroundings.', 'xp': 25, 'difficulty': 1, 'target': 10},
             {'title': 'Mindful Eating', 'description': 'Eat one meal slowly, noticing taste, texture, and smell.', 'xp': 25, 'difficulty': 2, 'target': 1},
-            {'title': 'Loving-Kindness Meditation', 'description': 'Spend 5 minutes sending kind thoughts to yourself and others.', 'xp': 30, 'difficulty': 3, 'target': 5},
+            {'title': 'Loving-Kindness Meditation', 'description': 'Spend 5 minutes sending kind thoughts to yourself and others.', 'xp': 25, 'difficulty': 3, 'target': 5},
         ],
         QuestType.TIP: [
             {'title': 'Learn About Sleep Hygiene', 'description': 'Read about creating a bedtime routine for better sleep.', 'xp': 10, 'difficulty': 1, 'target': 1},
-            {'title': 'Understand Cognitive Distortions', 'description': 'Learn to identify common thinking traps like catastrophizing.', 'xp': 15, 'difficulty': 2, 'target': 1},
-            {'title': 'Explore CBT Basics', 'description': 'Learn how thoughts, feelings, and behaviors are connected.', 'xp': 15, 'difficulty': 2, 'target': 1},
-            {'title': 'Stress Management Techniques', 'description': 'Discover evidence-based strategies for managing stress.', 'xp': 15, 'difficulty': 2, 'target': 1},
+            {'title': 'Understand Cognitive Distortions', 'description': 'Learn to identify common thinking traps like catastrophizing.', 'xp': 10, 'difficulty': 2, 'target': 1},
+            {'title': 'Explore CBT Basics', 'description': 'Learn how thoughts, feelings, and behaviors are connected.', 'xp': 10, 'difficulty': 2, 'target': 1},
+            {'title': 'Stress Management Techniques', 'description': 'Discover evidence-based strategies for managing stress.', 'xp': 10, 'difficulty': 2, 'target': 1},
         ],
         QuestType.CHECK_IN: [
-            {'title': 'Daily Mood Check', 'description': 'Log your mood and add a brief note about your day.', 'xp': 10, 'difficulty': 1, 'target': 1},
-            {'title': 'Weekly Reflection', 'description': 'Reflect on your week: What went well? What was challenging?', 'xp': 20, 'difficulty': 2, 'target': 1},
-            {'title': 'Energy Level Check', 'description': 'Rate your energy level and note what affected it today.', 'xp': 10, 'difficulty': 1, 'target': 1},
+            {'title': 'Daily Mood Check', 'description': 'Log your mood and add a brief note about your day.', 'xp': 15, 'difficulty': 1, 'target': 1},
+            {'title': 'Weekly Reflection', 'description': 'Reflect on your week: What went well? What was challenging?', 'xp': 25, 'difficulty': 2, 'target': 1},
+            {'title': 'Energy Level Check', 'description': 'Rate your energy level and note what affected it today.', 'xp': 15, 'difficulty': 1, 'target': 1},
         ],
         QuestType.PROGRESS: [
-            {'title': 'Complete PHQ-9 Assessment', 'description': 'Track your mental health progress with a quick 9-question assessment.', 'xp': 30, 'difficulty': 2, 'target': 1},
-            {'title': 'Complete GAD-7 Assessment', 'description': 'Measure your anxiety levels with a 7-question screening.', 'xp': 30, 'difficulty': 2, 'target': 1},
+            {'title': 'Complete PHQ-9 Assessment', 'description': 'Track your mental health progress with a quick 9-question assessment.', 'xp': 50, 'difficulty': 2, 'target': 1},
+            {'title': 'Complete GAD-7 Assessment', 'description': 'Measure your anxiety levels with a 7-question screening.', 'xp': 50, 'difficulty': 2, 'target': 1},
         ]
     }
     

@@ -1,0 +1,34 @@
+{
+  "service_name": "string",
+  "aws_service_type": "string",
+  "runtime": "string",
+  "dependencies": [
+    {
+      "name": "string",
+      "type": "string",
+      "location": "string"
+    }
+  ],
+  "configurations": {
+    "memory_mb": "integer",
+    "cpu_units": "integer",
+    "concurrency": "integer",
+    "environment_variables": {
+      "key": "string"
+    },
+    "networking": {
+      "vpc_id": "string",
+      "security_groups": ["string"],
+      "load_balancer_type": "string"
+    },
+    "data_storage": [
+      {
+        "type": "string",
+        "size_gb": "integer"
+      }
+    ],
+    "ci_cd_tool": "string",
+    "logging_monitoring": ["string"],
+    "auth_roles": ["string"]
+  }
+}

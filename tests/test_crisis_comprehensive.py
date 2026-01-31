@@ -1,6 +1,6 @@
 """Comprehensive crisis detection tests - 120+ cases"""
 import pytest
-from crisis_detection_enhanced import detect_crisis_level
+from crisis_detection import detect_crisis_level
 
 class TestSuicideKeywords:
     def test_direct_mentions(self):

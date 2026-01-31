@@ -23,7 +23,8 @@
 *   **Content Marketing (The "Gentle" Brand):**
     *   **Voice:** Empathic, calm, objective. "The System," not "The Founder."
     *   **Keywords:** "Flow," "Growth," "Balance." Avoid "Hustle," "Grind," "Streak."
-    *   **Action:** Engage in broad mental health/productivity communities (r/getdisciplined, r/productivity) with supportive, non-judgmental advice.
+    *   **Action:** Engage in broad mental health/productivity communities (r/getdisciplined, r/productivity) with supportive, non-judgmental advice. **Pause GentleQuest promo on Reddit until Jan 17, 2026 due to negative feedback.**
+    *   **Reddit Action:** Continue empathy-only comments in r/ADHD (no app mentions). Focus on understimulation burnout content.
 
 *   **Product Development:**
     *   **Focus:** "Anti-Streak" mechanics (Total Active Days).
@@ -77,4 +78,15 @@ Optimize all blog content to be *cited* by AI agents (Gemini, Claude, Perplexity
 **Social Search & Dark Social:**
 *   **Primary Channel:** Reddit & Discord (High trust, authenticated human voices).
 *   **Content Type:** 15s-60s "Dopamine Micro-hacks" (Video) leading to deep-dive text (Blog).
+
+**Recent Insights (Based on Marketing Log):**
+
+*   **GentleQuest:**
+    *   **High Engagement:** Short, relatable one-liners resonate well.
+    *   **High Engagement:** Understimulation burnout angle is performing strongly in the ADHD community.
+    *   **Low Engagement:** Direct product launches are not well-received.
+    *   **Action:** Focus on empathy-first interactions, avoiding explicit product promotion on Reddit for now. Pivot content towards understimulation burnout.
+*   **Nucleus:**
+    *   **New Opportunity:** Consider posting Nucleus (CLI tool) content to r/ClaudeAI (different audience, safer).
+
 ```

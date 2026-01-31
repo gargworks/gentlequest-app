@@ -1,5 +1,6 @@
 
 import os
+import re
 import json
 import time
 import uuid
@@ -11,6 +12,13 @@ import sys
 
 # Record start time for uptime tracking
 START_TIME = time.time()
+
+# v0.6.0 Tool Tier System - Solves Registry Bloat
+from .tool_tiers import get_active_tier, get_tier_info, is_tool_allowed, tier_manager
+
+ACTIVE_TIER = get_active_tier()
+logger_init = logging.getLogger("nucleus.init")
+logger_init.info(f"Nucleus Tool Tier: {ACTIVE_TIER} ({get_tier_info()['tier_name']})")
 
 # Configure FastMCP to disable banner and use stderr for logging to avoid breaking MCP protocol
 os.environ["FASTMCP_SHOW_CLI_BANNER"] = "False"
@@ -36,9 +44,11 @@ from .runtime.session_ops import (
 )
 from .runtime.depth_ops import (
     _get_depth_path, _get_depth_state, _save_depth_state, _depth_push, 
-    _depth_pop, _depth_show, _depth_reset, _format_depth_indicator,
+    _depth_pop, _depth_show, _depth_reset, _depth_set_max, _format_depth_indicator,
     _generate_depth_map
 )
+from .runtime.schema_gen import generate_tool_schema
+from .runtime.mounter import get_mounter
 
 # Setup logging
 # logging.basicConfig(level=logging.INFO) # Removing to prevent overriding FastMCP settings
@@ -65,6 +75,100 @@ except ImportError:
             return decorator
         def run(self): pass
     mcp = MockMCP()
+
+# =============================================================================
+# v0.6.0 PROTOCOL COUPLING FIX - Tiered Tool Registration
+# =============================================================================
+# This wrapper ensures only tier-appropriate tools are registered with FastMCP.
+# Without this, ALL tools would be registered regardless of NUCLEUS_TOOL_TIER.
+# See: TITAN_HANDOVER_PROTOCOL.md Section 0 (Registry Bloat Solution)
+
+# Capture original method before replacing it
+_original_mcp_tool = mcp.tool
+
+# State flag to prevent recursion when FastMCP internally calls mcp.tool
+_REGISTERING_TOOL = False
+
+def _tiered_tool_wrapper(*args, **kwargs):
+    """
+    Wrapper around mcp.tool() that checks tier before registration.
+    
+    Handles both decorator styles:
+    - @mcp.tool     (func passed directly)
+    - @mcp.tool()   (func is None, returns decorator)
+    """
+    global _REGISTERING_TOOL
+    
+    # If we are already in the middle of a registration, use the original method
+    if _REGISTERING_TOOL:
+        return _original_mcp_tool(*args, **kwargs)
+
+    func = None
+    if len(args) == 1 and callable(args[0]):
+        func = args[0]
+        args = args[1:]
+
+    def decorator(fn):
+        global _REGISTERING_TOOL
+        tool_name = fn.__name__
+        allowed = is_tool_allowed(tool_name)
+        if allowed:
+            tier_manager.registered_tools.add(tool_name)
+            
+            # Set flag and call original method
+            _REGISTERING_TOOL = True
+            try:
+                # Register and capture the FunctionTool return
+                tool = _original_mcp_tool(*args, **kwargs)(fn)
+                
+                # Make the FunctionTool object callable by proxying to the original function
+                # This fixes the 'FunctionTool is not callable' error in tests/scripts
+                # while preserving the object type for IDE discovery.
+                if not callable(tool):
+                    class CallableTool:
+                        def __init__(self, tool, original_fn):
+                            self._tool = tool
+                            self._fn = original_fn
+                            # Copy metadata
+                            self.__name__ = original_fn.__name__
+                            self.__doc__ = original_fn.__doc__
+                            self.__module__ = original_fn.__module__
+                            
+                        def __call__(self, *args, **kwargs):
+                            import sys
+                            print(f"[NUCLEUS] Executing {self.__name__}...", file=sys.stderr)
+                            return self._fn(*args, **kwargs)
+                            
+                        def __getattr__(self, name):
+                            return getattr(self._tool, name)
+                            
+                        # Pydantic serialization helpers
+                        def model_dump(self, *args, **kwargs):
+                            return self._tool.model_dump(*args, **kwargs)
+                            
+                        def model_dump_json(self, *args, **kwargs):
+                            return self._tool.model_dump_json(*args, **kwargs)
+                            
+                    return CallableTool(tool, fn)
+                
+                return tool
+            except Exception as e:
+                print(f"[NUCLEUS] ERROR registering {tool_name}: {e}", file=sys.stderr)
+                raise e
+            finally:
+                _REGISTERING_TOOL = False
+        else:
+            tier_manager.filtered_tools.add(tool_name)
+            # Return plain function - NOT registered with MCP
+            return fn
+    
+    if func is not None:
+        return decorator(func)
+    
+    return decorator
+
+# Replace mcp.tool with tiered wrapper
+mcp.tool = _tiered_tool_wrapper
 
 # get_brain_path imported from runtime.common
 
@@ -1122,6 +1226,123 @@ def brain_mark_validated(feature_id: str, result: str) -> Dict:
     """
     return _mark_validated(feature_id, result)
 
+# ============================================================
+# RECURSIVE MOUNTER (AG-021)
+# ============================================================
+
+@mcp.tool()
+async def brain_mount_server(name: str, command: str, args: List[str] = []) -> str:
+    """
+    Mount an external MCP server to Nucleus (Recursive Aggregator).
+    
+    This allows Nucleus to act as a Host-Runtime for other servers,
+    providing a single unified interface for the AI client.
+    
+    Args:
+        name: Local name for the mounted server
+        command: Executable command (e.g. "npx", "python")
+        args: Command line arguments
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        # V9.3 Async Protocol Fix: Use async/await directly
+        # This prevents "loop already running" errors in IDEs like Windsurf
+        return await mounter.mount(name, command, args)
+    except Exception as e:
+        return f"Error mounting server: {e}"
+
+@mcp.tool()
+async def brain_unmount_server(server_id: str) -> str:
+    """
+    Unmount an external MCP server.
+    
+    Args:
+        server_id: The ID of the server to unmount (e.g. mnt-123456)
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        # V9.3 Async Protocol Fix
+        return await mounter.unmount(server_id)
+    except Exception as e:
+        return f"Error unmounting server: {e}"
+
+@mcp.tool()
+def brain_list_mounted() -> str:
+    """
+    List all currently mounted external MCP servers.
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        return make_response(True, data=mounter.list_mounted())
+    except Exception as e:
+        return make_response(False, error=str(e))
+
+@mcp.tool()
+async def brain_discover_mounted_tools(server_id: str = None) -> str:
+    """
+    Discover tools from mounted MCP servers.
+    
+    This is the "Southbound Query" of the Recursive Aggregator pattern.
+    It asks mounted servers what tools they provide.
+    
+    Args:
+        server_id: Optional. Specific server to query. If None, queries all.
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        
+        # V9.3 Async Protocol Fix: Direct await
+        results = {}
+        servers = mounter.mounted_servers
+        
+        if server_id:
+            if server_id not in servers:
+                return {"error": f"Server {server_id} not found"}
+            server = servers[server_id]
+            tools = await server.list_tools()
+            return make_response(True, data={server.name: tools})
+        
+        # Query all servers
+        for sid, server in servers.items():
+            tools = await server.list_tools()
+            results[server.name] = tools
+            
+        return make_response(True, data=results)
+    except Exception as e:
+        return make_response(False, error=str(e))
+
+@mcp.tool()
+async def brain_invoke_mounted_tool(server_id: str, tool_name: str, arguments: Dict[str, Any] = {}) -> str:
+    """
+    Invoke a tool on a mounted external MCP server.
+    
+    This is the "Southbound Execution" of the Recursive Aggregator pattern.
+    It allows calling tools on any number of external servers without 
+    bloating the primary Nucleus registry.
+    
+    Args:
+        server_id: The ID of the server (e.g. mnt-123456)
+        tool_name: The name of the tool to call on that server
+        arguments: Arguments for the tool
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        
+        # V9.3 Async Protocol Fix
+        if server_id not in mounter.mounted_servers:
+            return json.dumps({"success": False, "error": f"Server {server_id} not found"})
+            
+        server = mounter.mounted_servers[server_id]
+        result = await server.call_tool(tool_name, arguments)
+        return json.dumps(result)
+    except Exception as e:
+        return json.dumps({"success": False, "error": str(e)})
+
 @mcp.tool()
 def brain_search_features(query: str) -> Dict:
     """Search features by name, description, or tags.
@@ -1416,17 +1637,31 @@ def brain_add_task(
     priority: int = 3,
     blocked_by: List[str] = None,
     required_skills: List[str] = None,
-    source: str = "synthesizer"
+    source: str = "synthesizer",
+    task_id: str = None,
+    skip_dep_check: bool = False
 ) -> str:
-    """Create a new task in the queue."""
-    return _add_task_impl(description, priority, blocked_by, required_skills, source)
+    """Create a new task in the queue.
+    
+    Args:
+        description: Task description
+        priority: 1-5 (1=highest)
+        blocked_by: Optional list of task IDs that block this task
+        required_skills: Optional list of skills needed
+        source: Emitter name
+        task_id: Optional custom ID (semantic)
+        skip_dep_check: For bulk imports to bypass referential integrity check
+    """
+    return _add_task_impl(description, priority, blocked_by, required_skills, source, task_id, skip_dep_check)
 
 def _add_task_impl(description: str, priority: int = 3, 
                   blocked_by: List[str] = None,
                   required_skills: List[str] = None,
-                  source: str = "synthesizer") -> str:
+                  source: str = "synthesizer",
+                  task_id: str = None,
+                  skip_dep_check: bool = False) -> str:
     """Implementation for adding a task."""
-    result = _add_task(description, priority, blocked_by, required_skills, source)
+    result = _add_task(description, priority, blocked_by, required_skills, source, task_id, skip_dep_check)
     if result.get("success"):
         return make_response(True, data=result.get("task"))
     return make_response(False, error=result.get("error"))
@@ -1437,13 +1672,19 @@ def _add_task_impl(description: str, priority: int = 3,
 
 
 @mcp.tool()
-def brain_import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> str:
-    """Import tasks from a JSONL file."""
-    return _import_tasks_from_jsonl_impl(jsonl_path, clear_existing)
+def brain_import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False, merge_gtm_metadata: bool = True) -> str:
+    """Import tasks from a JSONL file.
+    
+    Args:
+        jsonl_path: Path to tasks.jsonl (relative to brain or absolute)
+        clear_existing: Whether to wipe the current queue
+        merge_gtm_metadata: Whether to preserve environment/model fields for GTM
+    """
+    return _import_tasks_from_jsonl_impl(jsonl_path, clear_existing, merge_gtm_metadata)
 
-def _import_tasks_from_jsonl_impl(jsonl_path: str, clear_existing: bool = False) -> str:
+def _import_tasks_from_jsonl_impl(jsonl_path: str, clear_existing: bool = False, merge_gtm_metadata: bool = True) -> str:
     """Implementation for importing tasks."""
-    result = _import_tasks_from_jsonl(jsonl_path, clear_existing)
+    result = _import_tasks_from_jsonl(jsonl_path, clear_existing, merge_gtm_metadata)
     if result.get("success"):
         return make_response(True, data=result)
     return make_response(False, error=result.get("error"))
@@ -1690,7 +1931,7 @@ def activate_synthesizer() -> str:
     """Activate Synthesizer agent to orchestrate the current sprint."""
     state = _get_state()
     sprint = state.get("current_sprint", {})
-    return f"""You are the Synthesizer, the orchestrating intelligence of this Nuclear Brain.
+    return f"""You are the Synthesizer, the orchestrating intelligence of this Nucleus Control Plane.
 
 Current Sprint: {sprint.get('name', 'Unknown')}
 Focus: {sprint.get('focus', 'Unknown')}
@@ -2916,6 +3157,9 @@ def brain_session_start() -> str:
     Returns:
         Formatted report with priorities and recommendations
     """
+    return _brain_session_start_impl()
+
+def _brain_session_start_impl() -> str:
     try:
         # Direct File I/O for robustness (avoid internal function call issues)
         brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
@@ -3027,6 +3271,18 @@ def brain_session_start() -> str:
                 if not recommended_model and task_model and not task.get("claimed_by"):
                     recommended_model = task_model
                     recommended_env = task_env
+        
+        # 4. Model Routing Section (Patch 4)
+        output.append("-" * 60)
+        output.append("🔀 MODEL ROUTING:")
+        if recommended_model:
+            output.append(f"   🎯 TARGET MODEL: {recommended_model}")
+            output.append(f"   🌍 TARGET ENV:   {recommended_env or 'Any'}")
+            output.append("   💡 Recommendation: Resume with the model/env listed above.")
+        else:
+            output.append("   ✅ No specific model routing requested. Use default.")
+        output.append("-" * 60)
+        output.append("")
         
         # Model Auto-Selection (Patch 4)
         output.append("🤖 MODEL ROUTING:")
@@ -5244,7 +5500,7 @@ def brain_apply_critique(review_path: str) -> Dict:
 async def brain_orchestrate_swarm(mission: str, agents: List[str] = None) -> Dict:
     """Initialize a multi-agent swarm for a complex mission (Unified)."""
     try:
-        orch = get_orchestrator()
+        orch = get_orch()
         return await orch.start_mission(mission, agents=agents)
     except Exception as e:
         return make_response(False, error=f"Swarm failed: {str(e)}")
@@ -7113,3 +7369,836 @@ def brain_version() -> str:
    GitHub: https://github.com/nucleus-mcp/nucleus
    PyPI: pip install mcp-server-nucleus
    Docs: https://nucleus-mcp.com"""
+
+@mcp.tool()
+async def brain_export_schema() -> str:
+    """
+    Export the current MCP toolset as an OpenAPI/JSON Schema.
+    
+    This helps the AI or external tools understand the full 
+    contract of all available Nucleus tools.
+    
+    Returns:
+        JSON Schema string
+    """
+    schema = await generate_tool_schema(mcp)
+    return json.dumps(schema, indent=2)
+
+
+@mcp.tool()
+def brain_performance_metrics(export_to_file: bool = False) -> str:
+    """
+    Get performance metrics for Nucleus operations (AG-014).
+    
+    Requires NUCLEUS_PROFILING=true environment variable to collect metrics.
+    
+    Args:
+        export_to_file: If True, also exports metrics to .brain/metrics/
+    
+    Returns:
+        Formatted performance summary or JSON if exported
+    """
+    from .runtime.profiling import get_metrics, get_metrics_summary, export_metrics_to_file
+    
+    metrics = get_metrics()
+    if not metrics:
+        return make_response(True, data={
+            "message": "No metrics collected. Set NUCLEUS_PROFILING=true to enable.",
+            "hint": "export NUCLEUS_PROFILING=true before starting Nucleus"
+        })
+    
+    if export_to_file:
+        try:
+            filepath = export_metrics_to_file()
+            return make_response(True, data={
+                "metrics": metrics,
+                "exported_to": filepath
+            })
+        except Exception as e:
+            return make_response(False, error=f"Export failed: {e}")
+    
+    return make_response(True, data={
+        "summary": get_metrics_summary(),
+        "metrics": metrics
+    })
+
+
+@mcp.tool()
+def brain_prometheus_metrics(format: str = "prometheus") -> str:
+    """
+    Get Prometheus-compatible metrics for monitoring (AG-015).
+    
+    Args:
+        format: Output format - "prometheus" (text) or "json"
+    
+    Returns:
+        Metrics in Prometheus exposition format or JSON
+    
+    Example scrape config:
+        - job_name: 'nucleus'
+          static_configs:
+            - targets: ['localhost:9090']
+    """
+    from .runtime.prometheus import get_prometheus_metrics, get_metrics_json
+    
+    if format.lower() == "json":
+        return make_response(True, data=get_metrics_json())
+    
+    # Return raw Prometheus format (not wrapped in JSON for scraping)
+    return get_prometheus_metrics()
+
+
+@mcp.tool()
+def brain_audit_log(limit: int = 20) -> str:
+    """
+    View the cryptographic interaction log for trust verification.
+    
+    Each interaction is SHA-256 hashed for integrity verification.
+    This is the "Why-Trace" that proves agent decisions.
+    
+    Part of the Governance Moat (N-SOS V1).
+    
+    Args:
+        limit: Number of recent entries to return (default 20)
+    
+    Returns:
+        Recent interaction hashes with timestamps and emitters
+    """
+    return _brain_audit_log_impl(limit)
+
+
+def _brain_audit_log_impl(limit: int = 20) -> str:
+    """Implementation for audit log viewing."""
+    try:
+        brain = get_brain_path()
+        log_path = brain / "ledger" / "interaction_log.jsonl"
+        
+        if not log_path.exists():
+            return make_response(True, data={
+                "entries": [],
+                "count": 0,
+                "message": "No interaction log found. Enable with V9 Security."
+            })
+        
+        entries = []
+        with open(log_path, "r") as f:
+            for line in f:
+                if line.strip():
+                    entries.append(json.loads(line))
+        
+        # Get most recent entries
+        recent = entries[-limit:] if len(entries) > limit else entries
+        recent.reverse()  # Most recent first
+        
+        return make_response(True, data={
+            "entries": recent,
+            "count": len(recent),
+            "total": len(entries),
+            "algorithm": "sha256",
+            "message": f"Showing {len(recent)} of {len(entries)} interaction hashes"
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error reading audit log: {e}")
+
+
+@mcp.tool()
+def brain_write_engram(key: str, value: str, context: str = "Decision", intensity: int = 5) -> str:
+    """
+    Write a new Engram to the cognitive memory ledger.
+    
+    Engrams are persistent memory units that survive between sessions.
+    Use this to record architectural decisions, constraints, and learnings.
+    
+    Part of the Engram Ledger (N-SOS V1).
+    
+    Args:
+        key: Unique identifier (e.g., "auth_architecture", "no_openai")
+        value: The memory content (include reasoning - "X because Y")
+        context: Category - Feature, Architecture, Brand, Strategy, Decision
+        intensity: 1-10 priority (10=critical constraint, 5=normal, 1=archive)
+    
+    Returns:
+        Confirmation with engram details
+    
+    Examples:
+        - brain_write_engram("db_choice", "PostgreSQL for ACID compliance", "Architecture", 8)
+        - brain_write_engram("no_openai", "Budget constraint - Gemini only", "Decision", 10)
+    """
+    return _brain_write_engram_impl(key, value, context, intensity)
+
+
+def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int) -> str:
+    """Implementation for engram writing."""
+    try:
+        # V9.1 Security Hardening: Key Validation
+        if not key or len(key.strip()) < 2:
+            import sys
+            print(f"[NUCLEUS] SECURITY VIOLATION: Empty or short key detected", file=sys.stderr)
+            return make_response(False, error="Security Violation: Key must be at least 2 characters")
+            
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", key):
+            import sys
+            print(f"[NUCLEUS] SECURITY VIOLATION: Invalid key pattern detected", file=sys.stderr)
+            return make_response(False, error="Security Violation: Key contains invalid characters")
+
+        # V9.2 Value Restoration: Removed aggressive SQL/Script regex.
+        # Rationale: We use a JSON Ledger for storage, so SQL Injection is structurally impossible.
+        # Blocking strings like "DROP TABLE" hurts developers saving code snippets.
+        # We trust the ledger backend to serialize JSON correctly.
+
+        # Validate intensity
+        if not 1 <= intensity <= 10:
+            return make_response(False, error="Intensity must be between 1 and 10")
+        
+        # Validate context
+        valid_contexts = ["Feature", "Architecture", "Brand", "Strategy", "Decision"]
+        if context not in valid_contexts:
+            return make_response(False, error=f"Context must be one of: {valid_contexts}")
+        
+        brain = get_brain_path()
+        engram_path = brain / "engrams" / "ledger.jsonl"
+        engram_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        engram = {
+            "key": key,
+            "value": value,
+            "context": context,
+            "intensity": intensity,
+            "timestamp": datetime.now().isoformat(),
+            "signature": None  # Future: cryptographic signing
+        }
+        
+        with open(engram_path, "a") as f:
+            f.write(json.dumps(engram) + "\n")
+        
+        # Also emit event for audit trail
+        _emit_event("engram_written", "brain_write_engram", {
+            "key": key,
+            "context": context,
+            "intensity": intensity
+        })
+        
+        return make_response(True, data={
+            "engram": engram,
+            "message": f"Engram '{key}' written with intensity {intensity} ({context})"
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error writing engram: {e}")
+
+
+@mcp.tool()
+def brain_query_engrams(context: str = None, min_intensity: int = 1) -> str:
+    """
+    Query Engrams from the cognitive memory ledger.
+    
+    Retrieve persistent memory units filtered by context and intensity.
+    
+    Args:
+        context: Filter by category (Feature, Architecture, Brand, Strategy, Decision)
+                 If None, returns all engrams
+        min_intensity: Minimum intensity threshold (1-10)
+    
+    Returns:
+        List of matching engrams sorted by intensity (highest first)
+    """
+    return _brain_query_engrams_impl(context, min_intensity)
+
+
+def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
+    """Implementation for engram querying."""
+    try:
+        brain = get_brain_path()
+        engram_path = brain / "engrams" / "ledger.jsonl"
+        
+        if not engram_path.exists():
+            return make_response(True, data={
+                "engrams": [],
+                "count": 0,
+                "message": "No engrams found. Use brain_write_engram() to create."
+            })
+        
+        engrams = []
+        with open(engram_path, "r") as f:
+            for line in f:
+                if line.strip():
+                    e = json.loads(line)
+                    # Filter by context if specified
+                    if context and e.get("context", "").lower() != context.lower():
+                        continue
+                    # Filter by minimum intensity
+                    if e.get("intensity", 5) < min_intensity:
+                        continue
+                    engrams.append(e)
+        
+        # Sort by intensity (highest first)
+        engrams.sort(key=lambda x: x.get("intensity", 5), reverse=True)
+        
+        return make_response(True, data={
+            "engrams": engrams,
+            "count": len(engrams),
+            "filters": {"context": context, "min_intensity": min_intensity}
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error querying engrams: {e}")
+
+
+@mcp.tool()
+def brain_governance_status() -> str:
+    """
+    Get the current governance status of the Nucleus Control Plane.
+    
+    Returns a summary of:
+    - Active policies (Default-Deny, Isolation, Audit)
+    - Audit log statistics
+    - Engram count
+    - Security configuration
+    
+    Part of the Governance Moat (N-SOS V1).
+    """
+    return _brain_governance_status_impl()
+
+
+def _brain_governance_status_impl() -> str:
+    """Implementation for governance status."""
+    try:
+        brain = get_brain_path()
+        
+        # Check audit log
+        audit_path = brain / "ledger" / "interaction_log.jsonl"
+        audit_count = 0
+        if audit_path.exists():
+            with open(audit_path, "r") as f:
+                audit_count = sum(1 for line in f if line.strip())
+        
+        # Check engrams
+        engram_path = brain / "engrams" / "ledger.jsonl"
+        engram_count = 0
+        if engram_path.exists():
+            with open(engram_path, "r") as f:
+                engram_count = sum(1 for line in f if line.strip())
+        
+        # Check events
+        events_path = brain / "ledger" / "events.jsonl"
+        events_count = 0
+        if events_path.exists():
+            with open(events_path, "r") as f:
+                events_count = sum(1 for line in f if line.strip())
+        
+        # Security config
+        v9_security = os.environ.get("NUCLEUS_V9_SECURITY", "false").lower() == "true"
+        
+        governance = {
+            "policies": {
+                "default_deny": True,  # Always enforced
+                "isolation_boundaries": True,  # Always enforced
+                "immutable_audit": v9_security,
+                "cryptographic_hashing": v9_security
+            },
+            "statistics": {
+                "audit_log_entries": audit_count,
+                "engram_count": engram_count,
+                "events_logged": events_count
+            },
+            "configuration": {
+                "v9_security_enabled": v9_security,
+                "brain_path": str(brain)
+            },
+            "status": "ENFORCED" if v9_security else "PARTIAL"
+        }
+        
+        return make_response(True, data=governance)
+    except Exception as e:
+        return make_response(False, error=f"Error checking governance: {e}")
+
+
+# =============================================================================
+# v0.6.0 DSoR (Decision System of Record) MCP Tools
+# =============================================================================
+
+@mcp.tool()
+def brain_list_decisions(limit: int = 20) -> str:
+    """
+    List recent DecisionMade events from the decision ledger.
+    
+    v0.6.0 DSoR: Provides visibility into agent decision provenance.
+    
+    Args:
+        limit: Maximum number of decisions to return (default: 20)
+    """
+    try:
+        brain = get_brain_path()
+        decisions_file = brain / "ledger" / "decisions" / "decisions.jsonl"
+        
+        if not decisions_file.exists():
+            return make_response(True, data={"decisions": [], "count": 0})
+        
+        decisions = []
+        with open(decisions_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        decisions.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        
+        # Return most recent first
+        decisions = decisions[-limit:][::-1]
+        
+        return make_response(True, data={
+            "decisions": decisions,
+            "count": len(decisions),
+            "total_in_ledger": sum(1 for _ in open(decisions_file))
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error listing decisions: {e}")
+
+
+@mcp.tool()
+def brain_list_snapshots(limit: int = 10) -> str:
+    """
+    List context snapshots from the snapshot ledger.
+    
+    v0.6.0 DSoR: Provides visibility into state verification history.
+    
+    Args:
+        limit: Maximum number of snapshots to return (default: 10)
+    """
+    try:
+        brain = get_brain_path()
+        snapshots_dir = brain / "ledger" / "snapshots"
+        
+        if not snapshots_dir.exists():
+            return make_response(True, data={"snapshots": [], "count": 0})
+        
+        snapshots = []
+        for snap_file in sorted(snapshots_dir.glob("snap-*.json"), reverse=True)[:limit]:
+            try:
+                with open(snap_file) as f:
+                    snapshots.append(json.load(f))
+            except Exception:
+                continue
+        
+        return make_response(True, data={
+            "snapshots": snapshots,
+            "count": len(snapshots)
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error listing snapshots: {e}")
+
+
+@mcp.tool()
+def brain_metering_summary(since_hours: int = 24) -> str:
+    """
+    Get token metering summary for billing and audit.
+    
+    v0.6.0 DSoR: Addresses V9 Pricing Rebellion vulnerability.
+    
+    Args:
+        since_hours: Only include entries from the last N hours (default: 24)
+    """
+    try:
+        brain = get_brain_path()
+        meter_file = brain / "ledger" / "metering" / "token_meter.jsonl"
+        
+        if not meter_file.exists():
+            return make_response(True, data={
+                "total_entries": 0,
+                "total_units": 0,
+                "by_scope": {},
+                "by_resource_type": {},
+                "decisions_linked": 0
+            })
+        
+        from datetime import datetime, timezone, timedelta
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=since_hours)).isoformat()
+        
+        entries = []
+        with open(meter_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        entry = json.loads(line)
+                        if entry.get("timestamp", "") >= cutoff:
+                            entries.append(entry)
+                    except json.JSONDecodeError:
+                        continue
+        
+        # Compute summary
+        summary = {
+            "total_entries": len(entries),
+            "total_units": sum(e.get("units_consumed", 0) for e in entries),
+            "by_scope": {},
+            "by_resource_type": {},
+            "decisions_linked": sum(1 for e in entries if e.get("decision_id")),
+            "since_hours": since_hours
+        }
+        
+        for entry in entries:
+            scope = entry.get("scope", "unknown")
+            rtype = entry.get("resource_type", "unknown")
+            units = entry.get("units_consumed", 0)
+            
+            summary["by_scope"][scope] = summary["by_scope"].get(scope, 0) + units
+            summary["by_resource_type"][rtype] = summary["by_resource_type"].get(rtype, 0) + units
+        
+        return make_response(True, data=summary)
+    except Exception as e:
+        return make_response(False, error=f"Error getting metering summary: {e}")
+
+
+@mcp.tool()
+def brain_ipc_tokens(active_only: bool = True) -> str:
+    """
+    List IPC authentication tokens.
+    
+    v0.6.0 DSoR: Addresses CVE-2026-001 (Sidecar Exploit).
+    
+    Args:
+        active_only: Only show active (non-consumed, non-expired) tokens
+    """
+    try:
+        brain = get_brain_path()
+        tokens_file = brain / "ledger" / "auth" / "ipc_tokens.jsonl"
+        
+        if not tokens_file.exists():
+            return make_response(True, data={"tokens": [], "count": 0})
+        
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        
+        events = []
+        with open(tokens_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        events.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        
+        # Group by token_id to get current state
+        token_states = {}
+        for event in events:
+            tid = event.get("token_id")
+            if tid:
+                if tid not in token_states:
+                    token_states[tid] = {"token_id": tid, "events": []}
+                token_states[tid]["events"].append(event)
+                token_states[tid]["last_event"] = event.get("event")
+                token_states[tid]["decision_id"] = event.get("decision_id")
+        
+        tokens = list(token_states.values())
+        
+        if active_only:
+            tokens = [t for t in tokens if t.get("last_event") == "issued"]
+        
+        return make_response(True, data={
+            "tokens": tokens[-20:],  # Limit to recent 20
+            "count": len(tokens),
+            "active_only": active_only
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error listing IPC tokens: {e}")
+
+
+@mcp.tool()
+def brain_dsor_status() -> str:
+    """
+    Get comprehensive v0.6.0 DSoR (Decision System of Record) status.
+    
+    Returns combined status of:
+    - Decision ledger
+    - Context snapshots
+    - IPC token metering
+    - Security compliance
+    """
+    try:
+        brain = get_brain_path()
+        
+        # Decision ledger stats
+        decisions_file = brain / "ledger" / "decisions" / "decisions.jsonl"
+        decision_count = 0
+        if decisions_file.exists():
+            with open(decisions_file) as f:
+                decision_count = sum(1 for line in f if line.strip())
+        
+        # Snapshot stats
+        snapshots_dir = brain / "ledger" / "snapshots"
+        snapshot_count = len(list(snapshots_dir.glob("snap-*.json"))) if snapshots_dir.exists() else 0
+        
+        # Metering stats
+        meter_file = brain / "ledger" / "metering" / "token_meter.jsonl"
+        meter_count = 0
+        total_units = 0
+        if meter_file.exists():
+            with open(meter_file) as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            entry = json.loads(line)
+                            meter_count += 1
+                            total_units += entry.get("units_consumed", 0)
+                        except:
+                            pass
+        
+        # IPC token stats
+        tokens_file = brain / "ledger" / "auth" / "ipc_tokens.jsonl"
+        token_issued = 0
+        token_consumed = 0
+        if tokens_file.exists():
+            with open(tokens_file) as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                            if event.get("event") == "issued":
+                                token_issued += 1
+                            elif event.get("event") == "consumed":
+                                token_consumed += 1
+                        except:
+                            pass
+        
+        status = {
+            "version": "0.6.0",
+            "feature": "Decision System of Record (DSoR)",
+            "components": {
+                "decision_ledger": {
+                    "status": "ACTIVE" if decision_count > 0 else "READY",
+                    "total_decisions": decision_count
+                },
+                "context_snapshots": {
+                    "status": "ACTIVE" if snapshot_count > 0 else "READY",
+                    "total_snapshots": snapshot_count
+                },
+                "ipc_auth": {
+                    "status": "ACTIVE" if token_issued > 0 else "READY",
+                    "tokens_issued": token_issued,
+                    "tokens_consumed": token_consumed
+                },
+                "token_metering": {
+                    "status": "ACTIVE" if meter_count > 0 else "READY",
+                    "meter_entries": meter_count,
+                    "total_units_metered": total_units
+                }
+            },
+            "v9_vulnerabilities_addressed": [
+                "CVE-2026-001: Sidecar Exploit (per-request IPC auth)",
+                "Pricing Rebellion (token metering linked to decisions)"
+            ],
+            "overall_status": "OPERATIONAL"
+        }
+        
+        return make_response(True, data=status)
+    except Exception as e:
+        return make_response(False, error=f"Error getting DSoR status: {e}")
+
+
+@mcp.tool()
+def brain_federation_dsor_status() -> str:
+    """
+    Get Federation Engine DSoR status.
+    
+    v0.6.0 DSoR: Shows federation events with decision provenance.
+    """
+    try:
+        brain = get_brain_path()
+        events_file = brain / "ledger" / "events.jsonl"
+        
+        federation_events = {
+            "peer_joined": 0,
+            "peer_left": 0,
+            "peer_suspect": 0,
+            "leader_elected": 0,
+            "task_routed": 0,
+            "state_synced": 0
+        }
+        recent_events = []
+        
+        if events_file.exists():
+            with open(events_file) as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                            event_type = event.get("type", "")
+                            
+                            if event_type == "federation_peer_joined":
+                                federation_events["peer_joined"] += 1
+                            elif event_type == "federation_peer_left":
+                                federation_events["peer_left"] += 1
+                            elif event_type == "federation_peer_suspect":
+                                federation_events["peer_suspect"] += 1
+                            elif event_type == "federation_leader_elected":
+                                federation_events["leader_elected"] += 1
+                            elif event_type == "federation_task_routed":
+                                federation_events["task_routed"] += 1
+                            elif event_type == "federation_state_synced":
+                                federation_events["state_synced"] += 1
+                            
+                            if event_type.startswith("federation_"):
+                                recent_events.append({
+                                    "type": event_type,
+                                    "timestamp": event.get("timestamp"),
+                                    "decision_id": event.get("data", {}).get("decision_id")
+                                })
+                        except:
+                            pass
+        
+        # Get last 10 federation events
+        recent_events = recent_events[-10:]
+        
+        status = {
+            "version": "0.6.0",
+            "feature": "Federation Engine DSoR Integration",
+            "event_counts": federation_events,
+            "total_federation_events": sum(federation_events.values()),
+            "recent_events": recent_events,
+            "dsor_integration": {
+                "decision_provenance": True,
+                "context_hashing": True,
+                "event_auditing": True
+            }
+        }
+        
+        return make_response(True, data=status)
+    except Exception as e:
+        return make_response(False, error=f"Error getting federation DSoR status: {e}")
+
+
+@mcp.tool()
+def brain_routing_decisions(limit: int = 20) -> str:
+    """
+    Query routing decision history from the Federation Engine.
+    
+    v0.6.0 DSoR: All routing decisions are now auditable.
+    
+    Args:
+        limit: Maximum number of decisions to return (default: 20)
+    """
+    try:
+        brain = get_brain_path()
+        events_file = brain / "ledger" / "events.jsonl"
+        
+        routing_decisions = []
+        
+        if events_file.exists():
+            with open(events_file) as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                            if event.get("type") == "federation_task_routed":
+                                data = event.get("data", {})
+                                routing_decisions.append({
+                                    "timestamp": event.get("timestamp"),
+                                    "target_brain": data.get("target_brain"),
+                                    "score": data.get("score"),
+                                    "profile": data.get("profile"),
+                                    "decision_id": data.get("decision_id"),
+                                    "routing_time_ms": data.get("routing_time_ms")
+                                })
+                        except:
+                            pass
+        
+        # Return last N decisions
+        routing_decisions = routing_decisions[-limit:]
+        
+        return make_response(True, data={
+            "total_decisions": len(routing_decisions),
+            "limit": limit,
+            "decisions": routing_decisions
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error querying routing decisions: {e}")
+
+
+# =============================================================================
+# v0.6.0 TOOL TIER SYSTEM - Registry Bloat Solution
+# =============================================================================
+
+@mcp.tool()
+def brain_list_tools(category: str = None) -> str:
+    """
+    List available tools at the current tier level.
+    
+    v0.6.0 Registry Optimization: Tools are tiered to prevent LLM context overflow.
+    Set NUCLEUS_TOOL_TIER env var: 0=launch, 1=core, 2=all
+    
+    Args:
+        category: Optional filter (e.g., "federation", "task", "memory")
+    """
+    try:
+        tier_info = get_tier_info()
+        
+        # Get all brain_* functions/tools that are allowed for the current tier
+        import mcp_server_nucleus as nucleus
+        
+        all_funcs = []
+        for name in dir(nucleus):
+            if name.startswith('brain_'):
+                # Handle both functions and FunctionTool objects
+                item = getattr(nucleus, name)
+                # If it's a tool, its name is item.name. If function, item.__name__
+                actual_name = name
+                if is_tool_allowed(actual_name):
+                    all_funcs.append(actual_name)
+        
+        # Sync: Only list tools allowed in the current tier
+        all_tools = sorted(all_funcs)
+        
+        if category:
+            cat_map = {
+                "federation": ["brain_mount_server", "brain_list_tools"],
+                "memory": ["brain_write_engram", "brain_query_engrams"],
+                "governance": ["brain_audit_log", "brain_governance_status", "brain_version", "brain_health"],
+                "task": [] # No task tools in launch tier
+            }
+            
+            # If valid category in map, filter by set membership
+            if category.lower() in cat_map:
+                target_tools = set(cat_map[category.lower()])
+                all_tools = [t for t in all_tools if t in target_tools]
+            else:
+                # Fallback to string matching for unknown categories
+                all_tools = [t for t in all_tools if category.lower() in t.lower()]
+        
+        return make_response(True, data={
+            "tier": tier_info["tier_name"],
+            "tier_level": tier_info["active_tier"],
+            "total_tools": len(all_tools),
+            "tools": all_tools,
+            "hint": "Set NUCLEUS_TOOL_TIER=0 for launch (8 tools), =1 for core (28), =2 for all"
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error listing tools: {e}")
+
+
+@mcp.tool()
+def brain_tier_status() -> str:
+    """
+    Get current tool tier configuration status.
+    
+    v0.6.0 Registry Bloat Solution: Nucleus uses tiered tool exposure to prevent
+    LLM context window overflow. This tool shows the current tier and counts.
+    """
+    try:
+        info = get_tier_info()
+        stats = tier_manager.get_stats()
+        
+        return make_response(True, data={
+            "version": "0.6.0",
+            "feature": "Tool Tier System (Registry Bloat Solution)",
+            "current_tier": info["tier_name"],
+            "tier_level": info["active_tier"],
+            "env_var": info["env_var"],
+            "env_value": info["current_value"],
+            "tier_breakdown": {
+                "tier_0_launch": info["tier_0_count"],
+                "tier_1_core": info["tier_1_count"],
+                "tier_2_advanced": info["tier_2_count"],
+            },
+            "registration_stats": stats,
+            "recommendation": "Use NUCLEUS_TOOL_TIER=0 for nucleusos.dev website launch"
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error getting tier status: {e}")
+

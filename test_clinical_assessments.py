@@ -23,6 +23,7 @@ class TestPHQ9Scoring:
         assert result["total_score"] == 1
         assert result["severity"] == "minimal"
         assert result["requires_follow_up"] is False
+        assert result["responses"] == responses
 
     def test_mild_score(self):
         """Score of 5-9 is mild depression."""
@@ -69,6 +70,34 @@ class TestPHQ9Scoring:
         """Should raise error for out-of-range responses."""
         with pytest.raises(ValueError, match="between 0 and 3"):
             score_phq9([0, 0, 0, 0, 0, 0, 0, 0, 5])
+        with pytest.raises(ValueError, match="between 0 and 3"):
+            score_phq9([0, 0, 0, 0, 0, -1, 0, 0, 0])
+
+    def test_phq9_boundary_cases(self):
+        """Test scores right at the boundary of severity levels."""
+        # 4 -> minimal
+        assert score_phq9([1, 1, 1, 1, 0, 0, 0, 0, 0])["severity"] == "minimal"
+        # 5 -> mild
+        assert score_phq9([1, 1, 1, 1, 1, 0, 0, 0, 0])["severity"] == "mild"
+        # 9 -> mild
+        assert score_phq9([3, 3, 3, 0, 0, 0, 0, 0, 0])["severity"] == "mild"
+        # 10 -> moderate
+        assert score_phq9([3, 3, 3, 1, 0, 0, 0, 0, 0])["severity"] == "moderate"
+        # 14 -> moderate
+        assert score_phq9([3, 3, 3, 3, 2, 0, 0, 0, 0])["severity"] == "moderate"
+        # 15 -> moderately_severe
+        assert score_phq9([3, 3, 3, 3, 3, 0, 0, 0, 0])["severity"] == "moderately_severe"
+        # 19 -> moderately_severe
+        assert score_phq9([3, 3, 3, 3, 3, 3, 1, 0, 0])["severity"] == "moderately_severe"
+        # 20 -> severe
+        assert score_phq9([3, 3, 3, 3, 3, 3, 2, 0, 0])["severity"] == "severe"
+
+    def test_non_integer_responses(self):
+        """Should handle non-integer gracefully or raise helpful error."""
+        with pytest.raises(TypeError):
+            score_phq9([0, 0, "1", 0, 0, 0, 0, 0, 0])
+        with pytest.raises(TypeError):
+            score_phq9([0, 0, None, 0, 0, 0, 0, 0, 0])
 
 
 class TestGAD7Scoring:
@@ -80,6 +109,7 @@ class TestGAD7Scoring:
         result = score_gad7(responses)
         assert result["total_score"] == 1
         assert result["severity"] == "minimal"
+        assert result["responses"] == responses
 
     def test_mild_score(self):
         """Score of 5-9 is mild anxiety."""
@@ -113,6 +143,21 @@ class TestGAD7Scoring:
         """Should raise error for wrong number of responses."""
         with pytest.raises(ValueError, match="7 responses"):
             score_gad7([0, 0, 0])
+
+    def test_gad7_boundary_cases(self):
+        """Test GAD-7 boundary scores."""
+        # 4 -> minimal
+        assert score_gad7([1, 1, 1, 1, 0, 0, 0])["severity"] == "minimal"
+        # 5 -> mild
+        assert score_gad7([1, 1, 1, 1, 1, 0, 0])["severity"] == "mild"
+        # 9 -> mild
+        assert score_gad7([3, 3, 3, 0, 0, 0, 0])["severity"] == "mild"
+        # 10 -> moderate
+        assert score_gad7([3, 3, 3, 1, 0, 0, 0])["severity"] == "moderate"
+        # 14 -> moderate
+        assert score_gad7([2] * 7)["severity"] == "moderate"  # 14
+        # 15 -> severe
+        assert score_gad7([3, 3, 3, 3, 3, 0, 0])["severity"] == "severe"
 
 
 class TestAssessmentQuestions:

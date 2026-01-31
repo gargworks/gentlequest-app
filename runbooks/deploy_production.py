@@ -67,7 +67,9 @@ def log(message: str, level: str = "info"):
     print(f"{color}{message}{Colors.END}")
 
 
-def run_command(cmd: list[str], dry_run: bool = False, check: bool = True) -> subprocess.CompletedProcess | None:
+from typing import Optional
+
+def run_command(cmd: list[str], dry_run: bool = False, check: bool = True) -> Optional[subprocess.CompletedProcess]:
     """Run a shell command."""
     cmd_str = ' '.join(cmd)
     

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
+import '../services/streaming/streaming_sse.dart' as sse;
 
 class ChatProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -167,197 +168,12 @@ class ChatProvider extends ChangeNotifier {
       // Try streaming first (web-only, feature-gated). Fallback to non-streaming.
       final handle = await _apiService.streamMessage(content, country: country);
       if (handle != null) {
-        Message? streaming; // create lazily on first token
-        _error = null;
-        notifyListeners();
-
-        bool firstToken = true;
-        RiskLevel metaRisk = RiskLevel.none;
-        String? metaCrisisMsg;
-        List<Map<String, dynamic>>? metaCrisisNumbers;
-        InteractiveExercise? metaExercise;
-        final sub = handle.stream.listen(
-          (event) async {
-            final type = event['type'] as String?;
-            if (type == 'meta') {
-              // Capture meta and replace message to include immutable fields
-              metaRisk = _mapRisk(event['risk_level']) ?? RiskLevel.none;
-              metaCrisisMsg = event['crisis_msg'] as String?;
-              metaCrisisNumbers = (event['crisis_numbers'] as List?)
-                  ?.cast<Map<String, dynamic>>();
-              
-              // Parse exercise data from meta event
-              if (event['interactive'] == true && event['exercise'] != null) {
-                try {
-                  metaExercise = InteractiveExercise.fromJson({
-                    'type': event['exercise_type'],
-                    ...(event['exercise'] as Map<String, dynamic>),
-                  });
-                  if (kDebugMode) {
-                    debugPrint('🧩 [SSE meta] Parsed exercise: ${metaExercise?.name}');
-                  }
-                } catch (e) {
-                  if (kDebugMode) {
-                    debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
-                  }
-                }
-              }
-              
-              if (kDebugMode) {
-                debugPrint(
-                  '🟡 [SSE meta] risk=${event['risk_level']}, crisis_msg=${metaCrisisMsg?.substring(0, metaCrisisMsg!.length.clamp(0, 120))}',
-                );
-                final nums = metaCrisisNumbers
-                    ?.map((e) => e['phone'] ?? e['name'] ?? e.toString())
-                    .toList();
-                debugPrint('🟡 [SSE meta] crisis_numbers=${nums?.join(', ')}');
-              }
-              if (streaming != null) {
-                final idx = _messages.lastIndexOf(streaming!);
-                if (idx != -1) {
-                  final replaced = Message(
-                    id: streaming!.id,
-                    content: streaming!.content,
-                    isUser: false,
-                    timestamp: streaming!.timestamp,
-                    type: MessageType.text,
-                    riskLevel: metaRisk,
-                    crisisMsg: metaCrisisMsg,
-                    crisisNumbers: metaCrisisNumbers,
-                    exercise: metaExercise, // ✅ Add exercise widget
-                  );
-                  _messages[idx] = replaced;
-                  streaming = replaced; // update reference
-                  notifyListeners();
-                }
-              }
-            } else if (type == 'token') {
-              final text = (event['text'] as String?) ?? '';
-              // Create the streaming message on first token
-              if (streaming == null) {
-                streaming = Message(
-                  content: '',
-                  isUser: false,
-                  type: MessageType.text,
-                  riskLevel: metaRisk,
-                  crisisMsg: metaCrisisMsg,
-                  crisisNumbers: metaCrisisNumbers,
-                  exercise: metaExercise, // ✅ Add exercise widget
-                );
-                _messages.add(streaming!);
-              }
-              streaming!.content += text;
-              if (kDebugMode) {
-                final sample =
-                    text.length > 60 ? '${text.substring(0, 60)}…' : text;
-                debugPrint(
-                  '🟢 [SSE token] +${text.length} chars: "$sample" (total=${streaming!.content.length})',
-                );
-              }
-              if (firstToken) {
-                firstToken = false;
-                if (_isTyping) _isTyping = false;
-              }
-              notifyListeners();
-            } else if (type == 'done') {
-              if (_isTyping) _isTyping = false;
-              notifyListeners();
-              if (kDebugMode) {
-                debugPrint(
-                  '🔵 [SSE done] total_chars=${streaming?.content.length ?? 0}, risk=$metaRisk',
-                );
-              }
-              handle.close();
-            } else if (type == 'error') {
-              // Show a soft error and stop typing
-              _messages.add(
-                Message(
-                  content: 'Streaming error. Retrying soon...',
-                  isUser: false,
-                  type: MessageType.error,
-                ),
-              );
-              if (_isTyping) _isTyping = false;
-              notifyListeners();
-              if (kDebugMode) {
-                debugPrint('🔴 [SSE error] event=$event');
-              }
-              handle.close();
-            }
-          },
-          onError: (_) {
-            if (_isTyping) _isTyping = false;
-            notifyListeners();
-            if (kDebugMode) {
-              debugPrint('🔴 [SSE onError]');
-            }
-            handle.close();
-          },
-          onDone: () {
-            if (_isTyping) _isTyping = false;
-            notifyListeners();
-            if (kDebugMode) {
-              debugPrint('🔵 [SSE onDone]');
-            }
-          },
-          cancelOnError: true,
-        );
-        _subscriptions.add(sub);
-        _closers.add(handle.close);
-        return; // streaming path done
+        await _handleStreamingMessage(handle, content, country);
+        return; // streaming path initiated
       }
 
       // Fallback: non-streaming request, progressively reveal locally
-      final aiMessage = await _apiService.sendMessage(
-        content,
-        country: country,
-      );
-      if (kDebugMode) {
-        debugPrint('🟣 [HTTP chat] risk=${aiMessage.riskLevel}');
-        debugPrint(
-          '🟣 [HTTP chat] crisis_msg_len=${aiMessage.crisisMsg?.length ?? 0}',
-        );
-        debugPrint(
-          '🟣 [HTTP chat] crisis_numbers=${aiMessage.crisisNumbers?.length ?? 0}',
-        );
-      }
-
-      // Avoid adding an empty bubble. Delay insertion until first chunk exists.
-      final full = aiMessage.content;
-      final lines =
-          full.contains('\n') ? full.split('\n') : _splitIntoSentences(full);
-
-      if (lines.isEmpty || full.trim().isEmpty) {
-        // Nothing meaningful to show; just stop typing and return.
-        if (_isTyping) _isTyping = false;
-        _error = null;
-        notifyListeners();
-        return;
-      }
-
-      // Insert message with the first chunk immediately
-      final first = lines.first;
-      final streaming = Message(
-        content: first,
-        isUser: false,
-        type: aiMessage.type,
-        riskLevel: aiMessage.riskLevel,
-        crisisMsg: aiMessage.crisisMsg,
-        crisisNumbers: aiMessage.crisisNumbers,
-      );
-      _messages.add(streaming);
-      _error = null;
-      if (_isTyping) _isTyping = false;
-      notifyListeners();
-
-      // Append remaining chunks with a subtle delay for progressive effect
-      for (var i = 1; i < lines.length; i++) {
-        final line = lines[i];
-        streaming.content += '\n$line';
-        notifyListeners();
-        final ms = (line.trim().length * 15).clamp(120, 600);
-        await Future.delayed(Duration(milliseconds: ms));
-      }
+      await _processNonStreamingResponse(content, country: country);
     } on DioException catch (e) {
       debugPrint('🚨 DIO Exception in sendMessage:');
       debugPrint('   Type: ${e.type}');
@@ -400,6 +216,171 @@ class ChatProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Extracted logic for non-streaming response with progressive reveal
+  Future<void> _processNonStreamingResponse(String content,
+      {String? country}) async {
+    final aiMessage = await _apiService.sendMessage(
+      content,
+      country: country,
+    );
+    if (kDebugMode) {
+      debugPrint('🟣 [HTTP chat] risk=${aiMessage.riskLevel}');
+      debugPrint(
+        '🟣 [HTTP chat] crisis_msg_len=${aiMessage.crisisMsg?.length ?? 0}',
+      );
+      debugPrint(
+        '🟣 [HTTP chat] crisis_numbers=${aiMessage.crisisNumbers?.length ?? 0}',
+      );
+    }
+
+    // Avoid adding an empty bubble. Delay insertion until first chunk exists.
+    final full = aiMessage.content;
+    final lines =
+        full.contains('\n') ? full.split('\n') : _splitIntoSentences(full);
+
+    if (lines.isEmpty || full.trim().isEmpty) {
+      if (_isTyping) _isTyping = false;
+      _error = null;
+      notifyListeners();
+      return;
+    }
+
+    final first = lines.first;
+    final msg = Message(
+      content: first,
+      isUser: false,
+      type: aiMessage.type,
+      riskLevel: aiMessage.riskLevel,
+      crisisMsg: aiMessage.crisisMsg,
+      crisisNumbers: aiMessage.crisisNumbers,
+      exercise: aiMessage.exercise,
+    );
+    _messages.add(msg);
+    _error = null;
+    if (_isTyping) _isTyping = false;
+    notifyListeners();
+
+    for (var i = 1; i < lines.length; i++) {
+      final line = lines[i];
+      msg.content += '\n$line';
+      notifyListeners();
+      final ms = (line.trim().length * 15).clamp(120, 600);
+      await Future.delayed(Duration(milliseconds: ms));
+    }
+  }
+
+  /// Implementation of streaming message processing
+  Future<void> _handleStreamingMessage(
+      sse.SseHandle handle, String originalContent, String? country) async {
+    Message? streaming;
+    _error = null;
+    notifyListeners();
+
+    bool firstToken = true;
+    RiskLevel metaRisk = RiskLevel.none;
+    String? metaCrisisMsg;
+    List<Map<String, dynamic>>? metaCrisisNumbers;
+    InteractiveExercise? metaExercise;
+
+    final sub = handle.stream.listen(
+      (event) async {
+        final type = event['type'] as String?;
+        if (type == 'meta') {
+          metaRisk = _mapRisk(event['risk_level']) ?? RiskLevel.none;
+          metaCrisisMsg = event['crisis_msg'] as String?;
+          metaCrisisNumbers = (event['crisis_numbers'] as List?)
+              ?.cast<Map<String, dynamic>>();
+
+          if (event['interactive'] == true && event['exercise'] != null) {
+            try {
+              metaExercise = InteractiveExercise.fromJson({
+                'type': event['exercise_type'],
+                ...(event['exercise'] as Map<String, dynamic>),
+              });
+            } catch (e) {
+              if (kDebugMode) debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
+            }
+          }
+
+          if (streaming != null) {
+            final idx = _messages.lastIndexOf(streaming!);
+            if (idx != -1) {
+              final replaced = Message(
+                id: streaming!.id,
+                content: streaming!.content,
+                isUser: false,
+                timestamp: streaming!.timestamp,
+                type: MessageType.text,
+                riskLevel: metaRisk,
+                crisisMsg: metaCrisisMsg,
+                crisisNumbers: metaCrisisNumbers,
+                exercise: metaExercise,
+              );
+              _messages[idx] = replaced;
+              streaming = replaced;
+              notifyListeners();
+            }
+          }
+        } else if (type == 'token') {
+          final text = (event['text'] as String?) ?? '';
+          if (streaming == null) {
+            streaming = Message(
+              content: '',
+              isUser: false,
+              type: MessageType.text,
+              riskLevel: metaRisk,
+              crisisMsg: metaCrisisMsg,
+              crisisNumbers: metaCrisisNumbers,
+              exercise: metaExercise,
+            );
+            _messages.add(streaming!);
+          }
+          streaming!.content += text;
+          if (firstToken) {
+            firstToken = false;
+            if (_isTyping) _isTyping = false;
+          }
+          notifyListeners();
+        } else if (type == 'done') {
+          if (_isTyping) _isTyping = false;
+          notifyListeners();
+          handle.close();
+        } else if (type == 'error') {
+          handle.close();
+          if (streaming == null) {
+            // Early error: Fallback to non-streaming for a second attempt
+            await _processNonStreamingResponse(originalContent,
+                country: country);
+          } else {
+            // Late error: Show error marker
+            _messages.add(Message(
+                content: 'Stream disconnected.',
+                isUser: false,
+                type: MessageType.error));
+            if (_isTyping) _isTyping = false;
+            notifyListeners();
+          }
+        }
+      },
+      onError: (e) async {
+        handle.close();
+        if (streaming == null) {
+          await _processNonStreamingResponse(originalContent, country: country);
+        } else {
+          if (_isTyping) _isTyping = false;
+          notifyListeners();
+        }
+      },
+      onDone: () {
+        if (_isTyping) _isTyping = false;
+        notifyListeners();
+      },
+      cancelOnError: true,
+    );
+    _subscriptions.add(sub);
+    _closers.add(handle.close);
   }
 
   // Split a paragraph into sentence-like chunks for smoother progressive rendering

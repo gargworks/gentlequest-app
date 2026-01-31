@@ -1,1 +1,1 @@
-{"timestamp": 1768251837.0615091, "status": "test", "tasks": 0, "cpu": 0.0, "color": "red"}
+{"timestamp": 1769341781.0212579, "status": "busy", "tasks": 5, "cpu": 12.5, "color": "gold", "pulse_sig": "dbc6659d447221d3197f8fab76e3644592678ac3be0cdd3f8197f722668c2daaa304f0a258ca1a752ef915cf21b803a9071084bf2eb1640e802d4b17c2d10004", "did": "did:nucleus:1955883e30d3f57fcc59c3293edc709d3040e424ad5b7fdab281f5ced1fdce33"}

@@ -7,7 +7,7 @@ Core logic for depth tracking (Rabbit hole protection).
 import json
 import time
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Any
 from pathlib import Path
 
 # Relative imports assuming this is in mcp_server_nucleus.runtime
@@ -227,6 +227,32 @@ def _depth_reset() -> Dict[str, Any]:
             "current_depth": 0,
             "message": "✅ Depth reset to root level.",
             "indicator": _format_depth_indicator(0, state.get("max_safe_depth", 5))
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+def _depth_set_max(max_depth: int) -> Dict[str, Any]:
+    """Set the maximum safe depth threshold."""
+    try:
+        # Validate range
+        if max_depth < 1 or max_depth > 10:
+            return {
+                "error": "max_depth must be between 1 and 10",
+                "current_max": None
+            }
+        
+        state = _get_depth_state()
+        old_max = state.get("max_safe_depth", 5)
+        state["max_safe_depth"] = max_depth
+        _save_depth_state(state)
+        
+        current = state.get("current_depth", 0)
+        return {
+            "old_max": old_max,
+            "new_max": max_depth,
+            "current_depth": current,
+            "indicator": _format_depth_indicator(current, max_depth),
+            "message": f"✅ Max depth updated: {old_max} → {max_depth}"
         }
     except Exception as e:
         return {"error": str(e)}

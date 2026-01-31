@@ -6,6 +6,7 @@
 .vscode
 venv/
 .venv/
+venv_39/
 test_env/
 
 # Exclude Large Unrelated Projects
@@ -38,6 +39,11 @@ backend/.venv/
 *.webp
 *.png
 *.jpg
+!static/**/*.png
+!static/**/*.jpg
+!static/**/*.webp
+!static/**/*.json
+
 brain/
 
 # Explicitly Allow (if we were using whitelist, but here we just block the big stuff)

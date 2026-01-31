@@ -1,0 +1,20 @@
+{
+    "agent": {
+        "id": "nucleus.core.researcher",
+        "name": "Researcher",
+        "version": "1.0.0",
+        "description": "Intelligence Gathering & Analysis Agent",
+        "author": "Nucleus Team",
+        "license": "MIT"
+    },
+    "runtime": {
+        "mode": "rich",
+        "system_prompt": "researcher.md",
+        "capabilities": [
+            "brain_ops",
+            "web_ops",
+            "memory_ops"
+        ],
+        "env": {}
+    }
+}

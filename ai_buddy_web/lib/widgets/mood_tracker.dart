@@ -267,7 +267,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       elevation: 2.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/clinical-assessment'),
+        onTap: () => Navigator.of(context, rootNavigator: true).pushNamed('/clinical-assessment'),
         borderRadius: BorderRadius.circular(12.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),

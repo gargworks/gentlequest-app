@@ -1,7 +1,14 @@
 {
   "initialized": "2025-12-26T21:20:00+05:30",
-  "last_updated": "2026-01-16T00:00:02.861638",
+  "last_updated": "2026-01-31T00:00:03.757092",
   "agents": {
+    "brain_write_engram": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
     "health_check": {
       "completed": 0,
       "failed": 0,
@@ -9,7 +16,196 @@
       "success_rate": 0.0,
       "escalation_rate": 0.0
     },
-    "critic": {
+    "orchestrator": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "meta_optimizer": {
+      "completed": 3,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "verifier": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "nucleus_mcp": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "Antigravity": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "synthesizer": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "resilience_test": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "test_emitter": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "weekly_summary": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "ag_001": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "claude_ai_batch_8": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain_add_loop": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "user": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "render_poller": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "depth_tracker": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain_update_task": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "batch_3_smoke_test": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "batch_2_smoke_test": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "BRAIN_CONSOLIDATION": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "brain_save_session": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "antigravity_exec_001": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "antigravity_001": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "nucleus_orchestrate": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "windsurf_exec_001": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "ag_gemini_pro": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "antigravity_002": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
+      "escalation_rate": 0.0
+    },
+    "request_scanner": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,

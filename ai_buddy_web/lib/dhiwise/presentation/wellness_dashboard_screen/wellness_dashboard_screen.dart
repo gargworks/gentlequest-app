@@ -10,10 +10,11 @@ import './widgets/progress_card_widget.dart';
 import './widgets/recommendation_card_widget.dart';
 import '../../../theme/text_style_helper.dart' as CoreTextStyles;
 import '../../../widgets/assessment_splash.dart';
-import '../../../quests/quests_engine.dart';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:provider/provider.dart';
 import '../../../providers/quest_provider.dart';
+import '../../../providers/progress_provider.dart';
 import '../../../models/quest.dart' as model;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../navigation/route_observer.dart';
@@ -133,9 +134,9 @@ class _RipplePainter extends CustomPainter {
 
 class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     with TickerProviderStateMixin, RouteAware, WidgetsBindingObserver {
-  // UI-only state for TASK completion and progress
-  bool _task1Done = false; // Focus reset
-  bool _task2Done = false; // Study sprint
+  // Quests state handled by QuestProvider
+  Set<String> _exploreCompletedToday = {};
+
   int _baseSteps = 2; // total tasks today
   int _baseXp = 20; // base example XP shown initially
   bool _reminderOn = true; // UI-only reminder toggle (default ON)
@@ -207,16 +208,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   String _exploreFilter = 'All';
   List<String> _exploreCats = [
     'Mindfulness',
+    'Task',
+    'Resource',
+    'Tip',
     'Activity',
-    'Social',
     'Learning',
-    'Challenge'
-  ]; // curated MECE categories
+  ]; // Curated categories aligned with Quest types
   final Map<String, GlobalKey> _exploreCardKeys = <String, GlobalKey>{};
   // Track which Explore quests we've logged an impression for (to avoid duplicates)
   final Set<String> _impressedExplore = <String>{};
-  // Track Explore completions this session to drive 'Done' state only after Explore interaction
-  final Set<String> _exploreCompletedToday = <String>{};
+
 
   // Quick check-in daily flag (separate from mood logging)
   bool _hasCompletedQuickCheckinToday = false;
@@ -261,82 +262,42 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Handle completion of the Quick Check-in flow (explicit submission)
   Future<void> _onQuickCheckinSubmitted() async {
-    final engine = _questsEngine;
-    if (engine == null) return;
-
-    // Determine the quick check-in quest id for today
-    String? questId;
+    final questProvider = context.read<QuestProvider>();
+    
+    // Determine the quick check-in quest id for today from Provider
+    model.Quest? checkinQuest;
     try {
-      final raw = (_todayData?['todayItems'] as List?) ?? const [];
-      // Pass 1: prefer explicit CHECK-IN
-      for (final e in raw) {
-        try {
-          if (e is Quest && e.tag == QuestTag.checkin) {
-            questId = e.id;
-            break;
-          } else if (e is Map<String, dynamic>) {
-            final t = (e['tag'] ?? '').toString().toUpperCase();
-            if (t == 'CHECK-IN' || t == 'CHECKIN') {
-              questId = (e['quest_id'] as String?) ?? (e['id'] as String?);
-              break;
-            }
-          }
-        } catch (_) {}
-      }
-      // Pass 2: allow PROGRESS only if no CHECK-IN was present
-      if (questId == null) {
-        for (final e in raw) {
-          try {
-            if (e is Quest && e.tag == QuestTag.progress) {
-              questId = e.id;
-              break;
-            } else if (e is Map<String, dynamic>) {
-              final t = (e['tag'] ?? '').toString().toUpperCase();
-              if (t == 'PROGRESS') {
-                questId = (e['quest_id'] as String?) ?? (e['id'] as String?);
-                break;
-              }
-            }
-          } catch (_) {}
-        }
-      }
+      // Prefer explicit check_in type
+      checkinQuest = questProvider.quests.firstWhere(
+        (q) => q.type == 'check_in',
+        orElse: () => questProvider.quests.firstWhere(
+          (q) => q.type == 'progress',
+          orElse: () => questProvider.quests.first,
+        ),
+      );
     } catch (_) {}
 
-    // Fallback to known ids if not present in today's list
-    questId ??= engine.listAll().any((q) => q.id == 'checkin_quick_v2')
-        ? 'checkin_quick_v2'
-        : 'checkin_quick_v1';
+    if (checkinQuest == null) return;
+    final int questId = checkinQuest.id;
+    final bool alreadyDone = checkinQuest.isCompleted;
 
-    bool alreadyDone = false;
-    try {
-      alreadyDone = engine.isCompletedToday(questId);
-    } catch (_) {}
-
-    try {
-      await engine.markImpression(questId);
-    } catch (_) {}
-    try {
-      await engine.markStart(questId);
-    } catch (_) {}
     if (kDebugMode) {
-      try {
-        debugPrint('[QuickCheckin][Submitted] questId=$questId');
-      } catch (_) {}
+      debugPrint('[QuickCheckin][Submitted] questId=$questId');
     }
+    
     HapticFeedback.heavyImpact();
-    try {
-      await engine.markComplete(questId);
-    } catch (_) {}
+    
+    // Mark as completed in backend via provider
+    if (!alreadyDone) {
+      await questProvider.updateQuestProgress(questId, 100);
+    }
+    
+    // Refresh local flags
     // Determine if XP was newly awarded now (award occurs only if not already done today)
-    bool awarded = false;
-    try {
-      awarded = !alreadyDone && engine.isCompletedToday(questId);
-    } catch (_) {}
-
+    bool awarded = !alreadyDone; 
     if (!mounted) return;
     setState(() {});
 
-    // Visual feedback
     try {
       if (_enableSoftXpPop && awarded) {
         _showXpChipPop(_startBtnKey, amount: 10);
@@ -349,14 +310,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       }
 
       // Celebration message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Done! Every small step builds something bigger. ✨'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      _showCompletionSnackBar(questId, 'Done! Every small step builds something bigger. ✨');
     } catch (_) {}
 
     // Telemetry: track quest completion and daily check-in for retention
@@ -403,7 +357,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     // Sync providers: lifetime XP + today progress
     try {
-      final lifetimeXp = engine.computeLifetimeXp();
+      final lifetimeXp = questProvider.totalXP;
       if (mounted)
         context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
     } catch (_) {}
@@ -438,59 +392,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     return center;
   }
 
-  // Look up duration_min for a quest in today's selection
+  // Look up duration_min for a quest using QuestProvider
   int? _durationFor(String? questId) {
     if (questId == null) return null;
-    // Datasets may provide 'todayItems' (preferred) which may be List<Quest> or List<Map>
-    final raw = (_todayData?['todayItems'] as List?) ?? const [];
-    for (final e in raw) {
-      try {
-        if (e is Quest && e.id == questId) {
-          return e.durationMin;
-        } else if (e is Map<String, dynamic> && e['quest_id'] == questId) {
-          final d = e['duration_min'];
-          if (d == null) return null;
-          return (d as num).toInt();
-        }
-      } catch (_) {}
-    }
-    // Legacy 'today' support (List<Map>)
-    final todayAlt =
-        (_todayData?['today'] as List?)?.cast<Map<String, dynamic>>() ??
-            const [];
-    for (final m in todayAlt) {
-      if (m['quest_id'] == questId) {
-        final d = m['duration_min'];
-        if (d == null) return null;
-        try {
-          return (d as num).toInt();
-        } catch (_) {
-          return null;
-        }
-      }
-    }
-  // No hardcoded fallbacks: single source of truth is engine/JSON
-    return null;
+    final q = context.read<QuestProvider>().getQuestById(questId);
+    return q?.target; // In our model, target is used for duration if it's a timed task
   }
 
   String? _titleFor(String? questId) {
     if (questId == null) return null;
-    try {
-      final q = context.read<QuestProvider>().quests.firstWhere((e) => e.id == questId);
-      return q.title;
-    } catch (_) {
-      return null;
-    }
+    final q = context.read<QuestProvider>().getQuestById(questId);
+    return q?.title;
   }
-
   String? _subtitleFor(String? questId) {
     if (questId == null) return null;
-    try {
-      final q = context.read<QuestProvider>().quests.firstWhere((e) => e.id == questId);
-      return q.description;
-    } catch (_) {
-      return null;
-    }
+    final q = context.read<QuestProvider>().getQuestById(questId);
+    return q?.description;
   }
 
   // Keys to compute positions for XP chip animation
@@ -654,11 +571,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     
     setState(() {
       _computeDisplayedQuestIds();
-      // Sync local completion flags from provider
-      _task1Done = _qTask1Id != null && 
-          questProvider.quests.any((q) => q.id == _qTask1Id && q.isCompleted);
-      _task2Done = _qTask2Id != null && 
-          questProvider.quests.any((q) => q.id == _qTask2Id && q.isCompleted);
     });
   }
 
@@ -666,30 +578,39 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     await _initQuests();
   }
 
-  // Refresh Explore: reload catalog and update curated categories while preserving current filter
+  // Refresh Explore: reload catalog via QuestProvider
   Future<void> _refreshExplore() async {
-    if (_questsEngine == null) {
-      await _initQuests();
-      return;
-    }
-    await _questsEngine!.loadCatalog();
+    await context.read<QuestProvider>().loadQuests();
     if (!mounted) return;
-    setState(() {
-      final current = _exploreFilter;
-      if (current != 'All' && !_exploreCats.contains(current)) {
-        _exploreFilter = 'All';
-      } else {
-        _exploreFilter = current;
-      }
-    });
-    if (kDebugMode) {
-      try {
-        debugPrint(
-            '[Explore][REFRESH] curated_cats=${_exploreCats.join(', ')}');
-      } catch (_) {}
-    }
+    setState(() {});
   }
 
+  /// Unified completion feedback SnackBar with Undo action
+  void _showCompletionSnackBar(int questId, String message) {
+    if (!mounted) return;
+    final questProvider = context.read<QuestProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 5),
+        content: Text(message),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            await questProvider.updateQuestProgress(questId, 0);
+            await _refreshToday();
+            await _refreshExplore();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Reverted.')),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
   // Choose IDs from today's items to back the 4 static cards.
   // Choose IDs from backend quests to back the 4 static cards.
   void _computeDisplayedQuestIds() {
@@ -698,15 +619,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     // Mapping logic: distribute available quests to slots
     if (quests.isNotEmpty) {
-      _qTask1Id = quests[0].id;
-      _qTask2Id = quests.length > 1 ? quests[1].id : quests[0].id;
-      _qResId = quests.length > 2 ? quests[2].id : quests[0].id;
+      _qTask1Id = quests[0].id.toString();
+      _qTask2Id = quests.length > 1 ? quests[1].id.toString() : quests[0].id.toString();
+      _qResId = quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString();
       _qTipId = quests.length > 3
-          ? quests[3].id
-          : (quests.length > 2 ? quests[2].id : quests[0].id);
+          ? quests[3].id.toString()
+          : (quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString());
     }
   }
-  }
+// } removed extra brace
 
   void _scheduleMidnightRefresh() {
     _midnightTimer?.cancel();
@@ -1000,7 +921,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   void initState() {
     super.initState();
     _loadQuickCheckinFlag();
-    // Initialize confetti controller
+    // Initialize confetti controller - refined duration for premium feel
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
     // Observe app lifecycle for reminder scheduling
@@ -1018,9 +939,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       await _loadReminderPrefs();
       _rescheduleReminder('init');
       // DEBUG ONLY: reset quests state on each launch to test persistence/awards
-      if (kDebugMode && _debugResetQuestsOnLaunch) {
-        await QuestsEngine.debugResetAll();
-      }
+      // NOTE: Quests state is now managed via QuestProvider
       await _initQuests();
       _scheduleMidnightRefresh();
       // DEBUG ONLY: run reminder microinteraction self-test once per day,
@@ -1034,7 +953,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   }
 
   @override
-  void didUpdateWidget(covariant WellnessDashboardScreen oldWidget) {
+  void didUpdateWidget(WellnessDashboardScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.reselect != widget.reselect) {
       oldWidget.reselect?.removeListener(_onReselect);
@@ -1291,14 +1210,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     }
     _autoCompleteTimer?.cancel();
     _autoCompleteTimer = null;
-    // Ensure engine timer state is cleared whenever the pill is removed
-    try {
-      final String? qid = _timerPillQuestId ?? forQuestId;
-      if (qid != null) {
-        // Fire-and-forget; we don't need to await here
-        _questsEngine?.stopTimer(qid);
-      }
-    } catch (_) {}
+    // Clear timer-related state
     _timerPillTicker?.cancel();
     _timerPillTicker = null;
     _timerPillEndAt = null;
@@ -1341,9 +1253,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 child: ElevatedButton(
                   onPressed: () async {
                     Navigator.of(ctx).pop();
-                    try {
-                      await _questsEngine?.startTimer(questId);
-                    } catch (_) {}
+                    // In-memory start for UI
                     HapticFeedback.lightImpact();
                     SystemSound.play(SystemSoundType.click);
                     _showTimerRing(cardKey);
@@ -1388,28 +1298,21 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () async {
-                    // Close the bottom sheet first so SnackBar is visible
                     Navigator.of(ctx).pop();
-                    try {
-                      await _questsEngine?.markStart(questId);
-                      if (kDebugMode) {
-                        try {
-                          debugPrint('[TimerSheet][Complete] questId=$questId');
-                        } catch (_) {}
-                      }
-                      await _questsEngine?.markComplete(questId);
-                      // Sync lifetime XP immediately
+                    final qId = int.tryParse(questId);
+                    if (qId != null) {
+                      await context.read<QuestProvider>().updateQuestProgress(qId, 100);
+                      
                       try {
-                        final lifetimeXp =
-                            _questsEngine?.computeLifetimeXp() ?? 0;
+                        final lifetimeXp = context.read<QuestProvider>().totalXP;
                         if (mounted) {
                           context
                               .read<ProgressProvider>()
                               .updateLifetimeXp(lifetimeXp);
                         }
                       } catch (_) {}
-                      // XP chip pop is handled by first-use logic on initial tap to avoid duplicates
-                      _showCheckRipple(cardKey);
+                    }
+                    _showCheckRipple(cardKey);
                       // Telemetry: quest_complete for instant completion
                       try {
                         logAnalyticsEvent('quest_complete', metadata: {
@@ -1423,41 +1326,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           'ui': 'timer_sheet',
                         });
                       } catch (_) {}
-                      await _refreshToday();
-                      if (mounted) {
-                        // Trigger confetti celebration
-                        _randomizeConfetti();
-                        _confettiController.play();
-                        final messenger = ScaffoldMessenger.of(context);
-                        messenger.hideCurrentSnackBar();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            duration: const Duration(seconds: 5),
-                            content:
-                                Text('Nice work! Every small step counts ✨'),
-                            action: SnackBarAction(
-                              label: 'Undo',
-                              onPressed: () async {
-                                try {
-                                  await _questsEngine?.uncompleteToday(questId);
-                                } catch (_) {}
-                                // Sync lifetime XP after undo
-                                try {
-                                  final lifetimeXp =
-                                      _questsEngine?.computeLifetimeXp() ?? 0;
-                                  if (mounted) {
-                                    context
-                                        .read<ProgressProvider>()
-                                        .updateLifetimeXp(lifetimeXp);
-                                  }
-                                } catch (_) {}
-                                await _refreshToday();
-                              },
-                            ),
-                          ),
-                        );
-                      }
-                    } catch (_) {}
+                        await _refreshToday();
+                        await _refreshExplore();
+
+                        _showCompletionSnackBar(qId!, 'Done! You showed up for yourself today 💪');
                   },
                   child: const Text('Complete now'),
                 ),
@@ -1484,13 +1356,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     required GlobalKey cardKey,
   }) async {
     if (!mounted) return;
-    final engine = _questsEngine;
-    if (engine == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please try again')),
-      );
+    final questProvider = context.read<QuestProvider>();
+    final q = questProvider.getQuestById(int.tryParse(questId) ?? -1);
+    if (q == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quest not found')),
+        );
+      }
       return;
     }
+
     await showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -1519,30 +1395,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         Navigator.of(ctx).pop();
                         HapticFeedback.heavyImpact();
                         SystemSound.play(SystemSoundType.click);
-                        bool alreadyDone = false;
+                        
                         try {
-                          alreadyDone = engine.isCompletedToday(questId);
-                        } catch (_) {}
-                        try {
-                          await engine.markComplete(questId);
-                        } catch (_) {}
-                        // Sync lifetime XP
-                        try {
-                          final lifetimeXp = engine.computeLifetimeXp();
-                          if (mounted)
-                            context
-                                .read<ProgressProvider>()
-                                .updateLifetimeXp(lifetimeXp);
-                        } catch (_) {}
-                        // Visual feedback
-                        try {
-                          _showCheckRipple(cardKey);
-                        } catch (_) {}
-                        // Telemetry: only on first award
-                        try {
-                          final awarded =
-                              !alreadyDone && engine.isCompletedToday(questId);
-                          if (awarded) {
+                          await questProvider.updateQuestProgress(q.id, 100);
+                          
+                          // Visual feedback
+                          try {
+                            _showCheckRipple(cardKey);
+                          } catch (_) {}
+
+                          // Telemetry
+                          try {
                             logAnalyticsEvent('quest_complete', metadata: {
                               'quest_id': questId,
                               'surface': 'wellness_dashboard',
@@ -1554,42 +1417,18 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                               'ui': ui,
                               'source': telemetryTag,
                             });
+                          } catch (_) {}
+
+                          await _refreshToday();
+                          await _refreshExplore();
+
+                          _showCompletionSnackBar(q.id, 'Done! You showed up for yourself today 💪');
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to update progress')),
+                            );
                           }
-                        } catch (_) {}
-                        await _refreshToday();
-                        await _refreshExplore();
-                        if (mounted) {
-                          // Trigger confetti celebration
-                          _randomizeConfetti();
-                          _confettiController.play();
-                          final messenger = ScaffoldMessenger.of(context);
-                          messenger.hideCurrentSnackBar();
-                          messenger.showSnackBar(
-                            SnackBar(
-                              duration: const Duration(seconds: 5),
-                              content: Text(
-                                  'Done! You showed up for yourself today 💪'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () async {
-                                  try {
-                                    await engine.uncompleteToday(questId);
-                                  } catch (_) {}
-                                  // Sync lifetime XP after undo
-                                  try {
-                                    final lifetimeXp =
-                                        engine.computeLifetimeXp();
-                                    if (mounted)
-                                      context
-                                          .read<ProgressProvider>()
-                                          .updateLifetimeXp(lifetimeXp);
-                                  } catch (_) {}
-                                  await _refreshToday();
-                                  await _refreshExplore();
-                                },
-                              ),
-                            ),
-                          );
                         }
                       },
                       child: const Text('Mark complete'),
@@ -1788,6 +1627,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final questProvider = context.watch<QuestProvider>();
     // Build
     return Sizer(builder: (context, orientation, deviceType) {
       return KeyboardDismissibleScaffold(
@@ -1820,7 +1660,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Segmented tabs at top of scrollable content
-                            _buildTabSwitcher(),
+                            _buildTabsSection(),
                             // Sections (conditional by tab)
                             if (_tabIndex == 0) ...[
                               _buildMoodCheckInSection(),
@@ -1975,49 +1815,54 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       }
     } catch (_) {}
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Active days counter
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: appTheme.whiteCustom,
-              borderRadius: BorderRadius.circular(12.h),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4.h,
-                  offset: Offset(0, 2.h),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Active this week: $activeDaysThisWeek/7 days',
-                  style: TextStyle(
-                    fontSize: 14.h,
-                    fontWeight: FontWeight.w500,
-                    color: appTheme.colorFF1F29,
+    return Container(
+      width: double.infinity,
+      child: Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Active days counter
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: appTheme.whiteCustom,
+                borderRadius: BorderRadius.circular(12.h),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4.h,
+                    offset: Offset(0, 2.h),
                   ),
-                ),
-                SizedBox(width: 6.h),
-                Text('🌟', style: TextStyle(fontSize: 16.h)),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Active this week: $activeDaysThisWeek/7 days',
+                    style: TextStyle(
+                      fontSize: 14.h,
+                      fontWeight: FontWeight.w500,
+                      color: appTheme.colorFF1F29,
+                    ),
+                  ),
+                  SizedBox(width: 6.h),
+                  Text('🌟', style: TextStyle(fontSize: 16.h)),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 24.h),
-          // Large prompt card title
-          Text('Quick check-in',
-              textAlign: TextAlign.center,
-              style: TextStyleHelper.instance.headline28Inter.copyWith(
-                  fontFamily: CoreTextStyles
-                      .TextStyleHelper.instance.headline24Bold.fontFamily,
-                  color: Color(0xFF555F6D))),
+            SizedBox(height: 24.h),
+            // Large prompt card title
+            Text('Quick check-in',
+                textAlign: TextAlign.center,
+                style: TextStyleHelper.instance.headline28Inter.copyWith(
+                    fontFamily: CoreTextStyles
+                        .TextStyleHelper.instance.headline24Bold.fontFamily,
+                    color: const Color(0xFF555F6D))),
           SizedBox(height: 8.h),
           // Prompt subtitle
           Text('Takes 2 minutes',
@@ -2027,68 +1872,29 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       .TextStyleHelper.instance.headline24Bold.fontFamily,
                   color: Color(0xFF8C9CAA))),
           SizedBox(height: 32.h),
-          Center(
-            child: Builder(builder: (context) {
-              // Determine today's Quick Check-in quest id
-              final engine = _questsEngine;
-              String? questId;
+          Builder(builder: (context) {
+              final questProvider = context.watch<QuestProvider>();
+              
+              // Determine today's Quick Check-in quest from Provider
+              model.Quest? checkinQuest;
               try {
-                final raw = (_todayData?['todayItems'] as List?) ?? const [];
-                // Pass 1: prefer explicit CHECK-IN
-                for (final e in raw) {
-                  try {
-                    if (e is Quest && e.tag == QuestTag.checkin) {
-                      questId = e.id;
-                      break;
-                    } else if (e is Map<String, dynamic>) {
-                      final t = (e['tag'] ?? '').toString().toUpperCase();
-                      if (t == 'CHECK-IN' || t == 'CHECKIN') {
-                        questId =
-                            (e['quest_id'] as String?) ?? (e['id'] as String?);
-                        break;
-                      }
-                    }
-                  } catch (_) {}
-                }
-                // Pass 2: allow PROGRESS only if no CHECK-IN was present
-                if (questId == null) {
-                  for (final e in raw) {
-                    try {
-                      if (e is Quest && e.tag == QuestTag.progress) {
-                        questId = e.id;
-                        break;
-                      } else if (e is Map<String, dynamic>) {
-                        final t = (e['tag'] ?? '').toString().toUpperCase();
-                        if (t == 'PROGRESS') {
-                          questId = (e['quest_id'] as String?) ??
-                              (e['id'] as String?);
-                          break;
-                        }
-                      }
-                    } catch (_) {}
-                  }
-                }
-              } catch (_) {}
-              // Fallback to known ids if not present in today's list
-              questId ??=
-                  (engine?.listAll().any((q) => q.id == 'checkin_quick_v2') ==
-                          true)
-                      ? 'checkin_quick_v2'
-                      : 'checkin_quick_v1';
-
-              bool isDone = false;
-              try {
-                if (engine != null && questId != null) {
-                  isDone = engine.isCompletedToday(questId);
-                }
+                checkinQuest = questProvider.quests.firstWhere(
+                  (q) => q.type == 'check_in',
+                  orElse: () => questProvider.quests.firstWhere(
+                    (q) => q.type == 'progress',
+                    orElse: () => questProvider.quests.first,
+                  ),
+                );
               } catch (_) {}
 
+              final bool isDone = checkinQuest?.isCompleted ?? false;
               // Gate on quick check-in completion flag (separate from mood logging)
               final bool gatedDone = isDone || _hasCompletedQuickCheckinToday;
-              final Color bg = isDone
+              
+              final Color bg = gatedDone
                   ? const Color(0xFFE6EAF0)
                   : Theme.of(context).colorScheme.primary;
-              final Color fg = isDone ? const Color(0xFF8C9CAA) : Colors.white;
+              final Color fg = gatedDone ? const Color(0xFF8C9CAA) : Colors.white;
 
               return CustomButton(
                   key: _startBtnKey,
@@ -2124,8 +1930,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           );
                         });
             }),
-          ),
         ],
+      ),
+      ),
       ),
     );
   }
@@ -2135,7 +1942,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final int streak = questProvider.streak;
     final int lifetimeXp = questProvider.totalXP;
     final int level = questProvider.level;
-    final int xpEarned = 0; // Baseline for today's display
+    final int xpEarned = questProvider.quests.where((q) => q.isCompleted).fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
 
     // Level progress based on 100 XP per level (standard)
     const int _xpPerLevel = 100;
@@ -2179,10 +1986,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       });
       _lastLevelShown = level;
     }
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 70.h).copyWith(bottom: 32.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Your Progress',
               style: TextStyleHelper.instance.display31BoldInter.copyWith(
@@ -2377,21 +2186,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           // Estimated time moved below "Today's Recommendations" header
         ],
       ),
+      ),
     );
   }
 
   Widget _buildRecommendationsSection() {
-    // Determine daily completion state for RESOURCE and TIP to show subtle status
-    final comp =
-        (_todayData?['completedToday'] as Map?)?.cast<String, bool>() ??
-            const {};
-    final bool resDone = _qResId != null ? (comp[_qResId!] ?? false) : false;
-    final bool tipDone = _qTipId != null ? (comp[_qTipId!] ?? false) : false;
+    final questProvider = context.read<QuestProvider>();
+    final bool task1Done = _qTask1Id != null && 
+        questProvider.quests.any((q) => q.id.toString() == _qTask1Id && q.isCompleted);
+    final bool task2Done = _qTask2Id != null && 
+        questProvider.quests.any((q) => q.id.toString() == _qTask2Id && q.isCompleted);
+    final bool resDone = _qResId != null && 
+        questProvider.quests.any((q) => q.id.toString() == _qResId && q.isCompleted);
+    final bool tipDone = _qTipId != null && 
+        questProvider.quests.any((q) => q.id.toString() == _qTipId && q.isCompleted);
+    
     // Pull durations for tasks from today's selection for accurate display
     final int? _task1Dur = _durationFor(_qTask1Id);
     final int? _task2Dur = _durationFor(_qTask2Id);
-    return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 70.h).copyWith(bottom: 32.h),
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Today\'s Recommendations',
               style: TextStyleHelper.instance.display32BoldInter.copyWith(
@@ -2407,24 +2223,38 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 color: Color(0xFF8C9CAA)),
           ),
           SizedBox(height: 20.h),
-          // Card 1 (TASK)
-          // Card 1 (TASK)
           RecommendationCardWidget(
               containerKey: _task1CardKey,
               category: 'TASK',
               title: _task1Dur != null
                   ? 'Focus reset (${_task1Dur} min)'
                   : 'Focus reset',
-              subtitle: (_task1Done && _task2Done)
+              subtitle: (task1Done && task2Done)
                   ? 'All steps complete 🎉'
                   : 'Quick breathing + desk tidy',
               imagePath: 'assets/images/quests/task_focus.svg',
               doneImagePath: 'assets/images/quests/task_focus_done.svg',
-              completed: _task1Done,
+              completed: task1Done,
               onTap: () async {
-                if (_task1Done) return;
                 final questId = _qTask1Id;
                 if (questId == null) return;
+                
+                // Toggle undo if already done
+                if (task1Done) {
+                  final qId = int.tryParse(questId);
+                  if (qId != null) {
+                    await questProvider.updateQuestProgress(qId, 0);
+                    await _refreshToday();
+                    await _refreshExplore();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Marked undone')),
+                      );
+                    }
+                  }
+                  return;
+                }
+
                 final dur = _durationFor(questId);
                 if (dur != null && dur > 0) {
                   await _openTimerSheet(
@@ -2447,11 +2277,27 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 subtitle: 'Timer + no-phone rule',
                 imagePath: 'assets/images/quests/task_study.svg',
                 doneImagePath: 'assets/images/quests/task_study_done.svg',
-                completed: _task2Done,
+                completed: task2Done,
                 onTap: () async {
-                  if (_task2Done) return;
                   final questId = _qTask2Id;
                   if (questId == null) return;
+
+                  // Toggle undo if already done
+                  if (task2Done) {
+                    final qId = int.tryParse(questId);
+                    if (qId != null) {
+                      await questProvider.updateQuestProgress(qId, 0);
+                      await _refreshToday();
+                      await _refreshExplore();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Marked undone')),
+                        );
+                      }
+                    }
+                    return;
+                  }
+
                   final dur = _durationFor(questId);
                   if (dur != null && dur > 0) {
                     await _openTimerSheet(
@@ -2476,109 +2322,47 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               onTap: () async {
                 HapticFeedback.lightImpact();
                 SystemSound.play(SystemSoundType.click);
-                // Resolve engine and quest ID
-                if (_questsEngine == null) {
-                  await _initQuests();
-                }
-                final engine = _questsEngine;
-                final questId = _qResId;
-                if (questId == null || engine == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Calm music not available today')),
-                    );
+                
+                final questIdStr = _qResId;
+                if (questIdStr == null) return;
+                
+                final qId = int.tryParse(questIdStr);
+                if (qId == null) return;
+
+                if (!resDone) {
+                  // Mark as completed (optimistic 100% progress)
+                  try {
+                    await questProvider.updateQuestProgress(qId, 100);
+                    if (mounted) {
+                      _showCheckRipple(_resCardKey);
+                      _randomizeConfetti();
+                      _confettiController.play();
+                      
+                      await _refreshToday();
+                      await _refreshExplore();
+
+                      _showCompletionSnackBar(qId, 'Done! You showed up for yourself today 💪');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to update progress')),
+                      );
+                    }
                   }
-                  return;
-                }
-                bool isDone = false;
-                try {
-                  isDone = engine.isCompletedToday(questId);
-                } catch (_) {}
-                if (!isDone) {
-                  // Completing: optional soft XP pop only on first use per day
-                  if (_enableSoftXpPop &&
-                      await _isFirstUseToday(_prefsResPopDate)) {
-                    _showXpChipPop(_resCardKey, amount: 5);
-                    await _markUsedToday(_prefsResPopDate);
-                  }
+                } else {
+                  // Toggle back to 0 (Undo via direct tap)
                   try {
-                    await engine.markImpression(questId);
-                    await engine.markStart(questId);
-                  } catch (_) {}
-                  bool alreadyDone = false;
-                  try {
-                    alreadyDone = engine.isCompletedToday(questId);
-                  } catch (_) {}
-                  try {
-                    await engine.markComplete(questId);
-                  } catch (_) {}
-                  // Sync lifetime XP immediately
-                  try {
-                    final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted)
-                      context
-                          .read<ProgressProvider>()
-                          .updateLifetimeXp(lifetimeXp);
-                  } catch (_) {}
-                  // Visual feedback
-                  try {
-                    _showCheckRipple(_resCardKey);
-                  } catch (_) {}
-                  // Telemetry: only on first award
-                  try {
-                    final awarded =
-                        !alreadyDone && engine.isCompletedToday(questId);
-                    if (awarded) {
-                      logAnalyticsEvent('quest_complete', metadata: {
-                        'quest_id': questId,
-                        'surface': 'wellness_dashboard',
-                        'variant': 'today',
-                        'tag': 'xp_awarded',
-                        'ts': DateTime.now().millisecondsSinceEpoch,
-                        'success': true,
-                        'progress': 1.0,
-                        'ui': 'today_resource',
-                        'source': 'resource_used',
-                      });
+                    await questProvider.updateQuestProgress(qId, 0);
+                    await _refreshToday();
+                    await _refreshExplore();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Marked undone')),
+                      );
                     }
                   } catch (_) {}
-                } else {
-                  // Un-completing (toggle off)
-                  try {
-                    await engine.uncompleteToday(questId);
-                  } catch (_) {}
-                  // Sync lifetime XP after undo
-                  try {
-                    final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted)
-                      context
-                          .read<ProgressProvider>()
-                          .updateLifetimeXp(lifetimeXp);
-                  } catch (_) {}
-                  if (mounted) {
-                    final messenger = ScaffoldMessenger.of(context);
-                    messenger.hideCurrentSnackBar();
-                    messenger.showSnackBar(
-                      const SnackBar(
-                          duration: Duration(milliseconds: 1200),
-                          content: Text('Marked undone')),
-                    );
-                  }
-                  try {
-                    logAnalyticsEvent('quest_uncomplete', metadata: {
-                      'quest_id': questId,
-                      'surface': 'wellness_dashboard',
-                      'variant': 'today',
-                      'tag': 'toggle_undo',
-                      'ts': DateTime.now().millisecondsSinceEpoch,
-                      'ui': 'today_resource',
-                      'source': 'resource_used',
-                    });
-                  } catch (_) {}
                 }
-                await _refreshToday();
-                await _refreshExplore();
               }),
           SizedBox(height: 24.h),
           // Card 4 (TIP)
@@ -2593,108 +2377,49 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               onTap: () async {
                 HapticFeedback.lightImpact();
                 SystemSound.play(SystemSoundType.click);
-                // Resolve engine and quest ID
-                if (_questsEngine == null) {
-                  await _initQuests();
-                }
-                final engine = _questsEngine;
-                final questId = _qTipId;
-                if (questId == null || engine == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tip not available today')),
-                    );
-                  }
-                  return;
-                }
-                bool isDone = false;
-                try {
-                  isDone = engine.isCompletedToday(questId);
-                } catch (_) {}
-                if (!isDone) {
-                  // Completing: optional soft XP pop only on first use per day
-                  if (_enableSoftXpPop &&
-                      await _isFirstUseToday(_prefsTipPopDate)) {
-                    _showXpChipPop(_tipCardKey, amount: 5);
-                    await _markUsedToday(_prefsTipPopDate);
-                  }
+
+                final questIdStr = _qTipId;
+                if (questIdStr == null) return;
+                
+                final qId = int.tryParse(questIdStr);
+                if (qId == null) return;
+
+                if (!tipDone) {
                   try {
-                    await engine.markImpression(questId);
-                    await engine.markStart(questId);
-                  } catch (_) {}
-                  bool alreadyDone = false;
-                  try {
-                    alreadyDone = engine.isCompletedToday(questId);
-                  } catch (_) {}
-                  try {
-                    await engine.markComplete(questId);
-                  } catch (_) {}
-                  // Sync lifetime XP immediately
-                  try {
-                    final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted)
-                      context
-                          .read<ProgressProvider>()
-                          .updateLifetimeXp(lifetimeXp);
-                  } catch (_) {}
-                  // Visual feedback
-                  try {
+                    await questProvider.updateQuestProgress(qId, 100);
                     _showCheckRipple(_tipCardKey);
-                  } catch (_) {}
-                  // Telemetry: only on first award
-                  try {
-                    final awarded =
-                        !alreadyDone && engine.isCompletedToday(questId);
-                    if (awarded) {
-                      logAnalyticsEvent('quest_complete', metadata: {
-                        'quest_id': questId,
-                        'surface': 'wellness_dashboard',
-                        'variant': 'today',
-                        'tag': 'xp_awarded',
-                        'ts': DateTime.now().millisecondsSinceEpoch,
-                        'success': true,
-                        'progress': 1.0,
-                        'ui': 'today_tip',
-                        'source': 'tip_viewed',
-                      });
+                    _randomizeConfetti();
+                    _confettiController.play();
+                    
+                    await _refreshToday();
+                    await _refreshExplore();
+
+                    _showCompletionSnackBar(qId, 'Done! You showed up for yourself today 💪');
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to update progress')),
+                      );
                     }
-                  } catch (_) {}
-                } else {
-                  // Un-completing (toggle off)
-                  try {
-                    await engine.uncompleteToday(questId);
-                  } catch (_) {}
-                  // Sync lifetime XP after undo
-                  try {
-                    final lifetimeXp = engine.computeLifetimeXp();
-                    if (mounted)
-                      context
-                          .read<ProgressProvider>()
-                          .updateLifetimeXp(lifetimeXp);
-                  } catch (_) {}
-                  if (mounted) {
-                    final messenger = ScaffoldMessenger.of(context);
-                    messenger.hideCurrentSnackBar();
-                    messenger.showSnackBar(
-                      const SnackBar(
-                          duration: Duration(milliseconds: 1200),
-                          content: Text('Marked undone')),
-                    );
                   }
+                } else {
                   try {
-                    logAnalyticsEvent('quest_uncomplete', metadata: {
-                      'quest_id': questId,
-                      'surface': 'wellness_dashboard',
-                      'variant': 'today',
-                      'tag': 'toggle_undo',
-                      'ts': DateTime.now().millisecondsSinceEpoch,
-                      'ui': 'today_tip',
-                      'source': 'tip_viewed',
-                    });
-                  } catch (_) {}
+                    await questProvider.updateQuestProgress(qId, 0);
+                    await _refreshToday();
+                    await _refreshExplore();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Marked undone')),
+                      );
+                    }
+                  } catch (_) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to update progress')),
+                      );
+                    }
+                  }
                 }
-                await _refreshToday();
-                await _refreshExplore();
               }),
           SizedBox(height: 24.h),
           // Card 5 (REMINDER) - themed toggle + change time
@@ -3032,7 +2757,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               );
             },
           ),
-        ]));
+        ])));
   }
 
   // Utility: title-case a string for category display
@@ -3048,156 +2773,54 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         .join(' ');
   }
 
-  // Explore: minimal gating helper for awarding XP with daily "energy"
+  // Explore: minimal gating helper for awarding XP
   Future<void> _handleExploreComplete(String questId) async {
     HapticFeedback.lightImpact();
     SystemSound.play(SystemSoundType.click);
-    final engine = _questsEngine;
-    if (engine == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please try again')),
-      );
-      return;
+    
+    final qId = int.tryParse(questId);
+    if (qId == null) return;
+
+    final questProvider = context.read<QuestProvider>();
+    final q = questProvider.getQuestById(questId);
+    if (q == null) return;
+
+    // Interaction Rationalization:
+    // If it's a 'progress' quest (Assessment), we navigate the user to the tool.
+    // We only complete IF they actually finish it (return true).
+    if (q.type == 'progress') {
+      final result = await Navigator.pushNamed(context, '/clinical-assessment');
+      if (result != true) {
+        return; // User didn't complete it
+      }
     }
+
     try {
-      // Derive quest meta for clearer telemetry (TIP vs RESOURCE, etc.)
-      String questTag = 'unknown';
-      String questCategory = '';
-      try {
-        final meta = engine.listAll().firstWhere((q) => q.id == questId);
-        questTag = meta.tag.name;
-        questCategory = (meta.category ?? '').toLowerCase();
-      } catch (_) {}
-      if (kDebugMode) {
-        try {
-          debugPrint('[Explore][Meta] questId=' +
-              questId +
-              ' quest_tag=' +
-              questTag +
-              ' category=' +
-              questCategory);
-        } catch (_) {}
-      }
-      if (kDebugMode) {
-        try {
-          debugPrint('[Explore][Tap] questId=$questId -> impression/start');
-        } catch (_) {}
-      }
-      await engine.markImpression(questId);
-      await engine.markStart(questId);
-      if (kDebugMode) {
-        try {
-          debugPrint('[Explore][Award] tryAwardExplore questId=$questId');
-        } catch (_) {}
-      }
-      final awarded = await engine.tryAwardExplore(questId);
-
-      // Immediate UI refresh so energy pill decrements without delay
-      if (mounted) setState(() {});
-
-      // Figure out reason for no award
-      String reason = awarded ? 'energy_spent' : 'unknown';
-      if (!awarded) {
-        if (engine.isCompletedToday(questId)) {
-          reason = 'already_completed_today';
-        } else if (engine.exploreEnergyLeft() <= 0) {
-          reason = 'no_energy';
-        }
-      }
-      if (kDebugMode) {
-        try {
-          debugPrint(
-              '[Explore][Result] questId=$questId awarded=$awarded reason=$reason energy_left=${engine.exploreEnergyLeft()}');
-        } catch (_) {}
-      }
-
-      // Telemetry: quest_complete with success + reason
-      try {
-        logAnalyticsEvent('quest_complete', metadata: {
-          'quest_id': questId,
-          'surface': 'wellness_dashboard',
-          'variant': 'explore',
-          'tag': awarded ? 'xp_awarded' : 'no_xp',
-          'quest_tag': questTag,
-          'category': questCategory,
-          'ts': DateTime.now().millisecondsSinceEpoch,
-          'success': awarded,
-          'reason': reason,
-          'ui': 'explore_legacy',
+      await questProvider.updateQuestProgress(qId, 100);
+      
+      if (mounted) {
+        setState(() {
+          _exploreCompletedToday.add(questId);
         });
-      } catch (_) {}
-
-      // Update Explore UI 'Done' state only when XP was actually awarded here
-      if (awarded) {
-        _exploreCompletedToday.add(questId);
-        if (mounted) setState(() {});
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (awarded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              duration: Duration(milliseconds: 1400),
-              content: Text('XP awarded')),
-        );
-      } else {
-        final msg = (reason == 'no_energy')
-            ? 'No XP remaining for Explore today'
-            : (reason == 'already_completed_today')
-                ? 'Already counted today'
-                : 'No XP awarded';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              duration: const Duration(milliseconds: 1400), content: Text(msg)),
-        );
-      }
-
-      // Sync lifetime XP and refresh energy pill
-      try {
-        final lifetimeXp = engine.computeLifetimeXp();
-        if (mounted)
-          context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
-      } catch (_) {}
-      // Sync Today tab progress (steps/xp) after Explore award
-      try {
-        final data = await engine.getTodayData();
-        final prog =
-            (data['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
-        final stepsLeft = (prog['stepsLeft'] ?? 0) as int;
-        final xpEarned = (prog['xpEarned'] ?? 0) as int;
-        if (mounted) {
-          context
-              .read<ProgressProvider>()
-              .updateFromQuests(stepsLeft: stepsLeft, xpEarned: xpEarned);
+        
+        // Celebration logic: Rationalized
+        // Only confetti for high-impact achievements (>40 XP)
+        if (q.xpReward >= 40) {
+          HapticFeedback.heavyImpact();
+          try {
+            _confettiController.play();
+          } catch (_) {}
         }
-        // Also update lifetime XP immediately for Explore header
-        try {
-          final lifetimeXp = engine.computeLifetimeXp();
-          if (mounted)
-            context.read<ProgressProvider>().updateLifetimeXp(lifetimeXp);
-          if (kDebugMode) {
-            try {
-              debugPrint('[Explore][XP] lifetimeXp=' + lifetimeXp.toString());
-            } catch (_) {}
-          }
-        } catch (_) {}
-      } catch (_) {}
-      if (mounted) setState(() {});
-    } catch (e) {
-      if (kDebugMode) debugPrint('[Explore][ERROR] $e');
-    }
+      }
+    } catch (_) {}
   }
 
-  // Segmented control for Today | Explore
-  Widget _buildTabSwitcher() {
-    Widget segButton(String label, int index) {
-      final bool selected = _tabIndex == index;
-      final Color primary = Theme.of(context).colorScheme.primary;
-      return InkWell(
-        borderRadius: BorderRadius.circular(22.h),
-        onTap: () {
+
+
+  Widget _buildTab(int index, String label, {bool selected = false}) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return InkWell(
+      onTap: () {
           if (_tabIndex == index) return;
           HapticFeedback.selectionClick();
           SystemSound.play(SystemSoundType.click);
@@ -3254,6 +2877,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           ),
         ),
       );
+  }
+
+  Widget _buildTabsSection() {
+    Widget segButton(String label, int index) {
+      bool selected = _tabIndex == index;
+      return _buildTab(index, label, selected: selected);
     }
 
     return Padding(
@@ -3271,12 +2900,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Explore tab content (header + category filters + placeholder grid)
   Widget _buildExploreSection() {
     final qp = context.watch<QuestProvider>();
-    final List<String> cats = <String>{'All', ..._exploreCats}.toList();
+    
+    // Filter categories to only those with available quests
+    final activeCats = _exploreCats.where((cat) {
+      if (cat == 'All') return true;
+      // Case-insensitive match between display category and quest type
+      return qp.quests.any((q) => q.type.toUpperCase() == cat.toUpperCase());
+    }).toList();
+
+    final List<String> cats = <String>{'All', ...activeCats}.toList();
     final List<String> visible = _exploreFilter == 'All'
-        ? _exploreCats
-        : _exploreCats.where((c) => c == _exploreFilter).toList();
+        ? activeCats
+        : activeCats.where((c) => c == _exploreFilter).toList();
     // Keep XP display consistent with Today tab
-    final int xpToday = 0; // derivation would require tracking daily start XP
+    final int xpToday = qp.quests.where((q) => q.isCompleted).fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
     final int lifetimeXp = qp.totalXP;
     // Streak values for header (No-Guilt)
     final int streakDays = qp.streak;
@@ -3489,8 +3126,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
         // Dynamic Explore quest cards from catalog filtered by category
         Builder(builder: (context) {
-          final engine = _questsEngine;
-          if (engine == null) {
+          final questProvider = context.watch<QuestProvider>();
+          final items = (_exploreFilter == 'All')
+              ? questProvider.quests
+              : questProvider.quests.where((q) => (q.type ?? '').toLowerCase() == _exploreFilter.toLowerCase()).toList();
+
+          if (questProvider.quests.isEmpty) {
             return Container(
               padding: EdgeInsets.symmetric(horizontal: 20.h, vertical: 18.h),
               decoration: BoxDecoration(
@@ -3510,25 +3151,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             );
           }
 
-          // Category filter => lowercase for engine
-          final List<Quest> raw = (_exploreFilter == 'All')
-              ? engine.listActive()
-              : engine.listByCategory(_exploreFilter.toLowerCase());
-          // Explore-only hide flag: filter out quests marked hidden for Explore surface
-          final List<Quest> items = raw.where((q) => !q.hideInExplore).toList();
-
-          // Best-effort: mark impressions once per quest when first shown
+          // Best-effort: mark impressions (if needed in analytics)
           WidgetsBinding.instance.addPostFrameCallback((_) {
             for (final q in items) {
-              if (_impressedExplore.add(q.id)) {
-                try {
-                  engine.markImpression(q.id);
-                } catch (_) {}
+              if (_impressedExplore.add(q.id.toString())) {
                 try {
                   logAnalyticsEvent('quest_view', metadata: {
                     'quest_id': q.id,
-                    'tag': q.tag.name,
-                    'category': (q.category ?? '').toLowerCase(),
+                    'type': q.type,
                     'surface': 'wellness_dashboard',
                     'variant': 'explore',
                     'ts': DateTime.now().millisecondsSinceEpoch,
@@ -3559,9 +3189,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             );
           }
 
-          IconData iconFor(Quest q) {
-            final c = (q.category ?? '').toLowerCase();
-            switch (c) {
+          IconData iconFor(model.Quest q) {
+            final type = (q.type ?? '').toLowerCase();
+            switch (type) {
               case 'mindfulness':
                 return Icons.self_improvement_outlined;
               case 'activity':
@@ -3572,26 +3202,25 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 return Icons.school_outlined;
               case 'challenge':
                 return Icons.flag_outlined;
-            }
-            switch (q.tag) {
-              case QuestTag.task:
+              case 'task':
                 return Icons.check_circle_outline;
-              case QuestTag.tip:
+              case 'tip':
                 return Icons.lightbulb_outline;
-              case QuestTag.resource:
+              case 'resource':
                 return Icons.menu_book_outlined;
-              case QuestTag.reminder:
+              case 'reminder':
                 return Icons.alarm_outlined;
-              case QuestTag.checkin:
+              case 'check_in':
                 return Icons.favorite_border;
-              case QuestTag.progress:
+              case 'progress':
                 return Icons.trending_up_outlined;
             }
+            return Icons.help_outline;
           }
 
-          Color colorFor(Quest q) {
-            final c = (q.category ?? '').toLowerCase();
-            switch (c) {
+          Color colorFor(model.Quest q) {
+            final type = (q.type ?? '').toLowerCase();
+            switch (type) {
               case 'mindfulness':
                 return Colors.teal;
               case 'activity':
@@ -3602,21 +3231,20 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 return Colors.deepPurple;
               case 'challenge':
                 return Colors.redAccent;
-            }
-            switch (q.tag) {
-              case QuestTag.task:
+              case 'task':
                 return Theme.of(context).colorScheme.primary;
-              case QuestTag.tip:
+              case 'tip':
                 return Colors.orange;
-              case QuestTag.resource:
+              case 'resource':
                 return Colors.blue;
-              case QuestTag.reminder:
+              case 'reminder':
                 return Colors.pink;
-              case QuestTag.checkin:
+              case 'check_in':
                 return Colors.cyan;
-              case QuestTag.progress:
+              case 'progress':
                 return Colors.amber;
             }
+            return Colors.grey;
           }
 
           return ListView.separated(
@@ -3626,51 +3254,46 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             separatorBuilder: (_, __) => SizedBox(height: 12.h),
             itemBuilder: (context, index) {
               final q = items[index];
-              // Reflect actual same-day completion using engine state; also treat v1/v2 variants as equivalent
-              final engine = _questsEngine;
-              String? otherVariant;
-              if (q.id.endsWith('_v1')) {
-                otherVariant = q.id.replaceFirst('_v1', '_v2');
-              } else if (q.id.endsWith('_v2')) {
-                otherVariant = q.id.replaceFirst('_v2', '_v1');
-              }
-              bool doneToday = false;
-              if (engine != null) {
-                try {
-                  doneToday = engine.isCompletedToday(q.id) ||
-                      (otherVariant != null &&
-                          engine.isCompletedToday(otherVariant));
-                } catch (_) {}
-              }
-              // Also consider session-only completions so UI updates instantly after tap
-              if (!doneToday) {
-                doneToday = _exploreCompletedToday.contains(q.id) ||
-                    (otherVariant != null &&
-                        _exploreCompletedToday.contains(otherVariant));
-              }
+              final bool doneToday = q.isCompleted;
               final double? progress = doneToday ? 1.0 : null;
 
               return QuestCardWidget(
                 title: q.title,
-                subtitle: q.subtitle.isNotEmpty ? q.subtitle : null,
+                subtitle: q.description.isNotEmpty ? q.description : null,
                 icon: iconFor(q),
                 color: colorFor(q),
                 progress: progress,
+                xp: q.xpReward,
                 onTap: () {
                   try {
                     logAnalyticsEvent('quest_start', metadata: {
                       'quest_id': q.id,
-                      'tag': q.tag.name,
-                      'category': (q.category ?? '').toLowerCase(),
+                      'type': q.type,
                       'surface': 'wellness_dashboard',
                       'variant': 'explore',
                       'ts': DateTime.now().millisecondsSinceEpoch,
-                      if (q.durationMin != null) 'duration_min': q.durationMin,
-                      if (progress != null) 'progress': progress,
                       'ui': 'explore',
                     });
                   } catch (_) {}
-                  _handleExploreComplete(q.id);
+                  // Toggle logic for Explore tab
+                  if (q.isCompleted) {
+                    // Undo
+                    final qId = q.id;
+                    try {
+                      context.read<QuestProvider>().updateQuestProgress(qId, 0);
+                      if (mounted) {
+                        setState(() {
+                          _exploreCompletedToday.remove(qId.toString());
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Marked undone')),
+                        );
+                      }
+                    } catch (_) {}
+                  } else {
+                    // Complete
+                    _handleExploreComplete(q.id.toString());
+                  }
                 },
               );
             },
@@ -3680,3 +3303,5 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     );
   }
 }
+
+

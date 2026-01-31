@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple, Optional, Dict
 
@@ -63,7 +64,7 @@ class KeyManager:
                 "private_key_pem": kp.private_key_pem,
                 "public_key_pem": kp.public_key_pem,
                 "alias": alias,
-                "created_at": "TODO:Timestamp"
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             if alias:
                 # Also index by alias for convenience? 

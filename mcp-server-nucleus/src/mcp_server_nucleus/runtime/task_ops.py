@@ -353,7 +353,7 @@ def _escalate_task(task_id: str, reason: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-def _import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> Dict:
+def _import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False, merge_gtm_params: bool = True) -> Dict:
     """Import tasks from a JSONL file into the brain database."""
     try:
         brain = get_brain_path()
@@ -416,6 +416,15 @@ def _import_tasks_from_jsonl(jsonl_path: str, clear_existing: bool = False) -> D
                 "created_at": task_data.get("created_at", now),
                 "updated_at": now
             }
+            
+            # GTM Metadata Merging
+            if merge_gtm_params:
+                if "environment" in task_data:
+                    task["environment"] = task_data["environment"]
+                if "model" in task_data:
+                    task["model"] = task_data["model"]
+                if "step" in task_data:
+                    task["step"] = task_data["step"]
             
             new_tasks.append(task)
             existing_ids.add(task["id"])

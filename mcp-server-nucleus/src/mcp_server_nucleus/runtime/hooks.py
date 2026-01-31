@@ -213,21 +213,34 @@ class AmbientTelemetry:
     """
     Writes status to a "Pulse File" for the HUD/Status Bar to read.
     Frequency: High (1s-5s).
+    
+    Security (V9 Patch): Uses IdentityKey to sign heartbeats, preventing IPC hijacking.
     """
-    def __init__(self, brain_path: Path):
+    def __init__(self, brain_path: Path, identity: Optional['IdentityKey'] = None):
         self.pulse_file = brain_path / "pulse.json"
+        self.identity = identity
         
     def beat(self, status: str, active_tasks: int, cpu_usage: float = 0.0):
-        """Write the heartbeat."""
+        """Write the heartbeat with a cryptographic pulse signal."""
+        timestamp = time.time()
         data = {
-            "timestamp": time.time(),
+            "timestamp": timestamp,
             "status": status, # idle, busy, error, sleeping
             "tasks": active_tasks,
             "cpu": cpu_usage,
             "color": "green" if status == "idle" else "gold" if status == "busy" else "red"
         }
-        # Atomic write if possible, or just overwrite (it's ephemeral)
+        
+        # Add Trust Signal (Crypographic Pulse)
+        if self.identity:
+            payload = f"{timestamp}:{status}:{active_tasks}"
+            data["pulse_sig"] = self.identity.sign_message(payload)
+            data["did"] = self.identity.did
+
+        # Atomic write
         try:
-            self.pulse_file.write_text(json.dumps(data))
-        except Exception:
-            pass
+            temp_file = self.pulse_file.with_suffix(".tmp")
+            temp_file.write_text(json.dumps(data))
+            temp_file.replace(self.pulse_file)
+        except Exception as e:
+            logger.warning(f"Failed to pulse: {e}")

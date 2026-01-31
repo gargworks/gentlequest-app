@@ -36,6 +36,16 @@ class QuestCard extends StatelessWidget {
         return Icons.assignment_turned_in_outlined;
       case 'progress':
         return Icons.trending_up;
+      case 'social':
+        return Icons.people_outline;
+      case 'learning':
+        return Icons.school_outlined;
+      case 'challenge':
+        return Icons.emoji_events_outlined;
+      case 'mindfulness':
+        return Icons.self_improvement;
+      case 'activity':
+        return Icons.directions_walk;
       default:
         return Icons.star_border;
     }

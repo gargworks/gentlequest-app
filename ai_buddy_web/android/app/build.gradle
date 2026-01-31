@@ -62,8 +62,8 @@ android {
         applicationId appId
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 35
-        versionCode ciVersionCode.toInteger()
-        versionName ciVersionName
+        versionCode 5
+        versionName "1.2.1"
     }
 
     compileOptions {

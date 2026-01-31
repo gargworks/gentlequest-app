@@ -1,0 +1,90 @@
+# cloudbuild.yaml.template
+# This template defines a Google Cloud Build pipeline for containerizing and deploying microservices to Cloud Run.
+# It is designed to be reusable and parameterized for different services and environments.
+
+# --- GLOBAL VARIABLES ---
+# These variables can be overridden at runtime or by service-specific cloudbuild.yaml files.
+substitutions:
+  _SERVICE_NAME: default-service
+  _PROJECT_ID: ${PROJECT_ID}
+  _REGION: us-central1
+  _DOCKERFILE_PATH: Dockerfile
+  _BUILD_CONTEXT: .
+  _IMAGE_NAME: gcr.io/${_PROJECT_ID}/${_SERVICE_NAME}
+  _TAG_NAME: ${_IMAGE_NAME}:${_COMMIT_SHA:0:7}
+  _RUNTIME_IMAGE: gcr.io/cloud-run-containers/distroless/python3-debian11 # Example: use a distroless base for Python
+  _BUILD_IMAGE: python:3.9-slim-buster # Example: use Python for build stage
+  _SERVICE_ACCOUNT: projects/${_PROJECT_ID}/members/service-${_PROJECT_NUMBER}@gcp-sa-cloudbuild.iam.gserviceaccount.com # Cloud Build service account
+  _MEMORY: 512Mi # Default Cloud Run memory allocation
+  _CPU: 1 # Default Cloud Run CPU allocation
+  _CONCURRENCY: 80 # Default Cloud Run concurrency
+  _MIN_INSTANCES: 0 # Default Cloud Run min instances
+  _MAX_INSTANCES: 10 # Default Cloud Run max instances
+  _ALLOW_UNAUTHENTICATED: 'false' # Default Cloud Run allow unauthenticated traffic
+  _ENV_VARS: "" # Comma-separated list of key=value environment variables (e.g., FOO=bar,BAZ=qux)
+  _SECRETS: "" # Comma-separated list of secret key=value pairs (e.g., FOO=SECRET_ID:VERSION,BAR=ANOTHER_SECRET:LATEST)
+
+
+steps:
+
+# --- STEP 1: Build and Tag Docker Image ---
+# Uses Kaniko (default builder in Cloud Build) to build the Docker image.
+# Dynamic Dockerfile and build context allow flexibility per service.
+- id: 'Build and Tag Image'
+  name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build',
+    '-f', '${_DOCKERFILE_PATH}',
+    '--build-arg', 'BUILD_IMAGE=${_BUILD_IMAGE}',
+    '--build-arg', 'RUNTIME_IMAGE=${_RUNTIME_IMAGE}',
+    '-t', '${_IMAGE_NAME}:${_COMMIT_SHA:0:7}',
+    '-t', '${_IMAGE_NAME}:latest',
+    '${_BUILD_CONTEXT}'
+  ]
+
+# --- STEP 2: Push Docker Image to Google Container Registry (GCR) ---
+# Pushes the newly built image to GCR, making it available for Cloud Run deployment.
+- id: 'Push Image to GCR'
+  name: 'gcr.io/cloud-builders/docker'
+  args: ['push', '${_IMAGE_NAME}:${_COMMIT_SHA:0:7}']
+
+
+# --- STEP 3: Deploy to Google Cloud Run ---
+# Deploys the container image to Cloud Run.
+# Includes dynamic configuration for service name, region, environment variables, and secrets.
+- id: 'Deploy to Cloud Run'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gcloud run deploy ${_SERVICE_NAME} \
+        --image=${_IMAGE_NAME}:${_COMMIT_SHA:0:7} \
+        --platform=managed \
+        --region=${_REGION} \
+        --project=${_PROJECT_ID} \
+        --memory=${_MEMORY} \
+        --cpu=${_CPU} \
+        --concurrency=${_CONCURRENCY} \
+        --min-instances=${_MIN_INSTANCES} \
+        --max-instances=${_MAX_INSTANCES} \
+        --service-account=${_SERVICE_ACCOUNT} \
+        $( [ "${_ALLOW_UNAUTHENTICATED}" = "true" ] && echo "--allow-unauthenticated" || echo "--no-allow-unauthenticated" ) \
+        $( [ -n "${_ENV_VARS}" ] && echo "--set-env-vars=${_ENV_VARS}" || echo "" ) \
+        $( [ -n "${_SECRETS}" ] && echo "--set-secrets=${_SECRETS}" || echo "" )
+
+# --- ARTIFACTS ---
+# Specifies which images are built and pushed by this pipeline.
+images:
+  - '${_IMAGE_NAME}:${_COMMIT_SHA:0:7}'
+  - '${_IMAGE_NAME}:latest'
+
+# NOTE:
+# For triggering this pipeline:
+# - Create a Cloud Build trigger that points to your repository and this cloudbuild.yaml.template.
+# - Use substitutions to customize deployments (e.g., _SERVICE_NAME, _REGION, _ENV_VARS).
+# - For secrets, ensure the Cloud Build service account has 'Secret Manager Secret Accessor' role.
+#   Example usage for secrets:
+#   --set-secrets=DB_PASSWORD=my-db-password:latest,API_KEY=my-api-key:1
+# - For environment variables:
+#   --set-env-vars=NODE_ENV=production,PORT=8080

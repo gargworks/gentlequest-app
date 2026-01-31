@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crisis_detection_enhanced import detect_crisis_level
+from crisis_detection import detect_crisis_level
 
 # Test cases with expected results
 TEST_CASES = [

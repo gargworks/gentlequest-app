@@ -1,0 +1,155 @@
+{
+  "version": "3.0.0",
+  "last_updated": "2026-01-20",
+  
+  "tiers": {
+    "premium": {
+      "level": 1,
+      "description": "Top-tier models for strategy, architecture, complex reasoning",
+      "models": [
+        "claude_opus_4.5",
+        "claude_opus_4",
+        "claude_opus_4.5_thinking",
+        "gpt_4o"
+      ],
+      "priority_range": [1, 2],
+      "best_for": ["strategy", "architecture", "design", "complex_reasoning", "gtm"],
+      "cost_tier": "high",
+      "cost_per_1k_tokens": 0.075,
+      "context_window": 200000
+    },
+    
+    "thinking": {
+      "level": 2,
+      "description": "Models with extended reasoning for multi-step problems",
+      "models": [
+        "claude_sonnet_4.5_thinking",
+        "claude_sonnet_4_thinking",
+        "gemini_3_pro_thinking"
+      ],
+      "priority_range": [1, 3],
+      "best_for": ["planning", "debugging", "analysis", "multi_step"],
+      "cost_tier": "medium-high",
+      "cost_per_1k_tokens": 0.015,
+      "context_window": 128000
+    },
+    
+    "standard": {
+      "level": 3,
+      "description": "Balanced models for implementation and analysis",
+      "models": [
+        "claude_sonnet_4",
+        "claude_sonnet_4.5",
+        "gemini_3_pro_high",
+        "gemini_3_pro_low",
+        "gpt_4o_mini"
+      ],
+      "priority_range": [2, 4],
+      "best_for": ["implementation", "code", "analysis", "documentation"],
+      "cost_tier": "medium",
+      "cost_per_1k_tokens": 0.007,
+      "context_window": 128000,
+      "reset_hours": 5,
+      "reset_models": ["gemini_3_pro_high", "gemini_3_pro_low"]
+    },
+    
+    "fast": {
+      "level": 4,
+      "description": "Quick models for simple tasks and high volume",
+      "models": [
+        "claude_haiku",
+        "gemini_3_flash",
+        "grok_code_fast",
+        "gpt_4o_mini"
+      ],
+      "priority_range": [3, 5],
+      "best_for": ["cleanup", "formatting", "simple_edits", "repetitive"],
+      "cost_tier": "low",
+      "cost_per_1k_tokens": 0.001,
+      "context_window": 32000
+    },
+    
+    "code": {
+      "level": 2,
+      "description": "Specialized code generation models",
+      "models": [
+        "codex_5.1_max",
+        "codex_5.1_low",
+        "swe_1.5",
+        "deepseek_coder"
+      ],
+      "priority_range": [1, 5],
+      "best_for": ["refactor", "bulk_edit", "code_generation", "testing"],
+      "cost_tier": "medium",
+      "cost_per_1k_tokens": 0.020,
+      "context_window": 64000,
+      "specialized": true
+    },
+    
+    "human": {
+      "level": 0,
+      "description": "Tasks requiring human action",
+      "models": [],
+      "priority_range": [1, 5],
+      "best_for": ["external_action", "approval", "posting", "communication"],
+      "cost_tier": "none",
+      "cost_per_1k_tokens": 0,
+      "context_window": null
+    }
+  },
+  
+  "model_costs": {
+    "claude_opus_4.5": 0.075,
+    "claude_opus_4": 0.060,
+    "claude_sonnet_4.5": 0.015,
+    "claude_sonnet_4": 0.012,
+    "claude_sonnet_4.5_thinking": 0.020,
+    "claude_haiku": 0.001,
+    "gemini_3_pro_high": 0.007,
+    "gemini_3_pro_low": 0.003,
+    "gemini_3_flash": 0.0005,
+    "gemini_3_pro_thinking": 0.010,
+    "codex_5.1_max": 0.020,
+    "codex_5.1_low": 0.010,
+    "swe_1.5": 0.025,
+    "deepseek_coder": 0.005,
+    "gpt_4o": 0.030,
+    "gpt_4o_mini": 0.002,
+    "grok_code_fast": 0.003
+  },
+  
+  "model_aliases": {
+    "opus": "claude_opus_4.5",
+    "opus4": "claude_opus_4",
+    "sonnet": "claude_sonnet_4.5",
+    "haiku": "claude_haiku",
+    "gemini_high": "gemini_3_pro_high",
+    "gemini_low": "gemini_3_pro_low",
+    "flash": "gemini_3_flash",
+    "codex": "codex_5.1_max",
+    "swe": "swe_1.5"
+  },
+  
+  "tier_priority_mapping": {
+    "1": "premium",
+    "2": "standard",
+    "3": "standard",
+    "4": "fast",
+    "5": "fast"
+  },
+  
+  "skill_to_tier": {
+    "strategy": "premium",
+    "architecture": "premium",
+    "design": "premium",
+    "gtm": "premium",
+    "implementation": "standard",
+    "code": "standard",
+    "python": "standard",
+    "refactor": "code",
+    "bulk_edit": "code",
+    "cleanup": "fast",
+    "formatting": "fast",
+    "documentation": "standard"
+  }
+}

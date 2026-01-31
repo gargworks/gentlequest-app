@@ -1,21 +1,54 @@
 # GentleQuest Makefile
 # Common development and deployment commands
 
-.PHONY: help install migrate seed test run deploy rollback clean
+.PHONY: help install migrate seed test run deploy rollback clean experiment studio-help
+
+# ═══════════════════════════════════════════════════════════════
+# STUDIO OPERATING SYSTEM
+# ═══════════════════════════════════════════════════════════════
+
+experiment:
+	@if [ -z "$(name)" ]; then \
+		echo "Usage: make experiment name=my-idea"; \
+		exit 1; \
+	fi
+	@./scripts/scaffold_experiment.sh $(name)
+
+studio-help:
+	@echo "╔════════════════════════════════════════════════════════╗"
+	@echo "║         LOKESH STUDIO QUICK COMMANDS                   ║"
+	@echo "╠════════════════════════════════════════════════════════╣"
+	@echo "║  make experiment name=idea-name  → Create new experiment║"
+	@echo "║  make studio-help                → Show this help       ║"
+	@echo "║                                                        ║"
+	@echo "║  Docs: CONTEXT_HUB.md | STUDIO_MANUAL.md               ║"
+	@echo "╚════════════════════════════════════════════════════════╝"
+
+# ═══════════════════════════════════════════════════════════════
 
 help:
 	@echo "GentleQuest Development Commands"
 	@echo "================================="
-	@echo "make install    - Install dependencies"
-	@echo "make migrate    - Run database migrations"
-	@echo "make seed       - Seed initial data"
-	@echo "make test       - Run all tests"
-	@echo "make run        - Run development server"
-	@echo "make deploy     - Deploy to production"
-	@echo "make rollback   - Rollback last deployment"
-	@echo "make clean      - Clean old data"
-	@echo "make health     - Run health check"
-	@echo "make backup     - Backup database"
+	@echo ""
+	@echo "📦 STUDIO (Multi-Project):"
+	@echo "  make experiment name=X  - Create new experiment"
+	@echo "  make studio-help        - Studio quick reference"
+	@echo ""
+	@echo "🛠️  DEVELOPMENT:"
+	@echo "  make install    - Install dependencies"
+	@echo "  make migrate    - Run database migrations"
+	@echo "  make seed       - Seed initial data"
+	@echo "  make test       - Run all tests"
+	@echo "  make run        - Run development server"
+	@echo ""
+	@echo "🚀 DEPLOYMENT:"
+	@echo "  make deploy     - Deploy to production"
+	@echo "  make rollback   - Rollback last deployment"
+	@echo ""
+	@echo "🔧 MAINTENANCE:"
+	@echo "  make clean      - Clean old data"
+	@echo "  make health     - Run health check"
+	@echo "  make backup     - Backup database"
 
 install:
 	pip install -r requirements.txt

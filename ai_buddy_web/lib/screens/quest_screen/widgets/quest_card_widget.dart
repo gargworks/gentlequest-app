@@ -16,7 +16,10 @@ class QuestCardWidget extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.progress,
+    this.xp,
   });
+
+  final int? xp;
 
   // Button style getters
   ButtonStyle get _buttonStyle => ElevatedButton.styleFrom(
@@ -77,6 +80,28 @@ class QuestCardWidget extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // XP Badge (Premium UX)
+                      if (xp != null && xp! > 0)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFCC00).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: const Color(0xFFFFCC00), width: 1),
+                          ),
+                          child: Text(
+                            '+$xp XP',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFD6A200), // Darker Gold for legibility
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
                       Text(
                         title,
                         style: const TextStyle(

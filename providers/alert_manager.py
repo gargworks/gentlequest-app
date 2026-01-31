@@ -6,6 +6,7 @@ Manages counselor alerts for crisis events with email/SMS delivery
 import os
 from typing import Optional, Dict, List
 from datetime import datetime, timedelta
+from sqlalchemy import text
 from models import db, CounselorAlert, Message
 
 class AlertSeverity:

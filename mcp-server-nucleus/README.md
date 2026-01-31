@@ -1,33 +1,35 @@
-# 🧠 Nucleus MCP Server
+# 🧠 Nucleus Sovereign OS
 
 [![PyPI version](https://badge.fury.io/py/mcp-server-nucleus.svg)](https://badge.fury.io/py/mcp-server-nucleus)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Category: Agent Control Plane](https://img.shields.io/badge/Category-Agent_Control_Plane-blueviolet)](https://nucleussovereign.com)
 
-> **The Operating System for AI Agents** — Stop re-explaining your project to Claude every time you open a new chat. Give your agents a persistent **Operational Memory**.
+> **The Agent Control Plane** — Mount MCP servers with default-deny security, audited privileges, and orchestration.
 
-`mcp-server-nucleus` is an open-source MCP server that turns your AI assistants into a coordinated team. It provides **110+ MCP tools** for task orchestration, multi-agent swarms, session persistence, and enterprise-grade decision auditing — all stored in a local `.brain/` directory you own.
+Nucleus is the **Recursive Aggregator** that makes the MCP ecosystem usable for autonomous agents. It acts as a local **Host Layer** that governs tools, memory, and orchestration.
 
-## 🏛️ The Trinity Architecture
+### Context vs. Control
+Claude's `CLAUDE.md` provides **static context**. Nucleus provides **active control**.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  INTERFACE (Open)     │  ENGINE (Local)    │  BRAIN (Yours) │
-│  Python CLI           │  110+ MCP Tools    │  .brain/       │
-│  pip install          │  Task Orchestration│  Your Data     │
-│  MIT License          │  Swarm Coordination│  Zero Cloud    │
-└─────────────────────────────────────────────────────────────┘
-```
+| Feature | CLAUDE.md / .cursorrules | Nucleus (Agent Control Plane) |
+| :--- | :--- | :--- |
+| **State** | Static (read-only text) | **Dynamic** (Stateful DB, Event Ledger) |
+| **Memory** | Session-bound (forgotten on close) | **Persistent** (Project-bound, recallable) |
+| **Security** | None (Prompt injection risk) | **Enforced** (Auth boundary, Default Deny) |
+| **Tools** | Suggestions only | **Orchestrated Execution** (DAGs) |
+| **Audit** | None | **Full Decision Trail** (Who/Why/When) |
 
-## ✨ Features
+## ✨ Governance Features (The Moat)
 
-- **110+ MCP Tools** for agent orchestration, swarms, sessions, and federation
-- **V3.1 Task Engine** — Priority queue, skill routing, dependency DAG, slot pooling
-- **Multi-Agent Swarms** — Spawn recursive agent hierarchies for complex missions
-- **Session Persistence** — Save/resume work across conversations
-- **Health Monitoring** — Built-in `brain_health()` and `brain_version()` endpoints
-- **Event-Driven** — Full event ledger with `DecisionMade` audit trail
-- **Zero-Knowledge Default** — Your data stays local. No cloud required.
+- **Default Deny Security** — All mounted servers start with NO network/filesystem access.
+- **Explicit Consent** — You approve every command. No silent execution.
+- **Isolation Boundaries** — Tools cannot see each other or the full chat history.
+- **Auth Firewall** — Tokens are stored in Nucleus (Host), never passed to agents.
+- **Event Ledger** — Immutable audit trail of every agent decision (`DecisionMade`).
+- **Decision Provenance** — v0.6.0 DSoR: Full audit trail with context hashing.
+- **IPC Security** — Per-request auth tokens prevent socket impersonation (CVE-2026-001).
+- **135 Native Tools** — For orchestration, swarms, memory, and DSoR inspection.
 
 ## 🚀 Quick Start (2 Minutes)
 
@@ -147,8 +149,8 @@ Check your config pointer! You might be pointing to an old or temp brain.
 |------|-------------|
 | `brain_save_session` | Persist context for later resumption |
 | `brain_resume_session` | Restore previous session state |
-| `brain_search_memory` | Search long-term memory |
-| `brain_read_memory` | Read memory categories |
+| `brain_search_memory` | Search Engram Ledger |
+| `brain_read_memory` | Read Engram categories |
 
 ### 📊 Monitoring & Audit
 | Tool | Description |
@@ -247,7 +249,7 @@ Or click `brain://context` in Claude Desktop's sidebar.
 │   ├── research/
 │   ├── strategy/
 │   └── ...
-└── agents/
+└── memory/      # Engram storage (Memory)
     └── *.md
 ```
 
@@ -257,14 +259,26 @@ Or click `brain://context` in Claude Desktop's sidebar.
 - **No cross-editor sync**: Artifacts created in one IDE's conversation don't automatically sync to another. Manual copy is required for important documents.
 - **Python 3.10+ required**: Won't work with older Python versions.
 
-## 🚀 What's New in v0.5.0
+## 🚀 What's New in v0.5.1
 
-- **110+ MCP Tools** (up from 16 in v0.3.0)
+- **130 MCP Tools** (up from 110 in v0.5.0)
+- **Engram Ledger** — Persistent cognitive memory (`brain_write_engram`, `brain_query_engrams`)
+- **Governance Dashboard** — `brain_governance_status()` for security monitoring
+- **Cryptographic Audit** — SHA-256 hashed interaction log (`brain_audit_log`)
 - **V3.1 Task Engine** with slot pooling and tier routing
 - **Swarm Orchestration** for recursive multi-agent missions
 - **Session Persistence** across conversations
 - **Health Monitoring** endpoints for production use
-- **E2E Test Suite** — 8/8 critical path tests passing
+- **E2E Test Suite** — 18/18 critical path tests passing
+
+### The Governance Moat (v0.5.1)
+
+| Policy | Description |
+|--------|-------------|
+| **Default-Deny** | All tools start with NO access |
+| **Isolation Boundaries** | Tools can't see each other |
+| **Immutable Audit** | SHA-256 hashed decision trail |
+| **Engram Ledger** | Persistent memory ownership |
 
 ## 📜 License
 

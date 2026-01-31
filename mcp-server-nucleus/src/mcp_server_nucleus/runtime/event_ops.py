@@ -10,7 +10,31 @@ import uuid
 from typing import Dict, Any, List
 from datetime import datetime, timezone
 
-from .common import get_brain_path
+from .common import get_brain_path, logger
+
+def _log_interaction(emitter: str, event_type: str, data: Dict[str, Any]) -> None:
+    """Log a cryptographic hash of the interaction for user trust (V9 Security)."""
+    try:
+        import hashlib
+        brain = get_brain_path()
+        log_path = brain / "ledger" / "interaction_log.jsonl"
+        
+        # Create a stable string representation for hashing
+        payload = json.dumps({"type": event_type, "emitter": emitter, "data": data}, sort_keys=True)
+        h = hashlib.sha256(payload.encode()).hexdigest()
+        
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "emitter": emitter,
+            "type": event_type,
+            "hash": h,
+            "alg": "sha256"
+        }
+        
+        with open(log_path, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.warning(f"Failed to log interaction trust signal: {e}")
 
 def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
     """Core logic for emitting an event."""
@@ -32,6 +56,9 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
         
         with open(events_path, "a") as f:
             f.write(json.dumps(event) + "\n")
+
+        # Log interaction for security audit (Trust Signal)
+        _log_interaction(emitter, event_type, data)
         
         # Update activity summary for fast satellite view (Tier 2 precomputation)
         try:

@@ -1,10 +1,35 @@
-"""Tests for mcp-server-nucleus core functions."""
+"""Tests for mcp-server-nucleus core functions.
 
-import pytest
+Note: These tests require pytest. Run with: pytest tests/test_tools.py
+Skip gracefully when pytest is not installed.
+"""
+
+import unittest
+try:
+    import pytest
+    PYTEST_AVAILABLE = True
+except ImportError:
+    PYTEST_AVAILABLE = False
+    # Create dummy pytest module for decorators
+    class DummyPytest:
+        @staticmethod
+        def fixture(*args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+        @staticmethod
+        def mark(*args, **kwargs):
+            return lambda f: f
+    pytest = DummyPytest()
+
 import json
 import tempfile
 import os
 from pathlib import Path
+
+# Skip all tests if pytest not available
+if not PYTEST_AVAILABLE:
+    raise unittest.SkipTest("pytest not installed - skipping test_tools.py")
 
 # Set up test brain path before importing
 TEST_BRAIN = None

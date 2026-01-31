@@ -16,14 +16,6 @@ def app():
     
     with app.app_context():
         db.create_all()
-        # Create required tables
-        db.session.execute(text("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                id VARCHAR(255) PRIMARY KEY,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
         db.session.commit()
         yield app
         db.session.remove()
@@ -36,7 +28,7 @@ def client(app):
 @pytest.fixture
 def session_id(app):
     with app.app_context():
-        db.session.execute(text("INSERT INTO sessions (id) VALUES ('test_session')"))
+        db.session.execute(text("INSERT OR IGNORE INTO sessions (id) VALUES ('test_session')"))
         db.session.commit()
         return "test_session"
 

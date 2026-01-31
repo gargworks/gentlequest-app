@@ -19,22 +19,26 @@ def get_quests():
 
 @quest_bp.route('/api/quests/<int:quest_id>/complete', methods=['POST'])
 def complete_quest(quest_id):
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     session_id = data.get('session_id') or request.headers.get('X-Session-ID')
     
     if not session_id:
+        print(f"DEBUG: quest_complete failed - session_id missing (quest_id: {quest_id})")
         return jsonify({"error": "session_id required"}), 400
         
     try:
-        result = QuestEngine.complete_quest(session_id, quest_id)
+        result = QuestEngine.complete_quest(session_id, quest_id, data=data)
         
         if isinstance(result, tuple):
+            print(f"DEBUG: QuestEngine returned error tuple: {result}")
             return jsonify(result[0]), result[1]
             
         if not result.get('success'):
+            print(f"DEBUG: quest_complete success=False: {result}")
             return jsonify(result), 400
         return jsonify(result)
     except Exception as e:
+        print(f"DEBUG: quest_complete exception: {e}")
         return jsonify({"error": str(e)}), 500
 
 @quest_bp.route('/api/user/profile', methods=['GET'])

@@ -45,3 +45,16 @@ htmlcov/
 # Local config
 .env
 *.local
+
+# Brain state (user-specific)
+.brain/
+
+# Build
+build/
+*.so
+*.pyd
+
+# Secrets
+*.pem
+*.key
+secrets/

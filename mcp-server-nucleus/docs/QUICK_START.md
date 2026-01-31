@@ -1,6 +1,6 @@
 # Nucleus Quick Start Guide
 ## Get Running in 5 Minutes
-### v0.5.0 | The Operating System for AI Agents
+### v0.5.1 | The Agent Control Plane
 
 ---
 
@@ -224,9 +224,9 @@ ORCHESTRATION + CHOREOGRAPHY + CONTEXT = NUCLEUS
 
 - **Orchestration:** Who does what (task assignment, scheduling)
 - **Choreography:** How it happens (autonomous execution)
-- **Context:** What we know (persistent memory)
+- **Context:** What we know (Persistent Engrams)
 
-This is what makes Nucleus different from task managers (no autonomy) or AutoGPT (no memory).
+This is what makes Nucleus different from task managers (no autonomy) or AutoGPT (no persistent state).
 
 ---
 

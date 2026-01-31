@@ -7,10 +7,10 @@ class ResourceCard extends StatelessWidget {
   final Function(int) onView;
 
   const ResourceCard({
-    Key? key,
+    super.key,
     required this.resource,
     required this.onView,
-  }) : super(key: key);
+  });
 
   Future<void> _launchUrl() async {
     final Uri url = Uri.parse(resource.url);

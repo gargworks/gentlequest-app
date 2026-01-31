@@ -3,7 +3,7 @@ Nucleus Agent Runtime - Context Factory
 ========================================
 Maps Intent → Persona → Constrained Toolset
 
-This is the "Kernel" of the Agent OS.
+This is the "Kernel" of the Agent Control Plane.
 """
 
 from typing import List, Dict, Any, Optional

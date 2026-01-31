@@ -16,12 +16,24 @@ class TestBrainV2Logic(unittest.TestCase):
         self.brain_path = Path(self.test_dir)
         (self.brain_path / "ledger").mkdir(parents=True)
         
-        # Mock the get_brain_path to return our temp dir
-        self.patcher = patch('mcp_server_nucleus.get_brain_path', return_value=self.brain_path)
-        self.patcher.start()
+        # Mock get_brain_path where it's used in task_ops module
+        self.patcher1 = patch('mcp_server_nucleus.runtime.task_ops.get_brain_path', return_value=self.brain_path)
+        self.patcher1.start()
+        
+        # Mock _get_state for V1 fallback path - return state from our test dir
+        def mock_get_state():
+            state_path = self.brain_path / "ledger" / "state.json"
+            if state_path.exists():
+                with open(state_path) as f:
+                    return json.load(f)
+            return {}
+        
+        self.patcher2 = patch('mcp_server_nucleus.runtime.task_ops._get_state', side_effect=mock_get_state)
+        self.patcher2.start()
 
     def tearDown(self):
-        self.patcher.stop()
+        self.patcher1.stop()
+        self.patcher2.stop()
         shutil.rmtree(self.test_dir)
 
     def test_fallback_to_v1(self):
