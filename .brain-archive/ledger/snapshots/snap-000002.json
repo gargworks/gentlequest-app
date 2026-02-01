@@ -1,0 +1,15 @@
+{
+  "snapshot_id": "snap-000002",
+  "timestamp": "2026-02-01T02:30:13.230135+00:00",
+  "state_hash": "6260f849af09f970",
+  "component_hashes": {
+    "ledger": "143c47d374ad7655",
+    "slots": "1116f03f4f6f129c",
+    "mounts": "bdf48914e5ecf284"
+  },
+  "metadata": {
+    "agent_persona": "Librarian",
+    "decisions_made": 5,
+    "snapshot_type": "after_run"
+  }
+}
