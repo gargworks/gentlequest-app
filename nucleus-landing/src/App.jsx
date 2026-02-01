@@ -1,8 +1,9 @@
-import { Shield, Server, Terminal, Lock, Cpu, GitBranch, ExternalLink, Github, Brain, Database, Eye, FileText, Zap } from 'lucide-react';
+import { Shield, Server, Terminal, Lock, Cpu, GitBranch, Github, Database } from 'lucide-react';
 
 function App() {
-  const GITHUB_URL = 'https://github.com/lokeshgarg/mcp-server-nucleus';
+  const GITHUB_URL = 'https://github.com/eidetic-works/mcp-server-nucleus-public';
   const PYPI_URL = 'https://pypi.org/project/mcp-server-nucleus/';
+  const DISCORD_URL = 'https://discord.gg/RJuBNNJ5MT';
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-purple-500/30">
@@ -12,7 +13,7 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus <span className="text-purple-400 font-mono text-sm ml-1">v0.6.0 (DSoR)</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus <span className="text-purple-400 font-mono text-sm ml-1">v0.6.1 (DSoR)</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
@@ -60,27 +61,63 @@ function App() {
           <div className="w-full max-w-md bg-slate-900 rounded-xl border border-white/10 p-4 flex items-center gap-4 shadow-2xl">
             <Terminal className="w-5 h-5 text-purple-400" />
             <code className="flex-1 text-left font-mono text-sm text-purple-300">
-              curl https://nucleusos.dev/install.sh | bash
+              pip install mcp-server-nucleus
             </code>
             <button
-              onClick={() => navigator.clipboard.writeText('curl https://nucleusos.dev/install.sh | bash')}
+              onClick={() => navigator.clipboard.writeText('pip install mcp-server-nucleus')}
               className="text-xs font-medium text-gray-400 hover:text-white transition-colors uppercase tracking-wider"
             >
               Copy
             </button>
           </div>
+        </div>
 
-          <span className="text-slate-500 text-sm font-mono tracking-widest uppercase">OR</span>
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+          <a
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors"
+          >
+            Join Discord
+          </a>
+          <a
+            href="https://youtu.be/jI8TUpfjS1A"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-lg font-medium transition-colors border border-white/10"
+          >
+            Watch Launch Video
+          </a>
+        </div>
+      </section>
 
-          <div className="w-full max-w-md bg-white/5 rounded-xl border border-white/5 p-4 flex items-center gap-4">
-            <code className="flex-1 text-left font-mono text-sm text-slate-400">
-              pip install mcp-server-nucleus
-            </code>
+      {/* Video Section */}
+      <section className="px-6 py-20 max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            See Nucleus in Action
+          </h2>
+          <p className="text-slate-400 text-lg">
+            Watch the v0.6.0 launch demo: Local-first memory for AI agents
+          </p>
+        </div>
+
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+          <div className="relative pb-[56.25%] h-0">
+            <iframe
+              className="absolute top-0 left-0 w-full h-full"
+              src="https://www.youtube.com/embed/jI8TUpfjS1A"
+              title="Nucleus v0.6.0 Launch"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
           </div>
         </div>
       </section>
 
-      {/* Differentation Table */}
+      {/* Differentiation Table */}
       <section className="px-6 py-20 bg-slate-900/50 border-y border-white/5">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -186,9 +223,10 @@ function App() {
       <footer className="px-6 py-12 border-t border-white/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-6">
-            <a href="https://reddit.com/u/NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">Reddit</a>
+            <a href={DISCORD_URL} target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">Discord</a>
             <a href="https://youtube.com/@NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">YouTube</a>
             <a href="https://x.com/NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">X.com</a>
+            <a href={GITHUB_URL} target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">GitHub</a>
           </div>
           <p className="text-slate-500 text-sm">© 2026 Nucleus Sovereign OS. Built for the Sovereign Web.</p>
         </div>

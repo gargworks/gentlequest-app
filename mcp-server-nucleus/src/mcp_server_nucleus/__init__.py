@@ -7643,6 +7643,75 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
 
 
 @mcp.tool()
+def brain_search_engrams(query: str, case_sensitive: bool = False) -> str:
+    """
+    Search Engrams by substring match in key or value.
+    
+    Simple text search across all engrams. Use this to find
+    specific memories by keyword.
+    
+    Args:
+        query: Substring to search for in engram keys and values
+        case_sensitive: Whether search is case-sensitive (default: False)
+    
+    Returns:
+        List of matching engrams with match highlights
+    
+    Examples:
+        - brain_search_engrams("postgres") - Find database decisions
+        - brain_search_engrams("auth") - Find authentication-related memories
+    """
+    return _brain_search_engrams_impl(query, case_sensitive)
+
+
+def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
+    """Implementation for engram substring search."""
+    try:
+        brain = get_brain_path()
+        engram_path = brain / "engrams" / "ledger.jsonl"
+        
+        if not engram_path.exists():
+            return make_response(True, data={
+                "engrams": [],
+                "count": 0,
+                "query": query,
+                "message": "No engrams found. Use brain_write_engram() to create."
+            })
+        
+        search_query = query if case_sensitive else query.lower()
+        matches = []
+        
+        with open(engram_path, "r") as f:
+            for line in f:
+                if line.strip():
+                    e = json.loads(line)
+                    key = e.get("key", "")
+                    value = e.get("value", "")
+                    
+                    key_search = key if case_sensitive else key.lower()
+                    value_search = value if case_sensitive else value.lower()
+                    
+                    if search_query in key_search or search_query in value_search:
+                        e["_match_in"] = []
+                        if search_query in key_search:
+                            e["_match_in"].append("key")
+                        if search_query in value_search:
+                            e["_match_in"].append("value")
+                        matches.append(e)
+        
+        matches.sort(key=lambda x: x.get("intensity", 5), reverse=True)
+        
+        return make_response(True, data={
+            "engrams": matches,
+            "count": len(matches),
+            "query": query,
+            "case_sensitive": case_sensitive
+        })
+    except Exception as e:
+        return make_response(False, error=f"Error searching engrams: {e}")
+
+
+@mcp.tool()
 def brain_governance_status() -> str:
     """
     Get the current governance status of the Nucleus Control Plane.

@@ -4,12 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-nucleus"
-version = "0.6.0"
+version = "0.6.1"
 description = "The Agent Control Plane - Default-Deny Security for MCP Servers"
 readme = "README.md"
 authors = [
     { name = "Nucleus Team", email = "hello@nucleus-mcp.com" }
 ]
+urls = { Homepage = "https://github.com/eidetic-works/mcp-server-nucleus", Repository = "https://github.com/eidetic-works/mcp-server-nucleus" }
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp",

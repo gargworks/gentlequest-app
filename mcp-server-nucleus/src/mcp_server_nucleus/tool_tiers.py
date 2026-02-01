@@ -26,6 +26,8 @@ TIER_0_LAUNCH: Set[str] = {
     # The "Govern Your Agents in 60 Seconds" story
     "brain_write_engram",        # Persist a memory
     "brain_query_engrams",       # Retrieve memories
+    "brain_search_engrams",      # Substring search (v0.6.0)
+    "brain_audit_log",           # Trust verification (SHA-256 ledger)
     "brain_mount_server",        # Recursive aggregation demo (TEASER ONLY - Limited)
     # Meta tools
     "brain_version",             # Version check
@@ -116,22 +118,22 @@ TIER_2_ADVANCED: Set[str] = {
 _ACTIVE_TIER_CACHE = None
 
 def get_active_tier() -> int:
-    """Get the currently active tool tier from environment."""
+    """Determine the active tier based on environment variables."""
     global _ACTIVE_TIER_CACHE
     if _ACTIVE_TIER_CACHE is not None:
         return _ACTIVE_TIER_CACHE
         
-    tier_env = os.environ.get("NUCLEUS_TOOL_TIER", "0").lower()
+    # Security through Obscurity (v0.6.0 Friction)
+    # Prevents casual users from flipping a simple '1' switch.
+    # Hackers who read source will find this. That is acceptable marketing.
+    beta_token = os.environ.get("NUCLEUS_BETA_TOKEN", "").strip()
     
-    if tier_env in ("0", "launch"):
-        _ACTIVE_TIER_CACHE = 0
-    elif tier_env in ("1", "core"):
-        _ACTIVE_TIER_CACHE = 1
-    elif tier_env in ("2", "advanced", "all"):
-        _ACTIVE_TIER_CACHE = 2
+    if beta_token == "sovereign-launch-alpha":
+        _ACTIVE_TIER_CACHE = 1  # Unlock Manager Suite
+    elif beta_token == "titan-sovereign-godmode":
+        _ACTIVE_TIER_CACHE = 2  # Unlock Everything
     else:
-        # Default to launch tier for safety
-        _ACTIVE_TIER_CACHE = 0
+        _ACTIVE_TIER_CACHE = 0  # Default to Journal Mode
         
     return _ACTIVE_TIER_CACHE
 

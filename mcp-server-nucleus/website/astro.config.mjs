@@ -9,7 +9,7 @@ export default defineConfig({
 			title: 'Nucleus',
 			description: 'Local-First AI Memory for Agentic Workflows',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/LKGargProjects/nucleus' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/eidetic-works/mcp-server-nucleus' },
 				{ icon: 'x.com', label: 'Twitter', href: 'https://twitter.com/NucleusMCP' },
 			],
 			sidebar: [

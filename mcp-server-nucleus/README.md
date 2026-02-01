@@ -1,13 +1,13 @@
 # 🧠 Nucleus Sovereign OS
 
 [![PyPI version](https://badge.fury.io/py/mcp-server-nucleus.svg)](https://badge.fury.io/py/mcp-server-nucleus)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Website](https://img.shields.io/badge/Website-nucleusos.dev-blueviolet?logo=globe)](https://nucleusos.dev)
+[![Watch Launch Trailer](https://img.shields.io/badge/Watch-Launch_Trailer-red?logo=youtube)](https://youtu.be/jI8TUpfjS1A)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Category: Agent Control Plane](https://img.shields.io/badge/Category-Agent_Control_Plane-blueviolet)](https://nucleussovereign.com)
 
-> **The Agent Control Plane** — Mount MCP servers with default-deny security, audited privileges, and orchestration.
+> **The Operating System for AI Agents** — Persistent Operational Memory, Swarm Orchestration, and Local-First Sovereignty.
 
-Nucleus is the **Recursive Aggregator** that makes the MCP ecosystem usable for autonomous agents. It acts as a local **Host Layer** that governs tools, memory, and orchestration.
+Nucleus is the **Recursive Aggregator** that gives your AI agents a persistent brain (`.brain/`) and a file system. It turns stateless chatbots into stateful **Sovereign Agents**.
 
 ### Context vs. Control
 Claude's `CLAUDE.md` provides **static context**. Nucleus provides **active control**.
@@ -117,170 +117,74 @@ Check your config pointer! You might be pointing to an old or temp brain.
 2. **Verify path:** Ensure `NUCLEAR_BRAIN_PATH` points to your active project (e.g., `/Users/me/my-project/.brain`)
 3. **Restart:** You MUST restart Claude Desktop after any config change.
 
-## 🛠 Tool Categories (110+ Total)
+## ✨ Core Features (Included)
 
-### 🎯 Core Orchestration
+- **Persistent Memory** — `brain_write_engram` / `brain_query_engrams` (Vector-lite).
+- **Audit Ledger** — Immutable SHA-256 logs of every action (`brain_audit_log`).
+- **Recursive Mounting** — `brain_mount_server` (Basic).
+- **Local Sovereignty** — Zero cloud. All data in `~/.nucleus/brain`.
+
+## 🔐 Sovereign Edition (Closed Beta)
+*The "Dark Wheel" is reserved for active builders.*
+
+**Early Access Program**
+The Sovereign Edition (Task Engine, Swarm, Federation) is currently invite-only to ensure stability.
+To join the cohort:
+1.  **Install Core** (PyPI).
+2.  **DM u/NucleusOS** on Reddit for an invite code.
+
+**Unlockable Features:**
+
+- **Task Engine** — `brain_add_task`, `brain_claim_task`.
+- **Swarm Orchestration** — `brain_orchestrate_swarm`.
+- **Session Persistence** — `brain_save_session`.
+- **Federation** — Peer-to-Peer Agent Mesh.
+
+## 🚀 Quick Start (Core)
+
+### 1. Install
+```bash
+pip install mcp-server-nucleus
+```
+
+### 2. Initialize
+```bash
+nucleus-init
+```
+
+### 3. Use the Memory
+Restart Claude and try:
+> "Write an engram: 'The project goal is World Domination'. Then audit the ledger."
+
+---
+
+## 🛠 Tool Categories
+
+### 🧠 Core (Public)
 | Tool | Description |
 |------|-------------|
-| `brain_session_start` | **START HERE** — Get priorities, tasks, and recommendations |
-| `brain_orchestrate` | The "God Command" — auto-claim and execute tasks |
-| `brain_health` | System health dashboard with component status |
-| `brain_version` | Version and capability info |
+| `brain_write_engram` | Store persistent knowledge |
+| `brain_query_engrams` | Retrieve knowledge |
+| `brain_audit_log` | Verify ledger integrity |
+| `brain_mount_server` | Mount sub-MCP servers |
 
-### 📋 Task Management
-| Tool | Description |
-|------|-------------|
-| `brain_add_task` | Create tasks with priority, skills, dependencies |
-| `brain_list_tasks` | Query with filters (status, priority, skill, claimed_by) |
-| `brain_get_next_task` | Get highest-priority unblocked task for your skills |
-| `brain_claim_task` | Atomically claim (prevents race conditions) |
-| `brain_update_task` | Update status, priority, etc. |
-| `brain_escalate` | Request human help when stuck |
+### 🔒 Sovereign (Beta Key Required)
+| Feature | Capabilities |
+|---------|--------------|
+| **Task Engine** | Priority queues, dependency DAGs, agent assignment |
+| **Swarm** | Multi-agent recursive orchestration |
+| **Federation** | Cross-machine agent communication |
+| **Deep Monitoring** | Real-time dashboards and metrics |
 
-### 🐝 Swarm Coordination
-| Tool | Description |
-|------|-------------|
-| `brain_orchestrate_swarm` | Launch multi-agent missions |
-| `brain_spawn_agent` | Create ephemeral agents for specific tasks |
-| `brain_autopilot_sprint` | Orchestrate multiple slots in parallel |
+## �️ Community & Feedback
 
-### 💾 Session & Memory
-| Tool | Description |
-|------|-------------|
-| `brain_save_session` | Persist context for later resumption |
-| `brain_resume_session` | Restore previous session state |
-| `brain_search_memory` | Search Engram Ledger |
-| `brain_read_memory` | Read Engram categories |
+We represent the **Sovereign Web**. We build in the open, but we protect the signal.
 
-### 📊 Monitoring & Audit
-| Tool | Description |
-|------|-------------|
-| `brain_satellite_view` | Unified view of depth, activity, health |
-| `brain_metrics` | Velocity, closure rates, mental load |
-| `brain_open_loops` | All pending tasks, todos, drafts, decisions |
+- **🐛 Found a bug?** Open an [Issue on GitHub](https://github.com/eidetic-works/mcp-server-nucleus/issues).
+- **💡 Have an idea?** Discuss it on [GitHub Discussions](https://github.com/eidetic-works/mcp-server-nucleus/discussions).
+- **🗝️ Want to join the Inner Circle?** Check the **Early Access Program** above.
 
-**V2 Task Schema (11 fields):**
-```json
-{
-  "id": "task-abc123",
-  "description": "Build landing page",
-  "status": "PENDING | READY | IN_PROGRESS | BLOCKED | DONE | FAILED | ESCALATED",
-  "priority": 1,
-  "blocked_by": ["task-prerequisite"],
-  "required_skills": ["python", "frontend"],
-  "claimed_by": "agent-thread-id",
-  "source": "user | synthesizer",
-  "escalation_reason": null,
-  "created_at": "2026-01-03T12:00:00",
-  "updated_at": "2026-01-03T12:00:00"
-}
-```
-
-## 📡 MCP Resources
-
-| Resource | Description |
-|----------|-------------|
-| `brain://state` | Live state.json content |
-| `brain://events` | Recent events stream |
-| `brain://triggers` | Trigger definitions |
-| `brain://context` | **Full context for cold start** — click in sidebar for instant context |
-
-## 💬 MCP Prompts
-
-| Prompt | Description |
-|--------|-------------|
-| `cold_start` | **Get instant context** — sprint, events, artifacts, workflows |
-| `activate_synthesizer` | Orchestrate current sprint |
-| `start_sprint` | Initialize a new sprint |
-
-## 🎯 Common Use Cases
-
-### 1. Run a Sprint
-```
-> "What's my current sprint focus?"
-> "Add a task: Build landing page with priority 1"
-> "Show me all priority 1 tasks"
-```
-
-### 2. Coordinate Multiple Agents
-```
-> "Claim the next Python task for me"
-> "Mark task-abc123 as DONE"
-> "List all tasks claimed by agent-1"
-```
-
-### 3. Escalate When Stuck
-```
-> "Escalate task-xyz with reason: Need human approval on pricing"
-```
-The task is released and flagged for human intervention.
-
-### 4. Check Agent Context
-```
-> "Use the cold_start prompt from nucleus"
-```
-Instantly loads sprint, events, and artifacts.
-
-## 🚀 Cold Start (New in v0.2.4)
-
-Start every new session with full context:
-
-```
-> Use the cold_start prompt from nucleus
-```
-
-Or click `brain://context` in Claude Desktop's sidebar.
-
-**What you get:**
-- Current sprint name, focus, and status
-- Recent events and artifacts
-- Workflow detection (e.g., `lead_agent_model.md`)
-- Lead Agent role assignment
-
-## 📁 Expected `.brain/` Structure
-
-```
-.brain/
-├── ledger/
-│   ├── events.jsonl
-│   ├── state.json
-│   └── triggers.json
-├── artifacts/
-│   ├── research/
-│   ├── strategy/
-│   └── ...
-└── memory/      # Engram storage (Memory)
-    └── *.md
-```
-
-## ⚠️ Known Limitations
-
-- **IDE context is separate**: Each MCP client (Claude Desktop, Cursor, Windsurf) connects to the same `.brain/` directory and shares project state. However, IDE-specific context (Cursor's codebase memory, Antigravity's conversation artifacts, etc.) remains separate per editor.
-- **No cross-editor sync**: Artifacts created in one IDE's conversation don't automatically sync to another. Manual copy is required for important documents.
-- **Python 3.10+ required**: Won't work with older Python versions.
-
-## 🚀 What's New in v0.5.1
-
-- **130 MCP Tools** (up from 110 in v0.5.0)
-- **Engram Ledger** — Persistent cognitive memory (`brain_write_engram`, `brain_query_engrams`)
-- **Governance Dashboard** — `brain_governance_status()` for security monitoring
-- **Cryptographic Audit** — SHA-256 hashed interaction log (`brain_audit_log`)
-- **V3.1 Task Engine** with slot pooling and tier routing
-- **Swarm Orchestration** for recursive multi-agent missions
-- **Session Persistence** across conversations
-- **Health Monitoring** endpoints for production use
-- **E2E Test Suite** — 18/18 critical path tests passing
-
-### The Governance Moat (v0.5.1)
-
-| Policy | Description |
-|--------|-------------|
-| **Default-Deny** | All tools start with NO access |
-| **Isolation Boundaries** | Tools can't see each other |
-| **Immutable Audit** | SHA-256 hashed decision trail |
-| **Engram Ledger** | Persistent memory ownership |
-
-## 📜 License
+## �📜 License
 
 MIT © Nucleus Team
 
