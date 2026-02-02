@@ -10,6 +10,7 @@ sys.path.append(str(Path("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/sr
 
 from mcp_server_nucleus.runtime.capabilities.brain_ops import BrainOps
 
+@unittest.skipIf(os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI"), "requires local brain fixture")
 class TestSwarmPersistence(unittest.TestCase):
     def test_persistence_flow(self):
         """Test that Swarms stick around."""

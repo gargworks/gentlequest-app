@@ -1,7 +1,7 @@
 import pytest
 from app import app
-from models import db, UserProfile, MoodEntry, ClinicalAssessment, QuestProgress, UserSession
-from datetime import datetime, timedelta
+from models import db, UserProfile, MoodEntry, ClinicalAssessment, QuestProgress, UserSession, Quest
+from datetime import datetime
 
 @pytest.fixture
 def client():
@@ -22,6 +22,7 @@ def test_clinical_summary(client):
         sid = "test-session-summary"
         session = UserSession(id=sid, last_active=datetime.utcnow())
         db.session.add(session)
+        db.session.flush()
         
         # Profile
         profile = UserProfile(session_id=sid, xp=100, level=2)
@@ -79,9 +80,14 @@ def test_clinical_engagement(client):
         profile = UserProfile(session_id=sid, updated_at=datetime.utcnow())
         db.session.add(profile)
         
+        # Seed quest to satisfy FK
+        quest = Quest(title="Engagement Quest", description="D", quest_type="task", xp_reward=10, difficulty=1, week_number=1, year=2026)
+        db.session.add(quest)
+        db.session.flush()
+        
         progress = QuestProgress(
             session_id=sid,
-            quest_id=1,
+            quest_id=quest.id,
             status="completed",
             completed_at=datetime.utcnow()
         )

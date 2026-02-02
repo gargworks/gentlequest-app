@@ -12,9 +12,14 @@ def app():
     
     with app.app_context():
         db.create_all()
-        # Seed test data
-        r1 = Resource(title="Test Crisis", description="D1", category="crisis", tags="tag1")
-        r2 = Resource(title="Test SelfHelp", description="D2", category="self_help", tags="tag2")
+        # Seed session for FK-backed interactions
+        if not UserSession.query.get("test_sess"):
+            db.session.add(UserSession(id="test_sess"))
+        if not UserSession.query.get("test_interaction_sess"):
+            db.session.add(UserSession(id="test_interaction_sess"))
+        # Seed test data (active resources)
+        r1 = Resource(title="Test Crisis", description="D1", category="crisis", tags="tag1", is_active=True)
+        r2 = Resource(title="Test SelfHelp", description="D2", category="self_help", tags="tag2", is_active=True)
         db.session.add_all([r1, r2])
         db.session.commit()
         

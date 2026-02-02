@@ -1,6 +1,6 @@
 import pytest
 from app import create_app
-from models import db, Quest, QuestProgress, UserProfile
+from models import db, Quest, UserProfile, UserSession
 from providers.quest_generator import QuestGenerator
 
 @pytest.fixture
@@ -36,7 +36,13 @@ def test_quest_generation(app):
 def test_quest_api_flow(client, app):
     """Test the full API flow: Get Quests -> Complete Quest -> Verify Profile."""
     session_id = "test_session_gamer"
-    
+
+    # Ensure session exists for FK-backed profile
+    with app.app_context():
+        if not UserSession.query.get(session_id):
+            db.session.add(UserSession(id=session_id))
+            db.session.commit()
+
     # 1. Get Quests (should auto-generate)
     resp = client.get(f'/api/quests?session_id={session_id}')
     assert resp.status_code == 200
@@ -72,9 +78,12 @@ def test_quest_api_flow(client, app):
 def test_level_up_logic(client, app):
     """Test that leveling up works correctly."""
     session_id = "test_session_leveler"
-    
+
     # Generate Quests manually to control XP
     with app.app_context():
+        if not UserSession.query.get(session_id):
+            db.session.add(UserSession(id=session_id))
+            db.session.flush()
         q1 = Quest(title="Big Quest", description="D", quest_type="task", xp_reward=150, difficulty=1, week_number=1, year=2026)
         db.session.add(q1)
         db.session.commit()
