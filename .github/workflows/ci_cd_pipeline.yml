@@ -12,7 +12,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15
+        image: ankane/pgvector:v0.5.1
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
@@ -123,7 +123,7 @@ jobs:
       - name: Check formatting
         run: |
           cd ai_buddy_web
-          flutter format --set-exit-if-changed .
+          dart format --set-exit-if-changed .
   
 
   
