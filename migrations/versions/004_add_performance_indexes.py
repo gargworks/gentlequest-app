@@ -40,7 +40,7 @@ def upgrade():
         op.execute("CREATE INDEX IF NOT EXISTS idx_crisis_detections_risk ON crisis_detections (risk_level, timestamp)")
     
     # Sessions table indexes (for cleanup and analytics)
-    op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON sessions (last_activity)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_last_active ON sessions (last_active)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions (created_at)")
     
     # Analytics events indexes (for reporting)
@@ -62,7 +62,7 @@ def downgrade():
     op.drop_index('idx_analytics_events_session', table_name='analytics_events')
     
     op.drop_index('idx_sessions_created_at', table_name='sessions')
-    op.drop_index('idx_sessions_last_activity', table_name='sessions')
+    op.drop_index('idx_sessions_last_active', table_name='sessions')
     
     op.drop_index('idx_crisis_detections_risk', table_name='crisis_detections')
     op.drop_index('idx_crisis_detections_session', table_name='crisis_detections')
