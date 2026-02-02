@@ -44,6 +44,10 @@ def test_clinical_triage(client):
     # Seed data
     with app.app_context():
         sid = "test-session-triage"
+        # Ensure session exists for FK
+        session = UserSession(id=sid, last_active=datetime.utcnow())
+        db.session.add(session)
+        db.session.flush()
         # High priority assessment
         assessment = ClinicalAssessment(
             session_id=sid,
@@ -68,6 +72,10 @@ def test_clinical_engagement(client):
     # Seed data
     with app.app_context():
         sid = "test-session-engagement"
+        # Ensure session exists for FK
+        session = UserSession(id=sid, last_active=datetime.utcnow())
+        db.session.add(session)
+        db.session.flush()
         profile = UserProfile(session_id=sid, updated_at=datetime.utcnow())
         db.session.add(profile)
         

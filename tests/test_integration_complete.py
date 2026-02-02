@@ -4,9 +4,9 @@ Tests all API endpoints end-to-end
 """
 
 import pytest
+from datetime import datetime
 from app import create_app
-from models import db
-from sqlalchemy import text
+from models import db, UserSession
 
 @pytest.fixture
 def app():
@@ -28,8 +28,12 @@ def client(app):
 @pytest.fixture
 def session_id(app):
     with app.app_context():
-        db.session.execute(text("INSERT OR IGNORE INTO sessions (id) VALUES ('test_session')"))
-        db.session.commit()
+        # Ensure session exists (compatible with Postgres)
+        session = UserSession.query.get("test_session")
+        if not session:
+            session = UserSession(id="test_session", last_active=datetime.utcnow())
+            db.session.add(session)
+            db.session.commit()
         return "test_session"
 
 class TestChatEndpoints:
