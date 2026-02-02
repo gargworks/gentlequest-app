@@ -56,7 +56,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-mock alembic
           # Additional test dependencies
-          pip install playwright PyYAML
+          pip install playwright PyYAML google-genai
           playwright install --with-deps chromium
       
       - name: Run migrations
@@ -70,7 +70,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy-gemini-key' }}
           ENVIRONMENT: test
         run: |
           pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term -v
@@ -126,7 +126,7 @@ jobs:
       - name: Check formatting
         run: |
           cd ai_buddy_web
-          dart format --set-exit-if-changed .
+          dart format --output=none --set-exit-if-changed .
   
 
   
