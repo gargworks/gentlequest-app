@@ -339,8 +339,8 @@ class CounselorAlert(db.Model):
     sent_at = db.Column(db.DateTime, default=datetime.utcnow)
     acknowledged_at = db.Column(db.DateTime)
     acknowledged_by = db.Column(db.String(255))
-    email_sent = db.Column(db.Boolean, server_default=text('0'), default=False)
-    sms_sent = db.Column(db.Boolean, server_default=text('0'), default=False)
+    email_sent = db.Column(db.Boolean, server_default=text('false'), default=False)
+    sms_sent = db.Column(db.Boolean, server_default=text('false'), default=False)
 
     def __repr__(self):
         return f"<CounselorAlert id={self.id} severity={self.severity} session={self.session_id}>"
