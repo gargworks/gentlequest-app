@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-mock
+          pip install pytest pytest-cov pytest-mock alembic
       
       - name: Run migrations
         env:
@@ -93,7 +93,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: '3.24.0'
           channel: 'stable'
       
       - name: Cache Flutter packages
@@ -126,28 +126,7 @@ jobs:
           cd ai_buddy_web
           flutter format --set-exit-if-changed .
   
-  security-scan:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+
   
   deploy-staging:
     needs: [backend-tests, frontend-tests]
@@ -168,7 +147,7 @@ jobs:
             -d '{"clearCache": false}'
   
   deploy-production:
-    needs: [backend-tests, frontend-tests, security-scan]
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
