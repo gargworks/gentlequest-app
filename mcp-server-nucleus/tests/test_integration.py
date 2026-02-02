@@ -2,6 +2,7 @@ import unittest
 import json
 import tempfile
 import os
+import shutil
 from pathlib import Path
 
 # Set up test environment BEFORE importing nucleus
@@ -43,12 +44,16 @@ class TestIntegration(unittest.TestCase):
 
     def tearDown(self):
         # Clean up test files but keep directory for next test
-        for f in (self.brain_path / "ledger").glob("*"):
-            f.unlink()
-        for f in (self.brain_path / "sessions").glob("*"):
-            f.unlink()
-        for f in (self.brain_path / "session").glob("*"):
-            f.unlink()
+        def _clean_dir(path: Path):
+            for p in path.glob("*"):
+                if p.is_file():
+                    p.unlink()
+                elif p.is_dir():
+                    shutil.rmtree(p)
+
+        _clean_dir(self.brain_path / "ledger")
+        _clean_dir(self.brain_path / "sessions")
+        _clean_dir(self.brain_path / "session")
 
     def test_session_save_resume_cycle(self):
         """AG-007: Test session save and resume full cycle"""

@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
-import os
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
 from sqlalchemy import text
@@ -65,7 +64,7 @@ class UniversityCounselor(db.Model):
     phone = db.Column(db.String(50))
     role = db.Column(db.String(100))
     alert_methods = db.Column(db.String(200), default="email")  # comma-separated: email,sms
-    is_active = db.Column(db.Boolean, server_default=text('true'), default=True)
+    is_active = db.Column(db.Boolean, server_default=text('false'), default=False)
     receives_alerts = db.Column(db.Boolean, server_default=text('true'), default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -304,7 +303,7 @@ class Resource(db.Model):
     country = db.Column(db.String(10))
     university_id = db.Column(db.Integer, db.ForeignKey("universities.id"), nullable=True)
     tags = db.Column(db.String(500))
-    is_active = db.Column(db.Boolean, server_default=text('1'), default=True)
+    is_active = db.Column(db.Boolean, server_default=text('false'), default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     university = db.relationship("University", backref="resources")
