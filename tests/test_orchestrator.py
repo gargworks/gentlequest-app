@@ -1,14 +1,16 @@
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")))
+# Add src to path (repo-relative)
+sys.path.append(str(Path(__file__).resolve().parents[1] / "mcp-server-nucleus" / "src"))
 
 from mcp_server_nucleus.runtime.orchestrator import SwarmsOrchestrator
 
+@unittest.skipIf(os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI"), "requires local brain fixture")
 class TestOrchestrator(unittest.TestCase):
     def test_spawn_genesis_swarm(self):
         """Test spawning a Genesis Swarm for a Planning Mission."""

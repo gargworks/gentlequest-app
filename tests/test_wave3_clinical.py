@@ -1,12 +1,22 @@
+import os
 import pytest
-from app import app
+from app import create_app
 from models import db, UserProfile, MoodEntry, ClinicalAssessment, QuestProgress, UserSession, Quest
 from datetime import datetime
 
 @pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+def app():
+    # Ensure test mode is detected BEFORE create_app
+    os.environ["PYTEST_CURRENT_TEST"] = "true"
+    os.environ["CI"] = "true"  # Force CI mode for rate limit bypass
+    application = create_app()
+    application.config['TESTING'] = True
+    application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    application.config['RATE_LIMIT_ENABLED'] = False
+    return application
+
+@pytest.fixture
+def client(app):
     with app.test_client() as client:
         with app.app_context():
             db.create_all()
@@ -15,7 +25,7 @@ def client():
             db.drop_all()
 
 
-def test_clinical_summary(client):
+def test_clinical_summary(client, app):
     # Seed data
     with app.app_context():
         # User session
@@ -41,7 +51,7 @@ def test_clinical_summary(client):
     assert data['active_users_24h'] == 1
     assert data['average_mood_7d'] == 4.0
 
-def test_clinical_triage(client):
+def test_clinical_triage(client, app):
     # Seed data
     with app.app_context():
         sid = "test-session-triage"
@@ -69,7 +79,7 @@ def test_clinical_triage(client):
     assert data['triage_cases'][0]['total_score'] == 27
     assert data['triage_cases'][0]['requires_follow_up'] is True
 
-def test_clinical_engagement(client):
+def test_clinical_engagement(client, app):
     # Seed data
     with app.app_context():
         sid = "test-session-engagement"

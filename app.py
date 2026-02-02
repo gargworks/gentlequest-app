@@ -417,6 +417,12 @@ def create_app() -> Flask:
     # Load configuration
     app.config.from_object(Config)
 
+    test_mode = bool(os.getenv("CI") or os.getenv("PYTEST_CURRENT_TEST"))
+    if test_mode:
+        app.config["TESTING"] = True
+        app.config["RATE_LIMIT_ENABLED"] = False
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
+
     # Configure logging level/handler early so INFO diagnostics are emitted
     try:
         level_name = str(app.config.get("LOG_LEVEL", "INFO")).upper()

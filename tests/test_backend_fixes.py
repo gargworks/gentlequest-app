@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Fixed version of comprehensive test"""
 
+import os
+import pytest
 import requests
 import time
 from datetime import datetime
 
 BASE_URL = "http://localhost:5055"
 
+@pytest.mark.skipif(bool(os.getenv("CI")) or bool(os.getenv("GITHUB_ACTIONS")), reason="Requires local server")
 def test_all_features_fixed():
     """Run fixed tests"""
     print("\n🧪 RUNNING FIXED TESTS\n")

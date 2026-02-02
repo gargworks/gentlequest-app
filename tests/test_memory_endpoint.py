@@ -1,7 +1,6 @@
 
 import unittest
 import requests
-import json
 import os
 import sys
 
@@ -10,6 +9,7 @@ sys.path.append(os.path.join(os.getcwd(), "tools/marketing-dashboard"))
 
 API_URL = "http://localhost:9999/api/memory"
 
+@unittest.skipIf(os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI"), "requires local server")
 class TestMemoryEndpoint(unittest.TestCase):
     def test_memory_endpoint_structure(self):
         """Test that /api/memory returns a list of memory nodes with correct fields."""

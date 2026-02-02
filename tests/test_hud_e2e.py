@@ -1,5 +1,4 @@
 
-import sys
 import unittest
 import requests
 import os
@@ -11,6 +10,7 @@ HUD_URL_PREDICTED = "https://nucleus-hud-7an2ps6yna-uc.a.run.app"
 # Note: Cloud Run URLs are usually predictable [SERVICE_NAME]-[HASH]-[REGION].a.run.app
 # The hash '7an2ps6yna' seems stable for the project/region combo.
 
+@unittest.skipIf(os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI"), "requires live deployment")
 class TestNucleusDeployment(unittest.TestCase):
     
     def test_backend_health(self):

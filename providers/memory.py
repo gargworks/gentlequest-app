@@ -17,6 +17,13 @@ import psycopg
 from psycopg.rows import dict_row
 from sqlalchemy import text
 
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except Exception:
+    genai = None
+    GEMINI_AVAILABLE = False
+
 # Import from app context
 from models import db
 

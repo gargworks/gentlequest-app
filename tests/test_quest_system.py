@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import text
 from app import create_app
 from models import db, Quest, UserProfile, UserSession
 from providers.quest_generator import QuestGenerator
@@ -8,7 +9,8 @@ def app():
     app = create_app()
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "RATE_LIMIT_ENABLED": False
     })
     
     with app.app_context():
@@ -24,6 +26,9 @@ def client(app):
 def test_quest_generation(app):
     """Test that quests are generated correctly."""
     with app.app_context():
+        QuestGenerator._WEEKLY_CACHE.clear()
+        db.session.execute(text("DELETE FROM quests WHERE week_number = :week AND year = :year"), {"week": 1, "year": 2026})
+        db.session.commit()
         # Generate quests for Week 1, Year 2026
         quests = QuestGenerator.generate_weekly_quests(week=1, year=2026)
         

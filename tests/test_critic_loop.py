@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import pytest
 from pathlib import Path
 
 # Add source to path
@@ -9,6 +10,7 @@ sys.path.append(str(Path.cwd() / "mcp-server-nucleus/src"))
 
 from mcp_server_nucleus.runtime.critic import _critique_code
 
+@pytest.mark.skipif(bool(os.getenv("CI")) or bool(os.getenv("GITHUB_ACTIONS")), reason="Requires local brain fixture")
 def test_critique_logic():
     print("🧪 Testing Critic Logic...")
     

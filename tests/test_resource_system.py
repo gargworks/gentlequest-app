@@ -55,7 +55,7 @@ def test_get_resources(client):
 
 def test_track_interaction(client):
     """Test tracking resource views."""
-    session_id = "test_interaction_sess"
+    session_id = "test_sess"
     headers = {"X-Session-ID": session_id}
     
     # Get ID of first resource

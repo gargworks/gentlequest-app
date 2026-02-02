@@ -1275,3 +1275,4 @@
      "resolution": "Subtree split and force push"
    }
 {"event_id": "evt-1769992207-86889720", "timestamp": "2026-02-02T00:30:07.560739Z", "type": "health_status", "emitter": "health_check", "data": {"status": "critical", "issues_count": 2, "timestamp": "2026-02-02T06:00:03.364037"}, "description": "Health check: critical"}
+{"event_id": "evt-1770013806-af5de30f", "timestamp": "2026-02-02T06:30:06.348687Z", "type": "health_status", "emitter": "health_check", "data": {"status": "critical", "issues_count": 2, "timestamp": "2026-02-02T12:00:01.931761"}, "description": "Health check: critical"}

@@ -83,10 +83,26 @@ ai_buddy_web/ios/Config/local-overrides.xcconfig
 ai_buddy_web/android/key.properties
 **/*.keystore
 **/*.jks
-# MDR_008: Private Brain (entire folder except .gitkeep)
-.brain/
+# MDR_008: Private Brain (entire folder except required synthesis docs)
+.brain/*
+!.brain/
 !.brain/.gitkeep
-!.brain/tools/
+!.brain/artifacts/
+.brain/artifacts/*
+!.brain/artifacts/synthesis/
+.brain/artifacts/synthesis/*
+!.brain/artifacts/synthesis/ARCHITECTURE_MAP.md
+!.brain/artifacts/synthesis/OPERATIONS_PLAYBOOK.md
+!.brain/artifacts/synthesis/API_CONTRACTS.md
+!.brain/artifacts/synthesis/EXTENSION_GUIDE.md
+!.brain/artifacts/synthesis/DECISION_LOG.md
+!.brain/artifacts/synthesis/ENVIRONMENT_MATRIX.md
+!.brain/artifacts/synthesis/CRITICAL_PATHS.md
+!.brain/artifacts/synthesis/TECH_DEBT_REGISTRY.md
+!.brain/artifacts/synthesis/MASTER_CONTEXT_INDEX.md
+!.brain/artifacts/synthesis/TESTING_STRATEGY.md
+!.brain/artifacts/synthesis/SECURITY_CHECKLIST.md
+!.brain/artifacts/synthesis/AI_PROVIDER_SPECS.md
 
 
 # Nuclear Brain runtime (legacy specific rules)
@@ -94,10 +110,12 @@ ai_buddy_web/android/key.properties
 .brain/flywheel.log
 .brain/.state.lock
 .brain/.sync_state.json
-!*.md
 secret/service_account.json
 backend_config.env
 venv_39/
 
 # Build artifacts
 release_v1.0.0.zip
+
+# Brain archive (local only)
+.brain-archive/

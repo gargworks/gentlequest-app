@@ -3,6 +3,7 @@ Complete Integration Test Suite
 Tests all API endpoints end-to-end
 """
 
+import os
 import pytest
 from datetime import datetime
 from app import create_app
@@ -10,9 +11,11 @@ from models import db, UserSession
 
 @pytest.fixture
 def app():
+    os.environ["PYTEST_CURRENT_TEST"] = "true"
     app = create_app()
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['RATE_LIMIT_ENABLED'] = False
     
     with app.app_context():
         db.create_all()

@@ -5,8 +5,8 @@ import sys
 import unittest
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")))
+# Add src to path (repo-relative)
+sys.path.append(str(Path(__file__).resolve().parents[1] / "mcp-server-nucleus" / "src"))
 
 from mcp_server_nucleus.runtime.capabilities.brain_ops import BrainOps
 

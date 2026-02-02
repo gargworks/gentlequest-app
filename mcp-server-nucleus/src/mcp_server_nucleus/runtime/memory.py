@@ -43,12 +43,29 @@ def _search_memory(query: str) -> Dict:
         
         # V1: Simple Text Search
         cmd_text = ["rg", "-i", "-n", "--no-heading", query] + search_paths
-        result_text = subprocess.run(cmd_text, capture_output=True, text=True)
-        
-        snippets = []
-        if result_text.stdout:
-            snippets = result_text.stdout.strip().splitlines()
-            
+        try:
+            result_text = subprocess.run(cmd_text, capture_output=True, text=True)
+            snippets = []
+            if result_text.stdout:
+                snippets = result_text.stdout.strip().splitlines()
+        except FileNotFoundError:
+            # Fallback when ripgrep is not available
+            snippets = []
+            lowered = query.lower()
+            for path_str in search_paths:
+                path = Path(path_str)
+                if path.is_file():
+                    files = [path]
+                else:
+                    files = list(path.glob("*.md")) + list(path.glob("*.txt"))
+                for file_path in files:
+                    try:
+                        for line in file_path.read_text().splitlines():
+                            if lowered in line.lower():
+                                snippets.append(f"{file_path}:{line}")
+                    except Exception:
+                        continue
+
         return {
             "query": query,
             "count": len(snippets),

@@ -8934,3 +8934,39 @@ GODADDY EXPERT handles domain availability.
 2026-01-25 23:50:45,383 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Mission mission-1769365245 thread started
 2026-01-25 23:50:45,383 - mcp_server_nucleus.runtime.orchestrator - INFO - 🔄 Mission mission-1769365245 loop started with agents: ['steve_jobs', 'ogilvy', 'piyush_pandey', 'mckinsey', 'godaddy_expert', 'youtube_expert', 'openai_strategist']
 2026-01-25 23:50:45,384 - mcp_server_nucleus.runtime.orchestrator - INFO - 🤖 Spawning agent 1/7: steve_jobs
+2026-02-02 11:22:24,443 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Starting Mission mission-1770011544: Persistence Test Mission
+2026-02-02 11:22:24,443 - mcp_server_nucleus.runtime.orchestrator - INFO - 📋 Mission agents: ['developer']
+2026-02-02 11:22:24,443 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Mission mission-1770011544 thread started
+2026-02-02 11:22:24,444 - mcp_server_nucleus.runtime.orchestrator - INFO - 🔄 Mission mission-1770011544 loop started with agents: ['developer']
+2026-02-02 11:22:24,444 - mcp_server_nucleus.runtime.orchestrator - INFO - 🤖 Spawning agent 1/1: developer
+2026-02-02 11:22:24,444 - mcp_server_nucleus.runtime.orchestrator - ERROR - 💥 Agent developer failed: 'MockDualEngineLLM' object has no attribute 'tier'
+2026-02-02 11:22:24,444 - mcp_server_nucleus.runtime.orchestrator - INFO - 📄 Saved mission artifacts to /Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/swarms/mission-1770011544
+2026-02-02 11:22:24,445 - mcp_server_nucleus.runtime.orchestrator - INFO - ✅ Mission mission-1770011544 Completed with 1 agent outputs.
+2026-02-02 11:22:24,445 - mcp_server_nucleus.runtime.orchestrator - INFO - 🎓 [TRAINER] Would fine-tune on session mission-1770011544
+2026-02-02 11:22:24,445 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Starting Mission mission-1770011544: Relay Test Mission
+2026-02-02 11:22:24,445 - mcp_server_nucleus.runtime.orchestrator - INFO - 📋 Mission agents: ['developer']
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Mission mission-1770011544 thread started
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - INFO - 🔄 Mission mission-1770011544 loop started with agents: ['developer']
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - INFO - 🤖 Spawning agent 1/1: developer
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - ERROR - 💥 Agent developer failed: 'MockDualEngineLLM' object has no attribute 'tier'
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - INFO - 📄 Saved mission artifacts to /Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/swarms/mission-1770011544
+2026-02-02 11:22:24,446 - mcp_server_nucleus.runtime.orchestrator - INFO - ✅ Mission mission-1770011544 Completed with 1 agent outputs.
+2026-02-02 11:22:24,447 - mcp_server_nucleus.runtime.orchestrator - INFO - 🎓 [TRAINER] Would fine-tune on session mission-1770011544
+2026-02-02 11:45:21,407 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Starting Mission mission-1770012921: Persistence Test Mission
+2026-02-02 11:45:21,407 - mcp_server_nucleus.runtime.orchestrator - INFO - 📋 Mission agents: ['developer']
+2026-02-02 11:45:21,408 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Mission mission-1770012921 thread started
+2026-02-02 11:45:21,408 - mcp_server_nucleus.runtime.orchestrator - INFO - 🔄 Mission mission-1770012921 loop started with agents: ['developer']
+2026-02-02 11:45:21,408 - mcp_server_nucleus.runtime.orchestrator - INFO - 🤖 Spawning agent 1/1: developer
+2026-02-02 11:45:21,408 - mcp_server_nucleus.runtime.orchestrator - ERROR - 💥 Agent developer failed: 'MockDualEngineLLM' object has no attribute 'tier'
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 📄 Saved mission artifacts to /Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/swarms/mission-1770012921
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Starting Mission mission-1770012921: Relay Test Mission
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 📋 Mission agents: ['developer']
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - ✅ Mission mission-1770012921 Completed with 1 agent outputs.
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 🎓 [TRAINER] Would fine-tune on session mission-1770012921
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 🚀 Mission mission-1770012921 thread started
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 🔄 Mission mission-1770012921 loop started with agents: ['developer']
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - INFO - 🤖 Spawning agent 1/1: developer
+2026-02-02 11:45:21,409 - mcp_server_nucleus.runtime.orchestrator - ERROR - 💥 Agent developer failed: 'MockDualEngineLLM' object has no attribute 'tier'
+2026-02-02 11:45:21,410 - mcp_server_nucleus.runtime.orchestrator - INFO - 📄 Saved mission artifacts to /Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1/swarms/mission-1770012921
+2026-02-02 11:45:21,411 - mcp_server_nucleus.runtime.orchestrator - INFO - ✅ Mission mission-1770012921 Completed with 1 agent outputs.
+2026-02-02 11:45:21,411 - mcp_server_nucleus.runtime.orchestrator - INFO - 🎓 [TRAINER] Would fine-tune on session mission-1770012921

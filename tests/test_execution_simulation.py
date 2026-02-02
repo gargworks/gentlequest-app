@@ -1,14 +1,15 @@
 
-import json
+import os
 import sys
 import unittest
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")))
+# Add src to path (repo-relative)
+sys.path.append(str(Path(__file__).resolve().parents[1] / "mcp-server-nucleus" / "src"))
 
 from mcp_server_nucleus.runtime.orchestrator import SwarmsOrchestrator
 
+@unittest.skipIf(os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI"), "requires local brain fixture")
 class TestExecutionSimulation(unittest.TestCase):
     def test_execution_squad_injection(self):
         """Test that Execution Swarm injection includes the Squad Context."""
