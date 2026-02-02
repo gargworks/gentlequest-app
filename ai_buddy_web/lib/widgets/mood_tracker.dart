@@ -174,7 +174,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               Text(
                 '$pct% of $total check-ins today felt the same way',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                  color:
+                      theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   fontFamily: 'Inter',
                 ),
               ),
@@ -211,7 +212,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 Text(
                   "Start tracking to discover patterns over time 🌱",
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                    color: theme.textTheme.bodySmall?.color
+                        ?.withValues(alpha: 0.7),
                     fontFamily: 'Inter',
                   ),
                 ),
@@ -267,7 +269,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       elevation: 2.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: InkWell(
-        onTap: () => Navigator.of(context, rootNavigator: true).pushNamed('/clinical-assessment'),
+        onTap: () => Navigator.of(context, rootNavigator: true)
+            .pushNamed('/clinical-assessment'),
         borderRadius: BorderRadius.circular(12.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -276,7 +279,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  color:
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -300,7 +304,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                     Text(
                       'PHQ-9 & GAD-7 assessments',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                        color: theme.textTheme.bodySmall?.color
+                            ?.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -332,7 +337,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
         borderRadius: BorderRadius.circular(8),
         selectedBorderColor: Theme.of(context).colorScheme.primary,
         selectedColor: Theme.of(context).colorScheme.primary,
-        fillColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+        fillColor:
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
         children: const [
           Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -521,8 +527,10 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   dotData: const FlDotData(show: true),
                   belowBarData: BarAreaData(
                     show: spots.length > 1,
-                    color:
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
                   ),
                 ),
               ],

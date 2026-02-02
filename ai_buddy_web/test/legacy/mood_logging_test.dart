@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/screens/mood_tracker_screen.dart';
@@ -13,7 +12,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('Legacy MoodTrackerScreen renders correctly', (WidgetTester tester) async {
+  testWidgets('Legacy MoodTrackerScreen renders correctly',
+      (WidgetTester tester) async {
     // Mock SharedPreferences
     SharedPreferences.setMockInitialValues({});
 
@@ -36,11 +36,12 @@ void main() {
 
     // Verify basic presence
     expect(find.byType(MoodTrackerScreen), findsOneWidget);
-    
-    // Check for "Log Mood" or similar button text if standard, 
+
+    // Check for "Log Mood" or similar button text if standard,
     // but for now, just verifying the screen pumps without error is a good smoke test.
     // We can also check for common mood UI elements like slider or icons if known.
     // Assuming there's a title or header:
-    expect(find.textContaining('Mood'), findsWidgets); // Likely in header or button
+    expect(find.textContaining('Mood'),
+        findsWidgets); // Likely in header or button
   });
 }

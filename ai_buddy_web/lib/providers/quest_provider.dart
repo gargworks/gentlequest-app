@@ -37,15 +37,17 @@ class QuestProvider with ChangeNotifier {
     notifyListeners();
     try {
       final response = await _apiService.get('/api/quests');
-      
+
       if (response != null && response['quests'] != null) {
         final List<dynamic> questsJson = response['quests'];
         _quests = questsJson.map((q) => Quest.fromJson(q)).toList();
-        
+
         if (response['profile'] != null) {
           _totalXP = response['profile']['xp'] ?? 0;
           _level = response['profile']['level'] ?? 1;
-          _streak = response['profile']['streak_days'] ?? response['profile']['streak'] ?? 0;
+          _streak = response['profile']['streak_days'] ??
+              response['profile']['streak'] ??
+              0;
         }
       } else {
         _quests = _generateMockQuests();
@@ -191,7 +193,7 @@ class QuestProvider with ChangeNotifier {
 
     try {
       final result = await _apiService.post(
-        '/api/quests/$questId/complete', 
+        '/api/quests/$questId/complete',
         data: {'progress': newProgress},
       );
       if (result != null && result['success'] == true) {
@@ -201,7 +203,7 @@ class QuestProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error updating quest on backend: $e');
     }
-    
+
     notifyListeners();
   }
 

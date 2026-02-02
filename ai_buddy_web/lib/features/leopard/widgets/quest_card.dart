@@ -19,7 +19,8 @@ class QuestCard extends StatefulWidget {
   State<QuestCard> createState() => _QuestCardState();
 }
 
-class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMixin {
+class _QuestCardState extends State<QuestCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _blurAnimation;
   late Animation<double> _opacityAnimation;
@@ -64,7 +65,7 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
     setState(() {
       step.isCompleted = value;
     });
-    
+
     // Check for Victory
     if (widget.quest.steps.every((s) => s.isCompleted)) {
       HapticFeedback.heavyImpact(); // Victory Thud
@@ -78,7 +79,7 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
     setState(() {
       _isShared = true;
     });
-    
+
     // Reset icon after a delay
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -139,7 +140,7 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
 
   Widget _buildHeader() {
     bool allCompleted = widget.quest.steps.every((s) => s.isCompleted);
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -153,7 +154,8 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
               color: const Color(0xFF667EEA).withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.shield_outlined, color: Color(0xFF667EEA), size: 28),
+            child: const Icon(Icons.shield_outlined,
+                color: Color(0xFF667EEA), size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -181,13 +183,13 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
               ],
             ),
           ),
-          
+
           // SHARE BUTTON (Only visible or active if completed)
           IconButton(
             onPressed: allCompleted ? _handleShare : null,
             icon: Icon(
               _isShared ? Icons.check : Icons.share_outlined,
-              color: allCompleted 
+              color: allCompleted
                   ? (_isShared ? Colors.green : const Color(0xFF667EEA))
                   : Colors.white24,
             ),
@@ -204,7 +206,10 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
             ),
             child: Text(
               "+${widget.quest.xpReward} XP",
-              style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+              style: const TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12),
             ),
           ),
         ],
@@ -216,10 +221,12 @@ class _QuestCardState extends State<QuestCard> with SingleTickerProviderStateMix
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: widget.quest.steps.map((step) => _StepRow(
-          step: step,
-          onChanged: (val) => _onStepToggled(step, val),
-        )).toList(),
+        children: widget.quest.steps
+            .map((step) => _StepRow(
+                  step: step,
+                  onChanged: (val) => _onStepToggled(step, val),
+                ))
+            .toList(),
       ),
     );
   }
@@ -245,7 +252,9 @@ class _StepRow extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isChecked ? const Color(0xFF667EEA).withOpacity(0.2) : Colors.white.withOpacity(0.05),
+          color: isChecked
+              ? const Color(0xFF667EEA).withOpacity(0.2)
+              : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isChecked ? const Color(0xFF667EEA) : Colors.white10,
@@ -265,7 +274,7 @@ class _StepRow extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: isChecked 
+              child: isChecked
                   ? const Icon(Icons.check, size: 16, color: Colors.white)
                   : null,
             ),
@@ -302,4 +311,3 @@ class _StepRow extends StatelessWidget {
     );
   }
 }
-

@@ -902,8 +902,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       debugPrint('Rendering exercise: ${exercise.type} - ${exercise.name}');
     }
     // Use exercise name as identifier for tracking
-    final exerciseId = '${exercise.type.toString().split('.').last}_${exercise.name.hashCode}';
-    
+    final exerciseId =
+        '${exercise.type.toString().split('.').last}_${exercise.name.hashCode}';
+
     switch (exercise.type) {
       case ExerciseType.breathing:
         return BreathingExerciseWidget(
@@ -911,10 +912,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
           onComplete: () {
             // Track completion via chat provider
             context.read<ChatProvider>().trackExerciseOutcome(
-              exerciseType: 'breathing',
-              outcome: 'completed',
-              interventionId: exerciseId,
-            );
+                  exerciseType: 'breathing',
+                  outcome: 'completed',
+                  interventionId: exerciseId,
+                );
             if (kDebugMode) debugPrint('✓ Breathing exercise completed');
           },
         );
@@ -924,10 +925,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
           onComplete: () {
             // Track completion via chat provider
             context.read<ChatProvider>().trackExerciseOutcome(
-              exerciseType: 'grounding',
-              outcome: 'completed',
-              interventionId: exerciseId,
-            );
+                  exerciseType: 'grounding',
+                  outcome: 'completed',
+                  interventionId: exerciseId,
+                );
             if (kDebugMode) debugPrint('✓ Grounding exercise completed');
           },
         );
@@ -937,12 +938,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
           onSave: (entry) {
             // Track journal save via chat provider
             context.read<ChatProvider>().trackExerciseOutcome(
-              exerciseType: 'journal',
-              outcome: 'completed',
-              interventionId: exerciseId,
-              feedback: entry.isNotEmpty ? 'Entry saved' : null,
-            );
-            if (kDebugMode) debugPrint('✓ Journal entry saved: ${entry.length} chars');
+                  exerciseType: 'journal',
+                  outcome: 'completed',
+                  interventionId: exerciseId,
+                  feedback: entry.isNotEmpty ? 'Entry saved' : null,
+                );
+            if (kDebugMode)
+              debugPrint('✓ Journal entry saved: ${entry.length} chars');
           },
         );
     }

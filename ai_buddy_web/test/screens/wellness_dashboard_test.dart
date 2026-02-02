@@ -11,7 +11,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('WellnessDashboard renders main components', (WidgetTester tester) async {
+  testWidgets('WellnessDashboard renders main components',
+      (WidgetTester tester) async {
     // We wrap in MaterialApp to provide necessary theme/mediaquery context
     await tester.pumpWidget(
       MultiProvider(
@@ -33,11 +34,11 @@ void main() {
     // Dashboard typically has a "Talk" or "Chat" tab, "Mood" tab, etc.
     // Since we don't assume the exact text, we check for Key UI structure
     // or just that it doesn't crash on pump.
-    
+
     // Check for "Talk" tab text if it exists in the navigation bar
     // Note: The actual text might differ ("Talk with AI", "Chat", etc.)
     // We'll just verify the widget pumps successfully for now (Smoke Test).
-    
+
     expect(find.byType(WellnessDashboardScreen), findsOneWidget);
   });
 }

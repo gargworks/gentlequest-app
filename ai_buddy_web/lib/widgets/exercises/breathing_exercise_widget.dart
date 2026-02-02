@@ -26,30 +26,31 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
   int _currentStepIndex = 0;
   int _timeLeftInStep = 0;
   Timer? _timer;
-  
+
   // Breathing animation controller
   late AnimationController _breathController;
   late Animation<double> _scaleAnimation;
-  
+
   // Entrance animation controller
   late AnimationController _entranceController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   // Glow pulse animation
   late AnimationController _glowController;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Breathing animation
     _breathController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(_breathController);
-    
+    _scaleAnimation =
+        Tween<double>(begin: 1.0, end: 1.0).animate(_breathController);
+
     // Entrance animation - slide up and fade in
     _entranceController = AnimationController(
       vsync: this,
@@ -61,13 +62,13 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
     );
-    
+
     // Subtle glow pulse
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
-    
+
     // Start entrance animation
     _entranceController.forward();
   }
@@ -84,13 +85,13 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
   void _startExercise() {
     // Haptic feedback on start
     HapticFeedback.mediumImpact();
-    
+
     // Report exercise started for session tracking
     ApiService().reportExerciseOutcome(
       exerciseType: 'breathing',
       outcome: 'started',
     );
-    
+
     setState(() {
       _isActive = true;
       _currentCycle = 1;
@@ -101,18 +102,18 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
 
   void _runStep() {
     if (!mounted) return;
-    
+
     // Check if exercise complete
     if (_currentCycle > widget.exercise.cycles) {
       HapticFeedback.heavyImpact(); // Completion haptic
-      
+
       // Report exercise completed for session tracking
       ApiService().reportExerciseOutcome(
         exerciseType: 'breathing',
         outcome: 'completed',
         timeSpentSeconds: widget.exercise.totalTimeSeconds,
       );
-      
+
       setState(() => _isActive = false);
       widget.onComplete?.call();
       return;
@@ -120,7 +121,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
 
     final step = widget.exercise.steps[_currentStepIndex];
     setState(() => _timeLeftInStep = step.duration);
-    
+
     // Subtle haptic on phase change
     HapticFeedback.lightImpact();
 
@@ -138,7 +139,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
       _breathController.forward(from: 0.0);
     } else {
       // Hold - keep current scale
-      _breathController.stop(); 
+      _breathController.stop();
     }
 
     // Start countdown
@@ -168,7 +169,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     }
     _runStep();
   }
-  
+
   // Get color based on current action
   Color _getPhaseColor(String action) {
     switch (action) {
@@ -198,7 +199,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
       },
     );
   }
-  
+
   Widget _buildStartWidget() {
     return AnimatedBuilder(
       animation: _glowController,
@@ -274,7 +275,8 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                       backgroundColor: const Color(0xFF1976D2),
                       foregroundColor: Colors.white,
                       elevation: 4,
-                      shadowColor: const Color(0xFF1976D2).withValues(alpha: 0.4),
+                      shadowColor:
+                          const Color(0xFF1976D2).withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -302,7 +304,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
       },
     );
   }
-  
+
   Widget _buildActiveWidget() {
     final currentStep = widget.exercise.steps[_currentStepIndex];
     final phaseColor = _getPhaseColor(currentStep.action);
@@ -345,11 +347,11 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                     height: 8,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: isComplete 
-                        ? phaseColor
-                        : isCurrent 
+                      color: isComplete
                           ? phaseColor
-                          : Colors.grey.shade300,
+                          : isCurrent
+                              ? phaseColor
+                              : Colors.grey.shade300,
                     ),
                   ),
                 );
@@ -362,7 +364,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
             style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
           ),
           const SizedBox(height: 24),
-          
+
           // Breathing Circle with ripple effect
           Stack(
             alignment: Alignment.center,
@@ -377,7 +379,8 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: phaseColor.withValues(alpha: 0.3 * _scaleAnimation.value),
+                        color: phaseColor.withValues(
+                            alpha: 0.3 * _scaleAnimation.value),
                         width: 2,
                       ),
                     ),
@@ -425,9 +428,9 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Instruction with phase indicator
           Text(
             currentStep.instruction,

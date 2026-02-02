@@ -58,10 +58,9 @@ class _SelfAssessmentScreenState extends State<SelfAssessmentScreen> {
   void _submitAssessment() {
     final assessmentProvider =
         Provider.of<AssessmentProvider>(context, listen: false);
-    
-    final List<int> responses = _questions
-        .map((q) => _answers[q['question']] ?? 0)
-        .toList();
+
+    final List<int> responses =
+        _questions.map((q) => _answers[q['question']] ?? 0).toList();
 
     assessmentProvider.submitAssessment(
       assessmentType: 'phq9',

@@ -58,14 +58,15 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF667EEA),
-            brightness: Brightness.dark, // Leopard Seal Default is Dark Mode (Gym)
+            brightness:
+                Brightness.dark, // Leopard Seal Default is Dark Mode (Gym)
           ),
           useMaterial3: true,
         ),
         navigatorKey: rootNavigatorKey,
         navigatorObservers: [routeObserver],
         // LEOPARD SWITCH: Redirect to the Skunkworks Shell
-        home: const LeopardShell(), 
+        home: const LeopardShell(),
       ),
     );
   }

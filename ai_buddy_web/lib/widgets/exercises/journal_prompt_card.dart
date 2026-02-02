@@ -23,26 +23,26 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
 
   void _saveEntry() {
     if (_controller.text.trim().isEmpty) return;
-    
+
     // Report completed
     ApiService().reportExerciseOutcome(
       exerciseType: 'journaling',
       outcome: 'completed',
     );
-    
+
     widget.onSave?.call(_controller.text);
     setState(() => _isSaved = true);
-    
+
     // Hide keyboard
     FocusScope.of(context).unfocus();
   }
 
   void _useSuggestion(String suggestion) {
     if (_isSaved) return;
-    
+
     // Report started on first interaction
     _reportStartedOnce();
-    
+
     final current = _controller.text;
     final separator = current.isEmpty ? '' : '\n\n';
     _controller.text = '$current$separator$suggestion';
@@ -51,7 +51,7 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
       TextPosition(offset: _controller.text.length),
     );
   }
-  
+
   void _reportStartedOnce() {
     if (!_hasStarted) {
       _hasStarted = true;
@@ -82,7 +82,7 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
   @override
   Widget build(BuildContext context) {
     if (_isSaved) {
-       return Card(
+      return Card(
         elevation: 0,
         color: Colors.amber.shade50,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -90,7 +90,8 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              Icon(Icons.check_circle_outline, color: Colors.amber.shade800, size: 48),
+              Icon(Icons.check_circle_outline,
+                  color: Colors.amber.shade800, size: 48),
               const SizedBox(height: 16),
               const Text(
                 'Entry Saved',
@@ -138,7 +139,7 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Prompt Text
             Text(
               widget.exercise.prompt,
@@ -150,7 +151,7 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Input Area
             TextField(
               controller: _controller,
@@ -170,14 +171,16 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.amber.shade400, width: 2),
+                  borderSide:
+                      BorderSide(color: Colors.amber.shade400, width: 2),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Suggestions Chips
-            if (widget.exercise.suggestions != null && widget.exercise.suggestions!.isNotEmpty)
+            if (widget.exercise.suggestions != null &&
+                widget.exercise.suggestions!.isNotEmpty)
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
@@ -185,14 +188,15 @@ class _JournalPromptCardState extends State<JournalPromptCard> {
                   return ActionChip(
                     label: Text(s),
                     backgroundColor: Colors.amber.shade50,
-                    labelStyle: TextStyle(color: Colors.amber.shade900, fontSize: 12),
+                    labelStyle:
+                        TextStyle(color: Colors.amber.shade900, fontSize: 12),
                     onPressed: () => _useSuggestion(s),
                   );
                 }).toList(),
               ),
-              
+
             const SizedBox(height: 16),
-            
+
             // Save Button
             ElevatedButton(
               onPressed: _saveEntry,

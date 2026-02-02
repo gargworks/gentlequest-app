@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/features/leopard/widgets/leopard_gate.dart';
@@ -19,7 +18,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('LeopardGate respects Dead Switch (Default State)', (WidgetTester tester) async {
+  testWidgets('LeopardGate respects Dead Switch (Default State)',
+      (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       MultiProvider(
@@ -38,9 +38,9 @@ void main() {
       ),
     );
 
-    // EXPECTATION: When enableLeopardMode is false (default), 
+    // EXPECTATION: When enableLeopardMode is false (default),
     // it should render the WellnessDashboardScreen (legacy), not the Gate or Shell.
-    
+
     // Check that Access Gate is NOT present
     expect(find.byType(LeopardAccessGate), findsNothing);
   });

@@ -45,16 +45,16 @@ class _LeopardAccessGateState extends State<LeopardAccessGate> {
     if (_validCodes.contains(code)) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('leopard_access_granted', true);
-      
+
       // Log the success
       _firebase.logEvent('leopard_access_granted', {'code': code});
-      
+
       if (mounted) {
         setState(() {
           _isValidating = false;
           _statusMessage = "ACCESS GRANTED. INITIALIZING...";
         });
-        
+
         await Future.delayed(const Duration(milliseconds: 800));
         widget.onGranted();
       }
@@ -175,23 +175,24 @@ class _LeopardAccessGateState extends State<LeopardAccessGate> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  child: _isValidating 
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text(
-                        "EXECUTE PROTOCOL",
-                        style: TextStyle(
-                          fontFamily: 'Courier',
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2.0,
+                  child: _isValidating
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          "EXECUTE PROTOCOL",
+                          style: TextStyle(
+                            fontFamily: 'Courier',
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.0,
+                          ),
                         ),
-                      ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
               const Center(
                 child: Text(

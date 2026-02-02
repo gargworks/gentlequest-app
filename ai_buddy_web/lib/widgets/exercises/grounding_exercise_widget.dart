@@ -24,7 +24,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
   bool _isComplete = false;
   bool _hasStarted = false;
   List<bool> _checkedItems = []; // Track checked items for current step
-  
+
   // Entrance animation
   late AnimationController _entranceController;
   late Animation<double> _slideAnimation;
@@ -34,7 +34,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
   void initState() {
     super.initState();
     _initCheckedItems();
-    
+
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -47,24 +47,24 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
     );
     _entranceController.forward();
   }
-  
+
   @override
   void dispose() {
     _entranceController.dispose();
     super.dispose();
   }
-  
+
   void _initCheckedItems() {
     final step = widget.exercise.steps[_currentStepIndex];
     _checkedItems = List.filled(step.count, false);
   }
-  
+
   void _toggleItem(int index) {
     HapticFeedback.selectionClick();
     setState(() {
       _checkedItems[index] = !_checkedItems[index];
     });
-    
+
     // Check if all items are checked
     if (_checkedItems.every((checked) => checked)) {
       Future.delayed(const Duration(milliseconds: 300), _nextStep);
@@ -80,7 +80,7 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
         outcome: 'started',
       );
     }
-    
+
     if (_currentStepIndex < widget.exercise.steps.length - 1) {
       HapticFeedback.mediumImpact();
       setState(() {
@@ -175,154 +175,161 @@ class _GroundingExerciseWidgetState extends State<GroundingExerciseWidget>
             opacity: _fadeAnimation.value,
             child: Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-            // Header: Sense Icon + Title
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getIconForSense(step.sense),
-                    color: color,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.exercise.name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Text(
-                      step.sense.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Instruction
-            Text(
-              step.instruction,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Interactive checkboxes - tap to check off items
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: List.generate(step.count, (index) {
-                final isChecked = _checkedItems[index];
-                return GestureDetector(
-                  onTap: () => _toggleItem(index),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: isChecked ? color : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isChecked ? color : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                      boxShadow: isChecked
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : null,
-                    ),
-                    child: Center(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 150),
-                        child: isChecked
-                            ? Icon(Icons.check, color: Colors.white, size: 24, key: ValueKey('check_$index'))
-                            : Text(
-                                '${index + 1}',
-                                key: ValueKey('num_$index'),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade500,
-                                ),
+                    // Header: Sense Icon + Title
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getIconForSense(step.sense),
+                            color: color,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.exercise.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
                               ),
+                            ),
+                            Text(
+                              step.sense.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: color,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Instruction
+                    Text(
+                      step.instruction,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                     ),
-                  ),
-                );
-              }),
-            ),
+                    const SizedBox(height: 16),
 
-            const SizedBox(height: 24),
+                    // Interactive checkboxes - tap to check off items
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(step.count, (index) {
+                        final isChecked = _checkedItems[index];
+                        return GestureDetector(
+                          onTap: () => _toggleItem(index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isChecked ? color : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isChecked ? color : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                              boxShadow: isChecked
+                                  ? [
+                                      BoxShadow(
+                                        color: color.withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Center(
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 150),
+                                child: isChecked
+                                    ? Icon(Icons.check,
+                                        color: Colors.white,
+                                        size: 24,
+                                        key: ValueKey('check_$index'))
+                                    : Text(
+                                        '${index + 1}',
+                                        key: ValueKey('num_$index'),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
 
-            // Navigation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Step Indicator Dots
-                Row(
-                  children: List.generate(widget.exercise.steps.length, (index) {
-                    final isActive = index == _currentStepIndex;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      width: isActive ? 24 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isActive ? color : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    );
-                  }),
-                ),
-                
-                ElevatedButton(
-                  onPressed: _nextStep,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.white,
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Text(
-                    _currentStepIndex == widget.exercise.steps.length - 1
-                        ? 'Finish'
-                        : 'Next',
-                  ),
-                ),
-              ],
-            ),
+                    const SizedBox(height: 24),
+
+                    // Navigation
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Step Indicator Dots
+                        Row(
+                          children: List.generate(widget.exercise.steps.length,
+                              (index) {
+                            final isActive = index == _currentStepIndex;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              width: isActive ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isActive ? color : Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        ElevatedButton(
+                          onPressed: _nextStep,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color,
+                            foregroundColor: Colors.white,
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
+                          child: Text(
+                            _currentStepIndex ==
+                                    widget.exercise.steps.length - 1
+                                ? 'Finish'
+                                : 'Next',
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

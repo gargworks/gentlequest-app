@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/navigation/home_shell.dart';
@@ -14,7 +13,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('Legacy HomeShell renders 3 main tabs', (WidgetTester tester) async {
+  testWidgets('Legacy HomeShell renders 3 main tabs',
+      (WidgetTester tester) async {
     // Mock SharedPreferences
     SharedPreferences.setMockInitialValues({});
 
@@ -45,15 +45,15 @@ void main() {
     // Quest is hidden in legacy mode by default?
     // Wait, AppBottomNav says: if (FeatureFlags.enableLeopardMode) ... Quest
     // In legacy mode, Is Quest tab visible?
-    
+
     // Let's check FeatureFlags.enableLeopardMode is false.
     // If false, Quest tab is NOT in the row.
     // Community is index 2?
-    
+
     // Actually, "Legacy Mode" usually means "The Old World" which had Quests?
     // If standard prod app has no quests in the nav bar, then we should expect 3 tabs (Talk, Mood, Community).
     // Let's verify checking for Community instead of Quest if Quest is hidden.
-    
+
     expect(find.byIcon(Icons.people_outline), findsOneWidget); // Community
   });
 }

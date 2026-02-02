@@ -8,7 +8,6 @@ import 'dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
 import 'package:ai_buddy_web/dhiwise/presentation/quest_screen/quest_screen.dart'
     as dhiwise_quest;
 
-
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:sentry/sentry.dart' as sentry;
@@ -140,12 +139,12 @@ Future<void> main() async {
       debugPrint('Sentry initialization error: $e');
     }
   }
-  
+
   // Set tap handler for notification deep-linking
   NotificationService.onSelectNotification = (payload) {
     _handleNotificationPayload(payload);
   };
-  
+
   // Initialize app rating service (mobile only - no-op on web)
   // Wrapped in try-catch for resilience
   if (!kIsWeb) {
@@ -195,7 +194,7 @@ class MyApp extends StatelessWidget {
         navigatorKey: rootNavigatorKey,
         navigatorObservers: [routeObserver],
         // UpgradeAlert is for mobile app store version checks - skip on web
-        home: kIsWeb 
+        home: kIsWeb
             ? const SplashScreen()
             : UpgradeAlert(
                 upgrader: Upgrader(

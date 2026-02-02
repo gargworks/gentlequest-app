@@ -12,7 +12,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('InteractiveChatScreen has input field', (WidgetTester tester) async {
+  testWidgets('InteractiveChatScreen has input field',
+      (WidgetTester tester) async {
     // Mock SharedPreferences
     SharedPreferences.setMockInitialValues({});
 
@@ -32,7 +33,7 @@ void main() {
         ),
       ),
     );
-     
+
     // Verify the input field exists (TextField inside the chat screen)
     expect(find.byType(TextField), findsOneWidget);
   });

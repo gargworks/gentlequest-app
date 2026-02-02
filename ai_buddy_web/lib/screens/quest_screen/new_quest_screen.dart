@@ -9,7 +9,7 @@ class NewQuestScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light, clean background
       body: Consumer<QuestProvider>(
@@ -18,9 +18,15 @@ class NewQuestScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final activeQuests = questProvider.quests.where((q) => q.status == QuestStatus.inProgress).toList();
-          final availableQuests = questProvider.quests.where((q) => q.status == QuestStatus.unlocked).toList();
-          final completedQuests = questProvider.quests.where((q) => q.status == QuestStatus.completed).toList();
+          final activeQuests = questProvider.quests
+              .where((q) => q.status == QuestStatus.inProgress)
+              .toList();
+          final availableQuests = questProvider.quests
+              .where((q) => q.status == QuestStatus.unlocked)
+              .toList();
+          final completedQuests = questProvider.quests
+              .where((q) => q.status == QuestStatus.completed)
+              .toList();
 
           return RefreshIndicator(
             onRefresh: () => questProvider.loadQuests(),
@@ -34,46 +40,46 @@ class NewQuestScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (activeQuests.isNotEmpty) ...[
-                          _buildSectionHeader('In Progress', activeQuests.length),
+                          _buildSectionHeader(
+                              'In Progress', activeQuests.length),
                           const SizedBox(height: 12),
                           ...activeQuests.map((q) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: QuestCard.fromQuest(
-                              q,
-                              onTap: () => _handleQuestTap(context, q),
-                            ),
-                          )),
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: QuestCard.fromQuest(
+                                  q,
+                                  onTap: () => _handleQuestTap(context, q),
+                                ),
+                              )),
                           const SizedBox(height: 24),
                         ],
-                        
                         if (availableQuests.isNotEmpty) ...[
-                          _buildSectionHeader('Available Quests', availableQuests.length),
+                          _buildSectionHeader(
+                              'Available Quests', availableQuests.length),
                           const SizedBox(height: 12),
                           ...availableQuests.map((q) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: QuestCard.fromQuest(
-                              q,
-                              onTap: () => _handleQuestTap(context, q),
-                            ),
-                          )),
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: QuestCard.fromQuest(
+                                  q,
+                                  onTap: () => _handleQuestTap(context, q),
+                                ),
+                              )),
                           const SizedBox(height: 24),
                         ],
-
                         if (completedQuests.isNotEmpty) ...[
-                          _buildSectionHeader('Recently Completed', completedQuests.length),
+                          _buildSectionHeader(
+                              'Recently Completed', completedQuests.length),
                           const SizedBox(height: 12),
                           ...completedQuests.map((q) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: Opacity(
-                              opacity: 0.8,
-                              child: QuestCard.fromQuest(
-                                q,
-                                onTap: () => _handleQuestTap(context, q),
-                              ),
-                            ),
-                          )),
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Opacity(
+                                  opacity: 0.8,
+                                  child: QuestCard.fromQuest(
+                                    q,
+                                    onTap: () => _handleQuestTap(context, q),
+                                  ),
+                                ),
+                              )),
                         ],
-
                         if (questProvider.quests.isEmpty)
                           _buildEmptyState(theme),
                       ],
@@ -90,7 +96,8 @@ class NewQuestScreen extends StatelessWidget {
 
   Widget _buildSliverAppBar(BuildContext context, QuestProvider provider) {
     final theme = Theme.of(context);
-    final progress = (provider.totalXP % 100) / 100.0; // Assume 100 XP per level for simple UI
+    final progress = (provider.totalXP % 100) /
+        100.0; // Assume 100 XP per level for simple UI
 
     return SliverAppBar(
       expandedHeight: 180.0,
@@ -134,8 +141,10 @@ class NewQuestScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           child: LinearProgressIndicator(
                             value: progress,
-                            backgroundColor: Colors.white.withValues(alpha: 0.3),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.3),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.white),
                             minHeight: 10,
                           ),
                         ),
@@ -163,7 +172,8 @@ class NewQuestScreen extends StatelessWidget {
             ),
           ),
         ),
-        title: const Text('Your Quests', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Your Quests',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: false,
       ),
     );
@@ -206,7 +216,9 @@ class NewQuestScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 100),
-          Icon(Icons.auto_awesome, size: 64, color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+          Icon(Icons.auto_awesome,
+              size: 64,
+              color: theme.colorScheme.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           const Text(
             'No quests found for this week',
@@ -229,7 +241,7 @@ class NewQuestScreen extends StatelessWidget {
       );
       return;
     }
-    
+
     // Show a simple confirmation or detail sheet
     showModalBottomSheet(
       context: context,
@@ -242,17 +254,23 @@ class NewQuestScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(quest.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(quest.title,
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Text(quest.description, style: const TextStyle(fontSize: 16, color: Colors.blackDE)),
+            Text(quest.description,
+                style: const TextStyle(fontSize: 16, color: Colors.blackDE)),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.fromSeed(seedColor: Theme.of(context).primaryColor),
+                style: ElevatedButton.fromSeed(
+                    seedColor: Theme.of(context).primaryColor),
                 onPressed: () {
                   // Simulate progress or mark complete
-                  context.read<QuestProvider>().updateQuestProgress(quest.id, quest.target);
+                  context
+                      .read<QuestProvider>()
+                      .updateQuestProgress(quest.id, quest.target);
                   Navigator.pop(context);
                 },
                 child: const Padding(
@@ -267,5 +285,4 @@ class NewQuestScreen extends StatelessWidget {
       ),
     );
   }
-
 }

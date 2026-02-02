@@ -209,7 +209,6 @@ class _HomeShellState extends State<HomeShell> {
         builder: (_) =>
             MoodTrackerScreen(showBottomNav: false, reselect: _moodReselect),
       ),
-
       buildTabNavigator(
         key: _questNavKey,
         active: _index == 2,

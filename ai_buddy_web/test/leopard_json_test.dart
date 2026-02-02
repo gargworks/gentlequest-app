@@ -5,7 +5,6 @@ import 'package:ai_buddy_web/features/leopard/data/leopard_system_prompt.dart';
 
 void main() {
   group('Leopard AI Logic Tests', () {
-    
     test('LeopardQuest.fromJson parses valid JSON correctly', () {
       final jsonString = '''
       {
@@ -36,13 +35,13 @@ void main() {
     });
 
     test('LeopardQuest.fromJson handles missing fields gracefully', () {
-        final jsonString = '{}';
-        final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-        final quest = LeopardQuest.fromJson(jsonMap);
-        
-        expect(quest.id, 'unknown_id');
-        expect(quest.xpReward, 0);
-        expect(quest.steps, isEmpty);
+      final jsonString = '{}';
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+      final quest = LeopardQuest.fromJson(jsonMap);
+
+      expect(quest.id, 'unknown_id');
+      expect(quest.xpReward, 0);
+      expect(quest.steps, isEmpty);
     });
 
     test('System Prompt contains required JSON schema instruction', () {

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/widgets/community_feed_screen.dart';
@@ -13,7 +12,8 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 
 void main() {
-  testWidgets('CommunityFeedScreen renders feed and help button', (WidgetTester tester) async {
+  testWidgets('CommunityFeedScreen renders feed and help button',
+      (WidgetTester tester) async {
     // Mock SharedPreferences
     SharedPreferences.setMockInitialValues({});
 
@@ -36,10 +36,10 @@ void main() {
 
     // Verify basic presence
     expect(find.byType(CommunityFeedScreen), findsOneWidget);
-    
+
     // Check for "Community Guidelines" or similar text if standard
     expect(find.byType(ListView), findsOneWidget);
-    
+
     // Check for Floating Action Button or Post button (typically present)
     // Note: CommunityFeedScreen logic uses CommunityProvider.
     // Assuming empty list, we should see an empty state or just the list view.

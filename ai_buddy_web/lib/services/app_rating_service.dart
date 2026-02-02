@@ -34,7 +34,7 @@ class AppRatingService {
   Future<void> checkAndRequestRating() async {
     // In-app review not supported on web
     if (kIsWeb) return;
-    
+
     _ensureInit();
     final prefs = await SharedPreferences.getInstance();
 
@@ -77,7 +77,7 @@ class AppRatingService {
 
   Future<void> _requestRating() async {
     if (kIsWeb || _inAppReview == null) return;
-    
+
     try {
       await _inAppReview!.requestReview();
 

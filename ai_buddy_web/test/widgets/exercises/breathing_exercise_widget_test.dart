@@ -4,7 +4,8 @@ import 'package:ai_buddy_web/widgets/exercises/breathing_exercise_widget.dart';
 import 'package:ai_buddy_web/models/interactive_exercise.dart';
 
 void main() {
-  testWidgets('BreathingExerciseWidget renders and starts', (WidgetTester tester) async {
+  testWidgets('BreathingExerciseWidget renders and starts',
+      (WidgetTester tester) async {
     final exercise = BreathingExercise(
       name: 'Test Breath',
       description: 'Relax',

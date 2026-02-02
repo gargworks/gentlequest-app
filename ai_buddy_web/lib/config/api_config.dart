@@ -5,7 +5,8 @@ class ApiConfig {
   static const String localUrl = 'http://localhost:8080';
 
   // Production (Cloud Run)
-  static const String productionUrl = 'https://gentlequest-backend-999376128638.us-central1.run.app';
+  static const String productionUrl =
+      'https://gentlequest-backend-999376128638.us-central1.run.app';
 
   // Get the appropriate URL based on environment
   static String get baseUrl {

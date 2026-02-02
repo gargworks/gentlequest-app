@@ -178,14 +178,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     });
   }
 
-
   Path drawStar(Size size) {
     Path path = Path();
     path.moveTo(size.width * 0.5, 0);
-    path.quadraticBezierTo(size.width * 0.6, size.height * 0.4, size.width, size.height * 0.5);
-    path.quadraticBezierTo(size.width * 0.6, size.height * 0.6, size.width * 0.5, size.height);
-    path.quadraticBezierTo(size.width * 0.4, size.height * 0.6, 0, size.height * 0.5);
-    path.quadraticBezierTo(size.width * 0.4, size.height * 0.4, size.width * 0.5, 0);
+    path.quadraticBezierTo(
+        size.width * 0.6, size.height * 0.4, size.width, size.height * 0.5);
+    path.quadraticBezierTo(
+        size.width * 0.6, size.height * 0.6, size.width * 0.5, size.height);
+    path.quadraticBezierTo(
+        size.width * 0.4, size.height * 0.6, 0, size.height * 0.5);
+    path.quadraticBezierTo(
+        size.width * 0.4, size.height * 0.4, size.width * 0.5, 0);
     path.close();
     return path;
   }
@@ -217,7 +220,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   final Map<String, GlobalKey> _exploreCardKeys = <String, GlobalKey>{};
   // Track which Explore quests we've logged an impression for (to avoid duplicates)
   final Set<String> _impressedExplore = <String>{};
-
 
   // Quick check-in daily flag (separate from mood logging)
   bool _hasCompletedQuickCheckinToday = false;
@@ -263,7 +265,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Handle completion of the Quick Check-in flow (explicit submission)
   Future<void> _onQuickCheckinSubmitted() async {
     final questProvider = context.read<QuestProvider>();
-    
+
     // Determine the quick check-in quest id for today from Provider
     model.Quest? checkinQuest;
     try {
@@ -284,17 +286,17 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (kDebugMode) {
       debugPrint('[QuickCheckin][Submitted] questId=$questId');
     }
-    
+
     HapticFeedback.heavyImpact();
-    
+
     // Mark as completed in backend via provider
     if (!alreadyDone) {
       await questProvider.updateQuestProgress(questId, 100);
     }
-    
+
     // Refresh local flags
     // Determine if XP was newly awarded now (award occurs only if not already done today)
-    bool awarded = !alreadyDone; 
+    bool awarded = !alreadyDone;
     if (!mounted) return;
     setState(() {});
 
@@ -310,7 +312,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       }
 
       // Celebration message
-      _showCompletionSnackBar(questId, 'Done! Every small step builds something bigger. ✨');
+      _showCompletionSnackBar(
+          questId, 'Done! Every small step builds something bigger. ✨');
     } catch (_) {}
 
     // Telemetry: track quest completion and daily check-in for retention
@@ -396,7 +399,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   int? _durationFor(String? questId) {
     if (questId == null) return null;
     final q = context.read<QuestProvider>().getQuestById(questId);
-    return q?.target; // In our model, target is used for duration if it's a timed task
+    return q
+        ?.target; // In our model, target is used for duration if it's a timed task
   }
 
   String? _titleFor(String? questId) {
@@ -404,6 +408,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final q = context.read<QuestProvider>().getQuestById(questId);
     return q?.title;
   }
+
   String? _subtitleFor(String? questId) {
     if (questId == null) return null;
     final q = context.read<QuestProvider>().getQuestById(questId);
@@ -568,7 +573,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final questProvider = context.read<QuestProvider>();
     await questProvider.loadQuests();
     if (!mounted) return;
-    
+
     setState(() {
       _computeDisplayedQuestIds();
     });
@@ -611,6 +616,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       ),
     );
   }
+
   // Choose IDs from today's items to back the 4 static cards.
   // Choose IDs from backend quests to back the 4 static cards.
   void _computeDisplayedQuestIds() {
@@ -620,11 +626,15 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     // Mapping logic: distribute available quests to slots
     if (quests.isNotEmpty) {
       _qTask1Id = quests[0].id.toString();
-      _qTask2Id = quests.length > 1 ? quests[1].id.toString() : quests[0].id.toString();
-      _qResId = quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString();
+      _qTask2Id =
+          quests.length > 1 ? quests[1].id.toString() : quests[0].id.toString();
+      _qResId =
+          quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString();
       _qTipId = quests.length > 3
           ? quests[3].id.toString()
-          : (quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString());
+          : (quests.length > 2
+              ? quests[2].id.toString()
+              : quests[0].id.toString());
     }
   }
 // } removed extra brace
@@ -1301,10 +1311,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     Navigator.of(ctx).pop();
                     final qId = int.tryParse(questId);
                     if (qId != null) {
-                      await context.read<QuestProvider>().updateQuestProgress(qId, 100);
-                      
+                      await context
+                          .read<QuestProvider>()
+                          .updateQuestProgress(qId, 100);
+
                       try {
-                        final lifetimeXp = context.read<QuestProvider>().totalXP;
+                        final lifetimeXp =
+                            context.read<QuestProvider>().totalXP;
                         if (mounted) {
                           context
                               .read<ProgressProvider>()
@@ -1313,23 +1326,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       } catch (_) {}
                     }
                     _showCheckRipple(cardKey);
-                      // Telemetry: quest_complete for instant completion
-                      try {
-                        logAnalyticsEvent('quest_complete', metadata: {
-                          'quest_id': questId,
-                          'surface': 'wellness_dashboard',
-                          'variant': 'today',
-                          'tag': 'complete_now',
-                          'ts': DateTime.now().millisecondsSinceEpoch,
-                          'success': true,
-                          'progress': 1.0,
-                          'ui': 'timer_sheet',
-                        });
-                      } catch (_) {}
-                        await _refreshToday();
-                        await _refreshExplore();
+                    // Telemetry: quest_complete for instant completion
+                    try {
+                      logAnalyticsEvent('quest_complete', metadata: {
+                        'quest_id': questId,
+                        'surface': 'wellness_dashboard',
+                        'variant': 'today',
+                        'tag': 'complete_now',
+                        'ts': DateTime.now().millisecondsSinceEpoch,
+                        'success': true,
+                        'progress': 1.0,
+                        'ui': 'timer_sheet',
+                      });
+                    } catch (_) {}
+                    await _refreshToday();
+                    await _refreshExplore();
 
-                        _showCompletionSnackBar(qId!, 'Done! You showed up for yourself today 💪');
+                    _showCompletionSnackBar(
+                        qId!, 'Done! You showed up for yourself today 💪');
                   },
                   child: const Text('Complete now'),
                 ),
@@ -1395,10 +1409,10 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         Navigator.of(ctx).pop();
                         HapticFeedback.heavyImpact();
                         SystemSound.play(SystemSoundType.click);
-                        
+
                         try {
                           await questProvider.updateQuestProgress(q.id, 100);
-                          
+
                           // Visual feedback
                           try {
                             _showCheckRipple(cardKey);
@@ -1422,11 +1436,13 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           await _refreshToday();
                           await _refreshExplore();
 
-                          _showCompletionSnackBar(q.id, 'Done! You showed up for yourself today 💪');
+                          _showCompletionSnackBar(q.id,
+                              'Done! You showed up for yourself today 💪');
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Failed to update progress')),
+                              const SnackBar(
+                                  content: Text('Failed to update progress')),
                             );
                           }
                         }
@@ -1686,9 +1702,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
                 colors: _isStarConfetti
-                    ? const [
-                       Colors.amber, Colors.orange, Colors.purpleAccent
-                      ]
+                    ? const [Colors.amber, Colors.orange, Colors.purpleAccent]
                     : const [
                         Color(0xFF667EEA), // Primary purple
                         Color(0xFFFF6B6B), // Coral
@@ -1818,121 +1832,122 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     return Container(
       width: double.infinity,
       child: Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Active days counter
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: appTheme.whiteCustom,
-                borderRadius: BorderRadius.circular(12.h),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4.h,
-                    offset: Offset(0, 2.h),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Active this week: $activeDaysThisWeek/7 days',
-                    style: TextStyle(
-                      fontSize: 14.h,
-                      fontWeight: FontWeight.w500,
-                      color: appTheme.colorFF1F29,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Active days counter
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: appTheme.whiteCustom,
+                  borderRadius: BorderRadius.circular(12.h),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4.h,
+                      offset: Offset(0, 2.h),
                     ),
-                  ),
-                  SizedBox(width: 6.h),
-                  Text('🌟', style: TextStyle(fontSize: 16.h)),
-                ],
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Active this week: $activeDaysThisWeek/7 days',
+                      style: TextStyle(
+                        fontSize: 14.h,
+                        fontWeight: FontWeight.w500,
+                        color: appTheme.colorFF1F29,
+                      ),
+                    ),
+                    SizedBox(width: 6.h),
+                    Text('🌟', style: TextStyle(fontSize: 16.h)),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 24.h),
-            // Large prompt card title
-            Text('Quick check-in',
-                textAlign: TextAlign.center,
-                style: TextStyleHelper.instance.headline28Inter.copyWith(
-                    fontFamily: CoreTextStyles
-                        .TextStyleHelper.instance.headline24Bold.fontFamily,
-                    color: const Color(0xFF555F6D))),
-          SizedBox(height: 8.h),
-          // Prompt subtitle
-          Text('Takes 2 minutes',
-              textAlign: TextAlign.center,
-              style: TextStyleHelper.instance.headline21Inter.copyWith(
-                  fontFamily: CoreTextStyles
-                      .TextStyleHelper.instance.headline24Bold.fontFamily,
-                  color: Color(0xFF8C9CAA))),
-          SizedBox(height: 32.h),
-          Builder(builder: (context) {
-              final questProvider = context.watch<QuestProvider>();
-              
-              // Determine today's Quick Check-in quest from Provider
-              model.Quest? checkinQuest;
-              try {
-                checkinQuest = questProvider.quests.firstWhere(
-                  (q) => q.type == 'check_in',
-                  orElse: () => questProvider.quests.firstWhere(
-                    (q) => q.type == 'progress',
-                    orElse: () => questProvider.quests.first,
-                  ),
-                );
-              } catch (_) {}
+              SizedBox(height: 24.h),
+              // Large prompt card title
+              Text('Quick check-in',
+                  textAlign: TextAlign.center,
+                  style: TextStyleHelper.instance.headline28Inter.copyWith(
+                      fontFamily: CoreTextStyles
+                          .TextStyleHelper.instance.headline24Bold.fontFamily,
+                      color: const Color(0xFF555F6D))),
+              SizedBox(height: 8.h),
+              // Prompt subtitle
+              Text('Takes 2 minutes',
+                  textAlign: TextAlign.center,
+                  style: TextStyleHelper.instance.headline21Inter.copyWith(
+                      fontFamily: CoreTextStyles
+                          .TextStyleHelper.instance.headline24Bold.fontFamily,
+                      color: Color(0xFF8C9CAA))),
+              SizedBox(height: 32.h),
+              Builder(builder: (context) {
+                final questProvider = context.watch<QuestProvider>();
 
-              final bool isDone = checkinQuest?.isCompleted ?? false;
-              // Gate on quick check-in completion flag (separate from mood logging)
-              final bool gatedDone = isDone || _hasCompletedQuickCheckinToday;
-              
-              final Color bg = gatedDone
-                  ? const Color(0xFFE6EAF0)
-                  : Theme.of(context).colorScheme.primary;
-              final Color fg = gatedDone ? const Color(0xFF8C9CAA) : Colors.white;
+                // Determine today's Quick Check-in quest from Provider
+                model.Quest? checkinQuest;
+                try {
+                  checkinQuest = questProvider.quests.firstWhere(
+                    (q) => q.type == 'check_in',
+                    orElse: () => questProvider.quests.firstWhere(
+                      (q) => q.type == 'progress',
+                      orElse: () => questProvider.quests.first,
+                    ),
+                  );
+                } catch (_) {}
 
-              return CustomButton(
-                  key: _startBtnKey,
-                  text: gatedDone ? 'Logged today' : 'Start',
-                  backgroundColor: bg,
-                  textColor: fg,
-                  borderColor: Colors.transparent,
-                  showBorder: false,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 48.h, vertical: 24.h),
-                  borderRadius: 37.h,
-                  textStyle: TextStyleHelper.instance.headline25BoldInter
-                      .copyWith(
-                          fontFamily: CoreTextStyles.TextStyleHelper.instance
-                              .headline24Bold.fontFamily),
-                  onPressed: gatedDone
-                      ? null
-                      : () async {
-                          HapticFeedback.selectionClick();
-                          await Future<void>.delayed(
-                              const Duration(milliseconds: 220));
-                          if (!mounted) return;
-                          showDialog(
-                            context: context,
-                            barrierDismissible:
-                                false, // keep user on quest screen; use X to close
-                            builder: (ctx) => AssessmentSplash(
-                              onSubmitted: () {
-                                // Fire-and-forget on explicit submission only.
-                                _onQuickCheckinSubmitted();
-                              },
-                            ),
-                          );
-                        });
-            }),
-        ],
-      ),
-      ),
+                final bool isDone = checkinQuest?.isCompleted ?? false;
+                // Gate on quick check-in completion flag (separate from mood logging)
+                final bool gatedDone = isDone || _hasCompletedQuickCheckinToday;
+
+                final Color bg = gatedDone
+                    ? const Color(0xFFE6EAF0)
+                    : Theme.of(context).colorScheme.primary;
+                final Color fg =
+                    gatedDone ? const Color(0xFF8C9CAA) : Colors.white;
+
+                return CustomButton(
+                    key: _startBtnKey,
+                    text: gatedDone ? 'Logged today' : 'Start',
+                    backgroundColor: bg,
+                    textColor: fg,
+                    borderColor: Colors.transparent,
+                    showBorder: false,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 48.h, vertical: 24.h),
+                    borderRadius: 37.h,
+                    textStyle: TextStyleHelper.instance.headline25BoldInter
+                        .copyWith(
+                            fontFamily: CoreTextStyles.TextStyleHelper.instance
+                                .headline24Bold.fontFamily),
+                    onPressed: gatedDone
+                        ? null
+                        : () async {
+                            HapticFeedback.selectionClick();
+                            await Future<void>.delayed(
+                                const Duration(milliseconds: 220));
+                            if (!mounted) return;
+                            showDialog(
+                              context: context,
+                              barrierDismissible:
+                                  false, // keep user on quest screen; use X to close
+                              builder: (ctx) => AssessmentSplash(
+                                onSubmitted: () {
+                                  // Fire-and-forget on explicit submission only.
+                                  _onQuickCheckinSubmitted();
+                                },
+                              ),
+                            );
+                          });
+              }),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1942,7 +1957,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     final int streak = questProvider.streak;
     final int lifetimeXp = questProvider.totalXP;
     final int level = questProvider.level;
-    final int xpEarned = questProvider.quests.where((q) => q.isCompleted).fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
+    final int xpEarned = questProvider.quests
+        .where((q) => q.isCompleted)
+        .fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
 
     // Level progress based on 100 XP per level (standard)
     const int _xpPerLevel = 100;
@@ -1992,772 +2009,805 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         padding: EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Your Progress',
-              style: TextStyleHelper.instance.display31BoldInter.copyWith(
-                  fontFamily: CoreTextStyles
-                      .TextStyleHelper.instance.headline24Bold.fontFamily,
-                  color: Color(0xFF444D5C))),
-          SizedBox(height: 28.h),
-          Row(children: [
-            Expanded(
+          children: [
+            Text('Your Progress',
+                style: TextStyleHelper.instance.display31BoldInter.copyWith(
+                    fontFamily: CoreTextStyles
+                        .TextStyleHelper.instance.headline24Bold.fontFamily,
+                    color: Color(0xFF444D5C))),
+            SizedBox(height: 28.h),
+            Row(children: [
+              Expanded(
+                  child: ProgressCardWidget(
+                      imagePath: ImageConstant.imgImage65x52,
+                      value: '$streak days total',
+                      label: '',
+                      backgroundColor: const Color(0xFFE0F2E9),
+                      valueWidget: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, anim) =>
+                            ScaleTransition(scale: anim, child: child),
+                        child: Column(
+                          key: ValueKey<int>(streak),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$streak days total',
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyleHelper
+                                    .instance.headline28BoldInter
+                                    .copyWith(
+                                  fontFamily: CoreTextStyles.TextStyleHelper
+                                      .instance.headline24Bold.fontFamily,
+                                  color: const Color(0xFF4E5965),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 18.h),
+                          ],
+                        ),
+                      ))),
+              SizedBox(width: 24.h),
+              Expanded(
+                  child: Container(
+                key: _xpCardKey,
                 child: ProgressCardWidget(
-                    imagePath: ImageConstant.imgImage65x52,
-                    value: '$streak days total',
+                    imagePath: ImageConstant.imgImage63x65,
+                    value: 'Level $level',
                     label: '',
-                    backgroundColor: const Color(0xFFE0F2E9),
+                    backgroundColor: const Color(0xFFE8E7F8),
                     valueWidget: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
                       transitionBuilder: (child, anim) =>
                           ScaleTransition(scale: anim, child: child),
                       child: Column(
-                        key: ValueKey<int>(streak),
+                        key: ValueKey<int>(lifetimeXp),
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '$streak days total',
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyleHelper
-                                  .instance.headline28BoldInter
-                                  .copyWith(
-                                fontFamily: CoreTextStyles.TextStyleHelper
-                                    .instance.headline24Bold.fontFamily,
-                                color: const Color(0xFF4E5965),
-                              ),
+                          Text(
+                            'Level $level',
+                            style: TextStyleHelper.instance.headline28BoldInter
+                                .copyWith(
+                              fontFamily: CoreTextStyles.TextStyleHelper
+                                  .instance.headline24Bold.fontFamily,
+                              color: const Color(0xFF4E5965),
                             ),
                           ),
-                          SizedBox(height: 18.h),
-                        ],
-                      ),
-                    ))),
-            SizedBox(width: 24.h),
-            Expanded(
-                child: Container(
-              key: _xpCardKey,
-              child: ProgressCardWidget(
-                  imagePath: ImageConstant.imgImage63x65,
-                  value: 'Level $level',
-                  label: '',
-                  backgroundColor: const Color(0xFFE8E7F8),
-                  valueWidget: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    transitionBuilder: (child, anim) =>
-                        ScaleTransition(scale: anim, child: child),
-                    child: Column(
-                      key: ValueKey<int>(lifetimeXp),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Level $level',
-                          style: TextStyleHelper.instance.headline28BoldInter
-                              .copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance
-                                .headline24Bold.fontFamily,
-                            color: const Color(0xFF4E5965),
-                          ),
-                        ),
-                        SizedBox(height: 6.h),
-                        if (showTotalPill)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.h, vertical: 4.h),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12.h),
-                              ),
-                              child: Text(
-                                'Total ${lifetimeXp} XP',
-                                style: TextStyleHelper.instance.titleSmallInter
-                                    .copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF4E5965),
-                                ),
-                              ),
-                            ),
-                          ),
-                        SizedBox(height: 8.h),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6.h),
-                          child: SizedBox(
-                            height: 18.h,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: double.infinity,
-                                  height: double.infinity,
+                          SizedBox(height: 6.h),
+                          if (showTotalPill)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8.h, vertical: 4.h),
+                                decoration: BoxDecoration(
                                   color: Theme.of(context)
                                       .colorScheme
                                       .primary
-                                      .withValues(alpha: 0.18),
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12.h),
                                 ),
-                                // Animated fill + knob
-                                TweenAnimationBuilder<double>(
-                                  tween: Tween<double>(
-                                      begin: _prevLevelProgress,
-                                      end: levelProgress),
-                                  duration: const Duration(milliseconds: 450),
-                                  curve: Curves.easeOut,
-                                  builder: (context, value, _) {
-                                    final primary =
-                                        Theme.of(context).colorScheme.primary;
-                                    final bool nearLevelUp = value >= 0.92;
-                                    final bool flash = _levelUpFlash;
-                                    return Stack(children: [
-                                      FractionallySizedBox(
-                                        widthFactor: value,
-                                        child: Container(
-                                          height: double.infinity,
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                primary,
-                                                primary.withValues(alpha: 0.85),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Align(
-                                        alignment:
-                                            Alignment((value * 2) - 1.0, 0),
-                                        child: Container(
-                                          width: 14.h,
-                                          height: 14.h,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                              const BoxShadow(
-                                                  color: Color(0x1A000000),
-                                                  blurRadius: 4,
-                                                  offset: Offset(0, 2)),
-                                              if (nearLevelUp)
-                                                BoxShadow(
-                                                  color:
-                                                      primary.withValues(alpha: 0.30),
-                                                  blurRadius: 14,
-                                                  spreadRadius: 1.0,
-                                                ),
-                                              if (flash)
-                                                BoxShadow(
-                                                  color:
-                                                      primary.withValues(alpha: 0.55),
-                                                  blurRadius: 22,
-                                                  spreadRadius: 2.0,
-                                                ),
-                                            ],
-                                          ),
-                                          child: Center(
-                                            child: Container(
-                                              width: 8.h,
-                                              height: 8.h,
-                                              decoration: BoxDecoration(
-                                                color: primary,
-                                                shape: BoxShape.circle,
+                                child: Text(
+                                  'Total ${lifetimeXp} XP',
+                                  style: TextStyleHelper
+                                      .instance.titleSmallInter
+                                      .copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF4E5965),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          SizedBox(height: 8.h),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6.h),
+                            child: SizedBox(
+                              height: 18.h,
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.18),
+                                  ),
+                                  // Animated fill + knob
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween<double>(
+                                        begin: _prevLevelProgress,
+                                        end: levelProgress),
+                                    duration: const Duration(milliseconds: 450),
+                                    curve: Curves.easeOut,
+                                    builder: (context, value, _) {
+                                      final primary =
+                                          Theme.of(context).colorScheme.primary;
+                                      final bool nearLevelUp = value >= 0.92;
+                                      final bool flash = _levelUpFlash;
+                                      return Stack(children: [
+                                        FractionallySizedBox(
+                                          widthFactor: value,
+                                          child: Container(
+                                            height: double.infinity,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  primary,
+                                                  primary.withValues(
+                                                      alpha: 0.85),
+                                                ],
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ]);
-                                  },
-                                ),
-                                // Center overlay removed for cleaner look
-                                const SizedBox.shrink(),
-                              ],
+                                        Align(
+                                          alignment:
+                                              Alignment((value * 2) - 1.0, 0),
+                                          child: Container(
+                                            width: 14.h,
+                                            height: 14.h,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                const BoxShadow(
+                                                    color: Color(0x1A000000),
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 2)),
+                                                if (nearLevelUp)
+                                                  BoxShadow(
+                                                    color: primary.withValues(
+                                                        alpha: 0.30),
+                                                    blurRadius: 14,
+                                                    spreadRadius: 1.0,
+                                                  ),
+                                                if (flash)
+                                                  BoxShadow(
+                                                    color: primary.withValues(
+                                                        alpha: 0.55),
+                                                    blurRadius: 22,
+                                                    spreadRadius: 2.0,
+                                                  ),
+                                              ],
+                                            ),
+                                            child: Center(
+                                              child: Container(
+                                                width: 8.h,
+                                                height: 8.h,
+                                                decoration: BoxDecoration(
+                                                  color: primary,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ]);
+                                    },
+                                  ),
+                                  // Center overlay removed for cleaner look
+                                  const SizedBox.shrink(),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )),
-            )),
-          ]),
-          // Estimated time moved below "Today's Recommendations" header
-        ],
-      ),
+                        ],
+                      ),
+                    )),
+              )),
+            ]),
+            // Estimated time moved below "Today's Recommendations" header
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRecommendationsSection() {
     final questProvider = context.read<QuestProvider>();
-    final bool task1Done = _qTask1Id != null && 
-        questProvider.quests.any((q) => q.id.toString() == _qTask1Id && q.isCompleted);
-    final bool task2Done = _qTask2Id != null && 
-        questProvider.quests.any((q) => q.id.toString() == _qTask2Id && q.isCompleted);
-    final bool resDone = _qResId != null && 
-        questProvider.quests.any((q) => q.id.toString() == _qResId && q.isCompleted);
-    final bool tipDone = _qTipId != null && 
-        questProvider.quests.any((q) => q.id.toString() == _qTipId && q.isCompleted);
-    
+    final bool task1Done = _qTask1Id != null &&
+        questProvider.quests
+            .any((q) => q.id.toString() == _qTask1Id && q.isCompleted);
+    final bool task2Done = _qTask2Id != null &&
+        questProvider.quests
+            .any((q) => q.id.toString() == _qTask2Id && q.isCompleted);
+    final bool resDone = _qResId != null &&
+        questProvider.quests
+            .any((q) => q.id.toString() == _qResId && q.isCompleted);
+    final bool tipDone = _qTipId != null &&
+        questProvider.quests
+            .any((q) => q.id.toString() == _qTipId && q.isCompleted);
+
     // Pull durations for tasks from today's selection for accurate display
     final int? _task1Dur = _durationFor(_qTask1Id);
     final int? _task2Dur = _durationFor(_qTask2Id);
     return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Today\'s Recommendations',
-              style: TextStyleHelper.instance.display32BoldInter.copyWith(
-                  fontFamily: CoreTextStyles
-                      .TextStyleHelper.instance.headline24Bold.fontFamily,
-                  color: Color(0xFF4A5261))),
-          SizedBox(height: 8.h),
-          Text(
-            'Estimated time: 10 min',
-            style: TextStyleHelper.instance.headline21Inter.copyWith(
-                fontFamily: CoreTextStyles
-                    .TextStyleHelper.instance.headline24Bold.fontFamily,
-                color: Color(0xFF8C9CAA)),
-          ),
-          SizedBox(height: 20.h),
-          RecommendationCardWidget(
-              containerKey: _task1CardKey,
-              category: 'TASK',
-              title: _task1Dur != null
-                  ? 'Focus reset (${_task1Dur} min)'
-                  : 'Focus reset',
-              subtitle: (task1Done && task2Done)
-                  ? 'All steps complete 🎉'
-                  : 'Quick breathing + desk tidy',
-              imagePath: 'assets/images/quests/task_focus.svg',
-              doneImagePath: 'assets/images/quests/task_focus_done.svg',
-              completed: task1Done,
-              onTap: () async {
-                final questId = _qTask1Id;
-                if (questId == null) return;
-                
-                // Toggle undo if already done
-                if (task1Done) {
-                  final qId = int.tryParse(questId);
-                  if (qId != null) {
-                    await questProvider.updateQuestProgress(qId, 0);
-                    await _refreshToday();
-                    await _refreshExplore();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Marked undone')),
-                      );
+        child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding:
+                EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Today\'s Recommendations',
+                  style: TextStyleHelper.instance.display32BoldInter.copyWith(
+                      fontFamily: CoreTextStyles
+                          .TextStyleHelper.instance.headline24Bold.fontFamily,
+                      color: Color(0xFF4A5261))),
+              SizedBox(height: 8.h),
+              Text(
+                'Estimated time: 10 min',
+                style: TextStyleHelper.instance.headline21Inter.copyWith(
+                    fontFamily: CoreTextStyles
+                        .TextStyleHelper.instance.headline24Bold.fontFamily,
+                    color: Color(0xFF8C9CAA)),
+              ),
+              SizedBox(height: 20.h),
+              RecommendationCardWidget(
+                  containerKey: _task1CardKey,
+                  category: 'TASK',
+                  title: _task1Dur != null
+                      ? 'Focus reset (${_task1Dur} min)'
+                      : 'Focus reset',
+                  subtitle: (task1Done && task2Done)
+                      ? 'All steps complete 🎉'
+                      : 'Quick breathing + desk tidy',
+                  imagePath: 'assets/images/quests/task_focus.svg',
+                  doneImagePath: 'assets/images/quests/task_focus_done.svg',
+                  completed: task1Done,
+                  onTap: () async {
+                    final questId = _qTask1Id;
+                    if (questId == null) return;
+
+                    // Toggle undo if already done
+                    if (task1Done) {
+                      final qId = int.tryParse(questId);
+                      if (qId != null) {
+                        await questProvider.updateQuestProgress(qId, 0);
+                        await _refreshToday();
+                        await _refreshExplore();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Marked undone')),
+                          );
+                        }
+                      }
+                      return;
                     }
-                  }
-                  return;
-                }
 
-                final dur = _durationFor(questId);
-                if (dur != null && dur > 0) {
-                  await _openTimerSheet(
-                      questId: questId,
-                      cardKey: _task1CardKey,
-                      title: _titleFor(questId) ?? 'Focus reset',
-                      durationMin: dur);
-                  return;
-                }
-              }),
-          SizedBox(height: 24.h),
-          // Card 2 (TASK)
-          if (_qTask2Id != null)
-            RecommendationCardWidget(
-                containerKey: _task2CardKey,
-                category: 'TASK',
-                title: _task2Dur != null
-                    ? 'Study sprint (${_task2Dur} min)'
-                    : 'Study sprint',
-                subtitle: 'Timer + no-phone rule',
-                imagePath: 'assets/images/quests/task_study.svg',
-                doneImagePath: 'assets/images/quests/task_study_done.svg',
-                completed: task2Done,
-                onTap: () async {
-                  final questId = _qTask2Id;
-                  if (questId == null) return;
+                    final dur = _durationFor(questId);
+                    if (dur != null && dur > 0) {
+                      await _openTimerSheet(
+                          questId: questId,
+                          cardKey: _task1CardKey,
+                          title: _titleFor(questId) ?? 'Focus reset',
+                          durationMin: dur);
+                      return;
+                    }
+                  }),
+              SizedBox(height: 24.h),
+              // Card 2 (TASK)
+              if (_qTask2Id != null)
+                RecommendationCardWidget(
+                    containerKey: _task2CardKey,
+                    category: 'TASK',
+                    title: _task2Dur != null
+                        ? 'Study sprint (${_task2Dur} min)'
+                        : 'Study sprint',
+                    subtitle: 'Timer + no-phone rule',
+                    imagePath: 'assets/images/quests/task_study.svg',
+                    doneImagePath: 'assets/images/quests/task_study_done.svg',
+                    completed: task2Done,
+                    onTap: () async {
+                      final questId = _qTask2Id;
+                      if (questId == null) return;
 
-                  // Toggle undo if already done
-                  if (task2Done) {
-                    final qId = int.tryParse(questId);
-                    if (qId != null) {
-                      await questProvider.updateQuestProgress(qId, 0);
-                      await _refreshToday();
-                      await _refreshExplore();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Marked undone')),
-                        );
+                      // Toggle undo if already done
+                      if (task2Done) {
+                        final qId = int.tryParse(questId);
+                        if (qId != null) {
+                          await questProvider.updateQuestProgress(qId, 0);
+                          await _refreshToday();
+                          await _refreshExplore();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Marked undone')),
+                            );
+                          }
+                        }
+                        return;
+                      }
+
+                      final dur = _durationFor(questId);
+                      if (dur != null && dur > 0) {
+                        await _openTimerSheet(
+                            questId: questId,
+                            cardKey: _task2CardKey,
+                            title: _titleFor(questId) ?? 'Study sprint',
+                            durationMin: dur);
+                        return;
+                      }
+                    }),
+              SizedBox(height: 24.h),
+              // Card 3 (RESOURCE)
+              RecommendationCardWidget(
+                  containerKey: _resCardKey,
+                  category: 'RESOURCE',
+                  title: _titleFor(_qResId) ?? 'Calm music',
+                  subtitle: _subtitleFor(_qResId) ?? 'Lo‑fi playlist',
+                  imagePath:
+                      'assets/images/quests/resource_headphone_match_v8.svg',
+                  doneImagePath:
+                      'assets/images/quests/resource_headphone_match_v8_done.svg',
+                  completed: resDone,
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    SystemSound.play(SystemSoundType.click);
+
+                    final questIdStr = _qResId;
+                    if (questIdStr == null) return;
+
+                    final qId = int.tryParse(questIdStr);
+                    if (qId == null) return;
+
+                    if (!resDone) {
+                      // Mark as completed (optimistic 100% progress)
+                      try {
+                        await questProvider.updateQuestProgress(qId, 100);
+                        if (mounted) {
+                          _showCheckRipple(_resCardKey);
+                          _randomizeConfetti();
+                          _confettiController.play();
+
+                          await _refreshToday();
+                          await _refreshExplore();
+
+                          _showCompletionSnackBar(
+                              qId, 'Done! You showed up for yourself today 💪');
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Failed to update progress')),
+                          );
+                        }
+                      }
+                    } else {
+                      // Toggle back to 0 (Undo via direct tap)
+                      try {
+                        await questProvider.updateQuestProgress(qId, 0);
+                        await _refreshToday();
+                        await _refreshExplore();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Marked undone')),
+                          );
+                        }
+                      } catch (_) {}
+                    }
+                  }),
+              SizedBox(height: 24.h),
+              // Card 4 (TIP)
+              RecommendationCardWidget(
+                  containerKey: _tipCardKey,
+                  category: 'TIP',
+                  title: _titleFor(_qTipId) ?? 'One tiny step',
+                  subtitle:
+                      _subtitleFor(_qTipId) ?? 'Pick the easiest task first',
+                  imagePath: 'assets/images/quests/tip_generic.svg',
+                  doneImagePath: 'assets/images/quests/tip_generic_done.svg',
+                  completed: tipDone,
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    SystemSound.play(SystemSoundType.click);
+
+                    final questIdStr = _qTipId;
+                    if (questIdStr == null) return;
+
+                    final qId = int.tryParse(questIdStr);
+                    if (qId == null) return;
+
+                    if (!tipDone) {
+                      try {
+                        await questProvider.updateQuestProgress(qId, 100);
+                        _showCheckRipple(_tipCardKey);
+                        _randomizeConfetti();
+                        _confettiController.play();
+
+                        await _refreshToday();
+                        await _refreshExplore();
+
+                        _showCompletionSnackBar(
+                            qId, 'Done! You showed up for yourself today 💪');
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Failed to update progress')),
+                          );
+                        }
+                      }
+                    } else {
+                      try {
+                        await questProvider.updateQuestProgress(qId, 0);
+                        await _refreshToday();
+                        await _refreshExplore();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Marked undone')),
+                          );
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Failed to update progress')),
+                          );
+                        }
                       }
                     }
-                    return;
+                  }),
+              SizedBox(height: 24.h),
+              // Card 5 (REMINDER) - themed toggle + change time
+              Builder(
+                builder: (context) {
+                  final near = _isReminderNear();
+                  final now = DateTime.now();
+                  // Fire telemetry on transition into near state (release + debug)
+                  final becameNear = near && (_lastReminderNear != true);
+                  if (becameNear) {
+                    final qid = _qTask1Id ?? _qTask2Id;
+                    try {
+                      logAnalyticsEvent('quest_reminder_fired', metadata: {
+                        if (qid != null) 'quest_id': qid,
+                        'surface': 'wellness_dashboard',
+                        'variant': 'today',
+                        'tag': 'fired',
+                        'ts': now.millisecondsSinceEpoch,
+                        'ui': 'reminder_near',
+                      });
+                    } catch (_) {}
                   }
-
-                  final dur = _durationFor(questId);
-                  if (dur != null && dur > 0) {
-                    await _openTimerSheet(
-                        questId: questId,
-                        cardKey: _task2CardKey,
-                        title: _titleFor(questId) ?? 'Study sprint',
-                        durationMin: dur);
-                    return;
-                  }
-                }),
-          SizedBox(height: 24.h),
-          // Card 3 (RESOURCE)
-          RecommendationCardWidget(
-              containerKey: _resCardKey,
-              category: 'RESOURCE',
-              title: _titleFor(_qResId) ?? 'Calm music',
-              subtitle: _subtitleFor(_qResId) ?? 'Lo‑fi playlist',
-              imagePath: 'assets/images/quests/resource_headphone_match_v8.svg',
-              doneImagePath:
-                  'assets/images/quests/resource_headphone_match_v8_done.svg',
-              completed: resDone,
-              onTap: () async {
-                HapticFeedback.lightImpact();
-                SystemSound.play(SystemSoundType.click);
-                
-                final questIdStr = _qResId;
-                if (questIdStr == null) return;
-                
-                final qId = int.tryParse(questIdStr);
-                if (qId == null) return;
-
-                if (!resDone) {
-                  // Mark as completed (optimistic 100% progress)
-                  try {
-                    await questProvider.updateQuestProgress(qId, 100);
-                    if (mounted) {
-                      _showCheckRipple(_resCardKey);
-                      _randomizeConfetti();
-                      _confettiController.play();
-                      
-                      await _refreshToday();
-                      await _refreshExplore();
-
-                      _showCompletionSnackBar(qId, 'Done! You showed up for yourself today 💪');
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to update progress')),
-                      );
+                  // Update last-seen state always
+                  _lastReminderNear = near;
+                  // Keep debug prints throttled
+                  if (kDebugMode) {
+                    final shouldLog = (_lastReminderLogAt ==
+                            DateTime.fromMillisecondsSinceEpoch(0)) ||
+                        (now.difference(_lastReminderLogAt).inSeconds >= 60) ||
+                        becameNear;
+                    if (shouldLog) {
+                      debugPrint(
+                          '[Reminder][near] now=$near on=$_reminderOn time=${_reminderTime.format(context)}');
+                      _lastReminderLogAt = now;
                     }
                   }
-                } else {
-                  // Toggle back to 0 (Undo via direct tap)
-                  try {
-                    await questProvider.updateQuestProgress(qId, 0);
-                    await _refreshToday();
-                    await _refreshExplore();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Marked undone')),
-                      );
-                    }
-                  } catch (_) {}
-                }
-              }),
-          SizedBox(height: 24.h),
-          // Card 4 (TIP)
-          RecommendationCardWidget(
-              containerKey: _tipCardKey,
-              category: 'TIP',
-              title: _titleFor(_qTipId) ?? 'One tiny step',
-              subtitle: _subtitleFor(_qTipId) ?? 'Pick the easiest task first',
-              imagePath: 'assets/images/quests/tip_generic.svg',
-              doneImagePath: 'assets/images/quests/tip_generic_done.svg',
-              completed: tipDone,
-              onTap: () async {
-                HapticFeedback.lightImpact();
-                SystemSound.play(SystemSoundType.click);
-
-                final questIdStr = _qTipId;
-                if (questIdStr == null) return;
-                
-                final qId = int.tryParse(questIdStr);
-                if (qId == null) return;
-
-                if (!tipDone) {
-                  try {
-                    await questProvider.updateQuestProgress(qId, 100);
-                    _showCheckRipple(_tipCardKey);
-                    _randomizeConfetti();
-                    _confettiController.play();
-                    
-                    await _refreshToday();
-                    await _refreshExplore();
-
-                    _showCompletionSnackBar(qId, 'Done! You showed up for yourself today 💪');
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to update progress')),
-                      );
-                    }
+                  if (near && !_pulseController.isAnimating) {
+                    _pulseController.repeat(reverse: true);
+                  } else if (!near && _pulseController.isAnimating) {
+                    _pulseController.stop();
                   }
-                } else {
-                  try {
-                    await questProvider.updateQuestProgress(qId, 0);
-                    await _refreshToday();
-                    await _refreshExplore();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Marked undone')),
-                      );
-                    }
-                  } catch (_) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to update progress')),
-                      );
-                    }
-                  }
-                }
-              }),
-          SizedBox(height: 24.h),
-          // Card 5 (REMINDER) - themed toggle + change time
-          Builder(
-            builder: (context) {
-              final near = _isReminderNear();
-              final now = DateTime.now();
-              // Fire telemetry on transition into near state (release + debug)
-              final becameNear = near && (_lastReminderNear != true);
-              if (becameNear) {
-                final qid = _qTask1Id ?? _qTask2Id;
-                try {
-                  logAnalyticsEvent('quest_reminder_fired', metadata: {
-                    if (qid != null) 'quest_id': qid,
-                    'surface': 'wellness_dashboard',
-                    'variant': 'today',
-                    'tag': 'fired',
-                    'ts': now.millisecondsSinceEpoch,
-                    'ui': 'reminder_near',
-                  });
-                } catch (_) {}
-              }
-              // Update last-seen state always
-              _lastReminderNear = near;
-              // Keep debug prints throttled
-              if (kDebugMode) {
-                final shouldLog = (_lastReminderLogAt ==
-                        DateTime.fromMillisecondsSinceEpoch(0)) ||
-                    (now.difference(_lastReminderLogAt).inSeconds >= 60) ||
-                    becameNear;
-                if (shouldLog) {
-                  debugPrint(
-                      '[Reminder][near] now=$near on=$_reminderOn time=${_reminderTime.format(context)}');
-                  _lastReminderLogAt = now;
-                }
-              }
-              if (near && !_pulseController.isAnimating) {
-                _pulseController.repeat(reverse: true);
-              } else if (!near && _pulseController.isAnimating) {
-                _pulseController.stop();
-              }
-              final primary = Theme.of(context).colorScheme.primary;
-              final borderBase = const Color(0xFFF4F5F7);
-              final borderColor = near
-                  ? Color.lerp(
-                      borderBase, primary, 0.6 + 0.4 * _pulseController.value)!
-                  : borderBase;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeInOut,
-                decoration: BoxDecoration(
-                  color: _reminderOn
-                      ? const Color(0xFFF4F1FF)
-                      : const Color(0xFFFEFEFE),
-                  border: Border.all(color: borderColor),
-                  borderRadius: BorderRadius.circular(29.h),
-                  boxShadow: _reminderOn
-                      ? [
-                          BoxShadow(
-                            color: primary.withValues(alpha: 0.12),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ]
-                      : [],
-                ),
-                padding: EdgeInsets.all(28.h),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                'REMINDER',
-                                style: TextStyleHelper.instance.title19BoldInter
-                                    .copyWith(
-                                  fontFamily: CoreTextStyles.TextStyleHelper
-                                      .instance.headline24Bold.fontFamily,
-                                  color: const Color(0xFF8E98A7),
-                                ),
+                  final primary = Theme.of(context).colorScheme.primary;
+                  final borderBase = const Color(0xFFF4F5F7);
+                  final borderColor = near
+                      ? Color.lerp(borderBase, primary,
+                          0.6 + 0.4 * _pulseController.value)!
+                      : borderBase;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeInOut,
+                    decoration: BoxDecoration(
+                      color: _reminderOn
+                          ? const Color(0xFFF4F1FF)
+                          : const Color(0xFFFEFEFE),
+                      border: Border.all(color: borderColor),
+                      borderRadius: BorderRadius.circular(29.h),
+                      boxShadow: _reminderOn
+                          ? [
+                              BoxShadow(
+                                color: primary.withValues(alpha: 0.12),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _reminderOn = !_reminderOn;
-                                    _startMicrocopyRotation();
-                                  });
-                                  _saveReminderPrefs();
-                                  // Apply scheduling change immediately
-                                  _rescheduleReminder('toggle');
-                                  if (kDebugMode) {
-                                    debugPrint(
-                                        '[Reminder][toggle] on=$_reminderOn');
-                                  }
-                                  // Microinteraction: subtle ripple on toggle change
-                                  HapticFeedback.lightImpact();
-                                  SystemSound.play(SystemSoundType.click);
-                                  _showCheckRipple(_reminderToggleKey);
-                                  // Telemetry: quest_reminder_toggle
-                                  final qid = _qTask1Id ?? _qTask2Id;
-                                  try {
-                                    logAnalyticsEvent('quest_reminder_toggle',
-                                        metadata: {
-                                          if (qid != null) 'quest_id': qid,
-                                          'surface': 'wellness_dashboard',
-                                          'variant': 'today',
-                                          'tag': _reminderOn
-                                              ? 'toggle_on'
-                                              : 'toggle_off',
-                                          'ts': DateTime.now()
-                                              .millisecondsSinceEpoch,
-                                          'ui': 'reminder_toggle',
-                                        });
-                                  } catch (_) {}
-                                },
-                                child: Container(
-                                  key: _reminderToggleKey,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 220),
-                                    curve: Curves.easeOutCubic,
-                                    width: 56.h,
-                                    height: 30.h,
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 4.h, vertical: 4.h),
-                                    decoration: BoxDecoration(
-                                      color: _reminderOn
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          : const Color(0xFFE6EAF0),
-                                      borderRadius: BorderRadius.circular(20.h),
-                                      boxShadow: _reminderOn
-                                          ? [
-                                              BoxShadow(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
-                                                    .withValues(alpha: 0.35),
-                                                blurRadius: 14,
-                                                spreadRadius: 1,
-                                                offset: const Offset(0, 3),
-                                              )
-                                            ]
-                                          : [],
+                            ]
+                          : [],
+                    ),
+                    padding: EdgeInsets.all(28.h),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'REMINDER',
+                                    style: TextStyleHelper
+                                        .instance.title19BoldInter
+                                        .copyWith(
+                                      fontFamily: CoreTextStyles.TextStyleHelper
+                                          .instance.headline24Bold.fontFamily,
+                                      color: const Color(0xFF8E98A7),
                                     ),
-                                    child: AnimatedAlign(
-                                      duration:
-                                          const Duration(milliseconds: 220),
-                                      curve: Curves.easeOutCubic,
-                                      alignment: _reminderOn
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: AnimatedScale(
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _reminderOn = !_reminderOn;
+                                        _startMicrocopyRotation();
+                                      });
+                                      _saveReminderPrefs();
+                                      // Apply scheduling change immediately
+                                      _rescheduleReminder('toggle');
+                                      if (kDebugMode) {
+                                        debugPrint(
+                                            '[Reminder][toggle] on=$_reminderOn');
+                                      }
+                                      // Microinteraction: subtle ripple on toggle change
+                                      HapticFeedback.lightImpact();
+                                      SystemSound.play(SystemSoundType.click);
+                                      _showCheckRipple(_reminderToggleKey);
+                                      // Telemetry: quest_reminder_toggle
+                                      final qid = _qTask1Id ?? _qTask2Id;
+                                      try {
+                                        logAnalyticsEvent(
+                                            'quest_reminder_toggle',
+                                            metadata: {
+                                              if (qid != null) 'quest_id': qid,
+                                              'surface': 'wellness_dashboard',
+                                              'variant': 'today',
+                                              'tag': _reminderOn
+                                                  ? 'toggle_on'
+                                                  : 'toggle_off',
+                                              'ts': DateTime.now()
+                                                  .millisecondsSinceEpoch,
+                                              'ui': 'reminder_toggle',
+                                            });
+                                      } catch (_) {}
+                                    },
+                                    child: Container(
+                                      key: _reminderToggleKey,
+                                      child: AnimatedContainer(
                                         duration:
-                                            const Duration(milliseconds: 160),
-                                        curve: Curves.easeOutBack,
-                                        scale: _reminderOn ? 1.0 : 0.96,
-                                        child: Container(
-                                          width: 22.h,
-                                          height: 22.h,
-                                          decoration: const BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle),
-                                          child: _reminderOn
-                                              ? Icon(Icons.check,
-                                                  size: 16.h,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary)
-                                              : null,
+                                            const Duration(milliseconds: 220),
+                                        curve: Curves.easeOutCubic,
+                                        width: 56.h,
+                                        height: 30.h,
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 4.h, vertical: 4.h),
+                                        decoration: BoxDecoration(
+                                          color: _reminderOn
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : const Color(0xFFE6EAF0),
+                                          borderRadius:
+                                              BorderRadius.circular(20.h),
+                                          boxShadow: _reminderOn
+                                              ? [
+                                                  BoxShadow(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withValues(
+                                                            alpha: 0.35),
+                                                    blurRadius: 14,
+                                                    spreadRadius: 1,
+                                                    offset: const Offset(0, 3),
+                                                  )
+                                                ]
+                                              : [],
+                                        ),
+                                        child: AnimatedAlign(
+                                          duration:
+                                              const Duration(milliseconds: 220),
+                                          curve: Curves.easeOutCubic,
+                                          alignment: _reminderOn
+                                              ? Alignment.centerRight
+                                              : Alignment.centerLeft,
+                                          child: AnimatedScale(
+                                            duration: const Duration(
+                                                milliseconds: 160),
+                                            curve: Curves.easeOutBack,
+                                            scale: _reminderOn ? 1.0 : 0.96,
+                                            child: Container(
+                                              width: 22.h,
+                                              height: 22.h,
+                                              decoration: const BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle),
+                                              child: _reminderOn
+                                                  ? Icon(Icons.check,
+                                                      size: 16.h,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .primary)
+                                                  : null,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 8.h),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        _formatReminderTime(_reminderTime),
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyleHelper
-                                            .instance.headline26BoldInter
-                                            .copyWith(
-                                          fontFamily: CoreTextStyles
-                                              .TextStyleHelper
-                                              .instance
-                                              .headline24Bold
-                                              .fontFamily,
-                                          color: _reminderOn
-                                              ? const Color(0xFF4C5664)
-                                              : const Color(0xFFB8C0CC),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                        width: _isTomorrowLabel(_reminderTime)
-                                            ? 8.h
-                                            : 0),
-                                    _isTomorrowLabel(_reminderTime)
-                                        ? Text(
-                                            'tomorrow',
+                              SizedBox(height: 8.h),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            _formatReminderTime(_reminderTime),
+                                            overflow: TextOverflow.ellipsis,
                                             style: TextStyleHelper
-                                                .instance.headline21Inter
+                                                .instance.headline26BoldInter
                                                 .copyWith(
                                               fontFamily: CoreTextStyles
                                                   .TextStyleHelper
                                                   .instance
                                                   .headline24Bold
                                                   .fontFamily,
-                                              color: const Color(0xFF8E98A7),
+                                              color: _reminderOn
+                                                  ? const Color(0xFF4C5664)
+                                                  : const Color(0xFFB8C0CC),
                                             ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 8.h),
-                              OutlinedButton.icon(
-                                key: _reminderTimeKey,
-                                onPressed: _reminderOn
-                                    ? () async {
-                                        final picked = await showTimePicker(
-                                          context: context,
-                                          initialTime: _reminderTime,
-                                          builder: (context, child) {
-                                            return Theme(
-                                                data: Theme.of(context),
-                                                child: child!);
-                                          },
-                                        );
-                                        if (!mounted) return;
-                                        if (picked != null) {
-                                          setState(() {
-                                            _reminderTime = picked;
-                                            _reminderOn = true;
-                                          });
-                                          _saveReminderPrefs();
-                                          // Reschedule to new time immediately
-                                          _rescheduleReminder('time_changed');
-                                          if (kDebugMode) {
-                                            debugPrint(
-                                                '[Reminder][timeChanged] to=${_formatReminderTime(_reminderTime)}');
-                                          }
-                                          // Microinteraction: confirmation ring + haptics
-                                          HapticFeedback.selectionClick();
-                                          SystemSound.play(
-                                              SystemSoundType.click);
-                                          _showTimerRing(_reminderTimeKey);
-                                          // Telemetry: quest_reminder_toggle (time changed)
-                                          final qid = _qTask1Id ?? _qTask2Id;
-                                          try {
-                                            logAnalyticsEvent(
-                                                'quest_reminder_toggle',
-                                                metadata: {
-                                                  if (qid != null)
-                                                    'quest_id': qid,
-                                                  'surface':
-                                                      'wellness_dashboard',
-                                                  'variant': 'today',
-                                                  'tag': 'time_changed',
-                                                  'ts': DateTime.now()
-                                                      .millisecondsSinceEpoch,
-                                                  'ui': 'reminder_time',
-                                                });
-                                          } catch (_) {}
-                                        }
-                                      }
-                                    : null,
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 12.h, vertical: 0),
-                                  minimumSize:
-                                      Size(0, 30.h), // match toggle height
-                                  side: BorderSide(
-                                    color: _reminderOn
-                                        ? Theme.of(context).colorScheme.primary
-                                        : const Color(0xFFB8C0CC),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                            width:
+                                                _isTomorrowLabel(_reminderTime)
+                                                    ? 8.h
+                                                    : 0),
+                                        _isTomorrowLabel(_reminderTime)
+                                            ? Text(
+                                                'tomorrow',
+                                                style: TextStyleHelper
+                                                    .instance.headline21Inter
+                                                    .copyWith(
+                                                  fontFamily: CoreTextStyles
+                                                      .TextStyleHelper
+                                                      .instance
+                                                      .headline24Bold
+                                                      .fontFamily,
+                                                  color:
+                                                      const Color(0xFF8E98A7),
+                                                ),
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ],
+                                    ),
                                   ),
-                                  foregroundColor: _reminderOn
-                                      ? Theme.of(context).colorScheme.primary
-                                      : const Color(0xFFB8C0CC),
-                                  shape: const StadiumBorder(),
-                                ),
-                                icon: Icon(Icons.edit, size: 18.h),
-                                label: Text(
-                                  'Change',
+                                  SizedBox(width: 8.h),
+                                  OutlinedButton.icon(
+                                    key: _reminderTimeKey,
+                                    onPressed: _reminderOn
+                                        ? () async {
+                                            final picked = await showTimePicker(
+                                              context: context,
+                                              initialTime: _reminderTime,
+                                              builder: (context, child) {
+                                                return Theme(
+                                                    data: Theme.of(context),
+                                                    child: child!);
+                                              },
+                                            );
+                                            if (!mounted) return;
+                                            if (picked != null) {
+                                              setState(() {
+                                                _reminderTime = picked;
+                                                _reminderOn = true;
+                                              });
+                                              _saveReminderPrefs();
+                                              // Reschedule to new time immediately
+                                              _rescheduleReminder(
+                                                  'time_changed');
+                                              if (kDebugMode) {
+                                                debugPrint(
+                                                    '[Reminder][timeChanged] to=${_formatReminderTime(_reminderTime)}');
+                                              }
+                                              // Microinteraction: confirmation ring + haptics
+                                              HapticFeedback.selectionClick();
+                                              SystemSound.play(
+                                                  SystemSoundType.click);
+                                              _showTimerRing(_reminderTimeKey);
+                                              // Telemetry: quest_reminder_toggle (time changed)
+                                              final qid =
+                                                  _qTask1Id ?? _qTask2Id;
+                                              try {
+                                                logAnalyticsEvent(
+                                                    'quest_reminder_toggle',
+                                                    metadata: {
+                                                      if (qid != null)
+                                                        'quest_id': qid,
+                                                      'surface':
+                                                          'wellness_dashboard',
+                                                      'variant': 'today',
+                                                      'tag': 'time_changed',
+                                                      'ts': DateTime.now()
+                                                          .millisecondsSinceEpoch,
+                                                      'ui': 'reminder_time',
+                                                    });
+                                              } catch (_) {}
+                                            }
+                                          }
+                                        : null,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12.h, vertical: 0),
+                                      minimumSize:
+                                          Size(0, 30.h), // match toggle height
+                                      side: BorderSide(
+                                        color: _reminderOn
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : const Color(0xFFB8C0CC),
+                                      ),
+                                      foregroundColor: _reminderOn
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : const Color(0xFFB8C0CC),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    icon: Icon(Icons.edit, size: 18.h),
+                                    label: Text(
+                                      'Change',
+                                      style: TextStyleHelper
+                                          .instance.headline21Inter
+                                          .copyWith(
+                                        fontFamily: CoreTextStyles
+                                            .TextStyleHelper
+                                            .instance
+                                            .headline24Bold
+                                            .fontFamily,
+                                        fontSize: 12.h,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 12.h),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                child: Text(
+                                  _reminderOn
+                                      ? _microcopy[_microIndex]
+                                      : 'Nudge me to finish the quest',
+                                  key: ValueKey(_microIndex.toString() +
+                                      _reminderOn.toString()),
                                   style: TextStyleHelper
                                       .instance.headline21Inter
                                       .copyWith(
                                     fontFamily: CoreTextStyles.TextStyleHelper
                                         .instance.headline24Bold.fontFamily,
-                                    fontSize: 12.h,
+                                    color: const Color(0xFFA8B1BF),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12.h),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: Text(
-                              _reminderOn
-                                  ? _microcopy[_microIndex]
-                                  : 'Nudge me to finish the quest',
-                              key: ValueKey(_microIndex.toString() +
-                                  _reminderOn.toString()),
-                              style: TextStyleHelper.instance.headline21Inter
-                                  .copyWith(
-                                fontFamily: CoreTextStyles.TextStyleHelper
-                                    .instance.headline24Bold.fontFamily,
-                                color: const Color(0xFFA8B1BF),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        // Removed right-side image to give space for time + tomorrow label
+                      ],
                     ),
-                    // Removed right-side image to give space for time + tomorrow label
-                  ],
-                ),
-              );
-            },
-          ),
-        ])));
+                  );
+                },
+              ),
+            ])));
   }
 
   // Utility: title-case a string for category display
@@ -2777,7 +2827,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   Future<void> _handleExploreComplete(String questId) async {
     HapticFeedback.lightImpact();
     SystemSound.play(SystemSoundType.click);
-    
+
     final qId = int.tryParse(questId);
     if (qId == null) return;
 
@@ -2797,12 +2847,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     try {
       await questProvider.updateQuestProgress(qId, 100);
-      
+
       if (mounted) {
         setState(() {
           _exploreCompletedToday.add(questId);
         });
-        
+
         // Celebration logic: Rationalized
         // Only confetti for high-impact achievements (>40 XP)
         if (q.xpReward >= 40) {
@@ -2815,68 +2865,66 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     } catch (_) {}
   }
 
-
-
   Widget _buildTab(int index, String label, {bool selected = false}) {
     final primary = Theme.of(context).colorScheme.primary;
     return InkWell(
       onTap: () {
-          if (_tabIndex == index) return;
-          HapticFeedback.selectionClick();
-          SystemSound.play(SystemSoundType.click);
-          if (kDebugMode) {
-            try {
-              debugPrint('[Tabs] switch to index=$index -> clearing pill');
-            } catch (_) {}
-          }
-          _removeTimerPill();
-          setState(() {
-            _tabIndex = index;
-          });
-          // Telemetry: log Explore tab view
-          if (index == 1) {
-            try {
-              logAnalyticsEvent('quest_view', metadata: {
-                'surface': 'wellness_dashboard',
-                'variant': 'explore',
-                'tag': 'explore_tab',
-                'ts': DateTime.now().millisecondsSinceEpoch,
-                'ui': 'tab_switch',
-              });
-            } catch (_) {}
-          }
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
-          decoration: BoxDecoration(
-            color: selected ? primary : Colors.white,
-            borderRadius: BorderRadius.circular(22.h),
-            border: Border.all(color: const Color(0xFFE0E6EE)),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: primary.withValues(alpha: 0.18),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    )
-                  ]
-                : [],
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyleHelper.instance.headline21Inter.copyWith(
-                fontFamily: CoreTextStyles
-                    .TextStyleHelper.instance.headline24Bold.fontFamily,
-                color: selected ? Colors.white : const Color(0xFF47505E),
-                fontWeight: FontWeight.w700,
-              ),
+        if (_tabIndex == index) return;
+        HapticFeedback.selectionClick();
+        SystemSound.play(SystemSoundType.click);
+        if (kDebugMode) {
+          try {
+            debugPrint('[Tabs] switch to index=$index -> clearing pill');
+          } catch (_) {}
+        }
+        _removeTimerPill();
+        setState(() {
+          _tabIndex = index;
+        });
+        // Telemetry: log Explore tab view
+        if (index == 1) {
+          try {
+            logAnalyticsEvent('quest_view', metadata: {
+              'surface': 'wellness_dashboard',
+              'variant': 'explore',
+              'tag': 'explore_tab',
+              'ts': DateTime.now().millisecondsSinceEpoch,
+              'ui': 'tab_switch',
+            });
+          } catch (_) {}
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: selected ? primary : Colors.white,
+          borderRadius: BorderRadius.circular(22.h),
+          border: Border.all(color: const Color(0xFFE0E6EE)),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ]
+              : [],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyleHelper.instance.headline21Inter.copyWith(
+              fontFamily: CoreTextStyles
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
+              color: selected ? Colors.white : const Color(0xFF47505E),
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildTabsSection() {
@@ -2900,7 +2948,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Explore tab content (header + category filters + placeholder grid)
   Widget _buildExploreSection() {
     final qp = context.watch<QuestProvider>();
-    
+
     // Filter categories to only those with available quests
     final activeCats = _exploreCats.where((cat) {
       if (cat == 'All') return true;
@@ -2913,7 +2961,9 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         ? activeCats
         : activeCats.where((c) => c == _exploreFilter).toList();
     // Keep XP display consistent with Today tab
-    final int xpToday = qp.quests.where((q) => q.isCompleted).fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
+    final int xpToday = qp.quests
+        .where((q) => q.isCompleted)
+        .fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
     final int lifetimeXp = qp.totalXP;
     // Streak values for header (No-Guilt)
     final int streakDays = qp.streak;
@@ -3011,7 +3061,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           border: Border.all(color: const Color(0xFFE0E6EE)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: _whiteAlpha),
+                              color:
+                                  Colors.black.withValues(alpha: _whiteAlpha),
                               blurRadius: _whiteBlur,
                               offset: const Offset(0, 4),
                             ),
@@ -3047,7 +3098,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           border: Border.all(color: const Color(0xFFE0E6EE)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: _whiteAlpha),
+                              color:
+                                  Colors.black.withValues(alpha: _whiteAlpha),
                               blurRadius: _whiteBlur,
                               offset: const Offset(0, 4),
                             ),
@@ -3129,7 +3181,11 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
           final questProvider = context.watch<QuestProvider>();
           final items = (_exploreFilter == 'All')
               ? questProvider.quests
-              : questProvider.quests.where((q) => (q.type ?? '').toLowerCase() == _exploreFilter.toLowerCase()).toList();
+              : questProvider.quests
+                  .where((q) =>
+                      (q.type ?? '').toLowerCase() ==
+                      _exploreFilter.toLowerCase())
+                  .toList();
 
           if (questProvider.quests.isEmpty) {
             return Container(
@@ -3303,5 +3359,3 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     );
   }
 }
-
-

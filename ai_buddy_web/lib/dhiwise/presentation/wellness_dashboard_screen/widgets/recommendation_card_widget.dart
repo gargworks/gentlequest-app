@@ -64,7 +64,8 @@ class _RecommendationCardWidgetState extends State<RecommendationCardWidget> {
           onTap: widget.onTap,
           onHighlightChanged: (v) => setState(() => _pressed = v),
           borderRadius: radius,
-          splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+          splashColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
           highlightColor: Colors.transparent,
           child: AnimatedScale(
             scale: _pressed ? 0.985 : (_hover ? 1.005 : 1.0),

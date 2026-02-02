@@ -181,7 +181,7 @@ class ApiService {
 
   /// Report outcome when user interacts with an exercise.
   /// Used for session-level tracking and analytics to improve interventions.
-  /// 
+  ///
   /// [exerciseType] - Type of exercise: 'breathing', 'grounding', 'journaling'
   /// [outcome] - User action: 'started', 'completed', 'skipped'
   /// [interventionId] - Optional: specific intervention ID from backend
@@ -495,7 +495,8 @@ class ApiService {
         try {
           parsedExercise = InteractiveExercise.fromJson({
             'type': data['exercise_type'], // Top-level type
-            ...(data['exercise'] as Map<String, dynamic>), // Merge exercise data
+            ...(data['exercise']
+                as Map<String, dynamic>), // Merge exercise data
           });
           if (kDebugMode) {
             debugPrint('🧩 DEBUG: Parsed exercise: ${parsedExercise.name}');
@@ -585,10 +586,12 @@ class ApiService {
   // ============================================================================
 
   /// Get clinical assessment questions (phq9 or gad7)
-  Future<Map<String, dynamic>> getClinicalAssessmentQuestions(String assessmentType) async {
+  Future<Map<String, dynamic>> getClinicalAssessmentQuestions(
+      String assessmentType) async {
     return _retryOperation(() async {
       await _getSessionId();
-      final response = await _dio.get('/api/assessment/$assessmentType/questions');
+      final response =
+          await _dio.get('/api/assessment/$assessmentType/questions');
       return response.data as Map<String, dynamic>;
     });
   }

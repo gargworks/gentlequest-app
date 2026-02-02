@@ -87,7 +87,8 @@ class QuestCardWidget extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFCC00).withValues(alpha: 0.15),
+                            color:
+                                const Color(0xFFFFCC00).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                                 color: const Color(0xFFFFCC00), width: 1),
@@ -97,7 +98,8 @@ class QuestCardWidget extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFD6A200), // Darker Gold for legibility
+                              color: Color(
+                                  0xFFD6A200), // Darker Gold for legibility
                               letterSpacing: 0.5,
                             ),
                           ),

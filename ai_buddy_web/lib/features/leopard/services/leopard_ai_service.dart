@@ -20,7 +20,6 @@ class LeopardAiService {
 
       // 3. Parse JSON
       return _parseResponse(rawContent);
-
     } catch (e) {
       if (kDebugMode) {
         print("🔴 LEOPARD AI ERROR: $e");
@@ -42,8 +41,11 @@ USER INPUT TARGET:
   LeopardQuest _parseResponse(String rawContent) {
     try {
       // Aggressive cleaning of Markdown code blocks if the AI slips up
-      String cleaned = rawContent.replaceAll(RegExp(r'```json'), '').replaceAll(RegExp(r'```'), '').trim();
-      
+      String cleaned = rawContent
+          .replaceAll(RegExp(r'```json'), '')
+          .replaceAll(RegExp(r'```'), '')
+          .trim();
+
       final Map<String, dynamic> jsonMap = jsonDecode(cleaned);
       return LeopardQuest.fromJson(jsonMap);
     } catch (e) {
@@ -55,22 +57,23 @@ USER INPUT TARGET:
     return LeopardQuest(
       id: "fallback_001",
       title: "PROTOCOL: MANUAL OVERRIDE",
-      narrative: "Communication link unstable. Defaulting to manual survival protocols. You must stabilize the system yourself.",
+      narrative:
+          "Communication link unstable. Defaulting to manual survival protocols. You must stabilize the system yourself.",
       bossName: "The Signal Noise",
       heroArchetype: "System Operator",
       xpReward: 50,
       steps: [
         QuestStep(
-           id: "f1",
-           title: "Breathe",
-           instruction: "Take one deep breath. Hold for 4 seconds. Exhale.",
-           type: "Physical",
+          id: "f1",
+          title: "Breathe",
+          instruction: "Take one deep breath. Hold for 4 seconds. Exhale.",
+          type: "Physical",
         ),
         QuestStep(
-           id: "f2",
-           title: "Reboot",
-           instruction: "Drink a glass of water to reset biological sensors.",
-           type: "Physical",
+          id: "f2",
+          title: "Reboot",
+          instruction: "Drink a glass of water to reset biological sensors.",
+          type: "Physical",
         )
       ],
     );

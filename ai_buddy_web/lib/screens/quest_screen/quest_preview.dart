@@ -333,7 +333,8 @@ class QuestsHomeScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(quest.category).withValues(alpha: 0.2),
+                      color: _getCategoryColor(quest.category)
+                          .withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(quest.icon,

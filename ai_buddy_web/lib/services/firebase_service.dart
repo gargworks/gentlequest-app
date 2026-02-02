@@ -33,7 +33,7 @@ class FirebaseService {
     try {
       await Firebase.initializeApp(options: firebaseOptions);
       _analytics = FirebaseAnalytics.instance;
-      
+
       // FirebaseCrashlytics is NOT supported on web - only initialize on mobile
       if (!kIsWeb) {
         _crashlytics = FirebaseCrashlytics.instance;

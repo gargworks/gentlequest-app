@@ -19,14 +19,15 @@ class _LeopardShellState extends State<LeopardShell> {
   final MetaphorMapper _mapper = MetaphorMapper();
   final FirebaseService _firebase = FirebaseService();
   late ConfettiController _confettiController;
-  
+
   LeopardQuest? _currentQuest;
   bool _isGenerating = false;
 
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 2));
   }
 
   @override
@@ -75,7 +76,7 @@ class _LeopardShellState extends State<LeopardShell> {
   void _reset() {
     setState(() {
       _currentQuest = null;
-    _stressController.clear();
+      _stressController.clear();
     });
   }
 
@@ -84,7 +85,8 @@ class _LeopardShellState extends State<LeopardShell> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212), // Dark Mode "Gym" Vibe
       appBar: AppBar(
-        title: const Text("GentleQuest // LEOPARD", style: TextStyle(color: Colors.white)),
+        title: const Text("GentleQuest // LEOPARD",
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -105,14 +107,16 @@ class _LeopardShellState extends State<LeopardShell> {
                 children: [
                   if (_currentQuest == null && !_isGenerating) ...[
                     // INPUT STATE
-                    const Icon(Icons.fitness_center, size: 64, color: Color(0xFF667EEA)),
+                    const Icon(Icons.fitness_center,
+                        size: 64, color: Color(0xFF667EEA)),
                     const SizedBox(height: 20),
                     Text(
                       "What is the threat vector?",
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white70,
-                        fontFamily: 'Inter',
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Colors.white70,
+                                fontFamily: 'Inter',
+                              ),
                     ),
                     const SizedBox(height: 20),
                     TextField(
@@ -120,7 +124,8 @@ class _LeopardShellState extends State<LeopardShell> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "e.g. 'My boss is overwhelming me'",
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.3)),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.05),
                         border: OutlineInputBorder(
@@ -134,12 +139,13 @@ class _LeopardShellState extends State<LeopardShell> {
                       onPressed: _generateQuest,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF667EEA),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 16),
                       ),
-                      child: const Text("GENERATE PROTOCOL", style: TextStyle(color: Colors.white)),
+                      child: const Text("GENERATE PROTOCOL",
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ],
-
                   if (_isGenerating) ...[
                     // LOADING STATE (The Matrix Reveal Placeholder)
                     const CircularProgressIndicator(color: Color(0xFF667EEA)),
@@ -147,13 +153,11 @@ class _LeopardShellState extends State<LeopardShell> {
                     const Text(
                       "ANALYZING STRESS VECTORS...",
                       style: TextStyle(
-                        color: Color(0xFF667EEA), 
-                        letterSpacing: 2.0,
-                        fontWeight: FontWeight.bold
-                      ),
+                          color: Color(0xFF667EEA),
+                          letterSpacing: 2.0,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
-
                   if (_currentQuest != null) ...[
                     // RESULT STATE (The Final Animated Card)
                     QuestCard(
@@ -166,7 +170,7 @@ class _LeopardShellState extends State<LeopardShell> {
               ),
             ),
           ),
-          
+
           // CONFETTI OVERLAY
           Align(
             alignment: Alignment.topCenter,
@@ -174,7 +178,13 @@ class _LeopardShellState extends State<LeopardShell> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple
+              ],
             ),
           ),
         ],
@@ -201,15 +211,15 @@ class _LeopardShellState extends State<LeopardShell> {
 
     final story = _mapper.aiService.generateSuccessStory(quest);
     Clipboard.setData(ClipboardData(text: story)).then((_) {
-       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(
-             content: Text("Protocol victory copied to clipboard! 🛡️"),
-             backgroundColor: Color(0xFF667EEA),
-             behavior: SnackBarBehavior.floating,
-           ),
-         );
-       }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Protocol victory copied to clipboard! 🛡️"),
+            backgroundColor: Color(0xFF667EEA),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
   }
 }
@@ -231,7 +241,8 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+        style:
+            TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
       ),
     );
   }

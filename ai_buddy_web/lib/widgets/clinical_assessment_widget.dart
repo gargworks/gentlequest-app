@@ -14,17 +14,18 @@ class ClinicalAssessmentWidget extends StatefulWidget {
   });
 
   @override
-  State<ClinicalAssessmentWidget> createState() => _ClinicalAssessmentWidgetState();
+  State<ClinicalAssessmentWidget> createState() =>
+      _ClinicalAssessmentWidgetState();
 }
 
 class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
   final ApiService _apiService = ApiService();
-  
+
   bool _isLoading = true;
   bool _isSubmitting = false;
   bool _hasError = false;
   String? _errorMessage;
-  
+
   // Assessment data
   String _assessmentName = '';
   String _assessmentDescription = '';
@@ -32,7 +33,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
   List<Map<String, dynamic>> _options = [];
   List<int> _responses = [];
   int _currentQuestionIndex = 0;
-  
+
   // Result data
   Map<String, dynamic>? _result;
 
@@ -49,8 +50,9 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
     });
 
     try {
-      final data = await _apiService.getClinicalAssessmentQuestions(widget.assessmentType);
-      
+      final data = await _apiService
+          .getClinicalAssessmentQuestions(widget.assessmentType);
+
       setState(() {
         _assessmentName = data['name'] ?? '';
         _assessmentDescription = data['description'] ?? '';
@@ -247,12 +249,12 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1) 
+                  color: isSelected
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                       : Colors.grey[100],
                   border: Border.all(
-                    color: isSelected 
-                        ? Theme.of(context).primaryColor 
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
                         : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
@@ -265,18 +267,19 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                       height: 24,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected 
-                            ? Theme.of(context).primaryColor 
+                        color: isSelected
+                            ? Theme.of(context).primaryColor
                             : Colors.transparent,
                         border: Border.all(
-                          color: isSelected 
-                              ? Theme.of(context).primaryColor 
+                          color: isSelected
+                              ? Theme.of(context).primaryColor
                               : Colors.grey,
                           width: 2,
                         ),
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
                           : null,
                     ),
                     const SizedBox(width: 12),
@@ -285,7 +288,8 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                         label,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -342,7 +346,8 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
     final maxScore = _result!['max_score'] as int;
     final severity = _result!['severity'] as String;
     final message = _result!['message'] as String;
-    final recommendations = List<String>.from(_result!['recommendations'] ?? []);
+    final recommendations =
+        List<String>.from(_result!['recommendations'] ?? []);
     final requiresFollowUp = _result!['requires_follow_up'] == true;
 
     return SingleChildScrollView(
@@ -389,7 +394,8 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: _getSeverityColor(severity),
                     borderRadius: BorderRadius.circular(20),
@@ -454,16 +460,19 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
             ),
             const SizedBox(height: 12),
             ...recommendations.map((rec) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.arrow_right, size: 20, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(rec, style: const TextStyle(fontSize: 14))),
-                ],
-              ),
-            )),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.arrow_right,
+                          size: 20, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child:
+                              Text(rec, style: const TextStyle(fontSize: 14))),
+                    ],
+                  ),
+                )),
           ],
 
           const SizedBox(height: 32),

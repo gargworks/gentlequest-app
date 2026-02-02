@@ -19,7 +19,8 @@ class ChatProvider extends ChangeNotifier {
   final List<StreamSubscription<Map<String, dynamic>>> _subscriptions = [];
   final List<void Function()> _closers = [];
 
-  bool _isOptimisticGreeting = false; // Track if we are showing the temporary local greeting
+  bool _isOptimisticGreeting =
+      false; // Track if we are showing the temporary local greeting
 
   // Warm greeting variations for personality
   static const List<String> _greetings = [
@@ -107,7 +108,9 @@ class ChatProvider extends ChangeNotifier {
   Future<void> _updateGreetingWithContext() async {
     final contextualGreeting = await _getGreetingWithContext();
     // Only update if we are still showing the optimistic greeting
-    if (_isOptimisticGreeting && _messages.isNotEmpty && !_messages.first.isUser) {
+    if (_isOptimisticGreeting &&
+        _messages.isNotEmpty &&
+        !_messages.first.isUser) {
       // Only update if it's different from the sync greeting
       if (_messages.first.content != contextualGreeting) {
         _messages[0] = Message(
@@ -290,8 +293,8 @@ class ChatProvider extends ChangeNotifier {
         if (type == 'meta') {
           metaRisk = _mapRisk(event['risk_level']) ?? RiskLevel.none;
           metaCrisisMsg = event['crisis_msg'] as String?;
-          metaCrisisNumbers = (event['crisis_numbers'] as List?)
-              ?.cast<Map<String, dynamic>>();
+          metaCrisisNumbers =
+              (event['crisis_numbers'] as List?)?.cast<Map<String, dynamic>>();
 
           if (event['interactive'] == true && event['exercise'] != null) {
             try {
@@ -300,7 +303,8 @@ class ChatProvider extends ChangeNotifier {
                 ...(event['exercise'] as Map<String, dynamic>),
               });
             } catch (e) {
-              if (kDebugMode) debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
+              if (kDebugMode)
+                debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
             }
           }
 

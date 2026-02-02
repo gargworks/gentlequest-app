@@ -1,7 +1,8 @@
 class LeopardQuest {
   final String id;
   final String title; // e.g. "Protocol: Iron Shield"
-  final String narrative; // "The Voice of Authority attacks. Defend the perimeter."
+  final String
+      narrative; // "The Voice of Authority attacks. Defend the perimeter."
   final String bossName; // "The Voice of Authority"
   final String heroArchetype; // "Stoic Defender"
   final int xpReward; // 150
@@ -54,7 +55,7 @@ class QuestStep {
       title: json['title'] as String? ?? 'Action',
       instruction: json['instruction'] as String? ?? '',
       type: json['type'] as String? ?? 'Physical',
-      isCompleted: false, 
+      isCompleted: false,
     );
   }
 }

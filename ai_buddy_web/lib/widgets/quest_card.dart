@@ -77,7 +77,9 @@ class QuestCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.grey.shade200 : _getDifficultyColor(),
+                  color: isCompleted
+                      ? Colors.grey.shade200
+                      : _getDifficultyColor(),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -86,7 +88,7 @@ class QuestCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Middle: Content
               Expanded(
                 child: Column(
@@ -97,7 +99,8 @@ class QuestCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        decoration:
+                            isCompleted ? TextDecoration.lineThrough : null,
                         color: isCompleted ? Colors.grey : Colors.black87,
                       ),
                     ),
@@ -106,7 +109,9 @@ class QuestCard extends StatelessWidget {
                       quest.description,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isCompleted ? Colors.grey.shade400 : Colors.grey.shade600,
+                        color: isCompleted
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -114,7 +119,7 @@ class QuestCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Right: Rewards or Loading
               if (isLoading)
                 const Padding(
@@ -127,7 +132,8 @@ class QuestCard extends StatelessWidget {
                 )
               else if (!isCompleted)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.purple.shade50,
                     borderRadius: BorderRadius.circular(12),

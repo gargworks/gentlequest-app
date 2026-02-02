@@ -45,11 +45,10 @@ class _LeopardGateState extends State<LeopardGate> {
     if (!FeatureFlags.enableLeopardMode) {
       // LEGACY MODE: The Old World
       return dhiwise_sizer.Sizer(
-        builder: (context, orientation, deviceType) =>
-            WellnessDashboardScreen(
-              showBottomNav: widget.showBottomNav,
-              reselect: widget.reselect,
-            ),
+        builder: (context, orientation, deviceType) => WellnessDashboardScreen(
+          showBottomNav: widget.showBottomNav,
+          reselect: widget.reselect,
+        ),
       );
     }
 
@@ -60,7 +59,8 @@ class _LeopardGateState extends State<LeopardGate> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Color(0xFF121212),
-            body: Center(child: CircularProgressIndicator(color: Color(0xFF667EEA))),
+            body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF667EEA))),
           );
         }
 
