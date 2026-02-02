@@ -15,13 +15,12 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-
 def upgrade():
     # Create quest_type enum
-    op.execute("CREATE TYPE questtype AS ENUM ('task', 'tip', 'check_in', 'progress')")
+    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'questtype') THEN CREATE TYPE questtype AS ENUM ('task', 'tip', 'check_in', 'progress'); END IF; END $$;")
     
     # Create quest_status enum
-    op.execute("CREATE TYPE queststatus AS ENUM ('available', 'in_progress', 'completed', 'expired')")
+    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'queststatus') THEN CREATE TYPE queststatus AS ENUM ('available', 'in_progress', 'completed', 'expired'); END IF; END $$;")
     
     # Create quests table
     op.create_table(

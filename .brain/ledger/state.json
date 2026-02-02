@@ -1,52 +1,45 @@
 {
   "current_sprint": {
-    "name": "Phase 73: Strategic Planning 2026",
-    "goal": "Prepare GTM strategy for Feb 1 execution. No product code until then.",
-    "constraint": "NO_PRODUCT_CODE_UNTIL_FEB_1",
+    "name": "Phase 74: Global Production Restoration",
+    "goal": "Restore Web, iOS, and Android to full production status following infrastructure unblocking. No new product features.",
+    "constraint": "STABILITY_CHECK_ONLY",
     "tasks": [
-      "University outreach email sequence (DONE)",
-      "University one-pager (DONE)",
-      "NIMH SBIR/STTR research + timeline (DONE)",
-      "One Mind Accelerator research (DONE - missed 2026, target 2027)",
-      "Target university list with warm intros (PENDING)",
-      "SBIR Specific Aims draft (PENDING - due Mar 7)"
+      "Verify Render Web Service & DB Health",
+      "Verify App Routing (Host Header Logic)",
+      "Trigger Mobile Release (iOS/Android)",
+      "Execute Production Self-Test (Day 1 Protocol)"
     ]
   },
   "active_agents": [
-    "Strategic Co-Founder (Windsurf)",
-    "Synthesizer (Antigravity - credits exhausted)"
+    "Lead Systems Architect (Antigravity)",
+    "Strategic Co-Founder (Windsurf)"
   ],
   "top_3_leverage_actions": [
-    "Identify 10 target universities with warm connections",
-    "Draft SBIR Specific Aims page",
-    "Contact NIMH program officer for pre-submission consult"
+    "Confirm GitHub Actions Billing Status",
+    "Deploy latest stable build to Production",
+    "Verify end-to-end user flows (Web & Mobile)"
   ],
   "billion_dollar_thesis": "Orchestration logic IS the moat",
-  "core_gap": "Massive execution. Zero users. 72+ phases complete.",
+  "core_gap": "Infrastructure stability. Need confirmed reliable pipelines.",
   "feb_1_priorities": [
     "Launch university outreach (5-10 personalized emails)",
     "Close first pilot LOI by Feb 28",
     "Submit NIMH SBIR Phase I by Apr 5"
   ],
   "planning_session": {
-    "date": "2026-01-17",
-    "documents_created": 10,
+    "date": "2026-02-02",
+    "documents_created": 0,
     "index": ".brain/artifacts/planning/INDEX.md",
-    "next_action": "validation_self_test",
-    "status": "complete"
+    "next_action": "infrastructure_audit",
+    "status": "in_progress"
   },
   "validation_plan": {
-    "end": "2026-01-24",
-    "start": "2026-01-17",
+    "end": "2026-02-03",
+    "start": "2026-02-02",
     "steps": [
-      "product_self_test",
-      "wysa_comparison",
-      "informational_call",
-      "go_no_go_decision"
+      "render_health_check",
+      "mobile_pipeline_test",
+      "prod_smoke_test"
     ]
-  },
-  "batch_2_test_status": "in_progress",
-  "test_timestamp": "2026-01-24T03:13:30Z",
-  "last_test_tool": "brain_update_state",
-  "smoke_test_batch": 2
+  }
 }

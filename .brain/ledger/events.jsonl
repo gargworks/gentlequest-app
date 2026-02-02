@@ -1244,3 +1244,34 @@
 {"event_id": "evt-1769831919-d4408f70", "timestamp": "2026-01-31T03:58:39.542604Z", "type": "engram_written", "emitter": "brain_write_engram", "data": {"key": "architectural_decision", "context": "Architecture", "intensity": 8}, "description": ""}
 {"event_id": "evt-1769832004-7ac26e15", "timestamp": "2026-01-31T04:00:04.708471Z", "type": "engram_written", "emitter": "brain_write_engram", "data": {"key": "launch_date", "context": "Strategy", "intensity": 10}, "description": ""}
 {"event_id": "evt-1769832005-1ed590d6", "timestamp": "2026-01-31T04:00:05.486543Z", "type": "engram_written", "emitter": "brain_write_engram", "data": {"key": "lunch_order", "context": "Decision", "intensity": 1}, "description": ""}
+{
+     "timestamp": "2026-02-01T23:50:58Z",
+     "agent": "CODE_FORCE",
+     "event_type": "release_force_pushed",
+     "description": "Force pushed v0.6.1 to GitHub after resolving rebase conflict with archived files",
+     "commit_hash": "7c578383",
+     "github_status": "force_pushed",
+     "pypi_status": "published",
+     "resolution": "Aborted rebase, force pushed release as source of truth"
+   }
+{
+     "timestamp": "2026-02-01T23:51:23Z",
+     "agent": "CODE_FORCE",
+     "event_type": "release_force_pushed",
+     "description": "Force pushed v0.6.1 to GitHub after resolving rebase conflict with archived files",
+     "commit_hash": "7c578383",
+     "github_status": "force_pushed",
+     "pypi_status": "published",
+     "resolution": "Aborted rebase, force pushed release as source of truth"
+   }
+{
+     "timestamp": "2026-02-01T23:58:34Z",
+     "agent": "CODE_FORCE",
+     "event_type": "repository_repair",
+     "description": "Force pushed isolated mcp-server-nucleus subtree to GitHub to correct monorepo mix-up",
+     "commit_hash": "FILL_FROM_OUTPUT",
+     "github_status": "repaired",
+     "pypi_status": "published",
+     "resolution": "Subtree split and force push"
+   }
+{"event_id": "evt-1769992207-86889720", "timestamp": "2026-02-02T00:30:07.560739Z", "type": "health_status", "emitter": "health_check", "data": {"status": "critical", "issues_count": 2, "timestamp": "2026-02-02T06:00:03.364037"}, "description": "Health check: critical"}

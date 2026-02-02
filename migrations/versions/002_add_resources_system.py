@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     # Create resource_category enum
-    op.execute("CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external')")
+    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'resourcecategory') THEN CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external'); END IF; END $$;")
     
     # Create resources table
     op.create_table(

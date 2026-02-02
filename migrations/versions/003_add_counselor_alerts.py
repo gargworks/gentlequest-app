@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     # Create alert_severity enum
-    op.execute("CREATE TYPE alertseverity AS ENUM ('low', 'medium', 'high', 'critical')")
+    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'alertseverity') THEN CREATE TYPE alertseverity AS ENUM ('low', 'medium', 'high', 'critical'); END IF; END $$;")
     
     # Create university_counselors table
     op.create_table(

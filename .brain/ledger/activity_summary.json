@@ -13,18 +13,18 @@
     "2026-01-24": 31,
     "2026-01-25": 2
   },
-  "updated_at": "2026-01-31T04:00:05.486543Z",
+  "updated_at": "2026-02-02T00:30:07.560739Z",
   "last_event": {
-    "event_id": "evt-1769832005-1ed590d6",
-    "timestamp": "2026-01-31T04:00:05.486543Z",
-    "type": "engram_written",
-    "emitter": "brain_write_engram",
+    "event_id": "evt-1769992207-86889720",
+    "timestamp": "2026-02-02T00:30:07.560739Z",
+    "type": "health_status",
+    "emitter": "health_check",
     "data": {
-      "key": "lunch_order",
-      "context": "Decision",
-      "intensity": 1
+      "status": "critical",
+      "issues_count": 2,
+      "timestamp": "2026-02-02T06:00:03.364037"
     },
-    "description": ""
+    "description": "Health check: critical"
   },
-  "event_count": 147
+  "event_count": 148
 }
