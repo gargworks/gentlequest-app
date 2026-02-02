@@ -22,56 +22,64 @@ def upgrade():
     # Create quest_status enum
     op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'queststatus') THEN CREATE TYPE queststatus AS ENUM ('available', 'in_progress', 'completed', 'expired'); END IF; END $$;")
     
+    # Inspector to check for existing tables
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     # Create quests table
-    op.create_table(
-        'quests',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('title', sa.String(200), nullable=False),
-        sa.Column('description', sa.String(500), nullable=False),
-        sa.Column('quest_type', postgresql.ENUM('task', 'tip', 'check_in', 'progress', name='questtype', create_type=False), nullable=False),
-        sa.Column('xp_reward', sa.Integer(), nullable=False, server_default='10'),
-        sa.Column('difficulty', sa.Integer(), nullable=False, server_default='1'),
-        sa.Column('week_number', sa.Integer(), nullable=False),
-        sa.Column('year', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_quests_week', 'quests', ['week_number', 'year'])
+    if 'quests' not in existing_tables:
+        op.create_table(
+            'quests',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('title', sa.String(200), nullable=False),
+            sa.Column('description', sa.String(500), nullable=False),
+            sa.Column('quest_type', postgresql.ENUM('task', 'tip', 'check_in', 'progress', name='questtype', create_type=False), nullable=False),
+            sa.Column('xp_reward', sa.Integer(), nullable=False, server_default='10'),
+            sa.Column('difficulty', sa.Integer(), nullable=False, server_default='1'),
+            sa.Column('week_number', sa.Integer(), nullable=False),
+            sa.Column('year', sa.Integer(), nullable=False),
+            sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('idx_quests_week', 'quests', ['week_number', 'year'])
     
     # Create quest_progress table
-    op.create_table(
-        'quest_progress',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('session_id', sa.String(255), nullable=False),
-        sa.Column('quest_id', sa.Integer(), nullable=False),
-        sa.Column('status', postgresql.ENUM('available', 'in_progress', 'completed', 'expired', name='queststatus', create_type=False), nullable=False, server_default='available'),
-        sa.Column('started_at', sa.DateTime()),
-        sa.Column('completed_at', sa.DateTime()),
-        sa.ForeignKeyConstraint(['session_id'], ['user_sessions.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['quest_id'], ['quests.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_quest_progress_session', 'quest_progress', ['session_id'])
-    op.create_index('idx_quest_progress_quest', 'quest_progress', ['quest_id'])
-    op.create_index('idx_quest_progress_status', 'quest_progress', ['session_id', 'status'])
+    if 'quest_progress' not in existing_tables:
+        op.create_table(
+            'quest_progress',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('session_id', sa.String(255), nullable=False),
+            sa.Column('quest_id', sa.Integer(), nullable=False),
+            sa.Column('status', postgresql.ENUM('available', 'in_progress', 'completed', 'expired', name='queststatus', create_type=False), nullable=False, server_default='available'),
+            sa.Column('started_at', sa.DateTime()),
+            sa.Column('completed_at', sa.DateTime()),
+            sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['quest_id'], ['quests.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('idx_quest_progress_session', 'quest_progress', ['session_id'])
+        op.create_index('idx_quest_progress_quest', 'quest_progress', ['quest_id'])
+        op.create_index('idx_quest_progress_status', 'quest_progress', ['session_id', 'status'])
     
     # Create user_profiles table
-    op.create_table(
-        'user_profiles',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('session_id', sa.String(255), nullable=False),
-        sa.Column('xp', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('level', sa.Integer(), nullable=False, server_default='1'),
-        sa.Column('streak_days', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('last_activity_date', sa.DateTime()),
-        sa.Column('badges', sa.String(500), server_default=''),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.ForeignKeyConstraint(['session_id'], ['user_sessions.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('session_id')
-    )
-    op.create_index('idx_user_profiles_session', 'user_profiles', ['session_id'])
+    if 'user_profiles' not in existing_tables:
+        op.create_table(
+            'user_profiles',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('session_id', sa.String(255), nullable=False),
+            sa.Column('xp', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('level', sa.Integer(), nullable=False, server_default='1'),
+            sa.Column('streak_days', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('last_activity_date', sa.DateTime()),
+            sa.Column('badges', sa.String(500), server_default=''),
+            sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('session_id')
+        )
+        op.create_index('idx_user_profiles_session', 'user_profiles', ['session_id'])
 
 
 def downgrade():

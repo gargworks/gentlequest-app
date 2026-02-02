@@ -20,45 +20,52 @@ def upgrade():
     # Create resource_category enum
     op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'resourcecategory') THEN CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external'); END IF; END $$;")
     
+    # Inspector to check for existing tables
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     # Create resources table
-    op.create_table(
-        'resources',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('title', sa.String(200), nullable=False),
-        sa.Column('description', sa.String(1000), nullable=False),
-        sa.Column('url', sa.String(500)),
-        sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory', create_type=False), nullable=False),
-        sa.Column('country', sa.String(10)),
-        sa.Column('university_id', sa.Integer()),
-        sa.Column('tags', sa.String(500)),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.Column('is_active', sa.Boolean(), server_default='true'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_resources_category', 'resources', ['category'])
-    op.create_index('idx_resources_country', 'resources', ['country'])
-    op.create_index('idx_resources_active', 'resources', ['is_active'])
-    
-    # Create full-text search index for resources
-    op.execute("""
-        CREATE INDEX idx_resources_search ON resources 
-        USING GIN(to_tsvector('english', title || ' ' || description || ' ' || COALESCE(tags, '')))
-    """)
+    if 'resources' not in existing_tables:
+        op.create_table(
+            'resources',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('title', sa.String(200), nullable=False),
+            sa.Column('description', sa.String(1000), nullable=False),
+            sa.Column('url', sa.String(500)),
+            sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory', create_type=False), nullable=False),
+            sa.Column('country', sa.String(10)),
+            sa.Column('university_id', sa.Integer()),
+            sa.Column('tags', sa.String(500)),
+            sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.Column('is_active', sa.Boolean(), server_default='true'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('idx_resources_category', 'resources', ['category'])
+        op.create_index('idx_resources_country', 'resources', ['country'])
+        op.create_index('idx_resources_active', 'resources', ['is_active'])
+        
+        # Create full-text search index for resources
+        op.execute("""
+            CREATE INDEX idx_resources_search ON resources 
+            USING GIN(to_tsvector('english', title || ' ' || description || ' ' || COALESCE(tags, '')))
+        """)
     
     # Create user_resource_interactions table
-    op.create_table(
-        'user_resource_interactions',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('session_id', sa.String(255), nullable=False),
-        sa.Column('resource_id', sa.Integer(), nullable=False),
-        sa.Column('viewed_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_interactions_session', 'user_resource_interactions', ['session_id'])
-    op.create_index('idx_interactions_resource', 'user_resource_interactions', ['resource_id'])
-    op.create_index('idx_interactions_viewed_at', 'user_resource_interactions', ['viewed_at'])
+    if 'user_resource_interactions' not in existing_tables:
+        op.create_table(
+            'user_resource_interactions',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('session_id', sa.String(255), nullable=False),
+            sa.Column('resource_id', sa.Integer(), nullable=False),
+            sa.Column('viewed_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('idx_interactions_session', 'user_resource_interactions', ['session_id'])
+        op.create_index('idx_interactions_resource', 'user_resource_interactions', ['resource_id'])
+        op.create_index('idx_interactions_viewed_at', 'user_resource_interactions', ['viewed_at'])
 
 
 def downgrade():

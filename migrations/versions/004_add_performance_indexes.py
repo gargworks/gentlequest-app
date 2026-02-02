@@ -17,39 +17,41 @@ depends_on = None
 
 def upgrade():
     # Messages table indexes (for chat history queries)
-    op.create_index('idx_messages_session_timestamp', 'messages', ['session_id', 'timestamp'], 
-                    postgresql_using='btree')
-    op.create_index('idx_messages_timestamp', 'messages', ['timestamp'])
+    op.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_timestamp ON messages USING btree (session_id, timestamp)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)")
     
     # Mood entries indexes (for mood history and analytics)
-    op.create_index('idx_mood_entries_session_timestamp', 'mood_entries', ['session_id', 'timestamp'])
-    op.create_index('idx_mood_entries_timestamp', 'mood_entries', ['timestamp'])
+    op.execute("CREATE INDEX IF NOT EXISTS idx_mood_entries_session_timestamp ON mood_entries (session_id, timestamp)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_mood_entries_timestamp ON mood_entries (timestamp)")
     
     # Clinical assessments indexes (for outcome tracking)
-    op.create_index('idx_clinical_assessments_session', 'clinical_assessments', ['session_id', 'timestamp'])
-    op.create_index('idx_clinical_assessments_type', 'clinical_assessments', ['assessment_type', 'timestamp'])
+    # Wrap these in if exists table check because they are new tables in this sprint
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
+
+    if 'clinical_assessments' in existing_tables:
+        op.execute("CREATE INDEX IF NOT EXISTS idx_clinical_assessments_session ON clinical_assessments (session_id, timestamp)")
+        op.execute("CREATE INDEX IF NOT EXISTS idx_clinical_assessments_type ON clinical_assessments (assessment_type, timestamp)")
     
     # Crisis detections indexes (for safety monitoring)
-    op.create_index('idx_crisis_detections_session', 'crisis_detections', ['session_id', 'timestamp'])
-    op.create_index('idx_crisis_detections_risk', 'crisis_detections', ['risk_level', 'timestamp'])
+    if 'crisis_detections' in existing_tables:
+        op.execute("CREATE INDEX IF NOT EXISTS idx_crisis_detections_session ON crisis_detections (session_id, timestamp)")
+        op.execute("CREATE INDEX IF NOT EXISTS idx_crisis_detections_risk ON crisis_detections (risk_level, timestamp)")
     
     # Sessions table indexes (for cleanup and analytics)
-    op.create_index('idx_sessions_last_activity', 'sessions', ['last_activity'])
-    op.create_index('idx_sessions_created_at', 'sessions', ['created_at'])
+    op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON sessions (last_activity)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions (created_at)")
     
     # Analytics events indexes (for reporting)
-    op.create_index('idx_analytics_events_session', 'analytics_events', ['session_id', 'timestamp'])
-    op.create_index('idx_analytics_events_type', 'analytics_events', ['event_type', 'timestamp'])
+    if 'analytics_events' in existing_tables:
+        op.execute("CREATE INDEX IF NOT EXISTS idx_analytics_events_session ON analytics_events (session_id, timestamp)")
+        op.execute("CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events (event_type, timestamp)")
     
     # Intervention outcomes indexes (for effectiveness tracking)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_session_timestamp 
-        ON intervention_outcomes(session_id, timestamp)
-    """)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_type_outcome 
-        ON intervention_outcomes(exercise_type, outcome)
-    """)
+    if 'intervention_outcomes' in existing_tables:
+        op.execute("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_session_timestamp ON intervention_outcomes(session_id, timestamp)")
+        op.execute("CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_type_outcome ON intervention_outcomes(exercise_type, outcome)")
 
 
 def downgrade():
