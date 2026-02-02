@@ -159,3 +159,4 @@ jobs:
           MSG="Mobile build completed. Android artifact: $ANDROID_PRESENT, iOS artifact: $IOS_PRESENT. Tag: ${{ steps.meta.outputs.tag }}"
           PAYLOAD=$(printf '{"text":"%s"}' "${MSG//"/\"}")
           curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+ 
