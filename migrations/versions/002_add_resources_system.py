@@ -27,7 +27,7 @@ def upgrade():
         sa.Column('title', sa.String(200), nullable=False),
         sa.Column('description', sa.String(1000), nullable=False),
         sa.Column('url', sa.String(500)),
-        sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory'), nullable=False),
+        sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory', create_type=False), nullable=False),
         sa.Column('country', sa.String(10)),
         sa.Column('university_id', sa.Integer()),
         sa.Column('tags', sa.String(500)),

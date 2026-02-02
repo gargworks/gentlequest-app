@@ -44,7 +44,7 @@ def upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.String(255), nullable=False),
         sa.Column('university_id', sa.Integer()),
-        sa.Column('severity', postgresql.ENUM('low', 'medium', 'high', 'critical', name='alertseverity'), nullable=False),
+        sa.Column('severity', postgresql.ENUM('low', 'medium', 'high', 'critical', name='alertseverity', create_type=False), nullable=False),
         sa.Column('trigger_message', sa.Text(), nullable=False),
         sa.Column('conversation_excerpt', sa.Text()),
         sa.Column('risk_keywords', sa.String(500)),
