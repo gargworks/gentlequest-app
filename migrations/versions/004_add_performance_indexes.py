@@ -17,8 +17,8 @@ depends_on = None
 
 def upgrade():
     # Messages table indexes (for chat history queries)
-    op.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_timestamp ON messages USING btree (session_id, timestamp)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_session_timestamp ON chat_messages USING btree (session_id, timestamp)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages (timestamp)")
     
     # Mood entries indexes (for mood history and analytics)
     op.execute("CREATE INDEX IF NOT EXISTS idx_mood_entries_session_timestamp ON mood_entries (session_id, timestamp)")
@@ -73,5 +73,5 @@ def downgrade():
     op.drop_index('idx_mood_entries_timestamp', table_name='mood_entries')
     op.drop_index('idx_mood_entries_session_timestamp', table_name='mood_entries')
     
-    op.drop_index('idx_messages_timestamp', table_name='messages')
-    op.drop_index('idx_messages_session_timestamp', table_name='messages')
+    op.drop_index('idx_chat_messages_timestamp', table_name='chat_messages')
+    op.drop_index('idx_chat_messages_session_timestamp', table_name='chat_messages')

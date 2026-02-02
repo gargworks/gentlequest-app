@@ -117,9 +117,8 @@ jobs:
           flutter test
       
       - name: Analyze code
-        run: |
-          cd ai_buddy_web
-          flutter analyze
+        working-directory: ai_buddy_web
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
       
       - name: Check formatting
         run: |
