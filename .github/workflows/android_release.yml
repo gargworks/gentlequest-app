@@ -422,5 +422,5 @@ jobs:
           packageName: ${{ github.event.inputs.package_name || inputs.package_name }}
           releaseFiles: ${{ steps.find_aab.outputs.AAB }}
           track: ${{ github.event.inputs.track || inputs.track }}
-          status: completed
+          status: draft
           whatsNewDirectory: whatsnew
