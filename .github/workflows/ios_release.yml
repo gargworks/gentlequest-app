@@ -292,19 +292,25 @@ jobs:
           sentry-cli --auth-token "$SENTRY_AUTH_TOKEN" releases --org "$SENTRY_ORG" new "$REL" || true
           sentry-cli --auth-token "$SENTRY_AUTH_TOKEN" upload-dif --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" "${{ steps.dsym.outputs.path }}"
 
-      - name: Upload dSYMs to Crashlytics (optional)
-        if: ${{ (inputs.crashlytics_upload || github.event.inputs.crashlytics_upload) == 'true' && steps.dsym.outputs.path != '' }}
+      - name: Setup Firebase configuration
         shell: bash
         env:
           GOOGLE_SERVICES_INFO_PLIST: ${{ secrets.GOOGLE_SERVICES_INFO_PLIST }}
         run: |
           set -e
           if [ -z "$GOOGLE_SERVICES_INFO_PLIST" ]; then echo "::warning::GOOGLE_SERVICES_INFO_PLIST not set; skipping"; exit 0; fi
-          echo "$GOOGLE_SERVICES_INFO_PLIST" | base64 -d > GoogleService-Info.plist
-          if [ ! -f "${{ steps.dsym.outputs.path }}/Contents/Resources/DWARF/Runner" ]; then
-            echo "::warning::dSYM missing Runner binary; skipping Crashlytics upload"; exit 0; fi
+          mkdir -p ai_buddy_web/ios/Runner
+          echo "$GOOGLE_SERVICES_INFO_PLIST" | base64 -d > ai_buddy_web/ios/Runner/GoogleService-Info.plist
+          ls -lh ai_buddy_web/ios/Runner/GoogleService-Info.plist
+
+      - name: Upload dSYMs to Crashlytics (optional)
+        if: ${{ (inputs.crashlytics_upload || github.event.inputs.crashlytics_upload) == 'true' && steps.dsym.outputs.path != '' }}
+        shell: bash
+        run: |
+          set -e
+          if [ ! -f "ai_buddy_web/ios/Runner/GoogleService-Info.plist" ]; then echo "::warning::GoogleService-Info.plist missing; skipping Crashlytics upload"; exit 0; fi
           curl -sL https://firebase.tools | bash
-          ./firebase-crashlytics-uploader -p "${PWD}" -gsp "GoogleService-Info.plist" -pdsym "${{ steps.dsym.outputs.path }}"
+          ./firebase-crashlytics-uploader -p "${PWD}" -gsp "ai_buddy_web/ios/Runner/GoogleService-Info.plist" -pdsym "${{ steps.dsym.outputs.path }}"
 
       - name: Flutter build IPA
         working-directory: ai_buddy_web
@@ -325,10 +331,18 @@ jobs:
           # Build signed IPA if signing materials are available, otherwise build unsigned
           if [ "$WITH_SIGNING" == "true" ]; then
             echo "Building signed IPA..."
-            flutter build ipa --release --build-number "$BN" $EXPORT_OPTS
+            flutter build ipa --release --build-number "$BN" $EXPORT_OPTS \
+              --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+              --dart-define=FIREBASE_APP_ID="${{ secrets.FIREBASE_APP_ID }}" \
+              --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
+              --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
           else
             echo "Building unsigned IPA..."
-            flutter build ipa --release --no-codesign --build-number "$BN" $EXPORT_OPTS
+            flutter build ipa --release --no-codesign --build-number "$BN" $EXPORT_OPTS \
+              --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+              --dart-define=FIREBASE_APP_ID="${{ secrets.FIREBASE_APP_ID }}" \
+              --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
+              --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
           fi
 
       - name: Upload IPA artifact (if any)

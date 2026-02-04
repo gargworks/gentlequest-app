@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>app.gentlequest.www</string>
+	<string>com.gentlequest.app</string>
 	<key>PROJECT_ID</key>
 	<string>gentlequest-prod</string>
 	<key>STORAGE_BUCKET</key>

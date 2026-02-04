@@ -31,7 +31,12 @@ class FirebaseService {
     if (_initialized) return;
 
     try {
-      await Firebase.initializeApp(options: firebaseOptions);
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(options: firebaseOptions);
+        debugPrint('Firebase initialized successfully');
+      } else {
+        debugPrint('Firebase already initialized');
+      }
       _analytics = FirebaseAnalytics.instance;
 
       // FirebaseCrashlytics is NOT supported on web - only initialize on mobile
