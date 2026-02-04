@@ -62,8 +62,13 @@ android {
         applicationId appId
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 35
-        versionCode 5
-        versionName "1.2.1"
+        
+        // Dynamic versioning with early validation
+        println "GRADLE_BUILD: VERSION_CODE override = ${ciVersionCode}"
+        println "GRADLE_BUILD: VERSION_NAME override = ${ciVersionName}"
+        
+        versionCode ciVersionCode.toInteger()
+        versionName ciVersionName
     }
 
     compileOptions {
@@ -109,6 +114,18 @@ android {
             }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// FORCE Version Override: This ensures CI values win against Flutter plugin
+project.afterEvaluate {
+    if (project.hasProperty('VERSION_CODE')) {
+        android.defaultConfig.versionCode = project.property('VERSION_CODE').toInteger()
+        println "FORCED_OVERRIDE: versionCode set to ${android.defaultConfig.versionCode}"
+    }
+    if (project.hasProperty('VERSION_NAME')) {
+        android.defaultConfig.versionName = project.property('VERSION_NAME').toString()
+        println "FORCED_OVERRIDE: versionName set to ${android.defaultConfig.versionName}"
     }
 }
 
