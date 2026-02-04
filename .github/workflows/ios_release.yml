@@ -379,14 +379,6 @@ jobs:
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           RELEASE_NOTES: ${{ inputs.release_notes || github.event.inputs.release_notes }}
           BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
-
-      - name: Upload and Hardening
-        env:
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          RELEASE_NOTES: ${{ inputs.release_notes || github.event.inputs.release_notes }}
-          BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
         run: |
           set -e
           if [ ! -f dist/*.ipa ]; then echo "No IPA found; skipping upload"; exit 0; fi
