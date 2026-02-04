@@ -31,12 +31,49 @@ class FirebaseService {
     if (_initialized) return;
 
     try {
+      // Ultra-Defensive Initialization logic to prevent SIGABRT on iOS/Android
+      // 1. Check if Dart already knows about an app
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(options: firebaseOptions);
-        debugPrint('Firebase initialized successfully');
+        if (kIsWeb) {
+          await Firebase.initializeApp(options: firebaseOptions);
+          debugPrint('Firebase initialized successfully (Web)');
+        } else {
+          try {
+            // 2. Attempt automatic no-options init (uses GoogleService-Info.plist or google-services.json)
+            // This is the most stable method for mobile apps with bundled config files.
+            await Firebase.initializeApp();
+            debugPrint('Firebase initialized successfully (Mobile-Auto)');
+          } catch (e) {
+            debugPrint(
+                'Automatic Firebase initialization skipped or failed: $e');
+            // 3. Fallback to manual options if no config file is found or it fails
+            try {
+              await Firebase.initializeApp(options: firebaseOptions);
+              debugPrint('Firebase initialized successfully (Mobile-Manual)');
+            } catch (innerE) {
+              if (innerE.toString().contains('duplicate-app') ||
+                  innerE.toString().contains('already exists')) {
+                debugPrint('Firebase already initialized (Mobile-Inner-Catch)');
+              } else {
+                rethrow;
+              }
+            }
+          }
+        }
       } else {
-        debugPrint('Firebase already initialized');
+        debugPrint('Firebase already initialized (Detected via apps list)');
       }
+    } catch (e) {
+      // 4. Ultimate safety: If we still get a "duplicate-app" error, ignore it.
+      if (e.toString().contains('duplicate-app') ||
+          e.toString().contains('already exists')) {
+        debugPrint('Firebase already initialized (Detected via final catch)');
+      } else {
+        debugPrint('Fallback: Firebase initialization reported: $e');
+      }
+    }
+
+    try {
       _analytics = FirebaseAnalytics.instance;
 
       // FirebaseCrashlytics is NOT supported on web - only initialize on mobile
@@ -61,7 +98,8 @@ class FirebaseService {
       // Log app open
       await logEvent('app_open');
     } catch (e) {
-      debugPrint('Firebase initialization failed: $e');
+      debugPrint('Firebase instance registration failed: $e');
+      // We don't rethrow to ensure app boots even if analytics has issues
     }
   }
 
