@@ -358,21 +358,133 @@ jobs:
           name: ios-ipa
           path: dist
 
-      - name: Upload to TestFlight
+      - name: Upload and Hardening
         env:
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          RELEASE_NOTES: ${{ inputs.release_notes || github.event.inputs.release_notes }}
+          BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
+
+      - name: Upload and Hardening
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          RELEASE_NOTES: ${{ inputs.release_notes || github.event.inputs.release_notes }}
+          BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
         run: |
           set -e
           if [ ! -f dist/*.ipa ]; then echo "No IPA found; skipping upload"; exit 0; fi
           
-          # Create private_keys directory and save API key file (preserving newlines)
+          # Pre-flight: Validate API Key Existence
+          if [ -z "$APP_STORE_CONNECT_API_KEY" ] || [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ]; then
+            echo "::error::App Store Connect API credentials missing. Check GitHub Secrets."
+            exit 1
+          fi
+
+          # Create private_keys directory for altool
           mkdir -p ~/.appstoreconnect/private_keys
           echo -e "$APP_STORE_CONNECT_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
           
-          # Verify the key file format
-          echo "Key file first line:"
-          head -1 ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
-          
+          echo "🚀 Uploading to TestFlight..."
           xcrun altool --upload-app -t ios -f dist/*.ipa --apiKey "$APP_STORE_CONNECT_API_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
+          
+          echo "✅ Upload successful. Setting metadata..."
+          
+          # Note: Full REST API automation for 'whatsNew' and 'Groups' requires JWT generation.
+          # We'll use a small Ruby script to handle the JWT and API calls for "Full Use" of the keys.
+          cat << 'EOF' > ios_metadata.rb
+          require 'jwt'
+          require 'net/http'
+          require 'json'
+          require 'time'
+
+          # Load Env
+          key_id = ENV['APP_STORE_CONNECT_API_KEY_ID']
+          issuer_id = ENV['APP_STORE_CONNECT_API_ISSUER_ID']
+          private_key = ENV['APP_STORE_CONNECT_API_KEY'].gsub("\\n", "\n")
+          bundle_id = ENV['BUNDLE_ID']
+          notes = ENV['RELEASE_NOTES'] || "Standard Production Sync"
+
+          # 1. Generate JWT
+          payload = {
+            iss: issuer_id,
+            exp: Time.now.to_i + 20 * 60,
+            aud: 'appstoreconnect-v1'
+          }
+          header = { kid: key_id }
+          token = JWT.encode(payload, OpenSSL::PKey::EC.new(private_key), 'ES256', header)
+
+          def req(path, token, method = :get, body = nil)
+            uri = URI("https://api.appstoreconnect.apple.com/v1/#{path}")
+            http = Net::HTTP.new(uri.host, uri.port)
+            http.use_ssl = true
+            request = case method
+                      when :get then Net::HTTP::Get.new(uri)
+                      when :post then Net::HTTP::Post.new(uri)
+                      when :patch then Net::HTTP::Patch.new(uri)
+                      end
+            request['Authorization'] = "Bearer #{token}"
+            request['Content-Type'] = 'application/json'
+            request.body = body.to_json if body
+            response = http.request(request)
+            JSON.parse(response.body) if response.body && !response.body.empty?
+          end
+
+          puts "🔍 Finding App ID for #{bundle_id}..."
+          apps = req("apps?filter[bundleId]=#{bundle_id}", token)
+          app = apps['data']&.first
+          unless app
+            puts "❌ App not found for bundle ID: #{bundle_id}"
+            exit 0
+          end
+          app_id = app['id']
+
+          puts "🔍 Finding latest build for App #{app_id}..."
+          builds = req("builds?filter[app]=#{app_id}&sort=-uploadedDate&limit=1", token)
+          build = builds['data']&.first
+          unless build
+            puts "⚠️ Build not yet indexed by Apple (Normal immediately after upload)."
+            exit 0
+          end
+          build_id = build['id']
+
+          # 2. Add to 'Internal' Group if it exists
+          puts "🔍 Checking for 'Internal' beta group..."
+          groups = req("betaGroups?filter[app]=#{app_id}&filter[name]=Internal", token)
+          group = groups['data']&.first
+          if group
+            puts "📦 Adding build #{build_id} to group '#{group['attributes']['name']}'..."
+            req("betaGroups/#{group['id']}/relationships/builds", token, :post, { data: [{ id: build_id, type: 'builds' }] })
+          else
+            puts "ℹ️ 'Internal' group not found. Skipping auto-distribution."
+          end
+
+          # 3. Update 'What\'s New'
+          # This requires looking up betaBuildLocalizations linked to the build
+          puts "📝 Updating Release Notes (What's New)..."
+          locs = req("builds/#{build_id}/betaBuildLocalizations", token)
+          if locs['data']&.any?
+            loc_id = locs['data'].first['id']
+            req("betaBuildLocalizations/#{loc_id}", token, :patch, { 
+              data: { 
+                id: loc_id, 
+                type: 'betaBuildLocalizations', 
+                attributes: { whatsNew: notes } 
+              } 
+            })
+            puts "✅ Release notes updated."
+          else
+            puts "ℹ️ No localization found for build yet. Skipping notes."
+          end
+          EOF
+
+          # Check if ruby-jwt is available, if not install it (macos-15 has gem)
+          if ! gem list -i jwt > /dev/null 2>&1; then
+            echo "Installing ruby-jwt..."
+            sudo gem install jwt -n /usr/local/bin --no-document
+          fi
+          
+          ruby ios_metadata.rb
+
