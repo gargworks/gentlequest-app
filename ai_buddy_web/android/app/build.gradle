@@ -120,12 +120,14 @@ android {
 // FORCE Version Override: This ensures CI values win against Flutter plugin
 project.afterEvaluate {
     if (project.hasProperty('VERSION_CODE')) {
-        android.defaultConfig.versionCode = project.property('VERSION_CODE').toInteger()
-        println "FORCED_OVERRIDE: versionCode set to ${android.defaultConfig.versionCode}"
+        def vc = project.property('VERSION_CODE').toInteger()
+        android.defaultConfig.setVersionCode(vc)
+        println "FORCED_OVERRIDE: versionCode set to ${vc}"
     }
     if (project.hasProperty('VERSION_NAME')) {
-        android.defaultConfig.versionName = project.property('VERSION_NAME').toString()
-        println "FORCED_OVERRIDE: versionName set to ${android.defaultConfig.versionName}"
+        def vn = project.property('VERSION_NAME').toString()
+        android.defaultConfig.setVersionName(vn)
+        println "FORCED_OVERRIDE: versionName set to ${vn}"
     }
 }
 
