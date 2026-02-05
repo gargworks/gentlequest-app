@@ -23,6 +23,10 @@ on:
         description: "Release notes/changelog (optional)"
         required: false
         default: ""
+      status:
+        description: "Release status (draft, completed, inProgress, halted)"
+        required: false
+        default: "draft"
       upload:
         description: "Upload to Google Play after build?"
         required: false
@@ -31,6 +35,10 @@ on:
         description: "Run format/analyze/tests before build?"
         required: false
         default: "false"
+      runner_type:
+        description: "Where to run the build"
+        required: false
+        default: "github_hosted"
   workflow_call:
     inputs:
       app_id:
@@ -57,6 +65,10 @@ on:
         required: false
         type: string
         default: "false"
+      status:
+        required: false
+        type: string
+        default: "draft"
       preflight:
         required: false
         type: string
@@ -85,11 +97,15 @@ on:
         required: false
         type: string
         default: "false"
+      runner_type:
+        required: false
+        type: string
+        default: "github_hosted"
 
 jobs:
   build_aab:
     name: Build signed AAB
-    runs-on: ubuntu-latest
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     env:
       ORG_GRADLE_PROJECT_APP_ID: ${{ inputs.app_id || github.event.inputs.app_id || 'app.mhb.preview' }}
       ORG_GRADLE_PROJECT_VERSION_CODE: ${{ inputs.build_number || github.event.inputs.build_number || github.run_number }}
@@ -382,7 +398,7 @@ jobs:
 
   upload_play:
     name: Upload to Google Play
-    runs-on: ubuntu-latest
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     needs: build_aab
     if: ${{ (github.event.inputs.upload || inputs.upload) == 'true' }}
     environment: ${{ inputs.environment || github.event.inputs.environment }}
@@ -422,5 +438,5 @@ jobs:
           packageName: ${{ github.event.inputs.package_name || inputs.package_name }}
           releaseFiles: ${{ steps.find_aab.outputs.AAB }}
           track: ${{ github.event.inputs.track || inputs.track }}
-          status: draft
+          status: ${{ inputs.status || 'draft' }}
           whatsNewDirectory: whatsnew

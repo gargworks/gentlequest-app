@@ -22,7 +22,7 @@ on:
         description: "Android parameters JSON (app_id, package_name, track, upload, preflight, crashlytics_upload)"
         required: false
         default: |
-          {"app_id":"app.gentlequest.www","package_name":"app.gentlequest.www","track":"internal","upload":"true","preflight":"false","crashlytics_upload":"false"}
+          {"app_id":"app.gentlequest.www","package_name":"app.gentlequest.www","track":"internal","status":"draft","upload":"true","preflight":"false","crashlytics_upload":"false"}
       ios_params:
         description: "iOS parameters JSON (bundle_id, scheme, export_method, upload, preflight)"
         required: false
@@ -38,11 +38,19 @@ on:
         required: false
         default: |
           {"create_gh_release":"false","notify_slack":"false","tag_prefix":"mobile-v"}
+      runner_type:
+        description: "Where to run the build"
+        type: choice
+        required: true
+        default: "github_hosted"
+        options:
+          - github_hosted
+          - self_hosted
 
 jobs:
   parse-inputs:
     name: Parse inputs
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     outputs:
       android: ${{ steps.jq.outputs.android }}
       ios: ${{ steps.jq.outputs.ios }}
@@ -66,6 +74,7 @@ jobs:
       app_id: ${{ fromJson(needs.parse-inputs.outputs.android).app_id }}
       package_name: ${{ fromJson(needs.parse-inputs.outputs.android).package_name }}
       track: ${{ fromJson(needs.parse-inputs.outputs.android).track }}
+      status: ${{ fromJson(needs.parse-inputs.outputs.android).status || 'draft' }}
       build_number: ${{ inputs.build_number }}
       release_notes: ${{ inputs.release_notes }}
       upload: ${{ fromJson(needs.parse-inputs.outputs.android).upload }}
@@ -76,6 +85,7 @@ jobs:
       sentry_project: ${{ fromJson(needs.parse-inputs.outputs.sentry).project_android }}
       sentry_release: ${{ fromJson(needs.parse-inputs.outputs.sentry).release }}
       crashlytics_upload: ${{ fromJson(needs.parse-inputs.outputs.android).crashlytics_upload }}
+      runner_type: ${{ inputs.runner_type }}
 
   ios:
     name: iOS job
@@ -96,10 +106,11 @@ jobs:
       sentry_project: ${{ fromJson(needs.parse-inputs.outputs.sentry).project_ios }}
       sentry_release: ${{ fromJson(needs.parse-inputs.outputs.sentry).release }}
       crashlytics_upload: ${{ fromJson(needs.parse-inputs.outputs.ios).crashlytics_upload || 'false' }}
+      runner_type: ${{ inputs.runner_type }}
 
   release_notify:
     name: Release and Notify
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     needs: [parse-inputs, android, ios]
     env:
       DO_GH_RELEASE: ${{ fromJson(needs.parse-inputs.outputs.release_meta).create_gh_release }}

@@ -5,6 +5,16 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      runner_type:
+        description: "Where to run the build"
+        type: choice
+        required: true
+        default: "github_hosted"
+        options:
+          - github_hosted
+          - self_hosted
 
 permissions:
   contents: read
@@ -13,7 +23,7 @@ permissions:
 
 jobs:
   backend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy-gemini-key' }}
     
@@ -99,7 +109,7 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
   
   frontend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     
     steps:
       - uses: actions/checkout@v3
@@ -151,7 +161,7 @@ jobs:
   
   deploy-staging:
     needs: [backend-tests, frontend-tests]
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     if: github.ref == 'refs/heads/develop'
     
     steps:
@@ -169,7 +179,7 @@ jobs:
   
   deploy-production:
     needs: [backend-tests, frontend-tests]
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     if: github.ref == 'refs/heads/main'
     
     steps:

@@ -55,6 +55,10 @@ on:
         description: "Upload dSYMs to Firebase Crashlytics?"
         required: false
         default: "false"
+      runner_type:
+        description: "Where to run the build"
+        required: false
+        default: "github_hosted"
   workflow_call:
     inputs:
       bundle_id:
@@ -109,11 +113,15 @@ on:
         required: false
         type: string
         default: "false"
+      runner_type:
+        required: false
+        type: string
+        default: "github_hosted"
 
 jobs:
   build_ios:
     name: Build iOS (IPA or App)
-    runs-on: macos-15
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-15' }}
     env:
       # Flutter location
       FLUTTER_VERSION: '3.32.8'
@@ -363,7 +371,7 @@ jobs:
     name: Upload to TestFlight
     if: ${{ (inputs.upload || github.event.inputs.upload) == 'true' }}
     needs: build_ios
-    runs-on: macos-15
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-15' }}
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     steps:
       - name: Download IPA artifact
