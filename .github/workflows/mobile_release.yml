@@ -28,10 +28,15 @@ on:
         required: false
         type: string
         default: '{"create_gh_release": "false", "tag_prefix": "mobile-v", "notify_slack": "false"}'
+      runner_type:
+        description: 'Where to run the build'
+        required: false
+        type: string
+        default: 'github_hosted'
 
 jobs:
   Parse-Inputs:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     outputs:
       build: ${{ steps.parse.outputs.build }}
       android: ${{ steps.parse.outputs.android }}
@@ -67,6 +72,7 @@ jobs:
       sentry_project: ${{ fromJson(needs.Parse-Inputs.outputs.sentry).project_android }}
       sentry_release: ${{ fromJson(needs.Parse-Inputs.outputs.sentry).release }}
       crashlytics_upload: ${{ fromJson(needs.Parse-Inputs.outputs.android).crashlytics_upload }}
+      runner_type: ${{ inputs.runner_type }}
 
   ios:
     name: iOS job
@@ -86,10 +92,11 @@ jobs:
       sentry_org: ${{ fromJson(needs.Parse-Inputs.outputs.sentry).org }}
       sentry_project: ${{ fromJson(needs.Parse-Inputs.outputs.sentry).project_ios }}
       sentry_release: ${{ fromJson(needs.Parse-Inputs.outputs.sentry).release }}
+      runner_type: ${{ inputs.runner_type }}
 
   release_notify:
     name: Release and Notify
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     needs: [Parse-Inputs, android, ios]
     if: fromJson(needs.Parse-Inputs.outputs.release).create_gh_release == 'true' || fromJson(needs.Parse-Inputs.outputs.release).notify_slack == 'true'
     steps:

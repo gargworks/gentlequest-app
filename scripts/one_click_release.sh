@@ -68,12 +68,26 @@ case $release_type in
     3)
         RELEASE_TYPE="hotfix"
         UPLOAD_TO_STORE="true"
-        ;;
-    *)
-        echo "Invalid choice"
-        exit 1
-        ;;
 esac
+ 
+ # Choose runner type
+ echo ""
+ echo "${BLUE}Select where to run the build:${NC}"
+ echo "1) GitHub Hosted (Standard)"
+ echo "2) Self-Hosted (Local Mac - Bypasses Billing Limits)"
+ read -p "Choice [1-2]: " runner_choice
+ 
+ case $runner_choice in
+     1)
+         RUNNER_TYPE="github_hosted"
+         ;;
+     2)
+         RUNNER_TYPE="self_hosted"
+         ;;
+     *)
+         RUNNER_TYPE="github_hosted"
+         ;;
+ esac
 
 # Update version
 echo ""
@@ -124,12 +138,13 @@ echo ""
 echo "${BLUE}Building releases...${NC}"
 
 # Trigger CI build
-echo "Triggering Mobile Release workflow..."
+echo "Triggering Mobile Release workflow on $RUNNER_TYPE..."
 WORKFLOW_RUN=$(gh workflow run mobile_release.yml \
     -f "build_params={\"build_number\":\"$BUILD\",\"release_notes\":\"Release v$VERSION\",\"preflight\":\"false\"}" \
     -f "android_params={\"app_id\":\"app.gentlequest.www\",\"package_name\":\"app.gentlequest.www\",\"track\":\"internal\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
     -f "ios_params={\"bundle_id\":\"com.gentlequest.app\",\"scheme\":\"Runner\",\"export_method\":\"app-store\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
     -f "release_params={\"create_gh_release\":\"true\",\"tag_prefix\":\"v\"}" \
+    -f "runner_type=$RUNNER_TYPE" \
     --json 2>&1)
 
 if [ $? -eq 0 ]; then
