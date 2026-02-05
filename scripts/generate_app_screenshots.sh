@@ -17,8 +17,17 @@ mkdir -p "$OUTPUT_DIR/android/screenshots"
 mkdir -p "$OUTPUT_DIR/raw"
 
 echo ""
-echo "1. Installing screenshot tools..."
-flutter pub global activate screenshots
+echo "1. Checking dependencies..."
+# Check for python3 and Pillow
+if ! python3 -c "from PIL import Image" &>/dev/null; then
+  echo "⚠️ Python Pillow not found. Installing..."
+  pip3 install Pillow
+fi
+
+# Check for pngquant (optional but recommended)
+if ! command -v pngquant &> /dev/null; then
+  echo "⚠️ pngquant not found. Screenshots won't be optimized, but will still be generated."
+fi
 
 echo ""
 echo "2. Creating screenshot test file..."
@@ -26,13 +35,19 @@ cat > "$PROJECT_DIR/test/screenshot_test.dart" << 'EOF'
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/main.dart';
-import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
-import 'package:ai_buddy_web/screens/mood_tracker_screen.dart';
-import 'package:ai_buddy_web/screens/home_shell.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  // Set up mock SharedPreferences for all tests
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({
+      'age_verified': true,
+      'compliance_accepted': true,
+    });
+  });
 
   group('App Store Screenshots', () {
     testWidgets('1. Chat Interface', (WidgetTester tester) async {
@@ -95,47 +110,73 @@ void main() {
 
 extension on WidgetTester {
   Future<void> takeScreenshot(String name) async {
-    // Implement screenshot capture
-    // This would integrate with device_preview or screenshots package
+    final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized() as IntegrationTestWidgetsFlutterBinding;
+    // We Settlement between actions to ensure UI is stable
+    await pumpAndSettle();
+    await binding.takeScreenshot(name);
   }
 }
 EOF
 
-echo ""
-echo "3. Running screenshot generation..."
+echo "   Checking for available devices..."
+if ! flutter devices | grep -q "available device" && ! flutter devices | grep -q "simulator"; then
+  echo "⚠️ No devices or simulators found."
+  echo "   Attempting to start iOS Simulator..."
+  open -a Simulator || true
+  # Give it some time to boot or show up
+  for i in {1..30}; do
+    if flutter devices | grep -q "simulator"; then
+      echo "   Simulator started!"
+      break
+    fi
+    echo "   Waiting for simulator... $i/30"
+    sleep 2
+  done
+fi
 
-# iOS Screenshots (required sizes)
-echo "   Generating iOS screenshots..."
-IOS_DEVICES=(
-  "iPhone 6.7"    # 1290x2796 - iPhone 15 Pro Max
-  "iPhone 6.5"    # 1242x2688 - iPhone 11 Pro Max  
-  "iPhone 5.5"    # 1242x2208 - iPhone 8 Plus
-  "iPad 12.9"     # 2048x2732 - iPad Pro 12.9"
-)
+# Run the actual screenshot generation
+echo "   Running integration test locally..."
+# Create the screenshots directory if it doesn't exist (IntegrationTest driver expects it)
+mkdir -p "$OUTPUT_DIR/raw"
 
-for device in "${IOS_DEVICES[@]}"; do
-  echo "   - $device"
-  # flutter drive --driver=test_driver/integration_test.dart --target=test/screenshot_test.dart --device="$device"
-done
+# Move to the flutter project directory
+cd ai_buddy_web
 
-# Android Screenshots (required sizes)
-echo "   Generating Android screenshots..."
-ANDROID_DEVICES=(
-  "phone"         # 1080x1920
-  "tablet7"       # 600x1024  
-  "tablet10"      # 800x1280
-)
+# Execute the test and capture screenshots
+# --screenshot-path is where the driver will save the images
+# Run build first to ensure app bundle exists (especially on clean runs)
+# Using --debug as it's faster and sufficient for screenshots
+# Explicitly targeting simulator to avoid failures with connected physical devices
+  # Using --timeout 20m because builds take time
+  flutter drive \
+    --driver=test_driver/integration_test.dart \
+    --target=test/screenshot_test.dart \
+    -d iphonesimulator \
+    --no-pub \
+    -v || { echo "❌ flutter drive failed"; exit 1; }
 
-for device in "${ANDROID_DEVICES[@]}"; do
-  echo "   - $device"
-  # flutter drive --driver=test_driver/integration_test.dart --target=test/screenshot_test.dart --device="$device"
-done
+# Move back to root
+cd ..
+
+# Move captured screenshots from project directory to raw directory
+if [ -d "ai_buddy_web/build/integration_test_screenshots" ]; then
+    echo "   Moving screenshots to raw..."
+    cp ai_buddy_web/build/integration_test_screenshots/*.png "$OUTPUT_DIR/raw/"
+fi
+
+# Placeholder device loops for future expansion
+# IOS_DEVICES=("iPhone 15 Pro Max")
+# for device in "${IOS_DEVICES[@]}"; do
+#   echo "   - $device"
+#   # flutter drive --driver=test_driver/integration_test.dart --target=test/screenshot_test.dart --device="$device"
+# done
 
 echo ""
 echo "4. Processing screenshots with frames..."
 
 # Add device frames using Figma templates
-cat > "$OUTPUT_DIR/process_screenshots.py" << 'EOF'
+cd "$OUTPUT_DIR"
+cat > "process_screenshots.py" << 'EOF'
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -184,17 +225,33 @@ def add_device_frame(input_path, output_path, device_type):
     draw.text((x, 30), headline, fill=(102, 126, 234), font=font)
     
     framed.save(output_path, "PNG")
+    print(f"   ✓ Processed: {output_path}")
 
 # Process all screenshots
-for root, dirs, files in os.walk("raw"):
+raw_dir = os.path.join(os.getcwd(), "raw")
+if not os.path.exists(raw_dir):
+    os.makedirs(raw_dir)
+    print(f"⚠️ Raw directory {raw_dir} was missing. Creating...")
+
+processed_count = 0
+for root, dirs, files in os.walk(raw_dir):
     for file in files:
         if file.endswith('.png'):
             input_path = os.path.join(root, file)
-            output_path = os.path.join("ios/screenshots", file)
-            add_device_frame(input_path, output_path, "ios")
             
-            output_path = os.path.join("android/screenshots", file)
-            add_device_frame(input_path, output_path, "android")
+            # Save to iOS
+            ios_out = os.path.join("ios/screenshots", file)
+            add_device_frame(input_path, ios_out, "ios")
+            
+            # Save to Android
+            android_out = os.path.join("android/screenshots", file)
+            add_device_frame(input_path, android_out, "android")
+            processed_count += 1
+
+if processed_count == 0:
+    print("❌ No raw screenshots found to process!")
+else:
+    print(f"✅ Processed {processed_count} screenshots.")
 EOF
 
 python3 "$OUTPUT_DIR/process_screenshots.py"

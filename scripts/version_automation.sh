@@ -51,53 +51,23 @@ increment_version() {
     echo "$MAJOR.$MINOR.$PATCH"
 }
 
-# Menu
-echo "Select version update type:"
-echo "1) Major release (1.0.0 -> 2.0.0)"
-echo "2) Minor release (1.0.0 -> 1.1.0)"
-echo "3) Patch release (1.0.0 -> 1.0.1)"
-echo "4) Build number only"
-echo "5) Custom version"
-read -p "Choice [1-5]: " choice
+# Default to current version and timestamp build
+TIMESTAMP_BUILD=$(date +"%y%m%d%0H")
+echo -e "Defaulting to: ${YELLOW}$CURRENT_VERSION+$TIMESTAMP_BUILD${NC}"
 
-case $choice in
-    1)
-        NEW_VERSION=$(increment_version $CURRENT_VERSION major)
-        ;;
-    2)
-        NEW_VERSION=$(increment_version $CURRENT_VERSION minor)
-        ;;
-    3)
-        NEW_VERSION=$(increment_version $CURRENT_VERSION patch)
-        ;;
-    4)
-        NEW_VERSION=$CURRENT_VERSION
-        ;;
-    5)
-        read -p "Enter new version (e.g., 1.2.3): " NEW_VERSION
-        ;;
-    *)
-        echo "Invalid choice"
-        exit 1
-        ;;
-esac
+read -p "Enter new version [Default: $CURRENT_VERSION]: " NEW_VERSION
+NEW_VERSION=${NEW_VERSION:-$CURRENT_VERSION}
 
-# Auto-increment build number
-NEW_BUILD=$((CURRENT_BUILD + 1))
+read -p "Enter build number [Default: $TIMESTAMP_BUILD]: " NEW_BUILD
+NEW_BUILD=${NEW_BUILD:-$TIMESTAMP_BUILD}
 
-# Option to use custom build number
-read -p "Use auto build number $NEW_BUILD? [Y/n]: " use_auto
-if [[ $use_auto == "n" || $use_auto == "N" ]]; then
-    read -p "Enter build number: " NEW_BUILD
-fi
-
-echo ""
-echo -e "${YELLOW}New version will be: $NEW_VERSION+$NEW_BUILD${NC}"
+# Final Target: $NEW_VERSION+$NEW_BUILD
 read -p "Proceed? [Y/n]: " confirm
+confirm=${confirm:-y}
 
 if [[ $confirm == "n" || $confirm == "N" ]]; then
     echo "Cancelled"
-    exit 0
+    return 0 2>/dev/null || exit 0
 fi
 
 echo ""
@@ -107,21 +77,17 @@ echo "Updating version numbers..."
 sed -i.bak "s/^version: .*/version: $NEW_VERSION+$NEW_BUILD/" $PUBSPEC_PATH
 echo "✓ Updated pubspec.yaml"
 
-# Update Android build.gradle
-sed -i.bak "s/versionCode .*/versionCode $NEW_BUILD/" $ANDROID_GRADLE
-sed -i.bak "s/versionName .*/versionName \"$NEW_VERSION\"/" $ANDROID_GRADLE
-echo "✓ Updated Android build.gradle"
-
 # Update iOS Info.plist (via Flutter)
 # Flutter handles this automatically from pubspec.yaml
 
 # Git tag
 read -p "Create git tag v$NEW_VERSION? [Y/n]: " create_tag
+create_tag=${create_tag:-y}
 if [[ $create_tag != "n" && $create_tag != "N" ]]; then
-    git add $PUBSPEC_PATH $ANDROID_GRADLE
-    git commit -m "Release v$NEW_VERSION+$NEW_BUILD"
-    git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
-    echo "✓ Created git tag v$NEW_VERSION"
+    git add $PUBSPEC_PATH
+    git commit -m "Release v$NEW_VERSION+$NEW_BUILD" || echo "No changes to commit"
+    git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION" 2>/dev/null || echo "Tag v$NEW_VERSION already exists"
+    echo "✓ Processed git tag v$NEW_VERSION"
 fi
 
 # Generate changelog entry

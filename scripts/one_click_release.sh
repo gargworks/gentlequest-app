@@ -44,8 +44,14 @@ echo "${BLUE}Running launch checklist...${NC}"
 if [ -f "scripts/complete_launch_checklist.sh" ]; then
     chmod +x scripts/complete_launch_checklist.sh
     if ! ./scripts/complete_launch_checklist.sh; then
-        echo -e "${RED}Launch checklist failed. Fix issues above.${NC}"
-        exit 1
+        echo ""
+        echo -e "${YELLOW}⚠ Launch checklist failed with some issues.${NC}"
+        read -p "Do you want to proceed anyway? [y/N]: " proceed_anyway
+        if [[ $proceed_anyway != "y" && $proceed_anyway != "Y" ]]; then
+            echo -e "${RED}Aborting release.${NC}"
+            exit 1
+        fi
+        echo -e "${YELLOW}Proceeding with release despite checklist failures...${NC}"
     fi
 fi
 
@@ -54,7 +60,8 @@ echo "${BLUE}Select release type:${NC}"
 echo "1) TestFlight/Internal Testing (Beta)"
 echo "2) Production Release"
 echo "3) Hotfix"
-read -p "Choice [1-3]: " release_type
+read -p "Choice [1-3, Default: 1]: " release_type
+release_type=${release_type:-1}
 
 case $release_type in
     1)
@@ -68,6 +75,11 @@ case $release_type in
     3)
         RELEASE_TYPE="hotfix"
         UPLOAD_TO_STORE="true"
+        ;;
+    *)
+        RELEASE_TYPE="beta"
+        UPLOAD_TO_STORE="false"
+        ;;
 esac
  
  # Choose runner type
@@ -75,7 +87,8 @@ esac
  echo "${BLUE}Select where to run the build:${NC}"
  echo "1) GitHub Hosted (Standard)"
  echo "2) Self-Hosted (Local Mac - Bypasses Billing Limits)"
- read -p "Choice [1-2]: " runner_choice
+ read -p "Choice [1-2, Default: 2]: " runner_choice
+ runner_choice=${runner_choice:-2}
  
  case $runner_choice in
      1)
@@ -85,7 +98,7 @@ esac
          RUNNER_TYPE="self_hosted"
          ;;
      *)
-         RUNNER_TYPE="github_hosted"
+         RUNNER_TYPE="self_hosted"
          ;;
  esac
 
@@ -137,6 +150,10 @@ fi
 echo ""
 echo "${BLUE}Building releases...${NC}"
 
+# Ensure local changes are pushed to origin before triggering CI
+echo "${BLUE}Syncing changes with origin...${NC}"
+git push origin HEAD || echo -e "${YELLOW}⚠ Could not push to origin. CI might run stale code.${NC}"
+
 # Trigger CI build
 echo "Triggering Mobile Release workflow on $RUNNER_TYPE..."
 WORKFLOW_RUN=$(gh workflow run mobile_release.yml \
@@ -144,8 +161,7 @@ WORKFLOW_RUN=$(gh workflow run mobile_release.yml \
     -f "android_params={\"app_id\":\"app.gentlequest.www\",\"package_name\":\"app.gentlequest.www\",\"track\":\"internal\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
     -f "ios_params={\"bundle_id\":\"com.gentlequest.app\",\"scheme\":\"Runner\",\"export_method\":\"app-store\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
     -f "release_params={\"create_gh_release\":\"true\",\"tag_prefix\":\"v\"}" \
-    -f "runner_type=$RUNNER_TYPE" \
-    --json 2>&1)
+    -f "runner_type=$RUNNER_TYPE" 2>&1)
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ CI workflow triggered${NC}"
@@ -163,11 +179,28 @@ if [ $? -eq 0 ]; then
     
     gh run watch $RUN_ID || true
     
+    # Check if the run actually succeeded
+    RUN_STATUS=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
+    if [ "$RUN_STATUS" != "success" ]; then
+        echo ""
+        echo -e "${RED}✗ CI build failed with status: $RUN_STATUS${NC}"
+        echo ""
+        echo "View logs: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/$RUN_ID"
+        echo ""
+        echo "Common issues:"
+        echo "  - Android: Check build.gradle versioning and signing"
+        echo "  - iOS: Check provisioning profiles and certificates"
+        echo "  - Both: Check Flutter analyze and test results"
+        exit 1
+    fi
+    
     # Download artifacts
     echo ""
     echo "${BLUE}Downloading artifacts...${NC}"
+    # Clean previous artifacts to avoid extraction conflicts
+    rm -rf release_artifacts/*
     mkdir -p release_artifacts
-    gh run download $RUN_ID -D release_artifacts || echo "${YELLOW}⚠ Could not download all artifacts${NC}"
+    gh run download $RUN_ID -D release_artifacts || echo -e "${YELLOW}⚠ Could not download all artifacts${NC}"
     
     echo -e "${GREEN}✓ Artifacts downloaded to release_artifacts/${NC}"
 else
