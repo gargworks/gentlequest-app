@@ -7,6 +7,8 @@ import '../screens/mood_tracker_screen.dart';
 import '../dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
 import '../dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
 import '../widgets/community_feed_screen.dart';
+import '../services/compliance_service.dart';
+import '../screens/compliance_guard_screen.dart';
 
 import '../widgets/crisis_resources.dart';
 import '../models/message.dart';
@@ -25,7 +27,7 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late AppTab _current;
   // Per-tab navigator keys
   final _talkNavKey = GlobalKey<NavigatorState>();
@@ -41,10 +43,38 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Compliance Watcher
     _current = widget.initialTab;
     _onDeepLinkTab(); // Process any pre-set deep-link tab value on startup
     // Listen for deep-link tab change requests
     homeTabDeepLink.addListener(_onDeepLinkTab);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkComplianceOnResume();
+    }
+  }
+
+  Future<void> _checkComplianceOnResume() async {
+    // Sixth-Order Hardening: Re-verify compliance on app resume.
+    // If cache is >24h, this triggers GPS check.
+    // If user moved to restricted zone, this catches them.
+    try {
+      final status = await ComplianceService().checkCompliance();
+      if (status != ComplianceStatus.allowed) {
+        if (mounted) {
+           // Force back to Guard Screen if no longer compliant
+           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+             MaterialPageRoute(builder: (_) => const ComplianceGuardScreen()),
+             (route) => false,
+           );
+        }
+      }
+    } catch (e) {
+      debugPrint("Compliance resume check failed: $e");
+    }
   }
 
   void _onDeepLinkTab() {
@@ -284,6 +314,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     homeTabDeepLink.removeListener(_onDeepLinkTab);
     super.dispose();
   }

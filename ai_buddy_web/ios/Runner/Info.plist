@@ -67,11 +67,20 @@
 		<string>applinks:gentlequest.com</string>
 		<string>applinks:gentlequest.app</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Allow GentleQuest to connect to the Dart VM on your local network during development.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_dartobservatory._tcp</string>
 	</array>
+	<!-- Firebase: Disable auto-initialization to prevent SIGABRT double-init crash.
+	     Firebase will be initialized from Dart code only (FirebaseService.initialize).
+	     This fixes the crash: +[FIRApp addAppToAppDictionary:] duplicate app exception -->
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

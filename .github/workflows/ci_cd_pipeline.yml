@@ -125,6 +125,13 @@ jobs:
           cd ai_buddy_web
           flutter pub get
       
+      - name: Run Compliance Tests (CI Gate)
+        run: |
+          cd ai_buddy_web
+          echo "🔒 Running compliance verification tests..."
+          flutter test test/services/compliance_service_test.dart --reporter expanded
+          echo "✅ Compliance tests passed"
+      
       - name: Run tests
         run: |
           cd ai_buddy_web
