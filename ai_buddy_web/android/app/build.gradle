@@ -67,7 +67,7 @@ android {
         println "GRADLE_BUILD: VERSION_CODE override = ${ciVersionCode}"
         println "GRADLE_BUILD: VERSION_NAME override = ${ciVersionName}"
         
-        versionCode 26020514
+        versionCode 26020516
         versionName "1.2.1"
     }
 
@@ -122,8 +122,8 @@ project.afterEvaluate {
     android {
         if (project.hasProperty('VERSION_CODE')) {
             def vc = project.property('VERSION_CODE').toInteger()
-            defaultConfig.versionCode 26020514
-            println "FORCED_OVERRIDE: versionCode 26020514
+            defaultConfig.versionCode 26020516
+            println "FORCED_OVERRIDE: versionCode 26020516
         }
         if (project.hasProperty('VERSION_NAME')) {
             def vn = project.property('VERSION_NAME').toString()
