@@ -9,7 +9,7 @@ db = SQLAlchemy()
 
 
 class UserSession(db.Model):
-    __tablename__ = "sessions"
+    __tablename__ = "user_sessions"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -78,7 +78,7 @@ class Message(db.Model):
     __tablename__ = "chat_messages"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     content = db.Column(db.Text, nullable=False)
     is_user = db.Column(db.Boolean, default=False)  # True for user, False for AI
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -91,7 +91,7 @@ class ConversationLog(db.Model):
     __tablename__ = "conversation_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     user_message = db.Column(db.Text, nullable=False)
     ai_response = db.Column(db.Text, nullable=False)
     risk_level = db.Column(db.String(20), default="low")
@@ -103,7 +103,7 @@ class CrisisEvent(db.Model):
     __tablename__ = "crisis_detections"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     message = db.Column(db.Text)
     risk_level = db.Column(db.String(50))
     risk_score = db.Column(db.Float, default=0.0)
@@ -117,7 +117,7 @@ class SelfAssessmentEntry(db.Model):
     __tablename__ = "self_assessment_entries"
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(
-        db.String(36), db.ForeignKey("sessions.id"), nullable=False
+        db.String(36), db.ForeignKey("user_sessions.id"), nullable=False
     )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     assessment_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
@@ -130,7 +130,7 @@ class MoodEntry(db.Model):
     __tablename__ = "mood_entries"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     mood_level = db.Column(db.Integer, nullable=False)  # 1-5 scale
     note = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -143,7 +143,7 @@ class AnalyticsEvent(db.Model):
     __tablename__ = "analytics_events"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     event_type = db.Column(db.String(50), nullable=False)
     event_metadata = db.Column('metadata', JSON().with_variant(JSONB, "postgresql"))
     request_id = db.Column(db.String(64))
@@ -157,7 +157,7 @@ class InterventionOutcome(db.Model):
     __tablename__ = "intervention_outcomes"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(255), db.ForeignKey("sessions.id"), nullable=False, index=True)
+    session_id = db.Column(db.String(255), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
     intervention_id = db.Column(db.String(100), nullable=False)
     issue = db.Column(db.String(50), index=True)
     offer_stage = db.Column(db.Integer, default=1)
@@ -181,7 +181,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email}>"
@@ -210,7 +210,7 @@ class CommunityPost(db.Model):
 #
 #     id = db.Column(db.Integer, primary_key=True)
 #     post_id = db.Column(db.Integer, db.ForeignKey("community_posts.id"))
-#     session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+#     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
 #     content = db.Column(db.Text, nullable=False)
 #     is_anonymous = db.Column(db.Boolean, default=True)
 #     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -224,7 +224,7 @@ class ClinicalAssessment(db.Model):
     __tablename__ = "clinical_assessments"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
     assessment_type = db.Column(db.String(20), nullable=False)  # 'phq9' or 'gad7'
     responses = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)  # List of integer responses
     total_score = db.Column(db.Integer, nullable=False)
@@ -261,7 +261,7 @@ class QuestProgress(db.Model):
     __tablename__ = "quest_progress"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
     quest_id = db.Column(db.Integer, db.ForeignKey("quests.id"), nullable=False)
     status = db.Column(db.String(20), default="available")  # available, in_progress, completed, expired
     started_at = db.Column(db.DateTime)
@@ -278,7 +278,7 @@ class UserProfile(db.Model):
     __tablename__ = "user_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), unique=True, nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), unique=True, nullable=False)
     xp = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     streak_days = db.Column(db.Integer, default=0)
@@ -317,7 +317,7 @@ class UserResourceInteraction(db.Model):
     __tablename__ = "user_resource_interactions"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"), nullable=False)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False)
     resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -330,7 +330,7 @@ class CounselorAlert(db.Model):
     __tablename__ = "counselor_alerts"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
     university_id = db.Column(db.Integer, db.ForeignKey("universities.id"))
     severity = db.Column(db.String(20), nullable=False)
     trigger_message = db.Column(db.Text, nullable=False)

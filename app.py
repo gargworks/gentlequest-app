@@ -3694,7 +3694,8 @@ def run_auto_migrations(app):
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS mood_after INTEGER",
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1",
         "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS effectiveness_rating FLOAT",
-        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS feedback TEXT"
+        "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS feedback TEXT",
+        "ALTER TABLE sessions RENAME TO user_sessions"
     ]
     
     try:

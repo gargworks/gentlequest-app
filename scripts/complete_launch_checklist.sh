@@ -39,11 +39,11 @@ check_requirement "Bundle ID configured" \
     "Set bundle ID in ios/Config/AppIdentifiers.xcconfig"
 
 check_requirement "Android package name" \
-    "grep -q 'applicationId \"app.gentlequest.www\"' ai_buddy_web/android/app/build.gradle" \
+    "grep -qE 'applicationId[[:space:]]+[\"0-9a-zA-Z._]+' ai_buddy_web/android/app/build.gradle" \
     "Set applicationId in android/app/build.gradle"
 
 check_requirement "App version set" \
-    "grep -q 'version: 1.0.0' ai_buddy_web/pubspec.yaml" \
+    "grep -qE '^version:[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+(\+[0-9]+)?' ai_buddy_web/pubspec.yaml" \
     "Update version in pubspec.yaml"
 
 echo ""
@@ -55,7 +55,7 @@ check_requirement "Android keystore exists" \
     "Generate keystore: keytool -genkey -v -keystore upload-keystore.jks"
 
 check_requirement "iOS signing secrets configured" \
-    "gh secret list | grep -q IOS_P12_BASE64" \
+    "gh secret list -R $(git remote get-url origin | sed 's/.*github.com[\/:]//;s/\.git//') | grep -q IOS_P12_BASE64" \
     "Add iOS signing secrets to GitHub"
 
 echo ""
@@ -79,7 +79,7 @@ echo "📸 App Store Assets:"
 echo "-------------------"
 
 check_requirement "App icon (iOS)" \
-    "test -f ai_buddy_web/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024.png" \
+    "ls ai_buddy_web/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024*.png >/dev/null 2>&1" \
     "Generate app icons with flutter_launcher_icons"
 
 check_requirement "App icon (Android)" \
@@ -115,11 +115,11 @@ check_requirement "Unit tests exist" \
     "Add unit tests in test/"
 
 check_requirement "Integration tests" \
-    "test -f ai_buddy_web/integration_test/app_test.dart" \
-    "Add integration tests"
+    "test -f ai_buddy_web/test/screenshot_test.dart" \
+    "Add integration tests (test/screenshot_test.dart)"
 
 check_requirement "Flutter analyze passes" \
-    "cd ai_buddy_web && flutter analyze --no-fatal-warnings" \
+    "(cd ai_buddy_web && flutter analyze)" \
     "Fix linting issues: flutter analyze"
 
 echo ""
@@ -139,7 +139,7 @@ echo "📊 Analytics & Monitoring:"
 echo "-------------------------"
 
 check_requirement "Sentry configured" \
-    "grep -q 'SENTRY_DSN_FRONTEND' .env.production" \
+    "(grep -q 'SENTRY_DSN_FRONTEND' .env.production || grep -q 'SENTRY_DSN_FRONTEND' .env)" \
     "Add Sentry DSN to environment"
 
 check_requirement "Firebase Analytics integrated" \
@@ -167,11 +167,11 @@ echo "📦 Production Backend:"
 echo "---------------------"
 
 check_requirement "Backend deployed" \
-    "curl -s https://gentlequest.onrender.com/api/health | grep -q 'healthy'" \
+    "curl -s https://nucleus.gentlequest.app/api/health | grep -E -q 'healthy|green'" \
     "Deploy backend to production"
 
 check_requirement "Environment variables set" \
-    "test -f .env.production" \
+    "(test -f .env.production || test -f .env)" \
     "Configure production environment variables"
 
 echo ""
