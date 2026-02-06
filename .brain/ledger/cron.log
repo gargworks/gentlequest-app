@@ -937,3 +937,107 @@ Checklist scan failed: [Errno 2] No such file or directory: 'rg'
 Warning: FastMCP not installed. Running in standalone/verification mode.
 ⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
 ✅ Message sent to 7575125475 (Fallback Mode)
+2026-02-04 08:00:00,983 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-04 08:00:02,305 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-02-04 08:00:02,753 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-04 08:00:02,767 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-02-04 08:00:02,768 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-02-04 08:00:02,805 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-04 08:00:02,805 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-04 08:00:02,807 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-02-04 08:00:02,807 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-02-04 08:00:02,823 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-04 08:00:02,839 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-02-04 08:00:06,514 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+2026-02-04 08:00:06,526 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-04 08:00:06,526 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-04 08:00:06,530 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+2026-02-05 08:00:00,922 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-05 08:00:02,544 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-02-05 08:00:02,982 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-05 08:00:03,002 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-02-05 08:00:03,003 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-02-05 08:00:03,053 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-05 08:00:03,053 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-05 08:00:03,055 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-02-05 08:00:03,055 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-02-05 08:00:03,087 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-05 08:00:03,466 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-02-05 08:00:07,273 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-05 08:00:07,328 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-05 08:00:08,773 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-05 08:00:08,823 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-05 08:00:09,590 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+2026-02-05 08:00:09,592 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-05 08:00:09,592 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-05 08:00:09,595 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+2026-02-06 08:00:02,886 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-06 08:00:04,531 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-02-06 08:00:04,953 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-06 08:00:04,971 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-02-06 08:00:04,971 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-02-06 08:00:05,023 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-06 08:00:05,023 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-06 08:00:05,025 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-02-06 08:00:05,025 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-02-06 08:00:05,042 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-06 08:00:05,058 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-02-06 08:00:07,945 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 429 Too Many Requests"
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+2026-02-06 08:00:07,958 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-06 08:00:07,958 - nucleus.llm - ERROR - ❌ LLM Generate Content Failed (NEW): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-06 08:00:07,961 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)

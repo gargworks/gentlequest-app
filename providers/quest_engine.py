@@ -8,12 +8,22 @@ class QuestEngine:
         """Get quests for the current week/context."""
         from providers.quest_generator import QuestGenerator
         
-        # 1. Ensure UserProfile exists
+        # 1. Ensure UserSession exists first (FK requirement)
+        from models import UserSession
+        user_sess = UserSession.query.get(session_id)
+        if not user_sess:
+            user_sess = UserSession(id=session_id)
+            db.session.add(user_sess)
+            db.session.commit()
+            print(f"DEBUG: QuestEngine created missing UserSession: {session_id}")
+
+        # 2. Ensure UserProfile exists
         profile = UserProfile.query.filter_by(session_id=session_id).first()
         if not profile:
             profile = UserProfile(session_id=session_id)
             db.session.add(profile)
             db.session.commit()
+            print(f"DEBUG: QuestEngine created UserProfile for session: {session_id}")
 
         # 2. Ensure Quests exist for this week
         week, year = QuestGenerator.get_week_number()
@@ -144,11 +154,22 @@ class QuestEngine:
             if not quest:
                 return {"success": False, "message": "Quest not found"}, 404
 
+            # Ensure UserSession exists first (FK requirement)
+            from models import UserSession
+            user_sess = UserSession.query.get(session_id)
+            if not user_sess:
+                user_sess = UserSession(id=session_id)
+                db.session.add(user_sess)
+                db.session.commit()
+                print(f"DEBUG: QuestEngine.complete_quest created missing UserSession: {session_id}")
+
             # Ensure Profile Exists
             profile = UserProfile.query.filter_by(session_id=session_id).first()
             if not profile:
                  profile = UserProfile(session_id=session_id, xp=0, level=1, streak_days=0)
                  db.session.add(profile)
+                 db.session.commit()
+                 print(f"DEBUG: QuestEngine.complete_quest created UserProfile: {session_id}")
 
             progress = QuestProgress.query.filter_by(
                 session_id=session_id, quest_id=quest_id

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
-import 'package:geolocator/geolocator.dart'; // For Permission Enums
+// For Permission Enums
 import 'package:url_launcher/url_launcher.dart'; // Added for Data Export & App Store links
 
 class ComplianceGuardScreen extends StatefulWidget {
@@ -15,7 +13,6 @@ class ComplianceGuardScreen extends StatefulWidget {
 class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
   final ComplianceService _complianceService = ComplianceService();
   ComplianceStatus _status = ComplianceStatus.loading;
-  String? _errorMessage;
   bool _isLoadingAction = false;
 
   @override

@@ -37,7 +37,7 @@ class AlertItem extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: _isAcknowledged
               ? Colors.grey.shade300
-              : _getSeverityColor().withOpacity(0.2),
+              : _getSeverityColor().withValues(alpha: 0.2),
           child: Icon(
             Icons.warning_amber_rounded,
             color: _isAcknowledged ? Colors.grey : _getSeverityColor(),
@@ -94,9 +94,9 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         label,

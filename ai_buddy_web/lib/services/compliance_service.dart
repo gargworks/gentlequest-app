@@ -222,8 +222,10 @@ class ComplianceService {
     // Get current position
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // Coarse is sufficient for state-level
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low, // Coarse is sufficient for state-level
+          timeLimit: Duration(seconds: 15),
+        ),
       );
 
       // v3.1 Hardening: Reject Mock Locations (Android anti-spoofing)

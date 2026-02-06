@@ -15,7 +15,7 @@ class AlertInboxScreen extends StatefulWidget {
   });
 
   @override
-  _AlertInboxScreenState createState() => _AlertInboxScreenState();
+  State<AlertInboxScreen> createState() => _AlertInboxScreenState();
 }
 
 class _AlertInboxScreenState extends State<AlertInboxScreen>
@@ -121,10 +121,11 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
             "response_notes": "Acknowledged via dashboard",
             "action_taken": "review_pending"
           }));
+      if (!mounted) return;
       Navigator.pop(context); // Close dialog
       _fetchAlerts(); // Refresh list
     } catch (e) {
-      print("Error acknowledging: $e");
+      debugPrint("Error acknowledging: $e");
     }
   }
 

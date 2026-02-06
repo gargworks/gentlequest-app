@@ -1,0 +1,514 @@
+[
+  {
+    "id": "AG_FIX_BRAIN_MCP_STATUS",
+    "description": "Antigravity: Investigate and fix Brain MCP reliability/visibility issues. Observed: (1) brain_check_recent_session tool call fails with error 'structured_content must be a dict or None... Tools should wrap non-dict values based on their output_schema'; (2) brain_audit_log reports no interaction log found / enable with V9 Security; (3) subsequent calls to brain_check_protocol and brain_commitment_health returned 'Error running tool' intermittently. Goal: make recent-session check return correct structured output, ensure audit logging can be enabled/queried, and stabilize protocol/commitment tools so project status can be tracked for Nucleus/GentleQuest.",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "mcp-tooling",
+      "python",
+      "schema-debugging"
+    ],
+    "claimed_by": null,
+    "source": "perplexity",
+    "escalation_reason": null,
+    "created_at": "2026-02-03T15:01:52+0530",
+    "updated_at": "2026-02-03T15:01:52+0530"
+  },
+  {
+    "id": "AG_INVESTIGATE_MCP_TOOLCOUNT_MISMATCH",
+    "description": "Antigravity: Investigate MCP tool-count discrepancy (e.g., ~20 Brain tools visible in Perplexity vs ~140 tools visible in Antigravity). Determine why tool catalogs differ across clients: compare MCP handshake/manifests, server list, namespace filtering/allowlists, tool registry merging/deduping, and wrapper-generated tools vs raw MCP tools. Deliverable: root-cause + fix or documented explanation; ensure consistent tool visibility and correct counting across Perplexity/Antigravity environments.",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "AG_FIX_BRAIN_MCP_STATUS"
+    ],
+    "required_skills": [
+      "mcp-tooling",
+      "tool-registry",
+      "schema-debugging"
+    ],
+    "claimed_by": null,
+    "source": "perplexity",
+    "escalation_reason": null,
+    "created_at": "2026-02-03T15:13:50+0530",
+    "updated_at": "2026-02-03T15:13:50+0530"
+  },
+  {
+    "id": "deploy_autopilot_engine",
+    "description": "Deploy nop_v3_refactor autopilot engine for autonomous multi-agent orchestration",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "system_architecture",
+      "deployment"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:30:55+0530",
+    "updated_at": "2026-02-05T23:30:55+0530"
+  },
+  {
+    "id": "configure_agent_slots",
+    "description": "Configure multi-agent execution slots (Windsurf, Antigravity, Cursor) with tier capabilities and skill matrices",
+    "status": "BLOCKED",
+    "priority": 1,
+    "blocked_by": [
+      "deploy_autopilot_engine"
+    ],
+    "required_skills": [
+      "system_architecture",
+      "agent_coordination"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:07+0530",
+    "updated_at": "2026-02-05T23:31:07+0530"
+  },
+  {
+    "id": "deploy_video_automation",
+    "description": "Deploy daily video generation automation: VEO 2.0 text-to-video + assembly + YouTube upload scheduler (11 PM IST daily)",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "video_processing",
+      "api_integration"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:19+0530",
+    "updated_at": "2026-02-05T23:31:19+0530"
+  },
+  {
+    "id": "deploy_reddit_automation",
+    "description": "Deploy Reddit karma farming automation: 3-5 sentence helpful comments across 7 target subreddits (r/ClaudeAI, r/AskReddit, r/SaaS, r/Productivity, r/IndiHackers, r/ADHD, r/ProductHunt)",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "reddit_api",
+      "nlp",
+      "growth_hacking"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:28+0530",
+    "updated_at": "2026-02-05T23:31:28+0530"
+  },
+  {
+    "id": "deploy_health_monitoring",
+    "description": "Deploy health monitoring and self-healing system: track all automation pipelines, auto-restart on failure, alert on critical issues",
+    "status": "BLOCKED",
+    "priority": 1,
+    "blocked_by": [
+      "configure_agent_slots"
+    ],
+    "required_skills": [
+      "python",
+      "monitoring",
+      "system_architecture"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:37+0530",
+    "updated_at": "2026-02-05T23:31:37+0530"
+  },
+  {
+    "id": "deploy_social_automation",
+    "description": "Deploy cross-platform posting automation: IndieHackers daily updates, Twitter/X video announcements, Discord community engagement",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "deploy_video_automation"
+    ],
+    "required_skills": [
+      "python",
+      "api_integration",
+      "social_media",
+      "growth_hacking"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:45+0530",
+    "updated_at": "2026-02-05T23:31:45+0530"
+  },
+  {
+    "id": "deploy_analytics_ab_testing",
+    "description": "Deploy analytics tracking and A/B testing: monitor engagement metrics, test post timing (7:30-10 PM window), optimize content variations, track conversion funnel Reddit\u2192Landing\u2192Install",
+    "status": "BLOCKED",
+    "priority": 3,
+    "blocked_by": [
+      "deploy_social_automation",
+      "deploy_reddit_automation"
+    ],
+    "required_skills": [
+      "python",
+      "analytics",
+      "data_analysis",
+      "growth_hacking"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_deploy",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:31:54+0530",
+    "updated_at": "2026-02-05T23:31:54+0530"
+  },
+  {
+    "id": "cron_daily_video",
+    "description": "Create cron job for daily video generation: run believe_it_bot at 11 PM IST daily with VEO 2.0 text-to-video mode + auto YouTube upload",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "bash",
+      "cron",
+      "deployment"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:34:26+0530",
+    "updated_at": "2026-02-05T23:34:26+0530"
+  },
+  {
+    "id": "build_reddit_bot",
+    "description": "Build Reddit engagement automation script: query hot posts in target subreddits, generate helpful 3-5 sentence comments using Claude API, post with rate limiting (max 5/day)",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "reddit_api",
+      "claude_api"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:34:35+0530",
+    "updated_at": "2026-02-05T23:34:35+0530"
+  },
+  {
+    "id": "youtube_auto_upload",
+    "description": "Create YouTube upload automation: after each video generation, auto-upload with optimized title/description/tags, schedule for 11 PM publish time, track video IDs",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "cron_daily_video"
+    ],
+    "required_skills": [
+      "python",
+      "youtube_api",
+      "api_integration"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:34:43+0530",
+    "updated_at": "2026-02-05T23:34:43+0530"
+  },
+  {
+    "id": "cross_platform_poster",
+    "description": "Build cross-platform posting orchestrator: on new video upload, auto-post to Twitter/X, IndieHackers, and Discord with video link + engaging copy",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "youtube_auto_upload"
+    ],
+    "required_skills": [
+      "python",
+      "twitter_api",
+      "webhooks",
+      "social_media"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:34:52+0530",
+    "updated_at": "2026-02-05T23:34:52+0530"
+  },
+  {
+    "id": "analytics_dashboard",
+    "description": "Create analytics dashboard: track video views, Reddit karma, social engagement, conversion funnel metrics. Store in Postgres, daily summary reports",
+    "status": "BLOCKED",
+    "priority": 3,
+    "blocked_by": [
+      "cross_platform_poster",
+      "build_reddit_bot"
+    ],
+    "required_skills": [
+      "python",
+      "postgres",
+      "data_visualization",
+      "analytics"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:35:01+0530",
+    "updated_at": "2026-02-05T23:35:01+0530"
+  },
+  {
+    "id": "master_orchestrator",
+    "description": "Build master orchestration daemon: runs 24/7, coordinates all automation pipelines, health checks every 5 min, auto-restarts failed processes, logs all activity",
+    "status": "BLOCKED",
+    "priority": 1,
+    "blocked_by": [
+      "cron_daily_video",
+      "build_reddit_bot"
+    ],
+    "required_skills": [
+      "python",
+      "system_architecture",
+      "daemon_processes"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:35:10+0530",
+    "updated_at": "2026-02-05T23:35:10+0530"
+  },
+  {
+    "id": "github_automation",
+    "description": "Create GitHub Actions workflow: auto-release Nucleus OS updates, run tests on PR, deploy documentation to GitHub Pages",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "github_actions",
+      "ci_cd",
+      "yaml"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:37:04+0530",
+    "updated_at": "2026-02-05T23:37:04+0530"
+  },
+  {
+    "id": "deployment_validation",
+    "description": "First deployment validation: run test video generation, verify YouTube API connection, test Reddit bot with dry-run mode, confirm all credentials and API keys working",
+    "status": "IN_PROGRESS",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "testing",
+      "api_validation",
+      "deployment"
+    ],
+    "claimed_by": "perplexity_tsar_bomba_001",
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:37:13+0530",
+    "updated_at": "2026-02-05T23:38:28+0530"
+  },
+  {
+    "id": "nucleus_landing_page",
+    "description": "Deploy Nucleus OS landing page: domain setup on Cloudflare, Next.js site with feature showcase, waitlist capture form, link to GitHub repo and docs",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "nextjs",
+      "cloudflare",
+      "web_development"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:37:22+0530",
+    "updated_at": "2026-02-05T23:37:22+0530"
+  },
+  {
+    "id": "nucleus_readme",
+    "description": "Write comprehensive README.md for Nucleus OS GitHub repo: feature list, installation guide, 140+ tools showcase, MCP integration examples, architecture diagram",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "technical_writing",
+      "markdown",
+      "documentation"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:38:38+0530",
+    "updated_at": "2026-02-05T23:38:38+0530"
+  },
+  {
+    "id": "producthunt_launch",
+    "description": "Create viral launch post template for ProductHunt: compelling headline, demo GIF, feature highlights, early adopter perks, launch date scheduling",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "nucleus_landing_page",
+      "nucleus_readme"
+    ],
+    "required_skills": [
+      "copywriting",
+      "growth_hacking",
+      "producthunt"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:38:47+0530",
+    "updated_at": "2026-02-05T23:38:47+0530"
+  },
+  {
+    "id": "twitter_viral_engine",
+    "description": "Deploy Twitter/X viral content engine: auto-generate tweet threads from videos, optimal posting times (9 AM, 2 PM, 8 PM IST), hashtag optimization, engagement tracking, retweet bots coordination",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "cross_platform_poster"
+    ],
+    "required_skills": [
+      "twitter_api",
+      "growth_hacking",
+      "content_strategy"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:38:57+0530",
+    "updated_at": "2026-02-05T23:38:57+0530"
+  },
+  {
+    "id": "influencer_outreach_automation",
+    "description": "Build automated influencer outreach system: scrape AI/productivity influencers from Twitter/YouTube, generate personalized DM templates, track responses, coordinate collaboration opportunities",
+    "status": "BLOCKED",
+    "priority": 3,
+    "blocked_by": [
+      "twitter_viral_engine",
+      "analytics_dashboard"
+    ],
+    "required_skills": [
+      "web_scraping",
+      "outreach",
+      "growth_hacking",
+      "api_integration"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_live",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:39:07+0530",
+    "updated_at": "2026-02-05T23:39:07+0530"
+  },
+  {
+    "id": "install_dependencies",
+    "description": "Install missing Python dependencies: anthropic, praw, google-api-python-client, and all other required packages for automation pipeline",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "pip",
+      "dependency_management"
+    ],
+    "claimed_by": null,
+    "source": "tsar_bomba_remediation",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:44:34+0530",
+    "updated_at": "2026-02-05T23:44:34+0530"
+  },
+  {
+    "id": "register_antigravity_slot",
+    "description": "Register Antigravity as execution slot: configure agent ID, tier level (T1), skill set [python, system_architecture, deployment, api_integration], max concurrent tasks = 3",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "system_architecture",
+      "agent_coordination"
+    ],
+    "claimed_by": null,
+    "source": "multi_agent_swarm",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:52:46+0530",
+    "updated_at": "2026-02-05T23:52:46+0530"
+  },
+  {
+    "id": "register_windsurf_slot",
+    "description": "Register Windsurf as execution slot: configure agent ID windsurf_exec_001, tier T2, skills [python, javascript, web_development, ci_cd, github_actions], max concurrent = 2",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "system_architecture",
+      "agent_coordination"
+    ],
+    "claimed_by": null,
+    "source": "multi_agent_swarm",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:52:55+0530",
+    "updated_at": "2026-02-05T23:52:55+0530"
+  },
+  {
+    "id": "register_cursor_slot",
+    "description": "Register Cursor as execution slot: configure agent ID cursor_dev_001, tier T2, skills [python, typescript, code_review, testing, debugging], max concurrent = 2",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "system_architecture",
+      "agent_coordination"
+    ],
+    "claimed_by": null,
+    "source": "multi_agent_swarm",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:53:05+0530",
+    "updated_at": "2026-02-05T23:53:05+0530"
+  },
+  {
+    "id": "create_slot_configs",
+    "description": "Create agent slot configuration files in ~/.nucleus/slots/ directory: antigravity.json, windsurf.json, cursor.json with tier, skills, status, and coordination endpoints",
+    "status": "BLOCKED",
+    "priority": 1,
+    "blocked_by": [
+      "register_antigravity_slot",
+      "register_windsurf_slot",
+      "register_cursor_slot"
+    ],
+    "required_skills": [
+      "system_architecture",
+      "json",
+      "configuration"
+    ],
+    "claimed_by": null,
+    "source": "multi_agent_swarm",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:53:14+0530",
+    "updated_at": "2026-02-05T23:53:14+0530"
+  },
+  {
+    "id": "trigger_swarm_sprint",
+    "description": "Trigger multi-agent sprint: execute brain_autopilot_sprint with all registered slots, auto mode, no budget limit, max 3 tasks per slot, coordinate parallel execution across Antigravity, Windsurf, Cursor",
+    "status": "BLOCKED",
+    "priority": 1,
+    "blocked_by": [
+      "create_slot_configs"
+    ],
+    "required_skills": [
+      "orchestration",
+      "multi_agent_coordination"
+    ],
+    "claimed_by": null,
+    "source": "multi_agent_swarm",
+    "escalation_reason": null,
+    "created_at": "2026-02-05T23:53:25+0530",
+    "updated_at": "2026-02-05T23:53:25+0530"
+  }
+]

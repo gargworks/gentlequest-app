@@ -106,15 +106,15 @@ class _QuestCardState extends State<QuestCard>
               opacity: _opacityAnimation.value,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6), // Dark Glass
+                  color: Colors.black.withValues(alpha: 0.6), // Dark Glass
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: const Color(0xFF667EEA).withOpacity(0.5),
+                    color: const Color(0xFF667EEA).withValues(alpha: 0.5),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF667EEA).withOpacity(0.2),
+                      color: const Color(0xFF667EEA).withValues(alpha: 0.2),
                       blurRadius: 30,
                       spreadRadius: -5,
                     ),
@@ -144,14 +144,14 @@ class _QuestCardState extends State<QuestCard>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF667EEA).withOpacity(0.1),
+        color: const Color(0xFF667EEA).withValues(alpha: 0.1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF667EEA).withOpacity(0.2),
+              color: const Color(0xFF667EEA).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.shield_outlined,
@@ -201,7 +201,7 @@ class _QuestCardState extends State<QuestCard>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.amber.withOpacity(0.5)),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -253,8 +253,8 @@ class _StepRow extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isChecked
-              ? const Color(0xFF667EEA).withOpacity(0.2)
-              : Colors.white.withOpacity(0.05),
+              ? const Color(0xFF667EEA).withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isChecked ? const Color(0xFF667EEA) : Colors.white10,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_buddy_web/features/leopard/widgets/leopard_gate.dart';
 import 'package:ai_buddy_web/features/leopard/widgets/leopard_access_gate.dart';
-import 'package:ai_buddy_web/config/feature_flags.dart';
 
 // Mocking FeatureFlags is tricky as they are static const.
 // For this test, we accept that 'enableLeopardMode' is FALSE by default (Dead Switch).

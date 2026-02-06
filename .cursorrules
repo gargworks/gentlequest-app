@@ -1,0 +1,60 @@
+# AGENTIC SAFETY RULES FOR AI-MVP-BACKEND
+# Last Updated: 2026-02-03
+# Triggered By: Security incident - mcp-server-nucleus-public leak
+
+## FORBIDDEN ACTIONS (HARD STOP)
+
+1. **NEVER** embed tokens/secrets in command line arguments
+   - BAD: `git push https://github_pat_xxx@github.com/...`
+   - GOOD: `gh auth login && git push origin main`
+
+2. **NEVER** use `git checkout --orphan` without explicit user confirmation
+   - This wipes the working tree and can cause data loss
+
+3. **NEVER** use `git push --force` to any remote without:
+   - Listing files being pushed
+   - Confirming no secrets in content
+   - Getting explicit user approval
+
+4. **NEVER** push these directories to ANY public repo:
+   - `claude project export data-*/`
+   - `.brain/`
+   - `.gemini/`
+   - `**/secret**/`
+   - `**/internal**/`
+   - Any folder containing conversation exports
+
+5. **NEVER** create commits with author email containing real personal email
+   - Use: `Nucleus Team <hello@nucleusos.dev>`
+
+## REQUIRED CONFIRMATIONS
+
+Before any destructive git operation, you MUST:
+1. Show the user what will happen
+2. List affected files/commits
+3. Wait for explicit "yes" or "proceed" confirmation
+
+## SENSITIVE REPOS
+
+- `eidetic-works/mcp-server-nucleus` (PRIVATE) - Full source, handle with care
+- `eidetic-works/mcp-server-nucleus-public` (NOW PRIVATE) - DO NOT PUSH WITHOUT PARANOIA PROTOCOL
+
+## THE PARANOIA PROTOCOL (For Any Public Release)
+
+```bash
+# Run ALL of these before pushing to public:
+git diff HEAD origin/main --stat
+grep -r "github_pat_\|api_key\|secret\|password\|lokesh" .
+git ls-files | wc -l  # Verify expected file count
+```
+
+## NUCLEUS-SPECIFIC RULES
+
+- The main mcp-server-nucleus repo is PRIVATE - treat as confidential
+- PyPI package is public but should only contain tiered tools
+- Federation engine details are sensitive IP
+- Conversation exports contain strategic discussions - never public
+
+## IF UNCERTAIN
+
+STOP and ASK the user rather than guessing. A 30-second confirmation is better than a security incident.

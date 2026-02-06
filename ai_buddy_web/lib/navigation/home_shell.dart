@@ -4,8 +4,6 @@ import '../widgets/app_bottom_nav.dart';
 import 'home_tab_deeplink.dart';
 import '../screens/interactive_chat_screen.dart';
 import '../screens/mood_tracker_screen.dart';
-import '../dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart';
-import '../dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
 import '../widgets/community_feed_screen.dart';
 import '../services/compliance_service.dart';
 import '../screens/compliance_guard_screen.dart';

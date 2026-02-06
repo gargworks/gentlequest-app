@@ -943,8 +943,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   interventionId: exerciseId,
                   feedback: entry.isNotEmpty ? 'Entry saved' : null,
                 );
-            if (kDebugMode)
+            if (kDebugMode) {
               debugPrint('✓ Journal entry saved: ${entry.length} chars');
+            }
           },
         );
     }

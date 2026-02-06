@@ -7,11 +7,11 @@ class QuestCard extends StatelessWidget {
   final bool isLoading;
 
   const QuestCard({
-    Key? key,
+    super.key,
     required this.quest,
     required this.onTap,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   Color _getDifficultyColor() {
     switch (quest.difficulty) {

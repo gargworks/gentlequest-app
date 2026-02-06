@@ -1,0 +1,41 @@
+{
+  "commitments": [
+    {
+      "id": "comm_20260203_151340_0",
+      "created": "2026-02-03T15:13:40.014629",
+      "source_file": "manual",
+      "source_line": 0,
+      "type": "decision",
+      "source": "manual",
+      "description": "Decision/Note for Antigravity: The earlier task AG_FIX_BRAIN_MCP_STATUS was created with incomplete context; treat it as superseded by AG_INVESTIGATE_MCP_TOOLCOUNT_MISMATCH + any follow-up tasks. Since this MCP interface does not expose a 'complete/delete task' operation, do not spend time on AG_FIX_BRAIN_MCP_STATUS unless needed; close/cleanup later when task-complete/delete tooling is available.",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "low",
+        "urgency": null,
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 3,
+      "required_skills": [],
+      "suggested_action": "schedule",
+      "suggested_reason": "Low dopamine task, schedule for morning energy",
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    }
+  ],
+  "last_scan": null,
+  "last_interaction": null,
+  "notifications_sent": 0,
+  "high_impact_closed": 0,
+  "notifications_paused": false,
+  "manual_overrides_count": 0,
+  "estimated_time_saved_minutes": 0,
+  "stats": {
+    "total_open": 0,
+    "green_tier": 0,
+    "yellow_tier": 0,
+    "red_tier": 0
+  }
+}

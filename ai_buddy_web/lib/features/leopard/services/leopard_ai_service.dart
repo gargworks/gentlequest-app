@@ -81,21 +81,7 @@ USER INPUT TARGET:
 
   /// Generates a "Shareable" success story for marketing (Twitter/IH)
   String generateSuccessStory(LeopardQuest quest) {
-    const systemPrompt = """
-You are 'The Operator,' an AI specialized in psychological fortification.
-The user has just successfully completed a high-stakes mission (Quest) in GentleQuest.
-Generate a concise, high-status 'Mission Report' for the user to share on social media (IndieHackers/Twitter).
-
-RULES:
-- Persona: Cold, elite, proud of the user.
-- Structure: Code Name + Victory Result + Recruitment Link.
-- Recruitment Link: Always include 'Join the protocol: app.gentlequest.com/leopard'
-- Length: Max 240 characters.
-- Tone: Tactical, not clinical. No emojis except for 🛡️ or 🦾.
-
-EXAMPLE:
-'MISSION CLEAR: [QUEST TITLE] neutralized. Resilience levels optimized. Join the protocol: app.gentlequest.com/leopard 🛡️'
-""";
+    // systemPrompt removed as it was unused and causing lint issues.
     return '''
 Just defeated "${quest.bossName}" using GentleQuest // LEOPARD. 
 PROTOCOL: ${quest.title} complete. 

@@ -30,13 +30,9 @@ steps:
       - '$PROJECT_ID:us-central1:gentlequest-db'
       - '--set-env-vars'
       # Production Config with Secrets and API Keys
-      - 'ENVIRONMENT=production,FLASK_APP=app.py,AI_DEBUG_LOGS=false'
-      - '--set-env-vars'
-      - 'GEMINI_API_KEY=AIzaSyAw4JrwD6yMmLBCAcQ2KcNix2xtctnJmA8'
-      - '--set-env-vars'
-      - 'DB_USER=gentlequest,DB_NAME=gentlequest,DB_HOST=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
+      - 'ENVIRONMENT=production,FLASK_APP=app.py,AI_DEBUG_LOGS=false,DB_USER=gentlequest,DB_NAME=gentlequest,DB_HOST=/cloudsql/$PROJECT_ID:us-central1:gentlequest-db'
       - '--set-secrets'
-      - 'DB_PASSWORD=gentlequest-db-pass:latest'
+      - 'DB_PASSWORD=gentlequest-db-pass:latest,GEMINI_API_KEY=gemini-api-key:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/gentlequest-backend'

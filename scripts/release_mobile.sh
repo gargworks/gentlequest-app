@@ -17,10 +17,7 @@ STATUS="draft" # Default to draft for safety
 # This ensures strictly increasing versions and avoids conflicts with previous lower numbers.
 # Android Max: 2,100,000,000. Our format 26020314 is ~26 million (Safe).
 DEFAULT_BN=$(date +%y%m%d%H)
-BUILD_NUMBER="${1:-$DEFAULT_BN}" # Use arg 1 or default (Wait, arg 1 is track...)
-
-# We need to handle args properly below, so set default here and override if needed
-BUILD_NUMBER="$DEFAULT_BN"
+BUILD_NUMBER="${3:-$DEFAULT_BN}"
 
 # Color codes
 RED='\033[0;31m'

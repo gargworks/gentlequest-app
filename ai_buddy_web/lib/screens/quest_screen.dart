@@ -12,7 +12,7 @@ class QuestScreen extends StatefulWidget {
   const QuestScreen({super.key});
 
   @override
-  _QuestScreenState createState() => _QuestScreenState();
+  State<QuestScreen> createState() => _QuestScreenState();
 }
 
 class _QuestScreenState extends State<QuestScreen> {
@@ -25,8 +25,10 @@ class _QuestScreenState extends State<QuestScreen> {
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 3));
     // Load quests on init
-    Future.microtask(
-        () => Provider.of<QuestProvider>(context, listen: false).loadQuests());
+    Future.microtask(() {
+      if (!mounted) return;
+      Provider.of<QuestProvider>(context, listen: false).loadQuests();
+    });
   }
 
   @override
@@ -46,6 +48,7 @@ class _QuestScreenState extends State<QuestScreen> {
     // Complete it!
     await provider.updateQuestProgress(quest.id, quest.target);
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Quest Complete! +${quest.xpReward} XP"),

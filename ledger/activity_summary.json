@@ -1,0 +1,16 @@
+{
+  "last_event": {
+    "event_id": "evt-1770315805-60c5fe3e",
+    "timestamp": "2026-02-05T18:23:25.036548Z",
+    "type": "task_created",
+    "emitter": "multi_agent_swarm",
+    "data": {
+      "task_id": "trigger_swarm_sprint",
+      "description": "Trigger multi-agent sprint: execute brain_autopilot_sprint with all registered slots, auto mode, no budget limit, max 3 tasks per slot, coordinate parallel execution across Antigravity, Windsurf, Cursor",
+      "priority": 1
+    },
+    "description": ""
+  },
+  "updated_at": "2026-02-05T18:23:25.036548Z",
+  "event_count": 30
+}

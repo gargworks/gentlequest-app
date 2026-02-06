@@ -1,7 +1,7 @@
 # Release Notes - v1.2.1
 
-## Date: 2026-01-20
-## Build: 5
+## Date: 2026-02-06
+## Build: 26020611
 
 ### What's New
 - [Add new features here]
@@ -13,7 +13,7 @@
 - [Add bug fixes here]
 
 ### Platform Updates
-- iOS: Build 5
-- Android: Build 5
+- iOS: Build 26020611
+- Android: Build 26020611
 
 ---

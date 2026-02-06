@@ -1,15 +1,15 @@
 {
   "initialized": "2025-12-26T21:20:00+05:30",
-  "last_updated": "2026-01-31T00:00:03.757092",
+  "last_updated": "2026-02-04T00:00:02.993220",
   "agents": {
-    "brain_write_engram": {
+    "health_check": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,
       "success_rate": 0.0,
       "escalation_rate": 0.0
     },
-    "health_check": {
+    "brain_write_engram": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,
@@ -157,55 +157,6 @@
       "escalation_rate": 0.0
     },
     "brain_save_session": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "antigravity_exec_001": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "antigravity_001": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "nucleus_orchestrate": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "windsurf_exec_001": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "ag_gemini_pro": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "antigravity_002": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "request_scanner": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,

@@ -96,7 +96,7 @@ class _LeopardAccessGateState extends State<LeopardAccessGate> {
               const SizedBox(height: 8),
               Container(
                 height: 2,
-                color: const Color(0xFF667EEA).withOpacity(0.3),
+                color: const Color(0xFF667EEA).withValues(alpha: 0.3),
               ),
               const SizedBox(height: 48),
 
@@ -133,7 +133,7 @@ class _LeopardAccessGateState extends State<LeopardAccessGate> {
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: const OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.white10),
                   ),
@@ -144,7 +144,7 @@ class _LeopardAccessGateState extends State<LeopardAccessGate> {
                     borderSide: BorderSide(color: Color(0xFF667EEA)),
                   ),
                   hintText: "********",
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.1)),
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 onSubmitted: (_) => _validateCode(),
               ),

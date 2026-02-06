@@ -10,7 +10,6 @@ import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 import 'package:ai_buddy_web/navigation/route_observer.dart';
 import 'package:ai_buddy_web/services/notification_service.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
 
 // LEOPARD SEAL: Shadow Entry Point.

@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use, avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -256,7 +257,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: (selectedTopic == null || selectedTopic == 'All')
+                    initialValue: (selectedTopic == null || selectedTopic == 'All')
                         ? null
                         : selectedTopic,
                     items: _topicsFull

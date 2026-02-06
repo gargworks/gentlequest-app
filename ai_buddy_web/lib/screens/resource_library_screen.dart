@@ -17,7 +17,7 @@ class ResourceLibraryScreen extends StatefulWidget {
   });
 
   @override
-  _ResourceLibraryScreenState createState() => _ResourceLibraryScreenState();
+  State<ResourceLibraryScreen> createState() => _ResourceLibraryScreenState();
 }
 
 class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
@@ -115,7 +115,7 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
           Uri.parse('${widget.apiBaseUrl}/api/resources/$resourceId/view'),
           headers: {"X-Session-ID": widget.sessionId});
     } catch (e) {
-      print("Error tracking view: $e");
+      debugPrint("Error tracking view: $e");
     }
   }
 

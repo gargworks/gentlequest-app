@@ -29,6 +29,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/services/app_rating_service.dart';
 import 'package:upgrader/upgrader.dart';
+import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 
 // Root navigator key to support global routing from notification taps
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -239,6 +240,6 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HomeShell(initialTab: AppTab.talk);
+    return const ComplianceGuardScreen();
   }
 }

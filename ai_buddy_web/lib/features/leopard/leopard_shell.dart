@@ -125,9 +125,9 @@ class _LeopardShellState extends State<LeopardShell> {
                       decoration: InputDecoration(
                         hintText: "e.g. 'My boss is overwhelming me'",
                         hintStyle:
-                            TextStyle(color: Colors.white.withOpacity(0.3)),
+                            TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.05),
+                        fillColor: Colors.white.withValues(alpha: 0.05),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -224,26 +224,4 @@ class _LeopardShellState extends State<LeopardShell> {
   }
 }
 
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Text(
-        label,
-        style:
-            TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
-      ),
-    );
-  }
-}
+// _Badge was unused and removed to resolve lint.

@@ -303,8 +303,9 @@ class ChatProvider extends ChangeNotifier {
                 ...(event['exercise'] as Map<String, dynamic>),
               });
             } catch (e) {
-              if (kDebugMode)
+              if (kDebugMode) {
                 debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
+              }
             }
           }
 
