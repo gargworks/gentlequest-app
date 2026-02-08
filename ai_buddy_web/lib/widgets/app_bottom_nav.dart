@@ -45,10 +45,14 @@ class AppBottomNav extends StatelessWidget {
                       activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(context, Icons.mood, 'Mood', AppTab.mood,
                       activeLabelOnly: kActiveLabelOnlyDemo),
-                  if (FeatureFlags.enableLeopardMode)
-                    _buildItem(context, Icons.emoji_events_outlined, 'Quest',
-                        AppTab.quest,
-                        activeLabelOnly: kActiveLabelOnlyDemo),
+                  // LEOPARD SEAL: The Quest Tab is the entry point for both experiments.
+                  // Default (Flag=False) -> Old Epxeriment (Wellness Dashboard)
+                  // Leopard (Flag=True)  -> New Experiment (Leopard Gate -> Shell)
+                  // Note: We always show the tab now so the "Old Experiment" is accessible.
+                  // if (FeatureFlags.enableLeopardMode)
+                  _buildItem(context, Icons.emoji_events_outlined, 'Quest',
+                      AppTab.quest,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(context, Icons.people_outline, 'Community',
                       AppTab.community,
                       activeLabelOnly: kActiveLabelOnlyDemo),

@@ -87,7 +87,8 @@ esac
  echo "${BLUE}Select where to run the build:${NC}"
  echo "1) GitHub Hosted (Standard)"
  echo "2) Self-Hosted (Local Mac - Bypasses Billing Limits)"
- read -p "Choice [1-2, Default: 2]: " runner_choice
+ echo "3) Local Build (Skip CI - Immediate)"
+ read -p "Choice [1-3, Default: 2]: " runner_choice
  runner_choice=${runner_choice:-2}
  
  case $runner_choice in
@@ -96,6 +97,9 @@ esac
          ;;
      2)
          RUNNER_TYPE="self_hosted"
+         ;;
+     3)
+         RUNNER_TYPE="local"
          ;;
      *)
          RUNNER_TYPE="self_hosted"
@@ -146,6 +150,16 @@ if [[ $gen_screenshots == "y" || $gen_screenshots == "Y" ]]; then
     fi
 fi
 
+# Fix iOS Project (GoogleService-Info.plist injection)
+echo ""
+echo "${BLUE}Fixing iOS Project configuration...${NC}"
+if [ -f "scripts/fix_ios_project.rb" ]; then
+    ruby scripts/fix_ios_project.rb
+    echo -e "${GREEN}✓ iOS project fixed${NC}"
+else
+    echo -e "${YELLOW}⚠ scripts/fix_ios_project.rb not found. Skipping fix.${NC}"
+fi
+
 # Build for platforms
 echo ""
 echo "${BLUE}Building releases...${NC}"
@@ -154,59 +168,81 @@ echo "${BLUE}Building releases...${NC}"
 echo "${BLUE}Syncing changes with origin...${NC}"
 git push origin HEAD || echo -e "${YELLOW}⚠ Could not push to origin. CI might run stale code.${NC}"
 
-# Trigger CI build
-echo "Triggering Mobile Release workflow on $RUNNER_TYPE..."
-WORKFLOW_RUN=$(gh workflow run mobile_release.yml \
-    -f "build_params={\"build_number\":\"$BUILD\",\"release_notes\":\"Release v$VERSION\",\"preflight\":\"false\"}" \
-    -f "android_params={\"app_id\":\"app.gentlequest.www\",\"package_name\":\"app.gentlequest.www\",\"track\":\"internal\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
-    -f "ios_params={\"bundle_id\":\"com.gentlequest.app\",\"scheme\":\"Runner\",\"export_method\":\"app-store\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
-    -f "release_params={\"create_gh_release\":\"true\",\"tag_prefix\":\"v\"}" \
-    -f "runner_type=$RUNNER_TYPE" 2>&1)
+PERFORM_LOCAL_BUILD="false"
 
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ CI workflow triggered${NC}"
-    
-    # Get workflow run ID
-    RUN_ID=$(gh run list --workflow=mobile_release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
-    
-    echo "Workflow run ID: $RUN_ID"
-    echo "Watch progress: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/$RUN_ID"
-    
-    # Wait for completion
-    echo ""
-    echo "${BLUE}Waiting for build to complete...${NC}"
-    echo "This may take 10-15 minutes..."
-    
-    gh run watch $RUN_ID || true
-    
-    # Check if the run actually succeeded
-    RUN_STATUS=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
-    if [ "$RUN_STATUS" != "success" ]; then
-        echo ""
-        echo -e "${RED}✗ CI build failed with status: $RUN_STATUS${NC}"
-        echo ""
-        echo "View logs: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/$RUN_ID"
-        echo ""
-        echo "Common issues:"
-        echo "  - Android: Check build.gradle versioning and signing"
-        echo "  - iOS: Check provisioning profiles and certificates"
-        echo "  - Both: Check Flutter analyze and test results"
-        exit 1
-    fi
-    
-    # Download artifacts
-    echo ""
-    echo "${BLUE}Downloading artifacts...${NC}"
-    # Clean previous artifacts to avoid extraction conflicts
-    rm -rf release_artifacts/*
-    mkdir -p release_artifacts
-    gh run download $RUN_ID -D release_artifacts || echo -e "${YELLOW}⚠ Could not download all artifacts${NC}"
-    
-    echo -e "${GREEN}✓ Artifacts downloaded to release_artifacts/${NC}"
+if [ "$RUNNER_TYPE" == "local" ]; then
+    echo -e "${YELLOW}Skipping CI as requested. Performing local build...${NC}"
+    PERFORM_LOCAL_BUILD="true"
 else
-    echo -e "${RED}✗ Failed to trigger CI workflow${NC}"
-    echo "Attempting local build..."
-    
+    # Trigger CI build
+    echo "Triggering Mobile Release workflow on $RUNNER_TYPE..."
+    WORKFLOW_RUN=$(gh workflow run mobile_release.yml \
+        -f "build_params={\"build_number\":\"$BUILD\",\"release_notes\":\"Release v$VERSION\",\"preflight\":\"false\"}" \
+        -f "android_params={\"app_id\":\"app.gentlequest.www\",\"package_name\":\"app.gentlequest.www\",\"track\":\"internal\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
+        -f "ios_params={\"bundle_id\":\"com.gentlequest.app\",\"scheme\":\"Runner\",\"export_method\":\"app-store\",\"upload\":\"$UPLOAD_TO_STORE\"}" \
+        -f "release_params={\"create_gh_release\":\"true\",\"tag_prefix\":\"v\"}" \
+        -f "runner_type=$RUNNER_TYPE" 2>&1)
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ CI workflow triggered${NC}"
+        
+        # Get workflow run ID
+        RUN_ID=$(gh run list --workflow=mobile_release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
+        
+        echo "Workflow run ID: $RUN_ID"
+        echo "Watch progress: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/$RUN_ID"
+        
+        # Wait for completion
+        echo ""
+        echo "${BLUE}Waiting for build to complete...${NC}"
+        echo "This may take 10-15 minutes..."
+        
+        gh run watch $RUN_ID || true
+        
+        # Check if the run actually succeeded
+        RUN_STATUS=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
+        if [ "$RUN_STATUS" != "success" ]; then
+            echo ""
+            echo -e "${RED}✗ CI build failed with status: $RUN_STATUS${NC}"
+            echo ""
+            echo "View logs: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/$RUN_ID"
+            echo ""
+            echo "Common issues:"
+            echo "  - Android: Check build.gradle versioning and signing"
+            echo "  - iOS: Check provisioning profiles and certificates"
+            echo "  - Both: Check Flutter analyze and test results"
+            
+            # Fallback prompt
+            echo ""
+            read -p "CI failed. Attempt local build? [y/N]: " fallback_local
+            if [[ "$fallback_local" == "y" || "$fallback_local" == "Y" ]]; then
+                PERFORM_LOCAL_BUILD="true"
+            else
+                exit 1
+            fi
+        else
+             # Download artifacts
+            echo ""
+            echo "${BLUE}Downloading artifacts...${NC}"
+            # Clean previous artifacts to avoid extraction conflicts
+            rm -rf release_artifacts/*
+            mkdir -p release_artifacts
+            gh run download $RUN_ID -D release_artifacts || echo -e "${YELLOW}⚠ Could not download all artifacts${NC}"
+            
+            echo -e "${GREEN}✓ Artifacts downloaded to release_artifacts/${NC}"
+        fi
+    else
+        echo -e "${RED}✗ Failed to trigger CI workflow${NC}"
+        echo "Attempting local build..."
+        PERFORM_LOCAL_BUILD="true"
+    fi
+fi
+
+if [ "$PERFORM_LOCAL_BUILD" == "true" ]; then
+    echo ""
+    echo "${BLUE}Starting Local Build...${NC}"
+    mkdir -p release_artifacts
+
     # Local Android build
     echo "${BLUE}Building Android AAB locally...${NC}"
     cd ai_buddy_web
@@ -221,6 +257,9 @@ else
     flutter build ios --release --no-codesign --build-number=$BUILD
     cd ..
     echo -e "${GREEN}✓ iOS app built (unsigned)${NC}"
+
+    # IMPORTANT: Since we don't have the CI to finalize things, we must assume Manual Upload
+    echo -e "${YELLOW}⚠ Local build complete. You must manually upload these artifacts.${NC}"
 fi
 
 # Post-build steps

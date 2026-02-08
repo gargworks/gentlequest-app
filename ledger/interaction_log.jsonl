@@ -28,3 +28,4 @@
 {"timestamp": "2026-02-05T18:23:05.203187Z", "emitter": "multi_agent_swarm", "type": "task_created", "hash": "8e1e6cd29c8dea348cc420692f58ac4ad6009f7c87ca006e459b9767cdf6c1f2", "alg": "sha256"}
 {"timestamp": "2026-02-05T18:23:14.555191Z", "emitter": "multi_agent_swarm", "type": "task_created", "hash": "7839a72cfecff8193a75ed44bd25c73c4604957e225197734c677b3119771a5c", "alg": "sha256"}
 {"timestamp": "2026-02-05T18:23:25.036656Z", "emitter": "multi_agent_swarm", "type": "task_created", "hash": "fc72b12530b12983d32f02669217181c006730d31d08d39c8e3d919ff430c171", "alg": "sha256"}
+{"timestamp": "2026-02-06T13:29:54.696260Z", "emitter": "perplexity_user_request", "type": "task_created", "hash": "df89fde392ae792dfaaaa07268141958983f71d75ba0792abea3c8486f64a77c", "alg": "sha256"}

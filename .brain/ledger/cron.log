@@ -1041,3 +1041,125 @@ Warning: FastMCP not installed. Running in standalone/verification mode.
 Warning: FastMCP not installed. Running in standalone/verification mode.
 ⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
 ✅ Message sent to 7575125475 (Fallback Mode)
+2026-02-07 08:00:01,299 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-07 08:00:02,777 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-02-07 08:00:03,155 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-07 08:00:03,176 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-02-07 08:00:03,176 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-02-07 08:00:03,227 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-07 08:00:03,227 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-07 08:00:03,229 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-02-07 08:00:03,229 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-02-07 08:00:03,242 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-07 08:00:03,287 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-02-07 08:00:05,722 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-07 08:00:05,741 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-07 08:00:07,050 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-07 08:00:07,076 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-07 08:00:08,688 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-07 08:00:08,954 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-07 08:00:10,574 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-07 08:00:10,642 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-07 08:00:11,864 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-07 08:00:12,044 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+Error consolidating /Users/lokeshgarg/ai-mvp-backend/.brain/raw/llm_interaction_20260118_095924_225178.json: Extra data: line 7 column 2 (char 1027)
+Error consolidating /Users/lokeshgarg/ai-mvp-backend/.brain/raw/llm_interaction_20260118_100144_789378.json: Extra data: line 7 column 3 (char 831)
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+2026-02-08 08:00:00,977 - nucleus.init - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-08 08:00:02,315 - nucleus.llm - INFO - ✅ SDK: google-genai (new) available
+2026-02-08 08:00:02,673 - nucleus.llm - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-08 08:00:02,688 - NightlyTrigger - INFO - 🌙 Nightly Agent Trigger - Waking up Nucleus...
+2026-02-08 08:00:02,689 - google_genai._api_client - INFO - The user provided project/location will take precedence over the Vertex AI API key from the environment variable.
+2026-02-08 08:00:02,740 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-08 08:00:02,740 - nucleus.vector_store - WARNING - ⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.
+2026-02-08 08:00:02,743 - NightlyTrigger - INFO - Spawned Agent: Librarian
+2026-02-08 08:00:02,743 - NightlyTrigger - INFO - Active Capabilities: ['brain_ops', 'memory_ops', 'code_ops']
+2026-02-08 08:00:02,764 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 08:00:02,794 - google.auth._default - WARNING - No project ID could be determined. Consider running `gcloud config set project` or setting the GOOGLE_CLOUD_PROJECT environment variable
+2026-02-08 08:00:05,236 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-08 08:00:05,268 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 08:00:06,726 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-08 08:00:06,753 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 08:00:08,444 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-08 08:00:08,463 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 08:00:09,645 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-08 08:00:09,693 - google_genai.models - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 08:00:11,026 - httpx - INFO - HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 200 OK"
+2026-02-08 08:00:11,072 - NightlyTrigger - INFO - Agent finished. Result type: str
+
+============================================================
+🤖 AGENT OUTPUT (Librarian)
+============================================================
+
+Checklist scan failed: [Errno 2] No such file or directory: 'rg'
+
+============================================================
+🏁 SESSION COMPLETE
+============================================================
+
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Warning: FastMCP not installed. Running in standalone/verification mode.
+⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.
+✅ Message sent to 7575125475 (Fallback Mode)
+==============================================
+🌞 STARTING SUNDAY BUNDLE: Sun Feb  8 09:00:01 IST 2026
+==============================================
+Running Auto Strategy Sync...
+2026-02-08 09:00:01,373 - INFO - Nucleus Tool Tier: 0 (LAUNCH)
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-02-08 09:00:02,751 - INFO - ✅ SDK: google-genai (new) available
+2026-02-08 09:00:03,157 - INFO - 🎯 SDK Selection: Using NEW
+Warning: FastMCP not installed. Running in standalone/verification mode.
+2026-02-08 09:00:03,171 - INFO - 🧠 Nucleus Brain: Starting Weekly Strategy Sync...
+2026-02-08 09:00:03,171 - INFO - 📂 Project Root: /Users/lokeshgarg/ai-mvp-backend
+2026-02-08 09:00:03,172 - INFO - 🛡️ Backup created: /Users/lokeshgarg/ai-mvp-backend/docs/marketing/strategy.old.md
+2026-02-08 09:00:03,173 - INFO - 🔄 Analyzing Marketing Logs & Synthesizing New Strategy...
+2026-02-08 09:00:03,223 - INFO - AFC is enabled with max remote calls: 10.
+2026-02-08 09:00:03,481 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent "HTTP/1.1 404 Not Found"
+2026-02-08 09:00:03,494 - ERROR - GenAI Strategy Synthesis failed: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-2.0-flash-exp is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+2026-02-08 09:00:03,495 - ERROR - ❌ Strategy Update Failed.
+2026-02-08 09:00:03,495 - ERROR - Reason: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-2.0-flash-exp is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+2026-02-08 09:00:03,495 - INFO - 🧬 Nucleus Brain: Checking for Workflow Improvements (Meta-Feedback)...
+2026-02-08 09:00:03,495 - INFO - 👌 No Meta-Feedback found. Workflow is stable.
+Running Weekly Summary...
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+📊 Weekly Summary Generator Starting...
+   Time: 2026-02-08T09:00:05.027234
+📖 Extracting last 7 days of digests...
+   Found 7 daily reports
+📈 Analyzing events...
+Traceback (most recent call last):
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 239, in <module>
+    main()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 195, in main
+    events_summary = get_events_summary()
+  File "/Users/lokeshgarg/ai-mvp-backend/scripts/weekly_summary.py", line 107, in get_events_summary
+    if event_time > seven_days_ago:
+TypeError: can't compare offset-naive and offset-aware datetimes
+==============================================
+✅ SUNDAY BUNDLE COMPLETE: Sun Feb  8 09:00:05 IST 2026
+==============================================

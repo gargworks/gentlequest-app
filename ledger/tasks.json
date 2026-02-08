@@ -510,5 +510,22 @@
     "escalation_reason": null,
     "created_at": "2026-02-05T23:53:25+0530",
     "updated_at": "2026-02-05T23:53:25+0530"
+  },
+  {
+    "id": "believe_reupload_fact015",
+    "description": "Re-upload fact_015 with Phase 1.8.2 fixes: Re-assemble video using output/veo_raw/fact_015_veo_gemini.mp4 + output/audio/fact_015.mp3 with new MediaEngine (codec copy, narration 150%, BG 10%, no logo overlay). Generate fresh metadata. Upload to YouTube with AI tag. After successful upload, delete old video vTor3od81vU. Verify: clear narration, HD quality preserved, no red dot artifact.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "video_processing",
+      "youtube_api"
+    ],
+    "claimed_by": null,
+    "source": "perplexity_user_request",
+    "escalation_reason": null,
+    "created_at": "2026-02-06T18:59:54+0530",
+    "updated_at": "2026-02-06T18:59:54+0530"
   }
 ]

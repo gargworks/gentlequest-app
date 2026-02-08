@@ -58,3 +58,10 @@ git ls-files | wc -l  # Verify expected file count
 ## IF UNCERTAIN
 
 STOP and ASK the user rather than guessing. A 30-second confirmation is better than a security incident.
+
+## PLAN MODE MANDATE (Boss Opus, Feb 2026)
+
+Before ANY code change, state:
+1. What file(s) will change
+2. Why this change is needed
+3. Expected outcome

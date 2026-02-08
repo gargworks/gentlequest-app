@@ -69,6 +69,10 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GentleQuest requires your location to ensure ongoing compliance with regional AI safety and mental health regulations.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>GentleQuest requires your location to ensure ongoing compliance with regional AI safety and mental health regulations.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Allow GentleQuest to connect to the Dart VM on your local network during development.</string>
 	<key>NSBonjourServices</key>

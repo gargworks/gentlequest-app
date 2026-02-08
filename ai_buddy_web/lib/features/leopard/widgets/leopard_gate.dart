@@ -43,7 +43,9 @@ class _LeopardGateState extends State<LeopardGate> {
   @override
   Widget build(BuildContext context) {
     if (!FeatureFlags.enableLeopardMode) {
-      // LEGACY MODE: The Old World
+      // LEOPARD SEAL: EXPERIMENT A ("Old Experiment")
+      // Access to the classic Wellness Dashboard.
+      // This is the fallback when the "New Experiment" is disabled.
       return dhiwise_sizer.Sizer(
         builder: (context, orientation, deviceType) => WellnessDashboardScreen(
           showBottomNav: widget.showBottomNav,
