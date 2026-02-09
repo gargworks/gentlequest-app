@@ -1,35 +1,93 @@
-# 🧠 Nucleus Sovereign OS
+# 🧠 Nucleus OS
+
+> ⚠️ **Looking for the Open Source version?** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
 
 [![PyPI version](https://badge.fury.io/py/mcp-server-nucleus.svg)](https://badge.fury.io/py/mcp-server-nucleus)
-[![Website](https://img.shields.io/badge/Website-nucleusos.dev-blueviolet?logo=globe)](https://nucleusos.dev)
-[![Watch Launch Trailer](https://img.shields.io/badge/Watch-Launch_Trailer-red?logo=youtube)](https://youtu.be/jI8TUpfjS1A)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 
-> **The Operating System for AI Agents** — Persistent Operational Memory, Swarm Orchestration, and Local-First Sovereignty.
+> **The Universal Brain for AI Agents** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
 
-Nucleus is the **Recursive Aggregator** that gives your AI agents a persistent brain (`.brain/`) and a file system. It turns stateless chatbots into stateful **Sovereign Agents**.
+---
 
-### Context vs. Control
-Claude's `CLAUDE.md` provides **static context**. Nucleus provides **active control**.
+## 📦 Open Source Release
 
-| Feature | CLAUDE.md / .cursorrules | Nucleus (Agent Control Plane) |
-| :--- | :--- | :--- |
-| **State** | Static (read-only text) | **Dynamic** (Stateful DB, Event Ledger) |
-| **Memory** | Session-bound (forgotten on close) | **Persistent** (Project-bound, recallable) |
-| **Security** | None (Prompt injection risk) | **Enforced** (Auth boundary, Default Deny) |
-| **Tools** | Suggestions only | **Orchestrated Execution** (DAGs) |
-| **Audit** | None | **Full Decision Trail** (Who/Why/When) |
+The clean, open source version of Nucleus is now available at:
 
-## ✨ Governance Features (The Moat)
+**→ [github.com/eidetic-works/nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
 
-- **Default Deny Security** — All mounted servers start with NO network/filesystem access.
-- **Explicit Consent** — You approve every command. No silent execution.
-- **Isolation Boundaries** — Tools cannot see each other or the full chat history.
-- **Auth Firewall** — Tokens are stored in Nucleus (Host), never passed to agents.
-- **Event Ledger** — Immutable audit trail of every agent decision (`DecisionMade`).
-- **Decision Provenance** — v0.6.0 DSoR: Full audit trail with context hashing.
-- **IPC Security** — Per-request auth tokens prevent socket impersonation (CVE-2026-001).
-- **135 Native Tools** — For orchestration, swarms, memory, and DSoR inspection.
+```bash
+pip install nucleus-mcp
+nucleus-init
+```
+
+This repository (`mcp-server-nucleus`) is the internal development monorepo. For production use, please use the official open source package above.
+
+---
+
+## 🎯 The Problem
+
+You use **multiple AI tools** daily:
+- Cursor for coding
+- Claude Desktop for thinking
+- Windsurf for exploration
+- ChatGPT for quick answers
+
+**But they don't share memory.**
+
+Every time you switch tools, you lose context. You re-explain decisions. You repeat yourself.
+
+---
+
+## ✨ The Solution
+
+**Nucleus syncs them with one brain.**
+
+```
+Tell Claude about a decision → Cursor knows it
+Make a plan in Windsurf → Claude remembers it
+One brain. All your tools.
+```
+
+<!-- TODO: Add demo GIF here showing cross-platform sync -->
+
+---
+
+## 🚀 What Makes Nucleus Different
+
+| Feature | Other Solutions | Nucleus |
+|---------|-----------------|---------|
+| **Cross-Platform Sync** | Single platform only | ✅ Syncs ALL your AI tools |
+| **Sovereignty** | Cloud-dependent | ✅ 100% local, your data stays on your machine |
+| **Protocol** | Proprietary | ✅ MCP standard (Anthropic-backed) |
+| **Security** | Often misconfigured | ✅ Secure by default, audit logs included |
+| **Lock-in** | Platform-specific | ✅ MIT license, open standard |
+
+---
+
+## 🛠 140+ MCP Tools Included
+
+- **Memory** — Persistent knowledge that survives sessions
+- **Tasks** — Track work across agents
+- **Sessions** — Save and resume context
+- **Sync** — Multi-agent brain synchronization
+- **Hypervisor** — File locking, security, audit trails
+- **Orchestration** — Coordinate multiple agents
+
+---
+
+## ⚡ Comparison: Nucleus vs Alternatives
+
+| | OpenClaw | Claude Code | Nucleus |
+|---|----------|-------------|---------|
+| **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
+| **Cross-platform** | ❌ | ❌ | ✅ |
+| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
+| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
+| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+
+**OpenClaw is great for multi-agent teams on their platform.**
+**Nucleus connects ALL your platforms with one brain.**
 
 ## 🚀 Quick Start (2 Minutes)
 
@@ -124,37 +182,23 @@ Check your config pointer! You might be pointing to an old or temp brain.
 - **Recursive Mounting** — `brain_mount_server` (Basic).
 - **Local Sovereignty** — Zero cloud. All data in `~/.nucleus/brain`.
 
-## 🔐 Sovereign Edition (Closed Beta)
-*The "Dark Wheel" is reserved for active builders.*
+## 🔄 Multi-Agent Sync (New in v0.7.0)
 
-**Early Access Program**
-The Sovereign Edition (Task Engine, Swarm, Federation) is currently invite-only to ensure stability.
-To join the cohort:
-1.  **Install Core** (PyPI).
-2.  **DM u/NucleusOS** on Reddit for an invite code.
+**The killer feature: Multiple agents, one brain.**
 
-**Unlockable Features:**
+```python
+# Agent A (Claude Desktop) makes a decision
+brain_sync_now()  # Syncs to shared .brain/
 
-- **Task Engine** — `brain_add_task`, `brain_claim_task`.
-- **Swarm Orchestration** — `brain_orchestrate_swarm`.
-- **Session Persistence** — `brain_save_session`.
-- **Federation** — Peer-to-Peer Agent Mesh.
-
-## 🚀 Quick Start (Core)
-
-### 1. Install
-```bash
-pip install mcp-server-nucleus
+# Agent B (Cursor) automatically sees it
+brain_sync_status()  # Shows last sync, active agents
 ```
 
-### 2. Initialize
-```bash
-nucleus-init
-```
-
-### 3. Use the Memory
-Restart Claude and try:
-> "Write an engram: 'The project goal is World Domination'. Then audit the ledger."
+**Features:**
+- **Intent-Aware Locking** — Files locked with WHO/WHEN/WHY metadata
+- **Conflict Detection** — Last-write-wins with manual resolution option  
+- **Auto-Sync** — Optional file watcher for real-time sync
+- **Audit Trail** — Every sync logged to events.jsonl
 
 ---
 
@@ -168,21 +212,30 @@ Restart Claude and try:
 | `brain_audit_log` | Verify ledger integrity |
 | `brain_mount_server` | Mount sub-MCP servers |
 
-### 🔒 Sovereign (Beta Key Required)
+### 🔄 Sync Tools
+| Tool | Description |
+|------|-------------|
+| `brain_sync_now` | Manually trigger brain sync |
+| `brain_sync_status` | Check sync state and conflicts |
+| `brain_sync_auto` | Enable/disable auto-sync |
+| `brain_identify_agent` | Register agent identity |
+
+### 🔒 Enterprise Features
 | Feature | Capabilities |
 |---------|--------------|
-| **Task Engine** | Priority queues, dependency DAGs, agent assignment |
-| **Swarm** | Multi-agent recursive orchestration |
-| **Federation** | Cross-machine agent communication |
-| **Deep Monitoring** | Real-time dashboards and metrics |
+| **Audit Logs** | Full decision trail with context hashing |
+| **RBAC** | Role-based access control (coming soon) |
+| **SSO** | Enterprise SSO integration (coming soon) |
+| **Compliance** | SOC2/HIPAA export reports (coming soon) |
 
-## �️ Community & Feedback
+## 🤝 Community & Contributing
 
-We represent the **Sovereign Web**. We build in the open, but we protect the signal.
+We're building the universal brain for AI agents. Join us!
 
-- **🐛 Found a bug?** Open an [Issue on GitHub](https://github.com/eidetic-works/mcp-server-nucleus/issues).
-- **💡 Have an idea?** Discuss it on [GitHub Discussions](https://github.com/eidetic-works/mcp-server-nucleus/discussions).
-- **🗝️ Want to join the Inner Circle?** Check the **Early Access Program** above.
+- **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/mcp-server-nucleus/issues)
+- **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/mcp-server-nucleus/discussions)
+- **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **💬 Join Discord** — [discord.gg/nucleus](https://discord.gg/nucleus) (coming soon)
 
 ## �📜 License
 
