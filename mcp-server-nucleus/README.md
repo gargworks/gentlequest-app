@@ -1,16 +1,20 @@
-# 🧠 Nucleus OS
+# 🧠 Nucleus-MCP
 
-> ⚠️ **Looking for the Open Source version?** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
+> ⚠️ **Official Repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
 
-[![PyPI version](https://badge.fury.io/py/mcp-server-nucleus.svg)](https://badge.fury.io/py/mcp-server-nucleus)
+[![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 
-> **The Universal Brain for AI Agents** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
+> **The Sovereign Agent Control Plane** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
+
+> [!CAUTION]
+> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails — all 100% local.
 
 ---
 
-## 📦 Open Source Release
+## 📦 Installation
 
 The clean, open source version of Nucleus is now available at:
 
@@ -80,20 +84,21 @@ One brain. All your tools.
 
 | | OpenClaw | Claude Code | Nucleus |
 |---|----------|-------------|---------|
+| **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
 | **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
 | **Cross-platform** | ❌ | ❌ | ✅ |
 | **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
 | **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
 | **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
 
-**OpenClaw is great for multi-agent teams on their platform.**
+**OpenClaw trades security for capability. Nucleus gives you both.**
 **Nucleus connects ALL your platforms with one brain.**
 
 ## 🚀 Quick Start (2 Minutes)
 
 ### 1. Install
 ```bash
-pip install mcp-server-nucleus
+pip install nucleus-mcp
 ```
 
 ### 2. Initialize (Smart Config)
@@ -119,7 +124,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "nucleus": {
       "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
+      "args": ["-m", "nucleus_mcp"],
       "env": {
         "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
@@ -139,7 +144,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   "mcpServers": {
     "nucleus": {
       "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
+      "args": ["-m", "nucleus_mcp"],
       "env": {
         "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
@@ -157,7 +162,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "nucleus": {
       "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
+      "args": ["-m", "nucleus_mcp"],
       "env": {
         "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
@@ -228,11 +233,24 @@ brain_sync_status()  # Shows last sync, active agents
 | **SSO** | Enterprise SSO integration (coming soon) |
 | **Compliance** | SOC2/HIPAA export reports (coming soon) |
 
+## ❓ How is Nucleus Different?
+
+> **See the full comparison:** [Nucleus vs ContextStream vs mem0 vs OpenClaw →](docs/COMPARISON.md)
+
+| | Nucleus | ContextStream | mem0 |
+|---|:-------:|:-------------:|:----:|
+| **Architecture** | 100% Local (Git-native) | Cloud SaaS | Cloud API |
+| **Audit Trail** | ✅ Full | ❌ | ❌ |
+| **Governance** | ✅ Policy engine | ❌ | ❌ |
+| **Pricing** | Free (MIT) | Freemium → Paid | Freemium → Paid |
+
+---
+
 ## 🤝 Community & Contributing
 
 We're building the universal brain for AI agents. Join us!
 
-- **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/mcp-server-nucleus/issues)
+- **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/nucleus-mcp/issues)
 - **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/mcp-server-nucleus/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 - **💬 Join Discord** — [discord.gg/nucleus](https://discord.gg/nucleus) (coming soon)
