@@ -1,0 +1,30 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "mcpServers": {
+            "nucleus": {
+                "command": "python3",
+                "args": [
+                    "-m",
+                    "mcp_server_nucleus"
+                ],
+                "env": {
+                    "NUCLEUS_BETA_TOKEN": "titan-sovereign-godmode",
+                    "NUCLEAR_BRAIN_PATH": "/Users/lokeshgarg/ai-mvp-backend",
+                    "NUCLEUS_AGENT_ID": "windsurf_nucleus_core",
+                    "FASTMCP_SHOW_CLI_BANNER": "False",
+                    "FASTMCP_LOG_LEVEL": "WARNING"
+                }
+            }
+        },
+        "window.title": "⚛️ Nucleus (Core System)",
+        "workbench.colorCustomizations": {
+            "titleBar.activeBackground": "#d32f2f",
+            "titleBar.activeForeground": "#ffffff"
+        }
+    }
+}

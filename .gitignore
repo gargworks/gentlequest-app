@@ -119,3 +119,21 @@ release_v1.0.0.zip
 
 # Brain archive (local only)
 .brain-archive/
+
+# Nucleus MCP Sync Metadata
+**/*.meta
+**/*.conflict
+.nucleus_agent
+.sync_last
+
+# Demos - Ignore verified large media
+demos/*/frames/
+demos/*/*.mov
+demos/*/*.mp4
+
+
+# Demos - Ignore verified large media
+demos/*/frames/
+demos/*/*.mov
+demos/*/*.mp4
+

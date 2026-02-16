@@ -28,7 +28,7 @@ Community leaders will enforce these standards fairly. Violations may result in:
 
 ## Reporting
 
-Report violations to: conduct@nucleusos.dev (coming soon)
+Report violations to: hello@nucleusos.dev
 
 ## Attribution
 

@@ -14,7 +14,7 @@ echo "🚀 NUCLEUS PYPI PUBLISHING SCRIPT"
 echo "============================================================"
 
 # Configuration
-PACKAGE_NAME="mcp-server-nucleus"
+PACKAGE_NAME="nucleus-mcp"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 

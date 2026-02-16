@@ -1,0 +1,24 @@
+[
+  {
+    "id": "engram_sync_01",
+    "created": "2026-02-12T21:22:31.750558",
+    "description": "Use WebSockets (via Socket.io) for real-time synchronization in the AI Buddy app to ensure sub-100ms latency.",
+    "status": "open",
+    "priority": 1,
+    "skills": [
+      "Architecture"
+    ],
+    "claimed_by": null
+  },
+  {
+    "id": "engram_db_01",
+    "created": "2026-02-12T21:22:31.750561",
+    "description": "PostgreSQL with pgvector for efficient similarity search in long-term AI memory.",
+    "status": "open",
+    "priority": 1,
+    "skills": [
+      "Decision"
+    ],
+    "claimed_by": null
+  }
+]

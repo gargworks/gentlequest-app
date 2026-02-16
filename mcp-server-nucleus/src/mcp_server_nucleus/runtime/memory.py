@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 import logging
+import time
 
 # Configure logger
 logger = logging.getLogger("nucleus.memory")
@@ -113,3 +114,45 @@ def _read_memory(category: str) -> Dict:
     except Exception as e:
         logger.error(f"Read memory failed: {e}")
         return {"error": str(e)}
+
+def _write_memory(content: str, category: str = "learnings") -> str:
+    """
+    Write a memory engram to a specific category file in Markdown format.
+    """
+    try:
+        brain = get_brain_path()
+        memory_dir = brain / "memory"
+        memory_dir.mkdir(parents=True, exist_ok=True)
+        
+        allowed_files = {
+            "context": "context.md",
+            "patterns": "patterns.md",
+            "learnings": "learnings.md",
+            "decisions": "decisions.md" 
+        }
+        
+        # Default to learnings if unknown category, or map "memory" to learnings
+        if category == "memory":
+            category = "learnings"
+            
+        target_file = allowed_files.get(category, "learnings.md")
+        
+        # Special case for decisions (in ledger)
+        if category == "decisions":
+            file_path = brain / "ledger" / "decisions.md"
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            file_path = memory_dir / target_file
+            
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"\n\n## [{timestamp}] Engram\n{content}"
+        
+        mode = "a" if file_path.exists() else "w"
+        with open(file_path, mode) as f:
+            f.write(entry)
+            
+        return f"Memory written to {target_file}"
+
+    except Exception as e:
+        logger.error(f"Write memory failed: {e}")
+        return f"Error writing memory: {str(e)}"

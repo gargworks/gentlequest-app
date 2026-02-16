@@ -1,0 +1,4 @@
+# .env Lock Demo
+# Duration: 30 seconds
+
+This is what happens when an agent tries to delete your API keys. Nucleus blocks it, logs it, and you get a cryptographic receipt. Zero-trust by default.

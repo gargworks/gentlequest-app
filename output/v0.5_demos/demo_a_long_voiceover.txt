@@ -1,0 +1,4 @@
+# Phase A: Sovereign Context (Long-Form)
+# Duration: 2 minutes
+
+The Agentic Web is built on trust, but today, that trust is fragile. This is Phase A: Sovereign Context. You're watching an agent attempt to access or modify sensitive environment credentials. In any other system, this is a security failure. But with Nucleus v0.5, the control plane intercepts the system call at the transport layer. It doesn't just block the action; it generates a cryptographic audit receipt—a permanent Verisign Pillar in your ledger. Governance isn't a post-hoc check; it's the very infrastructure of the agentic economy. This is zero-trust, verified by code, and enforced by the Sovereign Control Plane.

@@ -15,6 +15,7 @@ import sys
 import json
 import tempfile
 from pathlib import Path
+import asyncio
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -39,10 +40,18 @@ def cleanup_test_brain(brain_path: Path):
         shutil.rmtree(brain_path)
 
 def call_tool(tool, **kwargs):
-    """Helper to call MCP FunctionTool objects."""
-    if hasattr(tool, 'fn'):
-        return tool.fn(**kwargs)
-    return tool(**kwargs)
+    """Helper to call MCP FunctionTool objects, handling both sync and async."""
+    import asyncio
+    fn = tool.fn if hasattr(tool, 'fn') else tool
+    
+    # Try calling it
+    result = fn(**kwargs)
+    
+    # If it returned a coroutine, run it
+    if asyncio.iscoroutine(result):
+        return asyncio.run(result)
+        
+    return result
 
 def test_brain_mount_server():
     """Test 1: brain_mount_server"""

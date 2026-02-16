@@ -1,0 +1,4 @@
+{"decision_id": "dec-e97c4a5a2e3d", "reasoning": "Tool: brain_scan_commitments | LLM requested tool call from turn 1", "context_hash": "bd9d1829781b43e1", "confidence": 0.9, "timestamp": "2026-02-09T02:30:05.542725+00:00"}
+{"decision_id": "dec-5eb100d636af", "reasoning": "Tool: code_run_command | LLM requested tool call from turn 2", "context_hash": "7f83e827d85dd459", "confidence": 0.9, "timestamp": "2026-02-09T02:30:07.381115+00:00"}
+{"decision_id": "dec-041e07d87108", "reasoning": "Tool: brain_scan_commitments | LLM requested tool call from turn 1", "context_hash": "bd9d1829781b43e1", "confidence": 0.9, "timestamp": "2026-02-09T17:30:06.600403+00:00"}
+{"decision_id": "dec-6e4ebd9de6d4", "reasoning": "Tool: brain_scan_commitments | LLM requested tool call from turn 1", "context_hash": "bd9d1829781b43e1", "confidence": 0.9, "timestamp": "2026-02-10T02:30:05.174888+00:00"}

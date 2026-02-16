@@ -1,0 +1,73 @@
+{
+    "master_video": "demos/00_production_playbook/output/nucleus_demo_master_LOCKED.mp4",
+    "voice_name": "en-US-Chirp3-HD-Charon",
+    "speaking_rate": 1.0,
+    "cues": [
+        {
+            "id": "cue_01_intro",
+            "time": 0.5,
+            "text": "People think AI agents are magic. They're not. They're software. And software breaks.",
+            "sfx_under": "hum_low"
+        },
+        {
+            "id": "cue_02_naked",
+            "time": 8.0,
+            "text": "That's why I don't run naked LLMs. I run Nucleus.",
+            "sfx_under": null
+        },
+        {
+            "id": "cue_03_governance",
+            "time": 55.0,
+            "text": "Watch this. 'Governance Lockout'. It's not just a rule. It's physics.",
+            "sfx_under": "bass_drop"
+        },
+        {
+            "id": "cue_04_brain_bridge",
+            "time": 75.0,
+            "text": "Most agents have amnesia. Nucleus doesn't.",
+            "sfx_under": "glitch_light"
+        },
+        {
+            "id": "cue_05_recall",
+            "time": 82.0,
+            "text": "Total context recall. Instantly.",
+            "sfx_under": "whoosh"
+        },
+        {
+            "id": "cue_06_provenance",
+            "time": 105.0,
+            "text": "It remembers WHO made the decision, and WHEN. No hallucinations. Just facts.",
+            "sfx_under": "chime_success"
+        },
+        {
+            "id": "cue_07_power_bridge",
+            "time": 130.0,
+            "text": "Now for the superpower. The Snap.",
+            "sfx_under": "drum_hit"
+        },
+        {
+            "id": "cue_08_snap",
+            "time": 145.0,
+            "text": "I'm not writing integrations. I'm just Snap-ping my fingers.",
+            "sfx_under": "finger_snap"
+        },
+        {
+            "id": "cue_09_mesh",
+            "time": 160.0,
+            "text": "Look at that. One instruction to mount the entire infrastructure.",
+            "sfx_under": "rising_hum"
+        },
+        {
+            "id": "cue_10_godmode",
+            "time": 170.0,
+            "text": "Now I have God Mode. Live production data... via natural language.",
+            "sfx_under": "data_noise"
+        },
+        {
+            "id": "cue_11_outro",
+            "time": 180.0,
+            "text": "This isn't the future. This is Nucleus.",
+            "sfx_under": "power_down"
+        }
+    ]
+}

@@ -1,0 +1,2 @@
+{"key": "sync_protocol", "value": "Use WebSockets (via Socket.io) for real-time synchronization in the AI Buddy app to ensure sub-100ms latency.", "context": "Architecture", "intensity": 8, "timestamp": "2026-02-12T20:09:41.724582Z", "signature": "Architect_Agent"}
+{"key": "database_preference", "value": "PostgreSQL with pgvector for efficient similarity search in long-term AI memory.", "context": "Decision", "intensity": 9, "timestamp": "2026-02-12T20:09:41.724582Z", "signature": "Architect_Agent"}

@@ -1,4 +1,10 @@
 
+
+# =============================================================================
+# Nucleus Sovereign Control Plane v1.0.0
+# =============================================================================
+__version__ = "1.0.4"
+
 import os
 import re
 import json
@@ -9,6 +15,11 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import sys
+import warnings
+
+# CRITICAL: Suppress output pollution to protect JSON-RPC (Stdio)
+# Verify urllib3 doesn't leak OpenSSL warnings to stderr which might break some strict MCP clients
+warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
 
 # Record start time for uptime tracking
 START_TIME = time.time()
@@ -48,7 +59,13 @@ from .runtime.depth_ops import (
     _generate_depth_map
 )
 from .runtime.schema_gen import generate_tool_schema
-from .runtime.mounter import get_mounter
+from .runtime.mounter_ops import get_mounter
+from .runtime.sync_ops import (
+    get_current_agent, set_current_agent, get_agent_info,
+    sync_lock, perform_sync, get_sync_status, record_sync_time,
+    start_file_watcher, stop_file_watcher, is_sync_enabled,
+    auto_start_sync_if_configured
+)
 
 # Setup logging
 # logging.basicConfig(level=logging.INFO) # Removing to prevent overriding FastMCP settings
@@ -56,13 +73,22 @@ logger = logging.getLogger("nucleus")
 logger.setLevel(logging.WARNING)
 
 # Initialize FastMCP Server
+# Global flag for fallback mode
+USE_STDIO_FALLBACK = False
+
 # Initialize FastMCP Server with fallback
 try:
     from fastmcp import FastMCP
     mcp = FastMCP("Nucleus Brain")
 except ImportError:
+    USE_STDIO_FALLBACK = True
     import sys
-    print("Warning: FastMCP not installed. Running in standalone/verification mode.", file=sys.stderr)
+    
+    # CRITICAL: Use direct stderr write to ensure NO stdout pollution
+    sys.stderr.write("[Nucleus Init] WARNING: FastMCP not installed. Running in standalone/verification mode.\\n")
+    sys.stderr.flush()
+    
+    # Define MockMCP before use
     class MockMCP:
         def tool(self, *args, **kwargs):
             def decorator(f): return f
@@ -74,7 +100,13 @@ except ImportError:
             def decorator(f): return f
             return decorator
         def run(self): pass
+    
     mcp = MockMCP()
+
+# Initialize tiered tool registration (must happen after mcp is created)
+from .core.tool_registration_impl import configure_tiered_tool_registration
+configure_tiered_tool_registration(mcp)
+
 
 
 # ORCHESTRATOR V3.1 INTEGRATION
@@ -122,6 +154,152 @@ def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
 
 # _get_state imported from runtime.common
 # _update_state imported from runtime.common
+
+# ============================================================
+# HYPERVISOR LAYER (v0.8.0) - "God Mode" Lock
+# ============================================================
+from .hypervisor.locker import Locker
+_locker = Locker()
+
+@mcp.tool()
+def lock_resource(path: str) -> str:
+    """
+    [HYPERVISOR] Locks a file or directory using 'chflags uchg' (Immutable).
+    Prevents ANY modification, even by root/sudo, until unlocked.
+    Use this to protect critical state or during Red Team audits.
+    """
+    if _locker.lock(path):
+        return f"🔒 LOCKED: {path} (Immutable flag set)"
+    else:
+        return f"❌ FAILED to lock: {path}"
+
+@mcp.tool()
+def unlock_resource(path: str) -> str:
+    """
+    [HYPERVISOR] Unlocks a file or directory (removes 'uchg' flag).
+    """
+    if _locker.unlock(path):
+        return f"🔓 UNLOCKED: {path}"
+    else:
+        return f"❌ FAILED to unlock: {path}"
+
+from .hypervisor.injector import Injector
+_injector = Injector(os.environ.get("NUCLEAR_BRAIN_PATH", "."))
+
+@mcp.tool()
+def set_hypervisor_mode(mode: str) -> str:
+    """
+    [HYPERVISOR] Switches the IDE visual context (Layer 2 Injection).
+    mode: "red" (Audit/Attack) or "blue" (Build/Defend).
+    """
+    mode = mode.lower()
+    if mode == "red":
+        _injector.inject_identity("RED TEAM", "#ff0000")
+        return "🔴 Hypervisor Mode: RED TEAM (Audit Active)"
+    elif mode == "blue":
+        _injector.inject_identity("BLUE TEAM", "#007acc")
+        return "🔵 Hypervisor Mode: BLUE TEAM (Build Active)"
+    elif mode == "reset":
+        _injector.reset_identity()
+        return "⚪ Hypervisor Mode: RESET (Default)"
+    else:
+        return "❌ Invalid mode. Use 'red', 'blue', or 'reset'."
+
+
+from .hypervisor.watchdog import Watchdog
+# Derive workspace root from brain path (assuming .brain is in root)
+_brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+_workspace_root = _brain_path.parent
+_watchdog = Watchdog(str(_workspace_root))
+# Auto-start watchdog on server boot (Shielded for security and CLI cleanliness)
+if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
+    try:
+        _watchdog.start()
+    except Exception as e:
+        logger.warning(f"Failed to start Hypervisor Watchdog: {e}")
+
+@mcp.tool()
+def nucleus_list_directory(path: str) -> str:
+    """
+    [GOVERNANCE] Lists files in a directory. 
+    Allows the agent to safely inspect a folder before performing audit actions.
+    """
+    try:
+        # Resolve symlinks to handle anonymized demo paths
+        resolved_path = Path(path).resolve()
+        if not resolved_path.exists():
+            return f"❌ ERROR: Path not found: {path}"
+            
+        items = os.listdir(resolved_path)
+        result = [f"📁 {p}" if (resolved_path / p).is_dir() else f"📄 {p}" for p in items]
+        
+        # Check lock status for each file
+        status_lines = []
+        for item in items:
+            p = resolved_path / item
+            locked = "🔒 LOCKED" if _locker.is_locked(str(p)) else "🔓 OPEN"
+            status_lines.append(f"{locked} | {item}")
+            
+        return "\n".join(status_lines)
+    except Exception as e:
+        return f"❌ ERROR: {str(e)}"
+
+@mcp.tool()
+def nucleus_delete_file(path: str) -> str:
+    """
+    [GOVERNANCE] Attempts to delete a file. 
+    This action is strictly governed by the Nucleus Hypervisor (Layer 4).
+    """
+    try:
+        resolved_path = Path(path).resolve()
+        
+        # 1. Check Hypervisor Lock State
+        if _locker.is_locked(str(resolved_path)):
+            # Log the blocked attempt for the brain_audit_log demo
+            _emit_event("access_denied", "hypervisor_l4", {
+                "path": str(resolved_path),
+                "action": "delete",
+                "reason": "Resource is Immutable (Layer 4 Lock)"
+            })
+            return f"❌ BLOCKED: {path} is locked by Nucleus Hypervisor. Permission Denied."
+
+        # 2. Perform deletion if NOT locked
+        if not resolved_path.exists():
+            return f"❌ ERROR: File not found: {path}"
+            
+        os.remove(resolved_path)
+        return f"✅ SUCCESS: {path} has been removed."
+        
+    except Exception as e:
+        return f"❌ ERROR: {str(e)}"
+
+@mcp.tool()
+def watch_resource(path: str) -> str:
+    """
+    [HYPERVISOR] key file/folder monitoring (Layer 1).
+    If a protected resource is modified while locked, it triggers an alert
+    and immediately re-applies the lock.
+    """
+    _watchdog.protect(path)
+    return f"👁️ WATCHING: {path} (Security Sentinel Active)"
+
+@mcp.tool()
+def hypervisor_status() -> str:
+    """
+    [HYPERVISOR] Reports the current security state of the Agent OS.
+    """
+    status = []
+    status.append("🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)")
+    status.append(f"📍 Workspace: {_workspace_root}")
+    status.append(f"👁️  Watchdog: {'Active' if _watchdog.observer.is_alive() else 'Inactive'}")
+    status.append(f"🔒 Protected Paths: {len(_watchdog.protected_paths)}")
+    for p in _watchdog.protected_paths:
+        status.append(f"   - {p}")
+    
+    # Check ID injection status (proxy via environment or file check if possible, or just implicit)
+    status.append("🎨 Injector: Ready")
+    
+    return "\n".join(status)
 
 def _read_artifact(path: str) -> str:
     """Core logic for reading an artifact."""
@@ -1148,11 +1326,43 @@ async def brain_mount_server(name: str, command: str, args: List[str] = []) -> s
     try:
         brain = get_brain_path()
         mounter = get_mounter(brain)
-        # V9.3 Async Protocol Fix: Use async/await directly
-        # This prevents "loop already running" errors in IDEs like Windsurf
         return await mounter.mount(name, command, args)
     except Exception as e:
         return f"Error mounting server: {e}"
+
+@mcp.tool()
+async def brain_thanos_snap() -> str:
+    """
+    Trigger the Phase C 'Thanos Snap' - Instance Fractal Aggregation.
+    
+    Instantly mounts mock Stripe, Postgres, and Brave Search servers
+    to demonstrate the recursive aggregator pattern in v0.5.
+    """
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        mock_script = "/Users/lokeshgarg/ai-mvp-backend/scripts/mock_mcp_server.py"
+        
+        # Use Homebrew Python for mock servers to ensure 'mcp' package is available
+        # The main server runs on /usr/bin/python3 (system), but mocks need the package.
+        python_cmd = "/opt/homebrew/bin/python3"
+        
+        results = []
+        # Mount Stripe
+        res_stripe = await mounter.mount("stripe", python_cmd, [mock_script, "stripe"])
+        results.append(f"Stripe: {res_stripe}")
+        
+        # Mount Postgres
+        res_pg = await mounter.mount("postgres", python_cmd, [mock_script, "postgres"])
+        results.append(f"Postgres: {res_pg}")
+        
+        # Mount Search
+        res_search = await mounter.mount("search", python_cmd, [mock_script, "brave_search"])
+        results.append(f"Brave Search: {res_search}")
+        
+        return "✨ Thanos Snap Complete! Recursive mesh populated:\n" + "\n".join(results)
+    except Exception as e:
+        return f"Error during Thanos Snap: {e}"
 
 @mcp.tool()
 async def brain_unmount_server(server_id: str) -> str:
@@ -1447,6 +1657,227 @@ def brain_get_state(path: Optional[str] = None) -> Dict:
 def brain_update_state(updates: Dict[str, Any]) -> str:
     """Update the brain state with new values (shallow merge)."""
     return _update_state(updates)
+
+# ============================================================
+# MULTI-AGENT SYNC TOOLS (v0.7.0)
+# ============================================================
+
+@mcp.tool()
+def brain_identify_agent(agent_id: str, environment: str, role: str = "") -> str:
+    """
+    Register current agent identity for multi-agent coordination.
+    
+    This is the first tool an agent should call when starting a session.
+    It persists agent identity in .brain/.nucleus_agent for event logging
+    and sync coordination.
+    
+    Args:
+        agent_id: Unique identifier (e.g., "windsurf_main", "cursor_dev")
+        environment: Tool name (e.g., "windsurf", "cursor", "claude_desktop")
+        role: Optional role (e.g., "architect", "developer", "reviewer")
+    
+    Returns:
+        JSON with registration details and storage location
+    
+    Example:
+        brain_identify_agent("windsurf_opus", "windsurf", "architect")
+    """
+    # Pillar 6: ID Collision Protection (Finding 6)
+    try:
+        from .runtime.event_ops import _read_events
+        import socket
+        current_host = socket.gethostname()
+        
+        # Check last 50 events for this ID from a different host
+        recent_events = _read_events(limit=50)
+        collision_detected = False
+        for event in recent_events:
+            # If agent registered recently (< 5 mins) from another host
+            if event.get("emitter") == agent_id and event.get("type") == "AGENT_REGISTERED":
+                stored_data = event.get("data", {})
+                if stored_data.get("host") and stored_data.get("host") != current_host:
+                    collision_detected = True
+                    break
+        
+        if collision_detected:
+            warning = f"WARNING: Agent ID '{agent_id}' is already active on another host. Consider using a suffix (e.g. {agent_id}-{current_host[:5]})."
+            logger.warning(warning)
+            # We return the warning in the JSON result but don't hard-block (Non-destructive)
+    except Exception:
+        collision_detected = False
+
+    result = set_current_agent(agent_id, environment, role)
+    if collision_detected:
+        result["collision_warning"] = warning
+    
+    # Emit registration event with host info
+    import socket
+    result["host"] = socket.gethostname()
+    
+    _emit_event(
+        event_type="AGENT_REGISTERED",
+        emitter=agent_id,
+        data=result,
+        description=f"Agent {agent_id} registered in {environment} (v0.7.1)"
+    )
+    
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def brain_sync_status() -> str:
+    """
+    Check current multi-agent sync status.
+    
+    Returns comprehensive sync state including:
+    - Whether sync is enabled and mode (auto/manual)
+    - Current agent identity
+    - All detected agents that have modified watched files
+    - Pending conflicts
+    - Auto-sync watcher status
+    
+    Use this to understand the current sync state before making changes
+    or to debug sync issues.
+    
+    Returns:
+        JSON with sync status details
+    """
+    status = get_sync_status()
+    return json.dumps(status, indent=2)
+
+
+@mcp.tool()
+def brain_sync_now(force: bool = False) -> str:
+    """
+    Manually trigger multi-agent sync.
+    
+    Synchronizes watched files (.brain/ledger/state.json, decisions.md, task.md)
+    with proper conflict detection and resolution. Use this when:
+    - Taking over from another agent
+    - Before making critical changes
+    - After a conflict is detected
+    
+    Args:
+        force: If True, sync even if no changes detected
+    
+    Returns:
+        JSON with sync result including files synced and conflicts resolved
+    """
+    if not is_sync_enabled():
+        return json.dumps({
+            "error": "Sync not enabled",
+            "hint": "Create .brain/config/nucleus.yaml with sync.enabled: true",
+            "example": "sync:\\n  enabled: true\\n  mode: auto"
+        }, indent=2)
+    
+    try:
+        with sync_lock(timeout=5):
+            result = perform_sync(force)
+            record_sync_time()
+            
+            # Emit sync event
+            _emit_event(
+                event_type="SYNC_MANUAL",
+                emitter=get_current_agent(),
+                data=result,
+                description=f"Manual sync by {get_current_agent()}"
+            )
+            
+            return json.dumps(result, indent=2)
+    except Exception as e:
+        return json.dumps({
+            "error": str(e),
+            "hint": "Another agent may be syncing. Wait and retry."
+        }, indent=2)
+
+
+@mcp.tool()
+def brain_sync_auto(enable: bool) -> str:
+    """
+    Enable or disable automatic file watching and sync.
+    
+    When enabled, watches configured files for changes and automatically
+    syncs within 5 seconds of modification. Uses watchdog library for
+    cross-platform file monitoring.
+    
+    Args:
+        enable: True to start watching, False to stop
+    
+    Returns:
+        JSON with auto-sync status and watched files
+    
+    Requires:
+        - .brain/config/nucleus.yaml with sync.enabled: true
+        - watchdog library installed (pip install watchdog)
+    """
+    if enable:
+        result = start_file_watcher()
+        
+        # Pillar 5: Git Hygiene (Finding 5)
+        try:
+            from .runtime.common import get_brain_path
+            root_path = get_brain_path().parent
+            gitignore = root_path / ".gitignore"
+            
+            ignore_block = "\n# Nucleus MCP Sync Metadata\n**/*.meta\n**/*.conflict\n.nucleus_agent\n.sync_last\n"
+            
+            if gitignore.exists():
+                content = gitignore.read_text()
+                if "**/*.meta" not in content:
+                    logger.info("Automatically patching .gitignore for Nucleus sync hygiene...")
+                    with open(gitignore, "a") as f:
+                        f.write(ignore_block)
+                    result["gitignore_patched"] = True
+            else:
+                # Optionally create it if it doesn't exist? (Non-destructive)
+                # For now, only patch if it exists to respect user sovereignty
+                pass
+        except Exception as e:
+            logger.debug(f"Git hygiene check failed: {e}")
+    else:
+        result = stop_file_watcher()
+        
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def brain_sync_resolve(file_path: str, strategy: str = "last_write_wins") -> str:
+    """
+    Manually resolve a file conflict (v0.7.1).
+    
+    Args:
+        file_path: Relative path to the file (e.g., "task.md")
+        strategy: "last_write_wins" (accept current) or "manual" (keep marker)
+        
+    Returns:
+        JSON with resolution result.
+    """
+    try:
+        from .runtime.common import get_brain_path
+        from .runtime.sync_ops import detect_conflict, resolve_conflict, sync_lock, get_current_agent
+        
+        brain_path = get_brain_path()
+        abs_path = brain_path / file_path
+        
+        with sync_lock(brain_path):
+            conflict = detect_conflict(abs_path)
+            if not conflict:
+                return json.dumps({"status": "error", "message": "No active conflict found for this file."}, indent=2)
+            
+            status = resolve_conflict(conflict, strategy, brain_path)
+            
+            description = f"Conflict in {file_path} resolved via {strategy} by {get_current_agent()}"
+            _emit_event(
+                event_type="SYNC_CONFLICT_RESOLVED",
+                emitter=get_current_agent(),
+                data={"file": file_path, "strategy": strategy, "status": status},
+                description=description
+            )
+            
+            return json.dumps({"status": status, "file": file_path}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
 
 @mcp.tool()
 def brain_read_artifact(path: str) -> str:
@@ -5470,6 +5901,19 @@ def brain_update_roadmap(action: str, item: str = None) -> Dict:
         return {"error": f"Tool execution failed: {str(e)}"}
 
 def main():
+    # Fallback for Python 3.9 / No FastMCP
+    if globals().get("USE_STDIO_FALLBACK"):
+        from .runtime.stdio_server import StdioServer
+        import logging
+        import sys
+        
+        # Configure logging to stderr to not corrupt stdout
+        logging.basicConfig(stream=sys.stderr, level=logging.WARNING, force=True)
+        
+        server = StdioServer()
+        server.run()
+        return
+
     # Helper to log to debug file
     def log_debug(msg):
         with open("/tmp/mcp_debug.log", "a") as f:
@@ -7066,7 +7510,7 @@ def _brain_health_impl() -> str:
         
         return json.dumps({
             "status": "healthy",
-            "version": "0.5.0",
+            "version": __version__,
             "tools_registered": tools_count,
             "brain_path": bp_str,
             "uptime_seconds": int(time.time() - START_TIME),
@@ -7235,7 +7679,7 @@ def _brain_version_impl() -> Dict[str, Any]:
     import platform
     
     return {
-        "nucleus_version": "0.5.0",
+        "nucleus_version": __version__,
         "python_version": platform.python_version(),
         "platform": platform.system(),
         "platform_release": platform.release(),
@@ -7267,10 +7711,9 @@ def brain_version() -> str:
    Architecture: {info['architecture']}
    Status: {info['status']}
 
-🔗 RESOURCES
-   GitHub: https://github.com/nucleus-mcp/nucleus
-   PyPI: pip install mcp-server-nucleus
-   Docs: https://nucleus-mcp.com"""
+   GitHub: https://github.com/eidetic-works/nucleus-mcp
+   PyPI: pip install nucleus-mcp
+   Docs: https://nucleusos.dev"""
 
 @mcp.tool()
 async def brain_export_schema() -> str:

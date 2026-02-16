@@ -1,0 +1,52 @@
+{
+  "commitments": [
+    {
+      "id": "engram_sync_01",
+      "created": "2026-02-12T21:22:57.669365",
+      "source_file": "ARCHITECT_PERSONA",
+      "source_line": 0,
+      "type": "Architecture",
+      "source": "sync_protocol",
+      "description": "Use WebSockets (via Socket.io) for real-time synchronization in the AI Buddy app to ensure sub-100ms latency.",
+      "context": {
+        "novelty": "high",
+        "dopamine": "high",
+        "urgency": "medium",
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 1,
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    },
+    {
+      "id": "engram_db_01",
+      "created": "2026-02-12T21:22:57.669369",
+      "source_file": "ARCHITECT_PERSONA",
+      "source_line": 0,
+      "type": "Decision",
+      "source": "database_preference",
+      "description": "PostgreSQL with pgvector for efficient similarity search in long-term AI memory.",
+      "context": {
+        "novelty": "medium",
+        "dopamine": "high",
+        "urgency": "low",
+        "emotional_load": 0
+      },
+      "age_days": 0,
+      "tier": "green",
+      "priority": 1,
+      "status": "open",
+      "closed_at": null,
+      "closed_method": null
+    }
+  ],
+  "stats": {
+    "total_open": 2,
+    "green_tier": 2,
+    "yellow_tier": 0,
+    "red_tier": 0
+  }
+}

@@ -1,0 +1,42 @@
+# Task: Nucleus Demo Series - Demo C: Recursive Mounting
+
+## Demo C: Recursive Mounting (Aggregator)
+- [x] Planning & Implementation
+    - [x] Analyze `server.py` and `agent.py` for mounter integration <!-- id: 0 -->
+    - [x] Create `implementation_plan.md` <!-- id: 1 -->
+    - [x] Implement `mounter_ops.py` (Core: mount, unmount, list) <!-- id: 2 -->
+    - [x] Implement `traverse_and_mount` recursive logic <!-- id: 3 -->
+    - [x] Add tools to `tool_tiers.py` / Registry <!-- id: 4 -->
+- [x] Verification
+    - [x] Create `scripts/mock_mcp_server.py` for testing <!-- id: 5 -->
+    - [x] Manual verification of mounting <!-- id: 6 -->
+    - [x] Verify recursive tool discovery <!-- id: 7 -->
+    - [x] Real-World Verification (Filesystem, Memory, SQLite, Git) <!-- id: 9 -->
+    - [x] Ecosystem Research (Aggregator Patterns) <!-- id: 10 -->
+    - [x] Real-World Workflow Simulation (FS -> Memory Pipeline) <!-- id: 11 -->
+    - [x] Competitor Analysis & Benchmarking (Zapier, LangChain) <!-- id: 12 -->
+    - [x] Compatibility Matrix (Tool Coverage) <!-- id: 13 -->
+    - [x] Standardize MCP method names (`tools/call`) <!-- id: 30 -->
+    - [x] Verify Demo C (Recursive Aggregator) Orchestration <!-- id: 31 -->
+- [x] Finalization
+    - [x] Update `walkthrough.md` <!-- id: 8 -->
+    - [x] **Strategic Archival**: Converged 12-iteration design thinking <!-- id: 32 -->
+    - [x] Create `docs/ANTI_NETSCAPE_PLAYBOOK.md.resolved` <!-- id: 33 -->
+    - [x] Create `docs/DESIGN_THINKING_LOG.md` (Full Trace) <!-- id: 34 -->
+    - [x] Create `docs/STRATEGY_SNAPSHOT_INDEX.md` (Canonical Gate) <!-- id: 35 -->
+    - [x] **Hard Safety Sync**: Mirrored suite to `ai-mvp-backend` <!-- id: 36 -->
+- [x] Release v0.5 Alpha (The Poison Pill)
+    - [x] Update `README.md` with "Recursive Mounting" Headline <!-- id: 14 -->
+    - [x] Create `RELEASE_NOTES_v0.5.md` <!-- id: 15 -->
+    - [x] Create `docs/PROTOCOL_SPEC.md` (Defensive Moat) <!-- id: 16 -->
+    - [x] Document "Thanos Snap" (Leverage vs. Chaos) Strategy <!-- id: 17 -->
+- [x] v0.5 Launch Prep
+    - [x] Refactor CLI Argument Parsing (`cli.py` conflict) <!-- id: 22 -->
+    - [x] Implement CLI `nucleus mount` (Persistence) <!-- id: 18 -->
+    - [x] Implement `restore_mounts` in `stdio_server.py` <!-- id: 19 -->
+    - [x] Verify Mounting & Persistence (`verify_mounting.py`) <!-- id: 20 -->
+    - [x] Bump Version to 1.0.5 and Publish to PyPI <!-- id: 21 -->
+- [x] Narrative Strategy
+    - [x] Align Voiceover Scripts with "Netscape Event" <!-- id: 27 -->
+    - [x] Create Side-by-Side Strategy Table in `ECOSYSTEM.md` <!-- id: 28 -->
+    - [x] Update Protocol Spec with fractal positioning <!-- id: 29 -->

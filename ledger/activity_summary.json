@@ -1,16 +1,16 @@
 {
   "last_event": {
-    "event_id": "evt-1770384594-69cd9c44",
-    "timestamp": "2026-02-06T13:29:54.692701Z",
-    "type": "task_created",
-    "emitter": "perplexity_user_request",
+    "event_id": "evt-1771223407-9d602b7c",
+    "timestamp": "2026-02-16T06:30:07.271930Z",
+    "type": "health_status",
+    "emitter": "health_check",
     "data": {
-      "task_id": "believe_reupload_fact015",
-      "description": "Re-upload fact_015 with Phase 1.8.2 fixes: Re-assemble video using output/veo_raw/fact_015_veo_gemini.mp4 + output/audio/fact_015.mp3 with new MediaEngine (codec copy, narration 150%, BG 10%, no logo overlay). Generate fresh metadata. Upload to YouTube with AI tag. After successful upload, delete old video vTor3od81vU. Verify: clear narration, HD quality preserved, no red dot artifact.",
-      "priority": 1
+      "status": "healthy",
+      "issues_count": 0,
+      "timestamp": "2026-02-16T12:00:04.897739"
     },
-    "description": ""
+    "description": "Health check: healthy"
   },
-  "updated_at": "2026-02-06T13:29:54.692701Z",
-  "event_count": 31
+  "updated_at": "2026-02-16T06:30:07.271930Z",
+  "event_count": 59
 }

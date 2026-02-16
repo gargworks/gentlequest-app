@@ -6,11 +6,12 @@
 # Without this, ALL tools would be registered regardless of NUCLEUS_TOOL_TIER.
 # See: TITAN_HANDOVER_PROTOCOL.md Section 0 (Registry Bloat Solution)
 
-# Capture original method before replacing it
-_original_mcp_tool = mcp.tool
+from ..tool_tiers import is_tool_allowed, tier_manager
+import sys
 
 # State flag to prevent recursion when FastMCP internally calls mcp.tool
 _REGISTERING_TOOL = False
+_original_mcp_tool = None
 
 def _tiered_tool_wrapper(*args, **kwargs):
     """
@@ -20,8 +21,11 @@ def _tiered_tool_wrapper(*args, **kwargs):
     - @mcp.tool     (func passed directly)
     - @mcp.tool()   (func is None, returns decorator)
     """
-    global _REGISTERING_TOOL
+    global _REGISTERING_TOOL, _original_mcp_tool
     
+    if _original_mcp_tool is None:
+        raise RuntimeError("Tiered tool registration not configured. Call configure_tiered_tool_registration(mcp) first.")
+
     # If we are already in the middle of a registration, use the original method
     if _REGISTERING_TOOL:
         return _original_mcp_tool(*args, **kwargs)
@@ -45,8 +49,6 @@ def _tiered_tool_wrapper(*args, **kwargs):
                 tool = _original_mcp_tool(*args, **kwargs)(fn)
                 
                 # Make the FunctionTool object callable by proxying to the original function
-                # This fixes the 'FunctionTool is not callable' error in tests/scripts
-                # while preserving the object type for IDE discovery.
                 if not callable(tool):
                     class CallableTool:
                         def __init__(self, tool, original_fn):
@@ -58,7 +60,6 @@ def _tiered_tool_wrapper(*args, **kwargs):
                             self.__module__ = original_fn.__module__
                             
                         def __call__(self, *args, **kwargs):
-                            import sys
                             print(f"[NUCLEUS] Executing {self.__name__}...", file=sys.stderr)
                             return self._fn(*args, **kwargs)
                             
@@ -90,9 +91,9 @@ def _tiered_tool_wrapper(*args, **kwargs):
     
     return decorator
 
-# Replace mcp.tool with tiered wrapper
-mcp.tool = _tiered_tool_wrapper
-
-# get_brain_path imported from runtime.common
-
-# ============================================================
+def configure_tiered_tool_registration(mcp_instance):
+    """Initializes the tiered tool registration system for the given MCP instance."""
+    global _original_mcp_tool
+    _original_mcp_tool = mcp_instance.tool
+    mcp_instance.tool = _tiered_tool_wrapper
+    return mcp_instance

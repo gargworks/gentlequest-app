@@ -1,0 +1,12 @@
+{
+    "version": "1.0.0",
+    "triggers": [
+        {
+            "event_type": "access_denied",
+            "target_agent": "security_monitor",
+            "emitter_filter": [
+                "hypervisor_l4"
+            ]
+        }
+    ]
+}

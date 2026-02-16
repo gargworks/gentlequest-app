@@ -1,0 +1,8 @@
+{"event": "issued", "token_id": "ipc-a0d7e2efb73a09676797100f", "decision_id": "dec-e97c4a5a2e3d", "scope": "tool_call", "timestamp": "2026-02-09T02:30:05.544629+00:00"}
+{"event": "consumed", "token_id": "ipc-a0d7e2efb73a09676797100f", "decision_id": "dec-e97c4a5a2e3d", "scope": "tool_call", "timestamp": "2026-02-09T02:30:05.547792+00:00"}
+{"event": "issued", "token_id": "ipc-8dd2becd6e160cb6aa603f5d", "decision_id": "dec-5eb100d636af", "scope": "tool_call", "timestamp": "2026-02-09T02:30:07.381361+00:00"}
+{"event": "consumed", "token_id": "ipc-8dd2becd6e160cb6aa603f5d", "decision_id": "dec-5eb100d636af", "scope": "tool_call", "timestamp": "2026-02-09T02:30:07.382619+00:00"}
+{"event": "issued", "token_id": "ipc-fa9424c46e10dd3cecf4a04d", "decision_id": "dec-041e07d87108", "scope": "tool_call", "timestamp": "2026-02-09T17:30:06.601354+00:00"}
+{"event": "consumed", "token_id": "ipc-fa9424c46e10dd3cecf4a04d", "decision_id": "dec-041e07d87108", "scope": "tool_call", "timestamp": "2026-02-09T17:30:06.602990+00:00"}
+{"event": "issued", "token_id": "ipc-520e92c51562ad297c58f74e", "decision_id": "dec-6e4ebd9de6d4", "scope": "tool_call", "timestamp": "2026-02-10T02:30:05.176603+00:00"}
+{"event": "consumed", "token_id": "ipc-520e92c51562ad297c58f74e", "decision_id": "dec-6e4ebd9de6d4", "scope": "tool_call", "timestamp": "2026-02-10T02:30:05.178802+00:00"}

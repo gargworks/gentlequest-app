@@ -1,16 +1,16 @@
 # Contributing to Nucleus
 
-Thank you for your interest in contributing to Nucleus - The Agent Control Plane.
+Thank you for your interest in contributing to Nucleus - The Universal Brain for AI Agents.
 
-## Current Status
+## We're Open Source! 🎉
 
-Nucleus follows the **Citadel Strategy** for intellectual property protection. This means:
+Nucleus is fully open source under the MIT license. We welcome contributions of all kinds:
 
-- ✅ **PyPI Package**: Publicly available for installation
-- ✅ **Documentation**: Open and accessible
-- ✅ **Bug Reports**: Welcome via GitHub Issues
-- ✅ **Feature Requests**: Welcome via GitHub Discussions
-- ⚠️ **Source Code**: Selective access for validated partners
+- ✅ **Bug Reports**: Via GitHub Issues
+- ✅ **Feature Requests**: Via GitHub Discussions  
+- ✅ **Code Contributions**: Via Pull Requests
+- ✅ **Documentation**: Improvements always welcome
+- ✅ **Integrations**: Add support for new AI tools
 
 ## How to Contribute
 
@@ -72,23 +72,62 @@ Contact us to join the beta program.
 - Response times may vary
 - Quality over speed
 
-## Enterprise & Partner Access
+## Code Contributions
 
-For source code access, enterprise licensing, or partnership inquiries:
+### Good First Issues
 
-- Email: partnerships@nucleusos.dev (coming soon)
-- Subject: "[Partnership] Your Organization Name"
+Look for issues labeled `good-first-issue` - these are ideal for new contributors:
+- Documentation improvements
+- Small bug fixes
+- Test coverage additions
+- New integration examples
 
-Include:
-- Organization name and size
-- Use case description
-- Why source access is needed
+### Development Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/eidetic-works/nucleus-mcp.git
+cd mcp-server-nucleus
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install in development mode
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+```
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass (`pytest tests/`)
+6. Commit with clear messages
+7. Push to your fork
+8. Open a Pull Request
+
+### PR Review Criteria
+
+- [ ] Tests pass
+- [ ] Code follows existing style
+- [ ] Documentation updated if needed
+- [ ] No breaking changes (or clearly documented)
+
+## Enterprise Inquiries
+
+For enterprise licensing or partnership inquiries:
+- Email: partnerships@nucleusos.dev
 
 ## Security Vulnerabilities
 
 **Do NOT report security vulnerabilities via public GitHub Issues.**
 
-Instead, email: security@nucleusos.dev (coming soon)
+Instead, email: security@nucleusos.dev
 
 Include:
 - Detailed description of the vulnerability
@@ -106,8 +145,8 @@ By contributing to Nucleus, you agree that your contributions will be licensed u
 
 - **General Questions**: GitHub Discussions
 - **Bug Reports**: GitHub Issues
-- **Partnership**: partnerships@nucleusos.dev
-- **Security**: security@nucleusos.dev
+- **Partnership**: hello@nucleusos.dev
+- **Security**: hello@nucleusos.dev
 
 ---
 

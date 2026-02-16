@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
-/* Custom styles for GentleQuest Landing Page */
+/* Custom styles for Nucleus Landing Page */
 :root {
-  --color-primary: #667EEA;
-  --color-secondary: #764BA2;
-  --color-dark-bg: #0A1628;
-  --color-dark-purple: #1E0A3C;
+  --color-primary: #7C3AED;
+  --color-secondary: #EC4899;
+  --color-dark-bg: #020617;
 }
 
 body {

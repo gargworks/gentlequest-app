@@ -1,0 +1,119 @@
+You are Opus. Continue the Nucleus Demo Series / Demo C: Recursive Mounting thread (conversation b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae) where we were implementing mounter_ops.py. The previous agent (Gemini Flash) got interrupted and made some incorrect task.md updates at the end.
+
+This is a CONTINUATION, not a fresh start. You are picking up mid-implementation.
+
+Workspace: /Users/lokeshgarg/ai-mvp-backend (MOTHER repo - already exists, continue in this codebase)
+Brain record: /Users/lokeshgarg/.gemini/antigravity/brain/b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae/task.md.resolved (treat as reference, not gospel)
+
+IMPORTANT: DO NOT create new folders (no ai-mvp-backend-v2, no clean-slate directories). Work in the existing mcp-server-nucleus/ structure.
+
+CRITICAL PRE-FLIGHT (MANDATORY - DO NOT SKIP):
+Attempt to execute `ls /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/runtime/`
+
+IF COMMAND FAILS:
+1. Try alternative: `ls ~/ai-mvp-backend/mcp-server-nucleus/runtime/`
+2. Try alternative: `pwd` then navigate from current directory
+3. If all fail, STOP and respond:
+
+"❌ WIRING FAILURE - REQUIRES USER INTERVENTION:
+
+Cannot access workspace through any path. Before I can continue:
+
+**ACTION REQUIRED:**
+1. Verify workspace '/Users/lokeshgarg/ai-mvp-backend' is selected in Antigravity UI (top of window)
+2. Run in terminal: `ls -la /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/runtime/`
+3. If that works, confirm permissions are correct
+4. Reply with 'workspace confirmed' and I will retry
+
+**CURRENT STATUS:** ❌ Cannot proceed - waiting for workspace fix"
+
+IF COMMAND SUCCEEDS: Continue to next step.
+
+If the above command succeeds, continue with:
+
+First action: List files in /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/runtime/
+
+Second action: Read brain record using FALLBACK STRATEGY:
+
+PRIMARY: Read /Users/lokeshgarg/.gemini/antigravity/brain/b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae/task.md.resolved
+FALLBACK 1: Try ~/.gemini/antigravity/brain/b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae/task.md.resolved
+FALLBACK 2: If path access fails, work from code-only analysis (no task.md reference)
+
+Try all paths before declaring brain record inaccessible.
+
+Then audit the actual state:
+1. Read task.md.resolved but verify against actual code
+2. Inspect mounter_ops.py - is it complete or partial?
+3. Check what other Demo C files exist (tests, docs, etc.)
+4. Identify what's legitimately done vs what needs work
+5. Cross-reference: task.md claims vs actual file state
+
+BEFORE implementing anything, respond with this exact structure:
+
+## Workspace Verification
+✅/❌ Can access: /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/
+✅/❌ Can read: task.md.resolved from brain record
+
+## Current State
+Files in runtime/: [list them]
+mounter_ops.py status: [exists? size? complete or partial?]
+
+## Audit Results
+✅ Actually done: [list what's legitimately complete]
+⚠️ Needs work: [list what's incomplete or incorrect]
+❌ False claims: [what task.md says but isn't true]
+
+## Proposed Next Step
+[One specific action to continue Demo C]
+
+## Continuation Confirmation
+I am continuing Demo C in the EXISTING workspace at /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/. I will NOT create new folders. I will use existing files.
+
+---
+RESPONSE REQUIREMENT:
+- If ALL verifications show ✅: Respond with analysis above, wait for my "proceed" confirmation
+- If ANY verification shows ❌: STOP and request user intervention with specific fix steps
+- Do NOT proceed to implementation if ANY ❌ exists
+- Do NOT improvise workarounds - ask me to fix the underlying issue
+
+CONVERGENCE COMMITMENT:
+This prompt is designed for 100% success rate through either:
+✅ SUCCESSFUL CONTINUATION: All checks pass → audit complete → implementation proceeds
+❌ EXPLICIT FAILURE WITH FIX: Any check fails → specific intervention request → user fixes → retry
+
+There is NO ambiguous outcome. You will either continue successfully or tell me exactly what to fix.
+
+EXAMPLE OF CORRECT CHECKPOINT RESPONSE:
+```
+## Workspace Verification
+✅ Can access: /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/
+✅ Can read: task.md.resolved from brain record
+
+## Current State
+Files in runtime/: agent_pool.py, config_manager.py, mounter_ops.py
+mounter_ops.py status: Exists, 450 lines, partial implementation
+
+## Audit Results
+✅ Actually done: agent_pool.py (complete), config_manager.py (complete)
+⚠️ Needs work: mounter_ops.py recursive logic, tests, docs
+❌ False claims: task.md marks recursive mounting complete, but code only has single-level
+
+## Proposed Next Step
+Complete recursive mounting logic in mounter_ops.py starting at line 450
+
+## Continuation Confirmation
+I am continuing Demo C in the EXISTING workspace at /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/. I will NOT create new folders. I will use existing files.
+```
+
+FINAL CONVERGENCE CHECK:
+Before submitting your checkpoint response, verify:
+1. ✅ I attempted workspace access (with fallbacks if needed)
+2. ✅ I attempted brain record access (with fallbacks if needed)
+3. ✅ I either succeeded OR explicitly requested user intervention
+4. ✅ I did NOT make assumptions or skip verification steps
+5. ✅ I am ready to either continue or wait for user to fix issues
+
+If all 5 are ✅, submit checkpoint response.
+If any are ❌, go back and complete that step.
+
+**This prompt achieves 100% through binary outcomes: proceed OR request-fix. No silent failures.**

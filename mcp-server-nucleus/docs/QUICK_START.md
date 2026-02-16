@@ -9,7 +9,7 @@
 ### Option 1: pip (Recommended)
 
 ```bash
-pip install mcp-server-nucleus
+pip install nucleus-mcp
 ```
 
 ### Option 2: From Source
@@ -203,12 +203,12 @@ mkdir -p ~/.brain/ledger ~/.brain/sessions ~/.brain/slots
 ### MCP Server Not Loading
 
 1. Check your config file syntax (valid JSON)
-2. Verify the path to `mcp-server-nucleus` is correct
+2. Verify the path to `nucleus-mcp` is correct
 3. Restart your MCP client
 
 ### Need Help?
 
-- GitHub Issues: https://github.com/nucleus-mcp/nucleus/issues
+- GitHub Issues: https://github.com/eidetic-works/nucleus-mcp/issues
 - Discord: https://discord.gg/nucleus (coming soon)
 
 ---

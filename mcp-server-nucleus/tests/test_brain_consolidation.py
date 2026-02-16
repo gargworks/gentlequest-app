@@ -12,6 +12,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+# Set up test environment
+_test_dir = tempfile.mkdtemp(prefix="nucleus_consolidation_env_")
+os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
+
 
 class TestBrainConsolidation(unittest.TestCase):
     """Test cases for brain consolidation feature."""

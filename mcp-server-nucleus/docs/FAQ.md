@@ -202,7 +202,7 @@ brain_export(format="json")  # Export full state
 - **Documentation**: [docs/](./docs/)
 - **Issues**: [GitHub Issues](https://github.com/NucleusSovereign/mcp-server-nucleus/issues)
 - **Discord**: Coming soon
-- **Email**: support@nucleusos.dev (coming soon)
+- **Email**: hello@nucleusos.dev
 
 ---
 

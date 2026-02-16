@@ -51,6 +51,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New runtime modules: `context_manager.py`, `ipc_auth.py`
 - Enhanced `agent.py` with decision emission and state verification
 
+## [1.0.0] - 2026-02-10
+
+### Added
+- **Sovereign Release**: The local-first Agent Control Plane is now 1.0.
+- **Improved Multi-Agent Sync**: Enhanced conflict detection and file locking coordination across Cursor, Claude Desktop, and Windsurf.
+- **Sovereign Metrics Ready**: Architecture finalized for non-PII, edge-blinded telemetry (deferred to v1.1.0).
+- **Hardened Governance**: Finalized audit logs and default-deny policies for production use.
+- **Recursive Mounting**: Full support for mounting sub-MCP servers with persistence.
+
+### Changed
+- **Final Positioning**: Rebranded as "The Local-First AI Memory Server with Governance".
+- **Documentation Refactor**: Comprehensive update of README and internal docs for v1.0.0.
+
+### Fixed
+- Various pathing issues for Windows compatibility in CLI.
+- Tool discovery edge cases in multi-product environments.
+
+---
+
+## [0.8.0] - 2026-02-05
+### Added
+- Multi-product support in `nucleus-init`.
+- Enhanced terminal visuals for depth tracking.
+
+---
+
+## [0.7.0] - 2026-02-01
+### Added
+- **Multi-Agent Sync**: `brain_sync_now`, `brain_sync_status`, `brain_sync_auto`.
+- Intent-Aware Locking for files.
+
 ---
 
 ## [0.5.1] - 2026-01-26

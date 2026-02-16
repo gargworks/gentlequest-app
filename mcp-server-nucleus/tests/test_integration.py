@@ -6,7 +6,6 @@ import shutil
 from pathlib import Path
 
 # Set up test environment BEFORE importing nucleus
-# This is the cleanest approach - use env var instead of complex mocking
 _test_dir = tempfile.mkdtemp()
 os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
 
@@ -17,6 +16,7 @@ class TestIntegration(unittest.TestCase):
     def setUp(self):
         # Use the pre-created temp brain directory
         self.test_dir = _test_dir
+        os.environ["NUCLEAR_BRAIN_PATH"] = self.test_dir
         self.brain_path = Path(self.test_dir)
         
         # Ensure directories exist (may have been cleaned up)
@@ -126,7 +126,7 @@ class TestIntegration(unittest.TestCase):
         event_id = emit_resp["data"]["event_id"]
         
         # 2. Read Events
-        read_resp_json = nucleus.brain_list_events(limit=5)
+        read_resp_json = nucleus.brain_read_events(limit=5)
         read_resp = json.loads(read_resp_json)
         self.assertTrue(read_resp["success"])
         
@@ -146,7 +146,8 @@ class TestIntegration(unittest.TestCase):
         health_resp_json = nucleus.brain_health()
         health_resp = json.loads(health_resp_json)
         self.assertEqual(health_resp["status"], "healthy")
-        self.assertEqual(health_resp["version"], "0.5.0")
+        # Version is now dynamic (1.0.4+)
+        self.assertIn("version", health_resp)
         self.assertIn("uptime_seconds", health_resp)
         self.assertIn("brain_path", health_resp)
         print("✅ pass: test_brain_health")

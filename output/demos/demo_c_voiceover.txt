@@ -1,0 +1,4 @@
+# Recursive Aggregator Demo
+# Duration: 30 seconds
+
+Every external tool goes through Nucleus. GitHub, Slack, whatever. They all start sandboxed. You control the permissions. Every call is logged.

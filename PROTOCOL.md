@@ -48,7 +48,7 @@ production:
   region: Oregon (US West)
   
 repository:
-  path: /Users/lokeshgarg/ai-mvp-backend
+  path: .
   vcs: git
   remote: origin
   branch: main
@@ -186,7 +186,6 @@ curl https://gentlequest.onrender.com/api/health
 ### Local Development
 ```bash
 # Backend
-cd /Users/lokeshgarg/ai-mvp-backend
 source venv/bin/activate
 flask run --port 5055
 
@@ -222,7 +221,7 @@ python -c "import yaml; yaml.safe_load(open('docs/openapi.yaml'))"
 ## §6 FILE MAP (Critical Paths)
 
 ```
-/Users/lokeshgarg/ai-mvp-backend/
+./
 │
 ├── PROTOCOL.md                    ★ YOU ARE HERE - THE TRUTH
 ├── protocol.json                  ★ Machine-readable version

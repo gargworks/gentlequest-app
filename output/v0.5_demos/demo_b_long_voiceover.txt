@@ -1,0 +1,4 @@
+# Phase B: Engram Recall (Long-Form)
+# Duration: 2 minutes
+
+Context rot is the hidden tax of modern AI. Every new thread is a blank slate—a regression to amnesia. Phase B of Nucleus v0.5 introduces Engram Recall. Every decision your agent makes, every preference it learns, is etched into the Engram Ledger. You're seeing a fresh conversation retrieving a decision made months ago. New thread, new model, different IDE—it doesn't matter. The context persists because it lives in the infrastructure, not the prompt. Ground your agents in the truth of their own history. Build memory that scales.

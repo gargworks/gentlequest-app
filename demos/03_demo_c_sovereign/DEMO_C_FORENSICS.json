@@ -1,0 +1,81 @@
+{
+    "meta": {
+        "title": "Nucleus Demo C: Sovereign Command",
+        "version": "1.0",
+        "fps": 0.33,
+        "total_duration_approx": "84s"
+    },
+    "parts": {
+        "p1": {
+            "filename": "Nucleus 1.0.4 Demo C Part 1.mov",
+            "duration_sec": 26,
+            "frame_count": 9,
+            "key_events": [
+                {
+                    "frame": 1,
+                    "time_sec": 0,
+                    "description": "Initial state. User begins typing.",
+                    "ui_focus": "Terminal/Claude Input"
+                },
+                {
+                    "frame": 9,
+                    "time_sec": 26,
+                    "description": "Prep for the Snap.",
+                    "ui_focus": "Claude Input"
+                }
+            ]
+        },
+        "p2": {
+            "filename": "Nucleus 1.0.4 Demo C Part 2.mov",
+            "duration_sec": 70,
+            "frame_count": 25,
+            "key_events": [
+                {
+                    "frame": 1,
+                    "time_sec": 0,
+                    "description": "The Snap command entered.",
+                    "ui_focus": "Claude Input"
+                },
+                {
+                    "frame": 16,
+                    "time_sec": 48,
+                    "description": "Mount summary visible. 'Demonstration is Complete'.",
+                    "ui_focus": "Claude Output",
+                    "ocr_text": "Mounted 3 external MCP servers... Aggregated 4 tools"
+                },
+                {
+                    "frame": 25,
+                    "time_sec": 70,
+                    "description": "User typing 'List my Stripe customers.'",
+                    "ui_focus": "Claude Input"
+                }
+            ]
+        },
+        "p3": {
+            "filename": "Nucleus 1.0.4 Demo C Part 3.mov",
+            "duration_sec": 28,
+            "frame_count": 9,
+            "key_events": [
+                {
+                    "frame": 2,
+                    "time_sec": 6,
+                    "description": "Stripe customers listed (User_A, User_B, User_C).",
+                    "ui_focus": "Claude Output",
+                    "vertical_roi": "right"
+                },
+                {
+                    "frame": 3,
+                    "time_sec": 9,
+                    "description": "User typing 'Clear the Gauntlet'.",
+                    "ui_focus": "Claude Input"
+                },
+                {
+                    "frame": 9,
+                    "time_sec": 28,
+                    "description": "Unmount complete.",
+                    "ui_focus": "Terminal"
+                }
+            ]
+        }
+    }
+}

@@ -19,8 +19,8 @@ then
     exit
 fi
 
-echo "📦 Installing mcp-server-nucleus via PyPI..."
-pip3 install mcp-server-nucleus
+echo "📦 Installing nucleus-mcp via PyPI..."
+pip3 install nucleus-mcp
 
 echo "✅ Nucleus OS successfully installed!"
 echo "🚀 Run 'nucleus --help' to get started."

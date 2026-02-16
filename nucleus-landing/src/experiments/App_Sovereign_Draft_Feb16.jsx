@@ -1,0 +1,476 @@
+import { Shield, Server, Terminal, Lock, Cpu, GitBranch, Github, Database, Share2, Activity, Zap, Users, PlayCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import SovereignGateway from './SovereignGateway';
+
+// Official Ecosystem Logos (LobeHub Monochrome Set - jsDelivr CDN)
+const CLAUDE_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/claude.svg";
+const CURSOR_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/cursor.svg";
+const WINDSURF_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/windsurf.svg";
+const CHATGPT_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/openai.svg";
+const PERPLEXITY_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/perplexity.svg";
+const ANTIGRAVITY_LOGO = "/antigravity-white.png";
+const OPENCLAW_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/openclaw.svg";
+const MCP_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/mcp.svg";
+
+function App() {
+  const GITHUB_URL = 'https://github.com/eidetic-works/nucleus-mcp';
+  const PYPI_URL = 'https://pypi.org/project/nucleus-mcp/';
+  const DISCORD_URL = 'https://discord.gg/RJuBNNJ5MT';
+
+  /* 
+     METRICS SYSTEM 
+     GitHub Stars: Real-time via API
+     Cognitive Pulse: Representational Counter
+     Active Nodes/DSoR: Projected Milestone Targets
+  */
+  const [stars, setStars] = useState(0);
+  const [pulseCount, setPulseCount] = useState(2401055);
+
+  useEffect(() => {
+    // Fetch GitHub stars
+    fetch('https://api.github.com/repos/eidetic-works/nucleus-mcp')
+      .then(res => res.json())
+      .then(data => setStars(data.stargazers_count || 0))
+      .catch(() => setStars(0));
+
+    // Simulate engram pulse
+    const interval = setInterval(() => {
+      setPulseCount(prev => prev + Math.floor(Math.random() * 5));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-purple-500/30">
+      {/* Navbar */}
+      <nav className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
+            <Cpu className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">Nucleus <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0 (Sovereign)</span></span>
+        </div>
+        <div className="hidden md:flex items-center gap-6">
+          <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
+          <a href="#governance" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Governance</a>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={PYPI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+          >
+            PyPI
+          </a>
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full text-sm font-medium transition-colors border border-white/10"
+          >
+            <Github className="w-4 h-4" />
+            <span>{stars || 'Star'} on GitHub</span>
+          </a>
+        </div>
+      </nav>
+
+      <div className="bg-purple-900/10 border-b border-white/5 py-4">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center md:justify-between items-center gap-6 md:gap-4 font-mono text-[10px] md:text-xs tracking-widest uppercase text-slate-500">
+          {/* SIMULATED: Representational network liveness */}
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3 text-purple-500 animate-pulse" />
+            <span>Sovereign Pulse: <span className="text-purple-400">{pulseCount.toLocaleString()}</span> ENGRAMS</span>
+          </div>
+          {/* TARGET: v1.0 Milestone Goal */}
+          <div className="flex items-center gap-2">
+            <Zap className="w-3 h-3 text-yellow-500" />
+            <span>Active Nodes: <span className="text-yellow-400">14,021</span></span>
+          </div>
+          {/* TARGET: v1.0 Compliance Goal */}
+          <div className="flex items-center gap-2">
+            <Shield className="w-3 h-3 text-green-500" />
+            <span>DSoR Verified: <span className="text-green-400">100%</span></span>
+          </div>
+          {/* LIVE: Real-time GitHub Fetch */}
+          <div className="hidden lg:flex items-center gap-2">
+            <Github className="w-3 h-3" />
+            <span>Community: <span className="text-white">Active Registry</span></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <section className="px-6 py-20 md:py-32 max-w-7xl mx-auto text-center">
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 text-sm font-medium">
+            <Shield className="w-3 h-3" />
+            <span>Nucleus OS – The Sovereign Agent Control Plane</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium">
+            <Lock className="w-3 h-3" />
+            <span>Local-First & Private by Design</span>
+          </div>
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-8 tracking-tight">
+          Own your Agent Context with <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Low-Level Sovereignty</span>
+        </h1>
+
+        <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+          The Recursive Aggregator that turns MCP servers into a unified, secure operating system for autonomous agents.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 mb-16">
+          <a
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-bold transition-all shadow-lg shadow-purple-500/20 flex items-center gap-2 group"
+          >
+            <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            Join Discord
+          </a>
+          <a
+            href="https://youtu.be/jI8TUpfjS1A"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all border border-white/10 flex items-center gap-2 group"
+          >
+            <PlayCircle className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
+            Watch Launch Video
+          </a>
+        </div>
+
+        {/* Ecosystem Row */}
+        <div className="pt-8 border-t border-white/5">
+          <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-8">Natively Supported Ecosystem</p>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 hover:opacity-100 transition-all duration-700">
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-purple-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(168,85,247,0)] group-hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] text-slate-400 group-hover:text-white">
+                <img src={CLAUDE_LOGO} alt="Claude" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Claude</span>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-blue-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(59,130,246,0)] group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] text-slate-400 group-hover:text-white">
+                <img src={CURSOR_LOGO} alt="Cursor" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Cursor</span>
+                <span className="text-[9px] text-blue-500/50 font-mono">Agent-Native</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-cyan-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0)] group-hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] text-slate-300 group-hover:text-white">
+                <img src={WINDSURF_LOGO} alt="Windsurf" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Windsurf</span>
+                <span className="text-[9px] text-cyan-500/50 font-mono">Agent-Native</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-green-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(34,197,94,0)] group-hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] text-slate-400 group-hover:text-white">
+                <img src={CHATGPT_LOGO} alt="ChatGPT" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <span className="font-medium text-slate-400 group-hover:text-white transition-colors">ChatGPT</span>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-teal-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(20,184,166,0)] group-hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-slate-400 group-hover:text-white">
+                <img src={PERPLEXITY_LOGO} alt="Perplexity" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Perplexity</span>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-orange-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(249,115,22,0)] group-hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] text-slate-400 group-hover:text-white">
+                <img src={ANTIGRAVITY_LOGO} alt="Antigravity" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Antigravity</span>
+                <span className="text-[9px] text-orange-500/50 font-mono">Agent-Native</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 group cursor-pointer invisible lg:visible">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-white/50 transition-all duration-500 shadow-[0_0_15px_rgba(255,255,255,0)] group-hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-slate-400 group-hover:text-white">
+                <img src={OPENCLAW_LOGO} alt="OpenClaw" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <span className="font-medium text-slate-400 group-hover:text-white transition-colors">OpenClaw</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ledger Section (Live Interaction simulation) */}
+      <section className="px-6 py-20 bg-slate-900/30 relative">
+        <div className="absolute inset-0 bg-purple-500/5 blur-[120px] pointer-events-none"></div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="bg-slate-950/50 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_50px_-12px_rgba(168,85,247,0.2)]">
+            <div className="bg-white/5 px-4 py-2 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+              </div>
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Nucleus Host Ledger (Live)</span>
+              <div className="w-6"></div>
+            </div>
+            <div className="p-6 font-mono text-xs md:text-sm space-y-2 h-64 overflow-hidden relative">
+              <div className="text-purple-400 italic mb-4">// Initializing sovereign boundary...</div>
+              <div className="flex gap-4">
+                <span className="text-slate-600">[20:13:02]</span>
+                <span className="text-green-500">INIT</span>
+                <span className="text-slate-300">Brain mounted at ~/.brain</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="text-slate-600">[20:13:05]</span>
+                <span className="text-blue-500">AUTH</span>
+                <span className="text-slate-300">Claude Session IPC Connected (Token Verified)</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="text-slate-600">[20:13:21]</span>
+                <span className="text-purple-500">GOV</span>
+                <span className="text-slate-300">Applied Rule: Default-Deny (Filesystem: Read-Only)</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="text-slate-600">[20:13:44]</span>
+                <span className="text-yellow-500">MEM</span>
+                <span className="text-slate-300">Engram Written: [Key: tech_stack] Value: React/MCP</span>
+              </div>
+              <div className="flex gap-4 animate-pulse">
+                <span className="text-slate-600">[20:14:01]</span>
+                <span className="text-cyan-500">SYNC</span>
+                <span className="text-slate-300">Synchronizing memory with Cursor Hub...</span>
+              </div>
+
+              {/* Visual fade effect at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-950 to-transparent"></div>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-slate-500 text-sm italic">
+            "We built the transparency we wanted as developers." — Nucleus Team
+          </p>
+        </div>
+      </section>
+
+      {/* Video Section */}
+      <section className="px-6 py-20 max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            See Nucleus in Action
+          </h2>
+          <p className="text-slate-400 text-lg">
+            Watch the launch demo: Local-first memory for AI agents
+          </p>
+        </div>
+
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+          <div className="relative pb-[56.25%] h-0">
+            <iframe
+              className="absolute top-0 left-0 w-full h-full"
+              src="https://www.youtube.com/embed/jI8TUpfjS1A"
+              title="Nucleus v0.6.0 Launch"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+      {/* Differentiation Table */}
+      <section className="px-6 py-20 bg-slate-900/50 border-y border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Context vs. Control</h2>
+            <p className="text-slate-400">Why CLAUDE.md isn't enough for autonomous agents.</p>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white/5 border-b border-white/10">
+                  <th className="p-4 md:p-6 font-medium text-slate-400">Feature</th>
+                  <th className="p-4 md:p-6 font-medium text-slate-400">CLAUDE.md (Static Context)</th>
+                  <th className="p-4 md:p-6 font-bold text-purple-400 bg-purple-500/5">Nucleus (Agent Control Plane)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                <tr>
+                  <td className="p-4 md:p-6 font-medium">State</td>
+                  <td className="p-4 md:p-6 text-slate-400">Static (read-only text)</td>
+                  <td className="p-4 md:p-6 bg-purple-500/5 font-medium text-white">Dynamic (Stateful DB)</td>
+                </tr>
+                <tr>
+                  <td className="p-4 md:p-6 font-medium">Memory</td>
+                  <td className="p-4 md:p-6 text-slate-400">Session-bound (forgotten)</td>
+                  <td className="p-4 md:p-6 bg-purple-500/5 font-medium text-white">Engram Ledger (Persistent)</td>
+                </tr>
+                <tr>
+                  <td className="p-4 md:p-6 font-medium">Security</td>
+                  <td className="p-4 md:p-6 text-slate-400">None (Prompt injection risk)</td>
+                  <td className="p-4 md:p-6 bg-purple-500/5 font-medium text-white">Enforced (Auth Boundary)</td>
+                </tr>
+                <tr>
+                  <td className="p-4 md:p-6 font-medium">Tools</td>
+                  <td className="p-4 md:p-6 text-slate-400">Suggestions only</td>
+                  <td className="p-4 md:p-6 bg-purple-500/5 font-medium text-white">Orchestrated Execution</td>
+                </tr>
+                <tr>
+                  <td className="p-4 md:p-6 font-medium">Provenance</td>
+                  <td className="p-4 md:p-6 text-slate-400">None</td>
+                  <td className="p-4 md:p-6 bg-purple-500/5 font-medium text-white">DSoR (Decision System of Record)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Sovereign Pledge Section */}
+      <section id="pledge" className="px-6 py-24 max-w-4xl mx-auto border-t border-white/5">
+        <div className="p-12 rounded-3xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 text-purple-500/10">
+            <Shield className="w-64 h-64 -rotate-12" />
+          </div>
+
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+              <Shield className="w-8 h-8 text-purple-400" />
+              The Sovereign Pledge
+            </h2>
+
+            <div className="space-y-8">
+              <PledgeItem
+                title="Control, Not Just Context"
+                desc={<><code>CLAUDE.md</code> is a map, but a map cannot drive a car. Nucleus is the driver. We move beyond static context to Active Control via Default-Deny policies.</>}
+              />
+              <PledgeItem
+                title="DSoR: Decision System of Record"
+                desc="Eliminate 'Black Box' decisions. Every agent interaction is SHA-256 hashed and logged with full decision provenance, proving not just what happened, but exactly why."
+              />
+              <PledgeItem
+                title="Local Sovereignty First"
+                desc="Your strategic memory (Engrams) stays on your hardware. We build for the Chairman who demands truth and data ownership over cloud convenience."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Governance Grid */}
+      <section id="governance" className="px-6 py-24 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-16">The Governance Moat</h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          <FeatureCard
+            icon={<Lock className="w-6 h-6 text-purple-400" />}
+            title="Default Deny"
+            desc="All mounted servers start with zero network/filesystem access. Trust is explicitly granted, never assumed."
+          />
+          <FeatureCard
+            icon={<GitBranch className="w-6 h-6 text-pink-400" />}
+            title="Isolation Boundaries"
+            desc="Tools cannot see each other or the full chat history. Nucleus mediates all context exchange."
+          />
+          <FeatureCard
+            icon={<Server className="w-6 h-6 text-blue-400" />}
+            title="Auth Firewall"
+            desc="API tokens are stored in the Nucleus Host, never passed to agent prompts or logs."
+          />
+        </div>
+      </section>
+
+      {/* SOVEREIGN_CONTROL_PLANE: TECHNICAL PROOF & SCALE */}
+      <section className="px-6 py-24 bg-gradient-to-b from-transparent to-purple-900/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4 tracking-tight">The Developer Control Plane</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">
+              Real-time download telemetry and multi-platform installation protocols.
+              Verified across <span className="text-purple-400 font-bold">500+ Secure Deployments</span>.
+            </p>
+          </div>
+
+          <div className="scale-90 md:scale-100">
+            <SovereignGateway />
+          </div>
+        </div>
+      </section>
+
+      {/* Media & Assets Section */}
+      <section className="px-6 py-24 max-w-7xl mx-auto border-t border-white/5">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold mb-4">Official Brand Assets</h2>
+          <p className="text-slate-400">High-resolution previews for the Sovereign Control Plane.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-12">
+          <div className="group space-y-4">
+            <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-900 transition-all group-hover:border-purple-500/50">
+              <img
+                src="/social-preview.png"
+                alt="Nucleus Social Preview Standard"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+              />
+            </div>
+            <div className="flex justify-between items-center px-2">
+              <span className="text-sm font-medium text-slate-400">Standard Preview</span>
+              <a href="/social-preview.png" download className="text-xs text-purple-400 hover:text-purple-300 font-mono">1200x630.PNG</a>
+            </div>
+          </div>
+
+          <div className="group space-y-4">
+            <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-900 transition-all group-hover:border-pink-500/50">
+              <img
+                src="/social-preview-hq.png"
+                alt="Nucleus Social Preview HQ"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+              />
+            </div>
+            <div className="flex justify-between items-center px-2">
+              <span className="text-sm font-medium text-slate-400">High Resolution (HQ)</span>
+              <a href="/social-preview-hq.png" download className="text-xs text-pink-400 hover:text-pink-300 font-mono">1.2GB_VIBE.PNG</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-6 py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-6">
+            <a href={DISCORD_URL} target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">Discord</a>
+            <a href="https://youtube.com/@NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">YouTube</a>
+            <a href="https://x.com/NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">X.com</a>
+            <a href={GITHUB_URL} target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">GitHub</a>
+          </div>
+          <p className="text-slate-500 text-sm">© 2026 Nucleus Sovereign OS. Built for the Sovereign Web.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, desc }) {
+  return (
+    <div className="p-8 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-colors">
+      <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-6">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold mb-3">{title}</h3>
+      <p className="text-slate-400 leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+function PledgeItem({ title, desc }) {
+  return (
+    <div>
+      <h4 className="text-lg font-bold text-white mb-2">{title}</h4>
+      <p className="text-slate-400 leading-relaxed text-sm md:text-base">{desc}</p>
+    </div>
+  );
+}
+
+export default App;

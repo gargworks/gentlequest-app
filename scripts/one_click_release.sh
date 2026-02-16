@@ -130,6 +130,21 @@ flutter pub get
 cd ..
 echo -e "${GREEN}✓ Flutter cleaned${NC}"
 
+# HARDENING: Patches
+echo "${BLUE}Applying hardening patches...${NC}"
+# Patch 1: Remove IntegrationTestPlugin from GeneratedPluginRegistrant (Fixes Release Build)
+# We find any line with IntegrationTestPlugin and comment it out to be safe
+if [ -f "ai_buddy_web/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java" ]; then
+    echo "Patching GeneratedPluginRegistrant.java..."
+    # Use perl for in-place editing to handle potential issues with sed across platforms (macOS/Linux)
+    # We comment out the lines containing 'IntegrationTestPlugin'
+    perl -pi -e 's/^(.*IntegrationTestPlugin.*)$/\/\/ \1/' ai_buddy_web/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+    echo -e "${GREEN}✓ Applied IntegrationTestPlugin patch${NC}"
+else
+     echo -e "${YELLOW}⚠ GeneratedPluginRegistrant.java not found yet. It might be generated later during build.${NC}"
+fi
+echo ""
+
 # Run tests
 echo ""
 echo "${BLUE}Running tests...${NC}"
@@ -260,6 +275,20 @@ if [ "$PERFORM_LOCAL_BUILD" == "true" ]; then
 
     # IMPORTANT: Since we don't have the CI to finalize things, we must assume Manual Upload
     echo -e "${YELLOW}⚠ Local build complete. You must manually upload these artifacts.${NC}"
+    
+    echo ""
+    echo "${GREEN}🚀 MANUAL UPLOAD REQUIRED (The 0.01% Check)${NC}"
+    echo "---------------------------------------------------"
+    echo "1. Android Play Console (Production):"
+    echo "   URL: https://play.google.com/console/u/2/developers/5873334186320541231/app/4972169399121992985/releases/production"
+    echo "   File to Upload (Drag & Drop):"
+    echo "   $(pwd)/release_artifacts/android.aab"
+    echo ""
+    echo "2. iOS App Store Connect (via Transporter):"
+    echo "   File to Upload:"
+    echo "   $(pwd)/release_artifacts/Runner.app (Archive)"
+    echo "---------------------------------------------------"
+    echo ""
 fi
 
 # Post-build steps

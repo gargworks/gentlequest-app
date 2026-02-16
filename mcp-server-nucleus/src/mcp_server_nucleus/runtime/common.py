@@ -94,8 +94,10 @@ def _get_state(path: Optional[str] = None) -> Dict:
         if not state_path.exists():
             return {}
             
-        with open(state_path, "r") as f:
-            state = json.load(f)
+        from .sync_ops import sync_lock
+        with sync_lock(brain, timeout=2):
+            with open(state_path, "r") as f:
+                state = json.load(f)
             
         if path:
             keys = path.split('.')
@@ -116,15 +118,17 @@ def _update_state(updates: Dict[str, Any]) -> str:
         state_path = brain / "ledger" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         
-        current_state = {}
-        if state_path.exists():
-            with open(state_path, "r") as f:
-                current_state = json.load(f)
-        
-        current_state.update(updates)
-        
-        with open(state_path, "w") as f:
-            json.dump(current_state, f, indent=2)
+        from .sync_ops import sync_lock
+        with sync_lock(brain, timeout=5):
+            current_state = {}
+            if state_path.exists():
+                with open(state_path, "r") as f:
+                    current_state = json.load(f)
+            
+            current_state.update(updates)
+            
+            with open(state_path, "w") as f:
+                json.dump(current_state, f, indent=2)
             
         return "State updated successfully"
     except Exception as e:

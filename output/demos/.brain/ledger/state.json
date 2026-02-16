@@ -1,0 +1,13 @@
+{
+    "version": "1.0.0",
+    "current_sprint": {
+        "name": "Sprint 1",
+        "focus": "Nucleus Demo A: .env Lock",
+        "started_at": null
+    },
+    "top_3_leverage_actions": [
+        "Secure API keys with Hypervisor",
+        "Record .env Lock demo",
+        "Verify blocked deletion attempts"
+    ]
+}

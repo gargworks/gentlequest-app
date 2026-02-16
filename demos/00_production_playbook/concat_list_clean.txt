@@ -1,0 +1,6 @@
+file '/Users/lokeshgarg/ai-mvp-backend/demos/01_demo_a_startup/part_1_trimmed.mp4'
+file '/Users/lokeshgarg/ai-mvp-backend/demos/01_demo_a_startup/part_2_trimmed.mp4'
+file '/Users/lokeshgarg/ai-mvp-backend/demos/02_demo_b_context/part_1_trimmed.mp4'
+file '/Users/lokeshgarg/ai-mvp-backend/demos/02_demo_b_context/part_2_trimmed.mp4'
+file '/Users/lokeshgarg/ai-mvp-backend/demos/03_demo_c_sovereign/part_1_trimmed.mp4'
+file '/Users/lokeshgarg/ai-mvp-backend/demos/03_demo_c_sovereign/part_2_trimmed.mp4'

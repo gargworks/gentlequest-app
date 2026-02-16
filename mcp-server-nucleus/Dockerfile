@@ -70,4 +70,4 @@ EXPOSE 8765
 VOLUME ["/data/.brain"]
 
 # Default command - run MCP server
-CMD ["mcp-server-nucleus"]
+CMD ["nucleus-mcp"]

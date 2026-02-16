@@ -2,7 +2,14 @@
 Tests for core module functionality
 """
 
+import tempfile
+import os
 import pytest
+
+# Set up test environment
+_test_dir = tempfile.mkdtemp(prefix="nucleus_core_env_")
+os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
+
 from mcp_server_nucleus.core import tool_registration_impl, orchestrator
 
 

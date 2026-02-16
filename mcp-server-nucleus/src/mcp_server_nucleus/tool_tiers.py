@@ -33,6 +33,13 @@ TIER_0_LAUNCH: Set[str] = {
     "brain_version",             # Version check
     "brain_health",              # Health check
     "brain_list_tools",          # Discover available tools
+    # Governance Demo Tools
+    "nucleus_list_directory",    # Demo A: Inspect environment
+    "nucleus_delete_file",       # Demo A: Test protection
+    "lock_resource",             # Demo A: Block modification
+    "unlock_resource",           # Demo A: Allow modification
+    "hypervisor_status",         # Demo A: Status check
+    "watch_resource",            # Demo A: Monitor changes
 }
 
 TIER_1_CORE: Set[str] = {
@@ -63,6 +70,18 @@ TIER_1_CORE: Set[str] = {
     # Memory
     "brain_read_memory",
     "brain_search_memory",
+    # Multi-Agent Sync (v0.7.0)
+    "brain_sync_status",
+    "brain_sync_now",
+    "brain_sync_auto",
+    "brain_sync_auto",
+    "brain_identify_agent",
+    # Hypervisor (v0.8.0)
+    "lock_resource",
+    "unlock_resource",
+    "watch_resource",
+    "hypervisor_status",
+    "set_hypervisor_mode",
 }
 
 TIER_2_ADVANCED: Set[str] = {

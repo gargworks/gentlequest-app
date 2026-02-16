@@ -1,0 +1,503 @@
+{
+    "video_id": "demo_b_part_1",
+    "metadata": {
+        "filename": "Nucleus 1.0.4 Demo B Part 1.mov",
+        "total_frames": 16,
+        "duration_seconds": 47,
+        "fps_extracted": 0.33,
+        "extraction_interval": "3s",
+        "vertical_roi": {
+            "x": 960,
+            "y": 0,
+            "width": 960,
+            "height": 1080,
+            "note": "Focus on Right 50% (Claude UI) for vertical shorts."
+        }
+    },
+    "frames": [
+        {
+            "frame_id": "001",
+            "timestamp": "00:00",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen (Left: Terminal, Right: Claude)",
+                "cursor_position": "Input Field",
+                "visible_ui_elements": [
+                    "Model: Haiku 4.5",
+                    "Greeting: Evening, Hi",
+                    "Input Placeholder: Reply..."
+                ]
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "nucleus $",
+                    "Evening, Hi",
+                    "Free plan",
+                    "Upgrade"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "",
+                "cursor_active": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Idle / Start",
+                "system_state": "Ready",
+                "narrative_context": "Initial state. User is about to begin the session."
+            }
+        },
+        {
+            "frame_id": "002",
+            "timestamp": "00:03",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "cursor_position": "Input Field"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "Evening, Hi"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "",
+                "cursor_active": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Focusing Input",
+                "system_state": "Ready",
+                "narrative_context": "User prepares to type."
+            }
+        },
+        {
+            "frame_id": "003",
+            "timestamp": "00:06",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am star"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am star",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "User begins entering the context command."
+            }
+        },
+        {
+            "frame_id": "004",
+            "timestamp": "00:09",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Continuing input."
+            }
+        },
+        {
+            "frame_id": "005",
+            "timestamp": "00:12",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a new session."
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a new session.",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "User defines the session boundary."
+            }
+        },
+        {
+            "frame_id": "006",
+            "timestamp": "00:15",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a new session. Can you chec"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a new session. Can you chec",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "User begins the specific request for the Nucleus Brain."
+            }
+        },
+        {
+            "frame_id": "007",
+            "timestamp": "00:18",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a new session. Can you check the Nucl"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a new session. Can you check the Nucl",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Specified target: 'Nucleus Brain'."
+            }
+        },
+        {
+            "frame_id": "008",
+            "timestamp": "00:21",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "visible_ui_elements": [
+                    "Input Field",
+                    "Typing Cursor"
+                ]
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a new session. Can you check the Nucleus Brain for an"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a new session. Can you check the Nucleus Brain for an",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Smooth typing continuation. No anomaly detected."
+            }
+        },
+        {
+            "frame_id": "009",
+            "timestamp": "00:24",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "I am starting a new session. Can you check the Nucleus Brain for any existing"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "I am starting a new session. Can you check the Nucleus Brain for any existing",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Resuming typing sequence, asking for 'existing' data."
+            }
+        },
+        {
+            "frame_id": "010",
+            "timestamp": "00:27",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "...existing architectural decisions"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "...existing architectural decisions",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Clarifying the type of data: 'architectural decisions'."
+            }
+        },
+        {
+            "frame_id": "011",
+            "timestamp": "00:30",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "...architectural decisions or tech stack"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "...architectural decisions or tech stack",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Adding 'tech stack' as search criteria."
+            }
+        },
+        {
+            "frame_id": "012",
+            "timestamp": "00:33",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "...architectural decisions or tech stack preferences"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "...architectural decisions or tech stack preferences",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Completing the query parameters."
+            }
+        },
+        {
+            "frame_id": "013",
+            "timestamp": "00:36",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "...preferences for the ai-mvp-backend project?"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "...preferences for the ai-mvp-backend project?",
+                "cursor_active": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing",
+                "system_state": "Input Capture",
+                "narrative_context": "Specifying the project scope."
+            }
+        },
+        {
+            "frame_id": "014",
+            "timestamp": "00:39",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "project?"
+                ]
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "...backend project?",
+                "cursor_active": true,
+                "velocity": "Decelerating"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Typing Finished",
+                "system_state": "Input Capture",
+                "narrative_context": "User pauses or finishes the query."
+            }
+        },
+        {
+            "frame_id": "015",
+            "timestamp": "00:42",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen"
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "(Entire Query Visible)"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "I am starting a new session. Can you check the Nucleus Brain for any existing architectural decisions or tech stack preferences for the ai-mvp-backend project?",
+                "cursor_active": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": []
+            },
+            "intent_analysis": {
+                "user_action": "Reviewing Query",
+                "system_state": "Ready to Submit",
+                "narrative_context": "User reviews the prompt before sending."
+            }
+        },
+        {
+            "frame_id": "016",
+            "timestamp": "00:45",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "visible_ui_elements": [
+                    "Input Field",
+                    "Send Button Active"
+                ]
+            },
+            "ocr_content": {
+                "screen_text": [
+                    "(Query Submitted / Transition)"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "(Full Query)",
+                "cursor_active": false,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "content_blocks": [],
+                "ui_indicators": [
+                    "Transition to Loading"
+                ]
+            },
+            "intent_analysis": {
+                "user_action": "Submission",
+                "system_state": "Processing Start",
+                "narrative_context": "User hits send. Transition to Demo B Part 2."
+            }
+        }
+    ]
+}

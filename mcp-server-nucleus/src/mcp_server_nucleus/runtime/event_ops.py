@@ -98,6 +98,6 @@ def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
         
         return events[-limit:]
     except Exception as e:
-        # Avoid logger dependency here if possible, or print
-        print(f"Error reading events: {e}")
+        import sys
+        sys.stderr.write(f"Error reading events: {e}\n"); sys.stderr.flush()
         return []

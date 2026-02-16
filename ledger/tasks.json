@@ -527,5 +527,59 @@
     "escalation_reason": null,
     "created_at": "2026-02-06T18:59:54+0530",
     "updated_at": "2026-02-06T18:59:54+0530"
+  },
+  {
+    "id": "nucleus_universal_agent_sync",
+    "description": "Implement Universal Agent Brain Sync in Nucleus OS - Allow all AI agents (Antigravity, Claude, Cursor, Windsurf, Perplexity, ChatGPT Desktop, Codex, Replit, Lovable, etc.) to share knowledge through ~/.nucleus/brain/ as single source of truth. Auto-detect agents, sync bidirectionally, provide MCP tools for universal access. Registry should be evergrowing with plugin system for future agents.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "mcp",
+      "system_design",
+      "file_sync",
+      "config_management"
+    ],
+    "claimed_by": null,
+    "source": "perplexity_planning_session",
+    "escalation_reason": null,
+    "created_at": "2026-02-08T12:29:50+0530",
+    "updated_at": "2026-02-08T12:29:50+0530"
+  },
+  {
+    "id": "google_cloud_beta_week1_actions",
+    "description": "Google Cloud Beta Access - This Week Actions: (1) Generate 20 Believe-It-Bot videos to show API usage, (2) Monitor for sales response Mon/Tue Feb 10-11, (3) Continue GentleQuest growth efforts, (4) Document metrics (users, views, engagement). Project: gen-lang-client-0894185576. Credits available: \u20b9107,486.",
+    "status": "PENDING",
+    "priority": 2,
+    "blocked_by": [],
+    "required_skills": [
+      "content_creation",
+      "monitoring",
+      "metrics"
+    ],
+    "claimed_by": null,
+    "source": "perplexity_planning",
+    "escalation_reason": null,
+    "created_at": "2026-02-08T12:32:14+0530",
+    "updated_at": "2026-02-08T12:32:14+0530"
+  },
+  {
+    "id": "startups_program_90day_review",
+    "description": "Google for Startups Program - 90 Day Review (April 1, 2026): Evaluate readiness for $350K credits application. Check criteria: (1) 500+ GentleQuest active users, (2) 100+ Believe-It-Bot videos with 50K+ views, (3) 100+ Nucleus OS GitHub stars, (4) $500+ productive credit usage, (5) 3+ months operating history. Apply ONLY if 4+ criteria met, otherwise wait another 60 days.",
+    "status": "BLOCKED",
+    "priority": 3,
+    "blocked_by": [
+      "google_cloud_beta_week1_actions"
+    ],
+    "required_skills": [
+      "analysis",
+      "strategy"
+    ],
+    "claimed_by": null,
+    "source": "perplexity_planning",
+    "escalation_reason": null,
+    "created_at": "2026-02-08T12:32:26+0530",
+    "updated_at": "2026-02-08T12:32:26+0530"
   }
 ]

@@ -64,7 +64,7 @@ Every 3 days, trigger the Recursive Self-Improvement sprint:
 **Constitution active as of December 27, 2025. Authorized by the Founder's Desk.**
 
 ### **The Final Handshake**
-1. **File saved** at `/Users/lokeshgarg/ai-mvp-backend/AGENTS.md` (overwritten with this content).
+1. **File saved** at `AGENTS.md` (overwritten with this content).
 2. Go to your **Antigravity Creator thread** and say: *"Read AGENTS.md. This is the law. Ensure all future code and agent management follows this hierarchy."*
 3. Go to your **Synthesizer thread** and say: *"Read AGENTS.md. Update state.json to reflect the 72-hour maintenance protocol and new agent codenames."*
 

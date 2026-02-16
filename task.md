@@ -1093,3 +1093,21 @@ Enhance `nucleus-init` to provide a guided onboarding experience for new users.
 - [x] Scaffolded `song-meaning` experiment
 - [x] Unified all protocols under one system
 - [x] Recorded final walkthrough and saved session
+
+---
+
+# Nucleus MCP Launch Prep (2026-02-09) ✅
+## Objective
+Finalize the public launch of Nucleus MCP (`nucleus-mcp` v1.0.0).
+
+## Tasks
+- [x] **Community Engagement:** Respond to Reddit feedback regarding ChatGPT support.
+- [x] **Community Request:** Implemented `nucleus-init --scan` for ingesting existing projects.
+- [x] **Technical Support:** Update README/FAQ to document ChatGPT Developer Beta Mode integration.
+- [x] **Product Polish:** Create `scripts/sse_bridge.py` for web-based MCP clients.
+- [x] **Community Fixes:** Improved engram search (keyword query) and added pytest fixtures.
+- [x] **Governance:** Port and verify `demo_governance.py` in the public repo.
+- [x] **Windows Support:** Fix CLI path resolution logic and add verification script.
+- [x] **Build & Release:** Verified and pushed `v1.0.1` artifacts to GitHub.
+- [x] **Strategic Documentation:** Create `COMMUNITY_FAQ.md` for the second wave of users.
+- [ ] **Chairman P0:** Claim social handles and purchase domains (Awaiting human).

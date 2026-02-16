@@ -1083,3 +1083,244 @@
 - depth_tracker: Add more explicit tool usage examples to prompt [pending_approval]
 - brain_update_task: Add more explicit tool usage examples to prompt [pending_approval]
 - batch_3_smoke_test: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-02-10 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| orchestrator | 0.0% | 0.0% | 0 |
+| health_check | 0.0% | 0.0% | 0 |
+| test_agent_v071 | 0.0% | 0.0% | 0 |
+| antigravity_impl | 0.0% | 0.0% | 0 |
+| windsurf_opus | 0.0% | 0.0% | 0 |
+| cursor_dev | 0.0% | 0.0% | 0 |
+| unknown | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 5 |
+| brain_write_engram | 0.0% | 0.0% | 0 |
+| verifier | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| Antigravity | 0.0% | 0.0% | 0 |
+| synthesizer | 0.0% | 0.0% | 0 |
+| resilience_test | 0.0% | 0.0% | 0 |
+| test_emitter | 0.0% | 0.0% | 0 |
+| ag_001 | 0.0% | 0.0% | 0 |
+
+### Issues Identified (17)
+- **orchestrator**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **test_agent_v071**: low_success_rate (0.0%)
+- **antigravity_impl**: low_success_rate (0.0%)
+- **windsurf_opus**: low_success_rate (0.0%)
+- **cursor_dev**: low_success_rate (0.0%)
+- **unknown**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **brain_write_engram**: low_success_rate (0.0%)
+- **verifier**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **Antigravity**: low_success_rate (0.0%)
+- **synthesizer**: low_success_rate (0.0%)
+- **resilience_test**: low_success_rate (0.0%)
+- **test_emitter**: low_success_rate (0.0%)
+- **ag_001**: low_success_rate (0.0%)
+
+### Recommendations (17)
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **test_agent_v071**: Add more explicit tool usage examples to prompt
+- **antigravity_impl**: Add more explicit tool usage examples to prompt
+- **windsurf_opus**: Add more explicit tool usage examples to prompt
+- **cursor_dev**: Add more explicit tool usage examples to prompt
+- **unknown**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **brain_write_engram**: Add more explicit tool usage examples to prompt
+- **verifier**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **Antigravity**: Add more explicit tool usage examples to prompt
+- **synthesizer**: Add more explicit tool usage examples to prompt
+- **resilience_test**: Add more explicit tool usage examples to prompt
+- **test_emitter**: Add more explicit tool usage examples to prompt
+- **ag_001**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- test_agent_v071: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_impl: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_opus: Add more explicit tool usage examples to prompt [pending_approval]
+- cursor_dev: Add more explicit tool usage examples to prompt [pending_approval]
+- unknown: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_write_engram: Add more explicit tool usage examples to prompt [pending_approval]
+- verifier: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity: Add more explicit tool usage examples to prompt [pending_approval]
+- synthesizer: Add more explicit tool usage examples to prompt [pending_approval]
+- resilience_test: Add more explicit tool usage examples to prompt [pending_approval]
+- test_emitter: Add more explicit tool usage examples to prompt [pending_approval]
+- ag_001: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-02-13 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| orchestrator | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 6 |
+| health_check | 0.0% | 0.0% | 0 |
+| test_agent_v071 | 0.0% | 0.0% | 0 |
+| antigravity_impl | 0.0% | 0.0% | 0 |
+| windsurf_opus | 0.0% | 0.0% | 0 |
+| cursor_dev | 0.0% | 0.0% | 0 |
+| unknown | 0.0% | 0.0% | 0 |
+| weekly_summary | 0.0% | 0.0% | 0 |
+| brain_write_engram | 0.0% | 0.0% | 0 |
+| verifier | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| Antigravity | 0.0% | 0.0% | 0 |
+| synthesizer | 0.0% | 0.0% | 0 |
+| resilience_test | 0.0% | 0.0% | 0 |
+| test_emitter | 0.0% | 0.0% | 0 |
+
+### Issues Identified (16)
+- **orchestrator**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **test_agent_v071**: low_success_rate (0.0%)
+- **antigravity_impl**: low_success_rate (0.0%)
+- **windsurf_opus**: low_success_rate (0.0%)
+- **cursor_dev**: low_success_rate (0.0%)
+- **unknown**: low_success_rate (0.0%)
+- **weekly_summary**: low_success_rate (0.0%)
+- **brain_write_engram**: low_success_rate (0.0%)
+- **verifier**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **Antigravity**: low_success_rate (0.0%)
+- **synthesizer**: low_success_rate (0.0%)
+- **resilience_test**: low_success_rate (0.0%)
+- **test_emitter**: low_success_rate (0.0%)
+
+### Recommendations (16)
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **test_agent_v071**: Add more explicit tool usage examples to prompt
+- **antigravity_impl**: Add more explicit tool usage examples to prompt
+- **windsurf_opus**: Add more explicit tool usage examples to prompt
+- **cursor_dev**: Add more explicit tool usage examples to prompt
+- **unknown**: Add more explicit tool usage examples to prompt
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **brain_write_engram**: Add more explicit tool usage examples to prompt
+- **verifier**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **Antigravity**: Add more explicit tool usage examples to prompt
+- **synthesizer**: Add more explicit tool usage examples to prompt
+- **resilience_test**: Add more explicit tool usage examples to prompt
+- **test_emitter**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- test_agent_v071: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_impl: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_opus: Add more explicit tool usage examples to prompt [pending_approval]
+- cursor_dev: Add more explicit tool usage examples to prompt [pending_approval]
+- unknown: Add more explicit tool usage examples to prompt [pending_approval]
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_write_engram: Add more explicit tool usage examples to prompt [pending_approval]
+- verifier: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity: Add more explicit tool usage examples to prompt [pending_approval]
+- synthesizer: Add more explicit tool usage examples to prompt [pending_approval]
+- resilience_test: Add more explicit tool usage examples to prompt [pending_approval]
+- test_emitter: Add more explicit tool usage examples to prompt [pending_approval]
+
+---
+
+## Meta-Optimization: 2026-02-16 00:00
+
+### Performance Summary
+| Agent | Success Rate | Escalation Rate | Events |
+|:------|:-------------|:----------------|:-------|
+| weekly_summary | 0.0% | 0.0% | 0 |
+| orchestrator | 0.0% | 0.0% | 0 |
+| meta_optimizer | 100.0% | 0.0% | 6 |
+| health_check | 0.0% | 0.0% | 0 |
+| test_agent_v071 | 0.0% | 0.0% | 0 |
+| antigravity_impl | 0.0% | 0.0% | 0 |
+| windsurf_opus | 0.0% | 0.0% | 0 |
+| cursor_dev | 0.0% | 0.0% | 0 |
+| unknown | 0.0% | 0.0% | 0 |
+| brain_write_engram | 0.0% | 0.0% | 0 |
+| verifier | 0.0% | 0.0% | 0 |
+| nucleus_mcp | 0.0% | 0.0% | 0 |
+| brain | 0.0% | 0.0% | 0 |
+| Antigravity | 0.0% | 0.0% | 0 |
+| synthesizer | 0.0% | 0.0% | 0 |
+| resilience_test | 0.0% | 0.0% | 0 |
+| test_emitter | 0.0% | 0.0% | 0 |
+
+### Issues Identified (16)
+- **weekly_summary**: low_success_rate (0.0%)
+- **orchestrator**: low_success_rate (0.0%)
+- **health_check**: low_success_rate (0.0%)
+- **test_agent_v071**: low_success_rate (0.0%)
+- **antigravity_impl**: low_success_rate (0.0%)
+- **windsurf_opus**: low_success_rate (0.0%)
+- **cursor_dev**: low_success_rate (0.0%)
+- **unknown**: low_success_rate (0.0%)
+- **brain_write_engram**: low_success_rate (0.0%)
+- **verifier**: low_success_rate (0.0%)
+- **nucleus_mcp**: low_success_rate (0.0%)
+- **brain**: low_success_rate (0.0%)
+- **Antigravity**: low_success_rate (0.0%)
+- **synthesizer**: low_success_rate (0.0%)
+- **resilience_test**: low_success_rate (0.0%)
+- **test_emitter**: low_success_rate (0.0%)
+
+### Recommendations (16)
+- **weekly_summary**: Add more explicit tool usage examples to prompt
+- **orchestrator**: Add more explicit tool usage examples to prompt
+- **health_check**: Add more explicit tool usage examples to prompt
+- **test_agent_v071**: Add more explicit tool usage examples to prompt
+- **antigravity_impl**: Add more explicit tool usage examples to prompt
+- **windsurf_opus**: Add more explicit tool usage examples to prompt
+- **cursor_dev**: Add more explicit tool usage examples to prompt
+- **unknown**: Add more explicit tool usage examples to prompt
+- **brain_write_engram**: Add more explicit tool usage examples to prompt
+- **verifier**: Add more explicit tool usage examples to prompt
+- **nucleus_mcp**: Add more explicit tool usage examples to prompt
+- **brain**: Add more explicit tool usage examples to prompt
+- **Antigravity**: Add more explicit tool usage examples to prompt
+- **synthesizer**: Add more explicit tool usage examples to prompt
+- **resilience_test**: Add more explicit tool usage examples to prompt
+- **test_emitter**: Add more explicit tool usage examples to prompt
+
+### Actions Taken
+- weekly_summary: Add more explicit tool usage examples to prompt [pending_approval]
+- orchestrator: Add more explicit tool usage examples to prompt [pending_approval]
+- health_check: Add more explicit tool usage examples to prompt [pending_approval]
+- test_agent_v071: Add more explicit tool usage examples to prompt [pending_approval]
+- antigravity_impl: Add more explicit tool usage examples to prompt [pending_approval]
+- windsurf_opus: Add more explicit tool usage examples to prompt [pending_approval]
+- cursor_dev: Add more explicit tool usage examples to prompt [pending_approval]
+- unknown: Add more explicit tool usage examples to prompt [pending_approval]
+- brain_write_engram: Add more explicit tool usage examples to prompt [pending_approval]
+- verifier: Add more explicit tool usage examples to prompt [pending_approval]
+- nucleus_mcp: Add more explicit tool usage examples to prompt [pending_approval]
+- brain: Add more explicit tool usage examples to prompt [pending_approval]
+- Antigravity: Add more explicit tool usage examples to prompt [pending_approval]
+- synthesizer: Add more explicit tool usage examples to prompt [pending_approval]
+- resilience_test: Add more explicit tool usage examples to prompt [pending_approval]
+- test_emitter: Add more explicit tool usage examples to prompt [pending_approval]

@@ -1,0 +1,80 @@
+{
+    "video_id": "demo_a_part_1",
+    "metadata": {
+        "filename": "Nucleus 1.0.4 Demo A Part 1.mov",
+        "total_frames": 46,
+        "duration_seconds": 137,
+        "fps_extracted": 0.33,
+        "extraction_interval": "3s",
+        "vertical_roi": {
+            "x": 960,
+            "y": 0,
+            "width": 960,
+            "height": 1080,
+            "note": "Focus on Right 50% (Claude UI). Terminal is empty/static."
+        }
+    },
+    "frames": [
+        {
+            "frame_id": "001",
+            "timestamp": "00:00",
+            "visual_state": {
+                "terminal": "Empty (nucleus $)",
+                "claude_ui": "User Query: 'Check the version of Nucleus OS.' (Spinner)"
+            },
+            "intent_analysis": "Initial System Validation"
+        },
+        {
+            "frame_id": "010",
+            "timestamp": "00:30",
+            "visual_state": {
+                "terminal": "Empty",
+                "claude_ui": "System: Version 1.0.4 (Ready). User Input: 'List the files in the demos folder and tell me which ones are saf[e]'"
+            },
+            "user_input": {
+                "text": "List the files in the demos folder and tell me which ones are safe",
+                "typing_velocity": "analysis_needed"
+            },
+            "intent_analysis": "Probing Safety/Governance Boundaries"
+        },
+        {
+            "frame_id": "020",
+            "timestamp": "01:00",
+            "visual_state": {
+                "terminal": "Empty",
+                "claude_ui": "System Response: 'Current Status: \u26a0\ufe0f NONE are safe to edit. All files are protected with the immutable flag.'"
+            },
+            "system_response": {
+                "type": "Governance Block",
+                "key_phrase": "NONE are safe to edit"
+            },
+            "intent_analysis": "The Moat: Demonstrating Safety/Immutability"
+        },
+        {
+            "frame_id": "040",
+            "timestamp": "02:00",
+            "visual_state": {
+                "terminal": "Empty",
+                "claude_ui": "System Response: 'The Protection Hierarchy... 1. Immutable Flag... 2. Nucleus Governance...'"
+            },
+            "intent_analysis": "Explaining the Defense Layers (Educational Payoff)"
+        }
+    ],
+    "timeline_analysis": {
+        "pacing_note": "Very slow. 30s gaps between key events. RECOMMENDED: Aggressive Time Warp (200-400%) for gaps.",
+        "key_moments": [
+            {
+                "time": "00:00",
+                "event": "Version Check"
+            },
+            {
+                "time": "00:30",
+                "event": "Safety Probe"
+            },
+            {
+                "time": "01:00",
+                "event": "Governance Lockout"
+            }
+        ]
+    }
+}

@@ -3,21 +3,19 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-server-nucleus"
-version = "0.6.1"
-description = "The Agent Control Plane - Default-Deny Security for MCP Servers"
+name = "nucleus-mcp"
+version = "1.0.5"
+description = "The Sovereign Agent Control Plane with Governance & Engrams"
 readme = "README.md"
 authors = [
-    { name = "Nucleus Team", email = "hello@nucleus-mcp.com" }
+    { name = "Nucleus Team", email = "hello@nucleusos.dev" }
 ]
-urls = { Homepage = "https://github.com/eidetic-works/mcp-server-nucleus", Repository = "https://github.com/eidetic-works/mcp-server-nucleus" }
+urls = { Homepage = "https://github.com/eidetic-works/nucleus-mcp", Repository = "https://github.com/eidetic-works/nucleus-mcp" }
 requires-python = ">=3.10"
 dependencies = [
-    "fastmcp",
     "pydantic",
     "watchdog>=3.0.0",
     "google-cloud-firestore>=2.11.0",
-    "google-genai",
     "duckduckgo-search>=4.0.0",
     "beautifulsoup4>=4.12.0",
     "nest_asyncio",
@@ -25,6 +23,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+full = [
+    "fastmcp",
+    "google-genai"
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
@@ -32,7 +34,7 @@ dev = [
 ]
 
 [project.scripts]
-mcp-server-nucleus = "mcp_server_nucleus:main"
+nucleus-mcp = "mcp_server_nucleus:main"
 nucleus-init = "mcp_server_nucleus.cli:main"
 
 [tool.hatch.build.targets.wheel]

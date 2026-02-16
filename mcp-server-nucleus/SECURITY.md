@@ -14,7 +14,7 @@
 
 ### Private Disclosure
 
-Email: **security@nucleusos.dev** (coming soon)
+Email: **security@nucleusos.dev**
 
 Until the email is active, please use GitHub's private vulnerability reporting:
 1. Go to the repository's Security tab

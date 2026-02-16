@@ -15,7 +15,7 @@ from .ipc_auth import get_ipc_auth_manager, IPCToken
 
 def get_brain_path_internal() -> Path:
     """Helper to get brain path inside runtime"""
-    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
 
 class DecisionMade:
     """

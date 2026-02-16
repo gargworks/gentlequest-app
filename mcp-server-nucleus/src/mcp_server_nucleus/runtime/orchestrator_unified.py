@@ -42,7 +42,7 @@ class UnifiedOrchestrator:
     """
 
     def __init__(self, brain_path: Optional[Path] = None):
-        self.brain_path = brain_path or Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+        self.brain_path = brain_path or Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
         self.replica_id = f"nucleus_{int(time.time())}"
         
         # 1. Initialize Task Core (V3)

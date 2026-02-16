@@ -1,0 +1,16 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.4",
+    "description": "NPM wrapper for Nucleus MCP - The Sovereign Agent Control Plane",
+    "bin": {
+        "nucleus-mcp": "./bin/run.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Nucleus Team",
+    "license": "MIT",
+    "engines": {
+        "node": ">=14.0.0"
+    }
+}

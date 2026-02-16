@@ -1,0 +1,16 @@
+{
+  "last_event": {
+    "event_id": "evt-1770923982-3c5176e6",
+    "timestamp": "2026-02-12T19:19:42.727369Z",
+    "type": "access_denied",
+    "emitter": "hypervisor_l4",
+    "data": {
+      "path": "/Users/lokeshgarg/ai-mvp-backend/output/demos/.env",
+      "action": "delete",
+      "reason": "Resource is Immutable (Layer 4 Lock)"
+    },
+    "description": ""
+  },
+  "updated_at": "2026-02-12T19:19:42.727369Z",
+  "event_count": 2
+}

@@ -52,7 +52,7 @@ class MountedServer:
 
         request = {
             "jsonrpc": "2.0",
-            "method": "call_tool",
+            "method": "tools/call",
             "params": {
                 "name": tool_name,
                 "arguments": arguments

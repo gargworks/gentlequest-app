@@ -14,6 +14,16 @@
 
 ---
 
+## 🚨 v1.0.5 SOVEREIGN: The "Hardened Triad" Release
+**The high-performance, secure standard for Agent-to-Agent Connection.**
+
+> **New in v1.0.5**: Nucleus is now fully hardened with the **Hypervisor** and **DSoR** (Decision System of Record).
+> *   **Hypervisor Layer**: Default Deny policy for all file system access.
+> *   **Verification Canary**: Integrated health checks for the recursive tool mesh.
+> *   **Real-time Monolith**: Visual confirmation of sovereign connectivity.
+
+---
+
 ## 📦 Installation
 
 The clean, open source version of Nucleus is now available at:
@@ -57,6 +67,17 @@ One brain. All your tools.
 
 ---
 
+## 🚀 What Makes Nucleus Different? (The Fractal Architecture)
+
+| Feature | Zapier / iPaaS | LangChain | **Nucleus (v0.5)** |
+| :--- | :--- | :--- | :--- |
+| **Architecture** | Centralized Hub | Code Library | **Recursive Client** |
+| **Scaling** | O(N) (Manual) | O(N) (Code) | **O(1) (Fractal)** |
+| **Data Locality** | Cloud Only | App Dependent | **100% Local** |
+| **Agent Network** | Walled Garden | Static Graph | **Dynamic "Internet of Agents"** |
+
+---
+
 ## 🚀 What Makes Nucleus Different
 
 | Feature | Other Solutions | Nucleus |
@@ -71,7 +92,7 @@ One brain. All your tools.
 
 ## 🛠 140+ MCP Tools Included
 
-- **Memory** — Persistent knowledge that survives sessions
+- **Engrams** — Persistent knowledge that survives sessions
 - **Tasks** — Track work across agents
 - **Sessions** — Save and resume context
 - **Sync** — Multi-agent brain synchronization
@@ -182,7 +203,7 @@ Check your config pointer! You might be pointing to an old or temp brain.
 
 ## ✨ Core Features (Included)
 
-- **Persistent Memory** — `brain_write_engram` / `brain_query_engrams` (Vector-lite).
+- **Persistent Engrams** — `brain_write_engram` / `brain_query_engrams` (Vector-lite).
 - **Audit Ledger** — Immutable SHA-256 logs of every action (`brain_audit_log`).
 - **Recursive Mounting** — `brain_mount_server` (Basic).
 - **Local Sovereignty** — Zero cloud. All data in `~/.nucleus/brain`.

@@ -1,0 +1,15 @@
+{
+    "mcpServers": {
+        "nucleus": {
+            "command": "python3",
+            "args": [
+                "-m",
+                "mcp_server_nucleus"
+            ],
+            "env": {
+                "PYTHONPATH": "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src",
+                "NUCLEAR_BRAIN_PATH": "/Users/lokeshgarg/ai-mvp-backend/output/demos/.brain"
+            }
+        }
+    }
+}

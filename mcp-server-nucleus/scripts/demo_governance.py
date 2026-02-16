@@ -155,8 +155,8 @@ def main():
         print("   1. Engrams persist decisions across sessions")
         print("   2. Audit trail provides cryptographic proof")
         print("   3. Governance policies are always enforced")
-        print("\n📦 Install: pip install mcp-server-nucleus")
-        print("🔗 GitHub: github.com/lokeshgarg/mcp-server-nucleus")
+        print("\n📦 Install: pip install nucleus-mcp")
+        print("🔗 GitHub: github.com/eidetic-works/nucleus-mcp")
         print()
         
     finally:

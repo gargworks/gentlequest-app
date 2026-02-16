@@ -1,0 +1,207 @@
+{
+    "video_id": "demo_b_part_2",
+    "metadata": {
+        "filename": "Nucleus 1.0.4 Demo B Part 2.mov",
+        "total_frames": 14,
+        "duration_seconds": 41,
+        "fps_extracted": 0.33,
+        "extraction_interval": "3s",
+        "vertical_roi": {
+            "x": 960,
+            "y": 0,
+            "width": 960,
+            "height": 1080,
+            "note": "Focus on Right 50% (Claude UI) for vertical shorts."
+        }
+    },
+    "frames": [
+        {
+            "frame_id": "001",
+            "timestamp": "00:00",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen (Left: Terminal Idle, Right: Claude Active)",
+                "cursor_position": "Response Area",
+                "visible_ui_elements": [
+                    "User Query: 'I am starting a new session...'",
+                    "Tool Call Indicator: 'Brain_query_engrams'",
+                    "Loading Spinner"
+                ]
+            },
+            "ocr_content": {
+                "user_query": "...check the Nucleus Brain for any existing architectural decisions...",
+                "system_status": "Brain_query_engrams >"
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "I am starting a new session...",
+                "cursor_active": false,
+                "input_box_visible": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": true,
+                "ui_indicators": [
+                    "Loading Spinner",
+                    "Tool Call Indicator"
+                ],
+                "content_blocks": [],
+                "streaming_rate": "N/A"
+            },
+            "intent_analysis": {
+                "user_action": "Waiting",
+                "system_state": "Processing (Tool Invocation)",
+                "narrative_context": "Nucleus is querying the 'Brain' (Search Engine/DB) for the requested context."
+            }
+        },
+        {
+            "frame_id": "004",
+            "timestamp": "00:09",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "cursor_position": "Response Area",
+                "visible_ui_elements": [
+                    "Generated Response",
+                    "Bulleted List"
+                ]
+            },
+            "ocr_content": {
+                "response_text": [
+                    "I found one architectural decision stored in the Nucleus Brain:",
+                    "Sync Protocol (Intensity: 8/10 - High Priority)",
+                    "- Use WebSockets (via Socket.io) for real-time synchronization",
+                    "- Target: sub-100ms latency"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "",
+                "cursor_active": false,
+                "input_box_visible": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "ui_indicators": [],
+                "content_blocks": [
+                    "Text: I found one architectural decision...",
+                    "List: Sync Protocol details"
+                ],
+                "streaming_rate": "Complete"
+            },
+            "intent_analysis": {
+                "user_action": "Reading",
+                "system_state": "Output Display",
+                "narrative_context": "Successful retrieval. The system sourced the specific 'Sync Protocol' decision."
+            }
+        },
+        {
+            "frame_id": "007",
+            "timestamp": "00:18",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "cursor_position": "Input Field",
+                "visible_ui_elements": [
+                    "User Query Bubble: 'Who made those decisions?'"
+                ]
+            },
+            "ocr_content": {
+                "user_query": "Who made those decisions?"
+            },
+            "user_input": {
+                "is_typing": true,
+                "text": "Who made those decisions?",
+                "cursor_active": true,
+                "input_box_visible": true,
+                "velocity": "Normal"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "ui_indicators": [],
+                "content_blocks": [],
+                "streaming_rate": "Idle"
+            },
+            "intent_analysis": {
+                "user_action": "Contextual Follow-up",
+                "system_state": "Input Received",
+                "narrative_context": "User tests the depth of the memory. Can it verify *attribution*?"
+            }
+        },
+        {
+            "frame_id": "010",
+            "timestamp": "00:27",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "cursor_position": "Response Area",
+                "visible_ui_elements": [
+                    "Loading Spinner"
+                ]
+            },
+            "ocr_content": {
+                "system_status": "Thinking / Processing"
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "",
+                "cursor_active": false,
+                "input_box_visible": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": true,
+                "ui_indicators": [
+                    "Loading Spinner"
+                ],
+                "content_blocks": [],
+                "streaming_rate": "N/A"
+            },
+            "intent_analysis": {
+                "user_action": "Waiting",
+                "system_state": "Processing",
+                "narrative_context": "System is checking the metadata of the retrieved engram."
+            }
+        },
+        {
+            "frame_id": "014",
+            "timestamp": "00:39",
+            "visual_state": {
+                "active_window": "Claude Desktop",
+                "layout": "Split Screen",
+                "cursor_position": "Response Area",
+                "visible_ui_elements": [
+                    "Final Response Bubble"
+                ]
+            },
+            "ocr_content": {
+                "response_text": [
+                    "According to the Nucleus Brain record, that architectural decision was made by Architect_Agent",
+                    "recorded on February 12, 2026 at 17:24:16 UTC"
+                ]
+            },
+            "user_input": {
+                "is_typing": false,
+                "text": "",
+                "cursor_active": false,
+                "input_box_visible": true,
+                "velocity": "Idle"
+            },
+            "generation_data": {
+                "is_generating": false,
+                "ui_indicators": [],
+                "content_blocks": [
+                    "Text: Attribution to Architect_Agent",
+                    "Text: Timestamp details"
+                ],
+                "streaming_rate": "Complete"
+            },
+            "intent_analysis": {
+                "user_action": "Reading",
+                "system_state": "Final Output",
+                "narrative_context": "Attribution Scan Complete. It correctly identifies 'Architect_Agent' and the exact timestamp, proving high-fidelity provenance."
+            }
+        }
+    ]
+}

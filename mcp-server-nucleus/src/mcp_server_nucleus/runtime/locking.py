@@ -15,8 +15,11 @@ import time
 import os
 import contextlib
 import logging
+import subprocess
+import shutil
+import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class BrainLock(abc.ABC):
     """
     
     @abc.abstractmethod
-    def acquire(self, timeout: float = 5.0) -> bool:
+    def acquire(self, timeout: float = 5.0, metadata: Optional[Dict[str, str]] = None) -> bool:
         """Attempt to acquire the lock. Returns True if successful."""
         pass
 
@@ -36,15 +39,20 @@ class BrainLock(abc.ABC):
         """Release the lock."""
         pass
 
+    @abc.abstractmethod
+    def get_metadata(self) -> Dict[str, Any]:
+        """Retrieve metadata associated with the lock."""
+        pass
+
     def check_stale_locks(self, max_age_seconds: float = 3600):
         """Optional: Check for and cleanup stale locks."""
         pass
 
 
     @contextlib.contextmanager
-    def section(self, timeout: float = 5.0):
+    def section(self, timeout: float = 5.0, metadata: Optional[Dict[str, str]] = None):
         """Context manager for critical sections."""
-        acquired = self.acquire(timeout)
+        acquired = self.acquire(timeout, metadata=metadata)
         if not acquired:
             raise TimeoutError(f"Could not acquire lock on {self} after {timeout}s")
         try:
@@ -54,7 +62,7 @@ class BrainLock(abc.ABC):
 
 class FileBrainLock(BrainLock):
     """
-    Local Implementation using UNIX `fcntl`.
+    Local Implementation using UNIX `fcntl` + `xattr` for metadata.
     Used for the 'Local First' Sovereign OS.
     """
     
@@ -63,8 +71,55 @@ class FileBrainLock(BrainLock):
         self.lock_file = None
         # Ensure directory exists
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        self.xattr_available = shutil.which("xattr") is not None
 
-    def acquire(self, timeout: float = 5.0) -> bool:
+    def _set_xattr(self, key: str, value: str):
+        """Writes extended attribute if xattr is available."""
+        if not self.xattr_available:
+            return
+        
+        try:
+            subprocess.run(
+                ["xattr", "-w", key, str(value), str(self.lock_path)],
+                check=True,
+                capture_output=True
+            )
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to set xattr {key}: {e}")
+
+    def _get_xattr(self, key: str) -> Optional[str]:
+        """Reads extended attribute if xattr is available."""
+        if not self.xattr_available:
+            return None
+            
+        try:
+            result = subprocess.run(
+                ["xattr", "-p", key, str(self.lock_path)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            return result.stdout.strip()
+        except subprocess.CalledProcessError:
+            return None
+
+    def _list_xattrs(self) -> List[str]:
+        """Lists all xattrs on the file."""
+        if not self.xattr_available:
+            return []
+            
+        try:
+            result = subprocess.run(
+                ["xattr", str(self.lock_path)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            return result.stdout.strip().split("\n")
+        except subprocess.CalledProcessError:
+            return []
+
+    def acquire(self, timeout: float = 5.0, metadata: Optional[Dict[str, str]] = None) -> bool:
         start_time = time.time()
         
         # Open the file if not already open
@@ -75,11 +130,24 @@ class FileBrainLock(BrainLock):
             try:
                 # specific locking operation: LOCK_EX (Exclusive) | LOCK_NB (Non-Blocking)
                 fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                
                 # Write PID for debugging (knowing who holds the lock)
                 self.lock_file.seek(0)
                 self.lock_file.truncate()
                 self.lock_file.write(str(os.getpid()))
                 self.lock_file.flush()
+                
+                # --- METADATA INJECTION (Phase 28) ---
+                if metadata:
+                    # Always include timestamp if not present
+                    if "timestamp" not in metadata:
+                        metadata["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+                        
+                    for k, v in metadata.items():
+                        # Namespace keys with 'nucleus.lock.' if not already
+                        key = k if k.startswith("nucleus.lock.") else f"nucleus.lock.{k}"
+                        self._set_xattr(key, v)
+                
                 return True
             except (IOError, OSError):
                 # Lock is held by another process
@@ -99,6 +167,29 @@ class FileBrainLock(BrainLock):
                 pass
             finally:
                 self.lock_file = None
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Retrieves all nucleus.lock.* metadata from the lock file."""
+        if not self.lock_path.exists():
+            return {}
+            
+        data = {}
+        # Get PID from file content
+        try:
+            with open(self.lock_path, 'r') as f:
+                data["pid"] = f.read().strip()
+        except:
+            data["pid"] = "unknown"
+
+        # Get xattrs
+        if self.xattr_available:
+            attrs = self._list_xattrs()
+            for attr in attrs:
+                if attr.startswith("nucleus.lock."):
+                    clean_key = attr.replace("nucleus.lock.", "")
+                    data[clean_key] = self._get_xattr(attr)
+        
+        return data
 
     def check_stale_locks(self, max_age_seconds: float = 86400):
         """

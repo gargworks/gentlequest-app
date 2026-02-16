@@ -1,0 +1,64 @@
+{
+    "master_video": "demos/00_production_playbook/output/nucleus_demo_master_v105.mp4",
+    "voice_name": "en-US-Chirp3-HD-Charon",
+    "speaking_rate": 0.9,
+    "sfx_config": {
+        "dark_drone": {
+            "vol": 0.08
+        },
+        "ui_glitch": {
+            "vol": 0.3
+        },
+        "ui_chime": {
+            "vol": 0.2
+        },
+        "tech_snap": {
+            "vol": 0.6
+        }
+    },
+    "cues": [
+        {
+            "id": "ambience",
+            "time": 0.0,
+            "sfx_under": "dark_drone",
+            "sfx_duration": 185.0,
+            "text": ""
+        },
+        {
+            "id": "phase_1_trap",
+            "time": 1.0,
+            "rate": 0.9,
+            "text": "Stop. <break time='800ms'/> If you are still managing AI permissions manually... you are already behind. <break time='1s'/> I used to think checking the code was enough. But once you have seen an agent hallucinate a delete command on a live production database? <break time='1s'/> That fear stays with you. It sits in your stomach. It makes you realize that most 'AI safety' is just theater. <break time='2.5s'/> This is why I built Nucleus. <break time='800ms'/> It is not a wrapper. It is a local hypervisor that locks your files at the OS level. <break time='1.5s'/> Watch this. <break time='600ms'/> The agent tries to wipe my env file. <break time='800ms'/> Blocked. <break time='500ms'/> Instantly. <break time='1s'/> It logs the attempt cryptographically. You have the receipt. You have the control. <break time='1.5s'/> I don't know if this is the perfect solution yet... but that blocked file? That is proof that you can contain the risk without killing the productivity."
+        },
+        {
+            "id": "phase_2_memory",
+            "time": 74.3,
+            "rate": 0.9,
+            "text": "But security is useless if it doesn't have memory. <break time='1s'/> Most tools... they just block. They have no context. But Nucleus? Nucleus *remembers*. <break time='1s'/> See this 'Engram'? <break time='500ms'/> You teach the agent once. 'Never touch the secrets file.' 'Always use this layout.' It verifies this memory across every single session. <break time='1s'/> Most enterprise tools will charge you twenty thousand dollars a year for this audit trail. They call it 'Compliance'. <break time='500ms'/> I call it a tax. Nucleus gives you this visibility for free. Locally."
+        },
+        {
+            "id": "phase_2_event",
+            "time": 90.3,
+            "sfx_under": "ui_chime",
+            "text": ""
+        },
+        {
+            "id": "phase_3_mount",
+            "time": 120.0,
+            "rate": 0.9,
+            "text": "And here is where it gets powerful. It scales. Recursively. <break time='800ms'/> You can mount your entire infrastructure... Stripe. Search. Postgres. <break time='1s'/> You are governing an entire swarm from a single point of truth. <break time='1.2s'/> I can snap my fingers..."
+        },
+        {
+            "id": "phase_3_event",
+            "time": 141.0,
+            "sfx_under": "tech_snap",
+            "text": ""
+        },
+        {
+            "id": "phase_3_dismount",
+            "time": 143.0,
+            "rate": 0.9,
+            "text": "...and manifest the entire swarm. <break time='600ms'/> Look at that. The agent can use them... but it cannot break the physics of the rules you set in your hypervisor. <break time='1.2s'/> The local tool is free. It is yours. <break time='800ms'/> If you want to see where we are taking the Sovereign Fleet... Comment SOVEREIGN below. <break time='1s'/> No hype. Just control. <break time='800ms'/> Stay sovereign."
+        }
+    ]
+}
