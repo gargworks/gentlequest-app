@@ -59,14 +59,14 @@ def generate_dashboard():
         
         <div class="metric-card">
             <div class="metric-label">Daily Active Users (24h)</div>
-            <div class="metric-value {'status-good' if dau/total_users >= 0.30 if total_users > 0 else False else 'status-warning'}">{dau}</div>
-            <div>{dau/total_users*100:.1f}% of total</div>
+            <div class="metric-value {'status-good' if (total_users > 0 and dau/total_users >= 0.30) else 'status-warning'}">{dau}</div>
+            <div>{(dau/total_users*100) if total_users > 0 else 0:.1f}% of total</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">Weekly Active Users (7d)</div>
-            <div class="metric-value {'status-good' if wau/total_users >= 0.40 if total_users > 0 else False else 'status-warning'}">{wau}</div>
-            <div>{wau/total_users*100:.1f}% of total</div>
+            <div class="metric-value {'status-good' if (total_users > 0 and wau/total_users >= 0.40) else 'status-warning'}">{wau}</div>
+            <div>{(wau/total_users*100) if total_users > 0 else 0:.1f}% of total</div>
         </div>
         
         <div class="metric-card">
