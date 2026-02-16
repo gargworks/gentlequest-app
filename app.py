@@ -60,7 +60,13 @@ from providers.clinical_assessments import (
 from providers.alert_manager import AlertManager
 
 # Import enterprise integration
-from api_clinical_dashboard import clinical_dashboard
+try:
+    from api_clinical_dashboard import clinical_dashboard
+    DASHBOARD_AVAILABLE = True
+except ImportError:
+    DASHBOARD_AVAILABLE = False
+    print("Clinical Dashboard not available: api_clinical_dashboard.py missing")
+
 try:
     from integrations import integrate_with_app
 
@@ -1152,11 +1158,14 @@ def _register_routes(app: Flask) -> None:
         app.logger.error(f"Failed to register Alert Routes: {e}")
 
     # Register Clinical Dashboard
-    try:
-        app.register_blueprint(clinical_dashboard)
-        app.logger.info("Clinical Dashboard Blueprint registered successfully")
-    except Exception as e:
-        app.logger.error(f"Failed to register Clinical Dashboard Blueprint: {e}")
+    if DASHBOARD_AVAILABLE:
+        try:
+            app.register_blueprint(clinical_dashboard)
+            app.logger.info("Clinical Dashboard Blueprint registered successfully")
+        except Exception as e:
+            app.logger.error(f"Failed to register Clinical Dashboard Blueprint: {e}")
+    else:
+        app.logger.info("Clinical Dashboard skipped: DASHBOARD_AVAILABLE is False")
 
     @app.route("/clinical")
     @app.route("/clinical-dashboard")
@@ -1397,6 +1406,71 @@ def _register_routes(app: Flask) -> None:
 </html>
         """
         return privacy_html, 200, {'Content-Type': 'text/html'}
+
+    @app.route("/terms")
+    @app.route("/terms/")
+    @app.limiter.exempt
+    def terms_of_service():
+        """Serve terms of service page for app stores"""
+        terms_html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - GentleQuest</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+        h1 { color: #6366f1; }
+        h2 { color: #4f46e5; margin-top: 2em; }
+        .updated { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated: August 14, 2025</p>
+    
+    <p>Welcome to GentleQuest ("Service"). By using the Service, you agree to these Terms. If you do not agree, please discontinue use.</p>
+    
+    <h2>1. Not Medical Advice</h2>
+    <p>The Service provides AI-generated wellness support and education only. It is not medical advice, diagnosis, or treatment. In an emergency or crisis, contact your local emergency number or country-specific crisis resources.</p>
+    
+    <h2>2. Eligibility</h2>
+    <p>You must comply with applicable laws and use the Service for lawful purposes. Do not submit illegal, harmful, or personal data you are not authorized to share.</p>
+    
+    <h2>3. Your Content</h2>
+    <p>You are responsible for the content you submit. To operate and improve the Service, you grant us a limited license to process your content.</p>
+    
+    <h2>4. Privacy</h2>
+    <p>See the Privacy Policy for how we collect, use, and retain data.</p>
+    
+    <h2>5. Data Retention and Deletion</h2>
+    <p>We retain data as described in our Privacy Policy. You may request data export or deletion via the in-app settings.</p>
+    
+    <h2>6. Acceptable Use</h2>
+    <p>No misuse, harassment, scraping, reverse engineering, or security testing without permission. Respect rate limits and system integrity.</p>
+    
+    <h2>7. Third-Party Services</h2>
+    <p>We use infrastructure and AI providers. Your use is subject to their terms.</p>
+    
+    <h2>8. Disclaimers</h2>
+    <p>The Service is provided "as is" without warranties. We do not guarantee accuracy, availability, or fitness for a particular purpose.</p>
+    
+    <h2>9. Limitation of Liability</h2>
+    <p>To the maximum extent permitted by law, we are not liable for indirect, incidental, or consequential damages.</p>
+    
+    <h2>10. Changes</h2>
+    <p>We may update these Terms. Continued use means you accept the updated Terms.</p>
+    
+    <h2>11. Contact</h2>
+    <p>For questions or requests, please refer to the in-app Settings > Safety & Legal section, or contact us at <a href="mailto:support@gentlequest.app">support@gentlequest.app</a>.</p>
+</body>
+</html>
+        """
+        return terms_html, 200, {'Content-Type': 'text/html'}
+
+
 
     @app.route("/api/health", methods=["GET"])
     @app.limiter.exempt
