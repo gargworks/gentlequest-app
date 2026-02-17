@@ -1,21 +1,24 @@
-# 🧠 Nucleus-MCP
+# 🧠 nucleus-mcp
 
-> ⚠️ **Official Repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
+> ⚠️ **official repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
 
 [![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
+[![Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1079781&theme=dark)](https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp)
 
-> **The Sovereign Agent Control Plane** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
+> **the sovereign agent control plane** — one brain that syncs cursor, claude, windsurf, and any mcp-compatible tool.
 
 > [!CAUTION]
-> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
-> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails — all 100% local.
+> **after the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> built nucleus security-first: hypervisor controls, resource locking, and full audit trails — all 100% local.
+
+🚀 **live on product hunt**: nucleus is the local-first agentic identity & security layer. [join the strike →](https://www.producthunt.com/posts/nucleus-mcp)
 
 ---
 
-## 🚨 v1.0.5 SOVEREIGN: The "Hardened Triad" Release
-**The high-performance, secure standard for Agent-to-Agent Connection.**
+## 🚨 v1.0.6 sovereign: the "absolute hardening" strike
+**the secure standard for agent-to-agent connection.**
 
 > **New in v1.0.5**: Nucleus is now fully hardened with the **Hypervisor** and **DSoR** (Decision System of Record).
 > *   **Hypervisor Layer**: Default Deny policy for all file system access.
@@ -39,23 +42,23 @@ This repository (`mcp-server-nucleus`) is the internal development monorepo. For
 
 ---
 
-## 🎯 The Problem
+## 🎯 the problem
 
-You use **multiple AI tools** daily:
-- Cursor for coding
-- Claude Desktop for thinking
-- Windsurf for exploration
-- ChatGPT for quick answers
+you use **multiple ai tools** daily:
+- cursor for coding
+- claude desktop for thinking
+- windsurf for exploration
+- chatgpt for quick answers
 
-**But they don't share memory.**
+**but they don't share memory.**
 
-Every time you switch tools, you lose context. You re-explain decisions. You repeat yourself.
+every time you switch tools, you lose context. you re-explain decisions. you repeat yourself.
 
 ---
 
-## ✨ The Solution
+## ✨ the solution
 
-**Nucleus syncs them with one brain.**
+**nucleus syncs them with one brain.**
 
 ```
 Tell Claude about a decision → Cursor knows it
@@ -112,8 +115,8 @@ One brain. All your tools.
 | **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
 | **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
 
-**OpenClaw trades security for capability. Nucleus gives you both.**
-**Nucleus connects ALL your platforms with one brain.**
+**openclaw trades security for capability. nucleus gives you both.**
+**nucleus connects ALL your platforms with one shared brain.**
 
 ## 🚀 Quick Start (2 Minutes)
 
