@@ -1,6 +1,6 @@
 # Nucleus MCP Repository Status Report
 
-**Generated**: Feb 9, 2026 11:20 AM IST (Author Fix Complete)
+**Generated**: Feb 17, 2026 12:42 AM IST (v1.0.5 Stability Check)
 
 ---
 
@@ -37,7 +37,7 @@ tests/test_core.py
 ### Git Status
 - **Commits**: 8 (all by "Nucleus Team")
 - **Branches**: main, dev (synced)
-- **Tags**: v1.0.0 (points to latest commit)
+- **Tags**: v1.0.5 (points to latest commit)
 - **Remote**: origin → github.com/eidetic-works/nucleus-mcp
 - **CI Status**: ✅ Passing
 - **Author**: Nucleus Team <hello@nucleus-mcp.com>
@@ -45,7 +45,7 @@ tests/test_core.py
 ### GitHub Features
 - ✅ Issues enabled (5 starter issues created)
 - ✅ Discussions enabled
-- ✅ Release v1.0.0 published
+- ✅ Release v1.0.5 published
 - ✅ Topics: mcp, ai-agents, cursor, claude, windsurf, memory-sync
 
 ### Protection Mechanisms
@@ -65,7 +65,7 @@ tests/test_core.py
 
 **URL**: https://pypi.org/project/nucleus-mcp/
 
-- **Version**: 1.0.0
+- **Version**: 1.0.5
 - **Install**: `pip install nucleus-mcp`
 - **CLI**: `nucleus-init`
 - **Status**: ✅ Working

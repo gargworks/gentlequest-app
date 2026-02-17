@@ -1,0 +1,13 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.5",
+    "description": "The Sovereign Agent Control Plane. Managed context, engrams, and tool orchestration.",
+    "mirror_to_root": true,
+    "templating": [
+        {
+            "file": "README.md",
+            "marker": "GLAMA_BADGE",
+            "content": "[![Glama](https://img.shields.io/badge/Glama-Verified-blue)](https://glama.ai/mcp/servers/@eidetic-works/nucleus-mcp)"
+        }
+    ]
+}

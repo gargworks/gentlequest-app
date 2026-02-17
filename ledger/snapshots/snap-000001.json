@@ -1,9 +1,9 @@
 {
   "snapshot_id": "snap-000001",
-  "timestamp": "2026-02-16T02:30:02.723593+00:00",
-  "state_hash": "deed7aea599b3444",
+  "timestamp": "2026-02-16T17:30:05.713215+00:00",
+  "state_hash": "e5bb0920ddbd66a2",
   "component_hashes": {
-    "ledger": "6081dfd1ab954b96",
+    "ledger": "7faf078a089be635",
     "slots": "1116f03f4f6f129c",
     "mounts": "bdf48914e5ecf284"
   },

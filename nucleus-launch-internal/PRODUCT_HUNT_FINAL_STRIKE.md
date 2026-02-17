@@ -39,7 +39,7 @@ No SaaS. No cloud. Just Sovereign AI. I’d love to hear how you’re handling a
 🚀 **Deep Dives & Community:**
 - 📺 **Watch the Demo**: [The Sovereign Trilogy](https://youtu.be/D1B6m_F-h80)
 - 🏗️ **Architecture**: [How we synced Cursor and Claude](https://dev.to/nucleusos/how-i-synced-cursor-claude-and-windsurf-with-one-shared-brain-mcp-1mh4)
-- 🛣️ **Roadmap**: [What's coming next (Security/Policy)](https://github.com/nucleusos/nucleus-mcp/blob/main/ROADMAP.md)
+- 🛣️ **Roadmap**: [What's coming next (Security/Policy)](https://github.com/eidetic-works/nucleus-mcp/blob/main/ROADMAP.md)
 - 👾 **Join the Tribe**: [Discord Community](https://discord.gg/RJuBNNJ5MT)
 
 🎁 **Launch Day Special**: We’re doing 1-on-1 'Agent Architecture Audits' for the first 10 people who leave a technical comment today. Let's harden your local workflows together!
@@ -63,13 +63,13 @@ No SaaS. No cloud. Just Sovereign AI. I’d love to hear how you’re handling a
 
 ### 🔗 Tiered Link List (Add in this order)
 1. **Primary**: `https://nucleusos.dev`
-2. **GitHub**: `https://github.com/nucleusos/nucleus-mcp`
+2. **GitHub**: `https://github.com/eidetic-works/nucleus-mcp`
 3. **Cursor Proof**: `https://cursor.directory/mcp/nucleus-mcp-the-sovereign-agent-control-plane`
-4. **YouTube (Trilogy)**: `https://youtu.be/D1B6m_F-h80`
-5. **Registry Proof (Glama)**: `https://glama.ai/mcp/servers/@nucleusos/nucleus-mcp`
-6. **Technical Proof (NPM)**: `https://www.npmjs.com/package/nucleus-mcp`
-7. **Technical Proof (PyPI)**: `https://pypi.org/project/nucleus-mcp/`
-8. **Social Proof (mcpservers.org)**: `https://mcpservers.org/servers/nucleus-mcp`
+4. **Registry Proof (Glama)**: `https://glama.ai/mcp/servers/@eidetic-works/nucleus-mcp`
+5. **Technical Proof (NPM)**: `https://www.npmjs.com/package/nucleus-mcp`
+6. **Technical Proof (PyPI)**: `https://pypi.org/project/nucleus-mcp/`
+7. **Social Proof (mcpservers.org)**: `https://mcpservers.org/servers/eidetic-works/nucleus-mcp`
+8. **YouTube (Trilogy)**: `https://youtu.be/D1B6m_F-h80`
 9. **Discord**: `https://discord.gg/RJuBNNJ5MT`
 
 ### 🛡️ Join the Tribe (Community Links)
@@ -97,7 +97,7 @@ For technical engagement and momentum, we are running the **Shared Brain Audit**
 
 *   **Architecture**: [How we synced Cursor and Claude](https://dev.to/nucleusos/how-i-synced-cursor-claude-and-windsurf-with-one-shared-brain-mcp-1mh4)
 *   **Philosophy**: [Why local-first beats cloud](https://dev.to/nucleusos/why-we-abandoned-cloud-memory-for-local-sovereignty-5bbo)
-* **Roadmap**: [What's coming next (Security/Policy)](https://github.com/nucleusos/nucleus-mcp/blob/main/ROADMAP.md)
+* **Roadmap**: [What's coming next (Security/Policy)](https://github.com/eidetic-works/nucleus-mcp/blob/main/ROADMAP.md)
 * **Dev Log**: [NucleusOS Hashnode](https://nucleusos.hashnode.dev)
 * **Builder Community**: [IndieHackers Profile](https://www.indiehackers.com/NucleusOS)
 

@@ -21,7 +21,7 @@ Select the following tags in the "Your interests" section:
 ### 🔗 4. Social & Account Links
 - **Email**: `hello@nucleusos.dev`
 - **X (Twitter)**: `https://x.com/NucleusOS`
-- **GitHub**: `https://github.com/nucleusos/nucleus-mcp`
+- **GitHub**: `https://github.com/eidetic-works/nucleus-mcp`
 - **Website**: `https://nucleusos.dev`
 - **LinkedIn**: **LEAVE BLANK** (To ensure anonymity).
 - **Newsletters**: **UNCHECK** (Keep inbox clean).

@@ -36,7 +36,7 @@ Use this if you want to keep the SEO/link juice but hide the "LKGargProjects" na
 >
 > We have recently rebranded and moved the repository to a new organization. I would like to request that this listing be **updated/transferred** to reflect our new "Total Safe" identity:
 >
-> **New Repo**: https://github.com/nucleusos/nucleus-mcp
+> **New Repo**: https://github.com/eidetic-works/nucleus-mcp
 > **New Name**: The Nucleus Team
 >
 > Alternatively, if a transfer is not possible, please **remove** the current listing so we can create a fresh one.

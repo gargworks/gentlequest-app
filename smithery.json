@@ -1,0 +1,18 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.5",
+    "mirror_to_root": true,
+    "description": "The Universal Brain for AI Agents - Cross-platform memory sync for Cursor, Claude, Windsurf",
+    "type": "stdio",
+    "build": {
+        "type": "pip",
+        "package": "."
+    },
+    "runtime": {
+        "command": "python",
+        "args": [
+            "-m",
+            "mcp_server_nucleus"
+        ]
+    }
+}

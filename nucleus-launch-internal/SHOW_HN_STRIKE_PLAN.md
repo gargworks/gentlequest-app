@@ -6,9 +6,9 @@ This is the technical pitch for **Hacker News**. We move away from "Sovereign AI
 
 ## 🏗️ The Pitch (Title Options)
 
-1. **Show HN: Nucleus – A local-first MCP server for autonomous agent governance**
-2. **Show HN: I built an Agentic OS to stop my autonomous agents from deleting my files**
-3. **Show HN: Nucleus – Recursive MCP tool mounting and intention-aware resource locking**
+1. **Show HN: Nucleus – Recursive MCP mounting as the antidote to agentic entropy**
+2. **Show HN: I built an Agentic OS so my autonomous agents stop hallucinating tool paths**
+3. **Show HN: Nucleus – A local Hypervisor for Cursor, Claude, and Windsurf**
 
 ---
 

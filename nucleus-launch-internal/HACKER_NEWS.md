@@ -41,7 +41,7 @@ Technical details:
 
 The real competitor is ContextStream, not OpenClaw. ContextStream requires cloud sync; Nucleus keeps everything local with governance + audit logs they don't offer.
 
-Comparison: https://github.com/eidetic-works/mcp-server-nucleus/blob/main/docs/COMPARISON.md
+Comparison: https://github.com/eidetic-works/nucleus-mcp/blob/main/docs/COMPARISON.md
 
 Looking for feedback on the Hypervisor architecture — is resource locking with intent metadata the right abstraction for agent sandboxing?
 ```

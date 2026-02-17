@@ -28,11 +28,14 @@ This is the atomic source of truth for all tasks required before **Tuesday, Feb 
     - [x] MCP.so Takedown request sent (admin@nucleusos.dev) <!-- id: 182 -->
     - [x] Verified Outreach Protocol codified (/outreach) <!-- id: 183 -->
 - [x] **Registry Sync**: Verified current live versions:
-    - [x] NPM: Live (v1.0.4)
+    - [/] NPM: Pending v1.0.5 (Metadata at 1.0.4, README updated)
     - [x] PyPI: Live (v1.0.5)
-    - [x] Glama: [Registry Listing](https://glama.ai/mcp/servers/@nucleusos/nucleus-mcp) is live (v1.0.5).
+    - [x] Glama: [Registry Listing](https://glama.ai/mcp/servers/@eidetic-works/nucleus-mcp) is live (v1.0.5).
 - [x] **README.md**: Root README standardized (Synchronized with `nucleus-mcp/README.md`).
-- [ ] **ACTION**: Unified Strike @ **v1.0.6** (Deferred until T-minus 2 hours to launch).
+- [x] **ACTION**: Unified Strike @ **v1.0.5**
+    - [x] Integrate CI fixes into `main`
+    - [x] Standardize branding (security email)
+    - [x] Verify PyPI/Glama drift reconciliation
 
 ## 🧠 4. Support & Engagement (The "Shared Brain" Loop)
 - [x] **Discord Setup**: Verified `#launch-day` channel and onboarding flow are ready.

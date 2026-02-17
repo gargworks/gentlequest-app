@@ -33,4 +33,4 @@ I’m launching on Product Hunt this Tuesday, but I wanted to share the technica
 * Git-native engrams (no cloud DB).
 * Intent-based metadata locking.
 
-Check it out: https://github.com/nucleusos/nucleus-mcp" 
+Check it out: https://github.com/eidetic-works/nucleus-mcp" 
