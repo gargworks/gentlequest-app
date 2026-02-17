@@ -174,7 +174,7 @@ const GatewayStrip = ({ os, path, setPath, getCommand, handleCopy, copied, setMo
                     {[{ icon: Shield, label: 'Encrypted' }, { icon: Server, label: '100% Local' }, { icon: Box, label: 'P2P Mesh' }].map((item, i) => (
                         <div key={i} className="flex items-center gap-3 opacity-60">
                             <item.icon className="w-4 h-4 text-purple-400" />
-                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-tighter">{item.label}</span>
+                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-tighter">BYOB™ Secure</span>
                         </div>
                     ))}
                 </div>

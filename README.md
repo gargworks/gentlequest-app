@@ -3,6 +3,9 @@
 <!-- GLAMA_BADGE:START -->
 [![Glama](https://img.shields.io/badge/Glama-Verified-blue)](https://glama.ai/mcp/servers/@eidetic-works/nucleus-mcp)
 <!-- GLAMA_BADGE:END -->
+<!-- PULSEMCP_BADGE:START -->
+[![PulseMCP](https://img.shields.io/badge/PulseMCP-Live-purple)](https://www.pulsemcp.com/servers/eidetic-works-nucleus)
+<!-- PULSEMCP_BADGE:END -->
 
 [![PyPI version](https://img.shields.io/pypi/v/nucleus-mcp?color=brightgreen&label=pypi%20package)](https://pypi.org/project/nucleus-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

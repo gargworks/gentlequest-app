@@ -1,0 +1,13 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.5",
+    "description": "The Sovereign Agent Control Plane. Managed context, engrams, and tool orchestration.",
+    "mirror_to_root": true,
+    "templating": [
+        {
+            "file": "README.md",
+            "marker": "PULSEMCP_BADGE",
+            "content": "[![PulseMCP](https://img.shields.io/badge/PulseMCP-Live-purple)](https://www.pulsemcp.com/servers/eidetic-works-nucleus)"
+        }
+    ]
+}

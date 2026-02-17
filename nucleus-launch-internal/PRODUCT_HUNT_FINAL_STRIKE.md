@@ -69,8 +69,9 @@ No SaaS. No cloud. Just Sovereign AI. I’d love to hear how you’re handling a
 5. **Technical Proof (NPM)**: `https://www.npmjs.com/package/nucleus-mcp`
 6. **Technical Proof (PyPI)**: `https://pypi.org/project/nucleus-mcp/`
 7. **Social Proof (mcpservers.org)**: `https://mcpservers.org/servers/eidetic-works/nucleus-mcp`
-8. **YouTube (Trilogy)**: `https://youtu.be/D1B6m_F-h80`
-9. **Discord**: `https://discord.gg/RJuBNNJ5MT`
+8. **Ecosystem (PulseMCP)**: `https://www.pulsemcp.com/servers/eidetic-works-nucleus`
+9. **YouTube (Trilogy)**: `https://youtu.be/D1B6m_F-h80`
+10. **Discord**: `https://discord.gg/RJuBNNJ5MT`
 
 ### 🛡️ Join the Tribe (Community Links)
 * **Discord (Nucleus Vanguard)**: `https://discord.gg/RJuBNNJ5MT`

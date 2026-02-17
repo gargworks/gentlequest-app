@@ -49,7 +49,7 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0 (Sovereign)</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0 (Sovereign)</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
@@ -107,7 +107,7 @@ function App() {
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 text-sm font-medium">
             <Shield className="w-3 h-3" />
-            <span>Nucleus OS – The Sovereign Agent Control Plane</span>
+            <span>Nucleus OS – The Sovereign BYOB™ Control Plane</span>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium">
             <Lock className="w-3 h-3" />
@@ -127,6 +127,33 @@ function App() {
         {/* Sovereign Monolith (Unified Entry Point) */}
         <div className="mb-12">
           <SovereignMonolith />
+        </div>
+
+        {/* Demo Video: The 'Wow' Factor (Additive) */}
+        <div className="mb-12 max-w-4xl mx-auto rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/50">
+          <div className="relative pb-[56.25%] h-0">
+            <iframe
+              className="absolute top-0 left-0 w-full h-full"
+              src="https://www.youtube.com/embed/D1B6m_F-h80"
+              title="Nucleus: The Sovereign Trilogy"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+
+        {/* Product Hunt Badge (Additive Launch Polish) */}
+        <div className="mb-8 flex justify-center">
+          <a href="https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=486015&theme=dark"
+              alt="Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt"
+              style={{ width: '250px', height: '54px' }}
+              width="250"
+              height="54"
+            />
+          </a>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm mb-16">
@@ -309,30 +336,6 @@ function App() {
         </div>
       </section>
 
-      {/* Video Section */}
-      <section className="px-6 py-20 max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            See Nucleus in Action
-          </h2>
-          <p className="text-slate-400 text-lg">
-            Watch the launch demo: Local-first memory for AI agents
-          </p>
-        </div>
-
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-          <div className="relative pb-[56.25%] h-0">
-            <iframe
-              className="absolute top-0 left-0 w-full h-full"
-              src="https://www.youtube.com/embed/jI8TUpfjS1A"
-              title="Nucleus v0.6.0 Launch"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        </div>
-      </section>
 
       {/* Differentiation Table */}
       <section className="px-6 py-20 bg-slate-900/50 border-y border-white/5">
