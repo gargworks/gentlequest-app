@@ -4,11 +4,11 @@ This is the technical pitch for **Hacker News**. We move away from "Sovereign AI
 
 ---
 
-## 🏗️ The Pitch (Title Options)
+## 🏗️ The Pitch (Title Options - Provocative Hooks)
 
-1. **Show HN: Nucleus – Recursive MCP mounting as the antidote to agentic entropy**
-2. **Show HN: I built an Agentic OS so my autonomous agents stop hallucinating tool paths**
-3. **Show HN: Nucleus – A local Hypervisor for Cursor, Claude, and Windsurf**
+1. **Show HN: Stop giving your autonomous agents raw filesystem access**
+2. **Show HN: Nucleus – A local Hypervisor for Cursor, Claude, and Windsurf**
+3. **Show HN: I built an Agentic OS to solve the 'Amnesia vs. Chaos' problem**
 
 ---
 
@@ -22,7 +22,7 @@ Nucleus is a **local-first control plane** that acts as a Hypervisor for your ag
 
 ### The Architecture:
 
-1. **Intention-Aware Resource Locking**: Traditional permissions (chmod) are too blunt for agents. Nucleus intercepts the agent’s stated goal *before* execution. If an agent says it’s 'refactoring a React component' but then tries to read `~/.ssh/id_rsa`, the Hypervisor kills the process before the tool ever executes.
+1. **Intention-Aware Resource Locking**: Most agent tool permissions are too blunt. Nucleus acts as a Hypervisor that intercepts the agent’s stated goal *before* execution. If an agent says it’s 'refactoring a React component' but then tries to read your SSH keys, the Hypervisor kills the process before the tool ever executes.
 
 2. **Recursive Tool Mounting**: This solves the fragmenting MCP ecosystem. Instead of configuring 10 different servers in every IDE, you mount them recursively into Nucleus. It acts as a single, canonical gateway that persists your 'Shared Brain' across Cursor, Windsurf, and Claude.
 
