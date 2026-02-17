@@ -13,6 +13,23 @@ const MCP_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages
 
 import SovereignMonolith from './components/SovereignMonolith_FINAL';
 
+function LaunchBanner() {
+  return (
+    <div className="bg-gradient-to-r from-purple-600 to-pink-600 py-1.5 px-6 text-center text-[10px] md:text-xs font-bold tracking-widest uppercase sticky top-0 z-50 shadow-lg backdrop-blur-md">
+      <a
+        href="https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+      >
+        <Zap className="w-3 h-3 fill-current" />
+        Nucleus is Live on Product Hunt! Support the Sovereign Web
+        <Share2 className="w-3 h-3" />
+      </a>
+    </div>
+  );
+}
+
 function App() {
   const GITHUB_URL = 'https://github.com/eidetic-works/nucleus-mcp';
   const PYPI_URL = 'https://pypi.org/project/nucleus-mcp/';
@@ -43,13 +60,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-purple-500/30">
+      <LaunchBanner />
       {/* Navbar */}
       <nav className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0 (Sovereign)</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.6 (Sovereign)</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
@@ -64,6 +82,14 @@ function App() {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
           >
             PyPI
+          </a>
+          <a
+            href="https://www.npmjs.com/package/nucleus-mcp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+          >
+            NPM
           </a>
           <a
             href={GITHUB_URL}
@@ -103,25 +129,25 @@ function App() {
       </div>
 
       {/* Hero Section */}
-      <section className="px-6 py-20 md:py-32 max-w-7xl mx-auto text-center">
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 text-sm font-medium">
+      <section className="px-6 pt-28 pb-20 md:pt-32 md:pb-32 max-w-7xl mx-auto text-center">
+        <div className="flex flex-wrap justify-center gap-4 mb-8 text-[10px] md:text-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 font-medium">
             <Shield className="w-3 h-3" />
             <span>Nucleus OS – The Sovereign BYOB™ Control Plane</span>
           </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm font-medium">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 font-medium">
             <Lock className="w-3 h-3" />
-            <span>Local-First & Private by Design</span>
+            <span>Absolute Hardening & No Amnesia</span>
           </div>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-8 tracking-tight">
-          Own your Agent Context with <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Low-Level Sovereignty</span>
+          Stop re-explaining your code to <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AI Agents.</span>
         </h1>
 
         <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-          The Recursive Aggregator that turns MCP servers into a unified, secure operating system for autonomous agents.
+          The shared brain for Cursor, Claude, and Windsurf. Local-first identity, no context amnesia, and 100% sovereign.
         </p>
 
         {/* Sovereign Monolith (Unified Entry Point) */}
@@ -129,31 +155,70 @@ function App() {
           <SovereignMonolith />
         </div>
 
-        {/* Demo Video: The 'Wow' Factor (Additive) */}
-        <div className="mb-12 max-w-4xl mx-auto rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/50">
-          <div className="relative pb-[56.25%] h-0">
-            <iframe
-              className="absolute top-0 left-0 w-full h-full"
-              src="https://www.youtube.com/embed/D1B6m_F-h80"
-              title="Nucleus: The Sovereign Trilogy"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+        {/* Product Hunt Badge (Official Launch Embed) */}
+        <div className="mb-12 flex justify-center">
+          <div className="p-1 rounded-2xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/10 backdrop-blur-xl shadow-2xl transition-transform hover:scale-105 duration-500">
+            <a href="https://www.producthunt.com/products/nucleus-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-nucleus-mcp" target="_blank" rel="noopener noreferrer">
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1079781&theme=dark"
+                alt="Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt"
+                style={{ width: '250px', height: '54px' }}
+                width="250"
+                height="54"
+              />
+            </a>
           </div>
         </div>
 
-        {/* Product Hunt Badge (Additive Launch Polish) */}
-        <div className="mb-8 flex justify-center">
-          <a href="https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=486015&theme=dark"
-              alt="Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt"
-              style={{ width: '250px', height: '54px' }}
-              width="250"
-              height="54"
-            />
-          </a>
+        {/* Video Deep Dive Section */}
+        <div className="mt-32 mb-32 max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-slate-400">
+              See Nucleus in Action
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-10">
+              Watch the launch demo: Local-first memory for AI agents
+            </p>
+
+          </div>
+
+          <div className="space-y-16">
+            {/* Sovereign Trilogy (Lore & Vision) - PRIORITY 1 */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/50 p-1">
+              <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden">
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/D1B6m_F-h80"
+                  title="Sovereign Trilogy"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="p-6 border-t border-white/5 bg-slate-900/80 backdrop-blur-xl">
+                <h3 className="text-xl font-bold mb-2">The Sovereign Trilogy</h3>
+                <p className="text-sm text-slate-400">The vision behind the Recursive Aggregator.</p>
+              </div>
+            </div>
+
+            {/* Main Launch Demo (v1.0.6 Target) - PRIORITY 2 */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/50 p-1">
+              <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden">
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/jI8TUpfjS1A"
+                  title="Nucleus Launch Demo"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="p-6 border-t border-white/5 bg-slate-900/80 backdrop-blur-xl">
+                <h3 className="text-xl font-bold mb-2">Technical Walkthrough (v1.0.6)</h3>
+                <p className="text-sm text-slate-400">Everything you need to know about the Sovereign MCP Layer.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm mb-16">
@@ -280,6 +345,11 @@ function App() {
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">OpenClaw</span>
             </a>
+          </div>
+          <div className="mt-12 flex justify-center gap-6">
+            <a href="https://cursor.directory/mcp/nucleus-mcp-the-sovereign-agent-control-plane" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-slate-500 hover:text-purple-400 transition-colors uppercase tracking-widest">Cursor Directory</a>
+            <a href="https://glama.ai/mcp/servers/@eidetic-works/nucleus-mcp" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-slate-500 hover:text-orange-400 transition-colors uppercase tracking-widest">Glama Registry</a>
+            <a href="https://www.pulsemcp.com/servers/eidetic-works-nucleus" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest">PulseMCP</a>
           </div>
         </div>
       </section>

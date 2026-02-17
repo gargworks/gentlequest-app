@@ -67,9 +67,17 @@ One brain. All your tools.
 
 ### 1. Install
 
-```bash
-pip install nucleus-mcp
-```
+**The fastest way for your OS:**
+
+| OS | Command | Status |
+| :--- | :--- | :--- |
+| **macOS / Linux** | `pip install nucleus-mcp` | Standard |
+| **Linux (Modern)** | `pipx install nucleus-mcp` | **Recommended (Isolated)** |
+| **Windows** | `pip install nucleus-mcp` | Standard |
+| **Pro / Build** | `uv tool install nucleus-mcp` | **Fastest (BYOB ready)** |
+
+> [!TIP]
+> **Linux Users**: If `pip` fails with an "externally-managed-environment" error, use `pipx install`. It keeps your system Python clean.
 
 ### 2. Initialize
 
@@ -275,6 +283,15 @@ Nucleus is a community-first project. A special thank you to our first contribut
 
 ### Development Setup
 
+**The Modern Way (Recommended):**
+```bash
+git clone https://github.com/eidetic-works/nucleus-mcp.git
+cd nucleus-mcp
+uv sync
+uv run pytest
+```
+
+**The Legacy Way:**
 ```bash
 git clone https://github.com/eidetic-works/nucleus-mcp.git
 cd nucleus-mcp
