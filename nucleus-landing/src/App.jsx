@@ -67,7 +67,7 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.7 (First Impression)</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.7</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
