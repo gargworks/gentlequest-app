@@ -64,6 +64,26 @@ Describe expected output format.
 # ONBOARDING: Instructional Seed Tasks
 # ============================================================================
 
+def get_welcome_engrams():
+    """Generate welcome engrams so the brain has content on first connection."""
+    now = datetime.utcnow().isoformat() + "Z"
+    return [
+        {
+            "key": "welcome_to_nucleus",
+            "value": "Welcome to your Sovereign Brain! This is Nucleus — your local-first AI memory server. Everything you store here stays on YOUR machine. Try asking your AI: 'What do you remember about me?' or 'Write an engram about my current project.'",
+            "context": "Feature",
+            "intensity": 8,
+            "timestamp": now
+        },
+        {
+            "key": "tip_cold_start",
+            "value": "Pro tip: Nucleus has a 'cold_start' feature. When your AI connects, it automatically receives your latest context — active tasks, recent memories, and system status. This means your AI never starts from zero.",
+            "context": "Strategy",
+            "intensity": 6,
+            "timestamp": now
+        }
+    ]
+
 def get_default_tasks():
     """Generate instructional seed tasks with current timestamps."""
     now = datetime.utcnow().isoformat() + "Z"
@@ -247,6 +267,12 @@ def init_brain_default(brain_path: Path) -> bool:
     )
     print("  📝 Created memory/context.md")
     
+    # Seed welcome engrams
+    (brain_path / "memory" / "engrams.json").write_text(
+        json.dumps(get_welcome_engrams(), indent=2)
+    )
+    print("  🧠 Created memory/engrams.json (2 welcome engrams)")
+    
     return True
 
 
@@ -284,6 +310,12 @@ def init_brain_solo(brain_path: Path) -> bool:
     # In-brain README
     (brain_path / "README.md").write_text(BRAIN_README)
     print("  📖 Created README.md")
+    
+    # Seed welcome engrams
+    (brain_path / "memory" / "engrams.json").write_text(
+        json.dumps(get_welcome_engrams(), indent=2)
+    )
+    print("  🧠 Created memory/engrams.json (2 welcome engrams)")
     
     return True
 
@@ -388,34 +420,50 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
             auto_configured_any = True
 
     if not auto_configured_any:
-        config_snippet = f'''"nucleus": {{
-    "command": "python3",
-    "args": ["-m", "mcp_server_nucleus"],
-    "env": {{
-      "NUCLEAR_BRAIN_PATH": "{abs_path}"
-    }}
-  }}'''
+        # Build a complete, ready-to-paste JSON config block
+        full_config = json.dumps({
+            "mcpServers": {
+                "nucleus": nucleus_config
+            }
+        }, indent=2)
         
-        print("\n" + "="*60)
-        print("📋 COPY THIS into your AI client's config:")
-        print("="*60)
+        print("\n" + "=" * 60)
+        print("📋 ADD THIS to your AI client's MCP config:")
+        print("=" * 60)
         print()
-        print(config_snippet)
+        print(full_config)
         print()
-        print("="*60)
+        print("=" * 60)
+        
+        # OS-specific config file locations
+        import platform
+        system = platform.system()
         print("\n📍 Config file locations:")
-        print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
-        print("   Cursor:         ~/.cursor/mcp.json") 
-        print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        if system == "Darwin":
+            print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
+            print("   Cursor:         ~/.cursor/mcp.json")
+            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        elif system == "Linux":
+            print("   Claude Desktop: ~/.config/Claude/claude_desktop_config.json")
+            print("   Cursor:         ~/.cursor/mcp.json")
+            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        else:  # Windows
+            print("   Claude Desktop: %APPDATA%\\Claude\\claude_desktop_config.json")
+            print("   Cursor:         %USERPROFILE%\\.cursor\\mcp.json")
+            print("   Windsurf:       %USERPROFILE%\\.codeium\\windsurf\\mcp_config.json")
+    else:
+        print("\n✅ Auto-configured your MCP client(s). Config used:")
+        print(f'   Brain path: {abs_path}')
+        print(f'   Command:    python3 -m mcp_server_nucleus')
     
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 NEXT STEPS")
-    print("="*60)
+    print("=" * 60)
     print("\n1. Restart your AI Client (Claude Desktop, Cursor, etc.)")
     print("2. Try these prompts:")
-    print("   • \"What is my current focus?\"")
+    print("   • \"What do you remember about me?\"")
     print("   • \"Show me all tasks\"")
-    print("   • \"Add a task: Build landing page\"")
+    print("   • \"Write an engram about my current project\"")
     print("\n📚 Docs: https://github.com/eidetic-works/nucleus-mcp")
     
     return True

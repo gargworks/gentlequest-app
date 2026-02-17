@@ -120,9 +120,16 @@ class TestAgentIdentification:
     
     def test_environment_detection(self, tmp_path):
         """Test environment variable detection."""
+        # Reset the process-local cache so env var detection is reached
+        import mcp_server_nucleus.runtime.sync_ops as sync_mod
+        sync_mod._current_identity = None
+        
         with patch.dict("os.environ", {"NUCLEUS_AGENT_ID": "custom_agent"}):
             agent = get_current_agent(tmp_path)
             assert agent == "custom_agent"
+        
+        # Re-clear for subsequent tests
+        sync_mod._current_identity = None
 
 
 class TestFileLocking:

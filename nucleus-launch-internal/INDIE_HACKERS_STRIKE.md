@@ -26,7 +26,7 @@ So I built **Nucleus MCP**. It’s a local-first control plane that acts as a Hy
 * Local Sovereignty is the only way I'm comfortable letting an agent touch my code.
 * 'Recursive Mounter' logic is the secret to scaling tool-use without bloating the context window.
 
-I’m launching on Product Hunt this Tuesday, but I wanted to share the technical background with the IH community first. If you’re building in the MCP ecosystem or struggling with agent memory, I’d love to trade notes.
+I’m launching on Product Hunt this Tuesday, and I just pushed **v1.0.7 (First Impression)** which solves the 'blank brain' problem with pre-seeded welcome engrams and OS-aware auto-config. Making onboarding frictionless was the final hurdle.
 
 **The Tech Stack:**
 * dual-stack Go/TS for the mounter.

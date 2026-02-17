@@ -85,14 +85,39 @@ def sync(dry_run=False, release=False):
     update_file(ROOT / "mcp-server-nucleus/pyproject.toml", r'version = "[^"]+"', f'version = "{v}"', dry_run)
     # Source Code
     update_file(ROOT / "mcp-server-nucleus/src/mcp_server_nucleus/__init__.py", r'__version__ = "[^"]+"', f'__version__ = "{v}"', dry_run)
-    # NPM
-    npm_path = ROOT / "nucleus-mcp/package.json"
-    if npm_path.exists():
-        data = json.loads(npm_path.read_text())
-        data["version"] = v
-        if not dry_run: 
-            npm_path.write_text(json.dumps(data, indent=4))
-            print(f"  [✓] Updated: {npm_path.relative_to(ROOT)}")
+    
+    # NPM Targets (Multiple)
+    npm_targets = [
+        ROOT / "nucleus-mcp/package.json",
+        ROOT / "nucleus-mcp/package.json.real",
+        ROOT / "mcp-server-nucleus/npm-wrapper/package.json"
+    ]
+    for npm_path in npm_targets:
+        if npm_path.exists():
+            data = json.loads(npm_path.read_text())
+            data["version"] = v
+            if not dry_run: 
+                npm_path.write_text(json.dumps(data, indent=4))
+                print(f"  [✓] Updated: {npm_path.relative_to(ROOT)}")
+            else:
+                print(f"  [SIM] Would update: {npm_path.relative_to(ROOT)}")
+
+    # Landing Page (UI Strings)
+    # Pattern matches: v1.0.x (Codename)
+    codename = cfg.get("codename", "First Impression")
+    update_file(
+        ROOT / "nucleus-landing/src/App.jsx", 
+        r'v\d+\.\d+\.\d+ \([\w\s]+\)', 
+        f'v{v} ({codename})', 
+        dry_run
+    )
+    # Also update technical walkthrough reference
+    update_file(
+        ROOT / "nucleus-landing/src/App.jsx",
+        r'Technical Walkthrough \(v\d+\.\d+\.\d+\)',
+        f'Technical Walkthrough (v{v})',
+        dry_run
+    )
 
     # 2. Registry Manifest Processing
     for manifest_file in REGISTRY_DIR.glob("*.json"):

@@ -3,7 +3,7 @@
 # =============================================================================
 # Nucleus Sovereign Control Plane v1.0.5
 # =============================================================================
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 import os
 import re
@@ -2329,9 +2329,79 @@ def cold_start() -> str:
         artifacts = _list_artifacts()[:5]
         artifacts_text = ", ".join([a.split("/")[-1] for a in artifacts]) if artifacts else "None"
         
-        return f"""# Nucleus Cold Start
+        # ─── BRAIN CARD: Engrams ───
+        engram_section = ""
+        try:
+            engram_path = brain / "memory" / "engrams.json"
+            if engram_path.exists():
+                with open(engram_path, "r") as f:
+                    engrams = json.load(f)
+                total_engrams = len(engrams) if isinstance(engrams, list) else 0
+                
+                # Show last 3 engrams (most recent first)
+                recent = engrams[-3:] if isinstance(engrams, list) else []
+                recent.reverse()
+                
+                engram_lines = ""
+                for eng in recent:
+                    key = eng.get("key", "?")[:30]
+                    ctx = eng.get("context", "?")
+                    intensity = eng.get("intensity", 0)
+                    bar = "█" * min(intensity, 10)
+                    val_preview = eng.get("value", "")[:60]
+                    engram_lines += f"  - **{key}** [{ctx}] {bar} ({intensity}/10)\n    _{val_preview}..._\n"
+                
+                if not engram_lines:
+                    engram_lines = "  _(No engrams stored yet)_\n"
+                
+                engram_section = f"""
+## 🧠 Memory ({total_engrams} engrams stored)
+{engram_lines}"""
+            else:
+                engram_section = "\n## 🧠 Memory\n  _(No engrams file found — run `brain_write_engram` to start building memory)_\n"
+        except Exception:
+            engram_section = "\n## 🧠 Memory\n  _(Could not read engrams)_\n"
+        
+        # ─── BRAIN CARD: Tasks ───
+        task_section = ""
+        try:
+            task_path = brain / "ledger" / "tasks.json"
+            if task_path.exists():
+                with open(task_path, "r") as f:
+                    tasks = json.load(f)
+                total = len(tasks) if isinstance(tasks, list) else 0
+                ready = sum(1 for t in tasks if isinstance(t, dict) and t.get("status") == "READY") if isinstance(tasks, list) else 0
+                in_progress = sum(1 for t in tasks if isinstance(t, dict) and t.get("status") == "IN_PROGRESS") if isinstance(tasks, list) else 0
+                done = sum(1 for t in tasks if isinstance(t, dict) and t.get("status") in ("DONE", "COMPLETED")) if isinstance(tasks, list) else 0
+                task_section = f"\n## 📋 Tasks ({total} total: {ready} ready, {in_progress} in progress, {done} done)\n"
+            else:
+                task_section = "\n## 📋 Tasks\n  _(No tasks found)_\n"
+        except Exception:
+            task_section = "\n## 📋 Tasks\n  _(Could not read tasks)_\n"
+        
+        # ─── BRAIN CARD: Mounts ───
+        mount_section = ""
+        try:
+            mounts_path = brain / "mounts.json"
+            if mounts_path.exists():
+                with open(mounts_path, "r") as f:
+                    mounts = json.load(f)
+                mount_count = len(mounts) if isinstance(mounts, (list, dict)) else 0
+                if isinstance(mounts, dict):
+                    mount_names = list(mounts.keys())[:5]
+                    mount_section = f"\n## 🔌 Mounts ({mount_count} connected)\n  {', '.join(mount_names)}\n"
+                elif mount_count > 0:
+                    mount_section = f"\n## 🔌 Mounts ({mount_count} connected)\n"
+                else:
+                    mount_section = "\n## 🔌 Mounts\n  _(No external servers mounted)_\n"
+            else:
+                mount_section = "\n## 🔌 Mounts\n  _(No mounts configured — use `brain_mount_server` to connect external MCP servers)_\n"
+        except Exception:
+            mount_section = "\n## 🔌 Mounts\n  _(Could not read mounts)_\n"
+        
+        return f"""# 🧠 Nucleus Brain Card
 
-You are now connected to a Nucleus Brain.
+> **v1.0.7** · Local-first AI Memory · Everything stays on your machine.
 
 ## Current State
 - **Sprint:** {sprint.get('name', 'No active sprint')}
@@ -2345,19 +2415,19 @@ You are now connected to a Nucleus Brain.
 {events_text}
 ## Recent Artifacts
 {artifacts_text}
-{workflow_hint}
+{engram_section}{task_section}{mount_section}{workflow_hint}
 
 ---
 
 ## Your Role
 You are now the **Lead Agent** for this session.
-- No strict role restrictions - you can do code, strategy, research
-- Use brain_* tools to read/write state and artifacts
+- No strict role restrictions — you can do code, strategy, research
+- Use `brain_*` tools to read/write state and artifacts
 - Emit events to coordinate with other agents
 
 What would you like to work on?"""
     except Exception as e:
-        return f"""# Nucleus Cold Start
+        return f"""# 🧠 Nucleus Brain Card
 
 ⚠️ Could not load brain state: {str(e)}
 

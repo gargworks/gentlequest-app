@@ -17,13 +17,13 @@
 
 ---
 
-## 🚨 v1.0.6 sovereign: the "absolute hardening" strike
-**the secure standard for agent-to-agent connection.**
+## 🚨 v1.0.7 sovereign: the "first impression" update
+**immediate value. zero friction.**
 
-> **New in v1.0.5**: Nucleus is now fully hardened with the **Hypervisor** and **DSoR** (Decision System of Record).
-> *   **Hypervisor Layer**: Default Deny policy for all file system access.
-> *   **Verification Canary**: Integrated health checks for the recursive tool mesh.
-> *   **Real-time Monolith**: Visual confirmation of sovereign connectivity.
+> **New in v1.0.7**: Nucleus now welcomes you with a **Sovereign Brain Card** and pre-seeded memories.
+> *   **Brain Card**: `cold_start` now returns a rich summary of your memory, active tasks, and connected tools.
+> *   **Welcome Engrams**: Your brain connects with pre-loaded context, so you never start from zero.
+> *   **Smart Config**: `nucleus-init` gives you OS-specific paths (macOS/Windows/Linux) for 1-second setup.
 
 ---
 
@@ -137,7 +137,9 @@ nucleus-init
 Restart Claude Desktop and try:
 > *"Use the cold_start prompt from nucleus to see our current sprint focus."*
 
-> **v0.2.2+**: Smart Init automatically detects Claude Desktop and adds the config for you!
+**You will see the Sovereign Brain Card:** a live dashboard of your engrams, tasks, and connected tools.
+
+> **v1.0.7+**: Smart Init automatically detects your OS and provides the exact config block for your editor.
 
 ### Configuration (Claude Desktop)
 

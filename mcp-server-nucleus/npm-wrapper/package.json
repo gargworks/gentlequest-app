@@ -1,6 +1,6 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.0.0",
+    "version": "1.0.7",
     "description": "NPM wrapper for the Nucleus-MCP Python server",
     "main": "index.js",
     "bin": {

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-02-17
+### Added
+- **Sovereign Brain Card**: `cold_start` now returns a rich summary of memory, tasks, and mounts.
+- **Welcome Engrams**: `nucleus-init` pre-seeds 2 starter memories to prevent "empty brain syndrome".
+- **OS-Aware Onboarding**: `nucleus-init` provides copy-paste config paths for macOS/Linux/Windows.
+- **Single Source of Truth**: Centralized versioning in `.registry/version.json` with `sync_registry.py` automation.
+
+### Fixed
+- **Tiered Registration**: Resolved recursion and AttributeError bugs in tool registration tests.
+- **Sync Operations**: Fixed cache pollution in `test_sync_ops.py` ensuring 100% test pass rate.
+- **Configuration**: Standardized `ruff` target version to `py311`.
+
+## [1.0.6] - 2026-02-14
+### Added
+- **Sovereign Monolith**: Unified `SovereignMonolith_FINAL.jsx` UI component.
+- **Sovereign Portal**: Adaptive V2 portal for ecosystem navigation.
+
+---
+
 ## [0.6.0] - 2026-01-30
 
 ### Added

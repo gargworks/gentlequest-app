@@ -1,6 +1,6 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "The Sovereign Agent Control Plane. Managed context, engrams, and tool orchestration.",
     "mirror_to_root": true,
     "templating": [
