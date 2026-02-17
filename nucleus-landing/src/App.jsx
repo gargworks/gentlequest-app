@@ -67,7 +67,7 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.6 (Sovereign)</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.7 (First Impression)</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
@@ -201,7 +201,7 @@ function App() {
               </div>
             </div>
 
-            {/* Main Launch Demo (v1.0.6 Target) - PRIORITY 2 */}
+            {/* Main Launch Demo (v1.0.7 Target) - PRIORITY 2 */}
             <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/50 p-1">
               <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden">
                 <iframe
@@ -214,7 +214,7 @@ function App() {
                 ></iframe>
               </div>
               <div className="p-6 border-t border-white/5 bg-slate-900/80 backdrop-blur-xl">
-                <h3 className="text-xl font-bold mb-2">Technical Walkthrough (v1.0.6)</h3>
+                <h3 className="text-xl font-bold mb-2">Technical Walkthrough (v1.0.7)</h3>
                 <p className="text-sm text-slate-400">Everything you need to know about the Sovereign MCP Layer.</p>
               </div>
             </div>
