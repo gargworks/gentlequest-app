@@ -45,6 +45,19 @@ except ImportError:
             self.pending_requests = {}
             self.reader_task = None
 
+    class ContentItem:
+        def __init__(self, data):
+            self.type = data.get("type", "text")
+            self.text = data.get("text", "")
+            if isinstance(data, dict):
+                self.__dict__.update(data)
+        def model_dump(self):
+            return self.__dict__
+
+    class ToolResult:
+        def __init__(self, content_data):
+            self.content = [ContentItem(c) for c in content_data]
+
         async def __aenter__(self):
             await self.start()
             return self
@@ -158,20 +171,6 @@ except ImportError:
                 }
             }
             res = await self._send_request(req)
-            
-            # Use robust ContentItem and ToolResult classes for proper serialization
-            class ContentItem:
-                def __init__(self, data):
-                    self.type = data.get("type", "text")
-                    self.text = data.get("text", "")
-                    self.__dict__.update(data)
-                def model_dump(self):
-                    return self.__dict__
-            
-            class ToolResult:
-                def __init__(self, content_data):
-                    self.content = [ContentItem(c) for c in content_data]
-            
             return ToolResult(res.get("content", []))
 
         async def initialize(self):
