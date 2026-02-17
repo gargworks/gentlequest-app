@@ -8,6 +8,7 @@ This is the atomic source of truth for all tasks required before **Tuesday, Feb 
 - [x] **Schedule Status**: Officially scheduled for Feb 17 @ 12:01 AM PT.
 - [x] **First Comment**: Verified formatting of the [Founder Story](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/PRODUCT_HUNT_FINAL_STRIKE.md#L25-47).
 - [x] **Media Check**: YouTube video (`https://youtu.be/D1B6m_F-h80`) is confirmed as the primary asset.
+- [x] **Tag Audit**: Delete stale v1.2.1 tags to prevent amnesia (Completed).
 - [x] **Link Audit**: All links in the [Tiered Link List](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/PRODUCT_HUNT_FINAL_STRIKE.md#L64-73) are active (200 OK).
 - [x] **Audit Playbook**: [Shared Brain Workflow](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/ONE_ON_ONE_AUDIT_PLAYBOOK.md) is codified and ready.
 
@@ -40,7 +41,7 @@ This is the atomic source of truth for all tasks required before **Tuesday, Feb 
 ## 🧠 4. Support & Engagement (The "Shared Brain" Loop)
 - [x] **Discord Setup**: Verified `#launch-day` channel and onboarding flow are ready.
 - [x] **Audit Trigger**: Prepare a "Save" status for this thread to quickly prompt Antigravity for audits. (CREATED: [LAUNCH_DAY_AUDIT_KIT.md](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/LAUNCH_DAY_AUDIT_KIT.md))
-- [/] **Target Identification**: Identifying community leaders on Twitter/Discord (No formal list exists).
+- [x] **Target Identification**: Identifying community leaders on Twitter/Discord ([OUTREACH_TARGET_LIST.md](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/OUTREACH_TARGET_LIST.md)).
 - [x] **IndieHackers Strike**: [Dedicated post drafted](file:///Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/INDIE_HACKERS_STRIKE.md). Ready for Tuesday.
 
 ## 📈 5. Content & Socials
