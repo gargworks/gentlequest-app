@@ -72,7 +72,7 @@ class TestEventTools:
     """Tests for event emission and reading."""
     
     def test_emit_event(self, setup_test_brain):
-        from mcp_server_nucleus import _emit_event
+        from mcp_server_nucleus.runtime.event_ops import _emit_event
         
         event_id = _emit_event(
             event_type="test_event",
@@ -90,7 +90,7 @@ class TestEventTools:
         assert "pytest" in content
     
     def test_read_events(self, setup_test_brain):
-        from mcp_server_nucleus import _emit_event, _read_events
+        from mcp_server_nucleus.runtime.event_ops import _emit_event, _read_events
         
         # Emit a few events
         _emit_event("event1", "test", {}, "")
@@ -132,14 +132,14 @@ class TestTriggerTools:
     """Tests for trigger functions."""
     
     def test_get_triggers(self, setup_test_brain):
-        from mcp_server_nucleus import _get_triggers
+        from mcp_server_nucleus.runtime.trigger_ops import _get_triggers_impl as _get_triggers
         
         triggers = _get_triggers()
         assert len(triggers) == 2
         assert triggers[0]["target_agent"] == "synthesizer"
     
     def test_evaluate_triggers(self, setup_test_brain):
-        from mcp_server_nucleus import _evaluate_triggers
+        from mcp_server_nucleus.runtime.trigger_ops import _evaluate_triggers_impl as _evaluate_triggers
         
         agents = _evaluate_triggers("task_completed", "any")
         assert "synthesizer" in agents
@@ -155,21 +155,21 @@ class TestArtifactTools:
     """Tests for artifact read/write/list."""
     
     def test_write_artifact(self, setup_test_brain):
-        from mcp_server_nucleus import _write_artifact
+        from mcp_server_nucleus.runtime.artifact_ops import _write_artifact
         
         result = _write_artifact("research/test.md", "# Test Content")
         # Check the operation succeeded (returns success message or path)
         assert "test.md" in result or "success" in result.lower() or "written" in result.lower()
     
     def test_read_artifact(self, setup_test_brain):
-        from mcp_server_nucleus import _write_artifact, _read_artifact
+        from mcp_server_nucleus.runtime.artifact_ops import _write_artifact, _read_artifact
         
         _write_artifact("research/read_test.md", "Hello World")
         content = _read_artifact("research/read_test.md")
         assert content == "Hello World"
     
     def test_list_artifacts(self, setup_test_brain):
-        from mcp_server_nucleus import _write_artifact, _list_artifacts
+        from mcp_server_nucleus.runtime.artifact_ops import _write_artifact, _list_artifacts
         
         _write_artifact("research/file1.md", "content")
         _write_artifact("research/file2.md", "content")
@@ -182,7 +182,8 @@ class TestAgentTools:
     """Tests for agent triggering."""
     
     def test_trigger_agent(self, setup_test_brain):
-        from mcp_server_nucleus import _trigger_agent, _read_events
+        from mcp_server_nucleus.runtime.trigger_ops import _trigger_agent_impl as _trigger_agent
+        from mcp_server_nucleus.runtime.event_ops import _read_events
         
         result = _trigger_agent(
             agent="researcher",

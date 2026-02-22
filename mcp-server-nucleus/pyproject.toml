@@ -19,13 +19,17 @@ dependencies = [
     "duckduckgo-search>=4.0.0",
     "beautifulsoup4>=4.12.0",
     "nest_asyncio",
-    "cryptography>=41.0.0"
+    "cryptography>=41.0.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
 full = [
     "fastmcp",
     "google-genai"
+]
+postgres = [
+    "psycopg2-binary"
 ]
 dev = [
     "pytest>=7.0",

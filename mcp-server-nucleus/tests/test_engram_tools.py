@@ -21,14 +21,18 @@ class TestEngramTools(unittest.TestCase):
         self.brain_path = Path(self.temp_dir) / ".brain"
         self.brain_path.mkdir(parents=True)
         
-        # Patch the get_brain_path function
+        # Patch the get_brain_path function in both __init__ and engram_ops
         self.patcher = patch('mcp_server_nucleus.get_brain_path')
+        self.patcher2 = patch('mcp_server_nucleus.runtime.engram_ops.get_brain_path')
         self.mock_brain = self.patcher.start()
+        self.mock_brain2 = self.patcher2.start()
         self.mock_brain.return_value = self.brain_path
+        self.mock_brain2.return_value = self.brain_path
     
     def tearDown(self):
         """Clean up temporary directory."""
         self.patcher.stop()
+        self.patcher2.stop()
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     

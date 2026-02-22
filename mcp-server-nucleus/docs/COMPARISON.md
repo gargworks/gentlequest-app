@@ -6,21 +6,20 @@ Choosing a persistence layer for your AI agents is a critical decision. Here is 
 
 | Feature | Nucleus MCP | ContextStream | mem0 |
 |---------|-------------|---------------|------|
-| **Deployment** | 100% Local | SaaS (Cloud) | SaaS / Self-Host |
-| **Identity** | Anonymous (Rotating) | Account-based | Account-based |
-| **Architecture** | Git-Native (`.brain/`) | Cloud Database | Cloud Database |
-| **Governance** | Hypervisor / File Locks | None / ACLs | None |
-| **Audit Logs**| Core Feature | Enterprise Only | Basic |
-| **License** | MIT | Proprietary | Apache 2.0 |
-| **API Keys** | None Required | Required | Required |
+| **The Moat** | **Sovereign (Local-First)** | Cloud-Locked | Cloud-Managed |
+| **Recall Speed** | **0.11ms (2,672x)** | ~300ms (Network) | ~400ms (Network) |
+| **Governance** | **Deterministic Hypervisor** | Basic ACLs | None |
+| **Data Gravity** | **Git-Native (`.brain/`)** | SaaS Database | SaaS / Vector Store |
+| **Audit Path** | **Local Event Ledger** | Enterprise-Only | Partial |
+| **License** | **MIT** | Proprietary | Apache 2.0 |
 
 ---
 
 ## Why Nucleus?
 
-### 🛡️ Governance-First
-Most memory servers focus only on "remembering". Nucleus focuses on **Control**. 
-The built-in **Hypervisor Layer** ensures that your agent doesn't just have context, but it also has boundaries. You can lock critical infrastructure files or entire directories, and Nucleus will enforce those limits at the MCP protocol level.
+### 🛡️ The Sovereign Moat (Governance)
+Most memory servers focus only on "remembering". Nucleus focuses on **Defensive Control**. 
+Our **Deterministic Hypervisor** ensures that your agent doesn't just have context, but it also has **Boundaries**. By enforcing local file locks and resource limits at the MCP protocol level, Nucleus prevents "Agent Drift" before it hits your codebase.
 
 ### 🧠 Engrams over Memories
 We use the term **Engrams** because these aren't just strings in a database. They are version-controlled units of knowledge. 

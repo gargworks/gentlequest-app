@@ -30,13 +30,16 @@ class TestBrainConsolidation(unittest.TestCase):
         # Create events.jsonl for emit_event
         (self.ledger_path / "events.jsonl").touch()
         
-        # Patch get_brain_path where it's used in __init__.py
+        # Patch get_brain_path where it's used in __init__.py and extracted modules
         self.patcher = patch('mcp_server_nucleus.get_brain_path', return_value=self.brain_path)
+        self.patcher2 = patch('mcp_server_nucleus.runtime.consolidation_ops.get_brain_path', return_value=self.brain_path)
         self.mock_brain_path = self.patcher.start()
+        self.mock_brain_path2 = self.patcher2.start()
     
     def tearDown(self):
         """Clean up test directory."""
         self.patcher.stop()
+        self.patcher2.stop()
         shutil.rmtree(self.test_dir)
     
     def test_archive_resolved_moves_files(self):

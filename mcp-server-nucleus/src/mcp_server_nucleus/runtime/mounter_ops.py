@@ -477,3 +477,140 @@ def get_mounter(brain_path: Path) -> Mounter:
     if _mounter is None:
         _mounter = Mounter(brain_path)
     return _mounter
+
+# ============================================================
+# MOUNTER IMPL FUNCTIONS (Extracted from __init__.py)
+# ============================================================
+
+from .common import get_brain_path, make_response
+
+async def _brain_mount_server_impl(name: str, command: str, args: List[str] = []) -> str:
+    """Implement brain_mount_server."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        return await mounter.mount(name, command, args)
+    except Exception as e:
+        return f"Error mounting server: {e}"
+
+async def _brain_thanos_snap_impl() -> str:
+    """Implement brain_thanos_snap."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        
+        # Robust path resolution for mock script
+        # Try to find workspace root relative to this file
+        # This file is in src/mcp_server_nucleus/runtime/mounter_ops.py
+        # Workspace root is 5 levels up
+        workspace_root = Path(__file__).parent.parent.parent.parent.parent
+        mock_script = workspace_root / "scripts" / "mock_mcp_server.py"
+        
+        if not mock_script.exists():
+             # Fallback: try relative from cwd
+             mock_script = Path("scripts/mock_mcp_server.py").resolve()
+             
+        # Use current Python executable to ensure compatibility
+        python_cmd = sys.executable
+        
+        results = []
+        # Mount Stripe
+        res_stripe = await mounter.mount("stripe", python_cmd, [str(mock_script), "stripe"])
+        results.append(f"Stripe: {res_stripe}")
+        
+        # Mount Postgres
+        res_pg = await mounter.mount("postgres", python_cmd, [str(mock_script), "postgres"])
+        results.append(f"Postgres: {res_pg}")
+        
+        # Mount Search
+        res_search = await mounter.mount("search", python_cmd, [str(mock_script), "brave_search"])
+        results.append(f"Brave Search: {res_search}")
+        
+        return "✨ Thanos Snap Complete! Recursive mesh populated:\n" + "\n".join(results)
+    except Exception as e:
+        return f"Error during Thanos Snap: {e}"
+
+async def _brain_unmount_server_impl(server_id: str) -> str:
+    """Implement brain_unmount_server."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        await mounter.unmount_server(server_id)
+        return f"Unmounted {server_id}"
+    except Exception as e:
+        return f"Error unmounting server: {e}"
+
+def _brain_list_mounted_impl() -> str:
+    """Implement brain_list_mounted."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        # Access configs directly since list_mounts is async but this tool is sync in definition
+        # If we change it to async in __init__.py, we can await. But keeping compatibility.
+        # Mounter keeps state in mounter.mount_configs
+        return make_response(True, data=[{"id": k, **v} for k, v in mounter.mount_configs.items()])
+    except Exception as e:
+        return make_response(False, error=str(e))
+
+async def _brain_discover_mounted_tools_impl(server_id: str = None) -> str:
+    """Implement brain_discover_mounted_tools."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        
+        results = {}
+        
+        if server_id:
+            if server_id not in mounter.sessions:
+                 return make_response(False, error=f"Server {server_id} not found")
+            
+            session = mounter.sessions[server_id]
+            name = mounter.mount_configs.get(server_id, {}).get("name", server_id)
+            
+            tools_result = await session.list_tools()
+            tool_list = []
+            for t in tools_result.tools:
+                 tool_list.append(t.model_dump() if hasattr(t, "model_dump") else t.__dict__)
+            
+            return make_response(True, data={name: tool_list})
+        
+        # Query all
+        for sid, session in mounter.sessions.items():
+            name = mounter.mount_configs.get(sid, {}).get("name", sid)
+            try:
+                tools_result = await session.list_tools()
+                tool_list = []
+                for t in tools_result.tools:
+                     tool_list.append(t.model_dump() if hasattr(t, "model_dump") else t.__dict__)
+                results[name] = tool_list
+            except Exception as e:
+                logger.error(f"Error listing tools for {sid}: {e}")
+                results[name] = {"error": str(e)}
+                
+        return make_response(True, data=results)
+    except Exception as e:
+        return make_response(False, error=str(e))
+
+async def _brain_invoke_mounted_tool_impl(server_id: str, tool_name: str, arguments: Dict[str, Any] = {}) -> str:
+    """Implement brain_invoke_mounted_tool."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        
+        if server_id not in mounter.sessions:
+             return json.dumps({"success": False, "error": f"Server {server_id} not found"})
+             
+        session = mounter.sessions[server_id]
+        
+        # Call tool
+        result = await session.call_tool(tool_name, arguments)
+        
+        # content is list of ContentItem
+        content_data = []
+        for c in result.content:
+            content_data.append(c.model_dump() if hasattr(c, "model_dump") else c.__dict__)
+            
+        return json.dumps({"content": content_data})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+

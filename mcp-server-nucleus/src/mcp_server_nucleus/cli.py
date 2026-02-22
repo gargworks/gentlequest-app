@@ -427,8 +427,42 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
             }
         }, indent=2)
         
+        # Auto-copy to clipboard
+        copied = False
+        try:
+            import subprocess
+            import platform
+            system = platform.system()
+            if system == "Darwin":
+                process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
+                process.communicate(full_config.encode('utf-8'))
+                copied = True
+            elif system == "Linux":
+                # Try xclip
+                try:
+                    process = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+                    process.communicate(full_config.encode('utf-8'))
+                    copied = True
+                except FileNotFoundError:
+                    # Try xsel
+                    try:
+                        process = subprocess.Popen(['xsel', '--clipboard', '--input'], stdin=subprocess.PIPE)
+                        process.communicate(full_config.encode('utf-8'))
+                        copied = True
+                    except FileNotFoundError:
+                        pass
+            elif system == "Windows":
+                 process = subprocess.Popen('clip', stdin=subprocess.PIPE, shell=True)
+                 process.communicate(full_config.encode('utf-8'))
+                 copied = True
+        except Exception:
+            pass # Fail silently
+            
         print("\n" + "=" * 60)
-        print("📋 ADD THIS to your AI client's MCP config:")
+        if copied:
+            print("📋 COPIED TO CLIPBOARD! Add this to your MCP config:")
+        else:
+            print("📋 ADD THIS to your AI client's MCP config:")
         print("=" * 60)
         print()
         print(full_config)

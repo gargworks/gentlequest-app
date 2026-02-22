@@ -86,6 +86,11 @@ def sync(dry_run=False, release=False):
     # Source Code
     update_file(ROOT / "mcp-server-nucleus/src/mcp_server_nucleus/__init__.py", r'__version__ = "[^"]+"', f'__version__ = "{v}"', dry_run)
     
+    # Dockerfiles (Root and Server)
+    update_file(ROOT / "Dockerfile", r'LABEL version="[^"]+"', f'LABEL version="{v}"', dry_run)
+    update_file(ROOT / "mcp-server-nucleus/Dockerfile", r'# Version: [^\s]+', f'# Version: {v}', dry_run)
+    update_file(ROOT / "mcp-server-nucleus/Dockerfile", r'LABEL version="[^"]+"', f'LABEL version="{v}"', dry_run)
+    
     # NPM Targets (Multiple)
     npm_targets = [
         ROOT / "nucleus-mcp/package.json",
@@ -103,12 +108,10 @@ def sync(dry_run=False, release=False):
                 print(f"  [SIM] Would update: {npm_path.relative_to(ROOT)}")
 
     # Landing Page (UI Strings)
-    # Pattern matches: v1.0.x (Codename)
-    codename = cfg.get("codename", "First Impression")
     update_file(
         ROOT / "nucleus-landing/src/App.jsx", 
-        r'v\d+\.\d+\.\d+ \([\w\s]+\)', 
-        f'v{v} ({codename})', 
+        r'v\d+\.\d+\.\d+', 
+        f'v{v}', 
         dry_run
     )
     # Also update technical walkthrough reference

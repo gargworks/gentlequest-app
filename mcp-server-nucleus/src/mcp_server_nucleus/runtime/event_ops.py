@@ -76,6 +76,14 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
                 json.dump(summary, f, indent=2)
         except Exception:
             pass  # Don't fail event emit if summary update fails
+
+        # MDR_016: Auto-write engram hook
+        # Significant events auto-generate engrams via ADUN pipeline
+        try:
+            from .engram_hooks import process_event_for_engram
+            process_event_for_engram(event_type, data)
+        except Exception:
+            pass  # Never let auto-engram break event emission
             
         return event_id
     except Exception as e:
