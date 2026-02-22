@@ -72,6 +72,15 @@ All polish protocols and launch agents MUST read this file to ensure brand/perso
 **Metric:** 2 upvotes, 0 comments.
 **Action:** Narrative abandoned. Focus on Hypervisor/Governance.
 
+#### [Batch C] The "Sovereign Control" Surge (LIVE - Feb 22)
+**Theme:** "I gave my agent root and it terrified me."
+**Outcome:** 
+- **Hacker News**: [Show HN Submission](https://news.ycombinator.com/item?id=47107311) rescued via public repo link correction in comments.
+- **Twitter**: Dual-demo thread verified live.
+- **Dev.to**: [Technical Article](https://dev.to/nucleusos/building-the-agentic-brain-audits-engrams-and-morning-briefs-5bfa) live with optimized GIFs.
+- **Reddit**: Strikes 1 & 2 live on r/aiHub and r/SecOpsDaily.
+
+
 ---
 
 ---
@@ -165,8 +174,16 @@ All polish protocols and launch agents MUST read this file to ensure brand/perso
 | 2026-02-15 | Slot 3 Pivot | Submitting to Registries (SUCCESS) | RED |
 
 ### Warmth Tracker
+- [2026.02.21] **Strike 1 (r/aiHub):** Responded to OpenClaw automation thread. (LIVE)
+- [2026.02.21] **Strike 2 (r/SecOpsDaily):** Warned about infostealer targeting agent secrets. (LIVE)
+- [2026.02.21] **Strike 3 (r/openclaw):** SKIPPED (Duplicate found via Deep Scan).
+- [2026.02.21] **Strike 4 (r/LocalLLaMA):** SKIPPED (Duplicate found via Deep Scan).
+- [2026.02.21] **Strike 5 (r/AI_Agents):** SKIPPED (Duplicate found via Deep Scan).
+- [2026.02.21] **Strike 6 (r/MistralAI):** SKIPPED (Duplicate found via Deep Scan).
 - [x] **Comment 1 (r/ClaudeAI)**: Context Rot (Live).
 - [x] **Comment 2 (r/ClaudeAI)**: SQLite/Retrieval (Live).
+- [x] **Gorilla Strike 1 (r/ClaudeAI)**: Context window feedback via u/gentlequest_dev (LIVE).
+- [x] **Gorilla Strike 2 (r/Cursor)**: Comparison feedback via u/gentlequest_dev (LIVE).
 - [ ] **Comment 3 (r/ClaudeAI)**: Engram Pattern (Paused - Wait limit).
 
 ### 🚀 EMERGENCY PLAYBOOK: The "GentleQuest" Pivot
@@ -225,3 +242,20 @@ All polish protocols and launch agents MUST read this file to ensure brand/perso
 *Note: These are synced to the Nucleus Hypervisor for agentic persistence.*
 - **Historical Fact:** Discord/Awesome-MCP was handled in Wave 1.
 - **Narrative Guardrail:** Do not repeat "Just open-sourced" intros in communities already hit. Use "Update: Post-V19" hooks instead.
+
+---
+
+## ☄️ Sovereign Outreach Log (Comet Sync)
+**Batch: 2026-02-21 (Microsoft Agentic OS Backlash)**
+- `[PENDING_POST]` https://www.reddit.com/r/technology/comments/1oupism/windows_president_says_platform_is_evolving_into/ (Angle: Anti-corporate cloud agent vs local sovereign brain)
+- `[PENDING_POST]` https://www.reddit.com/r/singularity/comments/1lrc7yk/warmwind_os_the_worlds_first_ai_operating_system/ (Angle: MCP terminal primitives vs GUI approach)
+- `[PENDING_POST]` https://www.reddit.com/r/LocalLLM/comments/1mmgyvs/built_a_localfirst_ai_agent_os_your_machine/ (Angle: Peer builder, shared memory context rot pain)
+- `[PENDING_POST]` https://www.reddit.com/r/privacy/comments/1p0p6nz/microsoft_is_turning_windows_into_an_agentic_os/ (Angle: Privacy mandate of local-first execution)
+
+**Batch C (v2): 2026-02-21 (Competitor Security & Specialized Memory)**
+- `[PENDING_POST]` https://www.reddit.com/r/aiHub/comments/1r4qr4n/openclaw_replaced_all_of_my_other_ai_automations/ (Angle: Local UX vs Cloud VM friction)
+- `[PENDING_POST]` https://www.reddit.com/r/SecOpsDaily/comments/1r6gv4c/infostealer_malware_found_stealing_openclaw/ (Angle: Security-by-Design / Sandboxed MCP)
+- `[PENDING_POST]` https://www.reddit.com/r/openclaw/comments/1r3e6em/has_anyone_foundcreated_a_repository_for_soul_et/ (Angle: Engram Ledger vs SOUL.md fragmentation)
+- `[PENDING_POST]` https://www.reddit.com/r/LocalLLaMA/comments/1qf5oj0/deepseek_engram_a_static_memory_unit_for_llms/ (Angle: Terminology alignment, academic validation)
+- `[PENDING_POST]` https://www.reddit.com/r/AI_Agents/comments/1phmtu8/ai_agents_still_cannot_operate_an_os_in_2025_that/ (Angle: MCP terminal primitives vs GUI approach)
+- `[PENDING_POST]` https://www.reddit.com/r/MistralAI/comments/1p7u015/pisces_agi_manifesto_local_minds_sovereign_humans/ (Angle: Philosophical alignment, v1.0.7 features)
