@@ -17,9 +17,10 @@
 
 ---
 
-## 🚨 v1.0.7 sovereign: the "first impression" update
+## 🚨 v1.0.8 monolith: the "infrastructure" update
 **immediate value. zero friction.**
 
+> **New in v1.0.8**: Monolith Decomposition completed. Core logic migrated to the `runtime/` module for modular growth.
 > **New in v1.0.7**: Nucleus now welcomes you with a **Sovereign Brain Card** and pre-seeded memories.
 > *   **Brain Card**: `cold_start` now returns a rich summary of your memory, active tasks, and connected tools.
 > *   **Welcome Engrams**: Your brain connects with pre-loaded context, so you never start from zero.

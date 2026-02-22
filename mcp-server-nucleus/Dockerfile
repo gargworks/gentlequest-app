@@ -1,6 +1,6 @@
 # ============================================================================
 # Nucleus MCP Server - Production Dockerfile
-# Version: 0.5.0
+# Version: 1.0.8
 # Description: The Agent Control Plane for MCP Servers
 # ============================================================================
 
@@ -29,7 +29,7 @@ FROM python:3.11-slim as production
 
 # Labels
 LABEL maintainer="Nucleus Team <hello@nucleus-mcp.com>"
-LABEL version="0.5.0"
+LABEL version="1.0.8"
 LABEL description="Nucleus MCP Server - The Agent Control Plane"
 
 # Environment variables
