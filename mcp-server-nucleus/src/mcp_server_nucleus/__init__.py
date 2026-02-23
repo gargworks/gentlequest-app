@@ -362,10 +362,10 @@ from .runtime.context_ops import (
 # Purpose: Automated cleanup of artifact noise without data loss
 # Philosophy: MOVE, never DELETE - all actions are reversible
 
-# Consolidation operations extracted to runtime/consolidation_ops.py
-from .runtime.consolidation_ops import (
-    _get_archive_path, _archive_resolved_files,
-    _detect_redundant_artifacts, _generate_merge_proposals
+# Checkpoint operations extracted to runtime/checkpoint_ops.py
+from .runtime.checkpoint_ops import (
+    _brain_checkpoint_task_impl, _brain_resume_from_checkpoint_impl,
+    _brain_generate_handoff_summary_impl
 )
 
 
@@ -748,6 +748,24 @@ def brain_propose_merges() -> Dict:
     return _generate_merge_proposals()
 
 @mcp.tool()
+def brain_garbage_collect_tasks(max_age_hours: int = 72, dry_run: bool = False) -> Dict:
+    """Archive stale and auto-generated tasks to reduce noise.
+    
+    Targets PENDING tasks with no activity for 72+ hours, auto-generated
+    tasks (auto_* IDs), and duplicate descriptions. Never touches
+    IN_PROGRESS or DONE tasks.
+    
+    Args:
+        max_age_hours: Hours of inactivity before archiving (default 72)
+        dry_run: If True, preview what would be archived without doing it
+    
+    Returns:
+        Dict with archived count, kept count, breakdown, and sample
+    """
+    from .runtime.consolidation_ops import _garbage_collect_tasks
+    return _garbage_collect_tasks(max_age_hours=max_age_hours, dry_run=dry_run)
+
+@mcp.tool()
 def brain_emit_event(event_type: str, emitter: str, data: Dict[str, Any], description: str = "") -> str:
     """Emit a new event to the brain ledger."""
     result = _emit_event(event_type, emitter, data, description)
@@ -770,6 +788,63 @@ def brain_get_state(path: Optional[str] = None) -> Dict:
 def brain_update_state(updates: Dict[str, Any]) -> str:
     """Update the brain state with new values (shallow merge)."""
     return _update_state(updates)
+
+# ============================================================
+# CHECKPOINT & HANDOFF TOOLS (v1.0.9)
+# ============================================================
+
+@mcp.tool()
+def brain_checkpoint_task(
+    task_id: str,
+    step: int = None,
+    progress_percent: float = None,
+    context: str = None,
+    artifacts: List[str] = None,
+    resumable: bool = True
+) -> str:
+    """
+    [CHECKPOINT] Save the current state of a task for later resumption.
+    
+    Use this during long missions to ensure you can resume from a specific
+    step if the session is interrupted or handed off.
+    
+    Args:
+        task_id: The ID of the task to checkpoint
+        step: Current step number
+        progress_percent: Estimated progress (0-100)
+        context: Detailed architectural/procedural context for resumption
+        artifacts: List of absolute file paths created during this task
+        resumable: Whether the task can be safely resumed
+    """
+    return _brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable)
+
+@mcp.tool()
+def brain_resume_from_checkpoint(task_id: str) -> str:
+    """
+    [CHECKPOINT] Retrieve the context and instructions to resume a task.
+    
+    Args:
+        task_id: The ID of the task to resume
+    """
+    return _brain_resume_from_checkpoint_impl(task_id)
+
+@mcp.tool()
+def brain_generate_handoff_summary(
+    task_id: str,
+    summary: str,
+    key_decisions: List[str] = None,
+    handoff_notes: str = ""
+) -> str:
+    """
+    [HANDOFF] Generate a rich context summary for a task handoff.
+    
+    Args:
+        task_id: The ID of the task being handed off
+        summary: High-level narrative summary of work accomplished
+        key_decisions: List of critical technical or strategic decisions made
+        handoff_notes: "Gold Standard" instructions for the next agent
+    """
+    return _brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes)
 
 # ============================================================
 # MULTI-AGENT SYNC TOOLS (v0.7.0)

@@ -625,6 +625,11 @@ def main():
     # nucleus consolidate status
     consolidate_subparsers.add_parser('status', help='Show consolidation status and archive info')
     
+    # nucleus consolidate tasks [--dry-run] [--max-age=72]
+    tasks_gc = consolidate_subparsers.add_parser('tasks', help='Garbage collect stale and auto-generated tasks')
+    tasks_gc.add_argument('--dry-run', action='store_true', help='Preview what would be archived without doing it')
+    tasks_gc.add_argument('--max-age', type=int, default=72, help='Hours of inactivity before archiving (default: 72)')
+    
     # ============================================================
     # SEARCH COMMAND
     # ============================================================
@@ -1308,12 +1313,67 @@ def handle_consolidate_command(args):
         except Exception as e:
             print(f"❌ Error: {e}")
         
+    elif args.consolidate_action == 'tasks':
+        try:
+            from .runtime.consolidation_ops import _garbage_collect_tasks
+        except ImportError:
+            try:
+                from mcp_server_nucleus.runtime.consolidation_ops import _garbage_collect_tasks
+            except ImportError:
+                print("Error: Could not import task garbage collection.")
+                return
+        
+        dry_run = getattr(args, 'dry_run', False)
+        max_age = getattr(args, 'max_age', 72)
+        
+        if dry_run:
+            print(f"🔍 Previewing task garbage collection (max age: {max_age}h)...")
+        else:
+            print(f"🧹 Garbage collecting stale tasks (max age: {max_age}h)...")
+        print()
+        
+        result = _garbage_collect_tasks(max_age_hours=max_age, dry_run=dry_run)
+        
+        if not result.get("success"):
+            print(f"❌ Error: {result.get('error', 'Unknown error')}")
+            return
+        
+        archived = result.get("archived", 0)
+        kept = result.get("kept", 0)
+        breakdown = result.get("breakdown", {})
+        
+        if archived == 0:
+            print("✅ No stale tasks found. Task queue is clean!")
+            print(f"   Active tasks: {kept}")
+            return
+        
+        mode = "Would archive" if dry_run else "Archived"
+        print(f"{'🔍' if dry_run else '✅'} {mode} {archived} tasks, kept {kept}")
+        print()
+        print(f"   Auto-generated noise: {breakdown.get('auto_generated', 0)}")
+        print(f"   Stale (>{max_age}h):    {breakdown.get('stale', 0)}")
+        print()
+        
+        sample = result.get("sample_archived", [])
+        if sample:
+            print("📋 Sample archived tasks:")
+            for t in sample[:5]:
+                print(f"   • {t.get('id', '?')}: {t.get('description', '?')}")
+            if len(sample) > 5:
+                print(f"   ... and {archived - 5} more")
+        
+        if dry_run:
+            print()
+            print("💡 Run without --dry-run to execute: nucleus consolidate tasks")
+    
     else:
         # Show consolidate help
         print("Usage: nucleus consolidate <action>")
         print()
         print("Actions:")
         print("  archive    Archive .resolved.* backup files (safe, reversible)")
+        print("  tasks      Garbage collect stale/auto-generated tasks")
+        print("  propose    Detect redundant artifacts and generate merge proposals")
         print("  status     Show consolidation status and archive info")
 
 
