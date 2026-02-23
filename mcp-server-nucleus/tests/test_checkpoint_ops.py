@@ -210,6 +210,105 @@ class TestDependencyGraph:
         assert graph["depths"][parent_id] == 0
 
 
+class TestE2ECheckpointOpsLayer:
+    """E2E: Verify checkpoint_ops.py _impl functions route through to UnifiedOrchestrator."""
+
+    def test_checkpoint_impl_e2e(self, orch):
+        """_brain_checkpoint_task_impl → get_orch() → UnifiedOrchestrator.checkpoint_task"""
+        result = orch.add_task("E2E checkpoint test", priority=1)
+        task_id = result["task"]["id"]
+
+        with patch("mcp_server_nucleus.runtime.checkpoint_ops._lazy") as mock_lazy:
+            mock_lazy.return_value = lambda: orch
+            from mcp_server_nucleus.runtime.checkpoint_ops import _brain_checkpoint_task_impl
+            output = _brain_checkpoint_task_impl(task_id, step=2, progress_percent=50, context="E2E test")
+
+        assert "Checkpoint saved" in output
+        assert task_id in output
+
+        # Verify it actually persisted in the orchestrator
+        task = orch.get_task(task_id)
+        assert task["checkpoint"]["data"]["step"] == 2
+        assert task["checkpoint"]["data"]["progress_percent"] == 50
+
+    def test_resume_impl_e2e(self, orch):
+        """_brain_resume_from_checkpoint_impl → get_orch() → UnifiedOrchestrator.resume_from_checkpoint"""
+        result = orch.add_task("E2E resume test", priority=1)
+        task_id = result["task"]["id"]
+        orch.checkpoint_task(task_id, {"step": 3, "progress_percent": 75, "context": "Almost done"})
+
+        with patch("mcp_server_nucleus.runtime.checkpoint_ops._lazy") as mock_lazy:
+            mock_lazy.return_value = lambda: orch
+            from mcp_server_nucleus.runtime.checkpoint_ops import _brain_resume_from_checkpoint_impl
+            output = _brain_resume_from_checkpoint_impl(task_id)
+
+        assert "Resume Instructions" in output
+        assert "Step: 3" in output
+        assert "Progress: 75" in output
+
+    def test_handoff_summary_impl_e2e(self, orch):
+        """_brain_generate_handoff_summary_impl → get_orch() → UnifiedOrchestrator.generate_context_summary"""
+        result = orch.add_task("E2E handoff test", priority=1)
+        task_id = result["task"]["id"]
+
+        with patch("mcp_server_nucleus.runtime.checkpoint_ops._lazy") as mock_lazy:
+            mock_lazy.return_value = lambda: orch
+            from mcp_server_nucleus.runtime.checkpoint_ops import _brain_generate_handoff_summary_impl
+            output = _brain_generate_handoff_summary_impl(
+                task_id, "Summary of work done", ["Decision A", "Decision B"], "Notes for next agent"
+            )
+
+        assert "Handoff summary generated" in output
+        assert "Key decisions: 2" in output
+
+        # Verify persistence
+        task = orch.get_task(task_id)
+        assert task["context_summary"]["summary"] == "Summary of work done"
+        assert len(task["context_summary"]["key_decisions"]) == 2
+
+    def test_checkpoint_not_found_impl_e2e(self, orch):
+        """Verify error path through impl layer."""
+        with patch("mcp_server_nucleus.runtime.checkpoint_ops._lazy") as mock_lazy:
+            mock_lazy.return_value = lambda: orch
+            from mcp_server_nucleus.runtime.checkpoint_ops import _brain_checkpoint_task_impl
+            output = _brain_checkpoint_task_impl("nonexistent_task", step=1)
+
+        assert "Checkpoint failed" in output
+        assert "not found" in output
+
+    def test_full_e2e_roundtrip(self, orch):
+        """Full E2E: create → checkpoint (impl) → summary (impl) → resume (impl)."""
+        result = orch.add_task("Full E2E roundtrip", priority=1)
+        task_id = result["task"]["id"]
+
+        with patch("mcp_server_nucleus.runtime.checkpoint_ops._lazy") as mock_lazy:
+            mock_lazy.return_value = lambda: orch
+            from mcp_server_nucleus.runtime.checkpoint_ops import (
+                _brain_checkpoint_task_impl,
+                _brain_generate_handoff_summary_impl,
+                _brain_resume_from_checkpoint_impl,
+            )
+
+            # Checkpoint
+            cp_out = _brain_checkpoint_task_impl(task_id, step=4, progress_percent=80,
+                                                  context="Nearly complete", artifacts=["file1.py", "file2.py"])
+            assert "Checkpoint saved" in cp_out
+
+            # Summary
+            sum_out = _brain_generate_handoff_summary_impl(
+                task_id, "4 of 5 steps done", ["Used security-first approach"], "Finish step 5"
+            )
+            assert "Handoff summary generated" in sum_out
+
+            # Resume
+            res_out = _brain_resume_from_checkpoint_impl(task_id)
+            assert "Resume Instructions" in res_out
+            assert "Step: 4" in res_out
+            assert "Previous Summary" in res_out
+            assert "4 of 5 steps done" in res_out
+            assert "security-first approach" in res_out
+
+
 class TestCheckpointResumeRoundtrip:
     def test_full_cycle(self, orch):
         """Create → Checkpoint → Summary → Resume: full roundtrip."""
