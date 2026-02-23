@@ -2931,14 +2931,34 @@ def main():
         with open("/tmp/mcp_debug.log", "a") as f:
             f.write(f"{msg}\n")
     
-    # Phase 50: Initialize File Monitor for Native Sync
+    # Phase 50: Initialize File Monitor for Native Sync (Tier 1-3)
     try:
-        from .runtime.file_monitor import init_file_monitor
+        from .runtime.file_monitor import init_file_monitor, FileChangeEvent
+        from .runtime.event_ops import _emit_event
         brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
         if brain_path and Path(brain_path).exists():
-            monitor = init_file_monitor(brain_path)
+            def _on_brain_file_change(event: FileChangeEvent):
+                """Auto-emit brain events when .brain/ files change.
+                This enables cross-agent sync: Agent A writes → event emitted →
+                Agent B reads events → sees the change without manual relay."""
+                try:
+                    rel_path = event.path.replace(brain_path, "").lstrip("/")
+                    # Only emit for meaningful files (tasks, engrams, state, sessions)
+                    meaningful = ["tasks.json", "engrams.json", "state.json",
+                                  "events.jsonl", "sessions/", "memory/", "ledger/"]
+                    if any(m in rel_path for m in meaningful):
+                        _emit_event(
+                            f"file_{event.event_type}",
+                            "FILE_MONITOR",
+                            {"path": rel_path, "event_type": event.event_type},
+                            f"Brain file {event.event_type}: {rel_path}"
+                        )
+                except Exception:
+                    pass  # Never crash the monitor callback
+            
+            monitor = init_file_monitor(brain_path, on_change=_on_brain_file_change)
             monitor.start()
-            log_debug(f"📡 File monitor initialized for: {brain_path}")
+            log_debug(f"📡 File monitor initialized with event bridge for: {brain_path}")
     except ImportError as e:
         log_debug(f"File monitor not available: {e}")
     except Exception as e:
