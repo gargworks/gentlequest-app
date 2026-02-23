@@ -115,6 +115,101 @@ class TestGenerateContextSummary:
         assert cs["handoff_notes"] == ""
 
 
+class TestGetAllTasks:
+    def test_get_all_unfiltered(self, orch):
+        orch.add_task("Task A", priority=1)
+        orch.add_task("Task B", priority=2)
+        assert len(orch.get_all_tasks()) == 2
+
+    def test_get_all_filtered_by_status(self, orch):
+        result = orch.add_task("Task A", priority=1)
+        orch.add_task("Task B", priority=2)
+        orch.claim_task(result["task"]["id"], "agent_1")
+        assert len(orch.get_all_tasks(status="PENDING")) == 1
+        assert len(orch.get_all_tasks(status="IN_PROGRESS")) == 1
+
+    def test_get_all_empty(self, orch):
+        assert orch.get_all_tasks() == []
+
+
+class TestClaimTask:
+    def test_claim_success(self, orch):
+        result = orch.add_task("Claimable", priority=1)
+        task_id = result["task"]["id"]
+        claim = orch.claim_task(task_id, "agent_1")
+        assert claim["success"] is True
+        assert claim["task"]["claimed_by"] == "agent_1"
+        assert claim["task"]["status"] == "IN_PROGRESS"
+
+    def test_claim_conflict(self, orch):
+        result = orch.add_task("Contested", priority=1)
+        task_id = result["task"]["id"]
+        orch.claim_task(task_id, "agent_1")
+        conflict = orch.claim_task(task_id, "agent_2")
+        assert conflict["success"] is False
+        assert "already claimed" in conflict["error"]
+
+    def test_claim_not_found(self, orch):
+        result = orch.claim_task("nonexistent", "agent_1")
+        assert result["success"] is False
+
+
+class TestCompleteTask:
+    def test_complete_success(self, orch):
+        result = orch.add_task("Completable", priority=1)
+        task_id = result["task"]["id"]
+        orch.claim_task(task_id, "agent_1")
+        done = orch.complete_task(task_id, "agent_1", "success")
+        assert done["success"] is True
+        assert done["task"]["status"] == "DONE"
+
+    def test_complete_failure(self, orch):
+        result = orch.add_task("Failing", priority=1)
+        task_id = result["task"]["id"]
+        done = orch.complete_task(task_id, "agent_1", "failure")
+        assert done["task"]["status"] == "FAILED"
+
+    def test_complete_not_found(self, orch):
+        result = orch.complete_task("nonexistent", "agent_1")
+        assert result["success"] is False
+
+
+class TestPoolMetrics:
+    def test_metrics_empty(self, orch):
+        metrics = orch.get_pool_metrics()
+        assert metrics["total_tasks"] == 0
+        assert metrics["pending"] == 0
+
+    def test_metrics_with_tasks(self, orch):
+        r1 = orch.add_task("A", priority=1)
+        r2 = orch.add_task("B", priority=2)
+        orch.claim_task(r1["task"]["id"], "agent_1")
+        orch.checkpoint_task(r1["task"]["id"], {"step": 1})
+        metrics = orch.get_pool_metrics()
+        assert metrics["total_tasks"] == 2
+        assert metrics["in_progress"] == 1
+        assert metrics["pending"] == 1
+        assert metrics["with_checkpoints"] == 1
+
+
+class TestDependencyGraph:
+    def test_graph_empty(self, orch):
+        graph = orch.get_dependency_graph()
+        assert graph["forward_deps"] == {}
+        assert graph["reverse_deps"] == {}
+
+    def test_graph_with_deps(self, orch):
+        r1 = orch.add_task("Parent", priority=1)
+        parent_id = r1["task"]["id"]
+        r2 = orch.add_task("Child", priority=2, blocked_by=[parent_id])
+        child_id = r2["task"]["id"]
+        graph = orch.get_dependency_graph()
+        assert parent_id in graph["forward_deps"][child_id]
+        assert child_id in graph["reverse_deps"][parent_id]
+        assert graph["depths"][child_id] == 1
+        assert graph["depths"][parent_id] == 0
+
+
 class TestCheckpointResumeRoundtrip:
     def test_full_cycle(self, orch):
         """Create → Checkpoint → Summary → Resume: full roundtrip."""
