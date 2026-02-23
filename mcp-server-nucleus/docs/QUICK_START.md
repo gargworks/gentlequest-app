@@ -1,6 +1,6 @@
 # Nucleus Quick Start Guide
 ## Get Running in 5 Minutes
-### v0.5.1 | The Agent Control Plane
+### v1.0.9 | The Agent Control Plane
 
 ---
 
@@ -99,7 +99,7 @@ You should see:
 [████████████████████] 100%
 
 📋 VERSION
-   Nucleus: 0.5.0
+   Nucleus: 1.0.9
    ...
 
 ✅ System is healthy
@@ -158,7 +158,56 @@ brain_dashboard()
 
 ---
 
-## 📁 Understanding .brain/
+## � Checkpoint & Handoff (V3.1)
+
+Nucleus can save and resume long-running tasks across sessions, agents, and IDEs.
+
+### Save Progress Before Session End
+
+```
+brain_checkpoint_task(
+    task_id="task_123",
+    step=3,
+    progress_percent=60,
+    context="Completed API integration, starting tests",
+    artifacts=["src/api.py", "tests/test_api.py"]
+)
+```
+
+### Resume in a New Session
+
+```
+brain_resume_from_checkpoint(task_id="task_123")
+```
+
+Returns the checkpoint data, context summary, and resume instructions.
+
+### Generate Handoff Summary
+
+Before handing off to another agent or ending a session:
+
+```
+brain_generate_handoff_summary(
+    task_id="task_123",
+    summary="API integration complete, 3 of 5 tests passing",
+    key_decisions=["Used REST over GraphQL", "SQLite for MVP"],
+    handoff_notes="Next agent should fix the auth test"
+)
+```
+
+### When to Use Checkpoints
+
+| Scenario | Tool |
+|----------|------|
+| Session ending | `brain_checkpoint_task()` |
+| Hitting rate limits | `brain_checkpoint_task()` |
+| Handing off to another agent | `brain_generate_handoff_summary()` |
+| Starting a new session | `brain_resume_from_checkpoint()` |
+| Approaching reset cycle | `brain_checkpoint_task()` + `brain_generate_handoff_summary()` |
+
+---
+
+## �📁 Understanding .brain/
 
 Your `.brain/` folder structure:
 
@@ -209,7 +258,7 @@ mkdir -p ~/.brain/ledger ~/.brain/sessions ~/.brain/slots
 ### Need Help?
 
 - GitHub Issues: https://github.com/eidetic-works/nucleus-mcp/issues
-- Discord: https://discord.gg/nucleus (coming soon)
+- Discord: https://discord.gg/RJuBNNJ5MT
 
 ---
 
