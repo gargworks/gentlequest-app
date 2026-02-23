@@ -180,6 +180,7 @@ EXPECTED_MCP_TOOLS = [
     "brain_archive_stale",
     "brain_file_changes",
     "brain_synthesize_status_report",
+    "brain_garbage_collect_tasks",
     
     # LLM/AI tools
     "brain_get_llm_status",
