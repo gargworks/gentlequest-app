@@ -160,6 +160,63 @@ class UnifiedOrchestrator:
         return available[0]
 
     # =========================================================================
+    # V3.1 CHECKPOINT & HANDOFF OPERATIONS
+    # =========================================================================
+
+    def checkpoint_task(self, task_id: str, checkpoint_data: Dict) -> Dict:
+        """Save checkpoint for long-running task."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        task["checkpoint"] = {
+            "enabled": True,
+            "last_checkpoint_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "data": checkpoint_data
+        }
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "checkpoint": task["checkpoint"]}
+
+    def resume_from_checkpoint(self, task_id: str) -> Dict:
+        """Get checkpoint data for task resumption."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        checkpoint = task.get("checkpoint")
+        if not checkpoint:
+            return {"success": False, "error": "No checkpoint found for task"}
+
+        return {
+            "success": True,
+            "task_id": task_id,
+            "checkpoint": checkpoint,
+            "context_summary": task.get("context_summary"),
+            "resume_instructions": f"Resume from step {checkpoint.get('data', {}).get('step', 'unknown')}"
+        }
+
+    def generate_context_summary(self, task_id: str, summary: str,
+                                  key_decisions: List[str] = None,
+                                  handoff_notes: str = "") -> Dict:
+        """Generate handoff context summary for a task."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        task["context_summary"] = {
+            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "summary": summary,
+            "key_decisions": key_decisions or [],
+            "handoff_notes": handoff_notes
+        }
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "context_summary": task["context_summary"]}
+
+    # =========================================================================
     # MISSION OPERATIONS (Muscles)
     # =========================================================================
 
