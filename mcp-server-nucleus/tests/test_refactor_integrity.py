@@ -79,6 +79,7 @@ EXPECTED_MCP_TOOLS = [
     "brain_get_next_task",
     "brain_checkpoint_task",
     "brain_resume_from_checkpoint",
+    "brain_generate_handoff_summary",
     "brain_import_tasks_from_jsonl",
     "brain_force_assign",
     "brain_handoff_task",
