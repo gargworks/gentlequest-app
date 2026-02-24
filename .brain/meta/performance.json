@@ -1,14 +1,7 @@
 {
   "initialized": "2025-12-26T21:20:00+05:30",
-  "last_updated": "2026-02-16T00:00:04.492737",
+  "last_updated": "2026-02-19T00:00:02.760026",
   "agents": {
-    "weekly_summary": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
     "orchestrator": {
       "completed": 0,
       "failed": 0,
@@ -17,10 +10,17 @@
       "escalation_rate": 0.0
     },
     "meta_optimizer": {
-      "completed": 6,
+      "completed": 7,
       "failed": 0,
       "escalated": 0,
       "success_rate": 1.0,
+      "escalation_rate": 0.0
+    },
+    "weekly_summary": {
+      "completed": 0,
+      "failed": 0,
+      "escalated": 0,
+      "success_rate": 0.0,
       "escalation_rate": 0.0
     },
     "health_check": {
@@ -108,13 +108,6 @@
       "escalation_rate": 0.0
     },
     "resilience_test": {
-      "completed": 0,
-      "failed": 0,
-      "escalated": 0,
-      "success_rate": 0.0,
-      "escalation_rate": 0.0
-    },
-    "test_emitter": {
       "completed": 0,
       "failed": 0,
       "escalated": 0,

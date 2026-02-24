@@ -322,8 +322,8 @@ class DualEngineLLM:
                 "response_text": response_text
             }
             
-            with open(filename, 'w') as f:
-                json.dump(data, f, indent=2)
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
                 
         except Exception as e:
             logger.warning(f"Failed to log interaction: {e}")

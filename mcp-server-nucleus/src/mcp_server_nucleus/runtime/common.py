@@ -95,7 +95,7 @@ def _get_state(path: Optional[str] = None) -> Dict:
             
         from .sync_ops import sync_lock
         with sync_lock(brain, timeout=2):
-            with open(state_path, "r") as f:
+            with open(state_path, "r", encoding="utf-8") as f:
                 state = json.load(f)
             
         if path:
@@ -121,13 +121,13 @@ def _update_state(updates: Dict[str, Any]) -> str:
         with sync_lock(brain, timeout=5):
             current_state = {}
             if state_path.exists():
-                with open(state_path, "r") as f:
+                with open(state_path, "r", encoding="utf-8") as f:
                     current_state = json.load(f)
             
             current_state.update(updates)
             
-            with open(state_path, "w") as f:
-                json.dump(current_state, f, indent=2)
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(current_state, f, indent=2, ensure_ascii=False)
             
         return "State updated successfully"
     except Exception as e:

@@ -36,7 +36,7 @@ class Injector:
     def _write_settings(self, settings: Dict[str, Any]) -> bool:
         try:
             self._ensure_vscode_dir()
-            self.vscode_settings_path.write_text(json.dumps(settings, indent=4))
+            self.vscode_settings_path.write_text(json.dumps(settings, indent=4, ensure_ascii=False))
             return True
         except Exception as e:
             logger.error(f"Failed to write settings.json: {e}")

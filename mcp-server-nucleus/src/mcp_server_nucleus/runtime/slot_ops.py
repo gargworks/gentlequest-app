@@ -87,14 +87,14 @@ def _brain_slot_complete_impl(slot_id: str, task_id: str, outcome: str = "succes
         registry_path = brain / "slots" / "registry.json"
         
         # Re-read to prevent race (simple optimistic lock)
-        with open(registry_path, "r") as f:
+        with open(registry_path, "r", encoding="utf-8") as f:
              current_reg = json.load(f)
              
         if resolved_id in current_reg["slots"]:
              current_reg["slots"][resolved_id].update(slot)
              
-        with open(registry_path, "w") as f:
-             json.dump(current_reg, f, indent=2)
+        with open(registry_path, "w", encoding="utf-8") as f:
+             json.dump(current_reg, f, indent=2, ensure_ascii=False)
              
         # Emit event
         _emit_event("slot_task_completed", resolved_id, {
@@ -135,8 +135,8 @@ def _brain_slot_exhaust_impl(slot_id: str, reason: str, reset_at: str) -> str:
         brain = get_brain_path()
         registry_path = brain / "slots" / "registry.json"
         
-        with open(registry_path, "w") as f:
-             json.dump(registry, f, indent=2)
+        with open(registry_path, "w", encoding="utf-8") as f:
+             json.dump(registry, f, indent=2, ensure_ascii=False)
              
         _emit_event("slot_exhausted", resolved_id, {
              "reason": reason,
@@ -554,7 +554,7 @@ def _check_protocol_compliance(agent_id: str) -> Dict:
                 "warnings": ["Protocol definition not found - assuming compliant"]
             }
             
-        with open(protocol_path, "r") as f:
+        with open(protocol_path, "r", encoding="utf-8") as f:
             protocol = json.load(f)
             
         # Get pending tasks
@@ -612,13 +612,13 @@ def _brain_request_handoff_impl(to_agent: str, context: str, request: str,
         handoffs_path = brain / "ledger" / "handoffs.json"
         handoffs = []
         if handoffs_path.exists():
-            with open(handoffs_path) as f:
+            with open(handoffs_path, encoding="utf-8") as f:
                 handoffs = json.load(f)
         
         handoffs.append(handoff)
         
-        with open(handoffs_path, "w") as f:
-            json.dump(handoffs, f, indent=2)
+        with open(handoffs_path, "w", encoding="utf-8") as f:
+            json.dump(handoffs, f, indent=2, ensure_ascii=False)
         
         # Emit event
         _emit_event("handoff_requested", "nucleus_mcp", {
@@ -654,7 +654,7 @@ def _brain_get_handoffs_impl(agent_id: str = None) -> str:
         if not handoffs_path.exists():
             return json.dumps({"handoffs": [], "message": "No handoffs found"})
         
-        with open(handoffs_path) as f:
+        with open(handoffs_path, encoding='utf-8') as f:
             handoffs = json.load(f)
         
         # Filter to pending

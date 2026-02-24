@@ -43,7 +43,7 @@ class LifecycleManager:
 
     def _save_ledger(self, ledger: Dict):
         with get_lock("lifecycle", self.brain_path).section():
-            self.ledger_path.write_text(json.dumps(ledger, indent=2))
+            self.ledger_path.write_text(json.dumps(ledger, indent=2, ensure_ascii=False))
 
     def register_agent(self, agent_id: str):
         """Register a new agent instance as ACTIVE."""

@@ -114,7 +114,7 @@ class SwarmsOrchestrator:
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         try:
             with get_lock("swarms", self.brain_path).section():
-                self.state_file.write_text(json.dumps(self._active_missions, indent=2))
+                self.state_file.write_text(json.dumps(self._active_missions, indent=2, ensure_ascii=False))
         except Exception as e:
             logger.error(f"Failed to save swarm state: {e}")
 
@@ -362,7 +362,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
             
             # Also save raw JSON
             raw_file = mission_dir / "artifacts.json"
-            raw_file.write_text(json.dumps(artifacts, indent=2))
+            raw_file.write_text(json.dumps(artifacts, indent=2, ensure_ascii=False))
             
         except Exception as e:
             logger.error(f"Failed to save mission artifacts: {e}")

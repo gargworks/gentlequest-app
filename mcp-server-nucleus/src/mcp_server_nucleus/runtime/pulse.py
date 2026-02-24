@@ -107,14 +107,14 @@ class SaltManager:
     
     def _load_salts(self) -> Dict:
         if self._salt_file.exists():
-            with open(self._salt_file) as f:
+            with open(self._salt_file, encoding="utf-8") as f:
                 return json.load(f)
         return {}
     
     def _save_salts(self, data: Dict) -> None:
         self._salt_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self._salt_file, "w") as f:
-            json.dump(data, f, indent=2)
+        with open(self._salt_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
     
     def get_monthly_salt(self) -> str:
         """Get or rotate the monthly salt."""
@@ -223,7 +223,7 @@ class PulseStore:
     def get_consent(self) -> PulseConsent:
         """Get current consent state."""
         if self._consent_file.exists():
-            with open(self._consent_file) as f:
+            with open(self._consent_file, encoding="utf-8") as f:
                 data = json.load(f)
             return PulseConsent(**data)
         return PulseConsent()
@@ -242,8 +242,8 @@ class PulseStore:
         consent.state = state
         consent.decided_at = now
         
-        with open(self._consent_file, "w") as f:
-            json.dump(asdict(consent), f, indent=2)
+        with open(self._consent_file, "w", encoding="utf-8") as f:
+            json.dump(asdict(consent), f, indent=2, ensure_ascii=False)
         
         logger.info(f"Pulse consent updated: {state}")
         return consent
@@ -320,8 +320,8 @@ class PulseStore:
     
     def _append_event(self, event: PulseEvent) -> None:
         """Append an event to the local JSONL store."""
-        with open(self._events_file, "a") as f:
-            f.write(json.dumps(asdict(event)) + "\n")
+        with open(self._events_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(asdict(event), ensure_ascii=False) + "\n")
     
     def _maybe_inject_decoy(self, real_hub: str) -> None:
         """
@@ -357,7 +357,7 @@ class PulseStore:
             return []
         
         events = []
-        with open(self._events_file) as f:
+        with open(self._events_file, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -481,7 +481,7 @@ class PulseStore:
         """Count total local events."""
         if not self._events_file.exists():
             return 0
-        with open(self._events_file) as f:
+        with open(self._events_file, encoding='utf-8') as f:
             return sum(1 for line in f if line.strip())
 
 

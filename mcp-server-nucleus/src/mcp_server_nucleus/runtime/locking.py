@@ -131,7 +131,7 @@ class FileBrainLock(BrainLock):
         
         # Open the file if not already open
         if self.lock_file is None:
-            self.lock_file = open(self.lock_path, 'w+')
+            self.lock_file = open(self.lock_path, 'w+', encoding='utf-8')
 
         while True:
             try:
@@ -191,9 +191,9 @@ class FileBrainLock(BrainLock):
         data = {}
         # Get PID from file content
         try:
-            with open(self.lock_path, 'r') as f:
+            with open(self.lock_path, 'r', encoding='utf-8') as f:
                 data["pid"] = f.read().strip()
-        except:
+        except Exception:
             data["pid"] = "unknown"
 
         # Get xattrs

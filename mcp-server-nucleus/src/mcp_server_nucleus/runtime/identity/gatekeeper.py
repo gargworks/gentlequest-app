@@ -61,7 +61,7 @@ class Gatekeeper:
                 
     def _save_ledger(self):
         data = [g.model_dump() for g in self._cache_grants.values()]
-        self.ledger_path.write_text(json.dumps(data, indent=2))
+        self.ledger_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
         
     def check_permission(self, request: GrantRequest) -> bool:
         """

@@ -148,7 +148,7 @@ def _write_memory(content: str, category: str = "learnings") -> str:
         entry = f"\n\n## [{timestamp}] Engram\n{content}"
         
         mode = "a" if file_path.exists() else "w"
-        with open(file_path, mode) as f:
+        with open(file_path, mode, encoding='utf-8') as f:
             f.write(entry)
             
         return f"Memory written to {target_file}"

@@ -53,13 +53,13 @@ def brain_synthesize_status_report(
     # Task List (What's pending)
     task_path = root_path / ".brain" / "task.md"
     if task_path.exists():
-        with open(task_path, 'r') as f:
+        with open(task_path, 'r', encoding='utf-8') as f:
             context['tasks'] = f.read()[:5000] # Cap usage
             
     # Vision (Where we are going)
     vision_path = root_path / ".brain" / "NUCLEUS_VISION.md"
     if vision_path.exists():
-        with open(vision_path, 'r') as f:
+        with open(vision_path, 'r', encoding='utf-8') as f:
             context['vision'] = f.read()
 
     # System Status (invisible work)

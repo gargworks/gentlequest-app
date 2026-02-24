@@ -890,7 +890,7 @@ class FederationEngine:
         state_file = self._persistence_path / "state.json"
         if state_file.exists():
             try:
-                with open(state_file) as f:
+                with open(state_file, encoding='utf-8') as f:
                     data = json.load(f)
                 self.state.term = data.get("term", 0)
                 self.state.leader_id = data.get("leader_id")
@@ -901,8 +901,8 @@ class FederationEngine:
     async def _save_state(self) -> None:
         state_file = self._persistence_path / "state.json"
         try:
-            with open(state_file, "w") as f:
-                json.dump(self.state.to_dict(), f, indent=2, default=str)
+            with open(state_file, "w", encoding="utf-8") as f:
+                json.dump(self.state.to_dict(), f, indent=2, default=str, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save federation state: {e}")
     

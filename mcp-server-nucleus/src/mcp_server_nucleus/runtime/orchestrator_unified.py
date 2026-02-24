@@ -66,7 +66,7 @@ class UnifiedOrchestrator:
         tasks_path = self.brain_path / "ledger" / "tasks.json"
         if tasks_path.exists():
             try:
-                with open(tasks_path) as f:
+                with open(tasks_path, encoding='utf-8') as f:
                     data = json.load(f)
                 
                 # V3.1+ format is {"tasks": [...]}
@@ -102,8 +102,8 @@ class UnifiedOrchestrator:
                     "last_synced": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z") if 'timezone' in globals() else time.strftime("%Y-%m-%dT%H:%M:%SZ")
                 }
             }
-            with open(tasks_path, "w") as f:
-                json.dump(output, f, indent=2)
+            with open(tasks_path, "w", encoding='utf-8') as f:
+                json.dump(output, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save tasks: {e}")
 
@@ -111,7 +111,7 @@ class UnifiedOrchestrator:
         self.swarms_state_file.parent.mkdir(parents=True, exist_ok=True)
         try:
             with get_lock("swarms", self.brain_path).section():
-                self.swarms_state_file.write_text(json.dumps(self._active_missions, indent=2))
+                self.swarms_state_file.write_text(json.dumps(self._active_missions, indent=2, ensure_ascii=False))
         except Exception as e:
             logger.error(f"Failed to save swarm state: {e}")
 
@@ -426,7 +426,7 @@ class UnifiedOrchestrator:
         for a in artifacts:
             summary += f"## {a['agent']} (Step {a['step']})\n{a['result']}\n\n---\n\n"
         (mission_dir / "summary.md").write_text(summary)
-        (mission_dir / "artifacts.json").write_text(json.dumps(artifacts, indent=2))
+        (mission_dir / "artifacts.json").write_text(json.dumps(artifacts, indent=2, ensure_ascii=False))
 
     def get_mission_status(self, mission_id: str) -> Optional[Dict]:
         return self._active_missions.get(mission_id)

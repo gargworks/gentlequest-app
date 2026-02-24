@@ -41,7 +41,7 @@ class BudgetAuditor:
         }
         
     def _save_ledger(self, ledger: Dict):
-        self.ledger_path.write_text(json.dumps(ledger, indent=2))
+        self.ledger_path.write_text(json.dumps(ledger, indent=2, ensure_ascii=False))
         
     def check_authorization(self, completed_cost: float = 0.0) -> bool:
         """

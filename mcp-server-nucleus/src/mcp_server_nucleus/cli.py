@@ -332,7 +332,7 @@ def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str
             shutil.copy2(config_path, backup_path)
             print(f"  📦 Created backup at {backup_path}")
         
-        with open(config_path, 'r') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
         
         # Normalize to standard 'mcpServers' block
@@ -342,8 +342,8 @@ def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str
         
         if "nucleus" not in config_data[target_key]:
             config_data[target_key]["nucleus"] = nucleus_config
-            with open(config_path, 'w') as f:
-                json.dump(config_data, f, indent=2)
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=2, ensure_ascii=False)
             print(f"  ✅ Auto-configured 'nucleus' in {ide_name} settings!")
             return True
         else:
@@ -606,6 +606,22 @@ def main():
     sessions_resume = sessions_subparsers.add_parser('resume', help='Resume a saved session')
     sessions_resume.add_argument('id', nargs='?', help='Session ID to resume (defaults to most recent)')
     
+    # ============================================================
+    # MORNING BRIEF — THE ALIVE WORKFLOW (MDR_015)
+    # ============================================================
+    brief_parser = subparsers.add_parser('morning-brief', help='🧠 The Alive Workflow — your daily brief')
+    brief_parser.add_argument('--json', action='store_true', help='Output as JSON instead of formatted')
+    
+    # nucleus loop - Compounding v0 Loop status
+    loop_parser = subparsers.add_parser('loop', help='🔄 Compounding v0 Loop status')
+    loop_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    
+    # nucleus end-of-day - Capture learnings
+    eod_parser = subparsers.add_parser('end-of-day', help='📝 Capture end-of-day learnings')
+    eod_parser.add_argument('summary', help='What was accomplished today (2-3 sentences)')
+    eod_parser.add_argument('--decisions', nargs='*', help='Key decisions made')
+    eod_parser.add_argument('--blockers', nargs='*', help='Blockers encountered')
+    
     # --- STATUS SUBCOMMAND (SATELLITE VIEW) ---
     status_parser = subparsers.add_parser('status', help='Show unified satellite view of the brain')
     status_parser.add_argument('--minimal', action='store_true', help='Show minimal view (depth only)')
@@ -729,6 +745,12 @@ def main():
         handle_search_command(args)
     elif args.cli_command == 'schema':
         handle_schema_command(args)
+    elif args.cli_command == 'morning-brief':
+        handle_morning_brief_command(args)
+    elif args.cli_command == 'loop':
+        handle_loop_command(args)
+    elif args.cli_command == 'end-of-day':
+        handle_end_of_day_command(args)
     elif args.cli_command is None:
         # No command given, show help
         parser.print_help()
@@ -988,7 +1010,7 @@ def handle_mount_command(args):
         else:
             try:
                 mounts = json.loads(mounts_file.read_text())
-            except:
+            except Exception:
                 mounts = {}
         
         config = {
@@ -1019,7 +1041,7 @@ def handle_mount_command(args):
             config["url"] = args.url
             
         mounts[args.id] = config
-        mounts_file.write_text(json.dumps(mounts, indent=2))
+        mounts_file.write_text(json.dumps(mounts, indent=2, ensure_ascii=False))
         print(f"✅ Mount '{args.id}' added to configuration.")
         print("   Restart Nucleus to activate.")
         
@@ -1030,13 +1052,13 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except:
+        except Exception:
              print("❌ Failed to parse mounts file.")
              return
              
         if args.id in mounts:
             del mounts[args.id]
-            mounts_file.write_text(json.dumps(mounts, indent=2))
+            mounts_file.write_text(json.dumps(mounts, indent=2, ensure_ascii=False))
             print(f"✅ Mount '{args.id}' removed.")
             print("   Restart Nucleus to apply.")
         else:
@@ -1049,7 +1071,7 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except:
+        except Exception:
              print("❌ Failed to parse mounts file.")
              return
              
@@ -1428,6 +1450,87 @@ def handle_schema_command(args):
         print(f"✅ Schema exported to: {args.output}")
 
     asyncio.run(run_gen())
+
+
+# ============================================================
+# ALIVE WORKFLOW CLI HANDLERS (MDR_015)
+# ============================================================
+
+def handle_morning_brief_command(args):
+    """Handle nucleus morning-brief command — THE Alive Workflow."""
+    import json
+    from .runtime.morning_brief_ops import _morning_brief_impl
+    
+    try:
+        result = _morning_brief_impl()
+        
+        if args.json:
+            # JSON output for programmatic use
+            print(json.dumps({
+                "recommendation": result.get("recommendation", {}),
+                "sections": result.get("sections", {}),
+                "meta": result.get("meta", {}),
+            }, indent=2))
+        else:
+            # Formatted output for terminal
+            print(result.get("formatted", "No brief generated"))
+    except Exception as e:
+        print(f"❌ Error generating morning brief: {e}")
+        print()
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("  export NUCLEAR_BRAIN_PATH=/path/to/.brain")
+
+
+def handle_loop_command(args):
+    """Handle nucleus loop command — Compounding v0 Loop status."""
+    import json
+    from .runtime.compounding_loop import _compounding_loop_status_impl
+    
+    try:
+        result = _compounding_loop_status_impl()
+        
+        if args.json:
+            print(json.dumps({
+                "day": result.get("day_of_week"),
+                "week": result.get("week_number"),
+                "today": result.get("today", {}),
+                "metrics": result.get("metrics", {}),
+            }, indent=2))
+        else:
+            print(result.get("formatted", "No loop status generated"))
+    except Exception as e:
+        print(f"❌ Error getting loop status: {e}")
+        print()
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+
+
+def handle_end_of_day_command(args):
+    """Handle nucleus end-of-day command — Capture learnings."""
+    import json
+    from .runtime.compounding_loop import _end_of_day_capture_impl
+    
+    try:
+        result = _end_of_day_capture_impl(
+            summary=args.summary,
+            key_decisions=args.decisions,
+            blockers=args.blockers,
+        )
+        
+        print("=" * 60)
+        print("📝 END OF DAY CAPTURED")
+        print("=" * 60)
+        print(f"  Day: {result.get('day')}")
+        print(f"  Week: {result.get('week')}")
+        print(f"  Engrams written: {result.get('engrams_written', 0)}")
+        print()
+        print("✅ These learnings will surface in tomorrow's morning brief.")
+        print()
+        print("Next step: Run `nucleus morning-brief` tomorrow morning.")
+        print("=" * 60)
+    except Exception as e:
+        print(f"❌ Error capturing end-of-day: {e}")
+        print()
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
 
 
 if __name__ == "__main__":

@@ -39,7 +39,7 @@ def read_events(brain_path: Path, limit: int = 50) -> List[Dict]:
     
     # Read all events
     events = []
-    with open(events_path, 'r') as f:
+    with open(events_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line:
@@ -78,8 +78,8 @@ def emit_event(
     }
     
     # Append to stream
-    with open(events_path, 'a') as f:
-        f.write(json.dumps(event) + '\n')
+    with open(events_path, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(event, ensure_ascii=False) + '\n')
     
     # Bridge to Cloud (Fire & Forget)
     try:
@@ -141,7 +141,7 @@ def rotate_events(brain_path: Path, keep_count: int = 1000) -> int:
     
     # Read all events
     events = []
-    with open(events_path, 'r') as f:
+    with open(events_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line:
@@ -156,11 +156,11 @@ def rotate_events(brain_path: Path, keep_count: int = 1000) -> int:
     
     # Write archive
     archive_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(archive_path, 'w') as f:
+    with open(archive_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(to_archive) + '\n')
     
     # Overwrite main file with kept events
-    with open(events_path, 'w') as f:
+    with open(events_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(to_keep) + '\n')
     
     return len(to_archive)

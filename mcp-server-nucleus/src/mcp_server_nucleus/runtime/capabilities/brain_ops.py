@@ -233,13 +233,13 @@ class BrainOps(Capability):
             today = datetime.now().strftime("%Y-%m-%d")
             archive_file = archive_dir / f"raw_interactions_{today}.jsonl"
             
-            with open(archive_file, "a") as out_f:
+            with open(archive_file, "a", encoding='utf-8') as out_f:
                 for log_file in logs:
                     try:
                          content = log_file.read_text()
                          # Minify JSON line
                          data = json.loads(content)
-                         out_f.write(json.dumps(data) + "\n")
+                         out_f.write(json.dumps(data, ensure_ascii=False) + "\n")
                          
                          size_saved += log_file.stat().st_size
                          log_file.unlink() # Delete original

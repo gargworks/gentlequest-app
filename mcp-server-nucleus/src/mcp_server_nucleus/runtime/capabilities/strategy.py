@@ -127,8 +127,8 @@ class StrategyTool(Capability):
                 "reason": reason,
                 "len_delta": len(content) - (path.stat().st_size if path.exists() else 0)
             }
-            with open(log_path, "a") as f:
-                f.write(json.dumps(entry) + "\n")
+            with open(log_path, "a", encoding='utf-8') as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
             
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)

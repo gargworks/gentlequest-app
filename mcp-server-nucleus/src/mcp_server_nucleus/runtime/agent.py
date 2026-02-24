@@ -119,8 +119,8 @@ class EphemeralAgent:
             
             # Append to decisions.jsonl (append-only ledger)
             decisions_file = decisions_dir / "decisions.jsonl"
-            with open(decisions_file, "a") as f:
-                f.write(json.dumps(decision.to_dict()) + "\n")
+            with open(decisions_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(decision.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
             pass  # Non-blocking persistence
         
@@ -341,7 +341,7 @@ CRITICAL RULES (MDR_002):
                                  "history": current_history[-10:],
                                  "status": "COMPLETE"
                              }
-                             log_path.write_text(json.dumps(mission_data, indent=2))
+                             log_path.write_text(json.dumps(mission_data, indent=2, ensure_ascii=False))
                              
                              log.append(f"💾 Mission persisted to {mission_dir}")
                          except Exception as persist_error:

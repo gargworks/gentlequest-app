@@ -58,13 +58,13 @@ def brain_synthesize_strategy(
         return {"status": "error", "message": f"Log file not found at {log_path}"}
         
     # Read the log
-    with open(log_path, 'r') as f:
+    with open(log_path, 'r', encoding='utf-8') as f:
         log_content = f.read()
         
     # Read existing strategy if valid
     existing_strategy = ""
     if strategy_path.exists():
-        with open(strategy_path, 'r') as f:
+        with open(strategy_path, 'r', encoding='utf-8') as f:
             existing_strategy = f.read()
 
     # Construct Prompt
@@ -102,7 +102,7 @@ def brain_synthesize_strategy(
         
         # Write to file
         strategy_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(strategy_path, 'w') as f:
+        with open(strategy_path, 'w', encoding='utf-8') as f:
             f.write(new_strategy)
             
     except Exception as e:
@@ -135,7 +135,7 @@ def brain_optimize_workflow(
     if not log_path.exists():
         return {"status": "error", "message": "Log file not found"}
 
-    with open(log_path, 'r') as f:
+    with open(log_path, 'r', encoding='utf-8') as f:
         log_content = f.read()
         
     # Check if there is any meta-feedback
@@ -145,7 +145,7 @@ def brain_optimize_workflow(
     # Read existing cheatsheet for context
     current_cheatsheet = ""
     if cheatsheet_path.exists():
-        with open(cheatsheet_path, 'r') as f:
+        with open(cheatsheet_path, 'r', encoding='utf-8') as f:
             current_cheatsheet = f.read()
 
     prompt = f"""
@@ -189,7 +189,7 @@ def brain_optimize_workflow(
         
         # If the file exists, append. If not, create.
         mode = 'a' if improvement_path.exists() else 'w'
-        with open(improvement_path, mode) as f:
+        with open(improvement_path, mode, encoding='utf-8') as f:
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             f.write(f"\n\n## 🧬 Workflow Upgrades (Auto-Generated {timestamp})\n{new_tasks}")
             

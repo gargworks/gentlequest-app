@@ -77,7 +77,8 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
             "message": f"Engram '{key}' processed via ADUN pipeline ({result.get('mode', 'unknown')})"
         })
     except Exception as e:
-        return make_response(False, error=f"Error writing engram: {e}")
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "engram_write"))
 
 
 def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
@@ -94,10 +95,13 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
             })
         
         engrams = []
-        with open(engram_path, "r") as f:
+        with open(engram_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
-                    e = json.loads(line)
+                    try:
+                        e = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # Skip corrupted lines
                     # Filter by context if specified
                     if context and e.get("context", "").lower() != context.lower():
                         continue
@@ -115,7 +119,8 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
             "filters": {"context": context, "min_intensity": min_intensity}
         })
     except Exception as e:
-        return make_response(False, error=f"Error querying engrams: {e}")
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "engram_query"))
 
 
 def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
@@ -135,10 +140,13 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
         search_query = query if case_sensitive else query.lower()
         matches = []
         
-        with open(engram_path, "r") as f:
+        with open(engram_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
-                    e = json.loads(line)
+                    try:
+                        e = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # Skip corrupted lines
                     key = e.get("key", "")
                     value = e.get("value", "")
                     
@@ -162,7 +170,8 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
             "case_sensitive": case_sensitive
         })
     except Exception as e:
-        return make_response(False, error=f"Error searching engrams: {e}")
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "engram_search"))
 
 
 def _brain_governance_status_impl() -> str:
@@ -174,21 +183,21 @@ def _brain_governance_status_impl() -> str:
         audit_path = brain / "ledger" / "interaction_log.jsonl"
         audit_count = 0
         if audit_path.exists():
-            with open(audit_path, "r") as f:
+            with open(audit_path, "r", encoding="utf-8") as f:
                 audit_count = sum(1 for line in f if line.strip())
         
         # Check engrams
         engram_path = brain / "engrams" / "ledger.jsonl"
         engram_count = 0
         if engram_path.exists():
-            with open(engram_path, "r") as f:
+            with open(engram_path, "r", encoding="utf-8") as f:
                 engram_count = sum(1 for line in f if line.strip())
         
         # Check events
         events_path = brain / "ledger" / "events.jsonl"
         events_count = 0
         if events_path.exists():
-            with open(events_path, "r") as f:
+            with open(events_path, "r", encoding="utf-8") as f:
                 events_count = sum(1 for line in f if line.strip())
         
         # Security config
@@ -215,4 +224,5 @@ def _brain_governance_status_impl() -> str:
         
         return make_response(True, data=governance)
     except Exception as e:
-        return make_response(False, error=f"Error checking governance: {e}")
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "governance_status"))

@@ -114,7 +114,7 @@ class MemoryPipeline:
             return []
 
         engrams = []
-        with open(self.ledger_path, "r") as f:
+        with open(self.ledger_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     try:
@@ -331,8 +331,8 @@ class MemoryPipeline:
 
     def _append_to_ledger(self, engram: Dict):
         """Append a new engram to the ledger."""
-        with open(self.ledger_path, "a") as f:
-            f.write(json.dumps(engram) + "\n")
+        with open(self.ledger_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(engram, ensure_ascii=False) + "\n")
 
     def _update_in_ledger(self, key: str, new_engram: Dict):
         """Update an existing engram in the ledger (rewrite file)."""
@@ -342,7 +342,7 @@ class MemoryPipeline:
 
         lines = []
         updated = False
-        with open(self.ledger_path, "r") as f:
+        with open(self.ledger_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     try:
@@ -358,7 +358,7 @@ class MemoryPipeline:
         if not updated:
             lines.append(json.dumps(new_engram) + "\n")
 
-        with open(self.ledger_path, "w") as f:
+        with open(self.ledger_path, "w", encoding="utf-8") as f:
             f.writelines(lines)
 
     def _delete_in_ledger(self, key: str):
@@ -367,7 +367,7 @@ class MemoryPipeline:
             return
 
         lines = []
-        with open(self.ledger_path, "r") as f:
+        with open(self.ledger_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     try:
@@ -381,7 +381,7 @@ class MemoryPipeline:
                     except json.JSONDecodeError:
                         lines.append(line)
 
-        with open(self.ledger_path, "w") as f:
+        with open(self.ledger_path, "w", encoding="utf-8") as f:
             f.writelines(lines)
 
     def _append_to_history(self, engram: Dict, op_type: str):
@@ -392,8 +392,8 @@ class MemoryPipeline:
             "timestamp": datetime.now().isoformat(),
             "snapshot": engram,
         }
-        with open(self.history_path, "a") as f:
-            f.write(json.dumps(history_entry) + "\n")
+        with open(self.history_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(history_entry, ensure_ascii=False) + "\n")
 
     # ── HIGH-LEVEL API ─────────────────────────────────────────────
 

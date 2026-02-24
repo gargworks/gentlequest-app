@@ -404,7 +404,7 @@ def _garbage_collect_tasks(
         if not tasks_file.exists():
             return {"success": True, "archived": 0, "kept": 0, "message": "No tasks.json found"}
         
-        with open(tasks_file, "r") as f:
+        with open(tasks_file, "r", encoding="utf-8") as f:
             raw = json.load(f)
         
         # Handle both list and object formats
@@ -482,18 +482,18 @@ def _garbage_collect_tasks(
             archive_dir.mkdir(parents=True, exist_ok=True)
             archive_file = archive_dir / f"tasks_archived_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
             
-            with open(archive_file, "w") as f:
+            with open(archive_file, "w", encoding="utf-8") as f:
                 for task in archive:
-                    f.write(json.dumps(task) + "\n")
+                    f.write(json.dumps(task, ensure_ascii=False) + "\n")
             
             # Write back the kept tasks
             if isinstance(raw, dict) and "tasks" in raw:
                 raw["tasks"] = keep
-                with open(tasks_file, "w") as f:
-                    json.dump(raw, f, indent=2)
+                with open(tasks_file, "w", encoding="utf-8") as f:
+                    json.dump(raw, f, indent=2, ensure_ascii=False)
             else:
-                with open(tasks_file, "w") as f:
-                    json.dump(keep, f, indent=2)
+                with open(tasks_file, "w", encoding="utf-8") as f:
+                    json.dump(keep, f, indent=2, ensure_ascii=False)
             
             _emit_event(
                 "tasks_garbage_collected",

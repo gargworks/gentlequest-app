@@ -6021,3 +6021,43 @@ verify_truth
 Simulation Error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
 
 ---
+
+# Session: 2026-02-24T00:28:03.641493
+## Proposition
+Batch G execution
+
+Simulation Error: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': "Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp' (or it may not exist).", 'status': 'PERMISSION_DENIED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'IAM_PERMISSION_DENIED', 'domain': 'aiplatform.googleapis.com', 'metadata': {'resource': 'projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', 'permission': 'aiplatform.endpoints.predict'}}]}}
+
+---
+
+# Session: 2026-02-24T00:28:07.017005
+## Proposition
+Batch G execution
+
+Simulation Error: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': "Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp' (or it may not exist).", 'status': 'PERMISSION_DENIED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'IAM_PERMISSION_DENIED', 'domain': 'aiplatform.googleapis.com', 'metadata': {'resource': 'projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', 'permission': 'aiplatform.endpoints.predict'}}]}}
+
+---
+
+# Session: 2026-02-24T00:28:11.321241
+## Proposition
+Batch G execution
+
+Simulation Error: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': "Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp' (or it may not exist).", 'status': 'PERMISSION_DENIED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'IAM_PERMISSION_DENIED', 'domain': 'aiplatform.googleapis.com', 'metadata': {'resource': 'projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', 'permission': 'aiplatform.endpoints.predict'}}]}}
+
+---
+
+# Session: 2026-02-24T00:28:15.489167
+## Proposition
+Batch G execution
+
+Simulation Error: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': "Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp' (or it may not exist).", 'status': 'PERMISSION_DENIED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'IAM_PERMISSION_DENIED', 'domain': 'aiplatform.googleapis.com', 'metadata': {'resource': 'projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', 'permission': 'aiplatform.endpoints.predict'}}]}}
+
+---
+
+# Session: 2026-02-24T00:28:18.681050
+## Proposition
+Batch G execution
+
+Simulation Error: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': "Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp' (or it may not exist).", 'status': 'PERMISSION_DENIED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'IAM_PERMISSION_DENIED', 'domain': 'aiplatform.googleapis.com', 'metadata': {'resource': 'projects/gen-lang-client-0894185576/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', 'permission': 'aiplatform.endpoints.predict'}}]}}
+
+---

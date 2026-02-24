@@ -67,7 +67,7 @@ except ImportError:
                 try:
                     self.proc.terminate()
                     await self.proc.wait()
-                except:
+                except Exception:
                     pass
             if self.reader_task:
                 self.reader_task.cancel()
@@ -203,7 +203,7 @@ class Mounter:
         """Load persisted mount configurations."""
         if self.mounts_file.exists():
             try:
-                with open(self.mounts_file, "r") as f:
+                with open(self.mounts_file, "r", encoding="utf-8") as f:
                     self.mount_configs = json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load mounts: {e}")
@@ -237,8 +237,8 @@ class Mounter:
     def _save_mounts(self):
         """Persist mount configurations."""
         try:
-            with open(self.mounts_file, "w") as f:
-                json.dump(self.mount_configs, f, indent=2)
+            with open(self.mounts_file, "w", encoding="utf-8") as f:
+                json.dump(self.mount_configs, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save mounts: {e}")
 
@@ -494,39 +494,37 @@ async def _brain_mount_server_impl(name: str, command: str, args: List[str] = []
         return f"Error mounting server: {e}"
 
 async def _brain_thanos_snap_impl() -> str:
-    """Implement brain_thanos_snap."""
+    """Implement brain_thanos_snap with idempotency."""
     try:
         brain = get_brain_path()
         mounter = get_mounter(brain)
         
         # Robust path resolution for mock script
-        # Try to find workspace root relative to this file
-        # This file is in src/mcp_server_nucleus/runtime/mounter_ops.py
-        # Workspace root is 5 levels up
-        workspace_root = Path(__file__).parent.parent.parent.parent.parent
+        # Workspace root is 5 levels up from src/mcp_server_nucleus/runtime/mounter_ops.py
+        current_file = Path(__file__).resolve()
+        workspace_root = current_file.parent.parent.parent.parent.parent
         mock_script = workspace_root / "scripts" / "mock_mcp_server.py"
         
         if not mock_script.exists():
-             # Fallback: try relative from cwd
              mock_script = Path("scripts/mock_mcp_server.py").resolve()
              
-        # Use current Python executable to ensure compatibility
         python_cmd = sys.executable
         
         results = []
-        # Mount Stripe
-        res_stripe = await mounter.mount("stripe", python_cmd, [str(mock_script), "stripe"])
-        results.append(f"Stripe: {res_stripe}")
+        targets = [
+            ("stripe", "stripe"),
+            ("postgres", "postgres"),
+            ("search", "brave_search")
+        ]
         
-        # Mount Postgres
-        res_pg = await mounter.mount("postgres", python_cmd, [str(mock_script), "postgres"])
-        results.append(f"Postgres: {res_pg}")
+        for mid, mock_type in targets:
+            if mid in mounter.sessions:
+                results.append(f"{mid.capitalize()}: Already Active ✅")
+            else:
+                res = await mounter.mount(mid, python_cmd, [str(mock_script), mock_type])
+                results.append(f"{mid.capitalize()}: {res}")
         
-        # Mount Search
-        res_search = await mounter.mount("search", python_cmd, [str(mock_script), "brave_search"])
-        results.append(f"Brave Search: {res_search}")
-        
-        return "✨ Thanos Snap Complete! Recursive mesh populated:\n" + "\n".join(results)
+        return "✨ Thanos Snap Sequence:\n" + "\n".join(results)
     except Exception as e:
         return f"Error during Thanos Snap: {e}"
 

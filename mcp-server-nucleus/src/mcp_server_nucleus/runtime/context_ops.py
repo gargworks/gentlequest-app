@@ -143,7 +143,7 @@ def _cold_start_prompt() -> str:
         try:
             engram_path = brain / "memory" / "engrams.json"
             if engram_path.exists():
-                with open(engram_path, "r") as f:
+                with open(engram_path, "r", encoding="utf-8") as f:
                     engrams = json.load(f)
                 total_engrams = len(engrams) if isinstance(engrams, list) else 0
                 
@@ -176,7 +176,7 @@ def _cold_start_prompt() -> str:
         try:
             task_path = brain / "ledger" / "tasks.json"
             if task_path.exists():
-                with open(task_path, "r") as f:
+                with open(task_path, "r", encoding="utf-8") as f:
                     tasks = json.load(f)
                 total = len(tasks) if isinstance(tasks, list) else 0
                 
@@ -207,7 +207,7 @@ def _cold_start_prompt() -> str:
         try:
             mounts_path = brain / "mounts.json"
             if mounts_path.exists():
-                with open(mounts_path, "r") as f:
+                with open(mounts_path, "r", encoding="utf-8") as f:
                     mounts = json.load(f)
                 mount_count = len(mounts) if isinstance(mounts, (list, dict)) else 0
                 if isinstance(mounts, dict):

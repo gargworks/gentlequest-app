@@ -101,7 +101,7 @@ def _brain_health_impl_legacy() -> str:
         tasks_path = brain / "ledger" / "tasks.json"
         if tasks_path.exists():
             try:
-                with open(tasks_path, "r") as f:
+                with open(tasks_path, "r", encoding="utf-8") as f:
                     tasks = json.load(f)
                 task_count = len(tasks.get("tasks", []))
                 health_status["checks"]["tasks"] = f"✅ OK ({task_count} tasks)"
@@ -115,7 +115,7 @@ def _brain_health_impl_legacy() -> str:
         events_path = brain / "ledger" / "events.jsonl"
         if events_path.exists():
             try:
-                with open(events_path, "r") as f:
+                with open(events_path, "r", encoding="utf-8") as f:
                     event_count = sum(1 for _ in f)
                 health_status["checks"]["events"] = f"✅ OK ({event_count} events)"
             except Exception as e:
@@ -134,7 +134,7 @@ def _brain_health_impl_legacy() -> str:
         slots_path = brain / "slots" / "registry.json"
         if slots_path.exists():
             try:
-                with open(slots_path, "r") as f:
+                with open(slots_path, "r", encoding="utf-8") as f:
                     slots = json.load(f)
                 slot_count = len(slots.get("slots", []))
                 health_status["checks"]["slots"] = f"✅ OK ({slot_count} slots)"
@@ -229,7 +229,7 @@ def _brain_audit_log_impl(limit: int = 20) -> str:
             })
         
         entries = []
-        with open(log_path, "r") as f:
+        with open(log_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     entries.append(json.loads(line))

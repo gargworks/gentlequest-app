@@ -25,7 +25,7 @@ def _load_features(product: str) -> Dict:
     """Load features for a product."""
     path = _get_features_path(product)
     if path.exists():
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     return {"product": product, "last_updated": None, "total_features": 0, "features": []}
 
@@ -36,8 +36,8 @@ def _save_features(product: str, data: Dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     data["total_features"] = len(data.get("features", []))
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def _add_feature(product: str, name: str, description: str, source: str, 

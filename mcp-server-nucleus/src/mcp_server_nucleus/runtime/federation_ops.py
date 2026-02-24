@@ -262,7 +262,7 @@ def _brain_federation_route_impl(task_id: str, profile: str = "default") -> str:
         try:
             tasks_file = get_brain_path() / "ledger" / "tasks.json"
             if tasks_file.exists():
-                with open(tasks_file) as f:
+                with open(tasks_file, encoding='utf-8') as f:
                     tasks_data = json.load(f)
                 for t in tasks_data.get("tasks", []):
                     if t.get("id") == task_id or t.get("description", "").startswith(task_id):

@@ -106,7 +106,7 @@ def save_triggers(brain_path: Path, triggers: Dict) -> None:
     """Save trigger definitions to disk"""
     triggers_path = get_triggers_path(brain_path)
     triggers_path.parent.mkdir(parents=True, exist_ok=True)
-    triggers_path.write_text(json.dumps(triggers, indent=2))
+    triggers_path.write_text(json.dumps(triggers, indent=2, ensure_ascii=False))
 
 
 def evaluate_condition(condition: str, event: Dict) -> bool:

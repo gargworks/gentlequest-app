@@ -41,7 +41,7 @@ def _get_activity_sparkline(days: int = 7) -> Dict:
         if summary_path.exists():
             try:
                 from datetime import datetime, timedelta
-                with open(summary_path, "r") as f:
+                with open(summary_path, "r", encoding='utf-8') as f:
                     summary = json.load(f)
                 
                 # Build counts from summary
@@ -87,7 +87,7 @@ def _get_activity_sparkline(days: int = 7) -> Dict:
         
         # Read events efficiently (tail approach)
         events = []
-        with open(events_path, "r") as f:
+        with open(events_path, "r", encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     events.append(line)

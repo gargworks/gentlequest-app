@@ -197,8 +197,8 @@ def export_metrics_to_file(brain_path: Optional[Path] = None) -> str:
         "metrics": get_metrics()
     }
     
-    with open(filepath, 'w') as f:
-        json.dump(data, f, indent=2)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
     
     return str(filepath)
 

@@ -63,7 +63,10 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 4: HOOK HEALTH (Auto-Write Metrics) ───────────
     brief["sections"]["hook_health"] = _retrieve_hook_health(brain)
 
-    # ── SECTION 5: RECOMMENDATION ──────────────────────────────
+    # ── SECTION 5: ADHD GUARDRAIL STATUS ────────────────────────
+    brief["sections"]["adhd_status"] = _retrieve_adhd_status()
+
+    # ── SECTION 6: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
 
     # ── META ────────────────────────────────────────────────────
@@ -98,6 +101,27 @@ def _retrieve_hook_health(brain: Path) -> Dict:
         return {"total_executions": 0, "message": "Hook metrics unavailable"}
 
 
+def _retrieve_adhd_status() -> Dict:
+    """Retrieve ADHD guardrail status (context switches + depth)."""
+    try:
+        from .depth_ops import _context_switch_status, _depth_show
+        
+        context_status = _context_switch_status()
+        depth_status = _depth_show()
+        
+        return {
+            "focus_status": context_status.get("status", "🟢 FOCUSED"),
+            "switch_count": context_status.get("switch_count", 0),
+            "max_switches": context_status.get("max_switches", 5),
+            "depth": depth_status.get("current_depth", 0),
+            "max_depth": depth_status.get("max_safe_depth", 5),
+            "depth_status": depth_status.get("status", "🟢 SAFE"),
+            "recommendation": context_status.get("recommendation", ""),
+        }
+    except Exception:
+        return {"focus_status": "🟢 FOCUSED", "switch_count": 0, "message": "ADHD metrics unavailable"}
+
+
 def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
     """Retrieve top engrams by intensity, with recency bonus."""
     engram_path = brain / "engrams" / "ledger.jsonl"
@@ -107,7 +131,7 @@ def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
     engrams = []
     now = datetime.now()
 
-    with open(engram_path, "r") as f:
+    with open(engram_path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 try:
@@ -167,7 +191,7 @@ def _retrieve_tasks(brain: Path) -> Dict:
     in_progress = []
     total = 0
 
-    with open(tasks_path, "r") as f:
+    with open(tasks_path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 try:
@@ -207,7 +231,7 @@ def _retrieve_yesterday(brain: Path) -> Dict:
     cutoff = datetime.now() - timedelta(hours=24)
     recent = []
 
-    with open(events_path, "r") as f:
+    with open(events_path, "r", encoding='utf-8') as f:
         for line in f:
             if line.strip():
                 try:
@@ -351,6 +375,20 @@ def _format_brief(brief: Dict) -> str:
         eff = hook.get("efficiency", 0)
         err_rate = hook.get("error_rate", 0)
         lines.append(f"  Efficiency: {eff:.0%}  |  Error rate: {err_rate:.1%}  |  Avg: {hook.get('avg_latency_ms', 0):.1f}ms")
+
+    # ADHD Guardrail section
+    adhd = brief["sections"].get("adhd_status", {})
+    switch_count = adhd.get("switch_count", 0)
+    depth = adhd.get("depth", 0)
+    if switch_count > 0 or depth > 0:
+        lines.append(f"\n🧠 ADHD GUARDRAIL")
+        lines.append("-" * 40)
+        focus = adhd.get("focus_status", "🟢 FOCUSED")
+        depth_status = adhd.get("depth_status", "🟢 SAFE")
+        lines.append(f"  Focus: {focus}  |  Depth: {depth_status}")
+        lines.append(f"  Context switches: {switch_count}/{adhd.get('max_switches', 5)}  |  Depth: {depth}/{adhd.get('max_depth', 5)}")
+        if adhd.get("recommendation"):
+            lines.append(f"  {adhd['recommendation']}")
 
     # Recommendation
     rec = brief.get("recommendation", {})

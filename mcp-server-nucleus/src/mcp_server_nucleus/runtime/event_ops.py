@@ -31,8 +31,8 @@ def _log_interaction(emitter: str, event_type: str, data: Dict[str, Any]) -> Non
             "alg": "sha256"
         }
         
-        with open(log_path, "a") as f:
-            f.write(json.dumps(entry) + "\n")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception as e:
         logger.warning(f"Failed to log interaction trust signal: {e}")
 
@@ -54,8 +54,8 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             "description": description
         }
         
-        with open(events_path, "a") as f:
-            f.write(json.dumps(event) + "\n")
+        with open(events_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
 
         # Log interaction for security audit (Trust Signal)
         _log_interaction(emitter, event_type, data)
@@ -65,15 +65,15 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             summary_path = brain / "ledger" / "activity_summary.json"
             summary = {}
             if summary_path.exists():
-                with open(summary_path, "r") as f:
+                with open(summary_path, "r", encoding="utf-8") as f:
                     summary = json.load(f)
             
             summary["last_event"] = event
             summary["updated_at"] = timestamp
             summary["event_count"] = summary.get("event_count", 0) + 1
             
-            with open(summary_path, "w") as f:
-                json.dump(summary, f, indent=2)
+            with open(summary_path, "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
         except Exception:
             pass  # Don't fail event emit if summary update fails
 
@@ -99,7 +99,7 @@ def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
             return []
             
         events = []
-        with open(events_path, "r") as f:
+        with open(events_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     events.append(json.loads(line))

@@ -29,12 +29,11 @@ This workflow applies the specific "humanizing" constraints that made GentleQues
 
 ## 2. The Transformation Rules (Universal)
 - **Formatting:** Strictly lowercase. No exclamation marks. Comma splices preferred.
+- **AI-Tell Prevention (CRITICAL):** 
+  - **Strip all apostrophes** (e.g., "don't" -> "dont").
+  - **No em-dashes** `—` or double-hyphens `--`. Use single hyphens `-` for breaks.
+  - **No Version Numbers:** Remove specific release tiers like "v1.0.7" or "v2.0". They scan as corporate announcements, not builder struggles.
 - **No Emojis:** Except `💀` or `😭` (rarely).
-- **Formatting:** 
-  - Strictly **lowercase** (unless emphasizing a specific technical term).
-  - **No exclamation marks** (uses periods or nothing).
-  - **Comma splices** are preferred (mimics stream-of-consciousness).
-  - **No emojis** (except rarely 💀 or 😭 for self-deprecation).
 
 ## 2. The Transformation Rules
 
@@ -71,7 +70,8 @@ For technical builds, a 2-4 line "Progress Log" is better than a 3-paragraph ess
 5.  **Shorten:** Cut to the bone. Max 2-3 sentences per block.
 6.  **Proof:** If there's a claim, replace it with a specific number or JSON snippet.
 7.  **Uncertainty:** End with a genuine question (not a CTA).
-8.  **Output:** Provide the rewritten text AND a suggested update for `LAUNCH_NARRATIVE_HISTORY.md` (e.g., 'New Claim added: Exploring Policy Engine').
+8.  **AI-Tell Strip:** Remove ALL apostrophes, replace all em-dashes `—` or `--` with standard `-`, and strip any version numbers (e.g., v1.0.7).
+9.  **Output:** Provide the rewritten text AND a suggested update for `LAUNCH_NARRATIVE_HISTORY.md`.
 
 **Input Text:**
 [INSERT DRAFT HERE]

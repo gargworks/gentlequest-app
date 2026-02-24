@@ -52,7 +52,7 @@ class BrainLock:
         start_time = time.time()
         while True:
             try:
-                self.fd = open(self.lock_file, 'w')
+                self.fd = open(self.lock_file, 'w', encoding='utf-8')
                 # LOCK_EX: Exclusive Lock
                 # LOCK_NB: Non-blocking (fail immediately if locked)
                 if fcntl:
@@ -125,7 +125,7 @@ class BrainLock:
             return False
             
         try:
-            fd = open(lock_file, 'r')
+            fd = open(lock_file, 'r', encoding='utf-8')
             if fcntl:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 # If we got here, it wasn't locked. Unlock and close.

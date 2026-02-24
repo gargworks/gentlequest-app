@@ -708,7 +708,7 @@ class AutopilotEngine:
         # Fallback to file
         tasks_path = self.brain_path / "ledger" / "tasks.json"
         if tasks_path.exists():
-            with open(tasks_path) as f:
+            with open(tasks_path, encoding="utf-8") as f:
                 data = json.load(f)
             return [t for t in data.get("tasks", []) if t.get("status") in ["PENDING", "READY"]]
         
@@ -721,7 +721,7 @@ class AutopilotEngine:
         if not registry_path.exists():
             return []
         
-        with open(registry_path) as f:
+        with open(registry_path, encoding="utf-8") as f:
             registry = json.load(f)
         
         states = []
@@ -842,8 +842,8 @@ class AutopilotEngine:
             slot_states=[asdict(s) for s in assigner.slots.values()],
         )
         
-        with open(checkpoint_dir / "checkpoint.json", "w") as f:
-            json.dump(checkpoint.to_dict(), f, indent=2)
+        with open(checkpoint_dir / "checkpoint.json", "w", encoding="utf-8") as f:
+            json.dump(checkpoint.to_dict(), f, indent=2, ensure_ascii=False)
     
     def _load_checkpoint(self, sprint_id: str) -> Optional[SprintCheckpoint]:
         """Load checkpoint for recovery."""
@@ -852,7 +852,7 @@ class AutopilotEngine:
         if not checkpoint_path.exists():
             return None
         
-        with open(checkpoint_path) as f:
+        with open(checkpoint_path, encoding="utf-8") as f:
             data = json.load(f)
         
         return SprintCheckpoint(**data)
@@ -862,8 +862,8 @@ class AutopilotEngine:
         missions_dir = self.brain_path / "missions"
         missions_dir.mkdir(parents=True, exist_ok=True)
         
-        with open(missions_dir / f"{mission.id}.json", "w") as f:
-            json.dump(mission.to_dict(), f, indent=2)
+        with open(missions_dir / f"{mission.id}.json", "w", encoding="utf-8") as f:
+            json.dump(mission.to_dict(), f, indent=2, ensure_ascii=False)
     
     def _load_mission(self, mission_id: str) -> Optional[Mission]:
         """Load mission from disk."""
@@ -872,7 +872,7 @@ class AutopilotEngine:
         if not mission_path.exists():
             return None
         
-        with open(mission_path) as f:
+        with open(mission_path, encoding="utf-8") as f:
             data = json.load(f)
         
         data["status"] = MissionStatus(data["status"])
@@ -889,7 +889,7 @@ class AutopilotEngine:
             minutes = int((elapsed.total_seconds() % 3600) // 60)
             
             return f"{hours}h {minutes}m"
-        except:
+        except Exception:
             return "N/A"
     
     def _create_result(
@@ -909,7 +909,7 @@ class AutopilotEngine:
             start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
             end = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
             duration = (end - start).total_seconds()
-        except:
+        except Exception:
             duration = 0
         
         total = len(tasks)

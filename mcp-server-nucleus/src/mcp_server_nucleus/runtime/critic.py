@@ -133,7 +133,7 @@ INSTRUCTIONS:
         filename = f"code_review_{target_path.name}_{timestamp}.json"
         review_path = brain / "artifacts" / "reviews" / filename
         review_path.parent.mkdir(parents=True, exist_ok=True)
-        review_path.write_text(json.dumps(critique_data, indent=2))
+        review_path.write_text(json.dumps(critique_data, indent=2, ensure_ascii=False))
         
         # 7. Extract status for easy consumption
         status = "APPROVED" if critique_data.get("event_type") == "review_approved" else "BLOCKED"

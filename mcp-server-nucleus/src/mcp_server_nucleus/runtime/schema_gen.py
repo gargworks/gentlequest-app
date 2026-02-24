@@ -136,5 +136,5 @@ def export_schema_to_file(schema: Dict[str, Any], output_path: str):
     """
     Writes the generated schema to a JSON file.
     """
-    with open(output_path, "w") as f:
-        json.dump(schema, f, indent=2)
+    with open(output_path, "w", encoding='utf-8') as f:
+        json.dump(schema, f, indent=2, ensure_ascii=False)

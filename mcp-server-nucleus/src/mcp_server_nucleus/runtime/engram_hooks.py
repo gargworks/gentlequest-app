@@ -364,8 +364,8 @@ def _record_metric(
             "error": error,
         }
 
-        with open(metrics_path, "a") as f:
-            f.write(json.dumps(metric) + "\n")
+        with open(metrics_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(metric, ensure_ascii=False) + "\n")
 
     except Exception:
         pass  # Metrics must NEVER break anything
@@ -396,7 +396,7 @@ def get_hook_metrics_summary(brain_path: Optional[Path] = None) -> Dict:
             return {"total_executions": 0, "message": "No metrics yet"}
 
         metrics = []
-        with open(metrics_path, "r") as f:
+        with open(metrics_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     try:

@@ -48,7 +48,7 @@ class KeyManager:
         if self.brain_path:
             # We don't have locking here yet, assume single user or add locking later
             # Ideally use update_brain_file or lock
-            self.keystore_path.write_text(json.dumps(store, indent=2))
+            self.keystore_path.write_text(json.dumps(store, indent=2, ensure_ascii=False))
 
     def generate_key(self, alias: Optional[str] = None) -> str:
         """

@@ -57,8 +57,8 @@ class ProposalOps:
         file_path = self.proposals_dir / f"{proposal.id}.json"
         
         with get_lock("proposals", self.brain_path).section():
-            with open(file_path, 'w') as f:
-                json.dump(asdict(proposal), f, indent=2)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(asdict(proposal), f, indent=2, ensure_ascii=False)
                 
     def get_pending_proposals(self) -> List[Proposal]:
         """List all pending proposals"""
@@ -95,7 +95,7 @@ class ProposalOps:
             data["ratified_option_id"] = option_id
             data["ratified_at"] = datetime.now().isoformat()
             
-            with open(file_path, 'w') as f:
-                json.dump(data, f, indent=2)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
                 
             return True

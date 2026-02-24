@@ -111,7 +111,7 @@ class NucleusOrchestratorV3:
         tasks_path = self.brain_path / "ledger" / "tasks.json"
         if tasks_path.exists():
             try:
-                with open(tasks_path) as f:
+                with open(tasks_path, encoding="utf-8") as f:
                     data = json.load(f)
                 
                 for task in data.get("tasks", []):
@@ -140,7 +140,7 @@ class NucleusOrchestratorV3:
         # Load existing to preserve metadata
         existing = {"tasks": [], "metadata": {"version": "3.1"}}
         if tasks_path.exists():
-            with open(tasks_path) as f:
+            with open(tasks_path, encoding="utf-8") as f:
                 existing = json.load(f)
         
         # Convert CRDT tasks to legacy format
@@ -165,8 +165,8 @@ class NucleusOrchestratorV3:
         existing["tasks"] = legacy_tasks
         existing["metadata"]["last_synced"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         
-        with open(tasks_path, "w") as f:
-            json.dump(existing, f, indent=2)
+        with open(tasks_path, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2, ensure_ascii=False)
     
     # =========================================================================
     # CORE OPERATIONS
@@ -368,7 +368,7 @@ class NucleusOrchestratorV3:
         if not registry_path.exists():
             return warnings
         
-        with open(registry_path) as f:
+        with open(registry_path, encoding="utf-8") as f:
             registry = json.load(f)
         
         now = datetime.now()
@@ -403,7 +403,7 @@ class NucleusOrchestratorV3:
         if not registry_path.exists():
             return {"success": False, "error": "Registry not found"}
         
-        with open(registry_path) as f:
+        with open(registry_path, encoding="utf-8") as f:
             registry = json.load(f)
         
         slot = registry.get("slots", {}).get(slot_id)
@@ -428,8 +428,8 @@ class NucleusOrchestratorV3:
         
         registry["slots"][slot_id] = slot
         
-        with open(registry_path, "w") as f:
-            json.dump(registry, f, indent=2)
+        with open(registry_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, ensure_ascii=False)
         
         return {"success": True, "event": event}
     

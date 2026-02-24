@@ -23,6 +23,11 @@ from typing import Set, Dict, Any
 # =============================================================================
 
 TIER_0_LAUNCH: Set[str] = {
+    # ═══════════════════════════════════════════════════════════════════════
+    # THE ALIVE WORKFLOW (MDR_015) — The ONE thing that makes Nucleus alive
+    # ═══════════════════════════════════════════════════════════════════════
+    "brain_morning_brief",       # THE daily workflow — "Today you should..."
+    "brain_hook_metrics",        # Auto-write monitoring
     # The "Govern Your Agents in 60 Seconds" story
     "brain_write_engram",        # Persist a memory
     "brain_query_engrams",       # Retrieve memories
@@ -46,6 +51,24 @@ TIER_0_LAUNCH: Set[str] = {
 }
 
 TIER_1_CORE: Set[str] = {
+    # ═══════════════════════════════════════════════════════════════════════
+    # COMPOUNDING v0 LOOP (MDR_017) — The 7-Day Workflow
+    # ═══════════════════════════════════════════════════════════════════════
+    "brain_compounding_status",  # Day-of-week action guidance
+    "brain_end_of_day",          # Capture learnings as engrams
+    "brain_session_inject",      # Session-start context injection
+    "brain_weekly_consolidate",  # Sunday's cleanup task
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADHD GUARDRAILS — Context switch detection + rabbit hole protection
+    # ═══════════════════════════════════════════════════════════════════════
+    "brain_context_switch",        # Record context switch, check for drift
+    "brain_context_switch_status", # Get ADHD metrics
+    "brain_context_switch_reset",  # Reset counter at session start
+    "brain_depth_push",            # Go deeper (rabbit hole tracker)
+    "brain_depth_pop",             # Come back up
+    "brain_depth_show",            # Show current depth
+    "brain_depth_reset",           # Reset to root
+    "brain_depth_map",             # Visual exploration map
     # Task Management
     "brain_list_tasks",
     "brain_get_next_task",

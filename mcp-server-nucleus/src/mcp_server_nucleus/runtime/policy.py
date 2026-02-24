@@ -59,7 +59,7 @@ class DirectivesLoader:
         # 1. Try Config JSON first (Structured)
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if data:
                         policy.update(data)

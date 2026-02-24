@@ -25,9 +25,10 @@ else:
 src_root = str(src_p)
 
 # Debug logging to stderr (because stdout is for JSON-RPC)
-sys.stderr.write("[Nucleus] Bootstrapping standalone server...\n")
-sys.stderr.write(f"[Nucleus] Script path: {current_path}\n")
-sys.stderr.write(f"[Nucleus] Injected src root: {src_root}\n")
+if "--help" not in sys.argv and "--status" not in sys.argv:
+    sys.stderr.write("[Nucleus] Bootstrapping standalone server...\n")
+    sys.stderr.write(f"[Nucleus] Script path: {current_path}\n")
+    sys.stderr.write(f"[Nucleus] Injected src root: {src_root}\n")
 
 if src_root not in sys.path:
     # Use insert(0) to prioritize our local source
@@ -141,7 +142,7 @@ class StdioServer:
                     },
                     "serverInfo": {
                         "name": "nucleus",
-                        "version": "1.0.1"
+                        "version": "1.0.9"
                     }
                 }
             }
@@ -672,7 +673,7 @@ class StdioServer:
                 return make_response(True, data={"entries": [], "count": 0, "message": "No log found."})
             
             entries = []
-            with open(log_path, "r") as f:
+            with open(log_path, "r", encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         entries.append(json.loads(line))
@@ -688,13 +689,13 @@ class StdioServer:
             audit_path = self.brain_path / "ledger" / "interaction_log.jsonl"
             audit_count = 0
             if audit_path.exists():
-                with open(audit_path, "r") as f:
+                with open(audit_path, "r", encoding='utf-8') as f:
                     audit_count = sum(1 for line in f if line.strip())
             
             engram_path = self.brain_path / "engrams" / "ledger.jsonl"
             engram_count = 0
             if engram_path.exists():
-                with open(engram_path, "r") as f:
+                with open(engram_path, "r", encoding='utf-8') as f:
                     engram_count = sum(1 for line in f if line.strip())
             
             governance = {
@@ -718,8 +719,8 @@ class StdioServer:
                 "key": key, "value": value, "context": context,
                 "intensity": intensity, "timestamp": datetime.now().isoformat()
             }
-            with open(engram_path, "a") as f:
-                f.write(json.dumps(engram) + "\n")
+            with open(engram_path, "a", encoding='utf-8') as f:
+                f.write(json.dumps(engram, ensure_ascii=False) + "\n")
             
             return make_response(True, data={"engram": engram, "message": f"Engram '{key}' written."})
         except Exception as e:
@@ -732,7 +733,7 @@ class StdioServer:
                 return make_response(True, data={"engrams": [], "count": 0})
             
             engrams = []
-            with open(engram_path, "r") as f:
+            with open(engram_path, "r", encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         e = json.loads(line)
@@ -754,7 +755,11 @@ def main():
         print(f"Version: 1.0.9")
         print(f"Platform: {sys.platform}")
         print(f"Python: {sys.version.split()[0]}")
-        print(f"Brain Path: {os.environ.get('NUCLEAR_BRAIN_PATH', 'NOT_SET')}")
+        
+        # Resolve brain path properly for status report
+        brain_env = os.environ.get('NUCLEAR_BRAIN_PATH')
+        resolved_brain = Path(brain_env).resolve() if brain_env else Path('.').resolve()
+        print(f"Brain Path: {resolved_brain}")
         
         # Build tool list
         server = StdioServer()

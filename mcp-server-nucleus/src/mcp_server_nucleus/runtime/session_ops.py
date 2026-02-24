@@ -29,7 +29,7 @@ def _get_depth_state_safe() -> Dict:
         brain = get_brain_path()
         depth_path = brain / "session" / "depth.json"
         if depth_path.exists():
-            with open(depth_path, "r") as f:
+            with open(depth_path, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
         pass
@@ -68,11 +68,11 @@ def _save_session(context: str, active_task: Optional[str] = None,
         }
         
         session_path = sessions_dir / f"{session_id}.json"
-        with open(session_path, "w") as f:
-            json.dump(session, f, indent=2)
+        with open(session_path, "w", encoding="utf-8") as f:
+            json.dump(session, f, indent=2, ensure_ascii=False)
             
-        with open(_get_active_session_path(), "w") as f:
-            json.dump({"active_session_id": session_id}, f)
+        with open(_get_active_session_path(), "w", encoding="utf-8") as f:
+            json.dump({"active_session_id": session_id}, f, ensure_ascii=False)
             
         _prune_old_sessions(max_sessions=10)
         
@@ -127,7 +127,7 @@ def _get_session(session_id: str) -> Dict[str, Any]:
         if not session_path.exists():
             return {"error": f"Session '{session_id}' not found"}
         
-        with open(session_path) as f:
+        with open(session_path, encoding="utf-8") as f:
             session = json.load(f)
         
         return {"session": session}
@@ -140,7 +140,7 @@ def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
         if not session_id:
             active_path = _get_active_session_path()
             if active_path.exists():
-                with open(active_path) as f:
+                with open(active_path, encoding="utf-8") as f:
                     active_data = json.load(f)
                     session_id = active_data.get("active_session_id")
         
@@ -167,7 +167,7 @@ def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
              if created_str:
                  # Very basic check
                  pass
-        except:
+        except Exception:
              pass
 
         return {
@@ -197,14 +197,14 @@ def _list_sessions() -> Dict[str, Any]:
             if session_file.name == "active.json":
                 continue
             try:
-                with open(session_file) as f:
+                with open(session_file, encoding="utf-8") as f:
                     session = json.load(f)
                 sessions.append({
                     "id": session.get("id"),
                     "context": session.get("context"),
                     "created_at": session.get("created_at")
                 })
-            except:
+            except Exception:
                 continue
                 
         return {"sessions": sessions, "total": len(sessions)}
@@ -216,7 +216,7 @@ def _check_for_recent_session() -> Dict[str, Any]:
     try:
         active_path = _get_active_session_path()
         if active_path.exists():
-            with open(active_path) as f:
+            with open(active_path, encoding="utf-8") as f:
                 sid = json.load(f).get("active_session_id")
             if sid:
                 return {"exists": True, "session_id": sid, "message": "Resumable session found."}
@@ -241,7 +241,7 @@ def _brain_session_start_impl() -> str:
         depth_data = {}
         if depth_path.exists():
             try:
-                with open(depth_path, "r") as f:
+                with open(depth_path, "r", encoding="utf-8") as f:
                     depth_data = json.load(f)
             except Exception:
                 pass
@@ -255,7 +255,7 @@ def _brain_session_start_impl() -> str:
         pending_tasks = []
         if tasks_path.exists():
             try:
-                with open(tasks_path, "r") as f:
+                with open(tasks_path, "r", encoding="utf-8") as f:
                     all_tasks = json.load(f)
                     pending_tasks = [t for t in all_tasks if t.get("status") == "PENDING"]
             except Exception:
@@ -278,7 +278,7 @@ def _brain_session_start_impl() -> str:
         
         if state_path.exists():
             try:
-                with open(state_path, "r") as f:
+                with open(state_path, "r", encoding="utf-8") as f:
                     state = json.load(f)
                     session = state.get("current_session", {})
                     if session:
@@ -294,7 +294,7 @@ def _brain_session_start_impl() -> str:
         recent_engrams = []
         if engram_path.exists():
             try:
-                with open(engram_path, "r") as f:
+                with open(engram_path, "r", encoding="utf-8") as f:
                     lines = [line for line in f if line.strip()]
                     engram_count = len(lines)
                     for line in reversed(lines[-2:]):
@@ -307,7 +307,7 @@ def _brain_session_start_impl() -> str:
         active_mounts = []
         if mount_path.exists():
             try:
-                with open(mount_path, "r") as f:
+                with open(mount_path, "r", encoding="utf-8") as f:
                     mounts_data = json.load(f)
                     active_mounts = list(mounts_data.keys())
             except Exception:
@@ -373,7 +373,7 @@ def _brain_session_start_impl() -> str:
         pending_handoffs = []
         if handoffs_path.exists():
             try:
-                with open(handoffs_path) as f:
+                with open(handoffs_path, encoding="utf-8") as f:
                     all_handoffs = json.load(f)
                     pending_handoffs = [h for h in all_handoffs if h.get("status") == "pending"]
             except Exception:
@@ -447,7 +447,7 @@ def _brain_session_end_impl(summary: str = "", learnings: str = "",
         event_count = 0
         task_events = {"completed": 0, "claimed": 0, "created": 0}
         if events_path.exists():
-            with open(events_path, "r") as f:
+            with open(events_path, "r", encoding="utf-8") as f:
                 for line in f:
                     if line.strip():
                         try:

@@ -96,7 +96,7 @@ class JSONBackend(StorageBackend):
     def _save_listings(self, listings: Dict[str, ContextListing]):
         with self._get_lock("broker", self.brain_path).section():
             data = {k: v.model_dump() for k, v in listings.items()}
-            self.listings_path.write_text(json.dumps(data, indent=2))
+            self.listings_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
             
     def _load_tasks(self) -> List[Dict]:
         with self._get_lock("ledger", self.brain_path).section():
@@ -113,7 +113,7 @@ class JSONBackend(StorageBackend):
     def _save_tasks(self, tasks: List[Dict]):
         with self._get_lock("ledger", self.brain_path).section():
             self.tasks_path.parent.mkdir(parents=True, exist_ok=True)
-            self.tasks_path.write_text(json.dumps(tasks, indent=2))
+            self.tasks_path.write_text(json.dumps(tasks, indent=2, ensure_ascii=False))
 
     def create_listing(self, listing: ContextListing) -> str:
         listings = self._load_listings()
@@ -145,7 +145,7 @@ class JSONBackend(StorageBackend):
 
     def create_transaction(self, tx: ContextTransaction) -> str:
         with self._get_lock("ledger", self.brain_path).section():
-            with open(self.transactions_path, "a") as f:
+            with open(self.transactions_path, "a", encoding="utf-8") as f:
                 f.write(tx.model_dump_json() + "\n")
         return tx.id
         
@@ -609,7 +609,7 @@ def get_storage_backend(brain_path: Path) -> StorageBackend:
     config_path = brain_path / "config" / "nucleus.yaml"
     if config_path.exists():
         try:
-            with config_path.open() as f:
+            with config_path.open(encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
                 storage_conf = config.get("storage", {})
                 backend_type = storage_conf.get("backend", "sqlite")

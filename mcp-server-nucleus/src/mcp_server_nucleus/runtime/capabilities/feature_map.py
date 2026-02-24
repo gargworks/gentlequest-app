@@ -143,7 +143,7 @@ class FeatureMap(Capability):
         path = self._get_store_path(product)
         # atomic write
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, indent=2))
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
 
     def _generate_id(self, name: str) -> str:
         # Simple snake_case conversion

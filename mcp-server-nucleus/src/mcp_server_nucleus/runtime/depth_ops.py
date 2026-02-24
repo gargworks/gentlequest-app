@@ -38,11 +38,11 @@ def _get_depth_state() -> Dict[str, Any]:
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                 "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
             }
-            with open(depth_path, "w") as f:
-                json.dump(default_state, f, indent=2)
+            with open(depth_path, "w", encoding="utf-8") as f:
+                json.dump(default_state, f, indent=2, ensure_ascii=False)
             return default_state
         
-        with open(depth_path, "r") as f:
+        with open(depth_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"Error getting depth state: {e}")
@@ -53,8 +53,8 @@ def _save_depth_state(state: Dict[str, Any]) -> str:
     try:
         depth_path = _get_depth_path()
         state["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-        with open(depth_path, "w") as f:
-            json.dump(state, f, indent=2)
+        with open(depth_path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
         return "Depth state saved"
     except Exception as e:
         return f"Error saving depth state: {str(e)}"
@@ -271,6 +271,201 @@ def _format_depth_indicator(current: int, max_safe: int) -> str:
         indicator += " ⚠️"
         
     return indicator
+
+# ============================================================================
+# CONTEXT SWITCH DETECTOR (ADHD Guardrail) — DT1 Backlog P1
+# ============================================================================
+
+def _get_context_switch_path() -> Path:
+    """Get the path to the context switch tracking file."""
+    brain = get_brain_path()
+    session_dir = brain / "session"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    return session_dir / "context_switches.json"
+
+
+def _get_context_switch_state() -> Dict[str, Any]:
+    """Get current context switch tracking state."""
+    try:
+        path = _get_context_switch_path()
+        
+        if not path.exists():
+            default_state = {
+                "session_id": f"session-{time.strftime('%Y%m%d')}",
+                "contexts": [],
+                "switch_count": 0,
+                "max_switches_before_alert": 5,
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
+            }
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(default_state, f, indent=2, ensure_ascii=False)
+            return default_state
+        
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Error getting context switch state: {e}")
+        return {"contexts": [], "switch_count": 0, "max_switches_before_alert": 5}
+
+
+def _context_switch(new_context: str) -> Dict[str, Any]:
+    """
+    Record a context switch and check for ADHD drift.
+    
+    This tracks when the user switches between different contexts/topics.
+    If too many switches happen in a session, it alerts the user to potential
+    ADHD drift and suggests focusing on one thing.
+    
+    Args:
+        new_context: The new context the user is switching to
+    
+    Returns:
+        Dict with switch count, warning level, and recommendations
+    """
+    try:
+        state = _get_context_switch_state()
+        contexts = state.get("contexts", [])
+        max_switches = state.get("max_switches_before_alert", 5)
+        
+        # Check if this is actually a switch (different from last context)
+        is_switch = True
+        if contexts and contexts[-1].get("context") == new_context:
+            is_switch = False
+        
+        if is_switch:
+            # Record the switch
+            contexts.append({
+                "context": new_context,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            })
+            state["switch_count"] = state.get("switch_count", 0) + 1
+        
+        state["contexts"] = contexts[-20:]  # Keep last 20 contexts
+        state["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        
+        # Save state
+        path = _get_context_switch_path()
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        
+        switch_count = state["switch_count"]
+        
+        # Generate warning based on switch count
+        warning = None
+        warning_level = "safe"
+        
+        if switch_count >= max_switches + 3:
+            warning = f"🔴🔴 SEVERE ADHD DRIFT! {switch_count} context switches. STOP. Pick ONE task and finish it."
+            warning_level = "danger"
+        elif switch_count >= max_switches:
+            warning = f"🔴 ADHD ALERT! {switch_count} context switches. You're bouncing between too many things."
+            warning_level = "danger"
+        elif switch_count >= max_switches - 2:
+            warning = f"🟡 CAUTION: {switch_count} context switches. Consider focusing on one thing."
+            warning_level = "caution"
+        
+        # Emit event for telemetry
+        if is_switch:
+            _emit_event("context_switched", "adhd_guardrail", {
+                "new_context": new_context,
+                "switch_count": switch_count,
+                "warning_level": warning_level
+            })
+        
+        # Build recent contexts list
+        recent = [c.get("context") for c in contexts[-5:]]
+        
+        return {
+            "current_context": new_context,
+            "switch_count": switch_count,
+            "max_switches": max_switches,
+            "was_switch": is_switch,
+            "recent_contexts": recent,
+            "warning": warning,
+            "warning_level": warning_level,
+            "recommendation": _get_focus_recommendation(switch_count, max_switches, contexts)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _get_focus_recommendation(switch_count: int, max_switches: int, contexts: list) -> str:
+    """Generate a focus recommendation based on context switch patterns."""
+    if switch_count < max_switches - 2:
+        return "✅ Focus is good. Keep going."
+    
+    # Find the most common context in recent history
+    if contexts:
+        context_counts = {}
+        for c in contexts[-10:]:
+            ctx = c.get("context", "unknown")
+            context_counts[ctx] = context_counts.get(ctx, 0) + 1
+        
+        most_common = max(context_counts, key=context_counts.get)
+        return f"🎯 FOCUS RECOMMENDATION: Return to '{most_common}' and finish it before switching."
+    
+    return "🎯 Pick ONE task from your morning brief and finish it completely."
+
+
+def _context_switch_reset() -> Dict[str, Any]:
+    """Reset the context switch counter. Call at start of new work session."""
+    try:
+        state = _get_context_switch_state()
+        state["switch_count"] = 0
+        state["contexts"] = []
+        state["session_id"] = f"session-{time.strftime('%Y%m%d%H%M%S')}"
+        state["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        
+        path = _get_context_switch_path()
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        
+        return {
+            "message": "✅ Context switch counter reset. Fresh start!",
+            "switch_count": 0,
+            "session_id": state["session_id"]
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _context_switch_status() -> Dict[str, Any]:
+    """Get current context switch status and ADHD metrics."""
+    try:
+        state = _get_context_switch_state()
+        switch_count = state.get("switch_count", 0)
+        max_switches = state.get("max_switches_before_alert", 5)
+        contexts = state.get("contexts", [])
+        
+        # Determine status
+        if switch_count >= max_switches + 3:
+            status = "🔴 SEVERE ADHD DRIFT"
+        elif switch_count >= max_switches:
+            status = "🔴 ADHD ALERT"
+        elif switch_count >= max_switches - 2:
+            status = "🟡 CAUTION"
+        else:
+            status = "🟢 FOCUSED"
+        
+        # Build recent contexts list
+        recent = [c.get("context") for c in contexts[-5:]]
+        
+        # Count unique contexts
+        unique_contexts = len(set(c.get("context") for c in contexts))
+        
+        return {
+            "status": status,
+            "switch_count": switch_count,
+            "max_switches": max_switches,
+            "unique_contexts": unique_contexts,
+            "recent_contexts": recent,
+            "session_id": state.get("session_id"),
+            "recommendation": _get_focus_recommendation(switch_count, max_switches, contexts)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 
 def _generate_depth_map() -> Dict[str, Any]:
     """Generate a Mermaid diagram of the current exploration path."""

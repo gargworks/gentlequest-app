@@ -280,11 +280,11 @@ We're building the universal brain for AI agents. Join us!
 - **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/nucleus-mcp/issues)
 - **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/mcp-server-nucleus/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
-- **💬 Join Discord** — [discord.gg/nucleus](https://discord.gg/nucleus) (coming soon)
+- **💬 Join Discord** — [Join the Nucleus Development Server](https://discord.gg/RJuBNNJ5MT)
 
 ## �📜 License
 
-MIT © Nucleus Team
+MIT © 2026 Nucleus Team | [hello@nucleusos.dev](mailto:hello@nucleusos.dev)
 
 ---
 

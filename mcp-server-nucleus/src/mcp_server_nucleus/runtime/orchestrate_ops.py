@@ -181,7 +181,7 @@ def _brain_orchestrate_impl(
         # CHECK HANDOFFS
         handoffs_path = brain / "ledger" / "handoffs.json"
         if handoffs_path.exists():
-            with open(handoffs_path) as f:
+            with open(handoffs_path, encoding='utf-8') as f:
                 all_handoffs = json.load(f)
             response["handoffs"]["pending_for_me"] = [
                 h for h in all_handoffs 

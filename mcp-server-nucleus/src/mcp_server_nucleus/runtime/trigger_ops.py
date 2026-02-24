@@ -32,7 +32,7 @@ def _get_triggers_impl() -> List[Dict]:
         if not triggers_path.exists():
             return []
             
-        with open(triggers_path, "r") as f:
+        with open(triggers_path, "r", encoding='utf-8') as f:
             triggers_data = json.load(f)
         
         # Return list of trigger definitions

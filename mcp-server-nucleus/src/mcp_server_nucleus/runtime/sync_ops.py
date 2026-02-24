@@ -251,7 +251,7 @@ def set_current_agent(agent_id: str, environment: str, role: str = "",
         "pid": os.getpid()
     }
     
-    agent_file.write_text(json.dumps(agent_info, indent=2))
+    agent_file.write_text(json.dumps(agent_info, indent=2, ensure_ascii=False))
     
     return {
         **agent_info,
@@ -307,7 +307,7 @@ def sync_lock(brain_path: Optional[Path] = None, timeout: int = 5):
     lock_file_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Open lock file
-    lock_fd = open(lock_file_path, 'w')
+    lock_fd = open(lock_file_path, 'w', encoding='utf-8')
     
     # Try to acquire lock with timeout
     start_time = time.time()
@@ -438,7 +438,7 @@ def set_last_modifier(file_path: Path, agent_id: str):
     # Atomic write pattern (tmp + replace)
     tmp_meta = meta_file.with_suffix(".tmp")
     try:
-        tmp_meta.write_text(json.dumps(meta, indent=2))
+        tmp_meta.write_text(json.dumps(meta, indent=2, ensure_ascii=False))
         os.replace(tmp_meta, meta_file)
     except Exception as e:
         logger.error(f"Failed to write metadata for {file_path}: {e}")
@@ -542,7 +542,7 @@ def resolve_conflict(conflict: Dict[str, Any], strategy: str,
         conflict_file = file_path.parent / f".{file_path.name}.conflict"
         conflict["detected_at"] = datetime.now().isoformat()
         conflict["detected_by"] = get_current_agent(brain_path)
-        conflict_file.write_text(json.dumps(conflict, indent=2))
+        conflict_file.write_text(json.dumps(conflict, indent=2, ensure_ascii=False))
         return "requires_manual_resolution"
     
     else:

@@ -1,47 +1,8 @@
 [
   {
-    "id": "crash_fb21",
-    "description": "test task",
-    "status": "PENDING",
-    "priority": 3,
-    "blocked_by": [],
-    "required_skills": [],
-    "claimed_by": null,
-    "source": "synthesizer",
-    "escalation_reason": null,
-    "created_at": "2026-01-25T19:10:53+0530",
-    "updated_at": "2026-01-25T19:10:53+0530"
-  },
-  {
-    "id": "crash_6898",
-    "description": "test task",
-    "status": "PENDING",
-    "priority": 3,
-    "blocked_by": [],
-    "required_skills": [],
-    "claimed_by": null,
-    "source": "synthesizer",
-    "escalation_reason": null,
-    "created_at": "2026-01-25T19:11:03+0530",
-    "updated_at": "2026-01-25T19:11:03+0530"
-  },
-  {
-    "id": "brand_convergence_v2",
-    "description": "Finalize Sovereign Branding Convergence for Nucleus OS (Critical-Tier Rigor)",
-    "status": "PENDING",
-    "priority": 1,
-    "blocked_by": [],
-    "required_skills": [],
-    "claimed_by": null,
-    "source": "Antigravity",
-    "escalation_reason": null,
-    "created_at": "2026-01-25T22:41:11+0530",
-    "updated_at": "2026-01-25T22:41:11+0530"
-  },
-  {
     "id": "brand_convergence_v3",
     "description": "Finalize Sovereign Branding Convergence for Nucleus OS (v3 Persistence)",
-    "status": "PENDING",
+    "status": "DONE",
     "priority": 1,
     "blocked_by": [],
     "required_skills": [],
@@ -49,44 +10,90 @@
     "source": "Antigravity",
     "escalation_reason": null,
     "created_at": "2026-01-25T22:42:59+0530",
-    "updated_at": "2026-01-25T22:42:59+0530"
+    "updated_at": "2026-02-19T23:24:15.831054"
   },
   {
-    "id": "gtm_001",
-    "description": "GTM Task",
-    "status": "PENDING",
+    "id": "task-77b46a94",
+    "description": "[SWARM] Synthesize Wave 1 Audit results and draft 'Enterprise Cloud' technical blueprint. Save to .brain/strategy/MASTER_STRATEGY.md",
+    "status": "DONE",
     "priority": 1,
     "blocked_by": [],
-    "required_skills": [],
+    "required_skills": [
+      "synthesizer",
+      "architect"
+    ],
     "claimed_by": null,
-    "source": "import:test_import.jsonl",
-    "created_at": "2026-01-25T23:26:10+0530",
-    "updated_at": "2026-01-25T23:26:10+0530",
-    "environment": "antigravity",
-    "model": "gemini-2.0-flash"
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T15:04:59+0530",
+    "updated_at": "2026-02-19T23:24:15.831054"
   },
   {
-    "id": "task-e04f6a90",
-    "description": "Standard Task",
+    "id": "task-9cccc3cb",
+    "description": "Reddit Strategy: Warmup and verify the 'SovereignStack' persona account. Post 3-5 genuine comments on r/ClaudeAI, r/LocalLLaMA, r/SelfHosted over 2 weeks before any Nucleus mentions. Track karma and engagement.",
     "status": "PENDING",
-    "priority": 3,
+    "priority": 6,
     "blocked_by": [],
-    "required_skills": [],
+    "required_skills": [
+      "marketing",
+      "reddit",
+      "community"
+    ],
     "claimed_by": null,
-    "source": "import:test_import.jsonl",
-    "created_at": "2026-01-25T23:26:10+0530",
-    "updated_at": "2026-01-25T23:26:10+0530"
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T22:32:32+0530",
+    "updated_at": "2026-02-19T22:32:32+0530"
   },
   {
-    "id": "task-0d0dde84",
-    "description": "Standard Task",
-    "status": "PENDING",
-    "priority": 3,
+    "id": "task-182b62fd",
+    "description": "DONE: Recorded Intern who Acts Demo via browser subagent recording of terminal simulation.",
+    "status": "DONE",
+    "priority": 4,
     "blocked_by": [],
-    "required_skills": [],
+    "required_skills": [
+      "marketing",
+      "demo",
+      "video"
+    ],
     "claimed_by": null,
-    "source": "import:test_import.jsonl",
-    "created_at": "2026-01-25T23:28:12+0530",
-    "updated_at": "2026-01-25T23:28:12+0530"
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T22:32:35+0530",
+    "updated_at": "2026-02-20T06:32:04+0530"
+  },
+  {
+    "id": "task-d02a10ae",
+    "description": "Product Hunt Launch Preparation: Draft PH tagline, description, first comment strategy, and maker story. Coordinate with HN Phase 2 timing. Reference PRODUCT_HUNT.md for existing draft.",
+    "status": "PENDING",
+    "priority": 5,
+    "blocked_by": [],
+    "required_skills": [
+      "marketing",
+      "copywriting",
+      "launch"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T22:32:37+0530",
+    "updated_at": "2026-02-19T22:32:37+0530"
+  },
+  {
+    "id": "task-1e5822dc",
+    "description": "Hacker News Phase 2: Refine the Show HN post based on HACKER_NEWS_PHASE_2.md. Focus on technical depth \u2014 'I built an MCP server that gives Claude persistent memory and task management'. No marketing speak.",
+    "status": "PENDING",
+    "priority": 5,
+    "blocked_by": [],
+    "required_skills": [
+      "marketing",
+      "copywriting",
+      "technical_writing"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T22:32:37+0530",
+    "updated_at": "2026-02-19T22:32:37+0530"
   }
 ]

@@ -1,0 +1,3 @@
+# Design Thinking Prompt
+
+ok let us run double diamond plus loops (diverge, converge, scamper, mvp etc all of these in cluas opus 4.5 thinking - one chat at a time)...

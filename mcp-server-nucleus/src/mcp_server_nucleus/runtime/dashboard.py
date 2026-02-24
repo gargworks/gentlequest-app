@@ -290,8 +290,8 @@ class TrendAnalyzer:
             "metrics": self._flatten_metrics(metrics),
         }
         
-        with open(self.metrics_file, "a") as f:
-            f.write(json.dumps(entry) + "\n")
+        with open(self.metrics_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         
         self._cleanup_old_entries()
     
@@ -303,7 +303,7 @@ class TrendAnalyzer:
         cutoff = datetime.utcnow() - timedelta(hours=hours)
         trends = []
         
-        with open(self.metrics_file) as f:
+        with open(self.metrics_file, encoding="utf-8") as f:
             for line in f:
                 try:
                     entry = json.loads(line.strip())
@@ -351,7 +351,7 @@ class TrendAnalyzer:
         cutoff = datetime.utcnow() - timedelta(days=self.retention_days)
         kept_lines = []
         
-        with open(self.metrics_file) as f:
+        with open(self.metrics_file, encoding="utf-8") as f:
             for line in f:
                 try:
                     entry = json.loads(line.strip())
@@ -361,7 +361,7 @@ class TrendAnalyzer:
                 except (json.JSONDecodeError, KeyError, ValueError):
                     continue
         
-        with open(self.metrics_file, "w") as f:
+        with open(self.metrics_file, "w", encoding="utf-8") as f:
             f.writelines(kept_lines)
 
 
@@ -391,8 +391,8 @@ class SnapshotManager:
         if self.snapshots_dir:
             self.snapshots_dir.mkdir(parents=True, exist_ok=True)
             snapshot_file = self.snapshots_dir / f"{snapshot_id}.json"
-            with open(snapshot_file, "w") as f:
-                json.dump(snapshot.to_dict(), f, indent=2)
+            with open(snapshot_file, "w", encoding="utf-8") as f:
+                json.dump(snapshot.to_dict(), f, indent=2, ensure_ascii=False)
             
             self._cleanup_old_snapshots()
         
@@ -407,7 +407,7 @@ class SnapshotManager:
         if not snapshot_file.exists():
             return None
         
-        with open(snapshot_file) as f:
+        with open(snapshot_file, encoding="utf-8") as f:
             data = json.load(f)
         
         return Snapshot(**data)
@@ -419,7 +419,7 @@ class SnapshotManager:
         
         snapshots = []
         for f in sorted(self.snapshots_dir.glob("snap_*.json"), reverse=True)[:limit]:
-            with open(f) as file:
+            with open(f, encoding="utf-8") as file:
                 data = json.load(file)
                 snapshots.append({
                     "id": data["id"],
@@ -796,7 +796,7 @@ class MetricsCollector:
             if self.brain_path:
                 registry_path = self.brain_path / "slots" / "registry.json"
                 if registry_path.exists():
-                    with open(registry_path) as f:
+                    with open(registry_path, encoding="utf-8") as f:
                         registry = json.load(f)
                     
                     slots = registry.get("slots", {})
@@ -837,7 +837,7 @@ class MetricsCollector:
             if self.brain_path:
                 tasks_path = self.brain_path / "ledger" / "tasks.json"
                 if tasks_path.exists():
-                    with open(tasks_path) as f:
+                    with open(tasks_path, encoding="utf-8") as f:
                         data = json.load(f)
                     
                     tasks = data.get("tasks", [])

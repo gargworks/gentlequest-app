@@ -32,8 +32,8 @@ def _save_render_config(config: Dict) -> None:
     state["render"] = config
     brain = get_brain_path()
     state_path = brain / "ledger" / "state.json"
-    with open(state_path, "w") as f:
-        json.dump(state, f, indent=2)
+    with open(state_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
 
 
 def _run_smoke_test(deploy_url: str, endpoint: str = "/api/health") -> Dict:
@@ -110,7 +110,7 @@ def _start_deploy_poll(service_id: str, commit_sha: str = None) -> Dict:
         polls_path = brain / "ledger" / "active_polls.json"
         
         if polls_path.exists():
-            with open(polls_path) as f:
+            with open(polls_path, encoding="utf-8") as f:
                 polls = json.load(f)
         else:
             polls = {"polls": []}
@@ -129,8 +129,8 @@ def _start_deploy_poll(service_id: str, commit_sha: str = None) -> Dict:
         polls["polls"] = [p for p in polls["polls"] if p.get("service_id") != service_id]
         polls["polls"].append(new_poll)
         
-        with open(polls_path, "w") as f:
-            json.dump(polls, f, indent=2)
+        with open(polls_path, "w", encoding="utf-8") as f:
+            json.dump(polls, f, indent=2, ensure_ascii=False)
         
         return {
             "poll_id": poll_id,
@@ -157,7 +157,7 @@ def _check_deploy_status(service_id: str) -> Dict:
                 "message": "No active polling for this service. Start one with brain_start_deploy_poll()."
             }
         
-        with open(polls_path) as f:
+        with open(polls_path, encoding='utf-8') as f:
             polls = json.load(f)
         
         active_poll = next((p for p in polls.get("polls", []) if p.get("service_id") == service_id), None)
@@ -200,13 +200,13 @@ def _complete_deploy(service_id: str, success: bool, deploy_url: str = None,
         
         # Remove from active polls
         if polls_path.exists():
-            with open(polls_path) as f:
+            with open(polls_path, encoding="utf-8") as f:
                 polls = json.load(f)
             
             polls["polls"] = [p for p in polls.get("polls", []) if p.get("service_id") != service_id]
             
-            with open(polls_path, "w") as f:
-                json.dump(polls, f, indent=2)
+            with open(polls_path, "w", encoding='utf-8') as f:
+                json.dump(polls, f, indent=2, ensure_ascii=False)
         
         # Run smoke test if successful
         smoke_result = None

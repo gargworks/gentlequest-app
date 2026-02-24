@@ -362,6 +362,11 @@ from .runtime.context_ops import (
 # Purpose: Automated cleanup of artifact noise without data loss
 # Philosophy: MOVE, never DELETE - all actions are reversible
 
+# Consolidation operations
+from .runtime.consolidation_ops import (
+    _archive_resolved_files, _generate_merge_proposals, _garbage_collect_tasks
+)
+
 # Checkpoint operations extracted to runtime/checkpoint_ops.py
 from .runtime.checkpoint_ops import (
     _brain_checkpoint_task_impl, _brain_resume_from_checkpoint_impl,
@@ -565,8 +570,6 @@ async def brain_invoke_mounted_tool(server_id: str, tool_name: str, arguments: D
         return await _brain_invoke_mounted_tool_impl(server_id, tool_name, arguments)
     except Exception as e:
         return json.dumps({"success": False, "error": str(e)})
-    except Exception as e:
-        return json.dumps({"success": False, "error": str(e)})
 
 @mcp.tool()
 def brain_search_features(query: str) -> Dict:
@@ -762,7 +765,6 @@ def brain_garbage_collect_tasks(max_age_hours: int = 72, dry_run: bool = False) 
     Returns:
         Dict with archived count, kept count, breakdown, and sample
     """
-    from .runtime.consolidation_ops import _garbage_collect_tasks
     return _garbage_collect_tasks(max_age_hours=max_age_hours, dry_run=dry_run)
 
 @mcp.tool()
@@ -1013,7 +1015,7 @@ def brain_sync_auto(enable: bool) -> str:
                 content = gitignore.read_text()
                 if "**/*.meta" not in content:
                     logger.info("Automatically patching .gitignore for Nucleus sync hygiene...")
-                    with open(gitignore, "a") as f:
+                    with open(gitignore, "a", encoding='utf-8') as f:
                         f.write(ignore_block)
                     result["gitignore_patched"] = True
             else:
@@ -1238,6 +1240,76 @@ def brain_depth_map() -> str:
     """Generate exploration map."""
     result = _generate_depth_map()
     return make_response(True, data=result)
+
+# ============================================================
+# CONTEXT SWITCH DETECTOR (ADHD Guardrail) — DT1 Backlog P1
+# ============================================================
+
+from .runtime.depth_ops import (
+    _context_switch,
+    _context_switch_reset,
+    _context_switch_status,
+)
+
+
+@mcp.tool()
+def brain_context_switch(new_context: str) -> str:
+    """
+    🧠 Record a context switch and check for ADHD drift.
+    
+    Call this when switching to a new task or topic. Nucleus tracks
+    how often you switch contexts and alerts you if you're bouncing
+    between too many things (ADHD drift pattern).
+    
+    Args:
+        new_context: The new context/task you're switching to
+        
+    Examples:
+        brain_context_switch("fixing auth bug")
+        brain_context_switch("writing docs")
+        brain_context_switch("code review")
+    
+    Returns:
+        Switch count, warning level, and focus recommendation
+    """
+    result = _context_switch(new_context)
+    return make_response(True, data=result)
+
+
+@mcp.tool()
+def brain_context_switch_status() -> str:
+    """
+    📊 Get current context switch status and ADHD metrics.
+    
+    Shows:
+    - Current focus status (🟢 FOCUSED, 🟡 CAUTION, 🔴 ADHD ALERT)
+    - Number of context switches this session
+    - Recent contexts visited
+    - Focus recommendation
+    
+    Use this to check if you're staying focused or drifting.
+    
+    Returns:
+        ADHD guardrail status with recommendations
+    """
+    result = _context_switch_status()
+    return make_response(True, data=result)
+
+
+@mcp.tool()
+def brain_context_switch_reset() -> str:
+    """
+    🔄 Reset the context switch counter.
+    
+    Call this at the start of a new work session to reset the
+    ADHD drift counter. This gives you a fresh start.
+    
+    Returns:
+        Confirmation of reset
+    """
+    result = _context_switch_reset()
+    return make_response(True, data=result)
+
 
 # ============================================================
 # RENDER POLLER TOOLS (Deploy monitoring)
@@ -1827,9 +1899,6 @@ def brain_metrics() -> str:
     except Exception as e:
         return f"Error: {e}"
 
-    except Exception as e:
-        return f"Error: {e}"
-
 # Internal proof functions removed (moved to runtime/proof_ops.py)
 
 
@@ -1894,7 +1963,7 @@ def brain_get_llm_status() -> str:
     # Load cached tier status if available
     if tier_status_path.exists():
         try:
-            with open(tier_status_path) as f:
+            with open(tier_status_path, encoding='utf-8') as f:
                 status = json.load(f)
             
             output += "### Available Tiers (from last benchmark)\n"
@@ -2086,7 +2155,7 @@ def _check_protocol_compliance(agent_id: str) -> Dict:
                 "warnings": []
             }
         
-        with open(protocol_path) as f:
+        with open(protocol_path, encoding='utf-8') as f:
             protocol = json.load(f)
         
         # Check 1: Is agent registered?
@@ -2318,91 +2387,9 @@ def brain_status_dashboard(detail_level: str = "standard") -> str:
 
 
 # ============================================================================
-# NOP V3.1: CHECKPOINT TOOLS - PAUSE/RESUME FOR LONG-RUNNING TASKS
-
-# Checkpoint impls extracted to runtime/checkpoint_ops.py
-from .runtime.checkpoint_ops import (
-    _brain_checkpoint_task_impl,
-    _brain_resume_from_checkpoint_impl,
-    _brain_generate_handoff_summary_impl,
-)
+# NOP V3.1: CHECKPOINT TOOLS - Defined earlier at line ~796 (v1.0.9 section)
+# DUPLICATE REMOVED - See "CHECKPOINT & HANDOFF TOOLS (v1.0.9)" section
 # ============================================================================
-
-@mcp.tool()
-def brain_checkpoint_task(
-    task_id: str,
-    step: int = None,
-    progress_percent: float = None,
-    context: str = None,
-    artifacts: List[str] = None,
-    resumable: bool = True
-) -> str:
-    """
-    Save checkpoint for long-running task.
-    
-    Use this to persist progress before:
-    - Agent exhaustion (rate limits, reset cycles)
-    - Session end
-    - Handoff to another agent
-    
-    Args:
-        task_id: Task to checkpoint
-        step: Current step number (e.g., 3 of 5)
-        progress_percent: 0-100 completion percentage
-        context: Textual context for resume
-        artifacts: List of artifact paths created so far
-        resumable: Whether task can be resumed from this point
-    
-    Returns:
-        Checkpoint confirmation with recovery instructions
-    """
-    return _brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable)
-
-
-@mcp.tool()
-def brain_resume_from_checkpoint(task_id: str) -> str:
-    """
-    Get checkpoint data for task resumption.
-    
-    Use this when:
-    - Resuming after agent exhaustion
-    - Taking over from another agent
-    - Continuing after session restart
-    
-    Args:
-        task_id: Task to resume
-    
-    Returns:
-        Checkpoint data with context and resume instructions
-    """
-    return _brain_resume_from_checkpoint_impl(task_id)
-
-
-@mcp.tool()
-def brain_generate_handoff_summary(
-    task_id: str,
-    summary: str,
-    key_decisions: List[str] = None,
-    handoff_notes: str = ""
-) -> str:
-    """
-    Generate context summary for task handoff.
-    
-    Use this before:
-    - Handing off to another agent
-    - Ending a session with incomplete work
-    - Approaching reset cycle limit
-    
-    Args:
-        task_id: Task to summarize
-        summary: Brief summary of current state
-        key_decisions: List of decisions made during work
-        handoff_notes: Notes for the next agent
-    
-    Returns:
-        Confirmation of summary generation
-    """
-    return _brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes)
 
 
 
@@ -2617,7 +2604,7 @@ def _scan_marketing_log() -> Dict:
             return {"status": "error", "error": f"Marketing log not found at {log_path}"}
             
         failures = []
-        with open(log_path, "r") as f:
+        with open(log_path, "r", encoding='utf-8') as f:
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if "[FAILURE]" in line:
@@ -2928,7 +2915,7 @@ def main():
 
     # Helper to log to debug file
     def log_debug(msg):
-        with open("/tmp/mcp_debug.log", "a") as f:
+        with open("/tmp/mcp_debug.log", "a", encoding='utf-8') as f:
             f.write(f"{msg}\n")
     
     # Phase 50: Initialize File Monitor for Native Sync (Tier 1-3)
@@ -2971,7 +2958,7 @@ def main():
     except Exception as e:
         log_debug(f"Exception in mcp.run(): {e}")
         import traceback
-        with open("/tmp/mcp_debug.log", "a") as f:
+        with open("/tmp/mcp_debug.log", "a", encoding='utf-8') as f:
             traceback.print_exc(file=f)
         raise
 
@@ -3187,7 +3174,7 @@ def _get_active_sessions() -> Dict:
         if not sessions_path.exists():
             return {"sessions": {}}
             
-        with open(sessions_path, "r") as f:
+        with open(sessions_path, "r", encoding='utf-8') as f:
             return json.load(f)
     except Exception:
         return {"sessions": {}}
@@ -3199,8 +3186,8 @@ def _save_active_sessions(data: Dict) -> str:
         sessions_path = brain / "ledger" / "active_sessions.json"
         sessions_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(sessions_path, "w") as f:
-            json.dump(data, f, indent=2)
+        with open(sessions_path, "w", encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
         return "Saved"
     except Exception as e:
         return f"Error: {e}"
@@ -3346,7 +3333,7 @@ def brain_handoff_task(
             
             handoffs = []
             if handoffs_path.exists():
-                with open(handoffs_path, "r") as f:
+                with open(handoffs_path, "r", encoding='utf-8') as f:
                     handoffs = json.load(f)
             
             handoffs.append({
@@ -3356,8 +3343,8 @@ def brain_handoff_task(
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
             })
             
-            with open(handoffs_path, "w") as f:
-                json.dump(handoffs, f, indent=2)
+            with open(handoffs_path, "w", encoding='utf-8') as f:
+                json.dump(handoffs, f, indent=2, ensure_ascii=False)
         except Exception:
             pass  # Don't fail if audit log fails
         
@@ -3371,6 +3358,7 @@ def brain_handoff_task(
 # PHASE 2: TASK INGESTION TOOLS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@mcp.tool()
 def brain_ingest_tasks(
     source: str,
     source_type: str = "auto",
@@ -3454,7 +3442,7 @@ from .runtime.dashboard_ops import (
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-
+@mcp.tool()
 def brain_dashboard(
     detail_level: str = "standard",
     format: str = "ascii",
@@ -4047,6 +4035,122 @@ def brain_hook_metrics() -> str:
     return make_response(True, data=summary)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPOUNDING v0 LOOP (MDR_017) — The 7-Day Automated Workflow
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from .runtime.compounding_loop import (
+    _compounding_loop_status_impl,
+    _end_of_day_capture_impl,
+    _session_start_inject_impl,
+    _weekly_consolidation_impl,
+)
+
+
+@mcp.tool()
+def brain_compounding_status() -> str:
+    """
+    🔄 Get the status of your Compounding v0 Loop.
+    
+    Shows:
+    - What day of the 7-day loop you're on
+    - Today's recommended action (Gap Analysis → Build → Test → Reflect → Ship → Audit → Consolidate)
+    - Compounding metrics (engram count, auto-writes, score)
+    - Morning brief recommendation
+    
+    Use this to understand where you are in the weekly cycle and what
+    Nucleus expects you to do today.
+    
+    Returns:
+        Loop status with day-specific guidance.
+    """
+    result = _compounding_loop_status_impl()
+    return make_response(True, data={
+        "formatted": result.get("formatted", ""),
+        "today": result.get("today", {}),
+        "metrics": result.get("metrics", {}),
+        "day": result.get("day_of_week"),
+        "week": result.get("week_number"),
+    })
+
+
+@mcp.tool()
+def brain_end_of_day(
+    summary: str,
+    key_decisions: List[str] = None,
+    blockers: List[str] = None,
+) -> str:
+    """
+    📝 Capture end-of-day learnings as engrams.
+    
+    Run this at the end of each work session to persist what you learned.
+    These engrams will surface in tomorrow's morning brief, creating
+    the compounding effect.
+    
+    Args:
+        summary: What was accomplished today (2-3 sentences)
+        key_decisions: List of decisions made (each becomes a high-intensity engram)
+        blockers: List of blockers encountered (surfaces with high priority tomorrow)
+    
+    Example:
+        brain_end_of_day(
+            summary="Implemented the Morning Brief workflow. All tests pass.",
+            key_decisions=["Use ADUN for dedup", "Target Tier 0 for core tools"],
+            blockers=["Need to add CLI command for morning-brief"]
+        )
+    
+    Returns:
+        Confirmation of engrams written.
+    """
+    result = _end_of_day_capture_impl(summary, key_decisions, blockers)
+    return make_response(True, data=result)
+
+
+@mcp.tool()
+def brain_session_inject() -> str:
+    """
+    🚀 Session-start context injection.
+    
+    Retrieves the top 10 engrams and active tasks, formatted as
+    context that can be injected into the current session.
+    
+    This is the "memory retrieval" step that makes each session
+    start with yesterday's context already loaded.
+    
+    Returns:
+        Injected context with top memories and active tasks.
+    """
+    result = _session_start_inject_impl()
+    return make_response(True, data={
+        "context": result.get("context", ""),
+        "engram_count": result.get("engram_count", 0),
+        "task_count": result.get("task_count", 0),
+    })
+
+
+@mcp.tool()
+def brain_weekly_consolidate(dry_run: bool = True) -> str:
+    """
+    🧹 Weekly consolidation — Sunday's automated task.
+    
+    Cleans up the brain by:
+    1. Archiving old tasks (>7 days inactive)
+    2. Archiving .resolved.* backup files
+    3. Computing NOOP ratio (warns if >50%)
+    4. Writing weekly synthesis engram
+    
+    Args:
+        dry_run: If True, preview without making changes (default: True)
+    
+    Returns:
+        Consolidation results.
+    """
+    result = _weekly_consolidation_impl(dry_run)
+    return make_response(True, data=result)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
 @mcp.tool()
 def brain_query_engrams(context: str = None, min_intensity: int = 1) -> str:
     """
@@ -4131,7 +4235,7 @@ def brain_list_decisions(limit: int = 20) -> str:
             return make_response(True, data={"decisions": [], "count": 0})
         
         decisions = []
-        with open(decisions_file, "r") as f:
+        with open(decisions_file, "r", encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     try:
@@ -4171,7 +4275,7 @@ def brain_list_ledger_snapshots(limit: int = 10) -> str:
         snapshots = []
         for snap_file in sorted(snapshots_dir.glob("snap-*.json"), reverse=True)[:limit]:
             try:
-                with open(snap_file) as f:
+                with open(snap_file, encoding='utf-8') as f:
                     snapshots.append(json.load(f))
             except Exception:
                 continue
@@ -4211,7 +4315,7 @@ def brain_metering_summary(since_hours: int = 24) -> str:
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=since_hours)).isoformat()
         
         entries = []
-        with open(meter_file, "r") as f:
+        with open(meter_file, "r", encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     try:
@@ -4265,7 +4369,7 @@ def brain_ipc_tokens(active_only: bool = True) -> str:
         now = datetime.now(timezone.utc).isoformat()
         
         events = []
-        with open(tokens_file, "r") as f:
+        with open(tokens_file, "r", encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     try:
@@ -4316,7 +4420,7 @@ def brain_dsor_status() -> str:
         decisions_file = brain / "ledger" / "decisions" / "decisions.jsonl"
         decision_count = 0
         if decisions_file.exists():
-            with open(decisions_file) as f:
+            with open(decisions_file, encoding='utf-8') as f:
                 decision_count = sum(1 for line in f if line.strip())
         
         # Snapshot stats
@@ -4328,14 +4432,14 @@ def brain_dsor_status() -> str:
         meter_count = 0
         total_units = 0
         if meter_file.exists():
-            with open(meter_file) as f:
+            with open(meter_file, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         try:
                             entry = json.loads(line)
                             meter_count += 1
                             total_units += entry.get("units_consumed", 0)
-                        except:
+                        except Exception:
                             pass
         
         # IPC token stats
@@ -4343,7 +4447,7 @@ def brain_dsor_status() -> str:
         token_issued = 0
         token_consumed = 0
         if tokens_file.exists():
-            with open(tokens_file) as f:
+            with open(tokens_file, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         try:
@@ -4352,7 +4456,7 @@ def brain_dsor_status() -> str:
                                 token_issued += 1
                             elif event.get("event") == "consumed":
                                 token_consumed += 1
-                        except:
+                        except Exception:
                             pass
         
         status = {
@@ -4412,7 +4516,7 @@ def brain_federation_dsor_status() -> str:
         recent_events = []
         
         if events_file.exists():
-            with open(events_file) as f:
+            with open(events_file, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         try:
@@ -4438,7 +4542,7 @@ def brain_federation_dsor_status() -> str:
                                     "timestamp": event.get("timestamp"),
                                     "decision_id": event.get("data", {}).get("decision_id")
                                 })
-                        except:
+                        except Exception:
                             pass
         
         # Get last 10 federation events
@@ -4479,7 +4583,7 @@ def brain_routing_decisions(limit: int = 20) -> str:
         routing_decisions = []
         
         if events_file.exists():
-            with open(events_file) as f:
+            with open(events_file, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         try:
@@ -4494,7 +4598,7 @@ def brain_routing_decisions(limit: int = 20) -> str:
                                     "decision_id": data.get("decision_id"),
                                     "routing_time_ms": data.get("routing_time_ms")
                                 })
-                        except:
+                        except Exception:
                             pass
         
         # Return last N decisions

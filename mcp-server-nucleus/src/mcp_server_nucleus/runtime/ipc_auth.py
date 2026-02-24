@@ -251,8 +251,8 @@ class IPCAuthManager:
             meter_dir.mkdir(parents=True, exist_ok=True)
             
             meter_file = meter_dir / "token_meter.jsonl"
-            with open(meter_file, "a") as f:
-                f.write(json.dumps(entry.to_dict()) + "\n")
+            with open(meter_file, "a", encoding='utf-8') as f:
+                f.write(json.dumps(entry.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
             pass  # Non-blocking
     
@@ -270,8 +270,8 @@ class IPCAuthManager:
                 "scope": token.scope,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
-            with open(log_file, "a") as f:
-                f.write(json.dumps(event) + "\n")
+            with open(log_file, "a", encoding='utf-8') as f:
+                f.write(json.dumps(event, ensure_ascii=False) + "\n")
         except Exception:
             pass  # Non-blocking
     

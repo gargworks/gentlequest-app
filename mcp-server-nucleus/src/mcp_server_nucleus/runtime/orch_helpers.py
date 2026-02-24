@@ -30,7 +30,7 @@ def _get_slot_registry() -> Dict:
     registry_path = brain / "slots" / "registry.json"
     if not registry_path.exists():
         return {"slots": {}, "aliases": {}}
-    with open(registry_path) as f:
+    with open(registry_path, encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -40,8 +40,8 @@ def _save_slot_registry(registry: Dict):
     registry_path = brain / "slots" / "registry.json"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
     registry["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-    with open(registry_path, "w") as f:
-        json.dump(registry, f, indent=2)
+    with open(registry_path, "w", encoding='utf-8') as f:
+        json.dump(registry, f, indent=2, ensure_ascii=False)
 
 
 def _get_tier_definitions() -> Dict:
@@ -50,7 +50,7 @@ def _get_tier_definitions() -> Dict:
     tiers_path = brain / "protocols" / "tiers.json"
     if not tiers_path.exists():
         return {"tiers": {}, "tier_priority_mapping": {}}
-    with open(tiers_path) as f:
+    with open(tiers_path, encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -130,7 +130,7 @@ def _get_fence_counter() -> Dict:
     counter_path = brain / "ledger" / "fence_counter.json"
     if not counter_path.exists():
         return {"value": 100, "last_issued": None, "history": []}
-    with open(counter_path) as f:
+    with open(counter_path, encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -144,8 +144,8 @@ def _increment_fence_token() -> int:
     counter["value"] += 1
     counter["last_issued"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     
-    with open(counter_path, "w") as f:
-        json.dump(counter, f, indent=2)
+    with open(counter_path, "w", encoding='utf-8') as f:
+        json.dump(counter, f, indent=2, ensure_ascii=False)
     
     return counter["value"]
 

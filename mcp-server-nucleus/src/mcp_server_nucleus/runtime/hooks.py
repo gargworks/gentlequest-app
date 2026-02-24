@@ -76,8 +76,8 @@ class InsightExchange:
             timestamp=time.time()
         )
         # Log offers
-        with open(self.ledger_path, "a") as f:
-            f.write(json.dumps(asdict(packet)) + "\n")
+        with open(self.ledger_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(asdict(packet), ensure_ascii=False) + "\n")
         return packet
 
 # --- 3. The Grid Hook (RemoteExecutionProtocol) ---
@@ -240,7 +240,7 @@ class AmbientTelemetry:
         # Atomic write
         try:
             temp_file = self.pulse_file.with_suffix(".tmp")
-            temp_file.write_text(json.dumps(data))
+            temp_file.write_text(json.dumps(data, ensure_ascii=False))
             temp_file.replace(self.pulse_file)
         except Exception as e:
             logger.warning(f"Failed to pulse: {e}")

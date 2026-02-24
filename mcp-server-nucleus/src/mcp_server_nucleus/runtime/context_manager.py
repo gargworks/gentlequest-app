@@ -129,7 +129,7 @@ class ContextManager:
         if mounts_file.exists():
             state["mounts_hash"] = self._hash_file(mounts_file)
             try:
-                with open(mounts_file) as f:
+                with open(mounts_file, encoding='utf-8') as f:
                     mounts = json.load(f)
                     state["mount_count"] = len(mounts.get("servers", []))
             except Exception:
@@ -272,7 +272,7 @@ class ContextManager:
         snapshots_dir.mkdir(parents=True, exist_ok=True)
         
         snapshot_file = snapshots_dir / f"{snapshot.snapshot_id}.json"
-        snapshot_file.write_text(json.dumps(snapshot.to_dict(), indent=2))
+        snapshot_file.write_text(json.dumps(snapshot.to_dict(), indent=2, ensure_ascii=False))
         
         return snapshot_file
     

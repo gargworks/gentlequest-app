@@ -14,5 +14,9 @@ RUN pip install --no-cache-dir .
 # Expose no ports (stdio based)
 # Glama environment uses stdio for inspection
 
+# Labels
+LABEL version="1.0.7"
+LABEL maintainer="Nucleus Team <hello@nucleusos.dev>"
+
 # Set the command to run the server
-ENTRYPOINT ["python", "-m", "mcp_server_nucleus.stdio_server"]
+ENTRYPOINT ["nucleus-mcp"]

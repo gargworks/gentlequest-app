@@ -147,7 +147,7 @@ class RecursiveMounter:
             }
             for s in self.mounted_servers.values()
         ]
-        self.mounts_file.write_text(json.dumps(data, indent=2))
+        self.mounts_file.write_text(json.dumps(data, indent=2, ensure_ascii=False))
 
     async def mount(self, name: str, command: str, args: List[str]) -> str:
         """Mounts an external MCP server."""

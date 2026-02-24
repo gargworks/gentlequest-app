@@ -183,7 +183,7 @@ def get_prometheus_metrics() -> str:
         # Event count
         events_file = brain_path / "ledger" / "events.jsonl"
         if events_file.exists():
-            with open(events_file) as f:
+            with open(events_file, encoding='utf-8') as f:
                 event_count = sum(1 for _ in f)
             lines.append("")
             lines.append("# HELP nucleus_events_total Total events logged")
