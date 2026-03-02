@@ -101,7 +101,7 @@ class BrainOps(Capability):
                 priority=args.get('priority', 3),
                 source=args.get('source', 'nar_agent')
             )
-            return f"Commitment Added: {result['id']}"
+            return f"Commitment Added: {result.get('id', 'unknown')}"
             
         elif tool_name == "brain_get_open_loops":
             loops = commitment_ledger.load_ledger(brain_path)["commitments"]

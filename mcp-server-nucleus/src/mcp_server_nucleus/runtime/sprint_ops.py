@@ -143,10 +143,10 @@ def _brain_mission_status_impl(mission_id: str = None) -> str:
         progress = status["progress"]
         budget = status["budget"]
         
-        return f"""🎯 Mission Status: {status['name']}
+        return f"""🎯 Mission Status: {status.get('name', 'N/A')}
 ═══════════════════════════════════════
-ID: {status['mission_id']}
-Status: {status['status'].upper()}
+ID: {status.get('mission_id', 'N/A')}
+Status: {status.get('status', 'UNKNOWN').upper()}
 
 📊 PROGRESS
    ├── Completed: {progress['completed']}/{progress['total']} ({progress['percent']}%)
@@ -172,8 +172,8 @@ def _brain_halt_sprint_impl(reason: str = "User requested halt") -> str:
         
         return f"""⛔ Sprint Halt Requested
    Sprint ID: {result.get('sprint_id', 'N/A')}
-   Reason: {result['reason']}
-   Status: {result['status']}
+   Reason: {result.get('reason', 'unknown')}
+   Status: {result.get('status', 'unknown')}
    
 💡 Sprint will complete current task then stop gracefully"""
         
