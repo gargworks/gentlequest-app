@@ -605,7 +605,7 @@ def main():
     
     # nucleus sessions save <context>
     sessions_save = sessions_subparsers.add_parser('save', help='Save current session')
-    sessions_save.add_argument('context', help='Context name (e.g., "Nucleus v0.5.0")')
+    sessions_save.add_argument('context', help='Context name (e.g., "Nucleus v1.2.1")')
     sessions_save.add_argument('--task', help='Current active task')
     
     # nucleus sessions resume [id]
