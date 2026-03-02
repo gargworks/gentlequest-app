@@ -1165,8 +1165,8 @@ def handle_sessions_command(args):
         print(f"\n📋 Saved Sessions ({len(sessions)})")
         print("=" * 60)
         for s in sessions:
-            print(f"• {s['timestamp']} - {s.get('context', 'Unknown Context')}")
-            print(f"  ID: {s['id']}")
+            print(f"• {s.get('timestamp', 'unknown')} - {s.get('context', 'Unknown Context')}")
+            print(f"  ID: {s.get('id', 'unknown')}")
             print(f"  Task: {s.get('active_task', 'None')}")
             print("-" * 40)
         print()
