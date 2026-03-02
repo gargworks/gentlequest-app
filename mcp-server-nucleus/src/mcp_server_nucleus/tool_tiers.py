@@ -1,158 +1,62 @@
 """
-Nucleus Tool Tier System - Registry Bloat Solution
+Nucleus Tool Tier System - Facade-Aware Registry Control
 
-Solves the "137 tools crash LLM client" problem by organizing tools into tiers:
-- Tier 0 (LAUNCH): 5 essential tools for nucleusos.dev demo
-- Tier 1 (CORE): 20 standard operation tools
-- Tier 2 (ADVANCED): All 137 tools
+Updated for v2.0 Super-Tools Facade pattern.
+With ~170 individual tools consolidated into 12 facade tools, tier filtering
+now operates on facade names (nucleus_*) instead of individual brain_* names.
 
-Set NUCLEUS_TOOL_TIER environment variable to control which tier is active:
-- "0" or "launch": Only Tier 0 tools (default for website)
-- "1" or "core": Tier 0 + Tier 1 tools
-- "2" or "advanced" or "all": All tools
+Tiers:
+- Tier 0 (LAUNCH): Essential facades for nucleusos.dev demo (engrams, governance)
+- Tier 1 (CORE): Tier 0 + orchestration/task/session facades
+- Tier 2 (ADVANCED): All 12 facade tools
+
+Set NUCLEUS_BETA_TOKEN to control which tier is active:
+- (unset):                    Tier 0 — Journal Mode (default)
+- "sovereign-launch-alpha":   Tier 1 — Manager Suite
+- "titan-sovereign-godmode":  Tier 2 — Everything
 
 Author: Nucleus Team
-Version: 0.6.0
+Version: 2.0.0
 """
 
 import os
 from typing import Set, Dict, Any
 
 # =============================================================================
-# TIER DEFINITIONS
+# TIER DEFINITIONS (Facade-Aware)
 # =============================================================================
+# Each entry is a registered @mcp.tool() facade function name.
+# Individual actions within facades are NOT filtered — the facade itself
+# is the unit of access control.
 
 TIER_0_LAUNCH: Set[str] = {
     # ═══════════════════════════════════════════════════════════════════════
-    # THE ALIVE WORKFLOW (MDR_015) — The ONE thing that makes Nucleus alive
+    # Essential facades for demo / nucleusos.dev launch
     # ═══════════════════════════════════════════════════════════════════════
-    "brain_morning_brief",       # THE daily workflow — "Today you should..."
-    "brain_hook_metrics",        # Auto-write monitoring
-    # The "Govern Your Agents in 60 Seconds" story
-    "brain_write_engram",        # Persist a memory
-    "brain_query_engrams",       # Retrieve memories
-    "brain_search_engrams",      # Substring search (v0.6.0)
-    "brain_audit_log",           # Trust verification (SHA-256 ledger)
-    "brain_mount_server",        # Recursive aggregation demo (TEASER ONLY - Limited)
-    # Meta tools
-    "brain_version",             # Version check
-    "brain_health",              # Health check
-    "brain_list_tools",          # Discover available tools
-    # Governance Demo Tools
-    "nucleus_list_directory",    # Demo A: Inspect environment
-    "nucleus_delete_file",       # Demo A: Test protection
-    "lock_resource",             # Demo A: Block modification
-    "unlock_resource",           # Demo A: Allow modification
-    "hypervisor_status",         # Demo A: Status check
-    "watch_resource",            # Demo A: Monitor changes
-    # Egress Proxies (v1.0.9)
-    "nucleus_curl",
-    "nucleus_pip_install",
+    "nucleus_engrams",           # Memory: write, query, search, health, version, morning brief
+    "nucleus_governance",        # Governance: lock, unlock, watch, audit, hypervisor, mode
 }
 
 TIER_1_CORE: Set[str] = {
     # ═══════════════════════════════════════════════════════════════════════
-    # COMPOUNDING v0 LOOP (MDR_017) — The 7-Day Workflow
+    # Manager Suite — task management, sessions, orchestration
     # ═══════════════════════════════════════════════════════════════════════
-    "brain_compounding_status",  # Day-of-week action guidance
-    "brain_end_of_day",          # Capture learnings as engrams
-    "brain_session_inject",      # Session-start context injection
-    "brain_weekly_consolidate",  # Sunday's cleanup task
-    # ═══════════════════════════════════════════════════════════════════════
-    # ADHD GUARDRAILS — Context switch detection + rabbit hole protection
-    # ═══════════════════════════════════════════════════════════════════════
-    "brain_context_switch",        # Record context switch, check for drift
-    "brain_context_switch_status", # Get ADHD metrics
-    "brain_context_switch_reset",  # Reset counter at session start
-    "brain_depth_push",            # Go deeper (rabbit hole tracker)
-    "brain_depth_pop",             # Come back up
-    "brain_depth_show",            # Show current depth
-    "brain_depth_reset",           # Reset to root
-    "brain_depth_map",             # Visual exploration map
-    # Task Management
-    "brain_list_tasks",
-    "brain_get_next_task",
-    "brain_add_task",
-    "brain_update_task",
-    "brain_claim_task",
-    # Orchestration
-    "brain_orchestrate",
-    "brain_spawn_agent",
-    "brain_slot_complete",
-    # State & Status
-    "brain_get_state",
-    "brain_update_state",
-    "brain_dashboard",
-    "brain_status_dashboard",
-    # DSoR
-    "brain_dsor_status",
-    "brain_list_decisions",
-    "brain_metering_summary",
-    "brain_ipc_tokens",
-    # Sessions
-    "brain_session_start",
-    "brain_save_session",
-    "brain_list_sessions",
-    # Memory
-    "brain_read_memory",
-    "brain_search_memory",
-    # Multi-Agent Sync (v0.7.0)
-    "brain_sync_status",
-    "brain_sync_now",
-    "brain_sync_auto",
-    "brain_sync_auto",
-    "brain_identify_agent",
-    # Hypervisor (v0.8.0)
-    "lock_resource",
-    "unlock_resource",
-    "watch_resource",
-    "hypervisor_status",
-    "set_hypervisor_mode",
+    "nucleus_tasks",             # Task + depth management (add, list, claim, depth_push, etc.)
+    "nucleus_sessions",          # Session management (save, resume, start, checkpoint, etc.)
+    "nucleus_sync",              # Multi-agent sync (identify, sync_now, read/write artifacts)
+    "nucleus_orchestration",     # Core orchestration (satellite, commitments, loops, metrics)
+    "nucleus_slots",             # Slot management (orchestrate, missions, sprints)
+    "nucleus_telemetry",         # Telemetry (LLM tiers, interactions, protocols)
 }
 
 TIER_2_ADVANCED: Set[str] = {
-    # Federation
-    "brain_federation_status",
-    "brain_federation_join",
-    "brain_federation_leave",
-    "brain_federation_peers",
-    "brain_federation_sync",
-    "brain_federation_route",
-    "brain_federation_health",
-    "brain_federation_dsor_status",
-    "brain_routing_decisions",
-    # Depth Management
-    "brain_depth_map",
-    "brain_depth_push",
-    "brain_depth_pop",
-    "brain_depth_show",
-    "brain_depth_reset",
-    "brain_depth_set_max",
-    # Autopilot
-    "brain_autopilot_sprint",
-    "brain_autopilot_sprint_v2",
-    "brain_halt_sprint",
-    "brain_resume_sprint",
-    # Ingestion
-    "brain_ingest_tasks",
-    "brain_ingestion_stats",
-    "brain_rollback_ingestion",
-    "brain_import_tasks_from_jsonl",
-    # Features
-    "brain_add_feature",
-    "brain_get_feature",
-    "brain_list_features",
-    "brain_update_feature",
-    "brain_search_features",
-    # Artifacts
-    "brain_write_artifact",
-    "brain_read_artifact",
-    "brain_list_artifacts",
-    # Proofs
-    "brain_generate_proof",
-    "brain_get_proof",
-    "brain_list_proofs",
-    # Everything else is implicitly Tier 2
+    # ═══════════════════════════════════════════════════════════════════════
+    # Full power — federation, features, infra, agents
+    # ═══════════════════════════════════════════════════════════════════════
+    "nucleus_federation",        # Federation (join, leave, peers, route, health)
+    "nucleus_features",          # Feature map + proofs + mounter (add, list, mount, proof)
+    "nucleus_infra",             # Infrastructure (gcloud, strategy, file changes, export)
+    "nucleus_agents",            # Agent management (spawn, critique, dashboard, ingest)
 }
 
 # =============================================================================
@@ -236,8 +140,8 @@ class TierFilteredToolManager:
     Usage:
         manager = TierFilteredToolManager()
         
-        @manager.register("brain_my_tool")
-        def brain_my_tool():
+        @manager.register("nucleus_my_facade")
+        def nucleus_my_facade():
             pass
     """
     

@@ -35,7 +35,7 @@ def test_tier_based_registration():
     
     # Register a tool that IS in TIER_0_LAUNCH (should be registered)
     @configured_mcp.tool()
-    def brain_health():
+    def nucleus_engrams():
         return "healthy"
     
     # Register a tool that is NOT in any tier set (should be filtered at tier 0)
@@ -43,8 +43,8 @@ def test_tier_based_registration():
     def some_unlisted_tool():
         return "filtered"
     
-    # At tier 0, brain_health should be registered, some_unlisted_tool should be filtered
-    assert "brain_health" in tier_manager.registered_tools
+    # At tier 0, nucleus_engrams should be registered, some_unlisted_tool should be filtered
+    assert "nucleus_engrams" in tier_manager.registered_tools
     assert "some_unlisted_tool" in tier_manager.filtered_tools
     
     # Now test Tier 2 (ADVANCED - all tools pass)

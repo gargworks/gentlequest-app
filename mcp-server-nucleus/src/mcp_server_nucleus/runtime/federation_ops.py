@@ -105,7 +105,7 @@ def _brain_federation_status_impl() -> str:
         return f"❌ Federation status error: {str(e)}"
 
 
-def _brain_federation_join_impl(seed_peer: str) -> str:
+async def _brain_federation_join_impl(seed_peer: str) -> str:
     """Internal implementation of federation join."""
     try:
         engine = _get_federation_engine()
@@ -114,9 +114,9 @@ def _brain_federation_join_impl(seed_peer: str) -> str:
         
         # Start engine if not running
         if not engine.running:
-            asyncio.run(engine.start())
+            await engine.start()
         
-        result = asyncio.run(engine.join(seed_peer))
+        result = await engine.join(seed_peer)
         
         if result.get("success"):
             return f"""✅ JOINED FEDERATION
@@ -131,14 +131,14 @@ def _brain_federation_join_impl(seed_peer: str) -> str:
         return f"❌ Join error: {str(e)}"
 
 
-def _brain_federation_leave_impl() -> str:
+async def _brain_federation_leave_impl() -> str:
     """Internal implementation of federation leave."""
     try:
         engine = _get_federation_engine()
         if engine is None:
             return "❌ FederationEngine not available."
         
-        result = asyncio.run(engine.leave())
+        result = await engine.leave()
         
         if result.get("success"):
             return """✅ LEFT FEDERATION
@@ -202,7 +202,7 @@ No peers discovered.
         return f"❌ Peers error: {str(e)}"
 
 
-def _brain_federation_sync_impl() -> str:
+async def _brain_federation_sync_impl() -> str:
     """Internal implementation of federation sync."""
     try:
         engine = _get_federation_engine()
@@ -212,7 +212,7 @@ def _brain_federation_sync_impl() -> str:
         if not engine.running:
             return "❌ Federation engine not running. Use brain_federation_join first."
         
-        results = asyncio.run(engine.sync_now())
+        results = await engine.sync_now()
         
         if not results:
             return """🔄 SYNC COMPLETE
@@ -248,7 +248,7 @@ No peers to sync with."""
         return f"❌ Sync error: {str(e)}"
 
 
-def _brain_federation_route_impl(task_id: str, profile: str = "default") -> str:
+async def _brain_federation_route_impl(task_id: str, profile: str = "default") -> str:
     """Internal implementation of federation routing."""
     try:
         engine = _get_federation_engine()
@@ -271,7 +271,7 @@ def _brain_federation_route_impl(task_id: str, profile: str = "default") -> str:
         except Exception:
             pass
         
-        decision = asyncio.run(engine.route_task(task, profile))
+        decision = await engine.route_task(task, profile)
         
         return f"""🎯 ROUTING DECISION
 ═══════════════════════════════════════

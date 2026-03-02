@@ -172,10 +172,10 @@ def _brain_status_dashboard_impl(refresh: bool = False) -> str:
         lines.append("╟──────────────────────────────────────────────────────────────╢")
         
         for slot in active_slots:
-            sid = slot.get("id")
-            tier = slot.get("tier", "standard")
+            sid = slot.get("id") or "unknown"
+            tier = slot.get("tier") or "standard"
             task_id = slot.get("current_task")
-            model = slot.get("model", "unknown")
+            model = slot.get("model") or "unknown"
             
             status_icon = "🟢"
             if task_id:
@@ -193,8 +193,8 @@ def _brain_status_dashboard_impl(refresh: bool = False) -> str:
             lines.append(f"║ {status_icon} {sid:<15} [{tier[:3].upper()}] {task_desc:<30} ║")
             
         for slot in exhausted_slots:
-            sid = slot.get("id")
-            reset = slot.get("reset_at", "unknown")
+            sid = slot.get("id") or "unknown"
+            reset = slot.get("reset_at") or "unknown"
             lines.append(f"║ 🔴 {sid:<15} [EXH] Reset: {reset:<30} ║")
             
         lines.append("╠══════════════════════════════════════════════════════════════╣")
@@ -208,7 +208,7 @@ def _brain_status_dashboard_impl(refresh: bool = False) -> str:
              top_pending = sorted(pending_tasks, key=lambda x: x.get("priority", 99))[:5]
              for i, t in enumerate(top_pending):
                  prio = f"P{t.get('priority',3)}"
-                 desc = t.get("description", "")[:45]
+                 desc = (t.get("description") or "")[:45]
                  lines.append(f"║ {i+1}. [{prio}] {desc:<50} ║")
                  
         lines.append("╚══════════════════════════════════════════════════════════════╝")

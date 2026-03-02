@@ -33,7 +33,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_write_engram_creates_file(self):
         """Test that write_engram creates the engram ledger file."""
-        from mcp_server_nucleus import _brain_write_engram_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
         
         result = _brain_write_engram_impl(
             key="test_key",
@@ -59,7 +59,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_write_engram_validates_intensity(self):
         """Test that intensity must be 1-10."""
-        from mcp_server_nucleus import _brain_write_engram_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
         
         # Test invalid intensity
         result = _brain_write_engram_impl(
@@ -75,7 +75,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_write_engram_validates_context(self):
         """Test that context must be valid category."""
-        from mcp_server_nucleus import _brain_write_engram_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
         
         result = _brain_write_engram_impl(
             key="test",
@@ -90,7 +90,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_query_engrams_returns_empty_when_no_file(self):
         """Test query returns empty list when no engrams exist."""
-        from mcp_server_nucleus import _brain_query_engrams_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_query_engrams_impl
         
         result = _brain_query_engrams_impl(context=None, min_intensity=1)
         result_data = json.loads(result)
@@ -100,7 +100,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_query_engrams_filters_by_context(self):
         """Test query filters by context category."""
-        from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams with different contexts
         _brain_write_engram_impl("arch1", "this is architecture value 1", "Architecture", 8)
@@ -116,7 +116,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_query_engrams_filters_by_intensity(self):
         """Test query filters by minimum intensity."""
-        from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams with different intensities
         _brain_write_engram_impl("critical", "this is a critical decision 1", "Decision", 10)
@@ -132,7 +132,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_query_engrams_sorts_by_intensity(self):
         """Test that results are sorted by intensity (highest first)."""
-        from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams in random order
         _brain_write_engram_impl("low", "low intensity value 1", "Decision", 3)
@@ -150,7 +150,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_governance_status_returns_policies(self):
         """Test governance status returns policy information."""
-        from mcp_server_nucleus import _brain_governance_status_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_governance_status_impl
         
         result = _brain_governance_status_impl()
         result_data = json.loads(result)
@@ -162,7 +162,7 @@ class TestEngramTools(unittest.TestCase):
     
     def test_governance_status_counts_engrams(self):
         """Test governance status accurately counts engrams."""
-        from mcp_server_nucleus import _brain_write_engram_impl, _brain_governance_status_impl
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_governance_status_impl
         
         # Write some engrams
         _brain_write_engram_impl("e1", "this is governance value 1", "Decision", 5)
@@ -172,6 +172,92 @@ class TestEngramTools(unittest.TestCase):
         result_data = json.loads(result)
         
         self.assertEqual(result_data["data"]["statistics"]["engram_count"], 2)
+
+
+    def test_query_engrams_pagination_limit(self):
+        """Test that query_engrams respects the limit parameter (D2/D24 fix)."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_query_engrams_impl
+
+        # Write 5 engrams
+        for i in range(5):
+            _brain_write_engram_impl(f"page_{i}", f"pagination test value {i}", "Decision", 5 + i)
+
+        # Query with limit=2
+        result = _brain_query_engrams_impl(context=None, min_intensity=1, limit=2)
+        result_data = json.loads(result)
+
+        self.assertTrue(result_data["success"])
+        self.assertEqual(result_data["data"]["count"], 2)
+        self.assertEqual(result_data["data"]["total_matching"], 5)
+        self.assertTrue(result_data["data"]["truncated"])
+        self.assertEqual(result_data["data"]["limit"], 2)
+        # Highest intensity first
+        self.assertEqual(result_data["data"]["engrams"][0]["intensity"], 9)
+
+    def test_query_engrams_limit_clamped(self):
+        """Test that limit is clamped to safe range [1, 500]."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_query_engrams_impl
+
+        # Limit > 500 should be clamped
+        result = _brain_query_engrams_impl(context=None, min_intensity=1, limit=9999)
+        result_data = json.loads(result)
+        self.assertTrue(result_data["success"])
+        self.assertEqual(result_data["data"]["limit"], 500)
+
+        # Limit < 1 should be clamped
+        result = _brain_query_engrams_impl(context=None, min_intensity=1, limit=0)
+        result_data = json.loads(result)
+        self.assertEqual(result_data["data"]["limit"], 1)
+
+    def test_query_engrams_no_truncation_when_within_limit(self):
+        """Test truncated=False when results fit within limit."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_query_engrams_impl
+
+        _brain_write_engram_impl("only_one", "single engram value", "Strategy", 7)
+
+        result = _brain_query_engrams_impl(context=None, min_intensity=1, limit=50)
+        result_data = json.loads(result)
+
+        self.assertEqual(result_data["data"]["count"], 1)
+        self.assertFalse(result_data["data"]["truncated"])
+
+
+    def test_search_engrams_pagination_limit(self):
+        """Test that search_engrams respects the limit parameter (Pillar 1.2)."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_search_engrams_impl
+
+        for i in range(5):
+            _brain_write_engram_impl(f"searchable_{i}", f"findme pagination test {i}", "Decision", 5 + i)
+
+        result = _brain_search_engrams_impl(query="findme", limit=2)
+        result_data = json.loads(result)
+
+        self.assertTrue(result_data["success"])
+        self.assertEqual(result_data["data"]["count"], 2)
+        self.assertEqual(result_data["data"]["total_matching"], 5)
+        self.assertTrue(result_data["data"]["truncated"])
+        self.assertEqual(result_data["data"]["limit"], 2)
+        self.assertEqual(result_data["data"]["engrams"][0]["intensity"], 9)
+
+    def test_search_engrams_limit_clamped(self):
+        """Test search_engrams limit clamping [1, 500]."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
+
+        result = json.loads(_brain_search_engrams_impl(query="x", limit=9999))
+        self.assertEqual(result["data"]["limit"], 500)
+
+        result = json.loads(_brain_search_engrams_impl(query="x", limit=0))
+        self.assertEqual(result["data"]["limit"], 1)
+
+    def test_search_engrams_no_truncation(self):
+        """Test search_engrams truncated=False when within limit."""
+        from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl, _brain_search_engrams_impl
+
+        _brain_write_engram_impl("unique_needle", "unique_needle_value", "Strategy", 7)
+
+        result = json.loads(_brain_search_engrams_impl(query="unique_needle", limit=50))
+        self.assertEqual(result["data"]["count"], 1)
+        self.assertFalse(result["data"]["truncated"])
 
 
 if __name__ == "__main__":

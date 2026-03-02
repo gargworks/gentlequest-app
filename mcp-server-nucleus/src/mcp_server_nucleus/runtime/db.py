@@ -20,6 +20,15 @@ from .broker import ContextListing, ContextTransaction
 
 logger = logging.getLogger("nucleus.db")
 
+
+def _notify_tasks_changed() -> None:
+    """Proactively signal ChangeLedger that tasks state changed."""
+    try:
+        from .event_bus import get_change_ledger
+        get_change_ledger().record_change("tasks.json", "modified")
+    except Exception:
+        pass
+
 class StorageBackend(ABC):
     """Abstract interface for Nucleus storage backend."""
     
@@ -114,6 +123,7 @@ class JSONBackend(StorageBackend):
         with self._get_lock("ledger", self.brain_path).section():
             self.tasks_path.parent.mkdir(parents=True, exist_ok=True)
             self.tasks_path.write_text(json.dumps(tasks, indent=2, ensure_ascii=False))
+        _notify_tasks_changed()
 
     def create_listing(self, listing: ContextListing) -> str:
         listings = self._load_listings()
@@ -327,6 +337,7 @@ class SQLiteBackend(StorageBackend):
                     task_dict.get("created_at"), task_dict.get("updated_at")
                 )
             )
+        _notify_tasks_changed()
         return task_dict["id"]
 
     def list_tasks(self, status: Optional[str] = None, priority: Optional[int] = None, 
@@ -394,7 +405,10 @@ class SQLiteBackend(StorageBackend):
         
         with self._get_conn() as conn:
             cursor = conn.execute(query, params)
-            return cursor.rowcount > 0
+            changed = cursor.rowcount > 0
+        if changed:
+            _notify_tasks_changed()
+        return changed
 
 class PostgresBackend(StorageBackend):
     """Enterprise Postgres backend for scaling Nucleus to multi-node setups."""
@@ -536,6 +550,7 @@ class PostgresBackend(StorageBackend):
                     )
                 )
             conn.commit()
+        _notify_tasks_changed()
         return task_dict["id"]
 
     def list_tasks(self, status: Optional[str] = None, priority: Optional[int] = None, 
@@ -595,7 +610,9 @@ class PostgresBackend(StorageBackend):
                 cursor.execute(query, params)
                 rows_updated = cursor.rowcount
             conn.commit()
-            return rows_updated > 0
+        if rows_updated > 0:
+            _notify_tasks_changed()
+        return rows_updated > 0
 
 def get_storage_backend(brain_path: Path) -> StorageBackend:
     """Factory to get the configured storage backend."""

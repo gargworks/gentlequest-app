@@ -84,7 +84,14 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             process_event_for_engram(event_type, data)
         except Exception:
             pass  # Never let auto-engram break event emission
-            
+
+        # Proactive hook: signal ChangeLedger immediately (bypasses Watchdog latency)
+        try:
+            from .event_bus import get_change_ledger
+            get_change_ledger().record_change("events.jsonl", event_type)
+        except Exception:
+            pass  # Never let ledger updates break event emission
+
         return event_id
     except Exception as e:
         return f"Error emitting event: {str(e)}"

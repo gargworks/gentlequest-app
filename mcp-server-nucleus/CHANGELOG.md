@@ -5,6 +5,105 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-02
+### Added — Phase 3: Operational Mastery (GA Release)
+- **God Combos** — 3 multi-tool automation pipelines:
+  - `pulse_and_polish`: Automated Chief of Staff (prometheus→audit→brief→engram)
+  - `self_healing_sre`: SRE diagnosis pipeline (search→metrics→diagnose→recommend)
+  - `fusion_reactor`: Self-reinforcing memory loop (capture→recall→synthesize→compound)
+- **HITL Safety Gates** on destructive operations:
+  - `delete_file` now requires `confirm=true` parameter
+  - `spawn_agent` now requires `confirm=true` parameter
+- **Pagination** for unbounded queries:
+  - `query_engrams`: limit param (default 50, max 500) with truncation metadata
+  - `search_engrams`: limit param (default 50, max 500) with truncation metadata
+- **`export_schema` response size cap** (200KB) to prevent context exhaustion
+- **`pytest-asyncio`** added to dev deps; `asyncio_mode = "auto"` configured
+- **Context Graph** (`context_graph`, `engram_neighbors`, `render_graph`): Engram relationship mapping with 4 edge types (context, prefix, temporal, semantic), BFS neighborhood traversal, clustering, density stats, ASCII visualization
+- **Billing Subsystem** (`billing_summary`): Usage cost tracking from audit logs with 4-tier cost model, per-tool/per-tier/per-session breakdowns, time filtering
+- **GCP Secret Manager** integration for `TELEGRAM_BOT_TOKEN` — token stored, SA has Secret Accessor, injected into backend, tested
+- **COMBOS.md** — unified God Combo reference documentation
+- 70+ new tests covering God Combos, HITL gates, pagination, Context Graph, Billing, ASCII renderer, session grouping, edge cases
+
+### Fixed
+- `status_dashboard` NoneType format string errors (`.get()` defaults)
+- `test_dispatch_telemetry` async tests now pass (pytest-asyncio added)
+- 102 stale `ledger:scanned` commitments archived (task queue: 103→1)
+
+### Changed
+- `nucleus_engrams` facade now has 32 actions (was 25), including 3 God Combos + Context Graph + Billing + ASCII renderer
+- `stdio_server` engrams router expanded from 8 to 15 actions (God Combos, Context Graph, Billing)
+- `tool_recommender` adds 3 categories: god_combos, context_graph, billing (19 total)
+- `llm_intent_analyzer` adds 17 keyword mappings for Phase 3 actions (59 total)
+- Test suite: 1115 total tests passing, 0 regressions
+- `test_version_consistency` updated for v1.2.0
+
+## [1.3.0] - 2026-02-24
+### Added
+- **Phase 73: Production-Grade Hardening** (99.9% Reliability Target)
+  - `ResilientLLMClient`: Timeout handling, retry with exponential backoff, circuit breaker, rate limit detection, fallback chain
+  - `CircuitBreaker`: Open/half-open/closed state machine with configurable thresholds and recovery
+  - `EnvironmentDetector`: Cross-platform OS detection (Mac/Windows/Linux), MCP host detection (Windsurf/Claude Desktop/Perplexity/Antigravity/Cursor/OpenClaw/CLI)
+  - `ResilientFileOps`: Atomic writes, cross-platform file locking, disk space checks, permission validation
+  - `AtomicWriter`: Write-to-temp-then-rename for corruption prevention
+  - `ResilientJSONReader`: Corruption recovery, BOM handling, JSONL with line-level error skipping
+  - `ErrorTelemetry`: Structured error codes (E001-E999), domain categorization, sliding-window rate monitoring, threshold-based alerting
+  - `AlertManager`: Configurable alert thresholds with callback support
+  - 137 new tests covering all resilience modules, cross-environment edge cases, concurrency, unicode
+
+### Changed
+- **LLMIntentAnalyzer**: Now uses `ResilientLLMClient` with automatic fallback to keyword-based analysis
+- **LLMToolValidator**: Now uses `ResilientLLMClient` with deterministic fallback on failure
+- **LLMToolEnforcer**: Outcome persistence via `ResilientFileOps` (atomic, locked writes)
+- **LLMPatternLearner**: Pattern load/save via `ResilientFileOps`, engram writes via resilient append
+- **ToolRecommender**: Usage data load/save via `ResilientFileOps`
+- **All Phase 71/72 modules**: Error telemetry integration for structured error tracking
+- **Test Suite**: 583 passed (137 new for Phase 73 hardening)
+
+## [1.2.0] - 2026-02-24
+### Added
+- **Phase 71: Tool Calling Enforcement Layer** (LLM-Supervising-LLM)
+  - `LLMIntentAnalyzer`: Pre-flight intent analysis to detect required tools
+  - `LLMToolValidator`: Post-flight validation that tools were actually called
+  - `LLMToolEnforcer`: Orchestrates enforcement flow with retry logic
+  - `LLMPatternLearner`: Learns from failures, generates better prompts
+  - 4 new MCP tools: `brain_enforcement_stats`, `brain_enforcement_patterns`, `brain_enforcement_analyze`, `brain_enforcement_test`
+  - Keyword-based fallback when LLM is unavailable
+  - Persistent pattern storage with engram integration
+
+### Changed
+- **EphemeralAgent**: Now performs pre-flight intent analysis and injects enforcement prompts
+- **Test Suite**: 396 tests (60 new for tool enforcement)
+
+## [1.1.0] - 2026-02-24
+### Added
+- **Agent Runtime V2**: Complete agent execution management system
+  - `AgentSpawnLimiter`: Token bucket rate limiting for agent spawning
+  - `AgentCostTracker`: Per-agent cost tracking with USD estimates
+  - `AgentExecutionManager`: Lifecycle orchestration with cancellation support
+  - `with_timeout` decorator and `check_cancellation` function for async control
+- **Budget Monitoring**: Configurable cost threshold alerts
+  - `BudgetMonitor`: Daily/hourly/per-agent spend tracking
+  - Telegram integration for budget alerts
+- **Agent Dashboard MCP Tools** (7 new tools):
+  - `brain_agent_dashboard`: Get comprehensive execution metrics
+  - `brain_agent_spawn_stats`: Rate limiter status
+  - `brain_agent_costs`: Cost records and statistics
+  - `brain_agent_list_active`: Active executions
+  - `brain_agent_cancel`: Cancel running agent
+  - `brain_agent_cleanup`: Cleanup stale executions
+  - `brain_agent_get`: Get specific execution details
+- **Budget Operations MCP Tools** (5 new tools):
+  - `brain_budget_status`: Current budget status
+  - `brain_budget_set_daily/hourly/per_agent`: Configure thresholds
+  - `brain_budget_reset_counters`: Reset spend counters
+- **Monitoring Scripts**: `monitor_db_health.py`, `monitor_ssl_cert.py`, `setup_monitoring_cron.sh`
+- **Documentation**: `AGENT_RUNTIME_V2.md`, `SECURITY_HARDENING.md`
+
+### Changed
+- **EphemeralAgent Integration**: Now tracks all executions with automatic cost/token recording
+- **Test Suite**: 336 tests (54 new for Agent Runtime V2)
+
 ## [1.0.9] - 2026-02-23
 ### Added
 - **Save System (Checkpoint & Handoff)**: Native checkpoint/resume/handoff tools for long-running tasks

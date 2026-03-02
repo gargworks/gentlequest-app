@@ -48,19 +48,17 @@ import logging
 import traceback
 import time
 import os
-import re
 from typing import Any, Dict, Optional
 from mcp_server_nucleus.hypervisor.locker import Locker
 from mcp_server_nucleus.hypervisor.watchdog import Watchdog
 from mcp_server_nucleus.hypervisor.injector import Injector
 from mcp_server_nucleus.runtime.task_ops import (
-    _list_tasks, _add_task, _update_task, 
+    _list_tasks, _add_task, _update_task,
     _claim_task, _get_next_task
 )
-from pathlib import Path
-from datetime import datetime
 import asyncio
 from mcp_server_nucleus.runtime.mounter_ops import get_mounter
+from mcp_server_nucleus.tools._dispatch import dispatch
 
 # Configure logging to stderr to not corrupt stdout (which is for JSON-RPC)
 logging.basicConfig(stream=sys.stderr, level=logging.INFO, format='[Nucleus] %(message)s')
@@ -152,268 +150,78 @@ class StdioServer:
             return None
             
         elif method == "tools/list":
-            # Create standard tools list
+            # ── 12 Facade Tools (post-facade refactor) ──────────────
+            FACADE_SCHEMA = {
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "description": "Action to execute (see tool description)"},
+                    "params": {"type": "object", "description": "Action parameters", "default": {}}
+                },
+                "required": ["action"]
+            }
             tools = [
-                        {
-                            "name": "lock_resource",
-                            "description": "✨ [NUCLEUS] Hypervisor: Lock a resource (file/folder) within the Sovereign Infrastructure to prevent any modification. High-tier governance tool.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "path": {"type": "string", "description": "Absolute path to lock"},
-                                    "reason": {"type": "string", "description": "Governance justification"},
-                                    "agent_id": {"type": "string", "description": "Locking agent identifier"}
-                                },
-                                "required": ["path"]
-                            }
-                        },
-                        {
-                            "name": "status",
-                            "description": "✨ [NUCLEUS] Hypervisor: Retrieve the operational status of the Sovereign Infrastructure and the COMMAND DECK Connectivity. USE THIS TO VERIFY THE SYSTEM IS ALIVE.",
-                            "inputSchema": {"type": "object", "properties": {}}
-                        },
-                        {
-                            "name": "watch_resource",
-                            "description": "[HYPERVISOR] key file/folder monitoring (Layer 1).",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "path": {"type": "string", "description": "Path to watch"}
-                                },
-                                "required": ["path"]
-                            }
-                        },
-                        {
-                            "name": "hypervisor_status",
-                            "description": "[HYPERVISOR] Reports the current security state of the Agent OS.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {}, 
-                            }
-                        },
-                        {
-                            "name": "set_hypervisor_mode",
-                            "description": "[HYPERVISOR] Switch Visual Context (Injector).",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "mode": {"type": "string", "enum": ["red", "blue", "reset"]}
-                                },
-                                "required": ["mode"]
-                            }
-                        },
-                        {
-                            "name": "brain_health",
-                            "description": "Get comprehensive system health status.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {}
-                            }
-                        },
-                        {
-                            "name": "nucleus_curl",
-                            "description": "[EGRESS FIREWALL] Proxied HTTP fetch for Air-Gapped Agents.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "url": {"type": "string", "description": "URL to fetch"},
-                                    "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE"], "default": "GET"}
-                                },
-                                "required": ["url"]
-                            }
-                        },
-                        {
-                            "name": "nucleus_pip_install",
-                            "description": "[EGRESS FIREWALL] Proxied pip install for Air-Gapped Agents.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "package": {"type": "string", "description": "PyPI package name"}
-                                },
-                                "required": ["package"]
-                            }
-                        },
-                        {
-                            "name": "brain_audit_log",
-                            "description": "View the cryptographic interaction log for trust verification.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "limit": {"type": "integer", "description": "Number of recent entries", "default": 20}
-                                }
-                            }
-                        },
-                        {
-                            "name": "brain_write_engram",
-                            "description": "Write a long-term memory engram (learning/pattern).",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "key": {"type": "string", "description": "Unique identifier"},
-                                    "value": {"type": "string", "description": "Memory content"},
-                                    "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"], "default": "Decision"},
-                                    "intensity": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5}
-                                },
-                                "required": ["key", "value"]
-                            }
-                        },
-                        {
-                            "name": "brain_query_engrams",
-                            "description": "Query context-aware memory engrams.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"]},
-                                    "min_intensity": {"type": "integer", "minimum": 1, "maximum": 10, "default": 1}
-                                }
-                            }
-                        },
-                        {
-                            "name": "brain_governance_status",
-                            "description": "Get the current governance status and statistics.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {}
-                            }
-                        },
-                        {
-                            "name": "brain_list_tasks",
-                            "description": "List all tasks from the Brain (Task Ledger).",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "status": {"type": "string"},
-                                    "priority": {"type": "integer"},
-                                    "skill": {"type": "string"},
-                                    "claimed_by": {"type": "string"}
-                                }
-                            }
-                        },
-                        {
-                            "name": "brain_add_task",
-                            "description": "Add a new task to the Brain.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "description": {"type": "string"},
-                                    "priority": {"type": "integer"},
-                                    "blocked_by": {"type": "array", "items": {"type": "string"}},
-                                    "required_skills": {"type": "array", "items": {"type": "string"}}
-                                },
-                                "required": ["description"]
-                            }
-                        },
-                        {
-                            "name": "brain_update_task",
-                            "description": "Update an existing task in the Brain.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "task_id": {"type": "string"},
-                                    "status": {"type": "string"},
-                                    "description": {"type": "string"},
-                                    "priority": {"type": "integer"}
-                                },
-                                "required": ["task_id"]
-                            }
-                        },
-                        {
-                            "name": "brain_claim_task",
-                            "description": "Claim a task for execution.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "task_id": {"type": "string"},
-                                    "agent_id": {"type": "string"}
-                                },
-                                "required": ["task_id"]
-                            }
-                        },
-                        {
-                            "name": "brain_get_next_task",
-                            "description": "Get the highest priority actionable task.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "skills": {"type": "array", "items": {"type": "string"}}
-                                }
-                            }
-                        }
+                {
+                    "name": "nucleus_governance",
+                    "description": "Governance, Hypervisor & security tools.\nActions: auto_fix_loop, lock, unlock, set_mode, list_directory, delete_file, watch, status, curl, pip_install",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_engrams",
+                    "description": "Engrams, health, observability, DSoR, God Combos, Context Graph & Billing.\nActions: health, version, audit_log, write_engram, query_engrams, search_engrams, governance_status, morning_brief, pulse_and_polish, self_healing_sre, fusion_reactor, context_graph, engram_neighbors, render_graph, billing_summary",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_tasks",
+                    "description": "Task management, depth tracking & ADHD context-switch tools.\nActions: list, get_next, claim, update, add, import_jsonl, escalate, depth_push, depth_pop, depth_show, depth_reset, depth_set_max, depth_map, context_switch, context_switch_status, context_switch_reset",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_sessions",
+                    "description": "Session management, events, state & checkpoint tools.\nActions: save, resume, list, check_recent, end, start, archive_resolved, propose_merges, garbage_collect, emit_event, read_events, get_state, update_state, checkpoint, resume_checkpoint, handoff_summary",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_sync",
+                    "description": "Sync, artifact, trigger & deploy management.\nActions: identify_agent, sync_status, sync_now, sync_auto, sync_resolve, read_artifact, write_artifact, list_artifacts, trigger_agent, get_triggers, evaluate_triggers, start_deploy_poll, check_deploy, complete_deploy, smoke_test",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_features",
+                    "description": "Feature tracking, proof generation & MCP server mounting.\nActions: add, list, get, update, validate, search, mount_server, thanos_snap, unmount_server, list_mounted, discover_tools, invoke_tool, traverse_mount, generate_proof, get_proof, list_proofs",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_federation",
+                    "description": "Federation management for multi-brain coordination.\nActions: status, join, leave, peers, sync, route, health",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_orchestration",
+                    "description": "Satellite view, commitments, loops, patterns & metrics.\nActions: satellite, scan_commitments, archive_stale, export, list_commitments, close_commitment, commitment_health, open_loops, add_loop, weekly_challenge, patterns, metrics",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_telemetry",
+                    "description": "LLM tiers, telemetry, PEFS notifications & protocol tools.\nActions: set_llm_tier, get_llm_status, record_interaction, value_ratio, check_kill_switch, pause_notifications, resume_notifications, record_feedback, mark_high_impact, check_protocol, request_handoff, get_handoffs, agent_cost_dashboard, dispatch_metrics",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_slots",
+                    "description": "Orchestration slots, sprints & mission management.\nActions: orchestrate, slot_complete, slot_exhaust, status_dashboard, autopilot_sprint, force_assign, autopilot_sprint_v2, start_mission, mission_status, halt_sprint, resume_sprint",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_infra",
+                    "description": "Infrastructure: file changes, cloud, marketing & strategy tools.\nActions: file_changes, gcloud_status, gcloud_services, list_services, scan_marketing_log, synthesize_strategy, status_report, optimize_workflow, manage_strategy, update_roadmap",
+                    "inputSchema": FACADE_SCHEMA
+                },
+                {
+                    "name": "nucleus_agents",
+                    "description": "Agent spawning, critic, swarm, memory, ingestion & dashboard tools.\nActions: spawn_agent, apply_critique, orchestrate_swarm, search_memory, read_memory, respond_to_consent, list_pending_consents, critique_code, fix_code, session_briefing, register_session, handoff_task, ingest_tasks, rollback_ingestion, ingestion_stats, dashboard, snapshot_dashboard, list_dashboard_snapshots, get_alerts, set_alert_threshold",
+                    "inputSchema": FACADE_SCHEMA
+                },
             ]
-            
-            # --- MOUNTING TOOLS ---
-            tools.append({
-                "name": "brain_mount_server",
-                "description": "Mount an external MCP server (Recursive/Aggregator).",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "mount_id": {"type": "string", "description": "Unique ID for this mount"},
-                        "transport": {"type": "string", "enum": ["stdio", "sse"], "default": "stdio"},
-                        "command": {"type": "string", "description": "Executable for stdio"},
-                        "args": {"type": "array", "items": {"type": "string"}, "description": "Arguments for stdio"},
-                        "env": {"type": "object", "description": "Environment vars"},
-                        "url": {"type": "string", "description": "URL for SSE"}
-                    },
-                    "required": ["mount_id"]
-                }
-            })
-            tools.append({
-                "name": "brain_unmount_server",
-                "description": "Unmount an external MCP server.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "mount_id": {"type": "string"}
-                    },
-                    "required": ["mount_id"]
-                }
-            })
-            tools.append({
-               "name": "brain_traverse_and_mount",
-               "description": "Recursively explore and mount downstream servers.",
-               "inputSchema": {
-                   "type": "object",
-                   "properties": {
-                       "root_mount_id": {"type": "string"}
-                   },
-                   "required": ["root_mount_id"]
-               }
-            })
-            tools.append({
-                "name": "thanos_snap",
-                "description": "✨ [NUCLEUS] Hypervisor: Trigger the 'Thanos Snap' - Instantiating the SOVEREIGN COMMAND DECK Infrastructure (Stripe, Postgres, Search). THIS IS THE PRIMARY DEMO TRIGGER.",
-                "inputSchema": {"type": "object", "properties": {}}
-            })
-            tools.append({
-                "name": "list_mounted",
-                "description": "✨ [NUCLEUS] Hypervisor: List all active mounted servers currently occupying the SOVEREIGN COMMAND DECK.",
-                "inputSchema": {"type": "object", "properties": {}}
-            })
-            tools.append({
-                "name": "discover_mounted_tools",
-                "description": "🔍 [NUCLEUS] Hypervisor: Aggregates every tool from the SOVEREIGN COMMAND DECK into the current session. USE THIS AS THE 'SNAP' RESULT.",
-                "inputSchema": {"type": "object", "properties": {}}
-            })
-            tools.append({
-                "name": "brain_rescue_restoration",
-                "description": "🛠️ [RESCUE] Force re-establishment of all infrastructure connections if they were missed at startup.",
-                "inputSchema": {"type": "object", "properties": {}}
-            })
-            tools.append({
-                "name": "brain_invoke_mounted_tool",
-                "description": "Invoke a tool on a mounted MCP server.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "server_id": {"type": "string", "description": "Mount ID (e.g. mnt-123456)"},
-                        "tool_name": {"type": "string", "description": "Tool name on that server"},
-                        "arguments": {"type": "object", "description": "Tool arguments", "default": {}}
-                    },
-                    "required": ["server_id", "tool_name"]
-                }
-            })
-            
+
             # Aggregate Tools from Mounts
             try:
                 mounted_tools = await self.mounter.list_tools()
@@ -433,17 +241,11 @@ class StdioServer:
             params = request.get("params", {})
             name = params.get("name")
             args = params.get("arguments", {})
-            
+
             try:
-                # --- MOUNTER DISPATCH ---
+                # --- MOUNTER DISPATCH (namespaced tools from mounted servers) ---
                 if "__" in name:
-                    # Delegate to mounted server
                     result = await self.mounter.call_tool(name, args)
-                    # Result is a ToolCallResult object from mcp SDK. We need to serialize it.
-                    # The SDK usually returns an object with `content`.
-                    # We need to adapt it to the dict format this server expects.
-                    
-                    # Inspect result structure or assume it matches
                     content = []
                     if hasattr(result, "content"):
                          for item in result.content:
@@ -451,7 +253,6 @@ class StdioServer:
                              content.append(item_dict)
                     else:
                         content = [{"type": "text", "text": str(result)}]
-                        
                     return {
                         "jsonrpc": "2.0",
                         "id": msg_id,
@@ -461,79 +262,23 @@ class StdioServer:
                         }
                     }
 
-                # --- LOCAL DISPATCH ---
-                if name == "brain_mount_server":
-                    res = await self.mounter.mount_server(
-                        mount_id=args["mount_id"],
-                        transport=args.get("transport", "stdio"),
-                        command=args.get("command"),
-                        args=args.get("args"),
-                        env=args.get("env"),
-                        url=args.get("url")
-                    )
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res)}], "isError": False}}
-                    
-                elif name == "brain_unmount_server":
-                    await self.mounter.unmount_server(args["mount_id"])
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": f"Unmounted server {args['mount_id']}"}], "isError": False}}
-                    
-                elif name == "thanos_snap":
-                    from mcp_server_nucleus import brain_thanos_snap as snap_impl
-                    res = await snap_impl()
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": res}], "isError": False}}
-                    
-                elif name == "status":
-                    res = {
-                        "status": "OPERATIONAL",
-                        "mesh_tier": os.environ.get("NUCLEUS_TOOL_TIER", "UNKNOWN"),
-                        "uptime": time.time() - START_TIME,
-                        "mounts": len(self.mounter.sessions)
+                # --- FACADE DISPATCH (12 nucleus_* facade tools) ---
+                if name.startswith("nucleus_"):
+                    action = args.get("action", "")
+                    facade_params = args.get("params", {})
+                    result_text = await self._dispatch_facade(name, action, facade_params)
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "result": {
+                            "content": [{"type": "text", "text": result_text}],
+                            "isError": False
+                        }
                     }
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res, indent=2)}], "isError": False}}
-                    
-                elif name == "list_mounted":
-                    res = await self.mounter.list_mounts()
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res, indent=2)}], "isError": False}}
-                    
-                elif name == "discover_mounted_tools":
-                    tools_list = await self.mounter.list_tools()
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(tools_list, indent=2)}], "isError": False}}
-                    
-                elif name == "brain_rescue_restoration":
-                    await self.mounter.restore_mounts()
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": "Restoration rescue sequence triggered."}], "isError": False}}
-                    
-                elif name == "brain_invoke_mounted_tool":
-                    server_id = args["server_id"]
-                    tool_name = args["tool_name"]
-                    tool_args = args.get("arguments", {})
-                    # Regex fix: ^[a-zA-Z0-9_-]{1,64}$ prevents colons. Using double underscore.
-                    namespaced_name = f"{server_id}__{tool_name}"
-                    result = await self.mounter.call_tool(namespaced_name, tool_args)
-                    # Convert MCP SDK result to JSON-RPC format
-                    content = []
-                    if hasattr(result, "content"):
-                        for item in result.content:
-                            item_dict = item.model_dump() if hasattr(item, "model_dump") else item.__dict__
-                            content.append(item_dict)
-                    else:
-                        content = [{"type": "text", "text": str(result)}]
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": content, "isError": False}}
 
-                result = self.execute_tool(name, args)
-                return {
-                    "jsonrpc": "2.0",
-                    "id": msg_id,
-                    "result": {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": str(result)
-                            }
-                        ],
-                        "isError": False
-                    }
-                }
+                # --- UNKNOWN TOOL ---
+                raise ValueError(f"Unknown tool: {name}")
+
             except Exception as e:
                 return {
                     "jsonrpc": "2.0",
@@ -544,209 +289,122 @@ class StdioServer:
                     }
                 }
 
-    def execute_tool(self, name: str, args: Dict[str, Any]) -> str:
-        if name == "lock_resource":
-            metadata = {}
-            if "reason" in args:
-                metadata["reason"] = args["reason"]
-            if "agent_id" in args:
-                metadata["agent_id"] = args["agent_id"]
-                
-            self.locker.lock(args["path"], metadata=metadata)
-            return f"🔒 LOCKED: {args['path']}"
-            
-        elif name == "unlock_resource":
-            self.locker.unlock(args["path"])
-            return f"🔓 UNLOCKED: {args['path']}"
-            
-        elif name == "get_lock_metadata":
-            meta = self.locker.get_metadata(args["path"])
-            return json.dumps(meta, indent=2)
+    def _get_facade_routers(self) -> Dict[str, Dict[str, Any]]:
+        """Build facade routers lazily. Same _impl functions as FastMCP facades."""
+        if hasattr(self, "_facade_cache"):
+            return self._facade_cache
 
-        elif name == "watch_resource":
-            self.watchdog.protect(args["path"])
-            return f"👁️ WATCHING: {args['path']}"
-            
-        elif name == "hypervisor_status":
-            status = []
-            status.append("🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode / Python 3.9 Shim)")
-            status.append(f"👁️  Watchdog: {'Active' if self.watchdog.observer.is_alive() else 'Inactive'}")
-            status.append(f"🔒 Protected Paths: {len(self.watchdog.protected_paths)}")
-            return "\n".join(status)
-            
-        elif name == "set_hypervisor_mode":
-            mode = args["mode"]
-            if mode == "red":
-                self.injector.inject_identity("RED TEAM", "#ff0000")
-                return "🔴 Hypervisor Mode: RED TEAM"
-            elif mode == "blue":
-                self.injector.inject_identity("BLUE TEAM", "#007acc")
-                return "🔵 Hypervisor Mode: BLUE TEAM"
-            elif mode == "reset":
-                self.injector.reset_identity()
-                return "⚪ Hypervisor Mode: RESET"
-                
-        # --- GOVERNANCE & HEALTH ---
-        elif name == "brain_health":
-            try:
-                return json.dumps({
-                    "status": "healthy",
-                    "version": "1.0.0",
-                    "tools_registered": 15,
-                    "brain_path": str(self.brain_path),
-                    "uptime_seconds": int(time.time() - START_TIME),
-                    "python_version": sys.version.split()[0]
-                }, indent=2)
-            except Exception as e:
-                return json.dumps({"status": "unhealthy", "error": str(e)})
+        def _make_response(success, data=None, error=None):
+            r = {"success": success}
+            if data is not None:
+                r["data"] = data
+            if error is not None:
+                r["error"] = error
+            return r
 
-        elif name == "brain_audit_log":
-            return self._audit_log_impl(args.get("limit", 20))
+        # ── nucleus_governance ──
+        from mcp_server_nucleus.runtime.hypervisor_ops import (
+            lock_resource_impl, unlock_resource_impl, set_hypervisor_mode_impl,
+            nucleus_list_directory_impl, nucleus_delete_file_impl,
+            watch_resource_impl, hypervisor_status_impl,
+        )
+        from mcp_server_nucleus.core.egress_proxy import nucleus_curl_impl, nucleus_pip_install_impl
 
-        elif name == "brain_governance_status":
-            return self._governance_status_impl()
+        governance_router = {
+            "lock": lambda path: lock_resource_impl(path),
+            "unlock": lambda path: unlock_resource_impl(path),
+            "set_mode": lambda mode: set_hypervisor_mode_impl(mode),
+            "list_directory": lambda path: nucleus_list_directory_impl(path),
+            "delete_file": lambda path: nucleus_delete_file_impl(path),
+            "watch": lambda path: watch_resource_impl(path),
+            "status": lambda: hypervisor_status_impl(),
+            "curl": lambda url, method="GET": nucleus_curl_impl(url, method),
+            "pip_install": lambda package: nucleus_pip_install_impl(package),
+        }
 
-        elif name == "brain_write_engram":
-            return self._write_engram_impl(
-                args["key"], 
-                args["value"], 
-                args.get("context", "Decision"), 
-                args.get("intensity", 5)
-            )
+        # ── nucleus_engrams ──
+        from mcp_server_nucleus.runtime.health_ops import (
+            _brain_health_impl, _brain_version_impl, _brain_audit_log_impl,
+        )
+        from mcp_server_nucleus.runtime.engram_ops import (
+            _brain_write_engram_impl, _brain_query_engrams_impl,
+            _brain_search_engrams_impl, _brain_governance_status_impl,
+        )
+        from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
+        from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
+        from mcp_server_nucleus.runtime.billing import compute_usage_summary
+        from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish
+        from mcp_server_nucleus.runtime.god_combos.self_healing_sre import run_self_healing_sre
+        from mcp_server_nucleus.runtime.god_combos.fusion_reactor import run_fusion_reactor
 
-        elif name == "brain_query_engrams":
-            return self._query_engrams_impl(
-                args.get("context"), 
-                args.get("min_intensity", 1)
-            )
+        engrams_router = {
+            "health": lambda: _brain_health_impl(),
+            "version": lambda: _brain_version_impl(),
+            "audit_log": lambda limit=20: _brain_audit_log_impl(limit),
+            "write_engram": lambda key, value, context="Decision", intensity=5: _brain_write_engram_impl(key, value, context, intensity),
+            "query_engrams": lambda context=None, min_intensity=1, limit=50: _brain_query_engrams_impl(context, min_intensity, limit),
+            "search_engrams": lambda query, case_sensitive=False, limit=50: _brain_search_engrams_impl(query, case_sensitive, limit),
+            "governance_status": lambda: _brain_governance_status_impl(),
+            "morning_brief": lambda: _make_response(True, data=_morning_brief_impl()),
+            # Phase 3: God Combos
+            "pulse_and_polish": lambda write_engram=True: _make_response(True, data=run_pulse_and_polish(write_engram=write_engram)),
+            "self_healing_sre": lambda symptom, write_engram=True: _make_response(True, data=run_self_healing_sre(symptom=symptom, write_engram=write_engram)),
+            "fusion_reactor": lambda observation, context="Decision", intensity=6, write_engrams=True: _make_response(True, data=run_fusion_reactor(observation=observation, context=context, intensity=intensity, write_engrams=write_engrams)),
+            # Phase 3: Context Graph
+            "context_graph": lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity)),
+            "engram_neighbors": lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth)),
+            "render_graph": lambda max_nodes=30, min_intensity=1: _make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)}),
+            # Phase 3: Billing
+            "billing_summary": lambda since_hours=None, group_by="tool": _make_response(True, data=compute_usage_summary(since_hours=since_hours, group_by=group_by)),
+        }
 
-        # --- TASK TOOLS ---
-        elif name == "brain_list_tasks":
-            return json.dumps(_list_tasks(
-                status=args.get("status"),
-                priority=args.get("priority"),
-                skill=args.get("skill"),
-                claimed_by=args.get("claimed_by")
-            ), indent=2)
+        # ── nucleus_tasks ──
+        tasks_router = {
+            "list": lambda status=None, priority=None, skill=None, claimed_by=None: _make_response(True, data=_list_tasks(status, priority, skill, claimed_by)),
+            "get_next": lambda skills: _make_response(True, data=_get_next_task(skills)),
+            "claim": lambda task_id, agent_id: _claim_task(task_id, agent_id),
+            "update": lambda task_id, updates: _update_task(task_id, updates),
+            "add": lambda description, priority=3, blocked_by=None, required_skills=None, source="stdio_server", task_id=None, skip_dep_check=False: _add_task(description, priority, blocked_by, required_skills, source, task_id, skip_dep_check),
+        }
 
-        elif name == "brain_add_task":
-            return json.dumps(_add_task(
-                description=args.get("description"),
-                priority=args.get("priority", 3),
-                blocked_by=args.get("blocked_by"),
-                required_skills=args.get("required_skills"),
-                source="hypervisor"
-            ), indent=2)
+        # ── nucleus_sessions (minimal — delegates to session_ops) ──
+        from mcp_server_nucleus.runtime.session_ops import (
+            _save_session, _resume_session, _list_sessions,
+        )
+        sessions_router = {
+            "save": lambda context, **kw: _save_session(context, **kw),
+            "resume": lambda session_id=None: _resume_session(session_id),
+            "list": lambda: _list_sessions(),
+        }
 
-        elif name == "brain_update_task":
-            updates = {k: v for k, v in args.items() if k != "task_id"}
-            return json.dumps(_update_task(
-                task_id=args.get("task_id"),
-                updates=updates
-            ), indent=2)
+        # ── nucleus_telemetry (minimal — core metrics) ──
+        from mcp_server_nucleus.tools._dispatch import get_dispatch_telemetry
 
-        elif name == "brain_claim_task":
-             return json.dumps(_claim_task(
-                 task_id=args.get("task_id"),
-                 agent_id=args.get("agent_id", "hypervisor_agent")
-             ), indent=2)
+        telemetry_router = {
+            "dispatch_metrics": lambda: get_dispatch_telemetry().get_metrics(),
+        }
 
-        elif name == "brain_get_next_task":
-            return json.dumps(_get_next_task(
-                skills=args.get("skills", [])
-            ), indent=2)
+        self._facade_cache = {
+            "nucleus_governance": governance_router,
+            "nucleus_engrams": engrams_router,
+            "nucleus_tasks": tasks_router,
+            "nucleus_sessions": sessions_router,
+            "nucleus_telemetry": telemetry_router,
+            # Remaining facades fall through to a "not available in stdio mode" message
+        }
+        return self._facade_cache
 
-        elif name == "nucleus_curl":
-            from mcp_server_nucleus.core.egress_proxy import nucleus_curl_impl
-            return nucleus_curl_impl(args.get("url"), args.get("method", "GET"))
-            
-        elif name == "nucleus_pip_install":
-            from mcp_server_nucleus.core.egress_proxy import nucleus_pip_install_impl
-            return nucleus_pip_install_impl(args.get("package"))
-                
-        raise ValueError(f"Unknown tool: {name}")
-
-    def _audit_log_impl(self, limit: int) -> str:
-        try:
-            log_path = self.brain_path / "ledger" / "interaction_log.jsonl"
-            if not log_path.exists():
-                return make_response(True, data={"entries": [], "count": 0, "message": "No log found."})
-            
-            entries = []
-            with open(log_path, "r", encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        entries.append(json.loads(line))
-            
-            recent = entries[-limit:] if len(entries) > limit else entries
-            recent.reverse()
-            return make_response(True, data={"entries": recent, "count": len(recent), "total": len(entries)})
-        except Exception as e:
-            return make_response(False, error=str(e))
-
-    def _governance_status_impl(self) -> str:
-        try:
-            audit_path = self.brain_path / "ledger" / "interaction_log.jsonl"
-            audit_count = 0
-            if audit_path.exists():
-                with open(audit_path, "r", encoding='utf-8') as f:
-                    audit_count = sum(1 for line in f if line.strip())
-            
-            engram_path = self.brain_path / "engrams" / "ledger.jsonl"
-            engram_count = 0
-            if engram_path.exists():
-                with open(engram_path, "r", encoding='utf-8') as f:
-                    engram_count = sum(1 for line in f if line.strip())
-            
-            governance = {
-                "policies": {"default_deny": True, "isolation_boundaries": True, "immutable_audit": True},
-                "statistics": {"audit_log_entries": audit_count, "engram_count": engram_count},
-                "status": "ENFORCED"
-            }
-            return make_response(True, data=governance)
-        except Exception as e:
-            return make_response(False, error=str(e))
-
-    def _write_engram_impl(self, key: str, value: str, context: str, intensity: int) -> str:
-        try:
-            if not re.match(r"^[a-zA-Z0-9_.-]+$", key):
-                return make_response(False, error="Invalid key characters")
-            
-            engram_path = self.brain_path / "engrams" / "ledger.jsonl"
-            engram_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            engram = {
-                "key": key, "value": value, "context": context,
-                "intensity": intensity, "timestamp": datetime.now().isoformat()
-            }
-            with open(engram_path, "a", encoding='utf-8') as f:
-                f.write(json.dumps(engram, ensure_ascii=False) + "\n")
-            
-            return make_response(True, data={"engram": engram, "message": f"Engram '{key}' written."})
-        except Exception as e:
-            return make_response(False, error=str(e))
-
-    def _query_engrams_impl(self, context: Optional[str], min_intensity: int) -> str:
-        try:
-            engram_path = self.brain_path / "engrams" / "ledger.jsonl"
-            if not engram_path.exists():
-                return make_response(True, data={"engrams": [], "count": 0})
-            
-            engrams = []
-            with open(engram_path, "r", encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        e = json.loads(line)
-                        if context and e.get("context", "").lower() != context.lower():
-                            continue
-                        if e.get("intensity", 5) < min_intensity:
-                            continue
-                        engrams.append(e)
-            
-            engrams.sort(key=lambda x: x.get("intensity", 5), reverse=True)
-            return make_response(True, data={"engrams": engrams, "count": len(engrams)})
-        except Exception as e:
-            return make_response(False, error=str(e))
+    async def _dispatch_facade(self, facade_name: str, action: str, params: dict) -> str:
+        """Route a facade tool call through the appropriate router."""
+        routers = self._get_facade_routers()
+        router = routers.get(facade_name)
+        if not router:
+            return json.dumps({
+                "error": f"Facade '{facade_name}' is not available in stdio fallback mode. "
+                         f"Use the FastMCP server for full facade support.",
+                "available_facades": sorted(routers.keys()),
+            }, indent=2)
+        return dispatch(action, params, router, facade_name)
 
 def main():
     # Handle diagnostic flags for smoke tests

@@ -132,3 +132,20 @@ def _update_state(updates: Dict[str, Any]) -> str:
         return "State updated successfully"
     except Exception as e:
         return f"Error updating state: {str(e)}"
+# ============================================================
+# MOCK MCP SERVER (For fallback/verification mode)
+# ============================================================
+
+class MockMCP:
+    """Mock FastMCP server for when the package is not installed."""
+    def tool(self, *args, **kwargs):
+        def decorator(f): return f
+        return decorator
+    def resource(self, *args, **kwargs):
+        def decorator(f): return f
+        return decorator
+    def prompt(self, *args, **kwargs):
+        def decorator(f): return f
+        return decorator
+    def run(self):
+        pass

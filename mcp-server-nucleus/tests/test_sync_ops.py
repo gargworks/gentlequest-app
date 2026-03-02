@@ -86,6 +86,10 @@ class TestAgentIdentification:
     
     def test_get_current_agent_no_registration(self, tmp_path):
         """Test getting agent when not registered."""
+        # Reset process-local identity cache to avoid pollution from other tests
+        import mcp_server_nucleus.runtime.sync_ops as sync_mod
+        sync_mod._current_identity = None
+
         # Without registration, should return unknown or auto-detected
         agent = get_current_agent(tmp_path)
         assert agent in ["unknown_agent", "vscode_auto", "windsurf_auto", "cursor_auto"]

@@ -20,6 +20,12 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
     """Implementation for engram writing — MDR_014 ADUN Protocol.
     
     Uses the MemoryPipeline for deterministic ADD/UPDATE/DELETE/NOOP operations.
+    
+    Args:
+        key: Alphanumeric identifier (min 2 chars, pattern: [a-zA-Z0-9_.-]+)
+        value: The engram content text
+        context: One of: Feature, Architecture, Brand, Strategy, Decision
+        intensity: 1-10 scale (10 = highest importance)
     """
     try:
         # V9.1 Security Hardening: Key Validation
@@ -81,9 +87,18 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
         return make_response(False, error=sanitize_error(e, "internal_error", "engram_write"))
 
 
-def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
-    """Implementation for engram querying."""
+def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50) -> str:
+    """Implementation for engram querying.
+    
+    Args:
+        context: Filter by context category (case-insensitive). None = all.
+        min_intensity: Minimum intensity threshold (1-10).
+        limit: Max engrams to return (default 50, max 500). Prevents context exhaustion.
+    """
     try:
+        # Clamp limit to safe range
+        limit = max(1, min(int(limit), 500))
+        
         brain = get_brain_path()
         engram_path = brain / "engrams" / "ledger.jsonl"
         
@@ -91,7 +106,10 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
             return make_response(True, data={
                 "engrams": [],
                 "count": 0,
-                "message": "No engrams found. Use brain_write_engram() to create."
+                "total_matching": 0,
+                "truncated": False,
+                "limit": limit,
+                "message": "No engrams found. Use write_engram to create."
             })
         
         engrams = []
@@ -113,9 +131,16 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
         # Sort by intensity (highest first)
         engrams.sort(key=lambda x: x.get("intensity", 5), reverse=True)
         
+        total_matching = len(engrams)
+        truncated = total_matching > limit
+        engrams = engrams[:limit]
+        
         return make_response(True, data={
             "engrams": engrams,
             "count": len(engrams),
+            "total_matching": total_matching,
+            "truncated": truncated,
+            "limit": limit,
             "filters": {"context": context, "min_intensity": min_intensity}
         })
     except Exception as e:
@@ -123,9 +148,17 @@ def _brain_query_engrams_impl(context: str, min_intensity: int) -> str:
         return make_response(False, error=sanitize_error(e, "internal_error", "engram_query"))
 
 
-def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
-    """Implementation for engram substring search."""
+def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: int = 50) -> str:
+    """Implementation for engram substring search.
+    
+    Args:
+        query: Substring to search for in engram keys and values.
+        case_sensitive: Whether to match case. Default False.
+        limit: Max engrams to return (default 50, max 500). Prevents context exhaustion.
+    """
     try:
+        limit = max(1, min(int(limit), 500))
+        
         brain = get_brain_path()
         engram_path = brain / "engrams" / "ledger.jsonl"
         
@@ -133,8 +166,11 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
             return make_response(True, data={
                 "engrams": [],
                 "count": 0,
+                "total_matching": 0,
+                "truncated": False,
+                "limit": limit,
                 "query": query,
-                "message": "No engrams found. Use brain_write_engram() to create."
+                "message": "No engrams found. Use write_engram to create."
             })
         
         search_query = query if case_sensitive else query.lower()
@@ -163,9 +199,16 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False) -> str:
         
         matches.sort(key=lambda x: x.get("intensity", 5), reverse=True)
         
+        total_matching = len(matches)
+        truncated = total_matching > limit
+        matches = matches[:limit]
+        
         return make_response(True, data={
             "engrams": matches,
             "count": len(matches),
+            "total_matching": total_matching,
+            "truncated": truncated,
+            "limit": limit,
             "query": query,
             "case_sensitive": case_sensitive
         })

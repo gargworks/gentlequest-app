@@ -37,7 +37,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 # v0.6.0 DSoR imports
 try:
     from .context_manager import compute_context_hash, get_context_manager
-    from .ipc_auth import get_ipc_auth_manager
+    from .auth import get_ipc_auth_manager
     from .event_stream import emit_event, EventTypes
     DSOR_AVAILABLE = True
 except ImportError:

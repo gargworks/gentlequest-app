@@ -8,11 +8,35 @@
 
 from ..tool_tiers import is_tool_allowed, tier_manager
 import sys
+from pathlib import Path
 
 # State flag to prevent recursion when FastMCP internally calls mcp.tool
 _REGISTERING_TOOL = False
 _original_mcp_tool = None
 _rpc_firewall_hook = None
+
+def default_rpc_firewall_hook(tool_name: str, args: tuple, kwargs: dict):
+    """Layer 3: Pre-execution validation of JSON-RPC tool calls."""
+    if tool_name in ["write_to_file", "replace_file_content", "multi_replace_file_content", "nucleus_delete_file", "brain_fix_code"]:
+        target_path = kwargs.get("TargetFile") or kwargs.get("target_file") or kwargs.get("AbsolutePath") or kwargs.get("path") or kwargs.get("file_path")
+        if target_path:
+            try:
+                abs_path = str(Path(target_path).resolve())
+                from ..runtime.hypervisor_ops import _watchdog
+                
+                is_protected = False
+                for p_path in getattr(_watchdog, 'protected_paths', []):
+                    if abs_path == p_path or abs_path.startswith(p_path + "/"):
+                        is_protected = True
+                        break
+                        
+                if is_protected:
+                    raise PermissionError(f"🚨 Nucleus RPC Firewall: Unauthorized file modification attempt on protected path: {target_path}")
+            except Exception as e:
+                if isinstance(e, PermissionError) and "Nucleus RPC Firewall" in str(e):
+                    raise e
+                import logging
+                logging.getLogger("nucleus").warning(f"RPC Firewall Hook Error: {e}")
 
 def _tiered_tool_wrapper(*args, **kwargs):
     """
@@ -102,6 +126,6 @@ def configure_tiered_tool_registration(mcp_instance, rpc_firewall_hook=None):
     """Initializes the tiered tool registration system for the given MCP instance."""
     global _original_mcp_tool, _rpc_firewall_hook
     _original_mcp_tool = mcp_instance.tool
-    _rpc_firewall_hook = rpc_firewall_hook
+    _rpc_firewall_hook = rpc_firewall_hook or default_rpc_firewall_hook
     mcp_instance.tool = _tiered_tool_wrapper
     return mcp_instance

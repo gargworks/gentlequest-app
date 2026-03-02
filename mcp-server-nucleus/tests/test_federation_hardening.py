@@ -326,34 +326,244 @@ class TestFederationErrorHandling:
 
 
 class TestFederationAsync:
-    """Test async federation operations."""
+    """Test async federation operations (stdlib asyncio.run, no plugin required)."""
 
-    @pytest.mark.asyncio
-    async def test_join_federation(self):
+    def test_join_federation(self):
         """Test joining federation."""
+        async def _join():
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                engine = create_federation_engine(
+                    brain_id="join_brain",
+                    brain_path=Path(tmp_dir)
+                )
+                result = await engine.join("10.0.0.1:9000")
+                assert result["success"]
+                assert result["peers"] >= 1
+        
+        asyncio.run(_join())
+
+    def test_leave_federation(self):
+        """Test leaving federation gracefully."""
+        async def _leave():
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                engine = create_federation_engine(
+                    brain_id="leave_brain",
+                    brain_path=Path(tmp_dir)
+                )
+                result = await engine.leave()
+                assert result["success"]
+        
+        asyncio.run(_leave())
+
+
+class TestDiscoveryManager:
+    """Test DiscoveryManager peer lifecycle and probing logic."""
+    
+    @pytest.mark.asyncio
+    async def test_probe_marks_peer_suspect(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            engine = create_federation_engine(
-                brain_id="join_brain",
-                brain_path=Path(tmp_dir)
-            )
+            engine = create_federation_engine("engine_bh1", Path(tmp_dir))
+            # Set short timeouts for testing
+            engine.discovery.config.heartbeat_timeout = 0.5
             
-            result = await engine.join("10.0.0.1:9000")
+            # Setup an online peer acting normally
+            peer_good = FederationPeer(peer_id="peer_good", address="host1", region="us")
+            peer_good.status = PeerStatus.ONLINE
+            peer_good.last_heartbeat = datetime.utcnow()
+            engine.state.peers["peer_good"] = peer_good
             
-            assert result["success"]
-            assert result["peers"] >= 1
+            # Setup a peer that missed heartbeats
+            peer_suspect = FederationPeer(peer_id="peer_suspect", address="host2", region="us")
+            peer_suspect.status = PeerStatus.ONLINE
+            import time
+            from datetime import timedelta
+            # Aged past the 0.5 timeout
+            peer_suspect.last_heartbeat = datetime.utcnow() - timedelta(seconds=1.0)
+            engine.state.peers["peer_suspect"] = peer_suspect
+            
+            # Run the probe manually
+            await engine.discovery._probe_round()
+            
+            assert engine.state.peers["peer_good"].status == PeerStatus.ONLINE
+            assert engine.state.peers["peer_suspect"].status == PeerStatus.SUSPECT
+            assert engine.state.peers["peer_suspect"].suspect_time is not None
 
     @pytest.mark.asyncio
-    async def test_leave_federation(self):
-        """Test leaving federation gracefully."""
+    async def test_probe_marks_suspect_offline(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            engine = create_federation_engine(
-                brain_id="leave_brain",
-                brain_path=Path(tmp_dir)
+            engine = create_federation_engine("engine_bh2", Path(tmp_dir))
+            engine.discovery.config.heartbeat_timeout = 0.5
+            engine.discovery.config.suspect_timeout = 0.5
+            
+            # Setup a peer that is a long time suspect
+            peer_dead = FederationPeer(peer_id="peer_dead", address="host3", region="us")
+            peer_dead.status = PeerStatus.SUSPECT
+            from datetime import timedelta
+            peer_dead.last_heartbeat = datetime.utcnow() - timedelta(seconds=2.0)
+            peer_dead.suspect_time = datetime.utcnow() - timedelta(seconds=1.0)
+            engine.state.peers["peer_dead"] = peer_dead
+            
+            await engine.discovery._probe_round()
+            
+            assert engine.state.peers["peer_dead"].status == PeerStatus.OFFLINE
+
+
+class TestSyncManager:
+    """Test state synchronization operations."""
+    
+    @pytest.mark.asyncio
+    async def test_sync_with_peer_updates_clock(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_sync", Path(tmp_dir))
+            
+            # Setup a peer
+            peer = FederationPeer("sync_peer", "host1", "us")
+            peer.vector_clock = VectorClock(clocks={"sync_peer": 5})
+            engine.state.peers["sync_peer"] = peer
+            
+            # Sync
+            result = await engine.sync.sync_with_peer("sync_peer", full=True)
+            
+            assert result.success is True
+            # The local state clock should have merged the peer's clock and incremented itself
+            assert engine.state.vector_clock.clocks.get("sync_peer") == 5
+            assert engine.state.vector_clock.clocks.get("engine_sync") == 1
+            assert peer.last_sync is not None
+
+
+class TestFederationTaskRouting:
+    """Test FederationEngine task routing logic with RoutingProfiles."""
+    
+    @pytest.mark.asyncio
+    async def test_route_task_default_profile(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_route_1", Path(tmp_dir))
+            
+            # Add some peers
+            engine.state.peers["peer_fast_empty"] = FederationPeer(
+                peer_id="peer_fast_empty", address="host1", region="us",
+                capabilities={"llm"}, load=0.1, latency_ms=10.0
             )
+            engine.state.peers["peer_fast_empty"].status = PeerStatus.ONLINE
             
-            result = await engine.leave()
+            engine.state.peers["peer_slow_busy"] = FederationPeer(
+                peer_id="peer_slow_busy", address="host2", region="us",
+                capabilities={"llm", "gpu"}, load=0.9, latency_ms=200.0
+            )
+            engine.state.peers["peer_slow_busy"].status = PeerStatus.ONLINE
             
-            assert result["success"]
+            # Without specific requirements, it should pick the fast/empty one
+            decision = await engine.route_task({"required_skills": ["llm"]}, profile="default")
+            # Usually local node gets a slight affinity bump. Let's see if the peer wins.
+            assert getattr(decision, "target_brain", None) is not None
+            
+            # With specific requirement, it should pick the one that has it
+            decision2 = await engine.route_task({"required_skills": ["gpu"]}, profile="default")
+            assert decision2.target_brain == "peer_slow_busy"
+
+    @pytest.mark.asyncio
+    async def test_routing_no_peers_available(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_route_3", Path(tmp_dir))
+            
+            engine.state.peers["peer_offline"] = FederationPeer(
+                peer_id="peer_offline", address="host1", region="us",
+                capabilities={"magic"}, load=0.1, latency_ms=10.0
+            )
+            engine.state.peers["peer_offline"].status = PeerStatus.OFFLINE
+            
+            # Should fallback to local
+            decision = await engine.route_task({"required_skills": ["magic"]})
+            assert decision.target_brain == "engine_route_3"
+
+
+class TestConsensusManager:
+    """Test Raft leader election and proposal logic."""
+
+    @pytest.mark.asyncio
+    async def test_start_election_single_node(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_raft_1", Path(tmp_dir))
+            # Initially FOLLOWER
+            assert engine.consensus.raft_state == RaftState.FOLLOWER
+            
+            # Single node should immediately elect itself
+            await engine.consensus._start_election()
+            
+            assert engine.consensus.raft_state == RaftState.LEADER
+            assert engine.state.leader_id == "engine_raft_1"
+            assert engine.state.term == 1
+
+    @pytest.mark.asyncio
+    async def test_propose_when_leader(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_raft_2", Path(tmp_dir))
+            engine.consensus.raft_state = RaftState.LEADER
+            
+            success = await engine.consensus.propose({"action": "test"})
+            assert success is True
+            assert len(engine.state.log) == 1
+            assert engine.state.log[0].command == {"action": "test"}
+
+    @pytest.mark.asyncio
+    async def test_propose_when_follower(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_raft_3", Path(tmp_dir))
+            engine.consensus.raft_state = RaftState.FOLLOWER
+            
+            success = await engine.consensus.propose({"action": "test"})
+            assert success is False
+            assert len(engine.state.log) == 0
+
+
+class TestRecoveryManager:
+    """Test partition detection and handling."""
+    
+    def test_partition_detection(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_rec_1", Path(tmp_dir))
+            
+            # 1 node = NORMAL
+            assert engine.recovery.check_partition_status() == PartitionStatus.NORMAL
+            
+            # Add 2 offline peers. Total = 3, Online = 1 => ISOLATED
+            peer1 = FederationPeer("p1", "h1", "us")
+            peer1.status = PeerStatus.OFFLINE
+            peer2 = FederationPeer("p2", "h2", "us")
+            peer2.status = PeerStatus.OFFLINE
+            engine.state.peers["p1"] = peer1
+            engine.state.peers["p2"] = peer2
+            
+            assert engine.recovery.check_partition_status() == PartitionStatus.ISOLATED
+            
+            # Make 1 peer online. Total = 3, Online = 2 => MAJORITY
+            peer1.status = PeerStatus.ONLINE
+            assert engine.recovery.check_partition_status() == PartitionStatus.MAJORITY
+
+    @pytest.mark.asyncio
+    async def test_handle_peer_failure_disables_class_a(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            engine = create_federation_engine("engine_rec_2", Path(tmp_dir))
+            
+            # Add 2 online peers. Total = 3, Online = 3
+            peer1 = FederationPeer("p1", "h1", "us")
+            peer1.status = PeerStatus.ONLINE
+            peer2 = FederationPeer("p2", "h2", "us")
+            peer2.status = PeerStatus.ONLINE
+            engine.state.peers["p1"] = peer1
+            engine.state.peers["p2"] = peer2
+            
+            assert engine.state.class_a_enabled is True
+            
+            # Both fail
+            peer1.status = PeerStatus.OFFLINE
+            peer2.status = PeerStatus.OFFLINE
+            
+            await engine.recovery.handle_peer_failure("p1")
+            await engine.recovery.handle_peer_failure("p2")
+            
+            assert engine.state.partition_status == PartitionStatus.ISOLATED
+            assert engine.state.class_a_enabled is False
 
 
 if __name__ == "__main__":

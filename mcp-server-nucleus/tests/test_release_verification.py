@@ -166,11 +166,100 @@ def test_cli_argument_parsing(brain_path, env):
     assert "Unknown command" not in result.stderr
     assert "Unknown command" not in result.stdout
 
+def test_cli_graph_command(brain_path, env):
+    """Test: nucleus graph command runs without error."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'graph'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Graph command failed: {result.stderr}"
+    assert "NUCLEUS ENGRAM CONTEXT GRAPH" in result.stdout or "Error" not in result.stdout
+
+def test_cli_graph_json(brain_path, env):
+    """Test: nucleus graph --json outputs valid JSON."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'graph', '--json'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Graph JSON failed: {result.stderr}"
+    import json
+    parsed = json.loads(result.stdout)
+    assert "nodes" in parsed
+    assert "stats" in parsed
+
+def test_cli_graph_neighbors_missing(brain_path, env):
+    """Test: nucleus graph --neighbors with missing key shows error."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'graph', '--neighbors', 'nonexistent_key_xyz'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0  # Exits cleanly even on missing key
+
+def test_cli_billing_command(brain_path, env):
+    """Test: nucleus billing command runs without error."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'billing'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Billing command failed: {result.stderr}"
+    assert "NUCLEUS USAGE BILLING" in result.stdout
+
+def test_cli_billing_json(brain_path, env):
+    """Test: nucleus billing --json outputs valid JSON."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'billing', '--json'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Billing JSON failed: {result.stderr}"
+    import json
+    parsed = json.loads(result.stdout)
+    assert "total_cost_units" in parsed
+    assert "cost_model" in parsed
+
+def test_cli_billing_group_by_tier(brain_path, env):
+    """Test: nucleus billing --group-by tier works."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'billing', '--group-by', 'tier'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Billing tier failed: {result.stderr}"
+    assert "NUCLEUS USAGE BILLING" in result.stdout
+
+def test_cli_billing_group_by_session(brain_path, env):
+    """Test: nucleus billing --group-by session works."""
+    result = subprocess.run(
+        [sys.executable, '-m', 'mcp_server_nucleus.cli', 'billing', '--group-by', 'session'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10
+    )
+    assert result.returncode == 0, f"Billing session failed: {result.stderr}"
+
+
 def test_version_consistency():
     """Test: Version in pyproject.toml matches expected"""
     dev_toml = Path(__file__).parent.parent / "pyproject.toml"
     
     if dev_toml.exists():
         content = dev_toml.read_text()
-        # Updated for v1.0.9 release
-        assert 'version = "1.0.9"' in content, "pyproject.toml version mismatch"
+        # Updated for v1.2.0 GA release
+        assert 'version = "1.2.0"' in content, "pyproject.toml version mismatch"

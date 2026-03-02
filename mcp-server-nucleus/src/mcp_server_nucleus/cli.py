@@ -647,6 +647,24 @@ def main():
     tasks_gc.add_argument('--max-age', type=int, default=72, help='Hours of inactivity before archiving (default: 72)')
     
     # ============================================================
+    # GRAPH COMMAND — Context Graph visualization
+    # ============================================================
+    graph_parser = subparsers.add_parser('graph', help='Visualize the engram context graph')
+    graph_parser.add_argument('--max-nodes', type=int, default=30, help='Max nodes to display (default: 30)')
+    graph_parser.add_argument('--min-intensity', type=int, default=1, help='Minimum engram intensity (default: 1)')
+    graph_parser.add_argument('--json', action='store_true', help='Output raw graph JSON instead of ASCII')
+    graph_parser.add_argument('--neighbors', metavar='KEY', help='Show neighborhood of a specific engram key')
+    graph_parser.add_argument('--depth', type=int, default=1, help='BFS depth for --neighbors (default: 1)')
+
+    # ============================================================
+    # BILLING COMMAND — Usage cost tracking
+    # ============================================================
+    billing_parser = subparsers.add_parser('billing', help='View usage cost tracking from audit logs')
+    billing_parser.add_argument('--hours', type=float, help='Only show last N hours (default: all time)')
+    billing_parser.add_argument('--group-by', choices=['tool', 'tier', 'session'], default='tool', help='Group costs by tool, tier, or session (default: tool)')
+    billing_parser.add_argument('--json', action='store_true', help='Output as JSON')
+
+    # ============================================================
     # SEARCH COMMAND
     # ============================================================
     search_parser = subparsers.add_parser('search', help='Search for agents in the registry')
@@ -751,6 +769,10 @@ def main():
         handle_loop_command(args)
     elif args.cli_command == 'end-of-day':
         handle_end_of_day_command(args)
+    elif args.cli_command == 'graph':
+        handle_graph_command(args)
+    elif args.cli_command == 'billing':
+        handle_billing_command(args)
     elif args.cli_command is None:
         # No command given, show help
         parser.print_help()
@@ -1530,6 +1552,103 @@ def handle_end_of_day_command(args):
     except Exception as e:
         print(f"❌ Error capturing end-of-day: {e}")
         print()
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+
+
+def handle_graph_command(args):
+    """Handle nucleus graph command — Context Graph visualization."""
+    import json
+
+    try:
+        if args.neighbors:
+            from .runtime.context_graph import get_engram_neighbors
+            result = get_engram_neighbors(key=args.neighbors, max_depth=args.depth)
+            if "error" in result:
+                print(f"❌ {result['error']}")
+                return
+            if args.json:
+                print(json.dumps(result, indent=2))
+            else:
+                target = result["target"]
+                print(f"🎯 Neighborhood of '{target['id']}' (depth={args.depth})")
+                print(f"   Context: {target['context']} | Intensity: {target['intensity']}")
+                print(f"   Neighbors: {result['neighbor_count']}")
+                print()
+                for n in result["neighbors"]:
+                    print(f"   ├─ {n['id']} [{n['context']}] intensity={n['intensity']}")
+                if result["edges"]:
+                    print()
+                    print(f"   Edges ({len(result['edges'])}):")
+                    for e in result["edges"]:
+                        print(f"   │  {e['source']} ─({e['type']})─ {e['target']}")
+        elif args.json:
+            from .runtime.context_graph import build_context_graph
+            result = build_context_graph(
+                include_edges=True,
+                min_intensity=args.min_intensity,
+            )
+            print(json.dumps(result, indent=2))
+        else:
+            from .runtime.context_graph import render_ascii_graph
+            output = render_ascii_graph(
+                max_nodes=args.max_nodes,
+                min_intensity=args.min_intensity,
+            )
+            print(output)
+    except Exception as e:
+        print(f"❌ Error generating context graph: {e}")
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+
+
+def handle_billing_command(args):
+    """Handle nucleus billing command — Usage cost tracking."""
+    import json
+    from .runtime.billing import compute_usage_summary
+
+    try:
+        result = compute_usage_summary(
+            since_hours=args.hours,
+            group_by=args.group_by,
+        )
+
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print("=" * 60)
+            print("💰 NUCLEUS USAGE BILLING")
+            print("=" * 60)
+            print(f"  Total cost: {result['total_cost_units']} units")
+            print(f"  Total interactions: {result['total_interactions']}")
+            print(f"  Time filter: {result['time_filter']}")
+            print(f"  Group by: {result['group_by']}")
+            print()
+
+            breakdown = result.get("breakdown", {})
+            if breakdown:
+                print(f"  {'Name':<30} {'Cost':>8} {'Count':>6}")
+                print("  " + "-" * 46)
+                for name, data in breakdown.items():
+                    cost = data.get("cost", 0)
+                    count = data.get("count", 0)
+                    extra = ""
+                    if "tier" in data:
+                        extra = f"  (T{data['tier']})"
+                    elif "label" in data:
+                        extra = f"  ({data['label']})"
+                    print(f"  {name:<30} {cost:>8.2f} {count:>6}{extra}")
+            else:
+                print("  No data found.")
+
+            print()
+            cm = result.get("cost_model", {})
+            print(f"  Cost model: T1={cm.get('tier_1_read', '?')} T2={cm.get('tier_2_write', '?')} "
+                  f"T3={cm.get('tier_3_compute', '?')} T4={cm.get('tier_4_destructive', '?')} ({cm.get('currency', '?')})")
+
+            ds = result.get("data_sources", {})
+            print(f"  Data sources: audit_log={ds.get('audit_log', 0)} events={ds.get('events', 0)} metering={ds.get('metering', 0)}")
+            print("=" * 60)
+    except Exception as e:
+        print(f"❌ Error generating billing summary: {e}")
         print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
 
 

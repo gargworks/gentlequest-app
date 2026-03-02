@@ -92,15 +92,24 @@ def nucleus_list_directory_impl(path: str) -> str:
         return f"❌ ERROR: {str(e)}"
 
 
-def nucleus_delete_file_impl(path: str, emit_event_fn=None) -> str:
-    """Attempt to delete a file, governed by Hypervisor lock.
+def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = False) -> str:
+    """Attempt to delete a file, governed by Hypervisor lock + HITL gate.
     
     Args:
         path: File path to delete
         emit_event_fn: Callback for emitting events (to avoid circular import)
+        confirm: HITL safety gate. Must be True to actually delete. Default False.
     """
     try:
         resolved_path = Path(path).resolve()
+
+        # HITL Gate: require explicit confirmation for destructive ops
+        if not confirm:
+            return (
+                f"⚠️ HITL GATE: delete_file requires confirm=true.\n"
+                f"Target: {resolved_path}\n"
+                f"Re-call with confirm=true to proceed. This is a destructive operation."
+            )
 
         if _locker.is_locked(str(resolved_path)):
             if emit_event_fn:
@@ -115,6 +124,11 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None) -> str:
             return f"❌ ERROR: File not found: {path}"
 
         os.remove(resolved_path)
+        if emit_event_fn:
+            emit_event_fn("file_deleted", "hypervisor_governance", {
+                "path": str(resolved_path),
+                "confirmed": True,
+            })
         return f"✅ SUCCESS: {path} has been removed."
 
     except Exception as e:

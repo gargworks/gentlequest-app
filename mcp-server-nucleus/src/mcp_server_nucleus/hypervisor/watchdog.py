@@ -34,6 +34,16 @@ class SecurityEventHandler(FileSystemEventHandler):
                 break
         
         if is_protected:
+            # Hash/Diff check to prevent false-positive trigger loops from IDE scanners
+            try:
+                with open(path, 'rb') as f:
+                    current_content = f.read()
+                if current_content == self.watchdog.shadow_cache.get(path):
+                    # False positive IDE scan, content is identical
+                    return
+            except Exception:
+                pass
+
             # Breach Detected!
             logger.warning(f"🚨 SECURITY BREACH: Locked file modified: {path}")
             
@@ -48,8 +58,11 @@ class SecurityEventHandler(FileSystemEventHandler):
         if len(self.revert_timestamps) == self.revert_timestamps.maxlen:
             time_delta = self.revert_timestamps[-1] - self.revert_timestamps[0]
             if time_delta < 1.0:
-                logger.error(f"🚨 DDoS CIRCUIT BREAKER TRIPPED! Too many reverts in {time_delta:.2f}s. Dropping connection.")
-                os._exit(1)
+                logger.error(f"🚨 DDoS CIRCUIT BREAKER TRIPPED! Too many reverts in {time_delta:.2f}s. Ignoring further reverts for 5s.")
+                # We do not os._exit(1) anymore to prevent IDEs from violently killing the MCP server.
+                # Just sleep briefly to break the infinite feedback loop.
+                time.sleep(1)
+                return
                 
         if path in self.watchdog.shadow_cache:
             try:

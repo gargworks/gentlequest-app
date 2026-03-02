@@ -24,6 +24,9 @@ from .capabilities.code_ops import CodeOps
 from .capabilities.web_ops import WebOps
 from .capabilities.memory_ops import MemoryOps
 from .capabilities.self_healing import SelfHealingOps
+from .capabilities.agent_dashboard import AgentDashboardOps
+from .capabilities.budget_ops import BudgetOps
+from .capabilities.enforcement_ops import EnforcementOps
 from .storage import read_brain_file, brain_file_exists
 
 from .plugin_loader import PluginLoader
@@ -280,6 +283,9 @@ class ContextFactory:
         self.register(WebOps())
         self.register(MemoryOps())
         self.register(SelfHealingOps())
+        self.register(AgentDashboardOps())
+        self.register(BudgetOps())
+        self.register(EnforcementOps())
         
         # Load Plugins (Marketplace - Phase 57 Update)
         # We no longer strictly scan all tools for global registration.

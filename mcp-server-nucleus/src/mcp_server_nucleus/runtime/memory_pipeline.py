@@ -97,11 +97,11 @@ class MemoryPipeline:
         for part in raw_parts:
             cleaned = part.strip().rstrip('.')
             # Filter out noise: too short, too long, or just whitespace
-            if len(cleaned) >= 10 and len(cleaned) <= 500:
+            if len(cleaned) >= 5 and len(cleaned) <= 500:
                 atoms.append(cleaned)
 
         # If no atoms extracted (text was a single statement), use the whole thing
-        if not atoms and len(text.strip()) >= 10:
+        if not atoms and len(text.strip()) >= 5:
             atoms = [text.strip()]
 
         return atoms
@@ -109,21 +109,53 @@ class MemoryPipeline:
     # ── STEP 2: Compare Against Existing Ledger ────────────────────
 
     def _load_active_engrams(self) -> List[Dict]:
-        """Load all active (non-deleted) engrams from the ledger."""
+        """Load all active (non-deleted) engrams from the ledger.
+
+        Deduplicates by key on read: if multiple engrams share a key,
+        only the one with the highest version (or latest timestamp) is kept.
+        This ensures queries always return clean data even if the ledger
+        file contains pre-ADUN duplicates.
+        """
         if not self.ledger_path.exists():
             return []
 
-        engrams = []
+        raw_engrams = []
         with open(self.ledger_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     try:
                         e = json.loads(line)
                         if not e.get("deleted", False):
-                            engrams.append(e)
+                            raw_engrams.append(e)
                     except json.JSONDecodeError:
                         continue
-        return engrams
+
+        # Deduplicate by key: keep the entry with highest version,
+        # breaking ties by latest timestamp.
+        seen: Dict[str, Dict] = {}
+        for e in raw_engrams:
+            key = e.get("key")
+            if not key:
+                # Engrams without keys are kept as-is (append to result)
+                continue
+            existing = seen.get(key)
+            if existing is None:
+                seen[key] = e
+            else:
+                # Compare: higher version wins, then later timestamp
+                e_ver = e.get("version", 1)
+                ex_ver = existing.get("version", 1)
+                if e_ver > ex_ver:
+                    seen[key] = e
+                elif e_ver == ex_ver:
+                    e_ts = e.get("timestamp", "")
+                    ex_ts = existing.get("timestamp", "")
+                    if e_ts > ex_ts:
+                        seen[key] = e
+
+        # Also include keyless engrams (rare but possible)
+        keyless = [e for e in raw_engrams if not e.get("key")]
+        return list(seen.values()) + keyless
 
     def _find_similar(self, candidate: str, existing: List[Dict], threshold: float = 0.6) -> Optional[Dict]:
         """
@@ -394,6 +426,101 @@ class MemoryPipeline:
         }
         with open(self.history_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(history_entry, ensure_ascii=False) + "\n")
+
+    # ── MAINTENANCE ────────────────────────────────────────────────
+
+    def deduplicate_ledger(self) -> Dict:
+        """One-shot migration: rewrite the ledger with only unique-key entries.
+
+        For each duplicate key, keeps the entry with the highest version
+        (or latest timestamp on tie). Creates a .bak backup before rewriting.
+
+        Returns:
+            Dict with counts: total_before, total_after, duplicates_removed,
+            unique_keys, backup path.
+        """
+        if not self.ledger_path.exists():
+            return {"error": "Ledger file not found", "path": str(self.ledger_path)}
+
+        # Read all lines (including deleted ones — we preserve those as-is)
+        all_entries = []
+        with open(self.ledger_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        all_entries.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+
+        total_before = len(all_entries)
+
+        # Separate deleted and active entries
+        deleted = [e for e in all_entries if e.get("deleted", False)]
+        active = [e for e in all_entries if not e.get("deleted", False)]
+
+        # Deduplicate active entries by key
+        seen: Dict[str, Dict] = {}
+        keyless = []
+        for e in active:
+            key = e.get("key")
+            if not key:
+                keyless.append(e)
+                continue
+            existing = seen.get(key)
+            if existing is None:
+                seen[key] = e
+            else:
+                e_ver = e.get("version", 1)
+                ex_ver = existing.get("version", 1)
+                if e_ver > ex_ver:
+                    seen[key] = e
+                elif e_ver == ex_ver:
+                    e_ts = e.get("timestamp", "")
+                    ex_ts = existing.get("timestamp", "")
+                    if e_ts > ex_ts:
+                        seen[key] = e
+
+        deduped_active = list(seen.values()) + keyless
+        total_after = len(deduped_active) + len(deleted)
+        duplicates_removed = total_before - total_after
+
+        if duplicates_removed == 0:
+            return {
+                "status": "clean",
+                "total_entries": total_before,
+                "unique_keys": len(seen),
+                "duplicates_removed": 0,
+                "message": "Ledger is already clean. No duplicates found.",
+            }
+
+        # Create backup
+        import shutil
+        backup_path = self.ledger_path.with_suffix(".jsonl.bak")
+        shutil.copy2(self.ledger_path, backup_path)
+
+        # Rewrite ledger: deduped active entries first, then deleted
+        with open(self.ledger_path, "w", encoding="utf-8") as f:
+            for e in deduped_active:
+                f.write(json.dumps(e, ensure_ascii=False) + "\n")
+            for e in deleted:
+                f.write(json.dumps(e, ensure_ascii=False) + "\n")
+
+        # Log to history
+        self._append_to_history(
+            {"key": "__ledger_dedup_migration__", "duplicates_removed": duplicates_removed},
+            "DEDUP_MIGRATION",
+        )
+
+        result = {
+            "status": "deduplicated",
+            "total_before": total_before,
+            "total_after": total_after,
+            "duplicates_removed": duplicates_removed,
+            "unique_keys": len(seen),
+            "backup": str(backup_path),
+        }
+        logger.info(f"Ledger deduplicated: {result}")
+        return result
 
     # ── HIGH-LEVEL API ─────────────────────────────────────────────
 

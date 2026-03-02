@@ -9,7 +9,15 @@ from datetime import datetime, timezone
 
 # v0.6.0 DSoR: Import context manager and IPC auth
 from .context_manager import get_context_manager
-from .ipc_auth import get_ipc_auth_manager, IPCToken
+from .auth import get_ipc_auth_manager, IPCToken
+# v0.6.1: Agent Runtime V2 integration
+from .agent_runtime_v2 import get_execution_manager, check_cancellation
+from .budget_alerts import get_budget_monitor
+# Phase 71: Tool Calling Enforcement
+from .llm_tool_enforcer import get_tool_enforcer
+from .llm_pattern_learner import get_pattern_learner
+# Phase 72: Autonomous Tool Discovery
+from .tool_recommender import get_tool_recommender
 
 # Gemini types imported dynamically or duck-typed via DualEngineLLM
 
@@ -58,7 +66,7 @@ class EphemeralAgent:
     MDR_002: Implements Active Correction (Critic) in LLM mode.
     v0.6.0 DSoR: Emits DecisionMade events before every tool execution.
     """
-    def __init__(self, context: Dict[str, Any], model: Any = None):
+    def __init__(self, context: Dict[str, Any], model: Any = None, timeout_seconds: int = 300):
         self.context = context
         self.model = model
         self.history: List[str] = []
@@ -66,6 +74,19 @@ class EphemeralAgent:
         self._decision_ledger: List[DecisionMade] = []  # v0.6.0: Track all decisions
         self._current_ipc_token: IPCToken = None  # v0.6.0: Current IPC token for tool calls
         self._context_manager = get_context_manager()  # v0.6.0: For state verification
+        
+        # v0.6.1: Agent Runtime V2 integration
+        self._execution_manager = get_execution_manager()
+        self._agent_id: str = None
+        self._timeout_seconds = timeout_seconds
+        
+        # Phase 71: Tool Calling Enforcement
+        self._tool_enforcer = get_tool_enforcer()
+        self._pattern_learner = get_pattern_learner()
+        self._tools_called: List[str] = []  # Track tools called in this execution
+        
+        # Phase 72: Autonomous Tool Discovery
+        self._tool_recommender = get_tool_recommender()
     
     def _compute_context_hash(self, current_history: List[str]) -> str:
         """
@@ -131,7 +152,25 @@ class EphemeralAgent:
         Execute the agent loop.
         Returns execution log.
         v0.6.0 DSoR: Takes before/after snapshots for state verification.
+        v0.6.1: Integrated with Agent Runtime V2 for rate limiting, cost tracking, cancellation.
         """
+        # v0.6.1: Spawn with rate limiting
+        persona = self.context.get('persona', 'unknown')
+        intent = self.context.get('intent', '')
+        execution_status = "completed"
+        
+        try:
+            execution = self._execution_manager.spawn_agent(
+                persona=persona,
+                intent=intent,
+                timeout_seconds=self._timeout_seconds
+            )
+            self._agent_id = execution.agent_id
+            self._execution_manager.start_execution(self._agent_id)
+        except Exception as e:
+            # Rate limited or other spawn error
+            return f"Agent spawn failed: {e}"
+        
         # MDR_010: Auto-record telemetry
         try:
              brain_path = get_brain_path_internal()
@@ -140,8 +179,8 @@ class EphemeralAgent:
              pass 
 
         log = []
-        log.append(f"--- Spawning Ephemeral Agent ({self.context['persona']}) ---")
-        log.append(f"Intent: {self.context['intent']}")
+        log.append(f"--- Spawning Ephemeral Agent ({persona}) [ID: {self._agent_id}] ---")
+        log.append(f"Intent: {intent}")
         
         # v0.6.0 DSoR: Take "before" snapshot for state verification
         before_snapshot = None
@@ -193,6 +232,20 @@ class EphemeralAgent:
         except Exception:
             pass
         
+        # v0.6.1: Complete execution tracking and budget monitoring
+        if self._agent_id:
+            cost_record = self._execution_manager.complete_execution(self._agent_id, execution_status)
+            
+            # Check budget thresholds
+            if cost_record:
+                budget_monitor = get_budget_monitor()
+                budget_monitor.check_agent_cost(
+                    self._agent_id, 
+                    persona, 
+                    cost_record.estimated_cost_usd
+                )
+                budget_monitor.record_spend(cost_record.estimated_cost_usd)
+        
         return result
 
     async def _run_llm(self, log: List[str]) -> str:
@@ -201,11 +254,78 @@ class EphemeralAgent:
         """
         log.append(">> Mode: LLM (Smart)")
         
+        # Phase 71: Pre-flight intent analysis
+        intent_result = None
+        enforcement_prompt = ""
+        user_intent = self.context.get('intent', '')
+        try:
+            intent_result = self._tool_enforcer.pre_flight(
+                user_intent,
+                self.context.get('tools', [])
+            )
+            enforcement_prompt = self._tool_enforcer.generate_enforcement_prompt(intent_result)
+            
+            # Phase D: Context Retrieval Gate (Phase 71 enhancement)
+            # If LLM detected an intent that requires context (like configure or advise)
+            if hasattr(intent_result, 'needs_context') and intent_result.needs_context:
+                try:
+                    # Dynamically inject relevant engrams as context
+                    log.append(f"🔍 Intent requires context! Auto-querying Brain Engrams...")
+                    from .memory_pipeline import MemoryPipeline
+                    pipeline = MemoryPipeline(get_brain_path_internal())
+                    # Use the raw string querying logic from memory_pipeline for best match
+                    # (This is a simplified read; ideally we call pipeline.query if available)
+                    active_engrams = pipeline._load_active_engrams()
+                    
+                    found_context = []
+                    # Simple heuristic match since pipeline doesn't have a public query yet
+                    req_lower = user_intent.lower()
+                    for e in active_engrams:
+                        key_words = e.get("key", "").lower().replace("_", " ")
+                        val_words = e.get("value", "").lower()
+                        
+                        # Find overlapping words between intent and engram
+                        intent_words = set(req_lower.split()) - {"the", "a", "an", "is", "are", "how", "what", "why"}
+                        if any(w in val_words or w in key_words for w in intent_words if len(w) > 4):
+                            found_context.append(f"- {e.get('key', 'unknown')}: {e.get('value', '')}")
+                    
+                    if found_context:
+                        # Take top 5 to avoid blowing up context window
+                        top_context = "\n".join(found_context[:5])
+                        context_prompt = f"\n\n[SYSTEM ACQUIRED CONTEXT FROM BRAIN ENGRAMS]:\n{top_context}\nUse this context to inform your answer or configuration."
+                        enforcement_prompt += context_prompt
+                        log.append(f"🧠 Context Gate: Injected {len(found_context[:5])} relevant historical engrams.")
+                    else:
+                        log.append("🧠 Context Gate: No hyper-relevant engrams found for this intent.")
+                        
+                except Exception as ctx_e:
+                    log.append(f"⚠️ Context injection failed: {ctx_e}")
+
+            # Also inject learned patterns from past failures
+            learned_prompt = self._pattern_learner.get_system_prompt_enhancement()
+            enforcement_prompt += learned_prompt
+            
+            if intent_result.has_requirements():
+                log.append(f"🎯 Intent: required_tools={intent_result.required_tools}")
+        except Exception as e:
+            log.append(f"⚠️ Intent analysis skipped: {e}")
+        
+        # Reset tools called tracker
+        self._tools_called = []
+        
         # 1. Build Base Prompt
         system_prompt = self.context.get('system_prompt', "You are an agent.")
         
+        # Phase 72: Filter tools to only relevant ones (reduces cognitive load)
+        all_tools = self.context.get('tools', [])
+        if len(all_tools) > 25:
+            filtered_tools = self._tool_recommender.filter_tools(user_intent, all_tools)
+            log.append(f"🔍 Tool Discovery: {len(filtered_tools)}/{len(all_tools)} tools selected")
+        else:
+            filtered_tools = all_tools
+        
         tools_desc = []
-        for t in self.context['tools']:
+        for t in filtered_tools:
              tools_desc.append(f"### {t['name']}")
              tools_desc.append(f"Description: {t['description']}")
              tools_desc.append(f"Parameters: {json.dumps(t.get('parameters', {}), indent=2)}")
@@ -214,6 +334,7 @@ class EphemeralAgent:
         tools_block = "\n".join(tools_desc)
         
         base_prompt = f"""{system_prompt}
+{enforcement_prompt}
         
 AVAILABLE TOOLS:
 {tools_block}
@@ -249,6 +370,13 @@ CRITICAL RULES (MDR_002):
             try:
                 response = self.model.generate_content(turn_prompt)
                 
+                # v0.6.1: Record token usage for cost tracking
+                if self._agent_id:
+                    # Estimate tokens (rough: 4 chars = 1 token)
+                    input_tokens = len(turn_prompt) // 4
+                    output_tokens = len(getattr(response, 'text', '') or '') // 4
+                    self._execution_manager.record_tokens(self._agent_id, input_tokens, output_tokens)
+                
                 # Defensive: Handle None or malformed response
                 if response is None:
                     log.append("[LLM Error]: Response is None (quota/network issue)")
@@ -279,6 +407,7 @@ CRITICAL RULES (MDR_002):
                     args = tool_call.get("args", {})
                     
                     log.append(f">> Tool detected: {tool_name}")
+                    self._tools_called.append(tool_name)
                     
                     # v0.6.0 DSoR: Emit DecisionMade BEFORE tool execution
                     decision = self._emit_decision(
@@ -289,6 +418,10 @@ CRITICAL RULES (MDR_002):
                         confidence=0.9
                     )
                     log.append(f"📋 Decision recorded: {decision.decision_id} (ctx:{decision.context_hash})")
+                    
+                    # v0.6.1: Record tool call for cost tracking
+                    if self._agent_id:
+                        self._execution_manager.record_tool_call(self._agent_id)
                     
                     result = self._execute_tool(tool_name, args)
                     log.append(f"[Tool Result]: {str(result)[:1000]}...")
@@ -365,6 +498,7 @@ CRITICAL RULES (MDR_002):
                         args = tool_call.get("args", {})
                         
                         log.append(f">> Tool detected (after critique): {tool_name}")
+                        self._tools_called.append(tool_name)
                         
                         # v0.6.0 DSoR: Emit DecisionMade BEFORE tool execution (post-critique)
                         decision = self._emit_decision(

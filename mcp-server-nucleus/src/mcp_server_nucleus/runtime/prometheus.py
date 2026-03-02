@@ -9,9 +9,10 @@ Usage:
     # OR call brain_prometheus_metrics() MCP tool
 
     # Metrics exported:
-    # - nucleus_tool_calls_total{tool="brain_health"} 
-    # - nucleus_tool_errors_total{tool="brain_health"}
-    # - nucleus_tool_latency_seconds{tool="brain_health",quantile="0.5"}
+    # - nucleus_tool_calls_total{tool="nucleus_engrams"} 
+    # - nucleus_tool_errors_total{tool="nucleus_governance"}
+    # - nucleus_tool_latency_seconds{tool="nucleus_tasks",quantile="0.5"}
+    # - nucleus_dispatch_total{facade="nucleus_tasks",action="add"}
     # - nucleus_tasks_total{status="PENDING"}
     # - nucleus_sessions_total
     # - nucleus_events_total
@@ -153,6 +154,41 @@ def get_prometheus_metrics() -> str:
         for key, value in _gauges.items():
             lines.append(f"nucleus_gauge{{{_extract_labels(key)}}} {value}")
     
+    # Add dispatch telemetry metrics (from _dispatch.py)
+    try:
+        from mcp_server_nucleus.tools._dispatch import get_dispatch_telemetry
+        dt = get_dispatch_telemetry().get_metrics()
+        if dt["total_dispatches"] > 0:
+            lines.append("")
+            lines.append("# HELP nucleus_dispatch_total Total facade action dispatches")
+            lines.append("# TYPE nucleus_dispatch_total counter")
+            for action_key, stats in dt.get("top_10_actions", {}).items():
+                parts = action_key.split(".", 1)
+                facade = parts[0] if len(parts) > 1 else "unknown"
+                action = parts[1] if len(parts) > 1 else parts[0]
+                lines.append(f'nucleus_dispatch_total{{facade="{facade}",action="{action}"}} {stats["calls"]}')
+            
+            lines.append("")
+            lines.append("# HELP nucleus_dispatch_errors_total Total facade dispatch errors")
+            lines.append("# TYPE nucleus_dispatch_errors_total counter")
+            for action_key, stats in dt.get("top_10_actions", {}).items():
+                if stats["errors"] > 0:
+                    parts = action_key.split(".", 1)
+                    facade = parts[0] if len(parts) > 1 else "unknown"
+                    action = parts[1] if len(parts) > 1 else parts[0]
+                    lines.append(f'nucleus_dispatch_errors_total{{facade="{facade}",action="{action}"}} {stats["errors"]}')
+            
+            lines.append("")
+            lines.append("# HELP nucleus_dispatch_latency_avg_ms Average dispatch latency in ms")
+            lines.append("# TYPE nucleus_dispatch_latency_avg_ms gauge")
+            for action_key, stats in dt.get("top_10_actions", {}).items():
+                parts = action_key.split(".", 1)
+                facade = parts[0] if len(parts) > 1 else "unknown"
+                action = parts[1] if len(parts) > 1 else parts[0]
+                lines.append(f'nucleus_dispatch_latency_avg_ms{{facade="{facade}",action="{action}"}} {stats["avg_ms"]}')
+    except Exception:
+        pass  # Silently skip dispatch metrics if unavailable
+
     # Add brain state metrics if available
     try:
         brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
@@ -244,8 +280,8 @@ def metrics_tracked(tool_name: str):
     Decorator to automatically track tool metrics.
     
     Usage:
-        @metrics_tracked("brain_health")
-        def brain_health():
+        @metrics_tracked("nucleus_engrams.health")
+        def nucleus_engrams_health():
             ...
     """
     def decorator(func):
