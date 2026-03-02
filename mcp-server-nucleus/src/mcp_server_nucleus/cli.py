@@ -457,9 +457,12 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
                     except FileNotFoundError:
                         pass
             elif system == "Windows":
-                 process = subprocess.Popen('clip', stdin=subprocess.PIPE, shell=True)
-                 process.communicate(full_config.encode('utf-8'))
-                 copied = True
+                 import shutil as _shutil
+                 clip_path = _shutil.which('clip')
+                 if clip_path:
+                     process = subprocess.Popen([clip_path], stdin=subprocess.PIPE)
+                     process.communicate(full_config.encode('utf-8'))
+                     copied = True
         except Exception:
             pass # Fail silently
             

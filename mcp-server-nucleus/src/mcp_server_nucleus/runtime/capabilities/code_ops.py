@@ -1,8 +1,18 @@
 from typing import List, Dict, Any
 import os
+import shlex
 import subprocess
 from pathlib import Path
 from .base import Capability
+
+# Command allowlist for code_run_command (shell injection prevention)
+# Only base commands in this list may be executed via the NAR agent.
+SAFE_COMMANDS = frozenset({
+    'python3', 'python', 'node', 'npm', 'npx', 'pytest', 'git',
+    'ls', 'cat', 'head', 'tail', 'grep', 'find', 'wc', 'diff',
+    'echo', 'pwd', 'env', 'which', 'make', 'cargo', 'ruff',
+    'pip', 'pip3', 'uv', 'poetry',
+})
 
 class CodeOps(Capability):
     @property
@@ -157,12 +167,18 @@ class CodeOps(Capability):
             cmd = args['command']
             timeout = args.get('timeout', 30)
             try:
+                # Security: validate command against allowlist
+                cmd_parts = shlex.split(cmd)
+                if not cmd_parts:
+                    return "Error: Empty command"
+                base_cmd = os.path.basename(cmd_parts[0])
+                if base_cmd not in SAFE_COMMANDS:
+                    return f"Error: Command '{base_cmd}' not in allowlist. Allowed: {', '.join(sorted(SAFE_COMMANDS))}"
                 result = subprocess.run(
-                    cmd, 
-                    shell=True, 
-                    capture_output=True, 
-                    text=True, 
-                    cwd=cwd, 
+                    cmd_parts,
+                    capture_output=True,
+                    text=True,
+                    cwd=cwd,
                     timeout=timeout
                 )
                 return f"Exit Code: {result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
