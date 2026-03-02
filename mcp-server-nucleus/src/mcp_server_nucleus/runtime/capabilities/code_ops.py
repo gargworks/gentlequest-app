@@ -122,6 +122,13 @@ class CodeOps(Capability):
         if tool_name == "code_read_file":
             path = self._resolve_path(args['path'])
             
+            # Security: prevent path traversal outside project / home
+            resolved = path.resolve()
+            project_root = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain")).resolve().parent
+            home = Path.home()
+            if not (str(resolved).startswith(str(project_root)) or
+                    str(resolved).startswith(str(home))):
+                return f"Error: Path '{resolved}' is outside allowed boundaries."
             if not path.exists():
                 return f"Error: File not found: {path} (in {cwd})"
             return path.read_text(encoding='utf-8')
@@ -158,6 +165,12 @@ class CodeOps(Capability):
                 print(f"[CodeOps] Path resolved: {path_str} → {path}")
             
             # Ensure parent directory exists
+            path = path.resolve()  # Canonicalize — collapses ../ etc.
+            project_root_resolved = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain")).resolve().parent
+            home = Path.home()
+            if not (str(path).startswith(str(project_root_resolved)) or
+                    str(path).startswith(str(home))):
+                return f"Error: Write path '{path}' is outside allowed boundaries."
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(args['content'], encoding='utf-8')
             return f"✅ Wrote {len(args['content'])} bytes to {path}"
