@@ -108,6 +108,25 @@ nucleus_engrams(action="fusion_reactor", params={
 └─────────────────────────────────────────────────┘
 ```
 
+## CLI Usage
+
+God Combos are available via the `nucleus combo` CLI subcommand (v1.2.1+):
+
+```bash
+# Pulse & Polish — automated health check
+nucleus combo pulse
+
+# Self-Healing SRE — diagnose an issue
+nucleus combo diagnose "high latency on /api/v1"
+
+# Fusion Reactor — compound knowledge
+nucleus combo learn "cache fix reduced p99 by 40%" --context Architecture --intensity 8
+```
+
+All combos print a formatted summary and write an engram to memory by default.
+
+---
+
 ## Adding a New God Combo
 
 1. Create `runtime/god_combos/your_combo.py` with a `run_your_combo(**kwargs) -> dict` function
