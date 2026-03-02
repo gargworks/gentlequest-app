@@ -5,6 +5,7 @@ Super-Tools Facade: All 10 governance actions exposed via a single
 """
 
 import json
+import re
 import sys
 from typing import Dict, Any
 
@@ -32,6 +33,32 @@ def register(mcp, helpers):
         )
         return json.dumps(loop.run(), indent=2)
 
+    def _validate_strategic_plan(plan_text, mode="strategic"):
+        """Enforce v3.2 protocol: Strategic mode PLANs must reference Big Bang insights.
+        
+        Returns a pass/fail verdict. Refuses strategic work if no [BB##] reference found.
+        """
+        if mode.lower() != "strategic":
+            return json.dumps({"valid": True, "mode": mode, "message": "TACTICAL mode — Big Bang reference not required."})
+        
+        # Match [BB##] pattern (e.g., [BB01], [BB12])
+        bb_refs = re.findall(r'\[BB\d{2,}\]', plan_text or "")
+        
+        if not bb_refs:
+            return json.dumps({
+                "valid": False,
+                "mode": "strategic",
+                "error": "PROTOCOL VIOLATION: Strategic mode PLAN must reference at least one Big Bang insight [BB##] from docs/reports/nucleus_bigbang_30d.md.",
+                "hint": "Add a 'Big Bang Insight Used:' section with at least one [BB##] reference.",
+            })
+        
+        return json.dumps({
+            "valid": True,
+            "mode": "strategic",
+            "big_bang_refs": bb_refs,
+            "message": f"✅ Strategic PLAN validated. {len(bb_refs)} Big Bang insight(s) referenced.",
+        })
+
     ROUTER = {
         "auto_fix_loop": lambda file_path, verification_command: _auto_fix_loop(file_path, verification_command),
         "lock": lambda path: lock_resource_impl(path),
@@ -43,6 +70,7 @@ def register(mcp, helpers):
         "status": lambda: hypervisor_status_impl(),
         "curl": lambda url, method="GET": nucleus_curl_impl(url, method),
         "pip_install": lambda package: nucleus_pip_install_impl(package),
+        "validate_strategic_plan": lambda plan_text, mode="strategic": _validate_strategic_plan(plan_text, mode),
     }
 
     @mcp.tool()
@@ -60,6 +88,7 @@ Actions:
   status          - [HYPERVISOR] Report current security state of Agent OS
   curl            - [EGRESS] Proxied HTTP fetch for air-gapped agents. params: {url, method?}
   pip_install     - [EGRESS] Proxied pip install for air-gapped agents. params: {package}
+  validate_strategic_plan - [PROTOCOL] Validate Strategic mode PLAN has Big Bang [BB##] refs. params: {plan_text, mode?}
 """
         params = params or {}
         return dispatch(action, params, ROUTER, "nucleus_governance")
