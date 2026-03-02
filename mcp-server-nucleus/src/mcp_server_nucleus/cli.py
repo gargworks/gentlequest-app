@@ -831,17 +831,17 @@ def handle_depth_command(args):
         
         print()
         print("╔═══════════════════════════════════════════════════════════╗")
-        print(f"║ {result['indicator']:^59} ║")
+        print(f"║ {result.get('indicator', '?'):^59} ║")
         print("╟───────────────────────────────────────────────────────────╢")
-        print(f"║ Status: {result['status']:<51} ║")
+        print(f"║ Status: {result.get('status', 'unknown'):<51} ║")
         print("╟───────────────────────────────────────────────────────────╢")
-        if result['breadcrumbs']:
-            print(f"║ Path: {result['breadcrumbs'][:53]:<53} ║")
+        if result.get('breadcrumbs'):
+            print(f"║ Path: {result.get('breadcrumbs', '')[:53]:<53} ║")
         else:
             print("║ Path: (root level)                                       ║")
         print("╟───────────────────────────────────────────────────────────╢")
         print("║ Tree:                                                     ║")
-        for line in result['tree'].split('\n')[:5]:  # Max 5 lines
+        for line in result.get('tree', '').split('\n')[:5]:  # Max 5 lines
             print(f"║   {line:<56} ║")
         print("╚═══════════════════════════════════════════════════════════╝")
         print()
@@ -863,27 +863,27 @@ def handle_depth_command(args):
             result = _depth_pop()
         
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         print(result.get('message', '✅ Popped up one level'))
         print(f"  {result.get('indicator', '')}")
         if result.get('breadcrumbs'):
-            print(f"  Path: {result['breadcrumbs']}")
+            print(f"  Path: {result.get('breadcrumbs')}")
         
     elif args.depth_action == 'reset':
         result = _depth_reset()
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         print(result.get('message', '✅ Reset to root'))
         if result.get('session_id'):
-            print(f"  New session: {result['session_id']}")
+            print(f"  New session: {result.get('session_id')}")
         
     elif args.depth_action == 'max':
         result = _depth_set_max(args.level)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         print(f"✅ {result.get('message', 'Max depth updated')}")
         print(f"  {result.get('indicator', '')}")
@@ -891,20 +891,20 @@ def handle_depth_command(args):
     elif args.depth_action == 'push':
         result = _depth_push(args.topic)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         print(f"📍 Diving into: {args.topic}")
         print(f"  {result.get('indicator', '')}")
         if result.get('warning'):
-            print(f"  {result['warning']}")
+            print(f"  {result.get('warning')}")
         print(f"  Path: {result.get('breadcrumbs', '')}")
         
     elif args.depth_action == 'map':
         result = _generate_depth_map()
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
-        print(f"🗺️  {result['message']}")
+        print(f"🗺️  {result.get('message', 'Depth map')}")
         print(f"  Path: {result.get('path', '(root)')}")
         print()
         print("─" * 50)
@@ -1597,23 +1597,23 @@ def handle_graph_command(args):
             from .runtime.context_graph import get_engram_neighbors
             result = get_engram_neighbors(key=args.neighbors, max_depth=args.depth)
             if "error" in result:
-                print(f"❌ {result['error']}")
+                print(f"❌ {result.get('error')}")
                 return
             if args.json:
                 print(json.dumps(result, indent=2))
             else:
-                target = result["target"]
-                print(f"🎯 Neighborhood of '{target['id']}' (depth={args.depth})")
-                print(f"   Context: {target['context']} | Intensity: {target['intensity']}")
-                print(f"   Neighbors: {result['neighbor_count']}")
+                target = result.get("target") or {}
+                print(f"🎯 Neighborhood of '{target.get('id', '?')}' (depth={args.depth})")
+                print(f"   Context: {target.get('context', '?')} | Intensity: {target.get('intensity', 0)}")
+                print(f"   Neighbors: {result.get('neighbor_count', 0)}")
                 print()
-                for n in result["neighbors"]:
-                    print(f"   ├─ {n['id']} [{n['context']}] intensity={n['intensity']}")
-                if result["edges"]:
+                for n in result.get("neighbors", []):
+                    print(f"   ├─ {n.get('id', '?')} [{n.get('context', '?')}] intensity={n.get('intensity', 0)}")
+                if result.get("edges"):
                     print()
-                    print(f"   Edges ({len(result['edges'])}):")
-                    for e in result["edges"]:
-                        print(f"   │  {e['source']} ─({e['type']})─ {e['target']}")
+                    print(f"   Edges ({len(result.get('edges', []))}):")  
+                    for e in result.get("edges", []):
+                        print(f"   │  {e.get('source', '?')} ─({e.get('type', '?')})─ {e.get('target', '?')}")
         elif args.json:
             from .runtime.context_graph import build_context_graph
             result = build_context_graph(
@@ -1650,10 +1650,10 @@ def handle_billing_command(args):
             print("=" * 60)
             print("💰 NUCLEUS USAGE BILLING")
             print("=" * 60)
-            print(f"  Total cost: {result['total_cost_units']} units")
-            print(f"  Total interactions: {result['total_interactions']}")
-            print(f"  Time filter: {result['time_filter']}")
-            print(f"  Group by: {result['group_by']}")
+            print(f"  Total cost: {result.get('total_cost_units', 0)} units")
+            print(f"  Total interactions: {result.get('total_interactions', 0)}")
+            print(f"  Time filter: {result.get('time_filter', 'all time')}")
+            print(f"  Group by: {result.get('group_by', 'tool')}")
             print()
 
             breakdown = result.get("breakdown", {})
