@@ -864,7 +864,7 @@ def handle_depth_command(args):
             return
         
         print(result.get('message', '✅ Popped up one level'))
-        print(f"  {result['indicator']}")
+        print(f"  {result.get('indicator', '')}")
         if result.get('breadcrumbs'):
             print(f"  Path: {result['breadcrumbs']}")
         
@@ -882,8 +882,8 @@ def handle_depth_command(args):
         if "error" in result:
             print(f"❌ Error: {result['error']}")
             return
-        print(f"✅ {result['message']}")
-        print(f"  {result['indicator']}")
+        print(f"✅ {result.get('message', 'Max depth updated')}")
+        print(f"  {result.get('indicator', '')}")
         
     elif args.depth_action == 'push':
         result = _depth_push(args.topic)
@@ -891,10 +891,10 @@ def handle_depth_command(args):
             print(f"❌ Error: {result['error']}")
             return
         print(f"📍 Diving into: {args.topic}")
-        print(f"  {result['indicator']}")
+        print(f"  {result.get('indicator', '')}")
         if result.get('warning'):
             print(f"  {result['warning']}")
-        print(f"  Path: {result['breadcrumbs']}")
+        print(f"  Path: {result.get('breadcrumbs', '')}")
         
     elif args.depth_action == 'map':
         result = _generate_depth_map()
@@ -905,7 +905,7 @@ def handle_depth_command(args):
         print(f"  Path: {result.get('path', '(root)')}")
         print()
         print("─" * 50)
-        print(result['mermaid'])
+        print(result.get('mermaid', '(no graph data)'))
         print("─" * 50)
         print()
         print("💡 Copy the mermaid code block to visualize in any markdown viewer!")
@@ -1183,7 +1183,7 @@ def handle_sessions_command(args):
         if "error" in result:
             print(f"❌ Error: {result['error']}")
             return
-        print(f"✅ Session saved: {result['session_id']}")
+        print(f"✅ Session saved: {result.get('session_id', 'unknown')}")
         
     elif args.sessions_action == 'resume':
         result = _resume_session(args.id)
