@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-03-02
+### Fixed
+- **`nucleus status` ImportError** — was importing `_get_satellite_view` from `__init__.py` which didn't export it; now imports from `runtime/satellite_ops.py`
+- **`nucleus consolidate` ImportError** — `_get_archive_path` wasn't exported from `__init__.py`; now imports from `runtime/consolidation_ops.py`
+- **`nucleus features proof` ImportError** — `_get_proof` didn't exist as standalone function; now uses `_brain_get_proof_impl` from `runtime/proof_ops.py` with correct return type handling
+- **BRAIN_README template** — stale `brain_session_start()` tool names replaced with `nucleus_sessions(action="start")` facade names; version updated to v1.2.1
+
+### Added
+- **`nucleus` CLI entry point** — users can now run `nucleus combo pulse`, `nucleus status`, etc. (previously only `nucleus-init` was registered)
+- **CLI usage section** in `COMBOS.md` with examples for all 3 God Combos
+- **14 regression tests** in `test_cli_imports.py` covering status flags, consolidate actions, and proof handler
+
+### Changed
+- All CLI handler imports hardened to use direct module paths instead of `__init__.py` re-exports
+- Big Bang report updated: 9/9 strategic recommendations now marked SHIPPED/DONE
+- Version bump 1.2.0 → 1.2.1
+
 ## [1.2.0] - 2026-03-02
 ### Added — Phase 3: Operational Mastery (GA Release)
 - **God Combos** — 3 multi-tool automation pipelines:
