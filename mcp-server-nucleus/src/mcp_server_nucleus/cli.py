@@ -873,8 +873,9 @@ def handle_depth_command(args):
         if "error" in result:
             print(f"❌ Error: {result['error']}")
             return
-        print(result['message'])
-        print(f"  New session: {result['session_id']}")
+        print(result.get('message', '✅ Reset to root'))
+        if result.get('session_id'):
+            print(f"  New session: {result['session_id']}")
         
     elif args.depth_action == 'max':
         result = _depth_set_max(args.level)
