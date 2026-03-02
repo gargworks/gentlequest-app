@@ -1,6 +1,6 @@
 # God Combos — Multi-Tool Automation Pipelines
 
-**Version:** 1.2.0 | **Facade:** `nucleus_engrams` | **Module:** `runtime/god_combos/`
+**Version:** 1.2.1 | **Facade:** `nucleus_engrams` | **Module:** `runtime/god_combos/`
 
 God Combos are composable automation pipelines that chain multiple Nucleus facade actions into a single invocation. Each combo:
 - Accepts a trigger (manual or automated)
