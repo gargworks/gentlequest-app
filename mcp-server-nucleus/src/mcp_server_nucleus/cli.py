@@ -693,10 +693,75 @@ def main():
     billing_parser.add_argument('--json', action='store_true', help='Output as JSON')
 
     # ============================================================
+    # COMPLY COMMAND — Jurisdiction Configuration (MVE-2/MVE-3)
+    # ============================================================
+    comply_parser = subparsers.add_parser('comply', help='🏛️ Configure jurisdiction-specific compliance')
+    comply_parser.add_argument(
+        '--jurisdiction', '-j',
+        choices=['eu-dora', 'sg-mas-trm', 'us-soc2', 'global-default'],
+        help='Apply a regulatory jurisdiction configuration'
+    )
+    comply_parser.add_argument('--list', action='store_true', help='List available jurisdictions')
+    comply_parser.add_argument('--report', action='store_true', help='Generate compliance status report')
+    comply_parser.add_argument('--brain', default=None, help='Path to .brain directory (default: auto-detect)')
+
+    # ============================================================
+    # AUDIT-REPORT COMMAND — Generate Audit Trail Reports (MVE-2)
+    # ============================================================
+    audit_parser = subparsers.add_parser('audit-report', help='📋 Generate audit-ready compliance report')
+    audit_parser.add_argument('--format', choices=['text', 'json', 'html'], default='text', help='Output format')
+    audit_parser.add_argument('--hours', type=float, help='Only include events from last N hours')
+    audit_parser.add_argument('--output', '-o', help='Write report to file instead of stdout')
+    audit_parser.add_argument('--brain', default=None, help='Path to .brain directory (default: auto-detect)')
+
+    # ============================================================
+    # SOVEREIGN COMMAND — Identity & Status (Sovereign Agent OS)
+    # ============================================================
+    sovereign_parser = subparsers.add_parser('sovereign', help='🛡️ Show sovereignty status report')
+    sovereign_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    sovereign_parser.add_argument('--brain', default=None, help='Path to .brain directory')
+
+    # ============================================================
     # SEARCH COMMAND
     # ============================================================
     search_parser = subparsers.add_parser('search', help='Search for agents in the registry')
     search_parser.add_argument('query', help='Search query (name, tag, or description)')
+
+    # ============================================================
+    # TRACE COMMAND — DSoR Trace Viewer
+    # ============================================================
+    trace_parser = subparsers.add_parser('trace', help='📜 Browse DSoR decision trails')
+    trace_subparsers = trace_parser.add_subparsers(dest='trace_action', help='Trace actions')
+
+    # nucleus trace list
+    trace_list = trace_subparsers.add_parser('list', help='List all DSoR traces')
+    trace_list.add_argument('--type', help='Filter by trace type (e.g., KYC_REVIEW)')
+
+    # nucleus trace view <ID>
+    trace_view = trace_subparsers.add_parser('view', help='View detailed trace')
+    trace_view.add_argument('trace_id', help='Trace ID to view')
+    trace_view.add_argument('--json', action='store_true', help='Output as JSON')
+
+    # ============================================================
+    # KYC COMMAND — Demo Compliance Workflow (MVE-2)
+    # ============================================================
+    kyc_parser = subparsers.add_parser('kyc', help='📝 Run simulated KYC review (compliance demo)')
+    kyc_subparsers = kyc_parser.add_subparsers(dest='kyc_action', help='KYC actions')
+
+    # nucleus kyc review [APP-001|APP-002|APP-003]
+    kyc_review = kyc_subparsers.add_parser('review', help='Run KYC review on a demo application')
+    kyc_review.add_argument('application', nargs='?', default='APP-001',
+                            choices=['APP-001', 'APP-002', 'APP-003'],
+                            help='Application ID (default: APP-001)')
+    kyc_review.add_argument('--json', action='store_true', help='Output as JSON')
+    kyc_review.add_argument('--html', action='store_true', help='Generate HTML report')
+    kyc_review.add_argument('--output', '-o', help='Write report to file')
+
+    # nucleus kyc list
+    kyc_subparsers.add_parser('list', help='List available demo applications')
+
+    # nucleus kyc demo (runs all 3 in sequence)
+    kyc_subparsers.add_parser('demo', help='Run full demo: review all 3 applications')
 
     # ============================================================
     # MOUNT COMMAND
@@ -803,6 +868,16 @@ def main():
         handle_billing_command(args)
     elif args.cli_command == 'combo':
         handle_combo_command(args)
+    elif args.cli_command == 'comply':
+        handle_comply_command(args)
+    elif args.cli_command == 'audit-report':
+        handle_audit_report_command(args)
+    elif args.cli_command == 'kyc':
+        handle_kyc_command(args)
+    elif args.cli_command == 'sovereign':
+        handle_sovereign_command(args)
+    elif args.cli_command == 'trace':
+        handle_trace_command(args)
     elif args.cli_command is None:
         # No command given, show help
         parser.print_help()
@@ -826,7 +901,7 @@ def handle_depth_command(args):
     if args.depth_action == 'show' or args.depth_action is None:
         result = _depth_show()
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         print()
@@ -935,7 +1010,7 @@ def handle_features_command(args):
     if args.features_action == 'list':
         result = _list_features(args.product, args.status, None)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         features = result.get("features", [])
@@ -977,7 +1052,7 @@ def handle_features_command(args):
     elif args.features_action == 'test':
         result = _get_feature(args.id)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         f = result.get("feature", {})
@@ -1011,7 +1086,7 @@ def handle_features_command(args):
     elif args.features_action == 'search':
         result = _search_features(args.query)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         features = result.get("features", [])
@@ -1040,7 +1115,7 @@ def handle_features_command(args):
             print(result)
         elif isinstance(result, dict):
             if "error" in result:
-                print(f"❌ Error: {result['error']}")
+                print(f"❌ Error: {result.get('error')}")
                 return
             print(result.get("content", str(result)))
         
@@ -1158,7 +1233,7 @@ def handle_sessions_command(args):
     if args.sessions_action == 'list':
         result = _list_sessions()
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         
         sessions = result.get("sessions", [])
@@ -1184,14 +1259,14 @@ def handle_sessions_command(args):
             next_steps=[]
         )
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         print(f"✅ Session saved: {result.get('session_id', 'unknown')}")
         
     elif args.sessions_action == 'resume':
         result = _resume_session(args.id)
         if "error" in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"❌ Error: {result.get('error')}")
             return
         print("✅ Session resumed")
         print(f"Context: {result.get('context')}")
@@ -1779,6 +1854,311 @@ def handle_combo_command(args):
     else:
         print(f"Unknown combo: {args.combo_action}")
         print("Available: pulse, diagnose, learn")
+
+
+# ============================================================
+# COMPLY COMMAND HANDLER (MVE-2/MVE-3)
+# ============================================================
+
+def handle_comply_command(args):
+    """Handle nucleus comply command — jurisdiction-aware compliance configuration."""
+    from .runtime.compliance_config import (
+        list_jurisdictions,
+        apply_jurisdiction,
+        generate_compliance_report,
+        format_compliance_report,
+    )
+
+    # Find brain path
+    brain_path = Path(args.brain) if args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    if args.list:
+        # List available jurisdictions
+        jurisdictions = list_jurisdictions()
+        print("")
+        print("  🏛️  Available Jurisdictions")
+        print("  " + "=" * 50)
+        for jid, name in jurisdictions.items():
+            print(f"    {jid:20s} → {name}")
+        print("")
+        print("  Usage: nucleus comply --jurisdiction eu-dora")
+        print("")
+        return
+
+    if args.report:
+        # Generate compliance report
+        report = generate_compliance_report(brain_path)
+        print(format_compliance_report(report))
+        return
+
+    if args.jurisdiction:
+        # Apply jurisdiction
+        result = apply_jurisdiction(brain_path, args.jurisdiction)
+        if result.get("error"):
+            print(f"❌ {result['error']}")
+            print(f"   Available: {result.get('available', '')}")
+            return
+
+        print("")
+        print("  🏛️  JURISDICTION APPLIED")
+        print("  " + "=" * 50)
+        print(f"    Jurisdiction: {result['name']}")
+        print(f"    Region:       {result['region']}")
+        print(f"    Status:       ✅ {result['status']}")
+        print("")
+        print("  Key Requirements:")
+        reqs = result.get("key_requirements", {})
+        print(f"    Data Residency:     {'✅ Required' if reqs.get('data_residency') else '⚪ Not required'}")
+        print(f"    Audit Retention:    {reqs.get('audit_retention_days', '?')} days")
+        print(f"    HITL Operations:    {reqs.get('hitl_operations', '?')} types")
+        print(f"    Max Auto Actions:   {reqs.get('max_autonomous_actions', '?')}")
+        print(f"    Kill Switch:        {'✅ Required' if reqs.get('kill_switch') else '⚪ Not required'}")
+        print("")
+        print("  Files Written:")
+        for f in result.get("files_written", []):
+            print(f"    📄 {f}")
+        print("")
+        print("  Next: Run `nucleus comply --report` to verify compliance status.")
+        print("")
+        return
+
+    # No flag given
+    print("")
+    print("  nucleus comply — Configure jurisdiction-specific compliance")
+    print("")
+    print("  Usage:")
+    print("    nucleus comply --list                  List available jurisdictions")
+    print("    nucleus comply --jurisdiction eu-dora   Apply EU DORA compliance")
+    print("    nucleus comply --report                Show compliance status")
+    print("")
+
+
+def handle_audit_report_command(args):
+    """Handle nucleus audit-report command — generate audit-ready compliance report."""
+    from .runtime.audit_report import generate_audit_report
+
+    # Find brain path
+    brain_path = Path(args.brain) if args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    try:
+        report = generate_audit_report(
+            brain_path=brain_path,
+            report_format=args.format,
+            since_hours=args.hours,
+        )
+
+        output_text = report.get("formatted", "No report generated")
+
+        if args.output:
+            # Write to file
+            output_path = Path(args.output)
+            output_path.write_text(output_text)
+            print(f"✅ Audit report written to {output_path}")
+            print(f"   Format: {args.format}")
+            if args.format == 'html':
+                print(f"   Open in browser: file://{output_path.absolute()}")
+        else:
+            print(output_text)
+    except Exception as e:
+        print(f"❌ Error generating audit report: {e}")
+        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+
+
+# ============================================================
+# KYC COMMAND HANDLER (MVE-2 Compliance Demo)
+# ============================================================
+
+def handle_kyc_command(args):
+    """Handle nucleus kyc command — simulated KYC review workflow."""
+    from .runtime.kyc_demo import (
+        run_kyc_review,
+        format_kyc_review,
+        DEMO_APPLICATIONS,
+    )
+
+    brain_path = _find_brain_path()
+
+    if not hasattr(args, 'kyc_action') or args.kyc_action is None:
+        print("")
+        print("  nucleus kyc — Simulated KYC Review (Compliance Demo)")
+        print("")
+        print("  Usage:")
+        print("    nucleus kyc list                  List demo applications")
+        print("    nucleus kyc review APP-001        Review a low-risk application")
+        print("    nucleus kyc review APP-002        Review a medium-risk application (PEP)")
+        print("    nucleus kyc review APP-003        Review a high-risk application (sanctions)")
+        print("    nucleus kyc demo                  Run full demo (all 3 applications)")
+        print("")
+        return
+
+    if args.kyc_action == 'list':
+        print("")
+        print("  📋 Available Demo Applications:")
+        print("  " + "=" * 55)
+        for app_id, app_data in DEMO_APPLICATIONS.items():
+            risk_icon = {"approved": "🟢", "escalate": "🟡", "reject": "🔴"}.get(
+                app_data["expected_result"], "❓"
+            )
+            print(f"    {risk_icon} {app_id}: {app_data['applicant']}")
+            print(f"       Type: {app_data['type']}")
+            print(f"       Nationality: {app_data['nationality']}")
+            print(f"       Expected: {app_data['expected_result'].upper()}")
+            print("")
+        print("  Run: nucleus kyc review APP-001")
+        print("")
+        return
+
+    if args.kyc_action == 'review':
+        review = run_kyc_review(
+            application_id=args.application,
+            brain_path=brain_path,
+            write_dsor=brain_path is not None,
+        )
+
+        if review.get("error"):
+            print(f"❌ {review['error']}")
+            return
+
+        if hasattr(args, 'json') and args.json:
+            print(json.dumps(review, indent=2, default=str))
+        else:
+            print(format_kyc_review(review))
+
+        if brain_path and not review.get("error"):
+            dsor_file = brain_path / "dsor" / f"{review['review_id']}.json"
+            if dsor_file.exists():
+                print(f"\n  📄 DSoR trace saved: {dsor_file}")
+                print("  → Generate audit report: nucleus audit-report")
+        return
+
+    if args.kyc_action == 'demo':
+        print("")
+        print("  " + "=" * 65)
+        print("  🏛️  NUCLEUS KYC COMPLIANCE DEMO")
+        print("  " + "=" * 65)
+        print("  Running 3 simulated KYC reviews to demonstrate:")
+        print("    1. Automated multi-check review pipeline")
+        print("    2. Full decision trail (DSoR) for each review")
+        print("    3. HITL approval requests for risky applications")
+        print("    4. Sovereignty: all processing is local, no data leaves")
+        print("  " + "=" * 65)
+        print("")
+
+        for app_id in ["APP-001", "APP-002", "APP-003"]:
+            review = run_kyc_review(
+                application_id=app_id,
+                brain_path=brain_path,
+                write_dsor=brain_path is not None,
+            )
+            print(format_kyc_review(review))
+            print("")
+
+        if brain_path:
+            dsor_dir = brain_path / "dsor"
+            if dsor_dir.exists():
+                traces = list(dsor_dir.glob("KYC-*.json"))
+                print(f"  📁 {len(traces)} DSoR traces saved to {dsor_dir}/")
+                print("  → Generate full audit report: nucleus audit-report --format html -o report.html")
+        print("")
+        return
+
+
+# ============================================================
+# SOVEREIGN COMMAND HANDLER (Identity & Status)
+# ============================================================
+
+def handle_sovereign_command(args):
+    """Handle nucleus sovereign command — sovereignty status report."""
+    from .runtime.sovereign_status import generate_sovereign_status, format_sovereign_status
+
+    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    report = generate_sovereign_status(brain_path)
+
+    if hasattr(args, 'json') and args.json:
+        print(json.dumps(report, indent=2, default=str))
+    else:
+        print(format_sovereign_status(report))
+
+
+# ============================================================
+# TRACE COMMAND HANDLER (DSoR Viewer)
+# ============================================================
+
+def handle_trace_command(args):
+    """Handle nucleus trace command — browse DSoR decision trails."""
+    from .runtime.trace_viewer import (
+        list_traces, get_trace,
+        format_trace_list, format_trace_detail,
+    )
+
+    brain_path = _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    if not hasattr(args, 'trace_action') or args.trace_action is None:
+        print("")
+        print("  nucleus trace — Browse DSoR Decision Trails")
+        print("")
+        print("  Usage:")
+        print("    nucleus trace list             List all DSoR traces")
+        print("    nucleus trace list --type KYC_REVIEW")
+        print("    nucleus trace view <TRACE_ID>  View detailed trace")
+        print("")
+        return
+
+    if args.trace_action == 'list':
+        trace_type = getattr(args, 'type', None)
+        data = list_traces(brain_path, trace_type=trace_type)
+        print(format_trace_list(data))
+        return
+
+    if args.trace_action == 'view':
+        trace = get_trace(brain_path, args.trace_id)
+        if not trace:
+            print(f"❌ Trace not found: {args.trace_id}")
+            return
+
+        if hasattr(args, 'json') and args.json:
+            print(json.dumps(trace, indent=2, default=str))
+        else:
+            print(format_trace_detail(trace))
+        return
+
+
+def _find_brain_path() -> Path:
+    """Auto-detect the brain path from environment or current directory."""
+    # Check environment variable
+    env_path = os.environ.get("NUCLEAR_BRAIN_PATH")
+    if env_path:
+        p = Path(env_path)
+        if p.exists():
+            return p
+
+    # Check current directory
+    cwd_brain = Path.cwd() / ".brain"
+    if cwd_brain.exists():
+        return cwd_brain
+
+    # Check parent directories (up to 3 levels)
+    current = Path.cwd()
+    for _ in range(3):
+        current = current.parent
+        candidate = current / ".brain"
+        if candidate.exists():
+            return candidate
+
+    return None
 
 
 if __name__ == "__main__":

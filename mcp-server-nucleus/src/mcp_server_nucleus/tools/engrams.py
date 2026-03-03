@@ -23,6 +23,7 @@ def register(mcp, helpers):
     from ..runtime.engram_ops import (
         _brain_write_engram_impl, _brain_query_engrams_impl,
         _brain_search_engrams_impl, _brain_governance_status_impl,
+        _dsor_query_decisions_impl, _dsor_get_trace_impl,
     )
     from ..runtime.morning_brief_ops import _morning_brief_impl
     from ..runtime.engram_hooks import get_hook_metrics_summary
@@ -344,6 +345,8 @@ def register(mcp, helpers):
         "engram_neighbors": lambda key, max_depth=1: _h_engram_neighbors(key, max_depth),
         "billing_summary": lambda since_hours=None, group_by="tool": _h_billing_summary(since_hours, group_by),
         "render_graph": lambda max_nodes=30, min_intensity=1: _h_render_graph(max_nodes, min_intensity),
+        "dsor_query_decisions": lambda limit=50: _dsor_query_decisions_impl(limit),
+        "dsor_get_trace": lambda decision_id: _dsor_get_trace_impl(decision_id),
     }
 
     @mcp.tool()
@@ -383,6 +386,8 @@ Actions:
   routing_decisions   - Query routing decision history. params: {limit?}
   list_tools          - List tools at current tier. params: {category?}
   tier_status         - Get tier configuration status
+  dsor_query_decisions- Query the DSoR decision ledger. params: {limit?}
+  dsor_get_trace      - Get full provenance trace for a decision. params: {decision_id}
 """
         return await async_dispatch(action, params, ROUTER, "nucleus_engrams")
 
