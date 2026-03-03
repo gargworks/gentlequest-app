@@ -792,6 +792,22 @@ def main():
     mount_remove = mount_subparsers.add_parser('remove', help='Remove a mount')
     mount_remove.add_argument('id', help='Mount ID to remove')
 
+    # ============================================================
+    # DOGFOOD COMMAND (30-Day Experiment Tracker)
+    # ============================================================
+    dogfood_parser = subparsers.add_parser('dogfood', help='30-day dog food test tracker')
+    dogfood_subparsers = dogfood_parser.add_subparsers(dest='dogfood_action', help='Dogfood actions')
+
+    # nucleus dogfood log <score> [options]
+    dogfood_log = dogfood_subparsers.add_parser('log', help='Log daily pain score')
+    dogfood_log.add_argument('score', type=int, help='Pain-if-broken score 1-10')
+    dogfood_log.add_argument('--pay', action='store_true', help='Would you pay $29/mo?')
+    dogfood_log.add_argument('--faster', type=int, default=0, help='Decisions made faster today')
+    dogfood_log.add_argument('--notes', default='', help='Daily notes')
+
+    # nucleus dogfood status
+    dogfood_subparsers.add_parser('status', help='Show experiment status')
+
     args = parser.parse_args()
     
     if args.cli_command == 'init':
@@ -887,6 +903,8 @@ def main():
         handle_trace_command(args)
     elif args.cli_command == 'dashboard':
         handle_dashboard_command(args)
+    elif args.cli_command == 'dogfood':
+        handle_dogfood_command(args)
     elif args.cli_command is None:
         # No command given, show help
         parser.print_help()
@@ -2191,6 +2209,63 @@ def _find_brain_path() -> Path:
             return candidate
 
     return None
+
+
+def handle_dogfood_command(args):
+    """Handle nucleus dogfood command — 30-day dog food test tracker."""
+    from .runtime.dogfood_tracker import log_daily, get_status, format_status
+
+    brain_path = _find_brain_path()
+
+    if not hasattr(args, 'dogfood_action') or args.dogfood_action is None:
+        print("")
+        print("  🐕 nucleus dogfood — 30-Day Dog Food Test")
+        print("")
+        print("  Track daily usage to validate Experiment 1 (Stage 5).")
+        print("  Kill Gate: avg pain < 5/10 after 30 days = KILL")
+        print("")
+        print("  Usage:")
+        print("    nucleus dogfood log 8                   Log today's pain score (8/10)")
+        print("    nucleus dogfood log 9 --pay             Also mark 'would pay $29/mo'")
+        print("    nucleus dogfood log 7 --faster 3        3 decisions made faster today")
+        print("    nucleus dogfood log 8 --notes 'Engrams saved 20m on context rebuild'")
+        print("    nucleus dogfood status                  Show experiment dashboard")
+        print("")
+        return
+
+    if args.dogfood_action == 'log':
+        result = log_daily(
+            pain_score=args.score,
+            would_pay=args.pay,
+            decisions_faster=args.faster,
+            notes=args.notes,
+            brain_path=brain_path,
+        )
+        if result.get("error"):
+            print(f"❌ {result['error']}")
+            return
+
+        entry = result["entry"]
+        summary = result["summary"]
+        gate = result["kill_gate"]
+
+        print("")
+        print(f"  ✅ Day {entry['day_number']} logged:")
+        print(f"     Pain: {entry['pain_if_broken']}/10  |  Pay: {'Yes' if entry['would_pay'] else 'No'}  |  Faster: {entry['decisions_faster']}")
+        if entry['notes']:
+            print(f"     Notes: {entry['notes']}")
+        print("")
+        print(f"  Running avg: {summary['avg_pain_score']}/10 {summary['pain_trend']}  |  Pay rate: {summary['would_pay_rate']}")
+        print(f"  Kill gate: {'🟢 SAFE' if gate['status'] == 'SAFE' else '🔴 AT RISK'} (threshold: pain < 5)")
+        if summary['total_days'] >= 30:
+            print(f"  🏁 30 days reached! Final avg: {summary['avg_pain_score']}/10")
+        print("")
+        return
+
+    if args.dogfood_action == 'status':
+        status = get_status(brain_path)
+        print(format_status(status))
+        return
 
 
 if __name__ == "__main__":
