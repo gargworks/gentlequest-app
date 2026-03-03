@@ -94,6 +94,16 @@ Add to your MCP config:
 
 ---
 
+## 🥞 The Layered Open-Core Model
+Nucleus is designed for progressive adoption. You can start local and scale up to full institutional compliance seamlessly.
+
+1. **Layer 1: Sovereign Core (OSS):** 100% local, persistent engrams, session state, and essential file governance.
+2. **Layer 2: CLI-First Tooling:** `morning-brief`, `end-of-day`, and the `dogfood` tracker for compounding intelligence.
+3. **Layer 3: Deployment Kit:** 1-command jurisdiction deployments (`nucleus deploy --jurisdiction eu-dora`).
+4. **Layer 4: Institutional Compliance:** DSoR Trace Viewer, Audit Report HTML exports (DORA/MAS TRM), and strict HITL gates.
+
+---
+
 ## 🏛️ Why Nucleus for Regulated Industries
 
 ### Jurisdiction-Aware Compliance
