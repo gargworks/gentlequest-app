@@ -736,6 +736,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "4. NEVER hallucinate file contents or codebase state. Always run commands first to verify!\n"
         "5. You have access to the Sovereign Brain (.brain folder) for persistent memory across sessions.\n"
         "6. You are already in an active session. Do not run redundant initialization (ls, status) unless the user asks.\n"
+        "7. MULTI-STEP AUTONOMY: You can chain many tool calls to complete complex tasks.\n"
+        "   Read files, understand code, make edits, verify — all in one conversation turn.\n"
+        "   Keep going until the task is fully done. The user will see each step as you work.\n"
         f"{brain_context}"
     )
 
