@@ -1075,6 +1075,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║  /auth [key]        Show or set API key for current provider ║
 ║  /status            Show full chat status                     ║
 ║  /tools             Show available tools                      ║
+║  /brain             Brain dashboard (engrams, tasks, memory)  ║
+║  /learn <text>      Save knowledge to brain memory            ║
 ║  /tier              Show current tier info                    ║
 ║  /history           Show conversation stats                  ║
 ║  /compact           Compress conversation history            ║
@@ -1205,7 +1207,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         from prompt_toolkit.patch_stdout import patch_stdout as _pt_patch_stdout
 
         _slash_commands = ["/help", "/model", "/auth", "/provider", "/dual",
-                           "/tier", "/status", "/tools", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
+                           "/tier", "/status", "/tools", "/brain", "/learn", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
         _pt_session = PromptSession(
             history=InMemoryHistory(),
             completer=WordCompleter(_slash_commands, sentence=True),
@@ -1714,6 +1716,59 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"   └─────────────────┴──────────────────────────────────────────┘")
                 print(f"   Brain context: auto-attached on read_file, edit_file, search_code")
                 print()
+                continue
+
+            elif cmd == "/brain":
+                print("🧠 Brain Dashboard")
+                if not brain_dir:
+                    print("   ⚪ No brain found. Run `nucleus init` first.\n")
+                    continue
+                print(f"   Path: {brain_dir}")
+                # Engram stats
+                try:
+                    from mcp_server_nucleus.runtime.engram_ops import _get_cached_engrams
+                    all_e = _get_cached_engrams()
+                    print(f"   Engrams: {len(all_e)} total")
+                    # Show top 5 by intensity
+                    top = sorted(all_e, key=lambda x: x.get("intensity", 5), reverse=True)[:5]
+                    for e in top:
+                        print(f"   │ [{e.get('context', '?')}|{e.get('intensity', 5)}] {e.get('key', '?')}: {str(e.get('value', ''))[:60]}")
+                except Exception:
+                    print("   Engrams: (unavailable)")
+                # Task stats
+                try:
+                    from mcp_server_nucleus.runtime.task_ops import _list_tasks
+                    all_t = _list_tasks()
+                    pending = [t for t in all_t if t.get("status") == "PENDING"]
+                    in_prog = [t for t in all_t if t.get("status") == "IN_PROGRESS"]
+                    done = [t for t in all_t if t.get("status") == "DONE"]
+                    print(f"   Tasks: {len(all_t)} total ({len(pending)} pending, {len(in_prog)} active, {len(done)} done)")
+                    for t in (in_prog + pending)[:3]:
+                        print(f"   │ [{t.get('status')}] {t.get('description', '?')[:60]}")
+                except Exception:
+                    print("   Tasks: (unavailable)")
+                # Session info
+                print(f"   Session: {turn_count} turns, {len(history)} messages")
+                print()
+                continue
+
+            elif cmd == "/learn":
+                if not cmd_arg:
+                    print("Usage: /learn <key> <value>  (e.g. /learn db_pattern Uses SQLAlchemy async)\n")
+                elif not brain_dir:
+                    print("⚠️  No brain found. Run `nucleus init` first.\n")
+                else:
+                    parts = cmd_arg.split(None, 1)
+                    if len(parts) < 2:
+                        print("Usage: /learn <key> <value>\n")
+                    else:
+                        _lkey, _lval = parts
+                        try:
+                            from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
+                            _brain_write_engram_impl(_lkey, _lval, "Architecture", 6)
+                            print(f"🧠 Saved: {_lkey} = {_lval[:80]}\n")
+                        except Exception as e:
+                            print(f"❌ Failed: {e}\n")
                 continue
 
             elif cmd == "/compact":
