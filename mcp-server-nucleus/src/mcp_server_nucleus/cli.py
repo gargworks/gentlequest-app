@@ -741,21 +741,34 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     # Gemini/Groq: use <execute> tags for tool execution
     _execute_tag_instructions = (
-        "3. TOOL EXECUTION: Wrap commands in <execute>...</execute> tags. One command per tag.\n"
-        "   IMPORTANT: Write raw shell commands, NOT prefixed with 'bash'. Examples:\n"
+        "3. TOOL EXECUTION: You have these capabilities:\n"
+        "   a) Shell commands — wrap in <execute>...</execute> tags:\n"
         "     <execute>ls -la</execute>           (correct)\n"
         "     <execute>cat README.md</execute>    (correct)\n"
         "     <execute>bash ls -la</execute>      (WRONG — never prefix with 'bash')\n"
+        "   b) File operations — use JSON in <execute_tool> tags:\n"
+        "     <execute_tool>{\"tool\": \"read_file\", \"path\": \"src/main.py\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"write_file\", \"path\": \"out.txt\", \"content\": \"hello\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"edit_file\", \"path\": \"f.py\", \"old_string\": \"foo\", \"new_string\": \"bar\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"search_files\", \"pattern\": \"**/*.py\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"search_code\", \"pattern\": \"def main\", \"path\": \"src/\"}</execute_tool>\n"
+        "   Prefer read_file over `cat`, edit_file over `sed`, search_code over `grep`.\n"
         f"{_cli_commands}"
-        "   Only emit ONE <execute> block per response. Wait for the result before issuing the next.\n"
+        "   Only emit ONE tool block per response. Wait for the result before issuing the next.\n"
     )
 
-    # Anthropic: use native shell_execute tool (no <execute> tags needed)
+    # Anthropic/Groq 70b+: native tool calling
     _native_tool_instructions = (
-        "3. TOOL EXECUTION: Use the shell_execute tool to run commands. One tool call per response.\n"
-        "   Write raw shell commands, NOT prefixed with 'bash'.\n"
+        "3. TOOL EXECUTION: You have 6 tools available:\n"
+        "   - shell_execute: Run shell commands (ls, git, nucleus, etc.)\n"
+        "   - read_file: Read file contents with line numbers (prefer over `cat`)\n"
+        "   - write_file: Create or overwrite files\n"
+        "   - edit_file: Surgical find-and-replace in files (prefer over `sed`)\n"
+        "   - search_files: Find files by glob pattern (prefer over `find`)\n"
+        "   - search_code: Search file contents by regex (prefer over `grep`)\n"
+        "   Use ONE tool call per response. Wait for the result before calling again.\n"
+        "   Prefer file tools over shell equivalents — they're faster and show better output.\n"
         f"{_cli_commands}"
-        "   Call the shell_execute tool once per response. Wait for the result before calling again.\n"
     )
 
     default_system = _base_system + _execute_tag_instructions + _tail_system
@@ -1115,6 +1128,125 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         except (ImportError, termios.error, AttributeError, ValueError):
             pass
 
+    def _execute_tool(tool_name: str, tool_input: dict, step: int) -> str:
+        """Execute a tool call and return the result string. Shows compact preview."""
+        if tool_name == "shell_execute":
+            command = tool_input.get("command", "")
+            print(f"   [Step {step}: $ {command}]")
+            import subprocess as _sp
+            try:
+                res = _sp.run(command, shell=True, capture_output=True, text=True, timeout=30)
+                result = f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+                # Compact preview
+                lines = res.stdout.strip().split("\n") if res.stdout.strip() else []
+                for _pl in lines[:3]:
+                    print(f"   │ {_pl[:120]}")
+                if len(lines) > 3:
+                    print(f"   │ ... ({len(lines)} lines)")
+            except Exception as e:
+                result = f"Execution failed: {e}"
+            return result
+
+        elif tool_name == "read_file":
+            fpath = tool_input.get("path", "")
+            offset = tool_input.get("offset", 1)
+            limit = tool_input.get("limit", 500)
+            print(f"   [Step {step}: read {fpath}]")
+            try:
+                p = Path(fpath).expanduser()
+                if not p.exists():
+                    return f"Error: File not found: {fpath}"
+                text = p.read_text()
+                all_lines = text.split("\n")
+                start = max(0, (offset or 1) - 1)
+                end = start + (limit or 500)
+                selected = all_lines[start:end]
+                # Number lines
+                numbered = [f"{start + i + 1:>5}│ {line}" for i, line in enumerate(selected)]
+                content = "\n".join(numbered)
+                print(f"   │ {len(selected)} lines ({p.stat().st_size} bytes)")
+                return content[:8000]
+            except Exception as e:
+                return f"Error reading file: {e}"
+
+        elif tool_name == "write_file":
+            fpath = tool_input.get("path", "")
+            content = tool_input.get("content", "")
+            print(f"   [Step {step}: write {fpath}]")
+            try:
+                p = Path(fpath).expanduser()
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(content)
+                lines = content.count("\n") + 1
+                print(f"   │ wrote {lines} lines ({len(content)} bytes)")
+                return f"Successfully wrote {fpath} ({lines} lines, {len(content)} bytes)"
+            except Exception as e:
+                return f"Error writing file: {e}"
+
+        elif tool_name == "edit_file":
+            fpath = tool_input.get("path", "")
+            old = tool_input.get("old_string", "")
+            new = tool_input.get("new_string", "")
+            print(f"   [Step {step}: edit {fpath}]")
+            try:
+                p = Path(fpath).expanduser()
+                if not p.exists():
+                    return f"Error: File not found: {fpath}"
+                text = p.read_text()
+                count = text.count(old)
+                if count == 0:
+                    return f"Error: old_string not found in {fpath}"
+                if count > 1:
+                    return f"Error: old_string matches {count} times in {fpath}. Make it more specific."
+                new_text = text.replace(old, new, 1)
+                p.write_text(new_text)
+                # Show diff preview
+                old_preview = old.strip().split("\n")[0][:60]
+                new_preview = new.strip().split("\n")[0][:60]
+                print(f"   │ - {old_preview}")
+                print(f"   │ + {new_preview}")
+                return f"Successfully edited {fpath}"
+            except Exception as e:
+                return f"Error editing file: {e}"
+
+        elif tool_name == "search_files":
+            pattern = tool_input.get("pattern", "")
+            search_path = tool_input.get("path", ".")
+            print(f"   [Step {step}: glob {pattern}]")
+            try:
+                p = Path(search_path).expanduser()
+                matches = sorted(p.glob(pattern))[:50]  # Cap at 50
+                result_lines = [str(m) for m in matches]
+                for _pl in result_lines[:5]:
+                    print(f"   │ {_pl}")
+                if len(result_lines) > 5:
+                    print(f"   │ ... ({len(result_lines)} files)")
+                return "\n".join(result_lines) if result_lines else "No files found"
+            except Exception as e:
+                return f"Error searching files: {e}"
+
+        elif tool_name == "search_code":
+            pattern = tool_input.get("pattern", "")
+            search_path = tool_input.get("path", ".")
+            file_glob = tool_input.get("glob", "")
+            print(f"   [Step {step}: grep '{pattern}']")
+            try:
+                import subprocess as _sp
+                cmd = ["grep", "-rn", "--include", file_glob, pattern, search_path] if file_glob else ["grep", "-rn", pattern, search_path]
+                res = _sp.run(cmd, capture_output=True, text=True, timeout=15)
+                lines = res.stdout.strip().split("\n") if res.stdout.strip() else []
+                for _pl in lines[:5]:
+                    print(f"   │ {_pl[:120]}")
+                if len(lines) > 5:
+                    print(f"   │ ... ({len(lines)} matches)")
+                return res.stdout[:8000] if res.stdout else "No matches found"
+            except Exception as e:
+                return f"Error searching code: {e}"
+
+        else:
+            print(f"   [Step {step}: unknown tool '{tool_name}']")
+            return f"Unknown tool: {tool_name}"
+
     def _get_input() -> str:
         """Get user input via prompt_toolkit (preferred) or bare input()."""
         _restore_echo()  # Ensure echo is on before prompting
@@ -1289,9 +1421,11 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
             elif cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
+                _tool_count = "6 tools (native)" if _native_tools else "6 tools (<execute> tags)"
                 print(f"📊 Nucleus Chat Status")
                 print(f"   Provider: {_provider} | Model: {llm.model_name}")
-                print(f"   Tool calling: {'native' if _native_tools else '<execute> tags'}")
+                print(f"   Tools: {_tool_count}")
+                print(f"   [shell_execute, read_file, write_file, edit_file, search_files, search_code]")
                 if _dual_mode:
                     print(f"   Dual-agent: ON (reviewer: {_dual_reviewer_name})")
                 else:
@@ -1502,30 +1636,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         # Check for native tool calls
                         if llm.last_tool_calls and llm.last_stop_reason in _tool_stop_reasons:
                             for tc in llm.last_tool_calls:
-                                if tc["name"] == "shell_execute":
-                                    react_step += 1
-                                    command = tc["input"].get("command", "")
-                                    print(f"   [Step {react_step}: {command}]")
-
-                                    import subprocess
-                                    try:
-                                        res = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=15)
-                                        cmd_output = f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
-                                    except Exception as e:
-                                        cmd_output = f"Execution failed: {e}"
-
-                                    # Show compact preview of output
-                                    _preview = res.stdout.strip().split("\n")[:3] if hasattr(res, 'stdout') and res.stdout.strip() else []
-                                    if _preview:
-                                        for _pl in _preview:
-                                            print(f"   │ {_pl[:120]}")
-                                        if len(res.stdout.strip().split("\n")) > 3:
-                                            print(f"   │ ... ({len(res.stdout.strip().split(chr(10)))} lines)")
-
-                                    history.append(("user", current_input))
-                                    history.append(("assistant", reply))
-                                    current_input = f"[Tool Result for `{command}`]\n{cmd_output[:4000]}"
-                                    is_initial = False
+                                react_step += 1
+                                tool_result = _execute_tool(tc["name"], tc["input"], react_step)
+                                history.append(("user", current_input))
+                                history.append(("assistant", reply))
+                                _tool_label = tc["input"].get("command") or tc["input"].get("path") or tc["input"].get("pattern") or tc["name"]
+                                current_input = f"[Tool Result for `{_tool_label}`]\n{tool_result[:4000]}"
+                                is_initial = False
                             if llm.last_stop_reason in _tool_stop_reasons:
                                 continue  # ReAct loop continues
                     except Exception as e:
@@ -1591,7 +1708,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             # Try streaming with the fallback model
                             reply_chunks = []
                             _first_chunk = True
-                            _stream_fn = llm.stream_with_tools if (hasattr(llm, "stream_with_tools") and _model_supports_tools(_fallback_model)) else llm.stream_content
+                            _uses_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(_fallback_model)
+                            _stream_fn = llm.stream_with_tools if _uses_tools else llm.stream_content
                             for chunk in _stream_fn(prompt):
                                 if _first_chunk:
                                     sys.stdout.write("\n🧠 ")
@@ -1602,6 +1720,19 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             print("\n")
                             reply = "".join(reply_chunks).strip()
                             success = True
+                            # Handle native tool calls from fallback model
+                            if _uses_tools and llm.last_tool_calls and llm.last_stop_reason in ("tool_use", "tool_calls"):
+                                for tc in llm.last_tool_calls:
+                                    react_step += 1
+                                    tool_result = _execute_tool(tc["name"], tc["input"], react_step)
+                                    history.append(("user", current_input))
+                                    history.append(("assistant", reply))
+                                    _tool_label = tc["input"].get("command") or tc["input"].get("path") or tc["input"].get("pattern") or tc["name"]
+                                    current_input = f"[Tool Result for `{_tool_label}`]\n{tool_result[:4000]}"
+                                    is_initial = False
+                                # Continue ReAct loop if tool was called
+                                if llm.last_tool_calls and llm.last_stop_reason in ("tool_use", "tool_calls"):
+                                    break  # Break cascade, outer while loop continues
                             break
                         except Exception:
                             _tried = _fallback_model
@@ -1642,12 +1773,42 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
                 # ── ReAct: check for tool calls in text response ──
                 import re
-                match = re.search(r"<execute>(.*?)</execute>", reply, flags=re.DOTALL)
-                # Also catch models that print tool calls as text (various formats):
-                # shell_execute={"command":"ls"} or shell_execute({"command":"ls"})
-                # function=shell_execute>{"command":"ls"}
-                # shell_execute: ls -la  (colon format — common with Groq)
-                if not match:
+                _text_tool_call = None  # (tool_name, tool_input) or None
+
+                # 1. <execute_tool>{JSON}</execute_tool> — structured file tools
+                _etool_m = re.search(r"<execute_tool>(.*?)</execute_tool>", reply, flags=re.DOTALL)
+                if _etool_m:
+                    try:
+                        import json as _json
+                        _td = _json.loads(_etool_m.group(1).strip())
+                        _tn = _td.pop("tool", "")
+                        if _tn in ("read_file", "write_file", "edit_file", "search_files", "search_code"):
+                            _text_tool_call = (_tn, _td)
+                    except Exception:
+                        pass
+
+                # 2. <execute>cmd</execute> — shell commands
+                if not _text_tool_call:
+                    _exec_m = re.search(r"<execute>(.*?)</execute>", reply, flags=re.DOTALL)
+                    if _exec_m:
+                        _text_tool_call = ("shell_execute", {"command": _exec_m.group(1).strip()})
+
+                # 3. Text-pattern tool calls (models printing tool calls as plain text)
+                if not _text_tool_call:
+                    # JSON-style: tool_name({"key": "val"}) or tool_name={"key": "val"}
+                    _RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code")
+                    for _tname in _RICH_TOOLS:
+                        _jm = re.search(rf'{_tname}[=(]\s*(\{{.*?\}})', reply, re.DOTALL)
+                        if _jm:
+                            try:
+                                import json as _json
+                                _text_tool_call = (_tname, _json.loads(_jm.group(1)))
+                            except Exception:
+                                pass
+                            break
+
+                # 4. shell_execute text patterns (various formats from Groq etc.)
+                if not _text_tool_call:
                     for tc_pattern in [
                         r'shell_execute[=(]\s*\{["\']command["\']\s*:\s*["\']([^"\']+)["\']',
                         r'function=shell_execute>\s*\{\s*"command"\s*:\s*"([^"]+)"',
@@ -1656,33 +1817,19 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     ]:
                         tc_match = re.search(tc_pattern, reply, re.DOTALL | re.MULTILINE)
                         if tc_match:
-                            match = tc_match
+                            _text_tool_call = ("shell_execute", {"command": tc_match.group(1).strip()})
                             break
 
-                if match:
+                if _text_tool_call:
                     react_step += 1
-                    command = match.group(1).strip()
-                    print(f"   [Step {react_step}: {command}]")
-
-                    import subprocess
-                    try:
-                        res = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=15)
-                        output = f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
-                    except Exception as e:
-                        output = f"Execution failed: {e}"
-
-                    # Show compact preview of output
-                    _preview = res.stdout.strip().split("\n")[:3] if hasattr(res, 'stdout') and res.stdout.strip() else []
-                    if _preview:
-                        for _pl in _preview:
-                            print(f"   │ {_pl[:120]}")
-                        if len(res.stdout.strip().split("\n")) > 3:
-                            print(f"   │ ... ({len(res.stdout.strip().split(chr(10)))} lines)")
+                    _tn, _ti = _text_tool_call
+                    tool_result = _execute_tool(_tn, _ti, react_step)
+                    _tool_label = _ti.get("command") or _ti.get("path") or _ti.get("pattern") or _tn
 
                     history.append(("user", current_input))
                     history.append(("assistant", reply))
 
-                    current_input = f"[Command Result for `{command}`]\n{output[:4000]}\nProvide your next response or run another command."
+                    current_input = f"[Tool Result for `{_tool_label}`]\n{tool_result[:4000]}\nProvide your next response or use another tool."
                     is_initial = False
                     continue
 

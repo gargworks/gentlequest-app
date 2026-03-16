@@ -101,3 +101,139 @@ class TestNoMatch:
 
     def test_empty(self):
         assert _detect_tool_call("") is None
+
+
+# ── New: rich tool detection (mirrors cli.py priority 1-3) ──
+
+EXECUTE_TOOL_PATTERN = r"<execute_tool>(.*?)</execute_tool>"
+RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code")
+
+
+def _detect_rich_tool(reply: str):
+    """Replicate cli.py full tool detection. Returns (tool_name, tool_input) or None."""
+    import json
+
+    # 1. <execute_tool>{JSON}</execute_tool>
+    etool_m = re.search(EXECUTE_TOOL_PATTERN, reply, flags=re.DOTALL)
+    if etool_m:
+        try:
+            td = json.loads(etool_m.group(1).strip())
+            tn = td.pop("tool", "")
+            if tn in RICH_TOOLS:
+                return (tn, td)
+        except Exception:
+            pass
+
+    # 2. <execute>cmd</execute>
+    exec_m = re.search(EXECUTE_PATTERN, reply, flags=re.DOTALL)
+    if exec_m:
+        return ("shell_execute", {"command": exec_m.group(1).strip()})
+
+    # 3. JSON-style: tool_name({"key":"val"}) or tool_name={"key":"val"}
+    for tname in RICH_TOOLS:
+        jm = re.search(rf'{tname}[=(]\s*(\{{.*?\}})', reply, re.DOTALL)
+        if jm:
+            try:
+                return (tname, json.loads(jm.group(1)))
+            except Exception:
+                pass
+            break
+
+    # 4. shell_execute text patterns
+    for tc_pattern in TEXT_PATTERNS:
+        tc_match = re.search(tc_pattern, reply, re.DOTALL | re.MULTILINE)
+        if tc_match:
+            return ("shell_execute", {"command": tc_match.group(1).strip()})
+
+    return None
+
+
+class TestExecuteToolTag:
+    """<execute_tool> JSON tag for file operations."""
+
+    def test_read_file(self):
+        reply = '<execute_tool>{"tool": "read_file", "path": "src/main.py"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "read_file"
+        assert ti == {"path": "src/main.py"}
+
+    def test_write_file(self):
+        reply = '<execute_tool>{"tool": "write_file", "path": "out.txt", "content": "hello world"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "write_file"
+        assert ti == {"path": "out.txt", "content": "hello world"}
+
+    def test_edit_file(self):
+        reply = '<execute_tool>{"tool": "edit_file", "path": "f.py", "old_string": "foo", "new_string": "bar"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "edit_file"
+        assert ti == {"path": "f.py", "old_string": "foo", "new_string": "bar"}
+
+    def test_search_files(self):
+        reply = '<execute_tool>{"tool": "search_files", "pattern": "**/*.py"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "search_files"
+        assert ti == {"pattern": "**/*.py"}
+
+    def test_search_code(self):
+        reply = '<execute_tool>{"tool": "search_code", "pattern": "def main", "path": "src/"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "search_code"
+        assert ti == {"pattern": "def main", "path": "src/"}
+
+    def test_embedded_in_prose(self):
+        reply = 'Let me read the file:\n<execute_tool>{"tool": "read_file", "path": "README.md"}</execute_tool>\nDone.'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "read_file"
+        assert ti == {"path": "README.md"}
+
+    def test_invalid_json_falls_through(self):
+        reply = '<execute_tool>not valid json</execute_tool>'
+        assert _detect_rich_tool(reply) is None
+
+    def test_unknown_tool_ignored(self):
+        reply = '<execute_tool>{"tool": "hack_server", "target": "prod"}</execute_tool>'
+        assert _detect_rich_tool(reply) is None
+
+
+class TestRichToolTextPatterns:
+    """Models printing file tool calls as text (JSON-style)."""
+
+    def test_read_file_equals(self):
+        reply = 'read_file={"path": "/tmp/test.py"}'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "read_file"
+        assert ti["path"] == "/tmp/test.py"
+
+    def test_edit_file_paren(self):
+        reply = 'edit_file({"path": "f.py", "old_string": "a", "new_string": "b"})'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "edit_file"
+        assert ti["old_string"] == "a"
+
+    def test_search_code_in_prose(self):
+        reply = 'I will search: search_code={"pattern": "import os", "path": "src/"}'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "search_code"
+        assert ti["pattern"] == "import os"
+
+
+class TestRichToolPriority:
+    """execute_tool tag takes priority over execute tag."""
+
+    def test_execute_tool_beats_execute(self):
+        reply = '<execute_tool>{"tool": "read_file", "path": "f.py"}</execute_tool>\n<execute>ls</execute>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "read_file"
+
+    def test_execute_still_works(self):
+        reply = "Check this:\n<execute>ls -la</execute>"
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "shell_execute"
+        assert ti["command"] == "ls -la"
+
+    def test_shell_text_pattern_still_works(self):
+        reply = "shell_execute: nucleus status"
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "shell_execute"
+        assert ti["command"] == "nucleus status"

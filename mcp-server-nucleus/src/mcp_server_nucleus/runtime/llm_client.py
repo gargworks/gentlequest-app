@@ -731,20 +731,82 @@ class AnthropicLLM:
 
     # ── Native Tool Calling ─────────────────────────────────
 
-    SHELL_TOOL = {
-        "name": "shell_execute",
-        "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands (e.g. 'nucleus task list', 'nucleus engram search Q').",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
-                }
+    TOOLS = [
+        {
+            "name": "shell_execute",
+            "description": "Execute a shell command. Use for CLI commands, system operations, and nucleus CLI (e.g. 'nucleus task list', 'nucleus engram search Q').",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "The shell command to execute"},
+                },
+                "required": ["command"],
             },
-            "required": ["command"],
         },
-    }
+        {
+            "name": "read_file",
+            "description": "Read the contents of a file. Use to understand code before editing, check configs, or review any text file.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path (absolute or relative to cwd)"},
+                    "offset": {"type": "integer", "description": "Start reading from this line number (1-based). Optional."},
+                    "limit": {"type": "integer", "description": "Maximum number of lines to read. Optional, defaults to 500."},
+                },
+                "required": ["path"],
+            },
+        },
+        {
+            "name": "write_file",
+            "description": "Create or overwrite a file with the given content. Use to create new files or completely rewrite existing ones.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to write to"},
+                    "content": {"type": "string", "description": "The full file content to write"},
+                },
+                "required": ["path", "content"],
+            },
+        },
+        {
+            "name": "edit_file",
+            "description": "Make a surgical edit to a file by finding and replacing an exact string. Use for targeted code changes — safer than rewriting the whole file.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to edit"},
+                    "old_string": {"type": "string", "description": "The exact text to find (must match uniquely)"},
+                    "new_string": {"type": "string", "description": "The replacement text"},
+                },
+                "required": ["path", "old_string", "new_string"],
+            },
+        },
+        {
+            "name": "search_files",
+            "description": "Find files by name pattern using glob. Use to locate files in the project (e.g. '**/*.py', 'src/**/test_*.py').",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string", "description": "Glob pattern (e.g. '**/*.py', 'src/**/*.ts')"},
+                    "path": {"type": "string", "description": "Directory to search in. Defaults to cwd."},
+                },
+                "required": ["pattern"],
+            },
+        },
+        {
+            "name": "search_code",
+            "description": "Search file contents for a regex pattern (like grep/ripgrep). Use to find function definitions, imports, usage patterns, or any text in code.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string", "description": "Regex pattern to search for"},
+                    "path": {"type": "string", "description": "File or directory to search in. Defaults to cwd."},
+                    "glob": {"type": "string", "description": "Filter files by glob (e.g. '*.py'). Optional."},
+                },
+                "required": ["pattern"],
+            },
+        },
+    ]
 
     def stream_with_tools(self, messages, **kwargs):
         """
@@ -762,7 +824,7 @@ class AnthropicLLM:
             "model": self.model_name,
             "max_tokens": max_tokens,
             "messages": messages,
-            "tools": [self.SHELL_TOOL],
+            "tools": self.TOOLS,
         }
         if self.system_instruction:
             msg_kwargs["system"] = self.system_instruction
@@ -1030,23 +1092,58 @@ class GroqLLM:
 
     # ── Native Tool Calling (OpenAI-compatible function calling) ──
 
-    SHELL_TOOL = {
-        "type": "function",
-        "function": {
+    TOOLS = [
+        {"type": "function", "function": {
             "name": "shell_execute",
-            "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
-                    }
-                },
-                "required": ["command"],
-            },
-        },
-    }
+            "description": "Execute a shell command. Use for CLI commands, system operations, and nucleus CLI.",
+            "parameters": {"type": "object", "properties": {
+                "command": {"type": "string", "description": "The shell command to execute"},
+            }, "required": ["command"]},
+        }},
+        {"type": "function", "function": {
+            "name": "read_file",
+            "description": "Read the contents of a file. Use to understand code before editing.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path (absolute or relative to cwd)"},
+                "offset": {"type": "integer", "description": "Start line number (1-based). Optional."},
+                "limit": {"type": "integer", "description": "Max lines to read. Optional, defaults to 500."},
+            }, "required": ["path"]},
+        }},
+        {"type": "function", "function": {
+            "name": "write_file",
+            "description": "Create or overwrite a file with given content.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path to write to"},
+                "content": {"type": "string", "description": "Full file content to write"},
+            }, "required": ["path", "content"]},
+        }},
+        {"type": "function", "function": {
+            "name": "edit_file",
+            "description": "Surgical edit: find exact old_string in file and replace with new_string.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path to edit"},
+                "old_string": {"type": "string", "description": "Exact text to find (must match uniquely)"},
+                "new_string": {"type": "string", "description": "Replacement text"},
+            }, "required": ["path", "old_string", "new_string"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_files",
+            "description": "Find files by name pattern using glob (e.g. '**/*.py').",
+            "parameters": {"type": "object", "properties": {
+                "pattern": {"type": "string", "description": "Glob pattern (e.g. '**/*.py', 'src/**/*.ts')"},
+                "path": {"type": "string", "description": "Directory to search in. Defaults to cwd."},
+            }, "required": ["pattern"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_code",
+            "description": "Search file contents for a regex pattern (like grep). Find functions, imports, usage.",
+            "parameters": {"type": "object", "properties": {
+                "pattern": {"type": "string", "description": "Regex pattern to search for"},
+                "path": {"type": "string", "description": "File or directory to search. Defaults to cwd."},
+                "glob": {"type": "string", "description": "Filter files by glob (e.g. '*.py'). Optional."},
+            }, "required": ["pattern"]},
+        }},
+    ]
 
     def stream_with_tools(self, messages, **kwargs):
         """
@@ -1076,7 +1173,7 @@ class GroqLLM:
                 model=self.model_name,
                 messages=api_messages,
                 max_tokens=max_tokens,
-                tools=[self.SHELL_TOOL],
+                tools=self.TOOLS,
                 stream=True,
             )
 
