@@ -932,6 +932,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     default_chat_tag = session_id[:8] if session_id else "latest"
     
     latest_turns = 0
+    _saved_history = []
     if brain_dir:
         latest_file = brain_dir / "chat" / f"{default_chat_tag}.json"
         if latest_file.exists():
@@ -939,6 +940,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 import json
                 data = json.loads(latest_file.read_text())
                 latest_turns = data.get("turn_count", 0)
+                _saved_history = data.get("history", [])
             except Exception:
                 pass
 
@@ -958,6 +960,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║  /tier              Show current tier info                    ║
 ║  /history           Show conversation stats                  ║
 ║  /compact           Compress conversation history            ║
+║  /retry             Re-send last message                      ║
 ║  /clear             Clear conversation history               ║
 ║  /chat save [tag]   Save conversation                        ║
 ║  /chat resume [tag] Resume saved conversation                ║
@@ -997,8 +1000,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         print("  Context: ⚪️ Sandboxed (No .brain found)")
     print()
 
-    history = []
-    turn_count = 0
+    # Resume saved history (cap at last 10 turns to avoid blowing context)
+    _max_resume_msgs = 20  # 10 turns × 2 messages each
+    if len(_saved_history) > _max_resume_msgs:
+        history = list(_saved_history[-_max_resume_msgs:])
+    else:
+        history = list(_saved_history)
+    turn_count = latest_turns
 
     # No global SIGINT handler — let KeyboardInterrupt propagate naturally.
     # Ctrl+C during streaming → cancel response (caught in ReAct loop)
@@ -1070,7 +1078,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         from prompt_toolkit.patch_stdout import patch_stdout as _pt_patch_stdout
 
         _slash_commands = ["/help", "/model", "/auth", "/provider", "/dual",
-                           "/tier", "/status", "/history", "/compact", "/chat", "/quit", "/exit"]
+                           "/tier", "/status", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
         _pt_session = PromptSession(
             history=InMemoryHistory(),
             completer=WordCompleter(_slash_commands, sentence=True),
@@ -1381,6 +1389,25 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   (If no tag is provided, defaults to active Mother ID: {default_chat_tag})\n")
                 continue
 
+            elif cmd == "/retry":
+                # Re-send the last user message
+                if history:
+                    # Find the last user message
+                    for _ri in range(len(history) - 1, -1, -1):
+                        if history[_ri][0] == "user":
+                            user_input = history[_ri][1]
+                            # Remove last turn so it doesn't duplicate
+                            history = history[:_ri]
+                            turn_count = max(0, turn_count - 1)
+                            break
+                    else:
+                        print("❌ No previous message to retry.\n")
+                        continue
+                    # Fall through to LLM call with the recovered user_input
+                else:
+                    print("❌ No previous message to retry.\n")
+                    continue
+
             else:
                 print(f"❓ Unknown command: {cmd}. Type /help for available commands.\n")
                 continue
@@ -1486,6 +1513,14 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                         cmd_output = f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
                                     except Exception as e:
                                         cmd_output = f"Execution failed: {e}"
+
+                                    # Show compact preview of output
+                                    _preview = res.stdout.strip().split("\n")[:3] if hasattr(res, 'stdout') and res.stdout.strip() else []
+                                    if _preview:
+                                        for _pl in _preview:
+                                            print(f"   │ {_pl[:120]}")
+                                        if len(res.stdout.strip().split("\n")) > 3:
+                                            print(f"   │ ... ({len(res.stdout.strip().split(chr(10)))} lines)")
 
                                     history.append(("user", current_input))
                                     history.append(("assistant", reply))
@@ -1636,6 +1671,14 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     except Exception as e:
                         output = f"Execution failed: {e}"
 
+                    # Show compact preview of output
+                    _preview = res.stdout.strip().split("\n")[:3] if hasattr(res, 'stdout') and res.stdout.strip() else []
+                    if _preview:
+                        for _pl in _preview:
+                            print(f"   │ {_pl[:120]}")
+                        if len(res.stdout.strip().split("\n")) > 3:
+                            print(f"   │ ... ({len(res.stdout.strip().split(chr(10)))} lines)")
+
                     history.append(("user", current_input))
                     history.append(("assistant", reply))
 
@@ -1644,6 +1687,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     continue
 
                 # No tool call = final response
+                if not reply:
+                    print("   [Empty response — try /retry or /model <other>]\n")
+                    break
 
                 # ── Dual-Agent Review ──────────────────────────
                 if _dual_mode and _dual_reviewer and reply:
