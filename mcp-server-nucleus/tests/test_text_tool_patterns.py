@@ -106,7 +106,7 @@ class TestNoMatch:
 # ── New: rich tool detection (mirrors cli.py priority 1-3) ──
 
 EXECUTE_TOOL_PATTERN = r"<execute_tool>(.*?)</execute_tool>"
-RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams")
+RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams", "list_tasks", "add_task", "update_task")
 
 
 def _detect_rich_tool(reply: str):
@@ -273,3 +273,37 @@ class TestEngramToolPatterns:
         tn, ti = _detect_rich_tool(reply)
         assert tn == "write_engram"
         assert ti["intensity"] == 9
+
+
+class TestTaskToolPatterns:
+    """Task tool detection via <execute_tool> and text patterns."""
+
+    def test_list_tasks_tag(self):
+        reply = '<execute_tool>{"tool": "list_tasks"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "list_tasks"
+
+    def test_list_tasks_with_status(self):
+        reply = '<execute_tool>{"tool": "list_tasks", "status": "PENDING"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "list_tasks"
+        assert ti["status"] == "PENDING"
+
+    def test_add_task_tag(self):
+        reply = '<execute_tool>{"tool": "add_task", "description": "Implement auth", "priority": 2}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "add_task"
+        assert ti["description"] == "Implement auth"
+        assert ti["priority"] == 2
+
+    def test_update_task_tag(self):
+        reply = '<execute_tool>{"tool": "update_task", "task_id": "task-abc123", "status": "DONE"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "update_task"
+        assert ti["task_id"] == "task-abc123"
+
+    def test_add_task_text_pattern(self):
+        reply = 'add_task={"description": "Fix login bug", "priority": 1}'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "add_task"
+        assert ti["priority"] == 1

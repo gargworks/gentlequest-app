@@ -832,6 +832,42 @@ class AnthropicLLM:
                 "required": ["query"],
             },
         },
+        {
+            "name": "list_tasks",
+            "description": "List tasks from the Sovereign Brain's task backlog. Use to see what needs to be done, check task status, or find tasks to work on.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "Filter by status. Optional — omit to list all."},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "add_task",
+            "description": "Create a new task in the Sovereign Brain's backlog. Use to track work that needs to be done, plan next steps, or create follow-ups from the current conversation.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string", "description": "What needs to be done. Be specific and actionable."},
+                    "priority": {"type": "integer", "description": "1 (highest) to 5 (lowest). Default 3."},
+                },
+                "required": ["description"],
+            },
+        },
+        {
+            "name": "update_task",
+            "description": "Update an existing task's status or fields. Use to mark tasks done, change priority, or update descriptions.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string", "description": "Task ID or exact description to find"},
+                    "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "New status"},
+                    "priority": {"type": "integer", "description": "New priority (1-5)"},
+                },
+                "required": ["task_id"],
+            },
+        },
     ]
 
     def stream_with_tools(self, messages, **kwargs):
@@ -1186,6 +1222,30 @@ class GroqLLM:
                 "query": {"type": "string", "description": "Search term to match against engram keys and values"},
                 "limit": {"type": "integer", "description": "Max results. Default 5."},
             }, "required": ["query"]},
+        }},
+        {"type": "function", "function": {
+            "name": "list_tasks",
+            "description": "List tasks from the brain's backlog. See what needs doing.",
+            "parameters": {"type": "object", "properties": {
+                "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "Filter by status. Optional."},
+            }, "required": []},
+        }},
+        {"type": "function", "function": {
+            "name": "add_task",
+            "description": "Create a new task in the brain's backlog.",
+            "parameters": {"type": "object", "properties": {
+                "description": {"type": "string", "description": "What needs to be done."},
+                "priority": {"type": "integer", "description": "1 (highest) to 5 (lowest). Default 3."},
+            }, "required": ["description"]},
+        }},
+        {"type": "function", "function": {
+            "name": "update_task",
+            "description": "Update a task's status or priority.",
+            "parameters": {"type": "object", "properties": {
+                "task_id": {"type": "string", "description": "Task ID or description"},
+                "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "New status"},
+                "priority": {"type": "integer", "description": "New priority (1-5)"},
+            }, "required": ["task_id"]},
         }},
     ]
 

@@ -799,6 +799,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "   c) Brain memory — persistent knowledge across sessions:\n"
         "     <execute_tool>{\"tool\": \"write_engram\", \"key\": \"my_key\", \"value\": \"learned this\", \"context\": \"Architecture\"}</execute_tool>\n"
         "     <execute_tool>{\"tool\": \"search_engrams\", \"query\": \"database\"}</execute_tool>\n"
+        "   d) Task management — self-organizing backlog:\n"
+        "     <execute_tool>{\"tool\": \"list_tasks\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"add_task\", \"description\": \"Implement auth\", \"priority\": 2}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"update_task\", \"task_id\": \"task-abc\", \"status\": \"DONE\"}</execute_tool>\n"
         "   Prefer read_file over `cat`, edit_file over `sed`, search_code over `grep`.\n"
         "   Use write_engram when you learn something important. Use search_engrams before assuming.\n"
         f"{_cli_commands}"
@@ -807,7 +811,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     # Anthropic/Groq 70b+: native tool calling
     _native_tool_instructions = (
-        "3. TOOL EXECUTION: You have 8 tools available:\n"
+        "3. TOOL EXECUTION: You have 11 tools available:\n"
         "   FILE TOOLS:\n"
         "   - shell_execute: Run shell commands (ls, git, nucleus, etc.)\n"
         "   - read_file: Read file contents with line numbers (prefer over `cat`)\n"
@@ -818,10 +822,14 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "   BRAIN TOOLS (persistent memory — survives across sessions):\n"
         "   - write_engram: Save important knowledge (code patterns, decisions, preferences)\n"
         "   - search_engrams: Recall knowledge from past sessions\n"
+        "   TASK TOOLS (self-organizing backlog):\n"
+        "   - list_tasks: See what needs doing, check status\n"
+        "   - add_task: Create tasks for follow-up work\n"
+        "   - update_task: Mark tasks done, change priority\n"
         "   Use ONE tool call per response. Wait for the result before calling again.\n"
         "   Prefer file tools over shell equivalents — they're faster and show better output.\n"
-        "   Use write_engram when you learn something important about the codebase or user preferences.\n"
-        "   Use search_engrams before making assumptions — check if you already know the answer.\n"
+        "   Use write_engram when you learn something important. Use search_engrams before assuming.\n"
+        "   Use add_task to track follow-ups. Use update_task to mark work done.\n"
         f"{_cli_commands}"
     )
 
@@ -1044,7 +1052,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║──────────────────────────────────────────────────────────────║
 ║  /help for commands  •  /model to switch  •  Ctrl+C to quit ║
 ╚══════════════════════════════════════════════════════════════╝""")
-    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: 8")
+    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: 11")
     if _workspace_info:
         # Show compact one-liner from workspace
         _ws_oneliner = _workspace_info.split("\n")[0]  # e.g. "Git: branch=main"
@@ -1388,6 +1396,64 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error searching engrams: {e}"
 
+        elif tool_name == "list_tasks":
+            status_filter = tool_input.get("status")
+            print(f"   [Step {step}: 📋 list tasks{' (' + status_filter + ')' if status_filter else ''}]")
+            try:
+                from mcp_server_nucleus.runtime.task_ops import _list_tasks
+                tasks = _list_tasks(status=status_filter)
+                if not tasks:
+                    print(f"   │ no tasks found")
+                    return "No tasks in backlog." + (" Try add_task to create one." if not status_filter else "")
+                lines = []
+                for t in tasks[:15]:
+                    tid = t.get("id", "?")[:12]
+                    desc = t.get("description", "")[:80]
+                    st = t.get("status", "?")
+                    pri = t.get("priority", 3)
+                    lines.append(f"  [{st}|P{pri}] {tid}: {desc}")
+                    print(f"   │ [{st}] {desc[:60]}")
+                if len(tasks) > 15:
+                    print(f"   │ ... ({len(tasks)} total)")
+                return f"{len(tasks)} task(s):\n" + "\n".join(lines)
+            except Exception as e:
+                return f"Error listing tasks: {e}"
+
+        elif tool_name == "add_task":
+            desc = tool_input.get("description", "")
+            priority = tool_input.get("priority", 3)
+            print(f"   [Step {step}: 📋 add task '{desc[:50]}']")
+            try:
+                from mcp_server_nucleus.runtime.task_ops import _add_task
+                result = _add_task(desc, priority=priority, source="nucleus_chat")
+                if result.get("success"):
+                    tid = result["task"]["id"]
+                    print(f"   │ ✅ {tid} (P{priority})")
+                    return f"Task created: {tid} — {desc}"
+                else:
+                    return f"Error: {result.get('error', 'unknown')}"
+            except Exception as e:
+                return f"Error adding task: {e}"
+
+        elif tool_name == "update_task":
+            task_id = tool_input.get("task_id", "")
+            updates = {}
+            if "status" in tool_input:
+                updates["status"] = tool_input["status"]
+            if "priority" in tool_input:
+                updates["priority"] = tool_input["priority"]
+            print(f"   [Step {step}: 📋 update task '{task_id[:20]}']")
+            try:
+                from mcp_server_nucleus.runtime.task_ops import _update_task
+                result = _update_task(task_id, updates)
+                if result.get("success"):
+                    print(f"   │ ✅ updated → {updates}")
+                    return f"Task {task_id} updated: {updates}"
+                else:
+                    return f"Error: {result.get('error', 'unknown')}"
+            except Exception as e:
+                return f"Error updating task: {e}"
+
         else:
             print(f"   [Step {step}: unknown tool '{tool_name}']")
             return f"Unknown tool: {tool_name}"
@@ -1566,11 +1632,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
             elif cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
-                _tool_count = "8 tools (native)" if _native_tools else "8 tools (<execute> tags)"
+                _tool_count = "11 tools (native)" if _native_tools else "11 tools (<execute> tags)"
                 print(f"📊 Nucleus Chat Status")
                 print(f"   Provider: {_provider} | Model: {llm.model_name}")
                 print(f"   Tools: {_tool_count}")
-                print(f"   [shell_execute, read_file, write_file, edit_file, search_files, search_code, write_engram, search_engrams]")
+                print(f"   File: shell_execute, read_file, write_file, edit_file, search_files, search_code")
+                print(f"   Brain: write_engram, search_engrams | Tasks: list_tasks, add_task, update_task")
                 if _dual_mode:
                     print(f"   Dual-agent: ON (reviewer: {_dual_reviewer_name})")
                 else:
@@ -1596,6 +1663,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"   │ BRAIN TOOLS (persistent memory)                            │")
                 print(f"   │ write_engram     │ Save knowledge to brain                 │")
                 print(f"   │ search_engrams   │ Recall from past sessions               │")
+                print(f"   │ TASK TOOLS (self-organizing backlog)                       │")
+                print(f"   │ list_tasks       │ See what needs doing                    │")
+                print(f"   │ add_task         │ Create follow-up tasks                  │")
+                print(f"   │ update_task      │ Mark done, change priority              │")
                 print(f"   └─────────────────┴──────────────────────────────────────────┘")
                 print(f"   Brain context: auto-attached on read_file, edit_file, search_code")
                 print()
@@ -1947,7 +2018,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         import json as _json
                         _td = _json.loads(_etool_m.group(1).strip())
                         _tn = _td.pop("tool", "")
-                        if _tn in ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams"):
+                        if _tn in ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams", "list_tasks", "add_task", "update_task"):
                             _text_tool_call = (_tn, _td)
                     except Exception:
                         pass
@@ -1961,7 +2032,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 # 3. Text-pattern tool calls (models printing tool calls as plain text)
                 if not _text_tool_call:
                     # JSON-style: tool_name({"key": "val"}) or tool_name={"key": "val"}
-                    _RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams")
+                    _RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams", "list_tasks", "add_task", "update_task")
                     for _tname in _RICH_TOOLS:
                         _jm = re.search(rf'{_tname}[=(]\s*(\{{.*?\}})', reply, re.DOTALL)
                         if _jm:
@@ -2069,6 +2140,32 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"\n❌ No API key. Use /auth <key> to set one.\n")
             else:
                 print(f"\n❌ Error: {err[:150]}\n")
+
+    # ── Auto-Engram: save session summary on exit ─────────────
+    if brain_dir and turn_count >= 3:
+        try:
+            from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
+            # Extract topics from user messages
+            user_msgs = [msg for role, msg in history if role == "user"][:10]
+            topics = []
+            for msg in user_msgs:
+                # Take first 60 chars of each user message as a topic hint
+                topic = msg.strip().split("\n")[0][:60]
+                if topic and not topic.startswith("[Tool Result") and not topic.startswith("[Command Result"):
+                    topics.append(topic)
+            if topics:
+                from datetime import datetime
+                ts = datetime.now().strftime("%Y%m%d_%H%M")
+                summary = f"Chat session ({turn_count} turns): " + " | ".join(topics[:5])
+                _brain_write_engram_impl(
+                    f"session_{ts}",
+                    summary[:500],
+                    "Decision",
+                    3  # Low intensity — just session notes
+                )
+                print(f"  🧠 Session summary saved to brain ({len(topics)} topic(s))")
+        except Exception:
+            pass  # Silent — never block exit
 
 
 def main():
