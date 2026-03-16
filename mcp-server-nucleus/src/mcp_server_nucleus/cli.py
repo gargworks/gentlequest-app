@@ -657,7 +657,47 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     import platform
     sys_info = f"{getpass.getuser()}@{platform.node()} (OS: {platform.system()})"
     cwd_info = str(Path.cwd())
-    
+
+    # ── Workspace Awareness (auto-detect project shape) ───────
+    _workspace_info = ""
+    try:
+        _cwd = Path.cwd()
+        _ws_parts = []
+
+        # Git info
+        import subprocess as _ws_sp
+        _git_res = _ws_sp.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True, timeout=3, cwd=str(_cwd))
+        if _git_res.returncode == 0:
+            _branch = _ws_sp.run(["git", "branch", "--show-current"], capture_output=True, text=True, timeout=3, cwd=str(_cwd)).stdout.strip()
+            _log = _ws_sp.run(["git", "log", "--oneline", "-3"], capture_output=True, text=True, timeout=3, cwd=str(_cwd)).stdout.strip()
+            _ws_parts.append(f"Git: branch={_branch}")
+            if _log:
+                _ws_parts.append(f"Recent commits:\n{_log}")
+
+        # Project type detection
+        _config_files = {
+            "pyproject.toml": "Python (pyproject.toml)",
+            "package.json": "Node.js (package.json)",
+            "Cargo.toml": "Rust (Cargo.toml)",
+            "go.mod": "Go (go.mod)",
+            "pom.xml": "Java (pom.xml)",
+            "Gemfile": "Ruby (Gemfile)",
+        }
+        for _cf, _label in _config_files.items():
+            if (_cwd / _cf).exists():
+                _ws_parts.append(f"Project: {_label}")
+                break
+
+        # Key dirs
+        _key_dirs = [d.name for d in _cwd.iterdir() if d.is_dir() and not d.name.startswith(".")][:8]
+        if _key_dirs:
+            _ws_parts.append(f"Directories: {', '.join(sorted(_key_dirs))}")
+
+        if _ws_parts:
+            _workspace_info = "\n".join(_ws_parts)
+    except Exception:
+        pass
+
     # ── Sovereign Brain Discovery ──────────────────────────────
     brain_context = ""
     brain_dir = None
@@ -713,8 +753,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "You are Nucleus, an intelligent AI assistant accessed directly via the user's terminal. "
         "You are currently running on the user's local machine.\n"
         f"System: {sys_info}\n"
-        f"Current Working Directory: {cwd_info}\n\n"
-        "Guidelines:\n"
+        f"Current Working Directory: {cwd_info}\n"
+        + (f"Workspace:\n{_workspace_info}\n\n" if _workspace_info else "\n")
+        + "Guidelines:\n"
         "1. Be concise, direct, and helpful.\n"
         "2. If a user asks what folder they are in or asks about their environment, answer using the info provided above.\n"
     )
@@ -1003,7 +1044,14 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║──────────────────────────────────────────────────────────────║
 ║  /help for commands  •  /model to switch  •  Ctrl+C to quit ║
 ╚══════════════════════════════════════════════════════════════╝""")
-    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tier: {tier_name}")
+    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: 8")
+    if _workspace_info:
+        # Show compact one-liner from workspace
+        _ws_oneliner = _workspace_info.split("\n")[0]  # e.g. "Git: branch=main"
+        _ws_proj = [l for l in _workspace_info.split("\n") if l.startswith("Project:")]
+        if _ws_proj:
+            _ws_oneliner += f" | {_ws_proj[0]}"
+        print(f"  Workspace: {_ws_oneliner}")
     _auth_env_map = {
         "gemini": "GEMINI_API_KEY",
         "anthropic": "NUCLEUS_ANTHROPIC_API_KEY",
