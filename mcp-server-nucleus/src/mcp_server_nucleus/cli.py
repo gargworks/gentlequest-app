@@ -970,6 +970,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║  /dual off          Disable dual-agent mode                  ║
 ║  /auth [key]        Show or set API key for current provider ║
 ║  /status            Show full chat status                     ║
+║  /tools             Show available tools                      ║
 ║  /tier              Show current tier info                    ║
 ║  /history           Show conversation stats                  ║
 ║  /compact           Compress conversation history            ║
@@ -1091,7 +1092,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         from prompt_toolkit.patch_stdout import patch_stdout as _pt_patch_stdout
 
         _slash_commands = ["/help", "/model", "/auth", "/provider", "/dual",
-                           "/tier", "/status", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
+                           "/tier", "/status", "/tools", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
         _pt_session = PromptSession(
             history=InMemoryHistory(),
             completer=WordCompleter(_slash_commands, sentence=True),
@@ -1127,6 +1128,37 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             termios.tcflush(fd, termios.TCIFLUSH)
         except (ImportError, termios.error, AttributeError, ValueError):
             pass
+
+    def _brain_context_for(filepath: str) -> str:
+        """Search engrams for context related to a file path. Returns empty string or context block."""
+        if not brain_dir:
+            return ""
+        try:
+            from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
+            import json
+            # Extract meaningful search terms from path
+            p = Path(filepath)
+            terms = [p.stem]  # filename without extension
+            if p.parent.name and p.parent.name != ".":
+                terms.append(p.parent.name)
+            hits = []
+            for term in terms:
+                if len(term) < 3:
+                    continue
+                raw = _brain_search_engrams_impl(term, limit=3)
+                data = json.loads(raw) if isinstance(raw, str) else raw
+                for e in data.get("data", {}).get("engrams", []):
+                    key = e.get("key", "")
+                    if key not in [h.get("key") for h in hits]:
+                        hits.append(e)
+            if not hits:
+                return ""
+            lines = [f"\n[Brain Context — {len(hits)} related engram(s)]"]
+            for h in hits[:3]:
+                lines.append(f"  • {h.get('key', '?')}: {str(h.get('value', ''))[:120]}")
+            return "\n".join(lines)
+        except Exception:
+            return ""
 
     def _execute_tool(tool_name: str, tool_input: dict, step: int) -> str:
         """Execute a tool call and return the result string. Shows compact preview."""
@@ -1165,7 +1197,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 numbered = [f"{start + i + 1:>5}│ {line}" for i, line in enumerate(selected)]
                 content = "\n".join(numbered)
                 print(f"   │ {len(selected)} lines ({p.stat().st_size} bytes)")
-                return content[:8000]
+                brain_ctx = _brain_context_for(fpath)
+                if brain_ctx:
+                    print(f"   │ 🧠 brain context attached")
+                return content[:8000] + brain_ctx
             except Exception as e:
                 return f"Error reading file: {e}"
 
@@ -1205,7 +1240,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 new_preview = new.strip().split("\n")[0][:60]
                 print(f"   │ - {old_preview}")
                 print(f"   │ + {new_preview}")
-                return f"Successfully edited {fpath}"
+                brain_ctx = _brain_context_for(fpath)
+                return f"Successfully edited {fpath}" + brain_ctx
             except Exception as e:
                 return f"Error editing file: {e}"
 
@@ -1239,7 +1275,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   │ {_pl[:120]}")
                 if len(lines) > 5:
                     print(f"   │ ... ({len(lines)} matches)")
-                return res.stdout[:8000] if res.stdout else "No matches found"
+                result = res.stdout[:8000] if res.stdout else "No matches found"
+                # Search engrams for the code pattern too
+                brain_ctx = _brain_context_for(pattern)
+                return result + brain_ctx
             except Exception as e:
                 return f"Error searching code: {e}"
 
@@ -1433,6 +1472,22 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"   History: {turn_count} turns, {len(history)} messages")
                 _k = os.environ.get(_auth_env_map.get(_provider, ""), "")
                 print(f"   Auth: ...{_k[-6:]}" if _k else "   Auth: ⚠️ no key")
+                print()
+                continue
+
+            elif cmd == "/tools":
+                _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
+                _mode = "native API" if _native_tools else "<execute> tags"
+                print(f"🛠  Available Tools ({_mode})")
+                print(f"   ┌─────────────────┬──────────────────────────────────────────┐")
+                print(f"   │ shell_execute    │ Run shell commands (ls, git, nucleus)   │")
+                print(f"   │ read_file        │ Read file with line numbers             │")
+                print(f"   │ write_file       │ Create or overwrite files               │")
+                print(f"   │ edit_file        │ Surgical find-and-replace               │")
+                print(f"   │ search_files     │ Find files by glob pattern              │")
+                print(f"   │ search_code      │ Search contents by regex                │")
+                print(f"   └─────────────────┴──────────────────────────────────────────┘")
+                print(f"   Brain context: auto-attached on read_file, edit_file, search_code")
                 print()
                 continue
 
