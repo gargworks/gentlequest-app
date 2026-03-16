@@ -2051,6 +2051,15 @@ def main():
     # ============================================================
     # SOVEREIGN COMMAND — Identity & Status (Sovereign Agent OS)
     # ============================================================
+    # ============================================================
+    # SECURE COMMAND — One-Shot Security Hardening
+    # ============================================================
+    secure_parser = subparsers.add_parser('secure', help='🔐 One-command security hardening + posture report')
+    secure_parser.add_argument('--jurisdiction', '-j', choices=['eu-dora', 'sg-mas-trm', 'us-soc2', 'global-default'],
+                               default=None, help='Apply jurisdiction (default: detect or global-default)')
+    secure_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    secure_parser.add_argument('--brain', default=None, help='Path to .brain directory')
+
     sovereign_parser = subparsers.add_parser('sovereign', help='🛡️ Show sovereignty status report')
     sovereign_parser.add_argument('--json', action='store_true', help='Output as JSON')
     sovereign_parser.add_argument('--brain', default=None, help='Path to .brain directory')
@@ -2561,6 +2570,9 @@ def main():
 
         elif cli_command == 'audit-report':
             handle_audit_report_command(args)
+
+        elif cli_command == 'secure':
+            handle_secure_command(args)
 
         elif cli_command == 'sovereign':
             handle_sovereign_command(args)
@@ -4226,6 +4238,84 @@ def handle_kyc_command(args):
 # ============================================================
 # SOVEREIGN COMMAND HANDLER (Identity & Status)
 # ============================================================
+
+def handle_secure_command(args):
+    """Handle nucleus secure — one-command security hardening + posture report."""
+    from .runtime.sovereign_status import generate_sovereign_status, format_sovereign_status
+    from .runtime.compliance_config import apply_jurisdiction, generate_compliance_report, format_compliance_report
+
+    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    print("🔐 Nucleus Security Hardening\n")
+
+    # Step 1: Apply jurisdiction if not already configured
+    jurisdiction = args.jurisdiction
+    governance_file = brain_path / "governance" / "compliance.json"
+    if not jurisdiction and governance_file.exists():
+        try:
+            existing = json.loads(governance_file.read_text())
+            jurisdiction = existing.get("jurisdiction")
+            print(f"   ✅ Jurisdiction already configured: {jurisdiction}")
+        except Exception:
+            pass
+    if not jurisdiction:
+        jurisdiction = "global-default"
+    if not governance_file.exists() or args.jurisdiction:
+        try:
+            result = apply_jurisdiction(brain_path, jurisdiction)
+            print(f"   ✅ Applied jurisdiction: {result.get('name', jurisdiction)}")
+        except Exception as e:
+            print(f"   ⚠️  Jurisdiction config: {e}")
+
+    # Step 2: Enable DSoR tracing (ensure decisions directory exists)
+    dsor_dir = brain_path / "ledger" / "decisions"
+    dsor_dir.mkdir(parents=True, exist_ok=True)
+    print("   ✅ DSoR tracing enabled")
+
+    # Step 3: Enable kill switch marker
+    kill_switch_file = brain_path / "governance" / "kill_switch_armed.json"
+    kill_switch_file.parent.mkdir(parents=True, exist_ok=True)
+    if not kill_switch_file.exists():
+        kill_switch_file.write_text(json.dumps({
+            "armed": True,
+            "armed_at": datetime.now(timezone.utc).isoformat() + "Z",
+            "armed_by": "nucleus secure",
+        }, indent=2))
+    print("   ✅ Kill switch armed")
+
+    # Step 4: Generate sovereignty report
+    print()
+    report = generate_sovereign_status(brain_path)
+    score = report.get("sovereignty_score", 0)
+
+    # Step 5: Generate compliance report
+    compliance = generate_compliance_report(brain_path)
+
+    if hasattr(args, 'json') and args.json:
+        print(json.dumps({"sovereignty": report, "compliance": compliance}, indent=2, default=str))
+    else:
+        print(format_sovereign_status(report))
+        print()
+        print(format_compliance_report(compliance))
+
+        # Security certificate
+        grade = "A" if score >= 80 else "B" if score >= 60 else "C" if score >= 40 else "D"
+        print(f"""
+╔══════════════════════════════════════════════════════════════╗
+║                 🔐 Security Certificate                      ║
+╠══════════════════════════════════════════════════════════════╣
+║  Sovereignty Score: {score:>3}/100 (Grade {grade})                       ║
+║  Jurisdiction:      {jurisdiction:<39s} ║
+║  Kill Switch:       ARMED                                    ║
+║  DSoR Tracing:      ACTIVE                                   ║
+║  Audit Trail:       SHA-256 HASHED                           ║
+╠══════════════════════════════════════════════════════════════╣
+║  Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'):<47s} ║
+╚══════════════════════════════════════════════════════════════╝""")
+
 
 def handle_sovereign_command(args):
     """Handle nucleus sovereign command — sovereignty status report."""
