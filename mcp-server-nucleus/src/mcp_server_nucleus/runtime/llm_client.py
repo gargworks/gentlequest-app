@@ -806,6 +806,32 @@ class AnthropicLLM:
                 "required": ["pattern"],
             },
         },
+        {
+            "name": "write_engram",
+            "description": "Save a piece of knowledge to the Sovereign Brain's persistent memory. Use to remember important facts about the codebase, architecture decisions, user preferences, or anything that should persist across sessions. The brain remembers what you write here.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Short identifier (alphanumeric + _.-). E.g. 'fastapi_pattern', 'db.schema', 'user-pref-testing'"},
+                    "value": {"type": "string", "description": "The knowledge to store. Be specific and useful for future sessions."},
+                    "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"], "description": "Category. Use Architecture for code patterns, Feature for capabilities, Decision for choices made, Strategy for plans."},
+                    "intensity": {"type": "integer", "description": "Importance 1-10 (10=critical). Default 5."},
+                },
+                "required": ["key", "value", "context"],
+            },
+        },
+        {
+            "name": "search_engrams",
+            "description": "Search the Sovereign Brain's persistent memory for relevant knowledge. Use before making assumptions about the codebase, to recall past decisions, or to find context from previous sessions. Returns matching engrams sorted by importance.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search term to match against engram keys and values"},
+                    "limit": {"type": "integer", "description": "Max results to return. Default 5."},
+                },
+                "required": ["query"],
+            },
+        },
     ]
 
     def stream_with_tools(self, messages, **kwargs):
@@ -1142,6 +1168,24 @@ class GroqLLM:
                 "path": {"type": "string", "description": "File or directory to search. Defaults to cwd."},
                 "glob": {"type": "string", "description": "Filter files by glob (e.g. '*.py'). Optional."},
             }, "required": ["pattern"]},
+        }},
+        {"type": "function", "function": {
+            "name": "write_engram",
+            "description": "Save knowledge to the Sovereign Brain's persistent memory. Survives across sessions.",
+            "parameters": {"type": "object", "properties": {
+                "key": {"type": "string", "description": "Short identifier (alphanumeric + _.-). E.g. 'fastapi_pattern', 'db.schema'"},
+                "value": {"type": "string", "description": "The knowledge to store."},
+                "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"], "description": "Category."},
+                "intensity": {"type": "integer", "description": "Importance 1-10 (10=critical). Default 5."},
+            }, "required": ["key", "value", "context"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_engrams",
+            "description": "Search the Sovereign Brain's persistent memory for relevant knowledge from past sessions.",
+            "parameters": {"type": "object", "properties": {
+                "query": {"type": "string", "description": "Search term to match against engram keys and values"},
+                "limit": {"type": "integer", "description": "Max results. Default 5."},
+            }, "required": ["query"]},
         }},
     ]
 

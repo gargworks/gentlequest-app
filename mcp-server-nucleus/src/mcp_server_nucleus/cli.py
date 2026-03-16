@@ -755,22 +755,32 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "     <execute_tool>{\"tool\": \"edit_file\", \"path\": \"f.py\", \"old_string\": \"foo\", \"new_string\": \"bar\"}</execute_tool>\n"
         "     <execute_tool>{\"tool\": \"search_files\", \"pattern\": \"**/*.py\"}</execute_tool>\n"
         "     <execute_tool>{\"tool\": \"search_code\", \"pattern\": \"def main\", \"path\": \"src/\"}</execute_tool>\n"
+        "   c) Brain memory — persistent knowledge across sessions:\n"
+        "     <execute_tool>{\"tool\": \"write_engram\", \"key\": \"my_key\", \"value\": \"learned this\", \"context\": \"Architecture\"}</execute_tool>\n"
+        "     <execute_tool>{\"tool\": \"search_engrams\", \"query\": \"database\"}</execute_tool>\n"
         "   Prefer read_file over `cat`, edit_file over `sed`, search_code over `grep`.\n"
+        "   Use write_engram when you learn something important. Use search_engrams before assuming.\n"
         f"{_cli_commands}"
         "   Only emit ONE tool block per response. Wait for the result before issuing the next.\n"
     )
 
     # Anthropic/Groq 70b+: native tool calling
     _native_tool_instructions = (
-        "3. TOOL EXECUTION: You have 6 tools available:\n"
+        "3. TOOL EXECUTION: You have 8 tools available:\n"
+        "   FILE TOOLS:\n"
         "   - shell_execute: Run shell commands (ls, git, nucleus, etc.)\n"
         "   - read_file: Read file contents with line numbers (prefer over `cat`)\n"
         "   - write_file: Create or overwrite files\n"
         "   - edit_file: Surgical find-and-replace in files (prefer over `sed`)\n"
         "   - search_files: Find files by glob pattern (prefer over `find`)\n"
         "   - search_code: Search file contents by regex (prefer over `grep`)\n"
+        "   BRAIN TOOLS (persistent memory — survives across sessions):\n"
+        "   - write_engram: Save important knowledge (code patterns, decisions, preferences)\n"
+        "   - search_engrams: Recall knowledge from past sessions\n"
         "   Use ONE tool call per response. Wait for the result before calling again.\n"
         "   Prefer file tools over shell equivalents — they're faster and show better output.\n"
+        "   Use write_engram when you learn something important about the codebase or user preferences.\n"
+        "   Use search_engrams before making assumptions — check if you already know the answer.\n"
         f"{_cli_commands}"
     )
 
@@ -1285,6 +1295,51 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error searching code: {e}"
 
+        elif tool_name == "write_engram":
+            key = tool_input.get("key", "")
+            value = tool_input.get("value", "")
+            context = tool_input.get("context", "Architecture")
+            intensity = tool_input.get("intensity", 5)
+            print(f"   [Step {step}: 🧠 write engram '{key}']")
+            try:
+                from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
+                import json
+                raw = _brain_write_engram_impl(key, value, context, intensity)
+                data = json.loads(raw) if isinstance(raw, str) else raw
+                if data.get("success"):
+                    print(f"   │ 🧠 saved: {key} ({context}, intensity={intensity})")
+                    return f"Engram saved: {key} = {value[:200]}"
+                else:
+                    err = data.get("error", "Unknown error")
+                    return f"Error writing engram: {err}"
+            except Exception as e:
+                return f"Error writing engram: {e}"
+
+        elif tool_name == "search_engrams":
+            query = tool_input.get("query", "")
+            limit = tool_input.get("limit", 5)
+            print(f"   [Step {step}: 🧠 search engrams '{query}']")
+            try:
+                from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
+                import json
+                raw = _brain_search_engrams_impl(query, limit=limit)
+                data = json.loads(raw) if isinstance(raw, str) else raw
+                engrams = data.get("data", {}).get("engrams", [])
+                if not engrams:
+                    print(f"   │ no engrams found for '{query}'")
+                    return f"No engrams found for '{query}'. The brain has no memory of this yet."
+                lines = []
+                for e in engrams[:limit]:
+                    k = e.get("key", "?")
+                    v = str(e.get("value", ""))[:150]
+                    ctx = e.get("context", "")
+                    i = e.get("intensity", 5)
+                    lines.append(f"  [{ctx}|{i}] {k}: {v}")
+                    print(f"   │ {k}: {v[:80]}")
+                return f"Found {len(engrams)} engram(s):\n" + "\n".join(lines)
+            except Exception as e:
+                return f"Error searching engrams: {e}"
+
         else:
             print(f"   [Step {step}: unknown tool '{tool_name}']")
             return f"Unknown tool: {tool_name}"
@@ -1463,11 +1518,11 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
             elif cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
-                _tool_count = "6 tools (native)" if _native_tools else "6 tools (<execute> tags)"
+                _tool_count = "8 tools (native)" if _native_tools else "8 tools (<execute> tags)"
                 print(f"📊 Nucleus Chat Status")
                 print(f"   Provider: {_provider} | Model: {llm.model_name}")
                 print(f"   Tools: {_tool_count}")
-                print(f"   [shell_execute, read_file, write_file, edit_file, search_files, search_code]")
+                print(f"   [shell_execute, read_file, write_file, edit_file, search_files, search_code, write_engram, search_engrams]")
                 if _dual_mode:
                     print(f"   Dual-agent: ON (reviewer: {_dual_reviewer_name})")
                 else:
@@ -1483,12 +1538,16 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 _mode = "native API" if _native_tools else "<execute> tags"
                 print(f"🛠  Available Tools ({_mode})")
                 print(f"   ┌─────────────────┬──────────────────────────────────────────┐")
+                print(f"   │ FILE TOOLS                                                 │")
                 print(f"   │ shell_execute    │ Run shell commands (ls, git, nucleus)   │")
                 print(f"   │ read_file        │ Read file with line numbers             │")
                 print(f"   │ write_file       │ Create or overwrite files               │")
                 print(f"   │ edit_file        │ Surgical find-and-replace               │")
                 print(f"   │ search_files     │ Find files by glob pattern              │")
                 print(f"   │ search_code      │ Search contents by regex                │")
+                print(f"   │ BRAIN TOOLS (persistent memory)                            │")
+                print(f"   │ write_engram     │ Save knowledge to brain                 │")
+                print(f"   │ search_engrams   │ Recall from past sessions               │")
                 print(f"   └─────────────────┴──────────────────────────────────────────┘")
                 print(f"   Brain context: auto-attached on read_file, edit_file, search_code")
                 print()
@@ -1840,7 +1899,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         import json as _json
                         _td = _json.loads(_etool_m.group(1).strip())
                         _tn = _td.pop("tool", "")
-                        if _tn in ("read_file", "write_file", "edit_file", "search_files", "search_code"):
+                        if _tn in ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams"):
                             _text_tool_call = (_tn, _td)
                     except Exception:
                         pass
@@ -1854,7 +1913,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 # 3. Text-pattern tool calls (models printing tool calls as plain text)
                 if not _text_tool_call:
                     # JSON-style: tool_name({"key": "val"}) or tool_name={"key": "val"}
-                    _RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code")
+                    _RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams")
                     for _tname in _RICH_TOOLS:
                         _jm = re.search(rf'{_tname}[=(]\s*(\{{.*?\}})', reply, re.DOTALL)
                         if _jm:

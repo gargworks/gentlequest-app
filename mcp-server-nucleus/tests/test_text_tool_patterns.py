@@ -106,7 +106,7 @@ class TestNoMatch:
 # ── New: rich tool detection (mirrors cli.py priority 1-3) ──
 
 EXECUTE_TOOL_PATTERN = r"<execute_tool>(.*?)</execute_tool>"
-RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code")
+RICH_TOOLS = ("read_file", "write_file", "edit_file", "search_files", "search_code", "write_engram", "search_engrams")
 
 
 def _detect_rich_tool(reply: str):
@@ -237,3 +237,39 @@ class TestRichToolPriority:
         tn, ti = _detect_rich_tool(reply)
         assert tn == "shell_execute"
         assert ti["command"] == "nucleus status"
+
+
+class TestEngramToolPatterns:
+    """Brain tool detection via <execute_tool> and text patterns."""
+
+    def test_write_engram_execute_tool_tag(self):
+        reply = '<execute_tool>{"tool": "write_engram", "key": "fastapi_pattern", "value": "uses dependency injection", "context": "Architecture"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "write_engram"
+        assert ti["key"] == "fastapi_pattern"
+        assert ti["context"] == "Architecture"
+
+    def test_search_engrams_execute_tool_tag(self):
+        reply = '<execute_tool>{"tool": "search_engrams", "query": "database"}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "search_engrams"
+        assert ti["query"] == "database"
+
+    def test_write_engram_text_pattern(self):
+        reply = 'write_engram={"key": "test_key", "value": "test_val", "context": "Decision"}'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "write_engram"
+        assert ti["key"] == "test_key"
+
+    def test_search_engrams_text_pattern(self):
+        reply = 'search_engrams({"query": "compliance", "limit": 3})'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "search_engrams"
+        assert ti["query"] == "compliance"
+        assert ti["limit"] == 3
+
+    def test_write_engram_with_intensity(self):
+        reply = '<execute_tool>{"tool": "write_engram", "key": "critical_bug", "value": "DB connection pool leaks under load", "context": "Architecture", "intensity": 9}</execute_tool>'
+        tn, ti = _detect_rich_tool(reply)
+        assert tn == "write_engram"
+        assert ti["intensity"] == 9
