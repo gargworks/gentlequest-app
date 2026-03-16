@@ -746,6 +746,48 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 
             if parts:
                 brain_context = "\n\n" + "\n\n".join(parts) + "\n\n"
+
+            # ── Startup Engram Injection: warm-start from brain ──
+            try:
+                from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
+                import json as _ej
+                _search_terms = [Path.cwd().name]
+                # Add project type hint
+                for _cf in ["pyproject.toml", "package.json", "Cargo.toml", "go.mod"]:
+                    if (Path.cwd() / _cf).exists():
+                        _search_terms.append(Path(_cf).stem)
+                        break
+                _startup_engrams = []
+                _seen_keys = set()
+                for term in _search_terms:
+                    if len(term) < 3:
+                        continue
+                    raw = _brain_search_engrams_impl(term, limit=5)
+                    data = _ej.loads(raw) if isinstance(raw, str) else raw
+                    for e in data.get("data", {}).get("engrams", []):
+                        k = e.get("key", "")
+                        if k not in _seen_keys:
+                            _seen_keys.add(k)
+                            _startup_engrams.append(e)
+                # Also load recent session/compact engrams
+                for prefix in ["session_", "compact_"]:
+                    raw = _brain_search_engrams_impl(prefix, limit=3)
+                    data = _ej.loads(raw) if isinstance(raw, str) else raw
+                    for e in data.get("data", {}).get("engrams", []):
+                        k = e.get("key", "")
+                        if k not in _seen_keys:
+                            _seen_keys.add(k)
+                            _startup_engrams.append(e)
+                if _startup_engrams:
+                    # Sort by intensity, take top 8
+                    _startup_engrams.sort(key=lambda x: x.get("intensity", 5), reverse=True)
+                    _top = _startup_engrams[:8]
+                    _engram_lines = ["### BRAIN MEMORY (from past sessions)"]
+                    for e in _top:
+                        _engram_lines.append(f"- [{e.get('context', '?')}|{e.get('intensity', 5)}] {e.get('key', '?')}: {str(e.get('value', ''))[:200]}")
+                    brain_context += "\n".join(_engram_lines) + "\n\n"
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -1073,7 +1115,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         print(f"  Auth:  ⚠️  No {_provider} API key set. Use /auth <key>")
         
     if brain_context:
-        print("  Context: 🧠 Sovereign Brain Active (Project aware)")
+        _engram_count = brain_context.count("- [")  # Count injected engrams
+        _engram_hint = f" + {_engram_count} engrams loaded" if _engram_count else ""
+        print(f"  Context: 🧠 Sovereign Brain Active{_engram_hint}")
         if session_id:
             session_label = {"ide": "IDE Session", "project": "Project Session", "recent": "Recent Session"}.get(session_type, "Session")
             print(f"           • {session_label}: {session_id[:16]}")
@@ -1676,10 +1720,25 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 if len(history) <= 4:
                     print("📎 History too short to compact.\n")
                 else:
-                    # Keep last 2 turns, summarize the rest
                     old_count = len(history)
                     kept = history[-4:]  # last 2 turns (4 messages)
-                    summary = f"[Previous {old_count // 2 - 2} turn(s) compacted]"
+                    # Extract topics from dropped history and save as engram
+                    dropped = history[:-4]
+                    _topics = []
+                    for role, msg in dropped:
+                        if role == "user" and not msg.startswith("[Tool Result"):
+                            _topics.append(msg.strip().split("\n")[0][:60])
+                    if _topics and brain_dir:
+                        try:
+                            from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
+                            from datetime import datetime
+                            ts = datetime.now().strftime("%Y%m%d_%H%M")
+                            _summary = f"Compacted context ({len(dropped)//2} turns): " + " | ".join(_topics[:5])
+                            _brain_write_engram_impl(f"compact_{ts}", _summary[:500], "Decision", 3)
+                            print(f"   🧠 Dropped context saved to brain as engram")
+                        except Exception:
+                            pass
+                    summary = f"[Previous {old_count // 2 - 2} turn(s) compacted — context saved to brain]"
                     history.clear()
                     history.append(("system", summary))
                     history.extend(kept)
