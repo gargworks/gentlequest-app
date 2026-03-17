@@ -138,11 +138,38 @@ if [ -f "$CLI" ]; then
     echo "  Sanitized: $CLI (claude-code provider refs)"
 fi
 
-# ── README.md: Strip cascade strategy details ──
+# ── cli.py: Strip archive/Third Brother references ──
+if [ -f "$CLI" ]; then
+    # Remove archive_pipeline import + record_turn block (try/except wrapped, safe to strip)
+    sed -i '' '/archive_pipeline/d' "$CLI"
+    sed -i '' '/Third Brother/d' "$CLI"
+    sed -i '' '/training.flywheel/d' "$CLI"
+    # Remove the archive subparser block entirely
+    sed -i '' "/ARCHIVE COMMAND/,/archive_record.add_argument.*decisions/d" "$CLI"
+    # Remove archive dispatch
+    sed -i '' "/cli_command == 'archive'/d" "$CLI"
+    sed -i '' '/handle_archive_command/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother refs)"
+fi
+
+# ── tools/__init__.py: Strip archive tool registration ──
+TOOLS_INIT="src/mcp_server_nucleus/tools/__init__.py"
+if [ -f "$TOOLS_INIT" ]; then
+    sed -i '' '/archive/d' "$TOOLS_INIT"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $TOOLS_INIT (archive module)"
+fi
+
+# ── README.md: Strip family architecture + cascade details ──
 if [ -f "README.md" ]; then
     sed -i '' 's/Cascades across models on rate limit (70b → scout → qwen → 8b)/Cascades across models on rate limit/' "README.md"
+    # Revert "Brother" naming to neutral "Chat" for public
+    sed -i '' 's/nucleus brother/nucleus chat/g' "README.md"
+    sed -i '' 's/Brother Interface/Interactive Chat/g' "README.md"
+    sed -i '' 's/Talk to a Brother/Interactive AI chat/g' "README.md"
+    sed -i '' 's/\*\*Brother\*\*/\*\*Chat\*\*/g' "README.md"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
-    echo "  Sanitized: README.md (cascade details)"
+    echo "  Sanitized: README.md (cascade + family naming)"
 fi
 
 echo "  $SANITIZE_COUNT files sanitized."

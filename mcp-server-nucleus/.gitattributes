@@ -158,6 +158,12 @@ src/mcp_server_nucleus/runtime/recovery_ops.py export-ignore
 src/mcp_server_nucleus/runtime/firestore_bridge.py export-ignore
 src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 
+# ── SOVEREIGN: Family Architecture + Third Brother (2026-03-17) ──
+# The exponential loop: Code^Cowork → archive → fine-tune → Third Brother.
+# This is the core IP. Never public.
+src/mcp_server_nucleus/runtime/archive_pipeline.py export-ignore
+src/mcp_server_nucleus/tools/archive.py export-ignore
+
 # ── Hosted-only modules (not included in open-source distribution) ──
 src/mcp_server_nucleus/runtime/autopilot.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore
