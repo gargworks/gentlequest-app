@@ -138,6 +138,16 @@ if [ -f "$CLI" ]; then
     echo "  Sanitized: $CLI (claude-code provider refs)"
 fi
 
+# ── orchestrator.py: Strip Third Brother routing ──
+ORCH="src/mcp_server_nucleus/runtime/orchestrator.py"
+if [ -f "$ORCH" ]; then
+    sed -i '' '/Third Brother/d' "$ORCH"
+    sed -i '' '/LocalLLM/d' "$ORCH"
+    sed -i '' '/_local_available/d' "$ORCH"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $ORCH (Third Brother routing)"
+fi
+
 # ── llm_client.py: Strip LocalLLM (Third Brother provider) ──
 LLM="src/mcp_server_nucleus/runtime/llm_client.py"
 if [ -f "$LLM" ]; then
@@ -163,6 +173,25 @@ if [ -f "$CLI" ]; then
     sed -i '' "/cli_command == 'archive'/d" "$CLI"
     sed -i '' '/handle_archive_command/d' "$CLI"
     echo "  Sanitized: $CLI (archive/Third Brother refs)"
+fi
+
+# ── daemon.py + morning_brief_ops.py: Strip Third Brother retrain blocks ──
+DAEMON="src/mcp_server_nucleus/runtime/daemon.py"
+if [ -f "$DAEMON" ]; then
+    sed -i '' '/archive_pipeline/d' "$DAEMON"
+    sed -i '' '/should_retrain/d' "$DAEMON"
+    sed -i '' '/Third Brother/d' "$DAEMON"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $DAEMON (retrain check)"
+fi
+BRIEF="src/mcp_server_nucleus/runtime/morning_brief_ops.py"
+if [ -f "$BRIEF" ]; then
+    sed -i '' '/archive_pipeline/d' "$BRIEF"
+    sed -i '' '/should_retrain/d' "$BRIEF"
+    sed -i '' '/Third Brother/d' "$BRIEF"
+    sed -i '' '/THIRD BROTHER/d' "$BRIEF"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $BRIEF (training status section)"
 fi
 
 # ── tools/__init__.py: Strip archive tool registration ──
