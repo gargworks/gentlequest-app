@@ -175,14 +175,21 @@ if [ -f "$CLI" ]; then
     echo "  Sanitized: $CLI (archive/Third Brother refs)"
 fi
 
-# ── engram_hooks.py: Strip training archive bridge ──
+# ── engram_hooks.py: Strip training archive bridge (block delete) ──
 HOOKS="src/mcp_server_nucleus/runtime/engram_hooks.py"
 if [ -f "$HOOKS" ]; then
-    sed -i '' '/archive_pipeline/d' "$HOOKS"
-    sed -i '' '/ARCHIVE_WORTHY/d' "$HOOKS"
-    sed -i '' '/_record_to_training_archive/d' "$HOOKS"
-    sed -i '' '/TRAINING ARCHIVE BRIDGE/d' "$HOOKS"
-    sed -i '' '/Third Brother/d' "$HOOKS"
+    # Remove the entire TRAINING ARCHIVE BRIDGE section via python (sed can't match unicode ═)
+    python3 -c "
+import re, pathlib
+p = pathlib.Path('$HOOKS')
+txt = p.read_text()
+# Remove the block between TRAINING ARCHIVE BRIDGE and METRICS & MONITORING headers
+txt = re.sub(r'# .*TRAINING ARCHIVE BRIDGE.*?\n# .*METRICS & MONITORING', '# METRICS & MONITORING', txt, flags=re.DOTALL)
+# Remove the call site
+txt = re.sub(r'.*_record_to_training_archive.*\n', '', txt)
+txt = re.sub(r'.*Feed high-value events.*\n', '', txt)
+p.write_text(txt)
+"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
     echo "  Sanitized: $HOOKS (training archive bridge)"
 fi
