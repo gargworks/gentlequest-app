@@ -992,6 +992,27 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         # Non-Gemini providers go through the factory (Anthropic, Groq, Claude Code)
         return get_llm_client(provider=_provider, **kwargs)
 
+    # Pre-flight check for local provider
+    if _provider == "local":
+        try:
+            from .runtime.llm_client import LocalLLM
+            _test_llm = LocalLLM()
+            _test_llm.generate_content("ping", max_tokens=5)
+            print(f"  ✅ Local model reachable ({_test_llm.endpoint})")
+        except Exception as _local_err:
+            _endpoint = os.environ.get("NUCLEUS_LOCAL_ENDPOINT", "http://localhost:11434/v1")
+            print(f"❌ Local model not reachable at {_endpoint}")
+            print(f"   Error: {_local_err}")
+            print(f"\n   To set up the Third Brother:")
+            print(f"   1. Install Ollama: https://ollama.ai")
+            print(f"   2. Train:  nucleus archive train --target local")
+            print(f"   3. Create: ollama create nucleus-brother -f scripts/Modelfile")
+            print(f"   4. Run:    nucleus brother --provider local")
+            print(f"\n   Or use an existing model:")
+            print(f"   ollama pull qwen2.5:7b")
+            print(f"   NUCLEUS_LOCAL_MODEL=qwen2.5:7b nucleus brother --provider local")
+            return
+
     try:
         llm = _init_llm(tier, model_override, sys_instruction=sys_prompt)
     except Exception as e:
@@ -2408,7 +2429,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             elif cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
                 _tool_count = "11 tools (native)" if _native_tools else "11 tools (<execute> tags)"
-                print(f"📊 Nucleus Chat Status")
+                print(f"📊 Nucleus Brother Status")
                 print(f"   Provider: {_provider} | Model: {llm.model_name}")
                 print(f"   Tools: {_tool_count}")
                 print(f"   File: shell_execute, read_file, write_file, edit_file, search_files, search_code")
@@ -2436,6 +2457,14 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     pass
                 _k = os.environ.get(_auth_env_map.get(_provider, ""), "")
                 print(f"   Auth: ...{_k[-6:]}" if _k else "   Auth: ⚠️ no key")
+                # Training flywheel status
+                try:
+                    from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+                    _rt = ArchivePipeline().should_retrain()
+                    _rt_label = "RETRAIN READY" if _rt['should_retrain'] else f"{_rt['new_turns']}/{_rt['threshold']} to retrain"
+                    print(f"   Training: {_rt['total_turns']} turns | {_rt_label}")
+                except Exception:
+                    pass
                 print()
                 continue
 

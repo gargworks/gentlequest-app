@@ -119,6 +119,8 @@ class SwarmsOrchestrator:
         The Third Brother handles routine orchestration at $0 cost.
         Complex tasks (PREMIUM tier) always go to frontier models.
         """
+        from .llm_client import DualEngineLLM
+
         # Premium/complex tasks → always frontier
         if job_type in ("PREMIUM", "CRITICAL"):
             return DualEngineLLM(job_type=job_type)
