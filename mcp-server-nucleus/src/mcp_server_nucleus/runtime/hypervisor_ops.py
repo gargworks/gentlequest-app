@@ -24,6 +24,10 @@ _locker_inst = None
 _injector_inst = None
 _watchdog_inst = None
 
+# Backward-compatible module-level exports (used by tests on main)
+_brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+_workspace_root = _brain_path.parent
+
 def get_locker():
     global _locker_inst
     if _locker_inst is None:
