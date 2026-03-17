@@ -117,8 +117,9 @@ venv_39/
 # Build artifacts
 release_v1.0.0.zip
 
-# Brain archive (local only)
+# Brain archive and backups (local only)
 .brain-archive/
+.brain-backup-*/
 
 # Nucleus MCP Sync Metadata
 **/*.meta
@@ -126,14 +127,24 @@ release_v1.0.0.zip
 .nucleus_agent
 .sync_last
 
-# Demos - Ignore verified large media
+# Demos - Ignore large media and temp frames
 demos/*/frames/
 demos/*/*.mov
 demos/*/*.mp4
+demos/**/temp_shorts/
+demos/**/*_frames/
+demos/**/captions/
+demos/**/production/
 
+# Test output artifacts
+test_output/
 
-# Demos - Ignore verified large media
-demos/*/frames/
-demos/*/*.mov
-demos/*/*.mp4
+# Health check artifacts (auto-generated)
+meta/health_checks/
+
+# Conversation exports (private)
+claude project export data-*/
+
+# Temp files
+tmp/
 
