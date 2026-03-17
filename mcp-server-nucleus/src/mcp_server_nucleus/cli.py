@@ -3143,6 +3143,27 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     3  # Low intensity — just session notes
                 )
                 print(f"  🧠 Session summary saved to brain ({len(topics)} topic(s))")
+
+                # Archive pipeline: record chat session as a loop turn for third brother training
+                try:
+                    from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+                    _archive = ArchivePipeline()
+                    _brother = "cowork" if _provider in ("claude-code", "claude_code", "max") else "code"
+                    _archive.record_turn(
+                        brother=_brother,
+                        intent=topics[0] if topics else "Chat session",
+                        actions=[t[:100] for t in topics[:10]],
+                        tools_used=list(set(_tool for _tool in _session_files.get("tools_called", []))),
+                        decisions=[],
+                        outcome=summary[:500],
+                        signal_absorbed=[],
+                        signal_produced=[f"engram/session_{ts}"] + [Path(f).name for f in _mod_files[:5]],
+                        confidence=0.8,
+                        context=f"nucleus chat ({_provider}) — {turn_count} turns",
+                    )
+                    print(f"  📊 Loop turn archived for training")
+                except Exception:
+                    pass
         except Exception:
             pass  # Silent — never block exit
 

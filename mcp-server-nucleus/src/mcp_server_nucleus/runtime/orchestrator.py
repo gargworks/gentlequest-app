@@ -74,11 +74,24 @@ class PrivateGraphTrainer:
         Future: Fine-tune local SLM on this session.
         Current: Log intent.
         """
-        logger.info(f"🎓 [TRAINER] Would fine-tune on session {session_id}")
-        # Append to training dataset
-        dataset_path = self.brain_path / "training" / "dataset.jsonl"
-        dataset_path.parent.mkdir(parents=True, exist_ok=True)
-        pass
+        logger.info(f"🎓 [TRAINER] Recording session {session_id} to archive")
+        try:
+            from .archive_pipeline import ArchivePipeline
+            archive = ArchivePipeline(brain_path=self.brain_path)
+            archive.record_turn(
+                brother="code",
+                intent=f"Orchestrated session {session_id}",
+                actions=[content[:200] if content else ""],
+                tools_used=[],
+                decisions=[],
+                outcome=f"Session {session_id} completed",
+                signal_absorbed=[],
+                signal_produced=[f"session/{session_id}"],
+                confidence=0.8,
+                context="Orchestrator auto-archive",
+            )
+        except Exception:
+            pass  # Non-blocking
 
 
 class SwarmsOrchestrator:
