@@ -4025,6 +4025,8 @@ def main():
     archive_subparsers.add_parser('dpo-status', help='Show DPO preference pair statistics')
     archive_dpo_export = archive_subparsers.add_parser('dpo-export', help='Export DPO preference pairs for training')
     archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
+    archive_dpo_export.add_argument('--balanced', action='store_true', help='Balance DPO sources (prevent shadow drowning corrections)')
+    archive_dpo_export.add_argument('--exclude-unjudged', action='store_true', help='Drop shadow pairs without LLM judge verification')
     archive_subparsers.add_parser('cot-status', help='Show reasoning chain (Chain-of-Thought) statistics')
     archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export reasoning chains as <think>-tagged training data')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
@@ -4920,21 +4922,44 @@ def handle_archive_command(args) -> int:
     elif cmd == 'dpo-export':
         out_dir = args.output or str(archive.training_dir / "exports")
         Path(out_dir).mkdir(parents=True, exist_ok=True)
-        p = str(Path(out_dir) / "dpo_training.jsonl")
-        ep = str(Path(out_dir) / "dpo_eval.jsonl")
-        count = archive.export_dpo(p, eval_path=ep)
-        ev = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
+        use_balanced = getattr(args, 'balanced', False)
+        exclude_unjudged = getattr(args, 'exclude_unjudged', False)
+
         print("=" * 50)
         print("🎯 DPO EXPORT — Preference Training Data")
         print("=" * 50)
-        if count == 0:
-            print(f"  No preference pairs to export yet.")
-            print(f"  Use /retry and corrections in chat to accumulate DPO data.")
+
+        if use_balanced:
+            p = str(Path(out_dir) / "dpo_training_balanced.jsonl")
+            result = archive.export_dpo_balanced(
+                p, exclude_unjudged=exclude_unjudged
+            )
+            if result["exported"] == 0:
+                print(f"  No preference pairs to export yet.")
+                print(f"  Use /retry and corrections in chat to accumulate DPO data.")
+            else:
+                print(f"  ⚖️  Balanced export: {result['exported']}/{result['total']} pairs")
+                print(f"     Max per source: {result.get('max_per_source', '?')}")
+                for src, cnt in result.get("by_source", {}).items():
+                    print(f"     {src}: {cnt}")
+                if result.get("excluded_unjudged"):
+                    print(f"     Excluded unjudged: {result['excluded_unjudged']}")
+                print(f"  Output: {p}")
         else:
-            print(f"  Exported: {count} train + {ev} eval pairs")
-            print(f"  Output:   {p}")
-            print(f"\n  To train with DPO (after SFT):")
-            print(f"    python scripts/train_third_brother.py --dpo {p}")
+            p = str(Path(out_dir) / "dpo_training.jsonl")
+            ep = str(Path(out_dir) / "dpo_eval.jsonl")
+            count = archive.export_dpo(p, eval_path=ep)
+            ev = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
+            if count == 0:
+                print(f"  No preference pairs to export yet.")
+                print(f"  Use /retry and corrections in chat to accumulate DPO data.")
+            else:
+                print(f"  Exported: {count} train + {ev} eval pairs")
+                print(f"  Output:   {p}")
+                print(f"\n  💡 For source-balanced export: nucleus archive dpo-export --balanced")
+
+        print(f"\n  To train with DPO (after SFT):")
+        print(f"    python scripts/train_third_brother.py --dpo {p}")
         print()
         return 0
 
@@ -5392,8 +5417,23 @@ def handle_archive_command(args) -> int:
             elif step_name == "synthesize":
                 print(f"  [{step_name:12s}] +{step.get('new_pairs', 0)} DPO pairs")
             elif step_name == "export":
-                print(f"  [{step_name:12s}] {step.get('sft_pairs', 0)} SFT, {step.get('dpo_pairs', 0)} DPO, {step.get('cot_chains', 0)} CoT, {step.get('eval_cases', 0)} eval")
+                sft_n = step.get('sft_exported', 0)
+                dpo_n = step.get('dpo_exported', 0)
+                cot_n = step.get('cot_chains', 0)
+                eval_n = step.get('eval_cases', 0)
+                print(f"  [{step_name:12s}] {sft_n} SFT, {dpo_n} DPO, {cot_n} CoT, {eval_n} eval")
                 print(f"                 → {step.get('output_dir', '')}")
+                if step.get('sft_eval_excluded'):
+                    print(f"                 🛡️  {step['sft_eval_excluded']} eval prompts excluded (contamination firewall)")
+                if step.get('sft_filtered_out'):
+                    print(f"                 🔬 {step['sft_filtered_out']} low-quality pairs filtered")
+                if step.get('sft_curriculum'):
+                    print(f"                 📚 Curriculum: easy→hard")
+                if step.get('dpo_by_source'):
+                    sources = ", ".join(f"{k}={v}" for k, v in step['dpo_by_source'].items())
+                    print(f"                 ⚖️  DPO balanced: {sources}")
+                if step.get('sft_snapshot'):
+                    print(f"                 📸 Snapshot: {step['sft_snapshot']}")
 
         na = report.get("next_action", {})
         if na:

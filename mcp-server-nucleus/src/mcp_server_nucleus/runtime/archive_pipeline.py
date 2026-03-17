@@ -861,6 +861,104 @@ class ArchivePipeline:
             _write_dpo(eval_prefs, eval_path)
         return count
 
+    def export_dpo_balanced(
+        self,
+        output_path: str,
+        max_per_source: Optional[int] = None,
+        exclude_unjudged: bool = False,
+        system_prompt: str = "",
+    ) -> Dict[str, Any]:
+        """Export DPO pairs with source-aware balancing.
+
+        Problem: 500 unjudged shadow pairs drown out 50 gold correction pairs.
+        The model hears "don't deviate" 10x louder than "learn from mistakes."
+
+        Solution: Cap each source so no single source dominates. Prioritize
+        judged pairs over unjudged. Corrections/escalations are gold signal.
+
+        Args:
+            output_path: Path for balanced export.
+            max_per_source: Max pairs per source. If None, auto-balances to
+                            2x the size of the smallest non-empty source.
+            exclude_unjudged: If True, drops shadow pairs where judged=false.
+            system_prompt: System prompt for the model.
+
+        Returns:
+            {total, exported, by_source, excluded_unjudged}.
+        """
+        if not system_prompt:
+            system_prompt = (
+                "You are the Third Brother — a trained intelligence that emerged from "
+                "thousands of decision cycles between two AI agents (Code and Cowork) "
+                "coordinating through a shared brain."
+            )
+
+        prefs = self.get_preferences()
+        if not prefs:
+            return {"total": 0, "exported": 0, "by_source": {}}
+
+        # Group by source
+        by_source: Dict[str, list] = {}
+        excluded_unjudged = 0
+        for p in prefs:
+            # Filter unjudged shadow pairs if requested
+            if exclude_unjudged and p.get("source") == "shadow":
+                if not p.get("metadata", {}).get("judged", True):
+                    excluded_unjudged += 1
+                    continue
+            src = p.get("source", "unknown")
+            by_source.setdefault(src, []).append(p)
+
+        # Source priority: gold > synthetic > shadow
+        PRIORITY = {
+            "mined_correction": 1, "correction": 1,
+            "escalation": 1, "deploy_outcome": 1,
+            "constitutional": 2, "active_learning": 2,
+            "self_play": 3, "spin": 3,
+            "shadow": 4, "unknown": 5,
+        }
+
+        # Auto-balance: cap at 2x smallest gold source, min 50
+        if max_per_source is None:
+            gold_sizes = [
+                len(v) for k, v in by_source.items()
+                if PRIORITY.get(k, 5) <= 2 and len(v) > 0
+            ]
+            if gold_sizes:
+                max_per_source = max(min(gold_sizes) * 2, 50)
+            else:
+                max_per_source = 200  # No gold signal, cap synthetic
+
+        # Sample from each source, prioritized
+        balanced = []
+        source_counts = {}
+        for src in sorted(by_source.keys(), key=lambda s: PRIORITY.get(s, 5)):
+            items = by_source[src]
+            take = min(len(items), max_per_source)
+            balanced.extend(items[:take])
+            source_counts[src] = take
+
+        # Write
+        with open(output_path, "w", encoding="utf-8") as f:
+            for p in balanced:
+                row = {
+                    "prompt": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": p["prompt"]},
+                    ],
+                    "chosen": [{"role": "assistant", "content": p["chosen"]}],
+                    "rejected": [{"role": "assistant", "content": p["rejected"]}],
+                }
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        return {
+            "total": len(prefs),
+            "exported": len(balanced),
+            "by_source": source_counts,
+            "max_per_source": max_per_source,
+            "excluded_unjudged": excluded_unjudged,
+        }
+
     # ── Reasoning / Chain-of-Thought (Phase 5) ──
 
     def record_reasoning_chain(
@@ -1311,14 +1409,110 @@ class ArchivePipeline:
         return suite
 
     def export_eval_suite(self, output_path: str, count: int = 50) -> int:
-        """Export eval suite to JSONL for benchmarking."""
+        """Export eval suite to JSONL for benchmarking.
+
+        Also saves a versioned copy so regression_check always compares
+        against the same eval suite. New eval versions only created when
+        the underlying data changes (content hash differs).
+        """
         suite = self.generate_eval_suite(count)
         if not suite:
             return 0
+
+        # Write the requested export
         with open(output_path, "w", encoding="utf-8") as f:
             for case in suite:
                 f.write(json.dumps(case, ensure_ascii=False) + "\n")
+
+        # Version the eval suite for stable regression comparison
+        self._version_eval_suite(suite)
+
         return len(suite)
+
+    def _version_eval_suite(self, suite: List[Dict[str, Any]]) -> str:
+        """Pin an eval suite version. Only creates a new version if content changed.
+
+        Returns the eval version ID (e.g., 'eval_v3').
+        """
+        eval_dir = self.training_dir / "eval_versions"
+        eval_dir.mkdir(parents=True, exist_ok=True)
+
+        # Content hash of the suite (deterministic)
+        content = json.dumps([c["eval_id"] for c in suite], sort_keys=True)
+        content_hash = hashlib.sha256(content.encode()).hexdigest()[:12]
+
+        # Check if this exact suite already exists
+        manifest_path = eval_dir / "manifest.json"
+        manifest = {}
+        if manifest_path.exists():
+            try:
+                manifest = json.loads(manifest_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                manifest = {}
+
+        if manifest.get("content_hash") == content_hash:
+            return manifest.get("version", "eval_v1")  # Same suite, no new version
+
+        # New version
+        versions = manifest.get("versions", [])
+        new_version = f"eval_v{len(versions) + 1}"
+
+        # Save versioned suite
+        version_path = eval_dir / f"{new_version}.jsonl"
+        with open(version_path, "w", encoding="utf-8") as f:
+            for case in suite:
+                f.write(json.dumps(case, ensure_ascii=False) + "\n")
+
+        # Update manifest
+        versions.append({
+            "version": new_version,
+            "content_hash": content_hash,
+            "case_count": len(suite),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        manifest = {
+            "version": new_version,
+            "content_hash": content_hash,
+            "versions": versions,
+        }
+        manifest_path.write_text(json.dumps(manifest, indent=2))
+
+        return new_version
+
+    def get_pinned_eval_suite(self, version: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Load a pinned eval suite version for stable comparison.
+
+        Args:
+            version: Eval version to load (e.g., 'eval_v1'). If None, uses latest.
+
+        Returns:
+            List of eval cases, or empty list if no pinned version exists.
+        """
+        eval_dir = self.training_dir / "eval_versions"
+        manifest_path = eval_dir / "manifest.json"
+
+        if not manifest_path.exists():
+            return []
+
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            return []
+
+        target = version or manifest.get("version", "eval_v1")
+        version_path = eval_dir / f"{target}.jsonl"
+
+        if not version_path.exists():
+            return []
+
+        cases = []
+        for line in version_path.read_text().strip().split("\n"):
+            if line.strip():
+                try:
+                    cases.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return cases
 
     @staticmethod
     def _score_heuristic(response: str, reference: str) -> Dict[str, float]:
@@ -1382,7 +1576,7 @@ Reply with ONLY three numbers separated by commas, like: 4,3,5"""
             return {"score": 0.5, "method": "llm_judge_error"}
 
     def run_eval(self, model_fn, count: int = 50,
-                 judge_fn=None) -> Dict[str, Any]:
+                 judge_fn=None, eval_version: Optional[str] = None) -> Dict[str, Any]:
         """Run evaluation against the generated suite.
 
         Args:
@@ -1392,11 +1586,19 @@ Reply with ONLY three numbers separated by commas, like: 4,3,5"""
             judge_fn: Optional LLM judge for scoring. If provided, uses LLM-as-Judge
                       (accurate for code/decision tasks). If None, uses word-overlap
                       heuristic (fast, offline, good for relative comparison).
+            eval_version: Use a pinned eval suite version (e.g., 'eval_v1') for
+                          stable regression comparison. If None, generates fresh.
 
         Returns:
             Eval results with scores by category and difficulty.
         """
-        suite = self.generate_eval_suite(count)
+        # Use pinned version if available (stable regression comparison)
+        if eval_version:
+            suite = self.get_pinned_eval_suite(eval_version)
+        else:
+            suite = self.get_pinned_eval_suite()  # Try latest pinned first
+        if not suite:
+            suite = self.generate_eval_suite(count)  # Fallback to fresh generation
         if not suite:
             return {"error": "No eval suite generated", "total": 0}
 
@@ -1439,10 +1641,20 @@ Reply with ONLY three numbers separated by commas, like: 4,3,5"""
 
         scoring_method = results[0].get("method", "heuristic") if results else "none"
 
+        # Detect which eval version was used
+        eval_dir = self.training_dir / "eval_versions" / "manifest.json"
+        used_eval_version = None
+        if eval_dir.exists():
+            try:
+                used_eval_version = json.loads(eval_dir.read_text()).get("version")
+            except (json.JSONDecodeError, OSError):
+                pass
+
         return {
             "total_cases": len(results),
             "avg_score": round(total_score, 3),
             "scoring_method": scoring_method,
+            "eval_version": eval_version or used_eval_version,
             "by_category": {
                 k: round(sum(v) / len(v), 3) for k, v in by_category.items()
             },
@@ -2088,14 +2300,19 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         model_fn=None,
         judge_fn=None,
         dry_run: bool = False,
+        min_quality: float = 0.4,
+        curriculum: bool = True,
+        exclude_unjudged: bool = False,
     ) -> Dict[str, Any]:
         """Run the full training pipeline end-to-end.
 
         This is the Training Conductor. It:
         1. Mines existing data (DPO + CoT)
         2. Synthesizes DPO pairs (if model_fn provided)
-        3. Exports all training data
-        4. Reports readiness for training
+        3. Exports all training data with quality filter + contamination firewall
+        4. Balances DPO sources so gold signal isn't drowned
+        5. Pins eval suite for stable regression comparison
+        6. Reports readiness for training
 
         Does NOT run actual training (that requires GPU/Ollama).
         Use dry_run=True to see what would happen without writing.
@@ -2104,6 +2321,9 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             model_fn: LLM for synthesis. If None, skips synthesis.
             judge_fn: LLM judge for synthesis. If None, uses heuristic.
             dry_run: If True, only report what would happen.
+            min_quality: Minimum quality threshold for SFT export (default 0.4).
+            curriculum: Sort training data easy→hard (default True).
+            exclude_unjudged: Drop unjudged shadow DPO pairs (default False).
 
         Returns:
             Pipeline execution report.
@@ -2146,22 +2366,41 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         out_dir.mkdir(parents=True, exist_ok=True)
 
         if not dry_run:
-            sft_count = self.export_openai(
-                str(out_dir / "sft_training.jsonl"),
-            )
-            dpo_count = self.export_dpo(
-                str(out_dir / "dpo_training.jsonl"),
-            )
-            cot_count = self.export_reasoning(
-                str(out_dir / "cot_training.jsonl"),
-            )
+            # Pin eval suite FIRST (before SFT export, so contamination
+            # firewall knows which prompts to exclude)
             eval_count = self.export_eval_suite(
                 str(out_dir / "eval_suite.jsonl"),
             )
+
+            # SFT: quality-filtered + contamination-safe + curriculum-ordered
+            sft_result = self.export_filtered(
+                str(out_dir / "sft_training.jsonl"),
+                min_quality=min_quality,
+                format="openai",
+                curriculum=curriculum,
+            )
+
+            # DPO: source-balanced so gold signal isn't drowned
+            dpo_result = self.export_dpo_balanced(
+                str(out_dir / "dpo_training.jsonl"),
+                exclude_unjudged=exclude_unjudged,
+            )
+
+            # CoT reasoning chains
+            cot_count = self.export_reasoning(
+                str(out_dir / "cot_training.jsonl"),
+            )
+
             report["steps"].append({
                 "step": "export",
-                "sft_pairs": sft_count,
-                "dpo_pairs": dpo_count,
+                "sft_exported": sft_result["exported"],
+                "sft_filtered_out": sft_result["filtered_out"],
+                "sft_eval_excluded": sft_result.get("eval_excluded", 0),
+                "sft_curriculum": curriculum,
+                "sft_snapshot": sft_result.get("snapshot"),
+                "dpo_exported": dpo_result["exported"],
+                "dpo_by_source": dpo_result.get("by_source", {}),
+                "dpo_excluded_unjudged": dpo_result.get("excluded_unjudged", 0),
                 "cot_chains": cot_count,
                 "eval_cases": eval_count,
                 "output_dir": str(out_dir),
