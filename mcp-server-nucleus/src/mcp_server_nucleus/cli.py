@@ -848,6 +848,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "     nucleus feature list     — list features\n"
         "     nucleus combo pulse      — run pulse combo\n"
         "     nucleus sovereign        — sovereign status\n"
+        "     nucleus archive stats    — training data flywheel\n"
     )
 
     _tail_system = (
@@ -915,7 +916,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     # Claude Code provider: lighter prompt that complements (not conflicts with) CC's own system prompt
     _claude_code_system = (
-        "You are running inside Nucleus Chat, powered by Claude Code with a Max subscription.\n"
+        "You are running inside Nucleus Brother, powered by Claude Code with a Max subscription.\n"
         "You have your standard Claude Code tools (Read, Edit, Bash, Glob, Grep, etc.) "
         "PLUS Nucleus MCP tools (nucleus_engrams, nucleus_tasks, nucleus_sessions, etc.).\n\n"
         "IMPORTANT CONTEXT:\n"
@@ -1265,7 +1266,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     # ── Help Text ────────────────────────────────────────────────
     HELP_TEXT = """
 ╔══════════════════════════════════════════════════════════════╗
-║                   Nucleus Chat Commands                      ║
+║                   Nucleus Brother Commands                    ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  /help              Show this help                           ║
 ║  /model [name]      Show or switch model                     ║
@@ -1303,7 +1304,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     # ── Banner ──────────────────────────────────────────────────
     print("""
 ╔══════════════════════════════════════════════════════════════╗
-║               🧠 Nucleus Interactive Chat                    ║
+║               🧬 Nucleus Brother                              ║
 ║──────────────────────────────────────────────────────────────║
 ║  /help for commands  •  /model to switch  •  Ctrl+C to quit ║
 ╚══════════════════════════════════════════════════════════════╝""")
@@ -2134,7 +2135,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         from mcp_server_nucleus.runtime.heartbeat_ops import escalate_to_operator
                         _esc_id = escalate_to_operator(
                             question=cmd_arg,
-                            context=f"Raised from nucleus chat ({_provider})",
+                            context=f"Raised from nucleus brother ({_provider})",
                             source=f"nucleus-chat-{_provider}",
                         )
                         print(f"🚨 Escalation created: {_esc_id}")
@@ -3166,7 +3167,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         signal_absorbed=[],
                         signal_produced=[f"engram/session_{ts}"] + [Path(f).name for f in _mod_files[:5]],
                         confidence=0.8,
-                        context=f"nucleus chat ({_provider}) — {turn_count} turns",
+                        context=f"nucleus brother ({_provider}) — {turn_count} turns",
                         conversation=_conv,
                     )
                     print(f"  📊 Loop turn archived for training")
@@ -3536,13 +3537,13 @@ def main():
     # ============================================================
     # CHAT COMMAND — Interactive Gemini conversation
     # ============================================================
-    chat_parser = subparsers.add_parser('chat', help='💬 Interactive Gemini chat (direct LLM conversation)')
+    chat_parser = subparsers.add_parser('brother', aliases=['chat'], help='🧬 Talk to a Brother — the family intelligence interface')
     chat_parser.add_argument('--tier', choices=['premium', 'standard', 'economy', 'local_paid', 'local_free'],
                              default='local_free', help='LLM tier to use (default: local_free, 500 RPD)')
     chat_parser.add_argument('--model', default=None, help='Override model name directly (e.g., gemini-3-flash)')
     chat_parser.add_argument('--system', default=None, help='Custom system prompt')
     chat_parser.add_argument('--provider', choices=['gemini', 'anthropic', 'groq', 'claude-code'], default=None,
-                             help='LLM provider: gemini (default), anthropic, groq, or claude-code (Max sub). '
+                             help='Which brother: gemini (default), anthropic, groq, or claude-code (Max sub). '
                                   'Anthropic requires NUCLEUS_ANTHROPIC_API_KEY. '
                                   'Groq requires NUCLEUS_GROQ_API_KEY (free at console.groq.com).')
     chat_parser.add_argument('--batch', action='store_true', help='Non-interactive batch mode (single turn, then exit)')
@@ -3913,7 +3914,7 @@ def main():
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
             
-        elif cli_command == 'chat':
+        elif cli_command in ('brother', 'chat'):
             _run_chat(
                 tier_name=getattr(args, 'tier', 'local_free') or 'local_free',
                 model_override=getattr(args, 'model', None),
@@ -4071,8 +4072,7 @@ def main():
             sys.exit(handle_archive_command(args))
 
         elif cli_command is None:
-            # Claude Code Model: bare `nucleus` → launches chat
-            # Same as `claude`, `gemini`, `python` (bare → REPL/chat)
+            # Bare `nucleus` → launches brother (the family intelligence interface)
             _run_chat(tier_name="local_free")
         else:
             print(f"Unknown command: {cli_command}")

@@ -68,8 +68,8 @@ Nucleus automatically locates your `.brain` by following this hierarchy:
 # One-command security hardening + posture report
 nucleus secure
 
-# Interactive AI chat (Gemini, Anthropic, Groq — hot-switchable)
-nucleus chat
+# Talk to a Brother (Gemini, Anthropic, Groq — hot-switchable)
+nucleus brother          # or: nucleus chat
 
 # See your sovereignty posture
 nucleus sovereign
@@ -258,10 +258,10 @@ Shows: sovereignty score (0-100), memory health, governance posture, DSoR integr
 | **Kill Switch** | Built-in | Emergency halt for agent operations |
 | **Hypervisor** | `nucleus_governance` | File locking, security, mode control |
 
-### Interactive — AI Chat
+### Interactive — Brother Interface
 | Feature | Command | Description |
 |---------|---------|-------------|
-| **Chat** | `nucleus chat` | Multi-provider terminal AI (Gemini/Anthropic/Groq) |
+| **Brother** | `nucleus brother` | Multi-provider terminal AI (Gemini/Anthropic/Groq) |
 | **Multi-Turn** | Built-in | Native conversation history with session resume |
 | **Tool Calling** | Built-in | Native function calling + `<execute>` tag fallback |
 | **Dual-Agent** | `/dual <provider>` | Primary generates, reviewer critiques |
@@ -332,7 +332,7 @@ See [TELEMETRY.md](TELEMETRY.md) for full details.
 ---
 
 ## 📦 v1.6.2 — Interactive Intelligence
-- **Multi-Provider Chat** — `nucleus chat` with Gemini, Anthropic, Groq (hot-switchable via `/provider`)
+- **Brother Interface** — `nucleus brother` with Gemini, Anthropic, Groq (hot-switchable via `/provider`)
 - **Native Tool Calling** — Anthropic `tool_use` API + Groq OpenAI function calling
 - **Model-Aware Gating** — 70b+ models use native tools; 8b models use `<execute>` tags
 - **Groq Auto-Rotation** — Cascades across models on rate limit (70b → scout → qwen → 8b)
