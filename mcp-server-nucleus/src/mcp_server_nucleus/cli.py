@@ -3299,7 +3299,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 )
                 print(f"  🧠 Session summary saved to brain ({len(topics)} topic(s))")
 
-                # Archive pipeline: record chat session as a loop turn for third brother training
+                # archive_pipeline: record chat session as a loop turn for Third Brother training
                 try:
                     from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
                     _archive = ArchivePipeline()
@@ -4022,6 +4022,11 @@ def main():
     archive_active.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation')
     archive_active.add_argument('--eval-provider', type=str, default=None, help='Run eval first against this provider to find weaknesses')
     archive_active.add_argument('--count', type=int, default=20, help='Pairs per weakness (default: 20)')
+    archive_conductor = archive_subparsers.add_parser('conductor', help='Training conductor: show status + next recommended action')
+    archive_pipeline = archive_subparsers.add_parser('pipeline', help='Run full training pipeline (mine → synthesize → export)')
+    archive_pipeline.add_argument('--provider', type=str, default=None, help='LLM provider for synthesis (omit to skip synthesis)')
+    archive_pipeline.add_argument('--judge', type=str, default=None, help='LLM provider for judging (enables LLM-as-Judge)')
+    archive_pipeline.add_argument('--dry-run', action='store_true', help='Show what would happen without executing')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -5226,6 +5231,115 @@ def handle_archive_command(args) -> int:
         print()
         return 0  # ACTIVE_LEARN_BLOCK_END
 
+    elif cmd == 'conductor':  # CONDUCTOR_BLOCK_START
+        print("=" * 50)
+        print("🎼 TRAINING CONDUCTOR — Pipeline Status")
+        print("=" * 50)
+
+        status = archive.training_status()
+
+        # SFT
+        sft = status["sft"]
+        sft_icon = "✅" if sft["ready"] else "⏳"
+        print(f"\n  {sft_icon} SFT:  {sft['turns']} turns {'(ready)' if sft['ready'] else '(need 50+)'}")
+
+        # DPO
+        dpo = status["dpo"]
+        dpo_icon = "✅" if dpo["ready"] else "⏳"
+        print(f"  {dpo_icon} DPO:  {dpo['total']} pairs {'(ready)' if dpo['ready'] else '(need 20+)'}")
+        if dpo["by_source"]:
+            for src, cnt in sorted(dpo["by_source"].items()):
+                print(f"         {src:15s}: {cnt}")
+
+        # CoT
+        cot = status["cot"]
+        cot_icon = "✅" if cot["ready"] else "⏳"
+        print(f"  {cot_icon} CoT:  {cot['quality']} quality chains {'(ready)' if cot['ready'] else '(need 20+)'}")
+
+        # Eval
+        ev = status["eval"]
+        if ev["has_baseline"]:
+            print(f"  ✅ Eval: baseline score = {ev['baseline_score']}")
+        else:
+            print(f"  ⏳ Eval: no baseline yet")
+
+        # Training history
+        tr = status["training"]
+        if tr["last_trained"]:
+            print(f"\n  Last trained: {tr['last_trained'][:10]} ({tr['trained_at_turns']} turns)")
+            print(f"  New since:    {tr['new_since_train']} turns")
+        else:
+            print(f"\n  Never trained.")
+
+        # Next action
+        na = status["next_action"]
+        priority_icon = {"critical": "🔴", "high": "🟡", "medium": "🔵", "low": "⚪"}.get(na["priority"], "⚪")
+        print(f"\n  {priority_icon} Next action: {na['action'].upper()}")
+        print(f"     {na['reason']}")
+        if na.get("command"):
+            print(f"\n     $ {na['command']}")
+
+        print()
+        return 0  # CONDUCTOR_BLOCK_END
+
+    elif cmd == 'pipeline':  # PIPELINE_BLOCK_START
+        pipe_provider = getattr(args, 'provider', None)
+        pipe_judge = getattr(args, 'judge', None)
+        pipe_dry_run = getattr(args, 'dry_run', False)
+
+        print("=" * 50)
+        print("🚂 TRAINING PIPELINE — Full Autonomous Run")
+        print("=" * 50)
+        if pipe_dry_run:
+            print("  [DRY RUN — no changes will be made]")
+        print(f"  Synthesis: {pipe_provider or 'disabled'}")
+        print(f"  Judge:     {pipe_judge or 'heuristic'}")
+
+        model_fn = None
+        judge_fn = None
+
+        if pipe_provider:
+            try:
+                from .runtime.llm_client import get_llm_client
+                llm = get_llm_client(pipe_provider)
+                model_fn = lambda p: llm.generate_content(p).text
+                if pipe_judge:
+                    judge_llm = get_llm_client(pipe_judge)
+                    judge_model_fn = lambda p: judge_llm.generate_content(p).text
+                    judge_fn = archive.build_judge_fn(judge_model_fn)
+            except Exception as e:
+                print(f"\n  ❌ Failed to initialize LLM: {e}")
+                return 1
+
+        print(f"\n  Running pipeline...")
+        report = archive.run_full_pipeline(
+            model_fn=model_fn,
+            judge_fn=judge_fn,
+            dry_run=pipe_dry_run,
+        )
+
+        for step in report.get("steps", []):
+            step_name = step.get("step", "?")
+            if "status" in step:
+                print(f"  [{step_name:12s}] {step['status']}")
+            elif step_name == "mine":
+                print(f"  [{step_name:12s}] +{step.get('mined_dpo', 0)} DPO, +{step.get('mined_cot', 0)} CoT")
+            elif step_name == "synthesize":
+                print(f"  [{step_name:12s}] +{step.get('new_pairs', 0)} DPO pairs")
+            elif step_name == "export":
+                print(f"  [{step_name:12s}] {step.get('sft_pairs', 0)} SFT, {step.get('dpo_pairs', 0)} DPO, {step.get('cot_chains', 0)} CoT, {step.get('eval_cases', 0)} eval")
+                print(f"                 → {step.get('output_dir', '')}")
+
+        na = report.get("next_action", {})
+        if na:
+            priority_icon = {"critical": "🔴", "high": "🟡", "medium": "🔵", "low": "⚪"}.get(na.get("priority", ""), "⚪")
+            print(f"\n  {priority_icon} Next: {na.get('action', '').upper()} — {na.get('reason', '')}")
+            if na.get("command"):
+                print(f"     $ {na['command']}")
+
+        print()
+        return 0  # PIPELINE_BLOCK_END
+
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
         stats = archive.get_stats()
@@ -5249,6 +5363,8 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive synthesize  — self-play DPO manufacturing")
         print(f"   nucleus archive spin        — iterative self-play (SPIN)")
         print(f"   nucleus archive active-learn — target model weaknesses")
+        print(f"   nucleus archive conductor   — what should I do next?")
+        print(f"   nucleus archive pipeline    — run full loop automatically")
         print(f"   nucleus archive train       — fine-tuning pipeline")
         print(f"   nucleus archive ingest      — bulk import conversations")
         return 0

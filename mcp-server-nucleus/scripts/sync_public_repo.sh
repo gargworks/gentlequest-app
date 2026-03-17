@@ -246,7 +246,22 @@ if [ -f "$CLI" ]; then
     sed -i '' '/build_judge_fn/d' "$CLI"
     sed -i '' '/LLM-as-Judge/d' "$CLI"
     sed -i '' '/judge_model_fn/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine/eval/synth/spin/active refs)"
+    # Strip Training Conductor (Phase 10)
+    sed -i '' '/CONDUCTOR_BLOCK_START/,/CONDUCTOR_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_conductor/d' "$CLI"
+    sed -i '' '/archive conductor/d' "$CLI"
+    sed -i '' '/TRAINING CONDUCTOR/d' "$CLI"
+    sed -i '' '/training_status/d' "$CLI"
+    # Strip Training Pipeline (Phase 10)
+    sed -i '' '/PIPELINE_BLOCK_START/,/PIPELINE_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_pipeline/d' "$CLI"
+    sed -i '' '/archive pipeline/d' "$CLI"
+    sed -i '' '/TRAINING PIPELINE/d' "$CLI"
+    sed -i '' '/run_full_pipeline/d' "$CLI"
+    sed -i '' '/pipe_provider/d' "$CLI"
+    sed -i '' '/pipe_judge/d' "$CLI"
+    sed -i '' '/pipe_dry_run/d' "$CLI"
+    echo "  Sanitized: $CLI (all training refs: DPO/CoT/mine/eval/synth/spin/active/conductor/pipeline)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──

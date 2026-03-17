@@ -1810,6 +1810,281 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
 
         return stats
 
+    # ── Training Conductor (full autonomous training loop) ──
+
+    def training_status(self) -> Dict[str, Any]:
+        """Comprehensive training readiness assessment.
+
+        Returns a complete picture of where the training pipeline stands,
+        what's ready, what's needed, and what the next action should be.
+        """
+        stats = self.get_stats()
+        total_turns = stats.get("total_turns", 0)
+        retrain = self.should_retrain()
+        dpo_count = self.count_preferences()
+        cot_count = self.count_reasoning_chains()
+        cot_quality = sum(1 for c in self.get_reasoning_chains()
+                         if self._is_quality_chain(c))
+
+        # Count by source
+        prefs = self.get_preferences()
+        dpo_by_source: Dict[str, int] = {}
+        for p in prefs:
+            src = p.get("source", "unknown")
+            dpo_by_source[src] = dpo_by_source.get(src, 0) + 1
+
+        # Determine phases ready
+        sft_ready = total_turns >= 50
+        dpo_ready = dpo_count >= 20
+        cot_ready = cot_quality >= 20
+        eval_ready = total_turns >= 20
+
+        # Check for existing eval results
+        eval_results_path = self.training_dir / "eval_results.json"
+        has_eval_baseline = eval_results_path.exists()
+        baseline_score = None
+        if has_eval_baseline:
+            try:
+                baseline = json.loads(eval_results_path.read_text())
+                baseline_score = baseline.get("avg_score")
+            except Exception:
+                pass
+
+        # Check trained marker
+        trained_marker = self.training_dir / ".last_trained"
+        last_trained = None
+        trained_at_turns = 0
+        if trained_marker.exists():
+            try:
+                marker = json.loads(trained_marker.read_text())
+                last_trained = marker.get("timestamp")
+                trained_at_turns = marker.get("total_turns", 0)
+            except Exception:
+                pass
+
+        new_turns_since_train = total_turns - trained_at_turns
+
+        # Determine next recommended action
+        next_action = self._recommend_next_action(
+            total_turns=total_turns,
+            dpo_count=dpo_count,
+            cot_quality=cot_quality,
+            has_eval_baseline=has_eval_baseline,
+            baseline_score=baseline_score,
+            new_turns_since_train=new_turns_since_train,
+            dpo_by_source=dpo_by_source,
+        )
+
+        return {
+            "sft": {"turns": total_turns, "ready": sft_ready},
+            "dpo": {"total": dpo_count, "by_source": dpo_by_source, "ready": dpo_ready},
+            "cot": {"total": cot_count, "quality": cot_quality, "ready": cot_ready},
+            "eval": {
+                "ready": eval_ready,
+                "has_baseline": has_eval_baseline,
+                "baseline_score": baseline_score,
+            },
+            "training": {
+                "last_trained": last_trained,
+                "trained_at_turns": trained_at_turns,
+                "new_since_train": new_turns_since_train,
+                "should_retrain": retrain["should_retrain"],
+            },
+            "next_action": next_action,
+        }
+
+    def _recommend_next_action(
+        self,
+        total_turns: int,
+        dpo_count: int,
+        cot_quality: int,
+        has_eval_baseline: bool,
+        baseline_score: float,
+        new_turns_since_train: int,
+        dpo_by_source: Dict[str, int],
+    ) -> Dict[str, Any]:
+        """Decision engine: what should the training pipeline do next?
+
+        This is the brain of the conductor — it looks at the current state
+        and recommends the highest-impact next action.
+        """
+        synth_count = dpo_by_source.get("self_play", 0)
+        spin_count = dpo_by_source.get("spin", 0)
+        active_count = dpo_by_source.get("active_learning", 0)
+
+        # Priority 1: Not enough data at all
+        if total_turns < 50:
+            return {
+                "action": "accumulate",
+                "reason": f"Need 50+ SFT turns (have {total_turns}). Keep using Nucleus.",
+                "command": None,
+                "priority": "low",
+            }
+
+        # Priority 2: Mine existing data
+        if dpo_count < 20:
+            return {
+                "action": "mine",
+                "reason": f"Need 20+ DPO pairs (have {dpo_count}). Mine from corrections.",
+                "command": "nucleus archive mine",
+                "priority": "high",
+            }
+
+        # Priority 3: No eval baseline yet
+        if not has_eval_baseline:
+            return {
+                "action": "eval_baseline",
+                "reason": "No eval baseline. Measure before training.",
+                "command": "nucleus archive eval --run gemini",
+                "priority": "high",
+            }
+
+        # Priority 4: Not enough synthetic DPO
+        if synth_count < 100 and dpo_count < 200:
+            return {
+                "action": "synthesize",
+                "reason": f"Only {synth_count} synthetic DPO pairs. Need 100+ for strong alignment.",
+                "command": "nucleus archive synthesize --judge gemini --count 200",
+                "priority": "high",
+            }
+
+        # Priority 5: Ready to train (or retrain)
+        if new_turns_since_train > 100 or (new_turns_since_train > 0 and not has_eval_baseline):
+            return {
+                "action": "train",
+                "reason": f"{new_turns_since_train} new turns since last training. Time to retrain.",
+                "command": "python scripts/train_third_brother.py --dpo --mine-first",
+                "priority": "critical",
+            }
+
+        # Priority 6: After training, run eval
+        if has_eval_baseline and baseline_score and baseline_score < 0.5:
+            return {
+                "action": "active_learn",
+                "reason": f"Baseline score {baseline_score} is low. Target weaknesses.",
+                "command": "nucleus archive active-learn --eval-provider local --provider gemini",
+                "priority": "high",
+            }
+
+        # Priority 7: SPIN (after first successful training)
+        if spin_count == 0 and total_turns > 200:
+            return {
+                "action": "spin",
+                "reason": "No SPIN rounds yet. Self-play iteration will compound quality.",
+                "command": "nucleus archive spin --current local --base gemini --judge gemini",
+                "priority": "medium",
+            }
+
+        # Priority 8: Active learning for refinement
+        if active_count < 50:
+            return {
+                "action": "active_learn",
+                "reason": f"Only {active_count} active learning pairs. Target more weaknesses.",
+                "command": "nucleus archive active-learn --provider gemini",
+                "priority": "medium",
+            }
+
+        # Steady state: keep accumulating
+        return {
+            "action": "accumulate",
+            "reason": "Pipeline is healthy. Keep using Nucleus to accumulate more signal.",
+            "command": None,
+            "priority": "low",
+        }
+
+    def run_full_pipeline(
+        self,
+        model_fn=None,
+        judge_fn=None,
+        dry_run: bool = False,
+    ) -> Dict[str, Any]:
+        """Run the full training pipeline end-to-end.
+
+        This is the Training Conductor. It:
+        1. Mines existing data (DPO + CoT)
+        2. Synthesizes DPO pairs (if model_fn provided)
+        3. Exports all training data
+        4. Reports readiness for training
+
+        Does NOT run actual training (that requires GPU/Ollama).
+        Use dry_run=True to see what would happen without writing.
+
+        Args:
+            model_fn: LLM for synthesis. If None, skips synthesis.
+            judge_fn: LLM judge for synthesis. If None, uses heuristic.
+            dry_run: If True, only report what would happen.
+
+        Returns:
+            Pipeline execution report.
+        """
+        report = {
+            "steps": [],
+            "dry_run": dry_run,
+        }
+
+        # Step 1: Mine
+        if not dry_run:
+            mined_dpo = self.mine_preferences_from_archive()
+            mined_cot = self.mine_reasoning_from_archive()
+            report["steps"].append({
+                "step": "mine",
+                "mined_dpo": mined_dpo,
+                "mined_cot": mined_cot,
+            })
+        else:
+            report["steps"].append({"step": "mine", "status": "would mine"})
+
+        # Step 2: Synthesize (if model available)
+        if model_fn and not dry_run:
+            synth_count = self.synthesize_preferences(
+                model_fn=model_fn,
+                judge_fn=judge_fn,
+                count=200,
+            )
+            report["steps"].append({
+                "step": "synthesize",
+                "new_pairs": synth_count,
+            })
+        elif model_fn:
+            report["steps"].append({"step": "synthesize", "status": "would synthesize 200"})
+        else:
+            report["steps"].append({"step": "synthesize", "status": "skipped (no model_fn)"})
+
+        # Step 3: Export all training data
+        out_dir = self.training_dir / "exports"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        if not dry_run:
+            sft_count = self.export_openai(
+                str(out_dir / "sft_training.jsonl"),
+            )
+            dpo_count = self.export_dpo(
+                str(out_dir / "dpo_training.jsonl"),
+            )
+            cot_count = self.export_reasoning(
+                str(out_dir / "cot_training.jsonl"),
+            )
+            eval_count = self.export_eval_suite(
+                str(out_dir / "eval_suite.jsonl"),
+            )
+            report["steps"].append({
+                "step": "export",
+                "sft_pairs": sft_count,
+                "dpo_pairs": dpo_count,
+                "cot_chains": cot_count,
+                "eval_cases": eval_count,
+                "output_dir": str(out_dir),
+            })
+        else:
+            report["steps"].append({"step": "export", "status": "would export to " + str(out_dir)})
+
+        # Step 4: Training readiness
+        status = self.training_status()
+        report["status"] = status
+        report["next_action"] = status["next_action"]
+
+        return report
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:
