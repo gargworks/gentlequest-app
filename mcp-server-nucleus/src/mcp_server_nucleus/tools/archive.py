@@ -69,7 +69,30 @@ def register(mcp, helpers):
     def _h_retrain_status():
         from ..runtime.archive_pipeline import ArchivePipeline
         archive = ArchivePipeline()
-        return make_response(True, data=archive.should_retrain())
+        rt = archive.should_retrain()
+        rt["dpo_pairs"] = archive.count_preferences()
+        return make_response(True, data=rt)
+
+    def _h_dpo_status():
+        from ..runtime.archive_pipeline import ArchivePipeline
+        archive = ArchivePipeline()
+        return make_response(True, data=archive.get_preference_stats())
+
+    def _h_record_preference(prompt="", chosen="", rejected="",
+                             source="manual", metadata=None):
+        from ..runtime.archive_pipeline import ArchivePipeline
+        archive = ArchivePipeline()
+        pref = archive.record_preference(
+            prompt=prompt, chosen=chosen, rejected=rejected,
+            source=source, metadata=metadata or {},
+        )
+        if pref:
+            return make_response(True, data={
+                "pref_id": pref["pref_id"],
+                "source": source,
+                "message": f"Recorded preference {pref['pref_id']}",
+            })
+        return make_response(False, error="Preference pair too short or identical")
 
     ACTION_MAP = {
         "stats": (_h_stats, "Show archive statistics"),
@@ -77,6 +100,8 @@ def register(mcp, helpers):
         "record": (_h_record, "Record a loop turn"),
         "export": (_h_export, "Export training data for fine-tuning"),
         "retrain_status": (_h_retrain_status, "Check if new training is recommended"),
+        "dpo_status": (_h_dpo_status, "Show DPO preference pair statistics"),
+        "record_preference": (_h_record_preference, "Record a DPO preference pair (prompt, chosen, rejected)"),
     }
 
     @mcp.tool()
@@ -89,6 +114,8 @@ def register(mcp, helpers):
         - record: Record a loop turn (params: brother, intent, outcome, decisions, actions, tools_used, context, confidence, conversation)
         - export: Export training data (params: format=all|gemini|openai|anthropic)
         - retrain_status: Check if enough new data has accumulated to retrain
+        - dpo_status: Show DPO preference pair statistics (source breakdown)
+        - record_preference: Record a DPO pair (params: prompt, chosen, rejected, source)
         """
         return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
 

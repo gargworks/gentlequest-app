@@ -1653,6 +1653,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     current_key_idx = 0
     is_initial = True
 
+    # ── DPO Preference Capture State ──
+    _retry_rejected = None  # Holds the rejected response during /retry
+    _retry_prompt = None    # Holds the prompt being retried
+
     # ── Dual-Agent Coordination State ──
     _dual_mode = False
     _dual_reviewer = None  # The review LLM (different provider)
@@ -2154,7 +2158,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   Search: /recall <query>")
                 else:
                     print(f"📚 Archive is empty. Auto-saves every turn.")
-                # Training data stats + retrain status
+                # Training data stats + retrain status + DPO
                 try:
                     from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
                     _ta = ArchivePipeline()
@@ -2164,11 +2168,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     _brothers = ", ".join(f"{k}={v}" for k, v in sorted(_by.items()))
                     _rt = _ta.should_retrain()
                     _rt_flag = "  RETRAIN READY" if _rt['should_retrain'] else f"  {_rt['new_turns']}/{_rt['threshold']} to retrain"
+                    _dpo_count = _ta.count_preferences()
+                    _dpo_flag = f"  |  DPO: {_dpo_count} pairs" if _dpo_count > 0 else ""
                     print(f"\n🧬 Third Brother Training Data:")
-                    print(f"   Turns: {_total}  |  By: {_brothers}")
+                    print(f"   SFT:  {_total} turns  |  By: {_brothers}")
+                    print(f"   DPO:  {_dpo_count} preference pairs{_dpo_flag}")
                     print(f"   Status:{_rt_flag}")
-                    print(f"   Export: nucleus archive export")
-                    print(f"   Train:  nucleus archive train\n")
+                    print(f"   Export: nucleus archive export | nucleus archive dpo-export\n")
                 except Exception:
                     print()
                 continue
@@ -2713,12 +2719,20 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 continue
 
             elif cmd == "/retry":
-                # Re-send the last user message
+                # Re-send the last user message — DPO: previous response = rejected
+                _retry_rejected = None
+                _retry_prompt = None
                 if history:
+                    # Capture the rejected response BEFORE trimming history
+                    for _ri in range(len(history) - 1, -1, -1):
+                        if history[_ri][0] == "assistant":
+                            _retry_rejected = history[_ri][1]
+                            break
                     # Find the last user message
                     for _ri in range(len(history) - 1, -1, -1):
                         if history[_ri][0] == "user":
                             user_input = history[_ri][1]
+                            _retry_prompt = user_input
                             # Remove last turn so it doesn't duplicate
                             history = history[:_ri]
                             turn_count = max(0, turn_count - 1)
@@ -2727,6 +2741,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print("❌ No previous message to retry.\n")
                         continue
                     # Fall through to LLM call with the recovered user_input
+                    # After LLM responds, DPO pair is captured below (search: DPO_RETRY_CAPTURE)
                 else:
                     print("❌ No previous message to retry.\n")
                     continue
@@ -3094,6 +3109,52 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 # Archive to disk (permanent, append-only — survives /compact and session end)
                 _archive_turn("user", current_input)
                 _archive_turn("assistant", reply, {"tools_used": react_step})
+
+                # ── DPO Preference Capture ─────────────────────────
+                # DPO_RETRY_CAPTURE: /retry path — previous was rejected, new is chosen
+                if _retry_rejected and _retry_prompt and reply:
+                    try:
+                        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline as _DPOArchive
+                        _dpo = _DPOArchive()
+                        _dpo.record_preference(
+                            prompt=_retry_prompt,
+                            chosen=reply,
+                            rejected=_retry_rejected,
+                            source="retry",
+                        )
+                    except Exception:
+                        pass
+                    _retry_rejected = None
+                    _retry_prompt = None
+
+                # DPO_CORRECTION_CAPTURE: user corrected the previous response
+                if (turn_count > 1 and len(history) >= 4
+                        and not current_input.startswith("[Tool Result")):
+                    try:
+                        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline as _DPOArchive
+                        if _DPOArchive.is_correction(current_input):
+                            # Previous turn: user asked X, got bad response
+                            # Current turn: user corrected, got better response
+                            _prev_user = None
+                            _prev_asst = None
+                            for _di in range(len(history) - 3, -1, -1):
+                                if history[_di][0] == "user" and not history[_di][1].startswith("[Tool Result"):
+                                    _prev_user = history[_di][1]
+                                    # Look for the assistant response right after
+                                    if _di + 1 < len(history) and history[_di + 1][0] == "assistant":
+                                        _prev_asst = history[_di + 1][1]
+                                    break
+                            if _prev_user and _prev_asst and reply:
+                                _dpo = _DPOArchive()
+                                _dpo.record_preference(
+                                    prompt=_prev_user,
+                                    chosen=reply,  # The corrected response
+                                    rejected=_prev_asst,  # The response that was corrected
+                                    source="correction",
+                                    metadata={"correction_msg": current_input[:200]},
+                                )
+                    except Exception:
+                        pass
 
                 # Auto-save (context window state — overwrites each time)
                 if brain_dir:
@@ -3899,6 +3960,9 @@ def main():
     archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
     archive_subparsers.add_parser('ingest-threads', help='Bridge thread.jsonl (chat history) into training archive')
     archive_subparsers.add_parser('mark-trained', help='Mark current archive as trained (resets retrain counter)')
+    archive_subparsers.add_parser('dpo-status', help='Show DPO preference pair statistics')
+    archive_dpo_export = archive_subparsers.add_parser('dpo-export', help='Export DPO preference pairs for training')
+    archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4525,23 +4589,38 @@ def handle_archive_command(args) -> int:
         print("=" * 50)
         print("🧬 THIRD BROTHER — Training Status")
         print("=" * 50)
+
+        # SFT data
+        print(f"  ── SFT (Supervised Fine-Tuning) ──")
         print(f"  Archive turns:    {total}")
         by_bro = stats.get('by_brother', {})
         for bro, count in sorted(by_bro.items()):
             print(f"    {bro:12s}:  {count}")
-        print()
-
-        # Quality pair count (no file I/O)
         pair_count = archive.count_quality_pairs()
         print(f"  Quality pairs:    {pair_count}")
         print(f"  Last trained at:  {retrain['last_trained_at']} turns")
         print(f"  New turns:        {retrain['new_turns']}")
-        print(f"  Retrain threshold:{retrain['threshold']}")
         print()
 
+        # DPO data
+        dpo_count = archive.count_preferences()
+        print(f"  ── DPO (Direct Preference Optimization) ──")
+        print(f"  Preference pairs: {dpo_count}")
+        if dpo_count > 0:
+            pref_stats = archive.get_preference_stats()
+            by_src = pref_stats.get('by_source', {})
+            for src, count in sorted(by_src.items(), key=lambda x: -x[1]):
+                print(f"    {src:12s}:  {count}")
+        else:
+            print(f"    (accumulates from /retry, corrections, outcomes)")
+        print()
+
+        # Retrain recommendation
         if retrain['should_retrain']:
             print(f"  ✅ RETRAIN RECOMMENDED — {retrain['reason']}")
-            print(f"     → nucleus archive train")
+            print(f"     Phase 1: nucleus archive train          (SFT)")
+            if dpo_count >= 50:
+                print(f"     Phase 2: nucleus archive dpo-export     (DPO)")
         else:
             print(f"  ⏳ {retrain['reason']}")
         print()
@@ -4676,20 +4755,81 @@ def handle_archive_command(args) -> int:
         print(f"   Retrain counter reset. New data will accumulate from here.")
         return 0
 
+    elif cmd == 'dpo-status':
+        pref_stats = archive.get_preference_stats()
+        total_prefs = pref_stats.get('total_preferences', 0)
+        print("=" * 50)
+        print("🎯 DPO PREFERENCE PAIRS — Training the Third Brother's Taste")
+        print("=" * 50)
+        print(f"  Total pairs:   {total_prefs}")
+        by_src = pref_stats.get('by_source', {})
+        if by_src:
+            print(f"  By source:")
+            for src, count in sorted(by_src.items(), key=lambda x: -x[1]):
+                label = {
+                    "retry": "/retry (explicit rejection)",
+                    "correction": "Correction pattern (no, instead...)",
+                    "outcome": "Outcome signal (deploy/escalation)",
+                    "review": "Code review (issues found)",
+                    "manual": "Manual recording",
+                }.get(src, src)
+                print(f"    {src:12s}: {count:4d}  — {label}")
+        if pref_stats.get('first'):
+            print(f"  First pair:    {pref_stats['first'][:19]}")
+            print(f"  Last pair:     {pref_stats['last'][:19]}")
+        print()
+        if total_prefs < 50:
+            print(f"  ⏳ Need ~50+ pairs for meaningful DPO. Keep chatting!")
+            print(f"     DPO pairs accumulate automatically from:")
+            print(f"       • /retry (previous answer = rejected)")
+            print(f"       • Corrections ('no, do X instead')")
+            print(f"       • Deploy success/failure events")
+            print(f"       • Task escalations")
+        else:
+            print(f"  ✅ Ready for DPO training!")
+            print(f"     → nucleus archive dpo-export")
+        print()
+        return 0
+
+    elif cmd == 'dpo-export':
+        out_dir = args.output or str(archive.training_dir / "exports")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        p = str(Path(out_dir) / "dpo_training.jsonl")
+        ep = str(Path(out_dir) / "dpo_eval.jsonl")
+        count = archive.export_dpo(p, eval_path=ep)
+        ev = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
+        print("=" * 50)
+        print("🎯 DPO EXPORT — Preference Training Data")
+        print("=" * 50)
+        if count == 0:
+            print(f"  No preference pairs to export yet.")
+            print(f"  Use /retry and corrections in chat to accumulate DPO data.")
+        else:
+            print(f"  Exported: {count} train + {ev} eval pairs")
+            print(f"  Output:   {p}")
+            print(f"\n  To train with DPO (after SFT):")
+            print(f"    python scripts/train_third_brother.py --dpo {p}")
+        print()
+        return 0
+
     else:
-        # bare `nucleus archive` — show stats + retrain indicator
+        # bare `nucleus archive` — show stats + retrain indicator + DPO count
         stats = archive.get_stats()
         total = stats.get('total_turns', 0)
         retrain = archive.should_retrain()
         retrain_flag = " | RETRAIN READY" if retrain['should_retrain'] else ""
-        print(f"📊 Archive: {total} turns{retrain_flag}")
-        print(f"   nucleus archive status   — retrain readiness check")
-        print(f"   nucleus archive stats    — full stats breakdown")
-        print(f"   nucleus archive recent   — see last 10 turns")
-        print(f"   nucleus archive export   — export for fine-tuning")
-        print(f"   nucleus archive record   — manually record a turn")
-        print(f"   nucleus archive train    — fine-tuning pipeline")
-        print(f"   nucleus archive ingest   — bulk import conversations")
+        dpo_count = archive.count_preferences()
+        dpo_flag = f" | {dpo_count} DPO pairs" if dpo_count > 0 else ""
+        print(f"📊 Archive: {total} turns{retrain_flag}{dpo_flag}")
+        print(f"   nucleus archive status      — retrain readiness check")
+        print(f"   nucleus archive stats       — full stats breakdown")
+        print(f"   nucleus archive recent      — see last 10 turns")
+        print(f"   nucleus archive export      — export SFT training data")
+        print(f"   nucleus archive dpo-status  — DPO preference pair stats")
+        print(f"   nucleus archive dpo-export  — export DPO training data")
+        print(f"   nucleus archive record      — manually record a turn")
+        print(f"   nucleus archive train       — fine-tuning pipeline")
+        print(f"   nucleus archive ingest      — bulk import conversations")
         print(f"   nucleus archive ingest-threads — bridge chat history → training")
         return 0
 

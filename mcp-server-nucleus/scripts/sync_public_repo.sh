@@ -161,7 +161,7 @@ if [ -f "$LLM" ]; then
     echo "  Sanitized: $LLM (LocalLLM/Third Brother provider)"
 fi
 
-# ── cli.py: Strip archive/Third Brother references ──
+# ── cli.py: Strip archive/Third Brother/DPO references ──
 if [ -f "$CLI" ]; then
     # Remove archive_pipeline import + record_turn block (try/except wrapped, safe to strip)
     sed -i '' '/archive_pipeline/d' "$CLI"
@@ -172,7 +172,19 @@ if [ -f "$CLI" ]; then
     # Remove archive dispatch
     sed -i '' "/cli_command == 'archive'/d" "$CLI"
     sed -i '' '/handle_archive_command/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother refs)"
+    # Strip DPO preference capture (private training infrastructure)
+    sed -i '' '/DPO/d' "$CLI"
+    sed -i '' '/_retry_rejected/d' "$CLI"
+    sed -i '' '/_retry_prompt/d' "$CLI"
+    sed -i '' '/_DPOArchive/d' "$CLI"
+    sed -i '' '/record_preference/d' "$CLI"
+    sed -i '' '/is_correction/d' "$CLI"
+    sed -i '' '/dpo_count/d' "$CLI"
+    sed -i '' '/count_preferences/d' "$CLI"
+    sed -i '' '/preference pair/d' "$CLI"
+    sed -i '' '/export_dpo/d' "$CLI"
+    sed -i '' '/get_preference_stats/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother/DPO refs)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──

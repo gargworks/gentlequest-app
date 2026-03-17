@@ -343,6 +343,9 @@ def _record_to_training_archive(event_type: str, event_data: Dict[str, Any], bra
     Creates a LoopTurn with the event as a synthetic conversation pair:
     user = "What happened?" + event context, assistant = structured outcome.
     Only fires for high-value events (completions, deploys, reviews).
+
+    Also captures DPO outcome preferences: deploy success = chosen,
+    deploy failure / task escalation = rejected.
     """
     if event_type not in _ARCHIVE_WORTHY_EVENTS:
         return
@@ -363,6 +366,40 @@ def _record_to_training_archive(event_type: str, event_data: Dict[str, Any], bra
             confidence=0.7,
             context=f"Auto-hook: {event_type}",
         )
+
+        # DPO outcome preference: success vs failure signals
+        if event_type == "deploy_complete":
+            status = event_data.get("status", "")
+            service = event_data.get("service_id", "service")
+            archive.record_outcome_preference(
+                event_type=event_type,
+                prompt=f"Deploy {service} to production",
+                response=description,
+                success="success" in status.lower() and "failed" not in status.lower(),
+                context=service,
+            )
+        elif event_type == "task_escalated":
+            reason = event_data.get("reason", "unknown")
+            task_id = event_data.get("task_id", "?")
+            archive.record_outcome_preference(
+                event_type=event_type,
+                prompt=f"Complete task {task_id}",
+                response=f"Attempted but escalated: {reason}",
+                success=False,
+                context=f"task {task_id}",
+            )
+        elif event_type == "code_critiqued":
+            verdict = event_data.get("verdict", "")
+            issues = event_data.get("issues_found", 0)
+            file_path = event_data.get("file_path", "code")
+            if issues and int(issues) > 0:
+                archive.record_outcome_preference(
+                    event_type=event_type,
+                    prompt=f"Review code in {file_path}",
+                    response=description,
+                    success=False,
+                    context=file_path,
+                )
     except Exception:
         pass  # Never block the hook pipeline
 

@@ -5,10 +5,21 @@ as a structured LoopTurn in .brain/training/loop_turns.jsonl. This is
 the raw material for fine-tuning the third brother — a model trained on
 the accumulated decision intelligence of both brothers.
 
+The archive has TWO data streams:
+
+1. SFT (Supervised Fine-Tuning) — loop_turns.jsonl
+   Input/output pairs: "what happened" → teach the model to mimic.
+
+2. DPO (Direct Preference Optimization) — preference_pairs.jsonl
+   Win/lose triples: (prompt, chosen, rejected) → teach the model TASTE.
+   Sources: /retry (explicit rejection), corrections ("no, do X"),
+   outcome signals (deploy success vs failure), escalations.
+
 The archive format is provider-agnostic. Converters export to:
 - Gemini (Vertex AI) fine-tuning format
 - OpenAI/Llama/Mistral chat format (axolotl, unsloth)
 - Anthropic fine-tuning format
+- DPO format (TRL DPOTrainer: prompt/chosen/rejected)
 
 Usage:
     from .archive_pipeline import ArchivePipeline
@@ -26,9 +37,18 @@ Usage:
         confidence=0.95
     )
 
+    # DPO: record a preference (user retried → old response is rejected)
+    archive.record_preference(
+        prompt="Fix the auth middleware",
+        chosen="I'll update the JWT validation to check expiry before signature...",
+        rejected="Let me refactor the entire auth module to use OAuth2...",
+        source="retry",
+    )
+
     # Export for fine-tuning
     archive.export_gemini("output/gemini_training.jsonl")
     archive.export_openai("output/openai_training.jsonl")
+    archive.export_dpo("output/dpo_training.jsonl")
 """
 
 import json
@@ -145,11 +165,20 @@ class LoopTurn:
 class ArchivePipeline:
     """Append-only archive of loop turns. The training data flywheel."""
 
+    # Correction patterns: if a user message starts with these, the previous
+    # assistant response is likely being rejected in favor of a new direction.
+    CORRECTION_PREFIXES = (
+        "no ", "no,", "not that", "wrong", "actually", "instead",
+        "don't", "stop", "that's wrong", "that's not", "nope",
+        "scratch that", "forget that", "let's not",
+    )
+
     def __init__(self, brain_path: Optional[Path] = None):
         self.brain_path = brain_path or get_brain_path()
         self.training_dir = self.brain_path / "training"
         self.training_dir.mkdir(parents=True, exist_ok=True)
         self.turns_file = self.training_dir / "loop_turns.jsonl"
+        self.prefs_file = self.training_dir / "preference_pairs.jsonl"
         self.stats_file = self.training_dir / "stats.json"
 
     def record_turn(self, **kwargs) -> LoopTurn:
@@ -635,6 +664,191 @@ class ArchivePipeline:
         history_file = self.training_dir / "training_history.jsonl"
         with open(history_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    # ── DPO (Direct Preference Optimization) ──
+
+    def record_preference(
+        self,
+        prompt: str,
+        chosen: str,
+        rejected: str,
+        source: str = "manual",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Record a preference pair for DPO training.
+
+        Args:
+            prompt: The user input / question.
+            chosen: The preferred (winning) response.
+            rejected: The dispreferred (losing) response.
+            source: Where this signal came from:
+                "retry"      — user hit /retry (explicit rejection of previous)
+                "correction" — user started with "no, do X instead" pattern
+                "outcome"    — deploy success vs failure, task complete vs escalated
+                "review"     — code review found issues (original = rejected)
+                "manual"     — manually recorded
+            metadata: Optional extra context (event_type, brother, etc.)
+
+        Returns:
+            The recorded preference dict.
+        """
+        if len(prompt) < 10 or len(chosen) < 20 or len(rejected) < 20:
+            return {}  # Too short to be useful
+        if chosen.strip() == rejected.strip():
+            return {}  # No preference signal
+
+        pref = {
+            "pref_id": f"pref-{uuid.uuid4().hex[:12]}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "prompt": prompt[:3000],
+            "chosen": chosen[:3000],
+            "rejected": rejected[:3000],
+            "source": source,
+            "metadata": metadata or {},
+        }
+
+        with open(self.prefs_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(pref, ensure_ascii=False) + "\n")
+
+        return pref
+
+    def record_outcome_preference(
+        self,
+        event_type: str,
+        prompt: str,
+        response: str,
+        success: bool,
+        context: str = "",
+    ):
+        """Record an outcome-based preference from system events.
+
+        For deploy_success: response is chosen, we synthesize a generic rejected.
+        For deploy_failed/task_escalated: response is rejected, we note the failure.
+        These build up gradually — the DPO trainer learns from the distribution.
+        """
+        if success:
+            # Successful outcome — this is the chosen response
+            # Rejected = generic "I'm not sure" placeholder (weak negative)
+            self.record_preference(
+                prompt=prompt,
+                chosen=response,
+                rejected=f"I'll need to investigate further before making changes to {context}.",
+                source="outcome",
+                metadata={"event_type": event_type, "outcome": "success"},
+            )
+        else:
+            # Failed outcome — this response led to a bad result
+            # Chosen = acknowledgement of the failure (teaches caution)
+            self.record_preference(
+                prompt=prompt,
+                chosen=f"This approach has risks. Let me reconsider the strategy for {context}.",
+                rejected=response,
+                source="outcome",
+                metadata={"event_type": event_type, "outcome": "failure"},
+            )
+
+    @staticmethod
+    def is_correction(user_msg: str) -> bool:
+        """Detect if a user message is correcting the previous response."""
+        lower = user_msg.strip().lower()
+        for prefix in ArchivePipeline.CORRECTION_PREFIXES:
+            if lower.startswith(prefix):
+                return True
+        return False
+
+    def get_preferences(self, limit: int = 0) -> List[Dict[str, Any]]:
+        """Read preference pairs from the archive."""
+        if not self.prefs_file.exists():
+            return []
+        prefs = []
+        with open(self.prefs_file, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    prefs.append(json.loads(line))
+        if limit > 0:
+            prefs = prefs[-limit:]
+        return prefs
+
+    def count_preferences(self) -> int:
+        """Count preference pairs without loading them all."""
+        if not self.prefs_file.exists():
+            return 0
+        count = 0
+        with open(self.prefs_file, encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    count += 1
+        return count
+
+    def get_preference_stats(self) -> Dict[str, Any]:
+        """Get DPO preference statistics broken down by source."""
+        prefs = self.get_preferences()
+        by_source: Dict[str, int] = {}
+        for p in prefs:
+            src = p.get("source", "unknown")
+            by_source[src] = by_source.get(src, 0) + 1
+        return {
+            "total_preferences": len(prefs),
+            "by_source": by_source,
+            "first": prefs[0]["timestamp"] if prefs else None,
+            "last": prefs[-1]["timestamp"] if prefs else None,
+        }
+
+    def export_dpo(self, output_path: str, eval_path: str = "",
+                   eval_ratio: float = 0.1, system_prompt: str = "") -> int:
+        """Export preference pairs in TRL DPOTrainer format.
+
+        Format:
+        {
+            "prompt": [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}],
+            "chosen": [{"role": "assistant", "content": "..."}],
+            "rejected": [{"role": "assistant", "content": "..."}]
+        }
+        """
+        if not system_prompt:
+            system_prompt = (
+                "You are the Third Brother — a trained intelligence that emerged from "
+                "thousands of decision cycles between two AI agents (Code and Cowork) "
+                "coordinating through a shared brain. You think like the founder, "
+                "know the codebase like Code, and know the market like Cowork."
+            )
+
+        prefs = self.get_preferences()
+        if not prefs:
+            return 0
+
+        if eval_path:
+            train_prefs, eval_prefs = self._split_train_eval(prefs, eval_ratio)
+        else:
+            train_prefs, eval_prefs = prefs, []
+
+        def _write_dpo(items, path):
+            count = 0
+            with open(path, "w", encoding="utf-8") as f:
+                for p in items:
+                    row = {
+                        "prompt": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": p["prompt"]},
+                        ],
+                        "chosen": [
+                            {"role": "assistant", "content": p["chosen"]},
+                        ],
+                        "rejected": [
+                            {"role": "assistant", "content": p["rejected"]},
+                        ],
+                    }
+                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    count += 1
+            return count
+
+        count = _write_dpo(train_prefs, output_path)
+        if eval_path and eval_prefs:
+            _write_dpo(eval_prefs, eval_path)
+        return count
+
+    # ── Internal ──
 
     def _get_existing_hashes(self) -> set:
         """Get content hashes of all existing turns for dedup."""
