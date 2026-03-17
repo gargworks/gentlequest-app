@@ -111,6 +111,8 @@ SOVEREIGN_FILES=(
   "src/mcp_server_nucleus/runtime/siphon_engine.py"
   "src/mcp_server_nucleus/runtime/llm_pattern_learner.py"
   "src/share_to_spotify.py"
+  "scripts/validate_public_surface.sh"
+  "scripts/sync_public_repo.sh"
   "docs/Sovereign_Compliance_Officer_Handbook.md"
   "docs/strategy/"
   "docs/COMPARISON.md"

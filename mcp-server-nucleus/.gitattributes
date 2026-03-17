@@ -1,5 +1,6 @@
 # Precision Sync: Exclude internal tools and private scripts from public repository
 scripts/sync_public_repo.sh export-ignore
+scripts/validate_public_surface.sh export-ignore
 scripts/publish_pypi.sh export-ignore
 scripts/build_dual_artifacts.sh export-ignore
 scripts/build_dark_wheel.py export-ignore
