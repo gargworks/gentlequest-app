@@ -1310,6 +1310,16 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ╚══════════════════════════════════════════════════════════════╝""")
     _tool_count = "35 (23 native + 12 MCP)" if _provider in ("claude-code", "claude_code", "max") and getattr(llm, "_mcp_config", None) else "11"
     print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: {_tool_count}")
+    # Show archive status in banner
+    try:
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        _ab = ArchivePipeline()
+        _as = _ab.get_stats()
+        _at = _as.get('total_turns', 0)
+        if _at > 0:
+            print(f"  Archive: {_at} turns | /archive for details")
+    except Exception:
+        pass
     if _workspace_info:
         # Show compact one-liner from workspace
         _ws_oneliner = _workspace_info.split("\n")[0]  # e.g. "Git: branch=main"
@@ -2120,9 +2130,23 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   File: {_archive_file}")
                     print(f"   Turns: {stats['turns']}  |  Size: {stats['size_kb']} KB")
                     print(f"   Range: {stats.get('first', '?')[:10]} → {stats.get('last', '?')[:10]}")
-                    print(f"   Search: /recall <query>\n")
+                    print(f"   Search: /recall <query>")
                 else:
-                    print(f"📚 Archive is empty. Auto-saves every turn.\n")
+                    print(f"📚 Archive is empty. Auto-saves every turn.")
+                # Training data stats
+                try:
+                    from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+                    _ta = ArchivePipeline()
+                    _ts = _ta.get_stats()
+                    _total = _ts.get('total_turns', 0)
+                    _by = _ts.get('by_brother', {})
+                    _brothers = ", ".join(f"{k}={v}" for k, v in sorted(_by.items()))
+                    print(f"\n🧬 Third Brother Training Data:")
+                    print(f"   Turns: {_total}  |  By: {_brothers}")
+                    print(f"   Export: nucleus archive export")
+                    print(f"   Train:  nucleus archive train\n")
+                except Exception:
+                    print()
                 continue
 
             elif cmd == "/escalate":
@@ -4507,16 +4531,17 @@ def handle_archive_command(args) -> int:
             count = archive.export_openai(p)
             print(f"\n  Exported: {count} pairs → {p}")
             if not dry_run:
-                print(f"\n  Local fine-tuning options:")
-                print(f"    1. Unsloth (fastest, free Colab):")
-                print(f"       → Upload {p} to Colab")
-                print(f"       → Base model: unsloth/Qwen2.5-7B-Instruct")
-                print(f"       → Output: GGUF for Ollama")
-                print(f"    2. Ollama create (from Modelfile):")
-                print(f"       → ollama create nucleus-brother -f Modelfile")
+                print(f"\n  One-shot training script:")
+                print(f"    python scripts/train_third_brother.py")
+                print(f"\n  Or manual options:")
+                print(f"    1. Unsloth (fastest, free Colab T4):")
+                print(f"       → Upload {p}")
+                print(f"       → Base: unsloth/Qwen2.5-7B-Instruct → GGUF")
+                print(f"    2. Ollama (from Modelfile):")
+                print(f"       → ollama create nucleus-brother -f scripts/Modelfile")
                 print(f"    3. axolotl (full control):")
                 print(f"       → axolotl train config.yaml")
-                print(f"\n  After training, run the brother:")
+                print(f"\n  After training:")
                 print(f"    nucleus brother --provider local")
 
         print()
