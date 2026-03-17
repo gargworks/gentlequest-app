@@ -3837,6 +3837,9 @@ def main():
     archive_train.add_argument('--target', choices=['gemini', 'openai', 'local'], default='local',
                                help='Training target: gemini (Vertex AI), openai (API), local (Ollama/unsloth)')
     archive_train.add_argument('--dry-run', action='store_true', help='Export data only, do not launch training')
+    archive_ingest = archive_subparsers.add_parser('ingest', help='Bulk import conversations from Gemini/Claude transcripts')
+    archive_ingest.add_argument('paths', nargs='+', help='Paths to conversation files (Gemini .json or Claude .md)')
+    archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4519,6 +4522,38 @@ def handle_archive_command(args) -> int:
         print()
         return 0
 
+    elif cmd == 'ingest':
+        paths = getattr(args, 'paths', [])
+        brother = getattr(args, 'brother', 'code')
+        total_ingested = 0
+
+        print("=" * 50)
+        print("📥 INGESTING CONVERSATIONS INTO ARCHIVE")
+        print("=" * 50)
+
+        for path in paths:
+            p = Path(path)
+            if not p.exists():
+                print(f"  ⚠️  Not found: {path}")
+                continue
+
+            if p.suffix == '.json':
+                count = archive.ingest_gemini_conversation(str(p), brother=brother)
+                print(f"  ✅ {p.name}: {count} turns (Gemini)")
+            elif p.suffix == '.md':
+                count = archive.ingest_claude_markdown(str(p), brother=brother)
+                print(f"  ✅ {p.name}: {count} turns (Claude)")
+            else:
+                print(f"  ⚠️  Unknown format: {p.name} (expected .json or .md)")
+                count = 0
+
+            total_ingested += count
+
+        stats = archive.get_stats()
+        print(f"\n  Ingested: {total_ingested} new turns")
+        print(f"  Total archive: {stats.get('total_turns', 0)} turns")
+        return 0
+
     else:
         # bare `nucleus archive` — show stats
         stats = archive.get_stats()
@@ -4528,6 +4563,7 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive export   — export for fine-tuning")
         print(f"   nucleus archive record   — manually record a turn")
         print(f"   nucleus archive train    — fine-tuning pipeline")
+        print(f"   nucleus archive ingest   — bulk import conversations")
         return 0
 
 

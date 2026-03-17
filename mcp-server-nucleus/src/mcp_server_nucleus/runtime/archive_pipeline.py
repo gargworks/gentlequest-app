@@ -270,6 +270,157 @@ class ArchivePipeline:
             json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
+    # ── Ingest: bulk import from conversation transcripts ──
+
+    def ingest_gemini_conversation(self, filepath: str, brother: str = "code") -> int:
+        """Import a Gemini CLI conversation JSON into the archive.
+
+        Gemini format: [{"role": "user"/"model", "parts": [{"text": "..."}]}]
+        Chunks into ~10-turn windows, each becoming one LoopTurn with real
+        conversation data (richest training signal).
+        """
+        data = json.loads(Path(filepath).read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            return 0
+
+        # Build conversation pairs
+        conversation = []
+        for msg in data:
+            role = msg.get("role", "")
+            parts = msg.get("parts", [])
+            text = parts[0].get("text", "") if parts else ""
+            if not text or len(text) < 5:
+                continue
+            if role == "user":
+                conversation.append({"role": "user", "content": text[:3000]})
+            elif role == "model":
+                conversation.append({"role": "assistant", "content": text[:3000]})
+
+        # Chunk into windows of ~20 messages (10 user/assistant pairs)
+        WINDOW = 20
+        count = 0
+        existing_hashes = self._get_existing_hashes()
+        fname = Path(filepath).stem
+
+        for i in range(0, len(conversation), WINDOW):
+            chunk = conversation[i:i + WINDOW]
+            if len(chunk) < 4:  # Skip tiny fragments
+                continue
+
+            # Extract intent from first user message
+            first_user = next((m["content"][:100] for m in chunk if m["role"] == "user"), "Gemini session")
+            # Dedup by content hash
+            content_sig = f"{brother}:{first_user}:{fname}:{i}"
+            content_hash = hashlib.sha256(content_sig.encode()).hexdigest()[:16]
+            if content_hash in existing_hashes:
+                continue
+
+            turn = self.record_turn(
+                brother=brother,
+                intent=first_user,
+                actions=[],
+                tools_used=[],
+                decisions=[],
+                outcome=f"Gemini session chunk {i // WINDOW + 1} ({len(chunk)} messages)",
+                signal_absorbed=[],
+                signal_produced=[],
+                confidence=0.7,
+                context=f"Ingested from {fname}",
+                conversation=chunk,
+                metadata={"source": filepath, "chunk_index": i // WINDOW},
+            )
+            count += 1
+
+        return count
+
+    def ingest_claude_markdown(self, filepath: str, brother: str = "code") -> int:
+        """Import a Claude project export markdown conversation.
+
+        These are markdown files with ## Human / ## Assistant sections.
+        """
+        text = Path(filepath).read_text(encoding="utf-8")
+        conversation = []
+        current_role = None
+        current_content = []
+
+        for line in text.split("\n"):
+            stripped = line.strip()
+            is_user = (
+                stripped.startswith("## Human") or stripped.startswith("**Human**")
+                or stripped == "### User Input"
+            )
+            is_assistant = (
+                stripped.startswith("## Assistant") or stripped.startswith("**Assistant**")
+                or stripped.startswith("### Planner Response")
+                or stripped.startswith("### Assistant Response")
+                or stripped.startswith("### Model Response")
+            )
+            if is_user:
+                if current_role and current_content:
+                    content = "\n".join(current_content).strip()
+                    if len(content) > 5:
+                        conversation.append({"role": current_role, "content": content[:3000]})
+                current_role = "user"
+                current_content = []
+            elif is_assistant:
+                if current_role and current_content:
+                    content = "\n".join(current_content).strip()
+                    if len(content) > 5:
+                        conversation.append({"role": current_role, "content": content[:3000]})
+                current_role = "assistant"
+                current_content = []
+            elif current_role:
+                current_content.append(line)
+
+        # Flush last block
+        if current_role and current_content:
+            content = "\n".join(current_content).strip()
+            if len(content) > 5:
+                conversation.append({"role": current_role, "content": content[:3000]})
+
+        if len(conversation) < 4:
+            return 0
+
+        # Chunk and record
+        WINDOW = 20
+        count = 0
+        existing_hashes = self._get_existing_hashes()
+        fname = Path(filepath).stem
+
+        for i in range(0, len(conversation), WINDOW):
+            chunk = conversation[i:i + WINDOW]
+            if len(chunk) < 4:
+                continue
+
+            first_user = next((m["content"][:100] for m in chunk if m["role"] == "user"), fname)
+            content_sig = f"{brother}:{first_user}:{fname}:{i}"
+            content_hash = hashlib.sha256(content_sig.encode()).hexdigest()[:16]
+            if content_hash in existing_hashes:
+                continue
+
+            turn = self.record_turn(
+                brother=brother,
+                intent=first_user,
+                actions=[],
+                tools_used=[],
+                decisions=[],
+                outcome=f"Claude session chunk {i // WINDOW + 1} ({len(chunk)} messages)",
+                signal_absorbed=[],
+                signal_produced=[],
+                confidence=0.7,
+                context=f"Ingested from {fname}",
+                conversation=chunk,
+                metadata={"source": filepath, "chunk_index": i // WINDOW},
+            )
+            count += 1
+
+        return count
+
+    def _get_existing_hashes(self) -> set:
+        """Get content hashes of all existing turns for dedup."""
+        turns = self.get_turns()
+        return {t.get("content_hash", "") for t in turns}
+
     def _dict_to_turn(self, d: Dict[str, Any]) -> LoopTurn:
         """Reconstruct a LoopTurn from a dict (for export)."""
         turn = LoopTurn(
