@@ -1,0 +1,37 @@
+# Grafana Contact Points for Nucleus Telemetry Alerts
+# Phase D: Alert delivery integrations (Slack + Email)
+# Auto-provisioned on Grafana startup
+
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: nucleus-slack-alerts
+    receivers:
+      - uid: nucleus_slack
+        type: slack
+        settings:
+          url: ${NUCLEUS_SLACK_WEBHOOK_URL}
+          title: "Nucleus Telemetry Alert"
+          text: |-
+            **{{ .GroupLabels.alertname }}**
+            Status: {{ .Status }}
+            Severity: {{ .GroupLabels.severity }}
+            
+            {{ range .Alerts }}
+            {{ .Annotations.summary }}
+            {{ .Annotations.description }}
+            {{ end }}
+            
+            [View in Grafana]({{ .ExternalURL }})
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: nucleus-email-alerts
+    receivers:
+      - uid: nucleus_email
+        type: email
+        settings:
+          addresses: ${NUCLEUS_ALERT_EMAIL}
+          singleEmail: true
+        disableResolveMessage: false

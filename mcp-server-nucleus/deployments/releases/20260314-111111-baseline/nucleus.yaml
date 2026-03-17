@@ -1,0 +1,194 @@
+# Nucleus Configuration — Incident Response (Phase F: Autonomous Policy Engine)
+# This file controls automated self-healing behavior.
+# All actions are idempotent and logged to incidents/actions.log.
+# Incident JSON files are written alongside MD reports for machine processing.
+
+incident_response:
+  # Master switch — set to false to disable all automated actions
+  enabled: true
+
+  # Prometheus endpoint for metric queries
+  prometheus_url: "http://localhost:9090"
+
+  # Slack webhook for incident notifications (uses same env var as Grafana)
+  # Set NUCLEUS_SLACK_WEBHOOK_URL in environment to enable
+  slack_webhook_env: "NUCLEUS_SLACK_WEBHOOK_URL"
+
+  # How often the controller polls (when run as a daemon)
+  poll_interval_seconds: 60
+
+  # Cooldown between identical actions on the same target (prevents flapping)
+  action_cooldown_minutes: 30
+
+  # ── Thresholds ──────────────────────────────────────────────
+  thresholds:
+    # Error rate (fraction, 0.0–1.0) over 5-minute window
+    error_rate_warning: 0.10   # 10% — generate report + notify
+    error_rate_critical: 0.25  # 25% — attempt restart + disable command
+
+    # Command rate anomaly Z-score (3σ = statistical anomaly)
+    anomaly_zscore: 3.0
+
+    # Minimum commands in window before acting (avoids noise on low traffic)
+    min_commands_for_action: 5
+
+    # No commands at all for this many hours triggers a "dead pipeline" incident
+    dead_pipeline_hours: 6
+
+  # ── Allowed Actions ─────────────────────────────────────────
+  # Each action can be individually enabled/disabled.
+  actions:
+    # Restart the otel-collector container on sustained failures
+    restart_collector:
+      enabled: true
+      max_restarts_per_hour: 2
+      container: "nucleus-otel-collector"
+
+    # Disable specific commands by writing to a feature-flag file
+    disable_command:
+      enabled: false  # Disabled by default — opt-in only
+      flag_file: ".brain/config/disabled_commands.json"
+      auto_reenable_minutes: 60  # Re-enable after cooldown
+
+    # Generate markdown incident reports
+    generate_report:
+      enabled: true
+      output_dir: "incidents"
+
+    # Post structured summary to Slack
+    notify_slack:
+      enabled: true  # Only fires if webhook URL is set in env
+
+    # Attempt to flush/restart the metrics pipeline
+    restart_metrics_pipeline:
+      enabled: true
+      max_restarts_per_hour: 1
+
+  # ── Incident Severity Mapping ───────────────────────────────
+  severity_map:
+    high_error_rate: "warning"
+    critical_error_rate: "critical"
+    command_rate_anomaly: "critical"
+    dead_pipeline: "warning"
+    collector_unhealthy: "critical"
+
+  # ── Policy Engine (Phase F) ──────────────────────────────────
+  # Deterministic, explainable policy adaptation based on resolution success rates.
+  # No ML — all rules are threshold-based and logged.
+  policy:
+    # Number of recent outcomes to track per incident type (rolling window)
+    rolling_window: 10
+
+    # If success_rate >= this, reward: shorten cooldowns, re-enable actions
+    high_success_threshold: 0.8
+
+    # If success_rate <= this, penalize: lengthen cooldowns, disable aggressive actions
+    low_success_threshold: 0.3
+
+    # Effective cooldown bounds (minutes) after multiplier is applied
+    min_cooldown_minutes: 10
+    max_cooldown_minutes: 120
+
+    # ── Autonomy Bounds (Phase G) ────────────────────────────────
+    # Control what the policy engine is allowed to do autonomously.
+    autonomy:
+      # Autonomy mode:
+      #   - observe_only: Detect and report only, no automated actions (except report/notify)
+      #   - infra_only: Allow infrastructure restarts (collector, metrics), no app changes
+      #   - infra_and_app: Full autonomy (subject to hard limits and Phase F safety)
+      autonomy_mode: "infra_and_app"
+
+      # Hard limits: absolute constraints that override all other settings
+      # If a hard limit forbids an action, it will NEVER execute
+      hard_limits:
+        allow_restart_collector: true
+        allow_restart_metrics_pipeline: true
+        allow_disable_command: false  # Disabled by default - requires explicit opt-in
+        allow_restart_core_process: true  # Phase H
+        allow_restart_db: true  # Phase H
+        allow_restart_queue: true  # Phase H
+        allow_auto_rollback: true  # Phase I
+
+    # ── Rollout Safety (Phase I) ──────────────────────────────
+    # Safe deployment with automatic rollback on regression
+    rollouts:
+      observation_window_minutes: 10  # Monitor new releases for this duration
+      enable_auto_rollback: true  # Auto-rollback on smoke test failure or regression
+      
+      # Regression detection thresholds during observation window
+      regression_thresholds:
+        max_error_rate: 0.30  # Higher than critical_error_rate (0.25)
+        allow_crash_loops: false  # Rollback if any component crash-loops
+        allow_component_down: false  # Rollback if critical component goes down
+
+  # ── Core Stack Health (Phase H) ──────────────────────────────
+  # Full stack monitoring with crash-loop defense for single-node deployments.
+  core_stack:
+    enabled: true
+    
+    # Components to monitor (beyond telemetry)
+    components:
+      - name: "nucleus-otel-collector"
+        type: "docker"
+        container: "nucleus-otel-collector"
+        health_check: "docker"
+        critical: true
+      
+      - name: "prometheus"
+        type: "docker"
+        container: "prometheus"
+        health_check: "http"
+        health_url: "http://localhost:9090/-/healthy"
+        critical: true
+      
+      - name: "grafana"
+        type: "docker"
+        container: "grafana"
+        health_check: "http"
+        health_url: "http://localhost:3000/api/health"
+        critical: false
+      
+      - name: "jaeger"
+        type: "docker"
+        container: "jaeger"
+        health_check: "http"
+        health_url: "http://localhost:16686/"
+        critical: false
+      
+      # Uncomment and configure as needed:
+      # - name: "nucleus-core"
+      #   type: "process"
+      #   pid_file: "/var/run/nucleus.pid"
+      #   health_check: "http"
+      #   health_url: "http://localhost:8080/health"
+      #   critical: true
+      
+      # - name: "postgres"
+      #   type: "docker"
+      #   container: "nucleus-postgres"
+      #   health_check: "docker"
+      #   critical: true
+      
+      # - name: "redis"
+      #   type: "docker"
+      #   container: "nucleus-redis"
+      #   health_check: "docker"
+      #   critical: false
+    
+    # Crash-loop detection and backoff
+    crash_loop:
+      max_restarts: 3  # Max restarts within window before declaring crash loop
+      window_minutes: 5  # Time window for counting restarts
+      backoff_minutes: 15  # How long to pause restarts after crash loop detected
+    
+    # Startup smoke tests
+    smoke_tests:
+      enabled: true
+      timeout_seconds: 30
+      required_checks:
+        - prometheus_reachable
+        - otel_collector_listening
+        # Add more as components are configured:
+        # - db_reachable
+        # - queue_reachable
+        # - core_health_endpoint

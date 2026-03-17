@@ -1,0 +1,2002 @@
+{
+    "sync.identify_agent": {
+        "original": "identify_agent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(identify_agent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(identify_agent)",
+            "concise": "LLM_GENERATE_CONCISE(identify_agent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(identify_agent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(identify_agent)"
+        }
+    },
+    "sync.sync_status": {
+        "original": "sync_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sync_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sync_status)",
+            "concise": "LLM_GENERATE_CONCISE(sync_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sync_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sync_status)"
+        }
+    },
+    "sync.sync_now": {
+        "original": "sync_now",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sync_now)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sync_now)",
+            "concise": "LLM_GENERATE_CONCISE(sync_now)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sync_now)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sync_now)"
+        }
+    },
+    "sync.sync_auto": {
+        "original": "sync_auto",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sync_auto)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sync_auto)",
+            "concise": "LLM_GENERATE_CONCISE(sync_auto)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sync_auto)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sync_auto)"
+        }
+    },
+    "sync.sync_resolve": {
+        "original": "sync_resolve",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sync_resolve)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sync_resolve)",
+            "concise": "LLM_GENERATE_CONCISE(sync_resolve)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sync_resolve)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sync_resolve)"
+        }
+    },
+    "sync.read_artifact": {
+        "original": "read_artifact",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(read_artifact)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(read_artifact)",
+            "concise": "LLM_GENERATE_CONCISE(read_artifact)",
+            "implicit": "LLM_GENERATE_IMPLICIT(read_artifact)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(read_artifact)"
+        }
+    },
+    "sync.write_artifact": {
+        "original": "write_artifact",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(write_artifact)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(write_artifact)",
+            "concise": "LLM_GENERATE_CONCISE(write_artifact)",
+            "implicit": "LLM_GENERATE_IMPLICIT(write_artifact)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(write_artifact)"
+        }
+    },
+    "sync.list_artifacts": {
+        "original": "list_artifacts",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_artifacts)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_artifacts)",
+            "concise": "LLM_GENERATE_CONCISE(list_artifacts)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_artifacts)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_artifacts)"
+        }
+    },
+    "sync.trigger_agent": {
+        "original": "trigger_agent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(trigger_agent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(trigger_agent)",
+            "concise": "LLM_GENERATE_CONCISE(trigger_agent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(trigger_agent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(trigger_agent)"
+        }
+    },
+    "sync.get_triggers": {
+        "original": "get_triggers",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_triggers)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_triggers)",
+            "concise": "LLM_GENERATE_CONCISE(get_triggers)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_triggers)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_triggers)"
+        }
+    },
+    "sync.evaluate_triggers": {
+        "original": "evaluate_triggers",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(evaluate_triggers)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(evaluate_triggers)",
+            "concise": "LLM_GENERATE_CONCISE(evaluate_triggers)",
+            "implicit": "LLM_GENERATE_IMPLICIT(evaluate_triggers)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(evaluate_triggers)"
+        }
+    },
+    "sync.start_deploy_poll": {
+        "original": "start_deploy_poll",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(start_deploy_poll)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(start_deploy_poll)",
+            "concise": "LLM_GENERATE_CONCISE(start_deploy_poll)",
+            "implicit": "LLM_GENERATE_IMPLICIT(start_deploy_poll)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(start_deploy_poll)"
+        }
+    },
+    "sync.check_deploy": {
+        "original": "check_deploy",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(check_deploy)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(check_deploy)",
+            "concise": "LLM_GENERATE_CONCISE(check_deploy)",
+            "implicit": "LLM_GENERATE_IMPLICIT(check_deploy)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(check_deploy)"
+        }
+    },
+    "sync.complete_deploy": {
+        "original": "complete_deploy",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(complete_deploy)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(complete_deploy)",
+            "concise": "LLM_GENERATE_CONCISE(complete_deploy)",
+            "implicit": "LLM_GENERATE_IMPLICIT(complete_deploy)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(complete_deploy)"
+        }
+    },
+    "sync.smoke_test": {
+        "original": "smoke_test",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(smoke_test)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(smoke_test)",
+            "concise": "LLM_GENERATE_CONCISE(smoke_test)",
+            "implicit": "LLM_GENERATE_IMPLICIT(smoke_test)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(smoke_test)"
+        }
+    },
+    "sessions.save": {
+        "original": "save",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(save)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(save)",
+            "concise": "LLM_GENERATE_CONCISE(save)",
+            "implicit": "LLM_GENERATE_IMPLICIT(save)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(save)"
+        }
+    },
+    "sessions.resume": {
+        "original": "resume",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(resume)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(resume)",
+            "concise": "LLM_GENERATE_CONCISE(resume)",
+            "implicit": "LLM_GENERATE_IMPLICIT(resume)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(resume)"
+        }
+    },
+    "sessions.list": {
+        "original": "list",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list)",
+            "concise": "LLM_GENERATE_CONCISE(list)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list)"
+        }
+    },
+    "sessions.check_recent": {
+        "original": "check_recent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(check_recent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(check_recent)",
+            "concise": "LLM_GENERATE_CONCISE(check_recent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(check_recent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(check_recent)"
+        }
+    },
+    "sessions.end": {
+        "original": "end",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(end)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(end)",
+            "concise": "LLM_GENERATE_CONCISE(end)",
+            "implicit": "LLM_GENERATE_IMPLICIT(end)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(end)"
+        }
+    },
+    "sessions.start": {
+        "original": "start",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(start)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(start)",
+            "concise": "LLM_GENERATE_CONCISE(start)",
+            "implicit": "LLM_GENERATE_IMPLICIT(start)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(start)"
+        }
+    },
+    "sessions.archive_resolved": {
+        "original": "archive_resolved",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(archive_resolved)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(archive_resolved)",
+            "concise": "LLM_GENERATE_CONCISE(archive_resolved)",
+            "implicit": "LLM_GENERATE_IMPLICIT(archive_resolved)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(archive_resolved)"
+        }
+    },
+    "sessions.propose_merges": {
+        "original": "propose_merges",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(propose_merges)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(propose_merges)",
+            "concise": "LLM_GENERATE_CONCISE(propose_merges)",
+            "implicit": "LLM_GENERATE_IMPLICIT(propose_merges)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(propose_merges)"
+        }
+    },
+    "sessions.garbage_collect": {
+        "original": "garbage_collect",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(garbage_collect)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(garbage_collect)",
+            "concise": "LLM_GENERATE_CONCISE(garbage_collect)",
+            "implicit": "LLM_GENERATE_IMPLICIT(garbage_collect)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(garbage_collect)"
+        }
+    },
+    "sessions.emit_event": {
+        "original": "emit_event",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(emit_event)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(emit_event)",
+            "concise": "LLM_GENERATE_CONCISE(emit_event)",
+            "implicit": "LLM_GENERATE_IMPLICIT(emit_event)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(emit_event)"
+        }
+    },
+    "sessions.read_events": {
+        "original": "read_events",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(read_events)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(read_events)",
+            "concise": "LLM_GENERATE_CONCISE(read_events)",
+            "implicit": "LLM_GENERATE_IMPLICIT(read_events)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(read_events)"
+        }
+    },
+    "sessions.get_state": {
+        "original": "get_state",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_state)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_state)",
+            "concise": "LLM_GENERATE_CONCISE(get_state)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_state)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_state)"
+        }
+    },
+    "sessions.update_state": {
+        "original": "update_state",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(update_state)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(update_state)",
+            "concise": "LLM_GENERATE_CONCISE(update_state)",
+            "implicit": "LLM_GENERATE_IMPLICIT(update_state)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(update_state)"
+        }
+    },
+    "sessions.checkpoint": {
+        "original": "checkpoint",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(checkpoint)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(checkpoint)",
+            "concise": "LLM_GENERATE_CONCISE(checkpoint)",
+            "implicit": "LLM_GENERATE_IMPLICIT(checkpoint)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(checkpoint)"
+        }
+    },
+    "sessions.resume_checkpoint": {
+        "original": "resume_checkpoint",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(resume_checkpoint)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(resume_checkpoint)",
+            "concise": "LLM_GENERATE_CONCISE(resume_checkpoint)",
+            "implicit": "LLM_GENERATE_IMPLICIT(resume_checkpoint)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(resume_checkpoint)"
+        }
+    },
+    "sessions.handoff_summary": {
+        "original": "handoff_summary",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(handoff_summary)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(handoff_summary)",
+            "concise": "LLM_GENERATE_CONCISE(handoff_summary)",
+            "implicit": "LLM_GENERATE_IMPLICIT(handoff_summary)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(handoff_summary)"
+        }
+    },
+    "sessions.recover": {
+        "original": "recover",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(recover)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(recover)",
+            "concise": "LLM_GENERATE_CONCISE(recover)",
+            "implicit": "LLM_GENERATE_IMPLICIT(recover)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(recover)"
+        }
+    },
+    "tasks.list": {
+        "original": "list",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list)",
+            "concise": "LLM_GENERATE_CONCISE(list)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list)"
+        }
+    },
+    "tasks.get_next": {
+        "original": "get_next",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_next)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_next)",
+            "concise": "LLM_GENERATE_CONCISE(get_next)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_next)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_next)"
+        }
+    },
+    "tasks.claim": {
+        "original": "claim",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(claim)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(claim)",
+            "concise": "LLM_GENERATE_CONCISE(claim)",
+            "implicit": "LLM_GENERATE_IMPLICIT(claim)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(claim)"
+        }
+    },
+    "tasks.update": {
+        "original": "update",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(update)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(update)",
+            "concise": "LLM_GENERATE_CONCISE(update)",
+            "implicit": "LLM_GENERATE_IMPLICIT(update)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(update)"
+        }
+    },
+    "tasks.add": {
+        "original": "add",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(add)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(add)",
+            "concise": "LLM_GENERATE_CONCISE(add)",
+            "implicit": "LLM_GENERATE_IMPLICIT(add)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(add)"
+        }
+    },
+    "tasks.import_jsonl": {
+        "original": "import_jsonl",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(import_jsonl)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(import_jsonl)",
+            "concise": "LLM_GENERATE_CONCISE(import_jsonl)",
+            "implicit": "LLM_GENERATE_IMPLICIT(import_jsonl)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(import_jsonl)"
+        }
+    },
+    "tasks.escalate": {
+        "original": "escalate",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(escalate)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(escalate)",
+            "concise": "LLM_GENERATE_CONCISE(escalate)",
+            "implicit": "LLM_GENERATE_IMPLICIT(escalate)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(escalate)"
+        }
+    },
+    "tasks.depth_push": {
+        "original": "depth_push",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_push)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_push)",
+            "concise": "LLM_GENERATE_CONCISE(depth_push)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_push)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_push)"
+        }
+    },
+    "tasks.depth_pop": {
+        "original": "depth_pop",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_pop)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_pop)",
+            "concise": "LLM_GENERATE_CONCISE(depth_pop)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_pop)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_pop)"
+        }
+    },
+    "tasks.depth_show": {
+        "original": "depth_show",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_show)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_show)",
+            "concise": "LLM_GENERATE_CONCISE(depth_show)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_show)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_show)"
+        }
+    },
+    "tasks.depth_reset": {
+        "original": "depth_reset",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_reset)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_reset)",
+            "concise": "LLM_GENERATE_CONCISE(depth_reset)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_reset)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_reset)"
+        }
+    },
+    "tasks.depth_set_max": {
+        "original": "depth_set_max",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_set_max)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_set_max)",
+            "concise": "LLM_GENERATE_CONCISE(depth_set_max)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_set_max)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_set_max)"
+        }
+    },
+    "tasks.depth_map": {
+        "original": "depth_map",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(depth_map)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(depth_map)",
+            "concise": "LLM_GENERATE_CONCISE(depth_map)",
+            "implicit": "LLM_GENERATE_IMPLICIT(depth_map)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(depth_map)"
+        }
+    },
+    "tasks.context_switch": {
+        "original": "context_switch",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(context_switch)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(context_switch)",
+            "concise": "LLM_GENERATE_CONCISE(context_switch)",
+            "implicit": "LLM_GENERATE_IMPLICIT(context_switch)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(context_switch)"
+        }
+    },
+    "tasks.context_switch_status": {
+        "original": "context_switch_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(context_switch_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(context_switch_status)",
+            "concise": "LLM_GENERATE_CONCISE(context_switch_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(context_switch_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(context_switch_status)"
+        }
+    },
+    "tasks.context_switch_reset": {
+        "original": "context_switch_reset",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(context_switch_reset)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(context_switch_reset)",
+            "concise": "LLM_GENERATE_CONCISE(context_switch_reset)",
+            "implicit": "LLM_GENERATE_IMPLICIT(context_switch_reset)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(context_switch_reset)"
+        }
+    },
+    "features.add": {
+        "original": "add",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(add)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(add)",
+            "concise": "LLM_GENERATE_CONCISE(add)",
+            "implicit": "LLM_GENERATE_IMPLICIT(add)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(add)"
+        }
+    },
+    "features.list": {
+        "original": "list",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list)",
+            "concise": "LLM_GENERATE_CONCISE(list)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list)"
+        }
+    },
+    "features.get": {
+        "original": "get",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get)",
+            "concise": "LLM_GENERATE_CONCISE(get)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get)"
+        }
+    },
+    "features.update": {
+        "original": "update",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(update)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(update)",
+            "concise": "LLM_GENERATE_CONCISE(update)",
+            "implicit": "LLM_GENERATE_IMPLICIT(update)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(update)"
+        }
+    },
+    "features.validate": {
+        "original": "validate",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(validate)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(validate)",
+            "concise": "LLM_GENERATE_CONCISE(validate)",
+            "implicit": "LLM_GENERATE_IMPLICIT(validate)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(validate)"
+        }
+    },
+    "features.search": {
+        "original": "search",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(search)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(search)",
+            "concise": "LLM_GENERATE_CONCISE(search)",
+            "implicit": "LLM_GENERATE_IMPLICIT(search)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(search)"
+        }
+    },
+    "features.mount_server": {
+        "original": "mount_server",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(mount_server)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(mount_server)",
+            "concise": "LLM_GENERATE_CONCISE(mount_server)",
+            "implicit": "LLM_GENERATE_IMPLICIT(mount_server)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(mount_server)"
+        }
+    },
+    "features.thanos_snap": {
+        "original": "thanos_snap",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(thanos_snap)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(thanos_snap)",
+            "concise": "LLM_GENERATE_CONCISE(thanos_snap)",
+            "implicit": "LLM_GENERATE_IMPLICIT(thanos_snap)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(thanos_snap)"
+        }
+    },
+    "features.unmount_server": {
+        "original": "unmount_server",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(unmount_server)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(unmount_server)",
+            "concise": "LLM_GENERATE_CONCISE(unmount_server)",
+            "implicit": "LLM_GENERATE_IMPLICIT(unmount_server)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(unmount_server)"
+        }
+    },
+    "features.list_mounted": {
+        "original": "list_mounted",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_mounted)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_mounted)",
+            "concise": "LLM_GENERATE_CONCISE(list_mounted)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_mounted)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_mounted)"
+        }
+    },
+    "features.discover_tools": {
+        "original": "discover_tools",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(discover_tools)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(discover_tools)",
+            "concise": "LLM_GENERATE_CONCISE(discover_tools)",
+            "implicit": "LLM_GENERATE_IMPLICIT(discover_tools)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(discover_tools)"
+        }
+    },
+    "features.invoke_tool": {
+        "original": "invoke_tool",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(invoke_tool)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(invoke_tool)",
+            "concise": "LLM_GENERATE_CONCISE(invoke_tool)",
+            "implicit": "LLM_GENERATE_IMPLICIT(invoke_tool)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(invoke_tool)"
+        }
+    },
+    "features.traverse_mount": {
+        "original": "traverse_mount",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(traverse_mount)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(traverse_mount)",
+            "concise": "LLM_GENERATE_CONCISE(traverse_mount)",
+            "implicit": "LLM_GENERATE_IMPLICIT(traverse_mount)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(traverse_mount)"
+        }
+    },
+    "features.generate_proof": {
+        "original": "generate_proof",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(generate_proof)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(generate_proof)",
+            "concise": "LLM_GENERATE_CONCISE(generate_proof)",
+            "implicit": "LLM_GENERATE_IMPLICIT(generate_proof)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(generate_proof)"
+        }
+    },
+    "features.get_proof": {
+        "original": "get_proof",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_proof)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_proof)",
+            "concise": "LLM_GENERATE_CONCISE(get_proof)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_proof)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_proof)"
+        }
+    },
+    "features.list_proofs": {
+        "original": "list_proofs",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_proofs)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_proofs)",
+            "concise": "LLM_GENERATE_CONCISE(list_proofs)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_proofs)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_proofs)"
+        }
+    },
+    "engrams.health": {
+        "original": "health",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(health)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(health)",
+            "concise": "LLM_GENERATE_CONCISE(health)",
+            "implicit": "LLM_GENERATE_IMPLICIT(health)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(health)"
+        }
+    },
+    "engrams.version": {
+        "original": "version",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(version)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(version)",
+            "concise": "LLM_GENERATE_CONCISE(version)",
+            "implicit": "LLM_GENERATE_IMPLICIT(version)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(version)"
+        }
+    },
+    "engrams.export_schema": {
+        "original": "export_schema",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(export_schema)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(export_schema)",
+            "concise": "LLM_GENERATE_CONCISE(export_schema)",
+            "implicit": "LLM_GENERATE_IMPLICIT(export_schema)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(export_schema)"
+        }
+    },
+    "engrams.performance_metrics": {
+        "original": "performance_metrics",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(performance_metrics)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(performance_metrics)",
+            "concise": "LLM_GENERATE_CONCISE(performance_metrics)",
+            "implicit": "LLM_GENERATE_IMPLICIT(performance_metrics)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(performance_metrics)"
+        }
+    },
+    "engrams.prometheus_metrics": {
+        "original": "prometheus_metrics",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(prometheus_metrics)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(prometheus_metrics)",
+            "concise": "LLM_GENERATE_CONCISE(prometheus_metrics)",
+            "implicit": "LLM_GENERATE_IMPLICIT(prometheus_metrics)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(prometheus_metrics)"
+        }
+    },
+    "engrams.audit_log": {
+        "original": "audit_log",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(audit_log)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(audit_log)",
+            "concise": "LLM_GENERATE_CONCISE(audit_log)",
+            "implicit": "LLM_GENERATE_IMPLICIT(audit_log)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(audit_log)"
+        }
+    },
+    "engrams.write_engram": {
+        "original": "write_engram",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(write_engram)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(write_engram)",
+            "concise": "LLM_GENERATE_CONCISE(write_engram)",
+            "implicit": "LLM_GENERATE_IMPLICIT(write_engram)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(write_engram)"
+        }
+    },
+    "engrams.query_engrams": {
+        "original": "query_engrams",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(query_engrams)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(query_engrams)",
+            "concise": "LLM_GENERATE_CONCISE(query_engrams)",
+            "implicit": "LLM_GENERATE_IMPLICIT(query_engrams)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(query_engrams)"
+        }
+    },
+    "engrams.search_engrams": {
+        "original": "search_engrams",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(search_engrams)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(search_engrams)",
+            "concise": "LLM_GENERATE_CONCISE(search_engrams)",
+            "implicit": "LLM_GENERATE_IMPLICIT(search_engrams)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(search_engrams)"
+        }
+    },
+    "engrams.governance_status": {
+        "original": "governance_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(governance_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(governance_status)",
+            "concise": "LLM_GENERATE_CONCISE(governance_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(governance_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(governance_status)"
+        }
+    },
+    "engrams.morning_brief": {
+        "original": "morning_brief",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(morning_brief)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(morning_brief)",
+            "concise": "LLM_GENERATE_CONCISE(morning_brief)",
+            "implicit": "LLM_GENERATE_IMPLICIT(morning_brief)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(morning_brief)"
+        }
+    },
+    "engrams.hook_metrics": {
+        "original": "hook_metrics",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(hook_metrics)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(hook_metrics)",
+            "concise": "LLM_GENERATE_CONCISE(hook_metrics)",
+            "implicit": "LLM_GENERATE_IMPLICIT(hook_metrics)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(hook_metrics)"
+        }
+    },
+    "engrams.compounding_status": {
+        "original": "compounding_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(compounding_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(compounding_status)",
+            "concise": "LLM_GENERATE_CONCISE(compounding_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(compounding_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(compounding_status)"
+        }
+    },
+    "engrams.end_of_day": {
+        "original": "end_of_day",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(end_of_day)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(end_of_day)",
+            "concise": "LLM_GENERATE_CONCISE(end_of_day)",
+            "implicit": "LLM_GENERATE_IMPLICIT(end_of_day)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(end_of_day)"
+        }
+    },
+    "engrams.session_inject": {
+        "original": "session_inject",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(session_inject)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(session_inject)",
+            "concise": "LLM_GENERATE_CONCISE(session_inject)",
+            "implicit": "LLM_GENERATE_IMPLICIT(session_inject)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(session_inject)"
+        }
+    },
+    "engrams.weekly_consolidate": {
+        "original": "weekly_consolidate",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(weekly_consolidate)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(weekly_consolidate)",
+            "concise": "LLM_GENERATE_CONCISE(weekly_consolidate)",
+            "implicit": "LLM_GENERATE_IMPLICIT(weekly_consolidate)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(weekly_consolidate)"
+        }
+    },
+    "engrams.list_decisions": {
+        "original": "list_decisions",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_decisions)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_decisions)",
+            "concise": "LLM_GENERATE_CONCISE(list_decisions)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_decisions)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_decisions)"
+        }
+    },
+    "engrams.list_snapshots": {
+        "original": "list_snapshots",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_snapshots)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_snapshots)",
+            "concise": "LLM_GENERATE_CONCISE(list_snapshots)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_snapshots)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_snapshots)"
+        }
+    },
+    "engrams.metering_summary": {
+        "original": "metering_summary",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(metering_summary)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(metering_summary)",
+            "concise": "LLM_GENERATE_CONCISE(metering_summary)",
+            "implicit": "LLM_GENERATE_IMPLICIT(metering_summary)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(metering_summary)"
+        }
+    },
+    "engrams.ipc_tokens": {
+        "original": "ipc_tokens",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(ipc_tokens)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(ipc_tokens)",
+            "concise": "LLM_GENERATE_CONCISE(ipc_tokens)",
+            "implicit": "LLM_GENERATE_IMPLICIT(ipc_tokens)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(ipc_tokens)"
+        }
+    },
+    "engrams.dsor_status": {
+        "original": "dsor_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(dsor_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(dsor_status)",
+            "concise": "LLM_GENERATE_CONCISE(dsor_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(dsor_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(dsor_status)"
+        }
+    },
+    "engrams.federation_dsor": {
+        "original": "federation_dsor",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(federation_dsor)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(federation_dsor)",
+            "concise": "LLM_GENERATE_CONCISE(federation_dsor)",
+            "implicit": "LLM_GENERATE_IMPLICIT(federation_dsor)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(federation_dsor)"
+        }
+    },
+    "engrams.routing_decisions": {
+        "original": "routing_decisions",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(routing_decisions)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(routing_decisions)",
+            "concise": "LLM_GENERATE_CONCISE(routing_decisions)",
+            "implicit": "LLM_GENERATE_IMPLICIT(routing_decisions)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(routing_decisions)"
+        }
+    },
+    "engrams.list_tools": {
+        "original": "list_tools",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_tools)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_tools)",
+            "concise": "LLM_GENERATE_CONCISE(list_tools)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_tools)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_tools)"
+        }
+    },
+    "engrams.tier_status": {
+        "original": "tier_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(tier_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(tier_status)",
+            "concise": "LLM_GENERATE_CONCISE(tier_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(tier_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(tier_status)"
+        }
+    },
+    "engrams.pulse_and_polish": {
+        "original": "pulse_and_polish",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(pulse_and_polish)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(pulse_and_polish)",
+            "concise": "LLM_GENERATE_CONCISE(pulse_and_polish)",
+            "implicit": "LLM_GENERATE_IMPLICIT(pulse_and_polish)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(pulse_and_polish)"
+        }
+    },
+    "engrams.self_healing_sre": {
+        "original": "self_healing_sre",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(self_healing_sre)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(self_healing_sre)",
+            "concise": "LLM_GENERATE_CONCISE(self_healing_sre)",
+            "implicit": "LLM_GENERATE_IMPLICIT(self_healing_sre)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(self_healing_sre)"
+        }
+    },
+    "engrams.fusion_reactor": {
+        "original": "fusion_reactor",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(fusion_reactor)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(fusion_reactor)",
+            "concise": "LLM_GENERATE_CONCISE(fusion_reactor)",
+            "implicit": "LLM_GENERATE_IMPLICIT(fusion_reactor)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(fusion_reactor)"
+        }
+    },
+    "engrams.context_graph": {
+        "original": "context_graph",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(context_graph)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(context_graph)",
+            "concise": "LLM_GENERATE_CONCISE(context_graph)",
+            "implicit": "LLM_GENERATE_IMPLICIT(context_graph)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(context_graph)"
+        }
+    },
+    "engrams.engram_neighbors": {
+        "original": "engram_neighbors",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(engram_neighbors)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(engram_neighbors)",
+            "concise": "LLM_GENERATE_CONCISE(engram_neighbors)",
+            "implicit": "LLM_GENERATE_IMPLICIT(engram_neighbors)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(engram_neighbors)"
+        }
+    },
+    "engrams.billing_summary": {
+        "original": "billing_summary",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(billing_summary)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(billing_summary)",
+            "concise": "LLM_GENERATE_CONCISE(billing_summary)",
+            "implicit": "LLM_GENERATE_IMPLICIT(billing_summary)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(billing_summary)"
+        }
+    },
+    "engrams.render_graph": {
+        "original": "render_graph",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(render_graph)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(render_graph)",
+            "concise": "LLM_GENERATE_CONCISE(render_graph)",
+            "implicit": "LLM_GENERATE_IMPLICIT(render_graph)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(render_graph)"
+        }
+    },
+    "engrams.dsor_query_decisions": {
+        "original": "dsor_query_decisions",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(dsor_query_decisions)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(dsor_query_decisions)",
+            "concise": "LLM_GENERATE_CONCISE(dsor_query_decisions)",
+            "implicit": "LLM_GENERATE_IMPLICIT(dsor_query_decisions)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(dsor_query_decisions)"
+        }
+    },
+    "engrams.dsor_get_trace": {
+        "original": "dsor_get_trace",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(dsor_get_trace)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(dsor_get_trace)",
+            "concise": "LLM_GENERATE_CONCISE(dsor_get_trace)",
+            "implicit": "LLM_GENERATE_IMPLICIT(dsor_get_trace)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(dsor_get_trace)"
+        }
+    },
+    "engrams.heartbeat_check": {
+        "original": "heartbeat_check",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(heartbeat_check)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(heartbeat_check)",
+            "concise": "LLM_GENERATE_CONCISE(heartbeat_check)",
+            "implicit": "LLM_GENERATE_IMPLICIT(heartbeat_check)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(heartbeat_check)"
+        }
+    },
+    "engrams.heartbeat_status": {
+        "original": "heartbeat_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(heartbeat_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(heartbeat_status)",
+            "concise": "LLM_GENERATE_CONCISE(heartbeat_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(heartbeat_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(heartbeat_status)"
+        }
+    },
+    "orchestration_orch.satellite": {
+        "original": "satellite",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(satellite)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(satellite)",
+            "concise": "LLM_GENERATE_CONCISE(satellite)",
+            "implicit": "LLM_GENERATE_IMPLICIT(satellite)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(satellite)"
+        }
+    },
+    "orchestration_orch.scan_commitments": {
+        "original": "scan_commitments",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(scan_commitments)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(scan_commitments)",
+            "concise": "LLM_GENERATE_CONCISE(scan_commitments)",
+            "implicit": "LLM_GENERATE_IMPLICIT(scan_commitments)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(scan_commitments)"
+        }
+    },
+    "orchestration_orch.archive_stale": {
+        "original": "archive_stale",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(archive_stale)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(archive_stale)",
+            "concise": "LLM_GENERATE_CONCISE(archive_stale)",
+            "implicit": "LLM_GENERATE_IMPLICIT(archive_stale)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(archive_stale)"
+        }
+    },
+    "orchestration_orch.export": {
+        "original": "export",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(export)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(export)",
+            "concise": "LLM_GENERATE_CONCISE(export)",
+            "implicit": "LLM_GENERATE_IMPLICIT(export)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(export)"
+        }
+    },
+    "orchestration_orch.list_commitments": {
+        "original": "list_commitments",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_commitments)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_commitments)",
+            "concise": "LLM_GENERATE_CONCISE(list_commitments)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_commitments)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_commitments)"
+        }
+    },
+    "orchestration_orch.close_commitment": {
+        "original": "close_commitment",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(close_commitment)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(close_commitment)",
+            "concise": "LLM_GENERATE_CONCISE(close_commitment)",
+            "implicit": "LLM_GENERATE_IMPLICIT(close_commitment)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(close_commitment)"
+        }
+    },
+    "orchestration_orch.commitment_health": {
+        "original": "commitment_health",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(commitment_health)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(commitment_health)",
+            "concise": "LLM_GENERATE_CONCISE(commitment_health)",
+            "implicit": "LLM_GENERATE_IMPLICIT(commitment_health)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(commitment_health)"
+        }
+    },
+    "orchestration_orch.open_loops": {
+        "original": "open_loops",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(open_loops)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(open_loops)",
+            "concise": "LLM_GENERATE_CONCISE(open_loops)",
+            "implicit": "LLM_GENERATE_IMPLICIT(open_loops)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(open_loops)"
+        }
+    },
+    "orchestration_orch.add_loop": {
+        "original": "add_loop",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(add_loop)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(add_loop)",
+            "concise": "LLM_GENERATE_CONCISE(add_loop)",
+            "implicit": "LLM_GENERATE_IMPLICIT(add_loop)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(add_loop)"
+        }
+    },
+    "orchestration_orch.weekly_challenge": {
+        "original": "weekly_challenge",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(weekly_challenge)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(weekly_challenge)",
+            "concise": "LLM_GENERATE_CONCISE(weekly_challenge)",
+            "implicit": "LLM_GENERATE_IMPLICIT(weekly_challenge)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(weekly_challenge)"
+        }
+    },
+    "orchestration_orch.patterns": {
+        "original": "patterns",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(patterns)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(patterns)",
+            "concise": "LLM_GENERATE_CONCISE(patterns)",
+            "implicit": "LLM_GENERATE_IMPLICIT(patterns)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(patterns)"
+        }
+    },
+    "orchestration_orch.metrics": {
+        "original": "metrics",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(metrics)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(metrics)",
+            "concise": "LLM_GENERATE_CONCISE(metrics)",
+            "implicit": "LLM_GENERATE_IMPLICIT(metrics)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(metrics)"
+        }
+    },
+    "orchestration_telem.set_llm_tier": {
+        "original": "set_llm_tier",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(set_llm_tier)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(set_llm_tier)",
+            "concise": "LLM_GENERATE_CONCISE(set_llm_tier)",
+            "implicit": "LLM_GENERATE_IMPLICIT(set_llm_tier)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(set_llm_tier)"
+        }
+    },
+    "orchestration_telem.get_llm_status": {
+        "original": "get_llm_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_llm_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_llm_status)",
+            "concise": "LLM_GENERATE_CONCISE(get_llm_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_llm_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_llm_status)"
+        }
+    },
+    "orchestration_telem.record_interaction": {
+        "original": "record_interaction",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(record_interaction)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(record_interaction)",
+            "concise": "LLM_GENERATE_CONCISE(record_interaction)",
+            "implicit": "LLM_GENERATE_IMPLICIT(record_interaction)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(record_interaction)"
+        }
+    },
+    "orchestration_telem.value_ratio": {
+        "original": "value_ratio",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(value_ratio)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(value_ratio)",
+            "concise": "LLM_GENERATE_CONCISE(value_ratio)",
+            "implicit": "LLM_GENERATE_IMPLICIT(value_ratio)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(value_ratio)"
+        }
+    },
+    "orchestration_telem.check_kill_switch": {
+        "original": "check_kill_switch",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(check_kill_switch)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(check_kill_switch)",
+            "concise": "LLM_GENERATE_CONCISE(check_kill_switch)",
+            "implicit": "LLM_GENERATE_IMPLICIT(check_kill_switch)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(check_kill_switch)"
+        }
+    },
+    "orchestration_telem.pause_notifications": {
+        "original": "pause_notifications",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(pause_notifications)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(pause_notifications)",
+            "concise": "LLM_GENERATE_CONCISE(pause_notifications)",
+            "implicit": "LLM_GENERATE_IMPLICIT(pause_notifications)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(pause_notifications)"
+        }
+    },
+    "orchestration_telem.resume_notifications": {
+        "original": "resume_notifications",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(resume_notifications)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(resume_notifications)",
+            "concise": "LLM_GENERATE_CONCISE(resume_notifications)",
+            "implicit": "LLM_GENERATE_IMPLICIT(resume_notifications)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(resume_notifications)"
+        }
+    },
+    "orchestration_telem.record_feedback": {
+        "original": "record_feedback",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(record_feedback)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(record_feedback)",
+            "concise": "LLM_GENERATE_CONCISE(record_feedback)",
+            "implicit": "LLM_GENERATE_IMPLICIT(record_feedback)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(record_feedback)"
+        }
+    },
+    "orchestration_telem.mark_high_impact": {
+        "original": "mark_high_impact",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(mark_high_impact)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(mark_high_impact)",
+            "concise": "LLM_GENERATE_CONCISE(mark_high_impact)",
+            "implicit": "LLM_GENERATE_IMPLICIT(mark_high_impact)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(mark_high_impact)"
+        }
+    },
+    "orchestration_telem.check_protocol": {
+        "original": "check_protocol",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(check_protocol)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(check_protocol)",
+            "concise": "LLM_GENERATE_CONCISE(check_protocol)",
+            "implicit": "LLM_GENERATE_IMPLICIT(check_protocol)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(check_protocol)"
+        }
+    },
+    "orchestration_telem.request_handoff": {
+        "original": "request_handoff",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(request_handoff)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(request_handoff)",
+            "concise": "LLM_GENERATE_CONCISE(request_handoff)",
+            "implicit": "LLM_GENERATE_IMPLICIT(request_handoff)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(request_handoff)"
+        }
+    },
+    "orchestration_telem.get_handoffs": {
+        "original": "get_handoffs",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_handoffs)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_handoffs)",
+            "concise": "LLM_GENERATE_CONCISE(get_handoffs)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_handoffs)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_handoffs)"
+        }
+    },
+    "orchestration_telem.agent_cost_dashboard": {
+        "original": "agent_cost_dashboard",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(agent_cost_dashboard)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(agent_cost_dashboard)",
+            "concise": "LLM_GENERATE_CONCISE(agent_cost_dashboard)",
+            "implicit": "LLM_GENERATE_IMPLICIT(agent_cost_dashboard)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(agent_cost_dashboard)"
+        }
+    },
+    "orchestration_telem.dispatch_metrics": {
+        "original": "dispatch_metrics",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(dispatch_metrics)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(dispatch_metrics)",
+            "concise": "LLM_GENERATE_CONCISE(dispatch_metrics)",
+            "implicit": "LLM_GENERATE_IMPLICIT(dispatch_metrics)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(dispatch_metrics)"
+        }
+    },
+    "orchestration_slots.orchestrate": {
+        "original": "orchestrate",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(orchestrate)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(orchestrate)",
+            "concise": "LLM_GENERATE_CONCISE(orchestrate)",
+            "implicit": "LLM_GENERATE_IMPLICIT(orchestrate)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(orchestrate)"
+        }
+    },
+    "orchestration_slots.slot_complete": {
+        "original": "slot_complete",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(slot_complete)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(slot_complete)",
+            "concise": "LLM_GENERATE_CONCISE(slot_complete)",
+            "implicit": "LLM_GENERATE_IMPLICIT(slot_complete)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(slot_complete)"
+        }
+    },
+    "orchestration_slots.slot_exhaust": {
+        "original": "slot_exhaust",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(slot_exhaust)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(slot_exhaust)",
+            "concise": "LLM_GENERATE_CONCISE(slot_exhaust)",
+            "implicit": "LLM_GENERATE_IMPLICIT(slot_exhaust)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(slot_exhaust)"
+        }
+    },
+    "orchestration_slots.status_dashboard": {
+        "original": "status_dashboard",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(status_dashboard)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(status_dashboard)",
+            "concise": "LLM_GENERATE_CONCISE(status_dashboard)",
+            "implicit": "LLM_GENERATE_IMPLICIT(status_dashboard)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(status_dashboard)"
+        }
+    },
+    "orchestration_slots.autopilot_sprint": {
+        "original": "autopilot_sprint",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(autopilot_sprint)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(autopilot_sprint)",
+            "concise": "LLM_GENERATE_CONCISE(autopilot_sprint)",
+            "implicit": "LLM_GENERATE_IMPLICIT(autopilot_sprint)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(autopilot_sprint)"
+        }
+    },
+    "orchestration_slots.force_assign": {
+        "original": "force_assign",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(force_assign)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(force_assign)",
+            "concise": "LLM_GENERATE_CONCISE(force_assign)",
+            "implicit": "LLM_GENERATE_IMPLICIT(force_assign)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(force_assign)"
+        }
+    },
+    "orchestration_slots.autopilot_sprint_v2": {
+        "original": "autopilot_sprint_v2",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(autopilot_sprint_v2)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(autopilot_sprint_v2)",
+            "concise": "LLM_GENERATE_CONCISE(autopilot_sprint_v2)",
+            "implicit": "LLM_GENERATE_IMPLICIT(autopilot_sprint_v2)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(autopilot_sprint_v2)"
+        }
+    },
+    "orchestration_slots.start_mission": {
+        "original": "start_mission",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(start_mission)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(start_mission)",
+            "concise": "LLM_GENERATE_CONCISE(start_mission)",
+            "implicit": "LLM_GENERATE_IMPLICIT(start_mission)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(start_mission)"
+        }
+    },
+    "orchestration_slots.mission_status": {
+        "original": "mission_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(mission_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(mission_status)",
+            "concise": "LLM_GENERATE_CONCISE(mission_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(mission_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(mission_status)"
+        }
+    },
+    "orchestration_slots.halt_sprint": {
+        "original": "halt_sprint",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(halt_sprint)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(halt_sprint)",
+            "concise": "LLM_GENERATE_CONCISE(halt_sprint)",
+            "implicit": "LLM_GENERATE_IMPLICIT(halt_sprint)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(halt_sprint)"
+        }
+    },
+    "orchestration_slots.resume_sprint": {
+        "original": "resume_sprint",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(resume_sprint)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(resume_sprint)",
+            "concise": "LLM_GENERATE_CONCISE(resume_sprint)",
+            "implicit": "LLM_GENERATE_IMPLICIT(resume_sprint)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(resume_sprint)"
+        }
+    },
+    "orchestration_infra.file_changes": {
+        "original": "file_changes",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(file_changes)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(file_changes)",
+            "concise": "LLM_GENERATE_CONCISE(file_changes)",
+            "implicit": "LLM_GENERATE_IMPLICIT(file_changes)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(file_changes)"
+        }
+    },
+    "orchestration_infra.gcloud_status": {
+        "original": "gcloud_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(gcloud_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(gcloud_status)",
+            "concise": "LLM_GENERATE_CONCISE(gcloud_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(gcloud_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(gcloud_status)"
+        }
+    },
+    "orchestration_infra.gcloud_services": {
+        "original": "gcloud_services",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(gcloud_services)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(gcloud_services)",
+            "concise": "LLM_GENERATE_CONCISE(gcloud_services)",
+            "implicit": "LLM_GENERATE_IMPLICIT(gcloud_services)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(gcloud_services)"
+        }
+    },
+    "orchestration_infra.list_services": {
+        "original": "list_services",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_services)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_services)",
+            "concise": "LLM_GENERATE_CONCISE(list_services)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_services)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_services)"
+        }
+    },
+    "orchestration_infra.scan_marketing_log": {
+        "original": "scan_marketing_log",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(scan_marketing_log)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(scan_marketing_log)",
+            "concise": "LLM_GENERATE_CONCISE(scan_marketing_log)",
+            "implicit": "LLM_GENERATE_IMPLICIT(scan_marketing_log)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(scan_marketing_log)"
+        }
+    },
+    "orchestration_infra.synthesize_strategy": {
+        "original": "synthesize_strategy",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(synthesize_strategy)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(synthesize_strategy)",
+            "concise": "LLM_GENERATE_CONCISE(synthesize_strategy)",
+            "implicit": "LLM_GENERATE_IMPLICIT(synthesize_strategy)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(synthesize_strategy)"
+        }
+    },
+    "orchestration_infra.status_report": {
+        "original": "status_report",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(status_report)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(status_report)",
+            "concise": "LLM_GENERATE_CONCISE(status_report)",
+            "implicit": "LLM_GENERATE_IMPLICIT(status_report)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(status_report)"
+        }
+    },
+    "orchestration_infra.optimize_workflow": {
+        "original": "optimize_workflow",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(optimize_workflow)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(optimize_workflow)",
+            "concise": "LLM_GENERATE_CONCISE(optimize_workflow)",
+            "implicit": "LLM_GENERATE_IMPLICIT(optimize_workflow)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(optimize_workflow)"
+        }
+    },
+    "orchestration_infra.manage_strategy": {
+        "original": "manage_strategy",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(manage_strategy)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(manage_strategy)",
+            "concise": "LLM_GENERATE_CONCISE(manage_strategy)",
+            "implicit": "LLM_GENERATE_IMPLICIT(manage_strategy)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(manage_strategy)"
+        }
+    },
+    "orchestration_infra.update_roadmap": {
+        "original": "update_roadmap",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(update_roadmap)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(update_roadmap)",
+            "concise": "LLM_GENERATE_CONCISE(update_roadmap)",
+            "implicit": "LLM_GENERATE_IMPLICIT(update_roadmap)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(update_roadmap)"
+        }
+    },
+    "orchestration_infra.outbound_check": {
+        "original": "outbound_check",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(outbound_check)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(outbound_check)",
+            "concise": "LLM_GENERATE_CONCISE(outbound_check)",
+            "implicit": "LLM_GENERATE_IMPLICIT(outbound_check)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(outbound_check)"
+        }
+    },
+    "orchestration_infra.outbound_record": {
+        "original": "outbound_record",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(outbound_record)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(outbound_record)",
+            "concise": "LLM_GENERATE_CONCISE(outbound_record)",
+            "implicit": "LLM_GENERATE_IMPLICIT(outbound_record)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(outbound_record)"
+        }
+    },
+    "orchestration_infra.outbound_fail": {
+        "original": "outbound_fail",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(outbound_fail)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(outbound_fail)",
+            "concise": "LLM_GENERATE_CONCISE(outbound_fail)",
+            "implicit": "LLM_GENERATE_IMPLICIT(outbound_fail)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(outbound_fail)"
+        }
+    },
+    "orchestration_infra.outbound_status": {
+        "original": "outbound_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(outbound_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(outbound_status)",
+            "concise": "LLM_GENERATE_CONCISE(outbound_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(outbound_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(outbound_status)"
+        }
+    },
+    "orchestration_infra.outbound_plan": {
+        "original": "outbound_plan",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(outbound_plan)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(outbound_plan)",
+            "concise": "LLM_GENERATE_CONCISE(outbound_plan)",
+            "implicit": "LLM_GENERATE_IMPLICIT(outbound_plan)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(outbound_plan)"
+        }
+    },
+    "orchestration_agents.spawn_agent": {
+        "original": "spawn_agent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(spawn_agent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(spawn_agent)",
+            "concise": "LLM_GENERATE_CONCISE(spawn_agent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(spawn_agent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(spawn_agent)"
+        }
+    },
+    "orchestration_agents.summon_agent": {
+        "original": "summon_agent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(summon_agent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(summon_agent)",
+            "concise": "LLM_GENERATE_CONCISE(summon_agent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(summon_agent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(summon_agent)"
+        }
+    },
+    "orchestration_agents.ping": {
+        "original": "ping",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(ping)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(ping)",
+            "concise": "LLM_GENERATE_CONCISE(ping)",
+            "implicit": "LLM_GENERATE_IMPLICIT(ping)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(ping)"
+        }
+    },
+    "orchestration_agents.apply_critique": {
+        "original": "apply_critique",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(apply_critique)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(apply_critique)",
+            "concise": "LLM_GENERATE_CONCISE(apply_critique)",
+            "implicit": "LLM_GENERATE_IMPLICIT(apply_critique)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(apply_critique)"
+        }
+    },
+    "orchestration_agents.orchestrate_swarm": {
+        "original": "orchestrate_swarm",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(orchestrate_swarm)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(orchestrate_swarm)",
+            "concise": "LLM_GENERATE_CONCISE(orchestrate_swarm)",
+            "implicit": "LLM_GENERATE_IMPLICIT(orchestrate_swarm)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(orchestrate_swarm)"
+        }
+    },
+    "orchestration_agents.search_memory": {
+        "original": "search_memory",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(search_memory)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(search_memory)",
+            "concise": "LLM_GENERATE_CONCISE(search_memory)",
+            "implicit": "LLM_GENERATE_IMPLICIT(search_memory)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(search_memory)"
+        }
+    },
+    "orchestration_agents.read_memory": {
+        "original": "read_memory",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(read_memory)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(read_memory)",
+            "concise": "LLM_GENERATE_CONCISE(read_memory)",
+            "implicit": "LLM_GENERATE_IMPLICIT(read_memory)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(read_memory)"
+        }
+    },
+    "orchestration_agents.respond_to_consent": {
+        "original": "respond_to_consent",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(respond_to_consent)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(respond_to_consent)",
+            "concise": "LLM_GENERATE_CONCISE(respond_to_consent)",
+            "implicit": "LLM_GENERATE_IMPLICIT(respond_to_consent)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(respond_to_consent)"
+        }
+    },
+    "orchestration_agents.list_pending_consents": {
+        "original": "list_pending_consents",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_pending_consents)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_pending_consents)",
+            "concise": "LLM_GENERATE_CONCISE(list_pending_consents)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_pending_consents)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_pending_consents)"
+        }
+    },
+    "orchestration_agents.critique_code": {
+        "original": "critique_code",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(critique_code)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(critique_code)",
+            "concise": "LLM_GENERATE_CONCISE(critique_code)",
+            "implicit": "LLM_GENERATE_IMPLICIT(critique_code)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(critique_code)"
+        }
+    },
+    "orchestration_agents.fix_code": {
+        "original": "fix_code",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(fix_code)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(fix_code)",
+            "concise": "LLM_GENERATE_CONCISE(fix_code)",
+            "implicit": "LLM_GENERATE_IMPLICIT(fix_code)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(fix_code)"
+        }
+    },
+    "orchestration_agents.session_briefing": {
+        "original": "session_briefing",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(session_briefing)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(session_briefing)",
+            "concise": "LLM_GENERATE_CONCISE(session_briefing)",
+            "implicit": "LLM_GENERATE_IMPLICIT(session_briefing)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(session_briefing)"
+        }
+    },
+    "orchestration_agents.register_session": {
+        "original": "register_session",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(register_session)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(register_session)",
+            "concise": "LLM_GENERATE_CONCISE(register_session)",
+            "implicit": "LLM_GENERATE_IMPLICIT(register_session)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(register_session)"
+        }
+    },
+    "orchestration_agents.handoff_task": {
+        "original": "handoff_task",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(handoff_task)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(handoff_task)",
+            "concise": "LLM_GENERATE_CONCISE(handoff_task)",
+            "implicit": "LLM_GENERATE_IMPLICIT(handoff_task)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(handoff_task)"
+        }
+    },
+    "orchestration_agents.ingest_tasks": {
+        "original": "ingest_tasks",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(ingest_tasks)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(ingest_tasks)",
+            "concise": "LLM_GENERATE_CONCISE(ingest_tasks)",
+            "implicit": "LLM_GENERATE_IMPLICIT(ingest_tasks)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(ingest_tasks)"
+        }
+    },
+    "orchestration_agents.rollback_ingestion": {
+        "original": "rollback_ingestion",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(rollback_ingestion)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(rollback_ingestion)",
+            "concise": "LLM_GENERATE_CONCISE(rollback_ingestion)",
+            "implicit": "LLM_GENERATE_IMPLICIT(rollback_ingestion)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(rollback_ingestion)"
+        }
+    },
+    "orchestration_agents.ingestion_stats": {
+        "original": "ingestion_stats",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(ingestion_stats)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(ingestion_stats)",
+            "concise": "LLM_GENERATE_CONCISE(ingestion_stats)",
+            "implicit": "LLM_GENERATE_IMPLICIT(ingestion_stats)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(ingestion_stats)"
+        }
+    },
+    "orchestration_agents.dashboard": {
+        "original": "dashboard",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(dashboard)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(dashboard)",
+            "concise": "LLM_GENERATE_CONCISE(dashboard)",
+            "implicit": "LLM_GENERATE_IMPLICIT(dashboard)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(dashboard)"
+        }
+    },
+    "orchestration_agents.snapshot_dashboard": {
+        "original": "snapshot_dashboard",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(snapshot_dashboard)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(snapshot_dashboard)",
+            "concise": "LLM_GENERATE_CONCISE(snapshot_dashboard)",
+            "implicit": "LLM_GENERATE_IMPLICIT(snapshot_dashboard)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(snapshot_dashboard)"
+        }
+    },
+    "orchestration_agents.list_dashboard_snapshots": {
+        "original": "list_dashboard_snapshots",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_dashboard_snapshots)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_dashboard_snapshots)",
+            "concise": "LLM_GENERATE_CONCISE(list_dashboard_snapshots)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_dashboard_snapshots)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_dashboard_snapshots)"
+        }
+    },
+    "orchestration_agents.get_alerts": {
+        "original": "get_alerts",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(get_alerts)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(get_alerts)",
+            "concise": "LLM_GENERATE_CONCISE(get_alerts)",
+            "implicit": "LLM_GENERATE_IMPLICIT(get_alerts)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(get_alerts)"
+        }
+    },
+    "orchestration_agents.set_alert_threshold": {
+        "original": "set_alert_threshold",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(set_alert_threshold)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(set_alert_threshold)",
+            "concise": "LLM_GENERATE_CONCISE(set_alert_threshold)",
+            "implicit": "LLM_GENERATE_IMPLICIT(set_alert_threshold)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(set_alert_threshold)"
+        }
+    },
+    "federation.status": {
+        "original": "status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(status)",
+            "concise": "LLM_GENERATE_CONCISE(status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(status)"
+        }
+    },
+    "federation.join": {
+        "original": "join",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(join)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(join)",
+            "concise": "LLM_GENERATE_CONCISE(join)",
+            "implicit": "LLM_GENERATE_IMPLICIT(join)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(join)"
+        }
+    },
+    "federation.leave": {
+        "original": "leave",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(leave)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(leave)",
+            "concise": "LLM_GENERATE_CONCISE(leave)",
+            "implicit": "LLM_GENERATE_IMPLICIT(leave)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(leave)"
+        }
+    },
+    "federation.peers": {
+        "original": "peers",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(peers)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(peers)",
+            "concise": "LLM_GENERATE_CONCISE(peers)",
+            "implicit": "LLM_GENERATE_IMPLICIT(peers)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(peers)"
+        }
+    },
+    "federation.sync": {
+        "original": "sync",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sync)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sync)",
+            "concise": "LLM_GENERATE_CONCISE(sync)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sync)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sync)"
+        }
+    },
+    "federation.route": {
+        "original": "route",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(route)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(route)",
+            "concise": "LLM_GENERATE_CONCISE(route)",
+            "implicit": "LLM_GENERATE_IMPLICIT(route)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(route)"
+        }
+    },
+    "federation.health": {
+        "original": "health",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(health)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(health)",
+            "concise": "LLM_GENERATE_CONCISE(health)",
+            "implicit": "LLM_GENERATE_IMPLICIT(health)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(health)"
+        }
+    },
+    "governance.auto_fix_loop": {
+        "original": "auto_fix_loop",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(auto_fix_loop)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(auto_fix_loop)",
+            "concise": "LLM_GENERATE_CONCISE(auto_fix_loop)",
+            "implicit": "LLM_GENERATE_IMPLICIT(auto_fix_loop)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(auto_fix_loop)"
+        }
+    },
+    "governance.lock": {
+        "original": "lock",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(lock)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(lock)",
+            "concise": "LLM_GENERATE_CONCISE(lock)",
+            "implicit": "LLM_GENERATE_IMPLICIT(lock)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(lock)"
+        }
+    },
+    "governance.unlock": {
+        "original": "unlock",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(unlock)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(unlock)",
+            "concise": "LLM_GENERATE_CONCISE(unlock)",
+            "implicit": "LLM_GENERATE_IMPLICIT(unlock)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(unlock)"
+        }
+    },
+    "governance.set_mode": {
+        "original": "set_mode",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(set_mode)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(set_mode)",
+            "concise": "LLM_GENERATE_CONCISE(set_mode)",
+            "implicit": "LLM_GENERATE_IMPLICIT(set_mode)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(set_mode)"
+        }
+    },
+    "governance.list_directory": {
+        "original": "list_directory",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(list_directory)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(list_directory)",
+            "concise": "LLM_GENERATE_CONCISE(list_directory)",
+            "implicit": "LLM_GENERATE_IMPLICIT(list_directory)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(list_directory)"
+        }
+    },
+    "governance.delete_file": {
+        "original": "delete_file",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(delete_file)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(delete_file)",
+            "concise": "LLM_GENERATE_CONCISE(delete_file)",
+            "implicit": "LLM_GENERATE_IMPLICIT(delete_file)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(delete_file)"
+        }
+    },
+    "governance.watch": {
+        "original": "watch",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(watch)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(watch)",
+            "concise": "LLM_GENERATE_CONCISE(watch)",
+            "implicit": "LLM_GENERATE_IMPLICIT(watch)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(watch)"
+        }
+    },
+    "governance.status": {
+        "original": "status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(status)",
+            "concise": "LLM_GENERATE_CONCISE(status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(status)"
+        }
+    },
+    "governance.curl": {
+        "original": "curl",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(curl)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(curl)",
+            "concise": "LLM_GENERATE_CONCISE(curl)",
+            "implicit": "LLM_GENERATE_IMPLICIT(curl)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(curl)"
+        }
+    },
+    "governance.pip_install": {
+        "original": "pip_install",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(pip_install)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(pip_install)",
+            "concise": "LLM_GENERATE_CONCISE(pip_install)",
+            "implicit": "LLM_GENERATE_IMPLICIT(pip_install)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(pip_install)"
+        }
+    },
+    "governance.validate_strategic_plan": {
+        "original": "validate_strategic_plan",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(validate_strategic_plan)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(validate_strategic_plan)",
+            "concise": "LLM_GENERATE_CONCISE(validate_strategic_plan)",
+            "implicit": "LLM_GENERATE_IMPLICIT(validate_strategic_plan)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(validate_strategic_plan)"
+        }
+    },
+    "governance.comply_list": {
+        "original": "comply_list",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(comply_list)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(comply_list)",
+            "concise": "LLM_GENERATE_CONCISE(comply_list)",
+            "implicit": "LLM_GENERATE_IMPLICIT(comply_list)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(comply_list)"
+        }
+    },
+    "governance.comply_apply": {
+        "original": "comply_apply",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(comply_apply)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(comply_apply)",
+            "concise": "LLM_GENERATE_CONCISE(comply_apply)",
+            "implicit": "LLM_GENERATE_IMPLICIT(comply_apply)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(comply_apply)"
+        }
+    },
+    "governance.comply_report": {
+        "original": "comply_report",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(comply_report)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(comply_report)",
+            "concise": "LLM_GENERATE_CONCISE(comply_report)",
+            "implicit": "LLM_GENERATE_IMPLICIT(comply_report)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(comply_report)"
+        }
+    },
+    "governance.audit_report": {
+        "original": "audit_report",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(audit_report)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(audit_report)",
+            "concise": "LLM_GENERATE_CONCISE(audit_report)",
+            "implicit": "LLM_GENERATE_IMPLICIT(audit_report)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(audit_report)"
+        }
+    },
+    "governance.kyc_review": {
+        "original": "kyc_review",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(kyc_review)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(kyc_review)",
+            "concise": "LLM_GENERATE_CONCISE(kyc_review)",
+            "implicit": "LLM_GENERATE_IMPLICIT(kyc_review)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(kyc_review)"
+        }
+    },
+    "governance.sovereign_status": {
+        "original": "sovereign_status",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(sovereign_status)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(sovereign_status)",
+            "concise": "LLM_GENERATE_CONCISE(sovereign_status)",
+            "implicit": "LLM_GENERATE_IMPLICIT(sovereign_status)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(sovereign_status)"
+        }
+    },
+    "governance.trace_list": {
+        "original": "trace_list",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(trace_list)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(trace_list)",
+            "concise": "LLM_GENERATE_CONCISE(trace_list)",
+            "implicit": "LLM_GENERATE_IMPLICIT(trace_list)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(trace_list)"
+        }
+    },
+    "governance.trace_view": {
+        "original": "trace_view",
+        "variants": {
+            "slang": "LLM_GENERATE_SLANG(trace_view)",
+            "professional": "LLM_GENERATE_PROFESSIONAL(trace_view)",
+            "concise": "LLM_GENERATE_CONCISE(trace_view)",
+            "implicit": "LLM_GENERATE_IMPLICIT(trace_view)",
+            "edge_case": "LLM_GENERATE_EDGE_CASE(trace_view)"
+        }
+    }
+}

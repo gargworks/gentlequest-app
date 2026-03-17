@@ -1,0 +1,112 @@
+# Nucleus Telemetry – Phase B Observability Stack
+#
+# Local development stack. TLS is handled by Cloudflare Tunnel (no Caddy needed).
+# See: PHASE_B_OBSERVABILITY_PROPOSAL.md, TELEMETRY_PIPELINE_README.md
+#
+# Components:
+#   1. OpenTelemetry Collector — receives OTLP gRPC/HTTP, exports to Jaeger + Prometheus + file
+#   2. Jaeger — trace visualization UI
+#   3. Prometheus — metrics storage + queries
+#   4. Grafana — dashboards and alerting
+#
+# Usage:
+#   npm run telemetry:dash          # start full stack
+#   npm run telemetry:dash:down     # stop full stack
+#
+# UIs:
+#   Jaeger:      http://localhost:16686
+#   Grafana:     http://localhost:3000  (admin / nucleus)
+#   Prometheus:  http://localhost:9090
+
+services:
+  # ── OTel Collector ──────────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: nucleus-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+      - ../../.telemetry:/telemetry-data
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP (primary — used by SDK via tunnel)
+      - "8889:8889"   # Prometheus metrics endpoint
+      - "13133:13133" # Health check
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - telemetry
+
+  # ── Jaeger (trace backend + UI) ─────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    container_name: nucleus-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # gRPC receiver (collector → jaeger)
+    networks:
+      - telemetry
+
+  # ── Prometheus ──────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: nucleus-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=2GB"
+    depends_on:
+      - otel-collector
+    networks:
+      - telemetry
+
+  # ── Grafana ─────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: nucleus-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=nucleus
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Phase D: Alert delivery configuration
+      - NUCLEUS_SLACK_WEBHOOK_URL=${NUCLEUS_SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/PLACEHOLDER}
+      - NUCLEUS_ALERT_EMAIL=${NUCLEUS_ALERT_EMAIL:-alerts@example.com}
+      # SMTP settings (optional, for email alerts)
+      - GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
+      - GF_SMTP_HOST=${GF_SMTP_HOST:-smtp.gmail.com:587}
+      - GF_SMTP_USER=${GF_SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD:-}
+      - GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS:-grafana@nucleusos.dev}
+      - GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME:-Nucleus Telemetry}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    networks:
+      - telemetry
+    depends_on:
+      - prometheus
+      - jaeger
+
+networks:
+  telemetry:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

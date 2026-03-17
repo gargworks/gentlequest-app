@@ -1,0 +1,24 @@
+# Grafana Notification Policies for Nucleus Telemetry
+# Phase D: Routes alerts to Slack and Email contact points
+# Auto-provisioned on Grafana startup
+
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: nucleus-slack-alerts
+    group_by:
+      - alertname
+      - severity
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: nucleus-email-alerts
+        matchers:
+          - severity = warning
+        continue: true
+      - receiver: nucleus-slack-alerts
+        matchers:
+          - component = nucleus-telemetry
+        continue: false
