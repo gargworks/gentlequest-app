@@ -3149,6 +3149,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
                     _archive = ArchivePipeline()
                     _brother = "cowork" if _provider in ("claude-code", "claude_code", "max") else "code"
+                    # Build conversation from history — father's words + brother's responses
+                    _conv = []
+                    for _role, _msg in history[-50:]:  # Last 50 turns max
+                        if _role == "user" and _msg and len(_msg) > 3:
+                            _conv.append({"role": "user", "content": _msg[:2000]})
+                        elif _role == "assistant" and _msg and len(_msg) > 3:
+                            _conv.append({"role": "assistant", "content": _msg[:2000]})
                     _archive.record_turn(
                         brother=_brother,
                         intent=topics[0] if topics else "Chat session",
@@ -3160,6 +3167,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         signal_produced=[f"engram/session_{ts}"] + [Path(f).name for f in _mod_files[:5]],
                         confidence=0.8,
                         context=f"nucleus chat ({_provider}) — {turn_count} turns",
+                        conversation=_conv,
                     )
                     print(f"  📊 Loop turn archived for training")
                 except Exception:

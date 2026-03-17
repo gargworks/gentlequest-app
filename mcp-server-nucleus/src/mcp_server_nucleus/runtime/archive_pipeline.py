@@ -56,6 +56,7 @@ class LoopTurn:
         signal_produced: List[str],  # Engrams/files written to brain
         confidence: float = 1.0,     # How confident in the outcome (0-1)
         context: Optional[str] = None,  # Extra context (e.g., "responding to Cowork's competitive scan")
+        conversation: Optional[List[Dict[str, str]]] = None,  # Full chat: [{"role": "user", "content": "..."}, ...]
         metadata: Optional[Dict[str, Any]] = None,
     ):
         self.turn_id = f"turn-{uuid.uuid4().hex[:12]}"
@@ -70,6 +71,7 @@ class LoopTurn:
         self.signal_produced = signal_produced
         self.confidence = confidence
         self.context = context or ""
+        self.conversation = conversation or []  # Father's words + brother's responses
         self.metadata = metadata or {}
 
         # Content hash for dedup
@@ -91,15 +93,39 @@ class LoopTurn:
             "confidence": self.confidence,
             "context": self.context,
             "content_hash": self.content_hash,
+            "conversation": self.conversation,
             "metadata": self.metadata,
         }
 
-    def to_conversation(self) -> Dict[str, str]:
-        """Convert to a user/assistant conversation pair for training.
+    def to_conversation_pairs(self) -> List[Dict[str, str]]:
+        """Convert to user/assistant conversation pairs for training.
 
-        The 'user' message is the intent + context (what the brain asked).
-        The 'assistant' message is the reasoning + outcome (what the brother did).
+        If real conversation is available (father's actual words + brother's responses),
+        use those directly — they're the richest training signal.
+        Otherwise, synthesize from intent/decisions/outcome.
         """
+        # Best case: real conversation recorded
+        if self.conversation:
+            pairs = []
+            user_buf, asst_buf = "", ""
+            for msg in self.conversation:
+                role = msg.get("role", "")
+                content = msg.get("content", "")
+                if not content or len(content) < 5:
+                    continue
+                if role == "user":
+                    if user_buf and asst_buf:
+                        pairs.append({"user": user_buf.strip(), "assistant": asst_buf.strip()})
+                        asst_buf = ""
+                    user_buf = content
+                elif role in ("assistant", "model"):
+                    asst_buf += content + "\n"
+            if user_buf and asst_buf:
+                pairs.append({"user": user_buf.strip(), "assistant": asst_buf.strip()})
+            if pairs:
+                return pairs
+
+        # Fallback: synthesize from structured fields
         user_msg = self.intent
         if self.context:
             user_msg = f"{self.context}\n\n{self.intent}"
@@ -113,7 +139,7 @@ class LoopTurn:
             assistant_msg += "Actions:\n" + "\n".join(f"- {a}" for a in self.actions) + "\n\n"
         assistant_msg += f"Outcome: {self.outcome}"
 
-        return {"user": user_msg.strip(), "assistant": assistant_msg.strip()}
+        return [{"user": user_msg.strip(), "assistant": assistant_msg.strip()}]
 
 
 class ArchivePipeline:
@@ -169,15 +195,15 @@ class ArchivePipeline:
         with open(output_path, "w", encoding="utf-8") as f:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
-                conv = turn.to_conversation()
-                gemini_row = {
-                    "contents": [
-                        {"role": "user", "parts": [{"text": conv["user"]}]},
-                        {"role": "model", "parts": [{"text": conv["assistant"]}]},
-                    ]
-                }
-                f.write(json.dumps(gemini_row, ensure_ascii=False) + "\n")
-                count += 1
+                for pair in turn.to_conversation_pairs():
+                    gemini_row = {
+                        "contents": [
+                            {"role": "user", "parts": [{"text": pair["user"]}]},
+                            {"role": "model", "parts": [{"text": pair["assistant"]}]},
+                        ]
+                    }
+                    f.write(json.dumps(gemini_row, ensure_ascii=False) + "\n")
+                    count += 1
         return count
 
     def export_openai(self, output_path: str, system_prompt: str = "") -> int:
@@ -199,12 +225,12 @@ class ArchivePipeline:
         with open(output_path, "w", encoding="utf-8") as f:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
-                conv = turn.to_conversation()
-                messages = [{"role": "system", "content": system_prompt}]
-                messages.append({"role": "user", "content": conv["user"]})
-                messages.append({"role": "assistant", "content": conv["assistant"]})
-                f.write(json.dumps({"messages": messages}, ensure_ascii=False) + "\n")
-                count += 1
+                for pair in turn.to_conversation_pairs():
+                    messages = [{"role": "system", "content": system_prompt}]
+                    messages.append({"role": "user", "content": pair["user"]})
+                    messages.append({"role": "assistant", "content": pair["assistant"]})
+                    f.write(json.dumps({"messages": messages}, ensure_ascii=False) + "\n")
+                    count += 1
         return count
 
     def export_anthropic(self, output_path: str) -> int:
@@ -218,15 +244,15 @@ class ArchivePipeline:
         with open(output_path, "w", encoding="utf-8") as f:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
-                conv = turn.to_conversation()
-                row = {
-                    "messages": [
-                        {"role": "user", "content": conv["user"]},
-                        {"role": "assistant", "content": conv["assistant"]},
-                    ]
-                }
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
-                count += 1
+                for pair in turn.to_conversation_pairs():
+                    row = {
+                        "messages": [
+                            {"role": "user", "content": pair["user"]},
+                            {"role": "assistant", "content": pair["assistant"]},
+                        ]
+                    }
+                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    count += 1
         return count
 
     # ── Internal ──
@@ -257,6 +283,7 @@ class ArchivePipeline:
             signal_produced=d.get("signal_produced", []),
             confidence=d.get("confidence", 1.0),
             context=d.get("context", ""),
+            conversation=d.get("conversation", []),
             metadata=d.get("metadata", {}),
         )
         turn.turn_id = d.get("turn_id", turn.turn_id)
