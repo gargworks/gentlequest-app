@@ -3542,10 +3542,12 @@ def main():
                              default='local_free', help='LLM tier to use (default: local_free, 500 RPD)')
     chat_parser.add_argument('--model', default=None, help='Override model name directly (e.g., gemini-3-flash)')
     chat_parser.add_argument('--system', default=None, help='Custom system prompt')
-    chat_parser.add_argument('--provider', choices=['gemini', 'anthropic', 'groq', 'claude-code'], default=None,
-                             help='Which brother: gemini (default), anthropic, groq, or claude-code (Max sub). '
+    chat_parser.add_argument('--provider', choices=['gemini', 'anthropic', 'groq', 'claude-code', 'local'], default=None,
+                             help='Which brother: gemini (default), anthropic, groq, claude-code (Max sub), '
+                                  'or local (Third Brother — Ollama/vLLM). '
                                   'Anthropic requires NUCLEUS_ANTHROPIC_API_KEY. '
-                                  'Groq requires NUCLEUS_GROQ_API_KEY (free at console.groq.com).')
+                                  'Groq requires NUCLEUS_GROQ_API_KEY (free at console.groq.com). '
+                                  'Local requires Ollama or NUCLEUS_LOCAL_ENDPOINT.')
     chat_parser.add_argument('--batch', action='store_true', help='Non-interactive batch mode (single turn, then exit)')
     chat_parser.add_argument('--prompt', type=str, help='Initial prompt for batch mode')
     chat_parser.add_argument('--output-format', choices=['text', 'json'], default='text',
@@ -3831,6 +3833,10 @@ def main():
     archive_record.add_argument('--intent', type=str, required=True, help='What this turn set out to do')
     archive_record.add_argument('--outcome', type=str, required=True, help='What happened')
     archive_record.add_argument('--decisions', type=str, nargs='*', default=[], help='Key decisions made')
+    archive_train = archive_subparsers.add_parser('train', help='Prepare or launch fine-tuning for the Third Brother')
+    archive_train.add_argument('--target', choices=['gemini', 'openai', 'local'], default='local',
+                               help='Training target: gemini (Vertex AI), openai (API), local (Ollama/unsloth)')
+    archive_train.add_argument('--dry-run', action='store_true', help='Export data only, do not launch training')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4441,6 +4447,78 @@ def handle_archive_command(args) -> int:
         print(f"✅ Recorded turn {turn.turn_id} ({args.brother})")
         return 0
 
+    elif cmd == 'train':
+        stats = archive.get_stats()
+        total = stats.get('total_turns', 0)
+        target = getattr(args, 'target', 'local')
+        dry_run = getattr(args, 'dry_run', False)
+
+        print("=" * 50)
+        print("🧬 THIRD BROTHER — Fine-Tuning Pipeline")
+        print("=" * 50)
+        print(f"  Archive turns:  {total}")
+        print(f"  Target:         {target}")
+
+        # Minimum viable training set
+        MIN_TURNS = 50
+        if total < MIN_TURNS:
+            print(f"\n  ⚠️  Need at least {MIN_TURNS} turns for meaningful training.")
+            print(f"     Current: {total} ({MIN_TURNS - total} more needed)")
+            print(f"\n  How to accumulate:")
+            print(f"     • Run nucleus brother sessions (auto-recorded)")
+            print(f"     • Run agent missions (auto-recorded)")
+            print(f"     • nucleus archive record --intent '...' --outcome '...'")
+            if total > 0 and dry_run:
+                print(f"\n  Proceeding with export (dry-run)...")
+            else:
+                return 0
+
+        # Export training data
+        out_dir = str(archive.training_dir / "exports")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+        if target == 'gemini':
+            p = str(Path(out_dir) / "gemini_training.jsonl")
+            count = archive.export_gemini(p)
+            print(f"\n  Exported: {count} pairs → {p}")
+            if not dry_run:
+                print(f"\n  To launch Vertex AI fine-tuning:")
+                print(f"    gcloud ai custom-jobs create \\")
+                print(f"      --region=us-central1 \\")
+                print(f"      --display-name=nucleus-brother \\")
+                print(f"      --config=train_config.yaml")
+                print(f"\n  Or upload to AI Studio: https://aistudio.google.com/tuning")
+
+        elif target == 'openai':
+            p = str(Path(out_dir) / "openai_training.jsonl")
+            count = archive.export_openai(p)
+            print(f"\n  Exported: {count} pairs → {p}")
+            if not dry_run:
+                print(f"\n  To launch OpenAI fine-tuning:")
+                print(f"    openai api fine_tuning.jobs.create \\")
+                print(f"      -t {p} -m gpt-4o-mini-2024-07-18")
+
+        elif target == 'local':
+            # Export both OpenAI format (for unsloth/axolotl) and raw
+            p = str(Path(out_dir) / "openai_training.jsonl")
+            count = archive.export_openai(p)
+            print(f"\n  Exported: {count} pairs → {p}")
+            if not dry_run:
+                print(f"\n  Local fine-tuning options:")
+                print(f"    1. Unsloth (fastest, free Colab):")
+                print(f"       → Upload {p} to Colab")
+                print(f"       → Base model: unsloth/Qwen2.5-7B-Instruct")
+                print(f"       → Output: GGUF for Ollama")
+                print(f"    2. Ollama create (from Modelfile):")
+                print(f"       → ollama create nucleus-brother -f Modelfile")
+                print(f"    3. axolotl (full control):")
+                print(f"       → axolotl train config.yaml")
+                print(f"\n  After training, run the brother:")
+                print(f"    nucleus brother --provider local")
+
+        print()
+        return 0
+
     else:
         # bare `nucleus archive` — show stats
         stats = archive.get_stats()
@@ -4449,6 +4527,7 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive recent   — see last 10 turns")
         print(f"   nucleus archive export   — export for fine-tuning")
         print(f"   nucleus archive record   — manually record a turn")
+        print(f"   nucleus archive train    — fine-tuning pipeline")
         return 0
 
 

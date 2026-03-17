@@ -128,14 +128,27 @@ CLI="src/mcp_server_nucleus/cli.py"
 if [ -f "$CLI" ]; then
     # Remove --dangerously-skip-permissions flag from subprocess call
     sed -i '' 's/, "--dangerously-skip-permissions"//' "$CLI"
-    # Remove claude-code from argparse choices
-    sed -i '' "s/'gemini', 'anthropic', 'groq', 'claude-code'/'gemini', 'anthropic', 'groq'/" "$CLI"
+    # Remove claude-code and local from argparse choices
+    sed -i '' "s/'gemini', 'anthropic', 'groq', 'claude-code', 'local'/'gemini', 'anthropic', 'groq'/" "$CLI"
     # Strip "claude-code (Max sub)" from help text
     sed -i '' 's/, or claude-code (Max sub)//' "$CLI"
     # Strip "free via Max subscription" from /provider help
     sed -i '' 's/(free via Max subscription)//' "$CLI"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
     echo "  Sanitized: $CLI (claude-code provider refs)"
+fi
+
+# ── llm_client.py: Strip LocalLLM (Third Brother provider) ──
+LLM="src/mcp_server_nucleus/runtime/llm_client.py"
+if [ -f "$LLM" ]; then
+    # Remove the entire LocalLLM class block
+    sed -i '' '/^class LocalLLM:/,/^def get_llm_client/{ /^def get_llm_client/!d; }' "$LLM"
+    # Remove local/third-brother from factory
+    sed -i '' '/third-brother/d' "$LLM"
+    sed -i '' "s/, LocalLLM//" "$LLM"
+    sed -i '' "s/'gemini', 'anthropic', 'groq', 'local'/'gemini', 'anthropic', 'groq'/" "$LLM"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $LLM (LocalLLM/Third Brother provider)"
 fi
 
 # ── cli.py: Strip archive/Third Brother references ──
