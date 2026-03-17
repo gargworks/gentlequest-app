@@ -184,7 +184,23 @@ if [ -f "$CLI" ]; then
     sed -i '' '/preference pair/d' "$CLI"
     sed -i '' '/export_dpo/d' "$CLI"
     sed -i '' '/get_preference_stats/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother/DPO refs)"
+    # Strip CoT/reasoning chain refs (Phase 5 training)
+    sed -i '' '/CoT/d' "$CLI"
+    sed -i '' '/_reasoning_steps/d' "$CLI"
+    sed -i '' '/_reasoning_prompt/d' "$CLI"
+    sed -i '' '/_CoTArchive/d' "$CLI"
+    sed -i '' '/record_reasoning_chain/d' "$CLI"
+    sed -i '' '/COT_CAPTURE/d' "$CLI"
+    sed -i '' '/cot-status/d' "$CLI"
+    sed -i '' '/cot-export/d' "$CLI"
+    sed -i '' '/cot_count/d' "$CLI"
+    sed -i '' '/cot_flag/d' "$CLI"
+    sed -i '' '/count_reasoning/d' "$CLI"
+    sed -i '' '/reasoning chain/d' "$CLI"
+    sed -i '' '/get_reasoning/d' "$CLI"
+    sed -i '' '/export_reasoning/d' "$CLI"
+    sed -i '' '/Chain-of-Thought/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT refs)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──

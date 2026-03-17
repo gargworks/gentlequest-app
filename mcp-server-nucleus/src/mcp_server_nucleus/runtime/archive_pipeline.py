@@ -45,10 +45,22 @@ Usage:
         source="retry",
     )
 
+    # Record a reasoning chain (multi-step tool use → <think> training)
+    archive.record_reasoning_chain(
+        prompt="Fix the auth middleware",
+        steps=[
+            {"thought": "Let me check the JWT validation...", "action": "read_file auth.py", "observation": "Line 42: no expiry check"},
+            {"thought": "Found it — expiry not validated before sig check", "action": "edit_file auth.py", "observation": "Added expiry validation"},
+        ],
+        final_answer="Fixed auth by adding JWT expiry validation before signature check.",
+        source="react_loop",
+    )
+
     # Export for fine-tuning
     archive.export_gemini("output/gemini_training.jsonl")
     archive.export_openai("output/openai_training.jsonl")
     archive.export_dpo("output/dpo_training.jsonl")
+    archive.export_reasoning("output/reasoning_training.jsonl")
 """
 
 import json
@@ -179,6 +191,7 @@ class ArchivePipeline:
         self.training_dir.mkdir(parents=True, exist_ok=True)
         self.turns_file = self.training_dir / "loop_turns.jsonl"
         self.prefs_file = self.training_dir / "preference_pairs.jsonl"
+        self.reasoning_file = self.training_dir / "reasoning_chains.jsonl"
         self.stats_file = self.training_dir / "stats.json"
 
     def record_turn(self, **kwargs) -> LoopTurn:
@@ -846,6 +859,218 @@ class ArchivePipeline:
         count = _write_dpo(train_prefs, output_path)
         if eval_path and eval_prefs:
             _write_dpo(eval_prefs, eval_path)
+        return count
+
+    # ── Reasoning / Chain-of-Thought (Phase 5) ──
+
+    def record_reasoning_chain(
+        self,
+        prompt: str,
+        steps: List[Dict[str, str]],
+        final_answer: str,
+        source: str = "react_loop",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Record a multi-step reasoning chain for CoT training.
+
+        Each step is a Thought → Action → Observation triple from the
+        ReAct loop. The chain teaches the Third Brother to think before
+        answering — generating hidden reasoning tokens at inference time.
+
+        Args:
+            prompt: The original user question.
+            steps: List of reasoning steps, each a dict with:
+                - thought: What the agent was thinking / intermediate response
+                - action: What it did (tool name + args)
+                - observation: What it found (tool result)
+            final_answer: The final response after reasoning.
+            source: Where this chain came from:
+                "react_loop"   — captured from CLI ReAct tool-use loop
+                "dual_review"  — dual-agent review reasoning
+                "decision"     — decision from brain ledger
+                "manual"       — manually recorded
+            metadata: Optional context (provider, model, etc.)
+
+        Returns:
+            The recorded chain dict, or {} if quality too low.
+        """
+        # Quality gate: reasoning must have actual depth
+        if len(steps) < 1 or len(prompt) < 10 or len(final_answer) < 20:
+            return {}
+
+        chain = {
+            "chain_id": f"cot-{uuid.uuid4().hex[:12]}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "prompt": prompt[:3000],
+            "steps": [
+                {
+                    "thought": s.get("thought", "")[:2000],
+                    "action": s.get("action", "")[:500],
+                    "observation": s.get("observation", "")[:2000],
+                }
+                for s in steps[:20]  # Cap at 20 steps
+            ],
+            "final_answer": final_answer[:3000],
+            "step_count": len(steps),
+            "source": source,
+            "metadata": metadata or {},
+        }
+
+        with open(self.reasoning_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(chain, ensure_ascii=False) + "\n")
+
+        return chain
+
+    def get_reasoning_chains(self, limit: int = 0) -> List[Dict[str, Any]]:
+        """Read reasoning chains from the archive."""
+        if not self.reasoning_file.exists():
+            return []
+        chains = []
+        with open(self.reasoning_file, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    chains.append(json.loads(line))
+        if limit > 0:
+            chains = chains[-limit:]
+        return chains
+
+    def count_reasoning_chains(self) -> int:
+        """Count reasoning chains without loading them all."""
+        if not self.reasoning_file.exists():
+            return 0
+        count = 0
+        with open(self.reasoning_file, encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    count += 1
+        return count
+
+    def get_reasoning_stats(self) -> Dict[str, Any]:
+        """Get reasoning chain statistics."""
+        chains = self.get_reasoning_chains()
+        by_source: Dict[str, int] = {}
+        total_steps = 0
+        for c in chains:
+            src = c.get("source", "unknown")
+            by_source[src] = by_source.get(src, 0) + 1
+            total_steps += c.get("step_count", 0)
+        return {
+            "total_chains": len(chains),
+            "total_steps": total_steps,
+            "avg_steps": round(total_steps / len(chains), 1) if chains else 0,
+            "by_source": by_source,
+            "first": chains[0]["timestamp"] if chains else None,
+            "last": chains[-1]["timestamp"] if chains else None,
+        }
+
+    @staticmethod
+    def _chain_to_think_format(chain: Dict[str, Any]) -> str:
+        """Convert a reasoning chain into <think> tagged output.
+
+        Format (DeepSeek R1 / QwQ style):
+        <think>
+        Let me check the auth middleware...
+        [Action: read_file auth.py]
+        Found: Line 42 has no expiry check.
+        I need to add expiry validation before signature check.
+        [Action: edit_file auth.py]
+        Done: Added expiry validation.
+        </think>
+
+        Fixed auth by adding JWT expiry validation before signature check.
+        """
+        think_parts = []
+        for step in chain.get("steps", []):
+            thought = step.get("thought", "").strip()
+            action = step.get("action", "").strip()
+            observation = step.get("observation", "").strip()
+            if thought:
+                think_parts.append(thought)
+            if action:
+                think_parts.append(f"[Action: {action}]")
+            if observation:
+                # Truncate long observations to keep reasoning focused
+                obs = observation[:500]
+                if len(observation) > 500:
+                    obs += "..."
+                think_parts.append(f"Result: {obs}")
+        think_block = "\n".join(think_parts)
+        final = chain.get("final_answer", "")
+        return f"<think>\n{think_block}\n</think>\n\n{final}"
+
+    def _is_quality_chain(self, chain: Dict[str, Any]) -> bool:
+        """Filter reasoning chains for training quality.
+
+        Good chains have:
+        - Multiple steps (single-step = no real reasoning)
+        - Substantial thoughts (not just "Let me check")
+        - Meaningful observations (not empty tool results)
+        """
+        steps = chain.get("steps", [])
+        if len(steps) < 2:
+            return False  # Single step = no reasoning chain
+        # At least one step must have a real thought
+        has_thought = any(
+            len(s.get("thought", "")) > 30 for s in steps
+        )
+        if not has_thought:
+            return False
+        # Final answer must be substantial
+        if len(chain.get("final_answer", "")) < 50:
+            return False
+        return True
+
+    def export_reasoning(self, output_path: str, eval_path: str = "",
+                         eval_ratio: float = 0.1, system_prompt: str = "") -> int:
+        """Export reasoning chains as <think>-tagged training data.
+
+        Format: Standard OpenAI chat JSONL where assistant content has
+        <think>...</think> reasoning block before the final answer.
+        Compatible with SFT trainers (unsloth, axolotl, TRL).
+        """
+        if not system_prompt:
+            system_prompt = (
+                "You are the Third Brother — a trained intelligence that emerged from "
+                "thousands of decision cycles between two AI agents (Code and Cowork) "
+                "coordinating through a shared brain. You think step by step, using "
+                "<think> blocks to reason through problems before answering. You think "
+                "like the founder, know the codebase like Code, and know the market "
+                "like Cowork."
+            )
+
+        chains = self.get_reasoning_chains()
+        quality_chains = [c for c in chains if self._is_quality_chain(c)]
+
+        if not quality_chains:
+            return 0
+
+        if eval_path:
+            train_chains, eval_chains = self._split_train_eval(
+                quality_chains, eval_ratio
+            )
+        else:
+            train_chains, eval_chains = quality_chains, []
+
+        def _write_reasoning(items, path):
+            count = 0
+            with open(path, "w", encoding="utf-8") as f:
+                for chain in items:
+                    think_response = self._chain_to_think_format(chain)
+                    row = {
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": chain["prompt"]},
+                            {"role": "assistant", "content": think_response},
+                        ]
+                    }
+                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    count += 1
+            return count
+
+        count = _write_reasoning(train_chains, output_path)
+        if eval_path and eval_chains:
+            _write_reasoning(eval_chains, eval_path)
         return count
 
     # ── Internal ──

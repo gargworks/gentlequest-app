@@ -94,6 +94,11 @@ def register(mcp, helpers):
             })
         return make_response(False, error="Preference pair too short or identical")
 
+    def _h_cot_status():
+        from ..runtime.archive_pipeline import ArchivePipeline
+        archive = ArchivePipeline()
+        return make_response(True, data=archive.get_reasoning_stats())
+
     ACTION_MAP = {
         "stats": (_h_stats, "Show archive statistics"),
         "recent": (_h_recent, "Show recent loop turns"),
@@ -102,6 +107,7 @@ def register(mcp, helpers):
         "retrain_status": (_h_retrain_status, "Check if new training is recommended"),
         "dpo_status": (_h_dpo_status, "Show DPO preference pair statistics"),
         "record_preference": (_h_record_preference, "Record a DPO preference pair (prompt, chosen, rejected)"),
+        "cot_status": (_h_cot_status, "Show reasoning chain (CoT) statistics"),
     }
 
     @mcp.tool()
@@ -116,6 +122,7 @@ def register(mcp, helpers):
         - retrain_status: Check if enough new data has accumulated to retrain
         - dpo_status: Show DPO preference pair statistics (source breakdown)
         - record_preference: Record a DPO pair (params: prompt, chosen, rejected, source)
+        - cot_status: Show reasoning chain (Chain-of-Thought) statistics
         """
         return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
 

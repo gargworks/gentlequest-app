@@ -2756,9 +2756,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         # and Ctrl+C (user can always interrupt).
         _suppress_echo()  # Block keystroke echo while agent is working
         reply_chunks = []  # Defined here so KeyboardInterrupt handler can access partial output
+        _reasoning_steps = []  # CoT: accumulates (thought, action, observation) triples
+        _reasoning_prompt = None  # CoT: the original user question
         try:
             current_input = _expand_at_files(user_input)
             react_step = 0
+            _reasoning_prompt = current_input  # Capture original question before tool rewrites
 
             while True:
                 # Native multi-turn for Anthropic/Groq; string-concat for Gemini
@@ -2868,6 +2871,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                 history.append(("user", current_input))
                                 history.append(("assistant", reply))
                                 _tool_label = tc["input"].get("command") or tc["input"].get("path") or tc["input"].get("pattern") or tc["name"]
+                                # CoT: capture reasoning step
+                                _reasoning_steps.append({
+                                    "thought": reply[:2000],
+                                    "action": f"{tc['name']}({_tool_label})",
+                                    "observation": tool_result[:2000],
+                                })
                                 current_input = f"[Tool Result for `{_tool_label}`]\n{tool_result[:4000]}"
                                 is_initial = False
                             if llm.last_stop_reason in _tool_stop_reasons:
@@ -3066,6 +3075,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     tool_result = _execute_tool(_tn, _ti, react_step)
                     _tool_label = _ti.get("command") or _ti.get("path") or _ti.get("pattern") or _tn
 
+                    # CoT: capture reasoning step
+                    _reasoning_steps.append({
+                        "thought": reply[:2000],
+                        "action": f"{_tn}({_tool_label})",
+                        "observation": tool_result[:2000],
+                    })
+
                     history.append(("user", current_input))
                     history.append(("assistant", reply))
 
@@ -3099,6 +3115,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print("\n")
                         review_text = "".join(review_chunks).strip()
                         history.append(("reviewer", f"[{_dual_reviewer_name}] {review_text}"))
+                        # CoT: dual-agent review = reasoning about quality
+                        _reasoning_steps.append({
+                            "thought": f"[{_dual_reviewer_name} review] {review_text}",
+                            "action": f"dual_review({_dual_reviewer_name})",
+                            "observation": "Review complete",
+                        })
                     except Exception as e:
                         print(f"   [Review failed: {str(e)[:100]}]\n")
 
@@ -3153,6 +3175,21 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                     source="correction",
                                     metadata={"correction_msg": current_input[:200]},
                                 )
+                    except Exception:
+                        pass
+
+                # COT_CAPTURE: Record reasoning chain if multi-step tool use occurred
+                if _reasoning_steps and _reasoning_prompt and reply:
+                    try:
+                        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline as _CoTArchive
+                        _cot = _CoTArchive()
+                        _cot.record_reasoning_chain(
+                            prompt=_reasoning_prompt,
+                            steps=_reasoning_steps,
+                            final_answer=reply,
+                            source="react_loop",
+                            metadata={"provider": _provider, "react_steps": react_step},
+                        )
                     except Exception:
                         pass
 
@@ -3963,6 +4000,9 @@ def main():
     archive_subparsers.add_parser('dpo-status', help='Show DPO preference pair statistics')
     archive_dpo_export = archive_subparsers.add_parser('dpo-export', help='Export DPO preference pairs for training')
     archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
+    archive_subparsers.add_parser('cot-status', help='Show reasoning chain (Chain-of-Thought) statistics')
+    archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export reasoning chains as <think>-tagged training data')
+    archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4615,12 +4655,26 @@ def handle_archive_command(args) -> int:
             print(f"    (accumulates from /retry, corrections, outcomes)")
         print()
 
+        # CoT data
+        cot_count = archive.count_reasoning_chains()
+        print(f"  ── CoT (Chain-of-Thought Reasoning) ──")
+        print(f"  Reasoning chains: {cot_count}")
+        if cot_count > 0:
+            cot_stats = archive.get_reasoning_stats()
+            print(f"    Total steps:    {cot_stats.get('total_steps', 0)}")
+            print(f"    Avg steps:      {cot_stats.get('avg_steps', 0)}")
+        else:
+            print(f"    (accumulates from multi-step tool use in chat)")
+        print()
+
         # Retrain recommendation
         if retrain['should_retrain']:
             print(f"  ✅ RETRAIN RECOMMENDED — {retrain['reason']}")
             print(f"     Phase 1: nucleus archive train          (SFT)")
             if dpo_count >= 50:
                 print(f"     Phase 2: nucleus archive dpo-export     (DPO)")
+            if cot_count >= 20:
+                print(f"     Phase 3: nucleus archive cot-export     (CoT)")
         else:
             print(f"  ⏳ {retrain['reason']}")
         print()
@@ -4812,25 +4866,87 @@ def handle_archive_command(args) -> int:
         print()
         return 0
 
+    elif cmd == 'cot-status':
+        cot_stats = archive.get_reasoning_stats()
+        total_chains = cot_stats.get('total_chains', 0)
+        print("=" * 50)
+        print("🧠 REASONING CHAINS — Chain-of-Thought Training Data")
+        print("=" * 50)
+        print(f"  Total chains:     {total_chains}")
+        print(f"  Total steps:      {cot_stats.get('total_steps', 0)}")
+        print(f"  Avg steps/chain:  {cot_stats.get('avg_steps', 0)}")
+        by_src = cot_stats.get('by_source', {})
+        if by_src:
+            print(f"  By source:")
+            for src, count in sorted(by_src.items(), key=lambda x: -x[1]):
+                label = {
+                    "react_loop": "ReAct tool-use chains",
+                    "dual_review": "Dual-agent review reasoning",
+                    "decision": "Brain ledger decisions",
+                    "manual": "Manual recording",
+                }.get(src, src)
+                print(f"    {src:12s}: {count:4d}  — {label}")
+        if cot_stats.get('first'):
+            print(f"  First chain:      {cot_stats['first'][:19]}")
+            print(f"  Last chain:       {cot_stats['last'][:19]}")
+        print()
+        if total_chains < 20:
+            print(f"  Chains accumulate automatically from multi-step tool use.")
+            print(f"  Every ReAct loop with 2+ tool calls = 1 reasoning chain.")
+        else:
+            # Count quality chains
+            quality = sum(1 for c in archive.get_reasoning_chains() if archive._is_quality_chain(c))
+            print(f"  Quality chains:   {quality} (2+ steps, real reasoning)")
+            if quality >= 20:
+                print(f"  Ready for CoT training!")
+                print(f"     → nucleus archive cot-export")
+        print()
+        return 0
+
+    elif cmd == 'cot-export':
+        out_dir = args.output or str(archive.training_dir / "exports")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        p = str(Path(out_dir) / "reasoning_training.jsonl")
+        ep = str(Path(out_dir) / "reasoning_eval.jsonl")
+        count = archive.export_reasoning(p, eval_path=ep)
+        ev = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
+        print("=" * 50)
+        print("🧠 COT EXPORT — Reasoning Training Data")
+        print("=" * 50)
+        if count == 0:
+            print(f"  No quality reasoning chains to export yet.")
+            print(f"  Chains accumulate from multi-step tool use in chat.")
+        else:
+            print(f"  Exported: {count} train + {ev} eval chains")
+            print(f"  Output:   {p}")
+            print(f"  Format:   <think>step 1...step N</think> + final answer")
+            print(f"\n  To train (mix with SFT data):")
+            print(f"    Combine {p} with openai_training.jsonl")
+            print(f"    Both use the same OpenAI chat format.")
+        print()
+        return 0
+
     else:
-        # bare `nucleus archive` — show stats + retrain indicator + DPO count
+        # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
         stats = archive.get_stats()
         total = stats.get('total_turns', 0)
         retrain = archive.should_retrain()
         retrain_flag = " | RETRAIN READY" if retrain['should_retrain'] else ""
         dpo_count = archive.count_preferences()
-        dpo_flag = f" | {dpo_count} DPO pairs" if dpo_count > 0 else ""
-        print(f"📊 Archive: {total} turns{retrain_flag}{dpo_flag}")
-        print(f"   nucleus archive status      — retrain readiness check")
+        dpo_flag = f" | {dpo_count} DPO" if dpo_count > 0 else ""
+        cot_count = archive.count_reasoning_chains()
+        cot_flag = f" | {cot_count} CoT" if cot_count > 0 else ""
+        print(f"📊 Archive: {total} turns{retrain_flag}{dpo_flag}{cot_flag}")
+        print(f"   nucleus archive status      — training readiness")
         print(f"   nucleus archive stats       — full stats breakdown")
         print(f"   nucleus archive recent      — see last 10 turns")
         print(f"   nucleus archive export      — export SFT training data")
-        print(f"   nucleus archive dpo-status  — DPO preference pair stats")
-        print(f"   nucleus archive dpo-export  — export DPO training data")
-        print(f"   nucleus archive record      — manually record a turn")
+        print(f"   nucleus archive dpo-status  — DPO preference pairs")
+        print(f"   nucleus archive dpo-export  — export DPO data")
+        print(f"   nucleus archive cot-status  — reasoning chain stats")
+        print(f"   nucleus archive cot-export  — export <think> data")
         print(f"   nucleus archive train       — fine-tuning pipeline")
         print(f"   nucleus archive ingest      — bulk import conversations")
-        print(f"   nucleus archive ingest-threads — bridge chat history → training")
         return 0
 
 
