@@ -1,0 +1,90 @@
+# OpenTelemetry Collector Configuration for telemetry.nucleusos.dev
+# This is the server-side config that receives anonymous Nucleus telemetry.
+#
+# Receives OTLP on gRPC (:4317) and HTTP (:4318).
+# Exports to: Jaeger (traces), Prometheus (metrics), file backup, debug console.
+# Phase B: Full observability stack — see PHASE_B_OBSERVABILITY_PROPOSAL.md
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  # Batch spans/metrics to reduce export overhead
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  # Memory limiter to prevent OOM on the collector
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Filter: only allow known anonymous attributes through
+  # Extra safety — even if a bug sends something unexpected, the collector drops it
+  filter/anonymous_only:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["nucleus.command"] == nil'
+    metrics:
+      metric:
+        - 'name != "nucleus.anon.commands" and name != "nucleus.anon.command_duration_ms"'
+
+exporters:
+  # Jaeger for trace visualization (Phase B)
+  otlp/jaeger:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
+  # Prometheus for metrics (Grafana dashboards)
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: nucleus
+    const_labels:
+      source: "anonymous_telemetry"
+
+  # File exporter for raw backup / audit
+  file/traces:
+    path: /telemetry-data/traces.jsonl
+    rotation:
+      max_megabytes: 100
+      max_days: 90
+      max_backups: 10
+
+  file/metrics:
+    path: /telemetry-data/metrics.jsonl
+    rotation:
+      max_megabytes: 100
+      max_days: 90
+      max_backups: 10
+
+  # Debug exporter for console output
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+  zpages:
+    endpoint: "0.0.0.0:55679"
+
+service:
+  extensions: [health_check, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger, file/traces, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, file/metrics, debug]

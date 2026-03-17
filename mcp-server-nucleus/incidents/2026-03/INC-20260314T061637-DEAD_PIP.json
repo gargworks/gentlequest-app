@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "id": "INC-20260314T061637-DEAD_PIP",
+  "type": "dead_pipeline",
+  "severity": "warning",
+  "detected_at": "2026-03-14T06:16:37.089814Z",
+  "resolved_at": null,
+  "resolution_status": "pending",
+  "summary": "No commands recorded in the last 6 hours",
+  "metrics_snapshot": {
+    "total_commands": 0.0
+  },
+  "actions": [
+    {
+      "name": "restart_collector",
+      "target": "nucleus-otel-collector",
+      "result": "success",
+      "timestamp": "2026-03-14T06:16:38.250248Z"
+    },
+    {
+      "name": "restart_metrics_pipeline",
+      "target": "pipeline",
+      "result": "success",
+      "timestamp": "2026-03-14T06:16:39.816385Z"
+    },
+    {
+      "name": "generate_report",
+      "target": "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/incidents/2026-03/INC-20260314T061637-DEAD_PIP.md",
+      "result": "success",
+      "timestamp": "2026-03-14T06:16:39.817058Z"
+    }
+  ],
+  "playbook": "dead_pipeline",
+  "evaluation": {
+    "evaluated_at": null,
+    "delay_seconds": 180,
+    "metrics_after": {},
+    "success_criteria_met": null,
+    "resolution_status": "pending"
+  },
+  "policy_snapshot": {
+    "cooldown_multiplier": 1.0,
+    "action_overrides": {},
+    "success_rate": null,
+    "total_incidents": 0
+  }
+}

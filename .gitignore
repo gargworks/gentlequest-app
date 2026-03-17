@@ -148,3 +148,30 @@ claude project export data-*/
 # Temp files
 tmp/
 
+# Test brain instances and local state
+.brain_test*/
+.telemetry/
+engrams/
+
+# Cloudflare local dev cache
+.wrangler/
+
+# Sync transient data
+nucleus-launch-internal/sync/inbox/
+nucleus-launch-internal/sync/outbox/
+
+# Demo generated assets
+demos/**/sovereign_test/
+demos/**/one_shot_output/
+
+# Individual scratch/temp files at root
+*.mp4
+*.txt
+!README*.txt
+gemini-conversation-*.json
+.gemini-sessions.json
+.nucleus_heartbeat
+
+# Session/context local state
+session/
+

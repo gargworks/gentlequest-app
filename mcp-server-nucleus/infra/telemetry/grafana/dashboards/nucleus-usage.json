@@ -1,0 +1,152 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Total Commands (All Users, Anonymous)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(nucleus_nucleus_anon_commands_total)",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": { "steps": [{ "color": "green", "value": null }] } }
+      }
+    },
+    {
+      "title": "Commands per Hour",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(nucleus_nucleus_anon_commands_total[1h])) by (nucleus_command)",
+          "legendFormat": "{{nucleus_command}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Top 10 Commands",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (nucleus_command) (nucleus_nucleus_anon_commands_total))",
+          "legendFormat": "{{nucleus_command}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Commands by Category",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (nucleus_category) (nucleus_nucleus_anon_commands_total)",
+          "legendFormat": "{{nucleus_category}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(nucleus_nucleus_anon_commands_total{nucleus_error_type!=\"\"}[1h])) / sum(rate(nucleus_nucleus_anon_commands_total[1h]))",
+          "legendFormat": "Error Rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "max": 1 }
+      }
+    },
+    {
+      "title": "P95 Command Duration",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(nucleus_nucleus_anon_command_duration_ms_bucket[5m])) by (le, nucleus_command))",
+          "legendFormat": "{{nucleus_command}} p95",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      }
+    },
+    {
+      "title": "OS Distribution",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum by (os_platform) (nucleus_nucleus_anon_commands_total)",
+          "legendFormat": "{{os_platform}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Python Version Distribution",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum by (python_version) (nucleus_nucleus_anon_commands_total)",
+          "legendFormat": "Python {{python_version}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Nucleus Version Distribution",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum by (nucleus_version) (nucleus_nucleus_anon_commands_total)",
+          "legendFormat": "v{{nucleus_version}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Top Error Types",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (nucleus_error_type) (nucleus_nucleus_anon_commands_total{nucleus_error_type!=\"\"}))",
+          "legendFormat": "{{nucleus_error_type}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["nucleus", "telemetry", "anonymous"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Nucleus Anonymous Usage",
+  "uid": "nucleus-anon-usage",
+  "version": 1
+}

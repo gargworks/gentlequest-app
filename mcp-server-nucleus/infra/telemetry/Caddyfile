@@ -1,0 +1,33 @@
+# Caddy reverse proxy for telemetry.nucleusos.dev
+# Automatic TLS via Let's Encrypt
+#
+# Routes:
+#   :4317 (gRPC)  → OTel Collector (OTLP gRPC ingest)
+#   :4318 (HTTPS) → OTel Collector (OTLP HTTP ingest)
+#   :3000         → Grafana dashboards (internal only — restrict via firewall)
+
+telemetry.nucleusos.dev {
+    # Health check endpoint
+    handle /health {
+        reverse_proxy otel-collector:13133
+    }
+
+    # OTLP HTTP ingest (fallback for clients that can't do gRPC)
+    handle /v1/* {
+        reverse_proxy otel-collector:4318
+    }
+
+    # Default: block everything else
+    handle {
+        respond "Nucleus Telemetry Collector" 200
+    }
+}
+
+# gRPC requires a separate site block with h2c
+telemetry.nucleusos.dev:4317 {
+    reverse_proxy otel-collector:4317 {
+        transport http {
+            versions h2c
+        }
+    }
+}

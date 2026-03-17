@@ -1,0 +1,228 @@
+# Grafana Alerting Rules for Nucleus Anonymous Telemetry
+# Phase C: Monitor error rates and command rate anomalies
+# Auto-provisioned on Grafana startup
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: nucleus_telemetry_alerts
+    folder: Nucleus Telemetry
+    interval: 1m
+    rules:
+      - uid: nucleus_high_error_rate
+        title: High Error Rate in Nucleus Commands
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                sum(rate(nucleus_nucleus_anon_commands_total{nucleus_error_type!=""}[5m])) /
+                sum(rate(nucleus_nucleus_anon_commands_total[5m]))
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: "Error rate is {{ $values.B.Value | humanizePercentage }} (threshold: 10%)"
+          summary: "Nucleus command error rate exceeded 10% over the last 5 minutes"
+        labels:
+          severity: warning
+          component: nucleus-telemetry
+
+      - uid: nucleus_command_rate_drop
+        title: Nucleus Command Rate Drop
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                rate(nucleus_nucleus_anon_commands_total[5m])
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.01
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          description: "Command rate is {{ $values.B.Value | humanize }} commands/sec (expected: >0.01/sec)"
+          summary: "Nucleus command rate dropped below expected baseline for 10 minutes"
+        labels:
+          severity: info
+          component: nucleus-telemetry
+
+      - uid: nucleus_no_commands_24h
+        title: No Nucleus Commands in 24 Hours
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 86400
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                sum(increase(nucleus_nucleus_anon_commands_total[24h]))
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 86400
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 86400
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 1h
+        annotations:
+          description: "No commands recorded in the last 24 hours. Telemetry may be disabled or broken."
+          summary: "Zero Nucleus commands detected in 24-hour window"
+        labels:
+          severity: warning
+          component: nucleus-telemetry
+
+      - uid: nucleus_command_rate_anomaly
+        title: Command Rate Statistical Anomaly
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                abs(
+                  (sum(rate(nucleus_nucleus_anon_commands_total[1h])) - 
+                   avg_over_time((sum(rate(nucleus_nucleus_anon_commands_total[1h])))[7d:1h])) /
+                  stddev_over_time((sum(rate(nucleus_nucleus_anon_commands_total[1h])))[7d:1h])
+                )
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 3
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 15m
+        annotations:
+          description: "Command rate deviates by {{ $values.B.Value | humanize }}σ from 7-day mean (threshold: 3σ)"
+          summary: "Statistical anomaly detected in command rate (Z-score > 3)"
+        labels:
+          severity: critical
+          component: nucleus-telemetry
