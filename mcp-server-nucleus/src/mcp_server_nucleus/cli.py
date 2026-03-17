@@ -5,6 +5,7 @@ import os
 import json
 import sys
 import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 import argparse
@@ -939,9 +940,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     # ── Proxy Sovereignty Auto-Discovery ───────────────────────
     if "GEMINI_API_BASE_URL" not in os.environ:
-        if Path("/tmp/gemini_proxy.port").exists():
+        if Path(tempfile.gettempdir()) / "gemini_proxy.port".exists():
             try:
-                port = Path("/tmp/gemini_proxy.port").read_text().strip()
+                port = Path(tempfile.gettempdir()) / "gemini_proxy.port".read_text().strip()
                 os.environ["GEMINI_API_BASE_URL"] = f"http://localhost:{port}/v1"
             except: pass
         elif os.environ.get("NUCLEUS_PROXY_DEFAULT_URL"):
@@ -3273,7 +3274,7 @@ def main():
     
     # nucleus features list [--product=X] [--status=X]
     features_list = features_subparsers.add_parser('list', help='List all features')
-    features_list.add_argument('--product', help='Filter by product (gentlequest/nucleus)')
+    features_list.add_argument('--product', help='Filter by product name')
     features_list.add_argument('--status', help='Filter by status')
     
     # nucleus features test <id>
@@ -3835,7 +3836,7 @@ def main():
 
     # 3. Proxy Sovereignty: Auto-detect local proxy (Phase 23/24)
     if "GEMINI_API_BASE_URL" not in os.environ:
-        proxy_port_file = Path("/tmp/gemini_proxy.port")
+        proxy_port_file = Path(tempfile.gettempdir()) / "gemini_proxy.port"
         if proxy_port_file.exists():
             try:
                 port = proxy_port_file.read_text().strip()
@@ -6102,10 +6103,10 @@ def handle_summon_command(args):
         env["GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
         env["GEMINI_NEXT_GEN_API_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
         env["GOOGLE_GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-    elif Path("/tmp/gemini_proxy.port").exists():
+    elif Path(tempfile.gettempdir()) / "gemini_proxy.port".exists():
         # Auto-detect local proxy (Phase 23 Hardening)
         try:
-            port = Path("/tmp/gemini_proxy.port").read_text().strip()
+            port = Path(tempfile.gettempdir()) / "gemini_proxy.port".read_text().strip()
             env["GEMINI_API_BASE_URL"] = f"http://localhost:{port}/v1"
             env["GEMINI_BASE_URL"] = f"http://localhost:{port}/v1"
             env["GEMINI_NEXT_GEN_API_BASE_URL"] = f"http://localhost:{port}/v1"
@@ -6169,7 +6170,7 @@ def _ensure_gemini_proxy(repo_root: Path) -> None:
     )
     # Phase 23: Persist port for auto-discovery
     try:
-        Path("/tmp/gemini_proxy.port").write_text(str(proxy_port))
+        Path(tempfile.gettempdir()) / "gemini_proxy.port".write_text(str(proxy_port))
     except: pass
     time.sleep(3)
 

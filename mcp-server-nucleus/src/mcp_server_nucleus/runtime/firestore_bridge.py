@@ -11,6 +11,7 @@ Location: mcp_server_nucleus/runtime/firestore_bridge.py
 """
 
 import logging
+import os
 from typing import Dict, Any
 
 try:
@@ -22,7 +23,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Configuration
-PROJECT_ID = "gen-lang-client-0894185576"
+PROJECT_ID = os.environ.get("GCP_PROJECT_ID", os.environ.get("GOOGLE_CLOUD_PROJECT", ""))
 COLLECTION_NAME = "nucleus-events"
 
 class FirestoreBridge:

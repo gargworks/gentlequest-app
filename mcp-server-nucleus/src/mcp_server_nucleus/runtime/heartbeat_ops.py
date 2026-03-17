@@ -166,7 +166,7 @@ YOUR MANDATE:
                         str(brain / "config" / "gcloud" / "application_default_credentials.json") if (brain / "config" / "gcloud" / "application_default_credentials.json").exists()
                         else str(Path.home() / ".config/gcloud/application_default_credentials.json")
                     ),
-                    "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576"),
+                    "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", os.environ.get("GCP_PROJECT_ID", "")),
                     "GOOGLE_CLOUD_LOCATION": "global",
                     "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
                 }

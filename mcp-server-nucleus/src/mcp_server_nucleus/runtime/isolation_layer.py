@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -24,7 +25,7 @@ class EnvironmentSanitizer:
     }
 
     def __init__(self, sandbox_root: Optional[Path] = None):
-        self.sandbox_root = sandbox_root or Path("/tmp/nucleus/sandbox")
+        self.sandbox_root = sandbox_root or Path(tempfile.gettempdir()) / "nucleus" / "sandbox"
 
     def get_isolated_env(self, base_env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         """Return a stripped and mapped environment."""

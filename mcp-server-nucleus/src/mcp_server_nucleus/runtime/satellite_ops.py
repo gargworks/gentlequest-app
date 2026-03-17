@@ -177,32 +177,34 @@ def _get_products_health() -> Dict:
     import os
     from pathlib import Path
     
-    # Check paths (auto-detect from brain location or env)
-    home = Path.home()
+    # Auto-detect project root from brain path or env
     project_root = Path(os.environ.get("NUCLEUS_PROJECT_ROOT", str(Path.cwd())))
-    nucleus_path = project_root
-    gq_path = project_root / "gentlequest-blog"
-    bib_path = home / "apps" / "believe-it-bot"
-    studio_path = bib_path / "AQUILA_VOICE_ARCHITECTURE"
-    
-    return {
+
+    products = {
         "nucleus_os": {
-            "status": "🟢 ONLINE" if nucleus_path.exists() else "🔴 OFFLINE",
-            "path": str(nucleus_path.name)
-        },
-        "gentlequest": {
-            "status": "🟢 ONLINE" if gq_path.exists() else "🔴 OFFLINE",
-            "path": str(gq_path.name)
-        },
-        "believe_it_bot": {
-            "status": "🟢 ONLINE" if bib_path.exists() else "🔴 OFFLINE",
-            "path": str(bib_path.name)
-        },
-        "sovereign_studio": {
-            "status": "🟢 ONLINE" if studio_path.exists() else "🔴 OFFLINE",
-            "path": str(studio_path.name)
+            "status": "🟢 ONLINE" if project_root.exists() else "🔴 OFFLINE",
+            "path": str(project_root.name)
         }
     }
+
+    # Discover additional satellite products from brain config if available
+    try:
+        from .common import get_brain_path
+        brain = get_brain_path()
+        satellites_config = brain / "config" / "satellites.json"
+        if satellites_config.exists():
+            import json
+            with open(satellites_config) as f:
+                for name, info in json.load(f).items():
+                    sat_path = Path(os.path.expanduser(info.get("path", "")))
+                    products[name] = {
+                        "status": "🟢 ONLINE" if sat_path.exists() else "🔴 OFFLINE",
+                        "path": str(sat_path.name)
+                    }
+    except Exception:
+        pass
+
+    return products
 
 def _get_satellite_view(detail_level: str = "standard") -> Dict:
     """

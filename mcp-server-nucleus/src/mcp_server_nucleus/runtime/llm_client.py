@@ -11,6 +11,7 @@ MDR_010 Compliant: Ensures high availability and reliability.
 import os
 import logging
 import json
+import tempfile
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, Union
@@ -272,7 +273,7 @@ class DualEngineLLM:
         
         # Determine platform from tier config
         use_vertex = self.tier_config.get("platform", "vertex") == "vertex" if self.tier_config else True
-        force_vertex_env = os.environ.get("FORCE_VERTEX", "1") == "1"
+        force_vertex_env = os.environ.get("FORCE_VERTEX", "0") == "1"
         
         # For local tiers, don't use vertex
         if self.tier in [LLMTier.LOCAL_PAID, LLMTier.LOCAL_FREE]:
@@ -290,9 +291,10 @@ class DualEngineLLM:
                 proxy_url = os.environ.get("GEMINI_API_BASE_URL")
                 
                 # Phase 14 Hardening: Auto-discovery of local proxy
-                if not proxy_url and Path("/tmp/gemini_proxy.port").exists():
+                _proxy_port_file = Path(tempfile.gettempdir()) / "gemini_proxy.port"
+                if not proxy_url and _proxy_port_file.exists():
                     try:
-                        port = Path("/tmp/gemini_proxy.port").read_text().strip()
+                        port = _proxy_port_file.read_text().strip()
                         proxy_url = f"http://127.0.0.1:{port}/v1"
                         logger.info(f"📍 Auto-discovered Gemini Proxy at {proxy_url}")
                     except Exception as e:

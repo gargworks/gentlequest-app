@@ -40,9 +40,9 @@ GOLDEN_SCENARIOS = [
     {
         "id": "S02",
         "name": "Deployment Configuration",
-        "question": "Where is the project deployed and what service ID is used?",
-        "expected_keywords": ["render", "srv-d2r3i1fdiees73dqtov0", "cloud run", "gentlequest"],
-        "expected_decision": "Render Service srv-d2r3i1fdiees73dqtov0 (GentleQuest)",
+        "question": "Where is the project deployed and what platform is used?",
+        "expected_keywords": ["render", "cloud run", "deployment", "service"],
+        "expected_decision": "Deployment platform configured via environment",
         "difficulty": "easy",
     },
     {
