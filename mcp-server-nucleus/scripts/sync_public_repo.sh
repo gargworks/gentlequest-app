@@ -138,6 +138,13 @@ if [ -f "$CLI" ]; then
     echo "  Sanitized: $CLI (claude-code provider refs)"
 fi
 
+# ── README.md: Strip cascade strategy details ──
+if [ -f "README.md" ]; then
+    sed -i '' 's/Cascades across models on rate limit (70b → scout → qwen → 8b)/Cascades across models on rate limit/' "README.md"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: README.md (cascade details)"
+fi
+
 echo "  $SANITIZE_COUNT files sanitized."
 echo ""
 
