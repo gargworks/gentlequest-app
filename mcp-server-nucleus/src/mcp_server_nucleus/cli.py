@@ -4072,6 +4072,11 @@ def main():
     archive_promote.add_argument('--to', type=str, required=True, choices=['shadow', 'canary', 'primary', 'retired'], help='Target status')
     archive_subparsers.add_parser('shadow-stats', help='Show shadow mode performance (Third Brother vs primary)')
     archive_subparsers.add_parser('graduation', help='Check if Third Brother should be promoted')
+    archive_vault = archive_subparsers.add_parser('vault', help='List all model versions stored in the vault (SSD)')  # noqa: F841
+    archive_vault_restore = archive_subparsers.add_parser('vault-restore', help='Restore a model version from the vault')
+    archive_vault_restore.add_argument('version', help='Version to restore (e.g., v1)')
+    archive_rollback = archive_subparsers.add_parser('rollback', help='Rollback to a previous model version (retire current, restore target)')
+    archive_rollback.add_argument('version', help='Version to rollback to (e.g., v1)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -5666,6 +5671,61 @@ def handle_archive_command(args) -> int:
         elif rec == "retrain":
             print(f"\n     $ nucleus archive conductor")
         return 0  # GRADUATION_BLOCK_END
+
+    # VAULT_BLOCK_START
+    elif cmd == 'vault':
+        vault_versions = archive.vault_list()
+        vault_path = archive.get_vault_path()
+        ssd_mounted = archive.DEFAULT_VAULT_PATH.parent.exists()
+
+        print("=" * 50)
+        print("🏦 MODEL VAULT — Versioned Artifact Storage")
+        print("=" * 50)
+        print(f"  Location: {vault_path}")
+        print(f"  Storage:  {'SSD (Samsung 990 PRO 2TB)' if ssd_mounted else 'LOCAL (⚠️ SSD not mounted)'}")
+
+        if not vault_versions:
+            print(f"\n  No models in vault yet.")
+            print(f"  Train with --register to auto-vault:")
+            print(f"    python scripts/train_third_brother.py --register --auto-shadow")
+        else:
+            print(f"\n  Versions: {len(vault_versions)}")
+            for v in vault_versions:
+                arts = len(v.get("artifacts", []))
+                size = v.get("total_size_bytes", 0)
+                size_str = f"{size // 1024 // 1024}MB" if size else "?"
+                stored = v.get("stored_at", "?")[:10]
+                print(f"    {v.get('version', '?'):8s}  {arts} artifacts  {size_str:>8s}  {stored}")
+        print()
+        return 0
+
+    elif cmd == 'vault-restore':
+        version = args.version
+        print(f"  Restoring {version} from vault...")
+        result = archive.vault_restore(version)
+        if "error" in result:
+            print(f"  ❌ {result['error']}")
+            return 1
+        print(f"  ✅ Restored to: {result['restored_to']}")
+        for a in result.get("artifacts", []):
+            print(f"     - {a}")
+        print(f"\n  Deploy: {result.get('ollama_command', '')}")
+        return 0
+
+    elif cmd == 'rollback':
+        version = args.version
+        print("=" * 50)
+        print(f"⏪ ROLLBACK — Restoring {version}")
+        print("=" * 50)
+        result = archive.rollback_model(version)
+        if "error" in result:
+            print(f"  ❌ {result['error']}")
+            return 1
+        print(f"  From: {result.get('from_version', 'none')}")
+        print(f"  To:   {result['to_version']} (status: {result.get('new_status', '?')})")
+        print(f"\n  {result.get('instructions', '')}")
+        return 0
+    # VAULT_BLOCK_END
 
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT

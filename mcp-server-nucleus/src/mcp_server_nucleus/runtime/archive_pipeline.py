@@ -3074,6 +3074,257 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
 
         return result
 
+    # ── Model Vault (versioned artifact storage on external SSD) ──
+
+    DEFAULT_VAULT_PATH = Path("/Volumes/Samsung SSD 990 PRO 2TB Media/nucleus-vault")
+
+    def get_vault_path(self) -> Path:
+        """Get the vault root. Uses SSD if mounted, falls back to local."""
+        ssd_vault = self.DEFAULT_VAULT_PATH
+        if ssd_vault.parent.exists():
+            return ssd_vault
+        # Fallback: local vault (MacBook Air 256GB — warn about space)
+        local = self.training_dir / "vault"
+        return local
+
+    def vault_version_path(self, version: str) -> Path:
+        """Get the versioned directory for a model in the vault."""
+        return self.get_vault_path() / version
+
+    def vault_store(
+        self,
+        version: str,
+        output_dir: Path,
+        sft_adapter_dir: Optional[Path] = None,
+    ) -> Dict[str, Any]:
+        """Store a trained model's artifacts in the vault.
+
+        Copies GGUF, LoRA adapter, Modelfile, and training metadata
+        into a versioned vault directory on the SSD. The local output_dir
+        can then be cleaned up to save MacBook space.
+
+        Args:
+            version: Model version (e.g., "v3").
+            output_dir: The training output directory containing artifacts.
+            sft_adapter_dir: Optional path to SFT-only adapter (preserved
+                             separately so DPO can't destroy it).
+
+        Returns:
+            {vault_path, artifacts, size_bytes}.
+        """
+        import shutil
+
+        vault_dir = self.vault_version_path(version)
+        vault_dir.mkdir(parents=True, exist_ok=True)
+
+        artifacts = []
+
+        # 1. GGUF model file
+        for gguf in output_dir.glob("*.gguf"):
+            dest = vault_dir / gguf.name
+            if not dest.exists():
+                shutil.copy2(str(gguf), str(dest))
+            artifacts.append({"type": "gguf", "name": gguf.name,
+                              "size": gguf.stat().st_size})
+
+        # 2. LoRA adapter (post-DPO, the final adapter)
+        lora_src = output_dir / "lora_adapter"
+        if lora_src.exists():
+            lora_dest = vault_dir / "lora_adapter"
+            if not lora_dest.exists():
+                shutil.copytree(str(lora_src), str(lora_dest))
+            artifacts.append({"type": "lora_adapter", "name": "lora_adapter/"})
+
+        # 3. SFT-only adapter (pre-DPO checkpoint — the safety net)
+        if sft_adapter_dir and sft_adapter_dir.exists():
+            sft_dest = vault_dir / "sft_adapter"
+            if not sft_dest.exists():
+                shutil.copytree(str(sft_adapter_dir), str(sft_dest))
+            artifacts.append({"type": "sft_adapter", "name": "sft_adapter/"})
+
+        # 4. Modelfile
+        for mf in output_dir.glob("Modelfile*"):
+            dest = vault_dir / mf.name
+            if not dest.exists():
+                shutil.copy2(str(mf), str(dest))
+            artifacts.append({"type": "modelfile", "name": mf.name})
+
+        # 5. Eval metrics
+        metrics = output_dir / "eval_metrics.json"
+        if metrics.exists():
+            shutil.copy2(str(metrics), str(vault_dir / "eval_metrics.json"))
+            artifacts.append({"type": "eval_metrics", "name": "eval_metrics.json"})
+
+        # 6. Training export snapshot (link to which data produced this model)
+        snapshots_dir = self.training_dir / "snapshots"
+        if snapshots_dir.exists():
+            latest_snap = sorted(snapshots_dir.glob("snap_*.json"))
+            if latest_snap:
+                shutil.copy2(str(latest_snap[-1]), str(vault_dir / "training_snapshot.json"))
+                artifacts.append({"type": "snapshot", "name": "training_snapshot.json"})
+
+        # 7. Write vault manifest
+        total_size = sum(a.get("size", 0) for a in artifacts)
+        manifest = {
+            "version": version,
+            "stored_at": datetime.now(timezone.utc).isoformat(),
+            "vault_path": str(vault_dir),
+            "artifacts": artifacts,
+            "total_size_bytes": total_size,
+            "ssd_mounted": self.DEFAULT_VAULT_PATH.parent.exists(),
+        }
+        (vault_dir / "MANIFEST.json").write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False)
+        )
+
+        # 8. Update registry with artifact_path
+        self._update_registry_artifact(version, str(vault_dir))
+
+        return manifest
+
+    def vault_list(self) -> List[Dict[str, Any]]:
+        """List all versions in the vault."""
+        vault = self.get_vault_path()
+        if not vault.exists():
+            return []
+        versions = []
+        for d in sorted(vault.iterdir()):
+            if d.is_dir() and (d / "MANIFEST.json").exists():
+                try:
+                    manifest = json.loads((d / "MANIFEST.json").read_text())
+                    versions.append(manifest)
+                except (json.JSONDecodeError, OSError):
+                    versions.append({"version": d.name, "error": "bad manifest"})
+        return versions
+
+    def vault_restore(self, version: str, restore_to: Optional[Path] = None) -> Dict[str, Any]:
+        """Restore a model version from the vault.
+
+        Copies artifacts from the vault back to the local output directory.
+        Also generates the ollama create command with the version tag.
+
+        Args:
+            version: Version to restore (e.g., "v1").
+            restore_to: Local path to restore into. Defaults to training output dir.
+
+        Returns:
+            {restored_to, artifacts, ollama_command}.
+        """
+        import shutil
+
+        vault_dir = self.vault_version_path(version)
+        if not vault_dir.exists():
+            return {"error": f"Version {version} not found in vault"}
+
+        dest = restore_to or (self.training_dir / "output")
+        dest.mkdir(parents=True, exist_ok=True)
+
+        restored = []
+
+        # Restore GGUF
+        for gguf in vault_dir.glob("*.gguf"):
+            shutil.copy2(str(gguf), str(dest / gguf.name))
+            restored.append(gguf.name)
+
+        # Restore LoRA adapter
+        lora_src = vault_dir / "lora_adapter"
+        if lora_src.exists():
+            lora_dest = dest / "lora_adapter"
+            if lora_dest.exists():
+                shutil.rmtree(str(lora_dest))
+            shutil.copytree(str(lora_src), str(lora_dest))
+            restored.append("lora_adapter/")
+
+        # Restore Modelfile
+        for mf in vault_dir.glob("Modelfile*"):
+            shutil.copy2(str(mf), str(dest / mf.name))
+            restored.append(mf.name)
+
+        # Find GGUF for ollama command
+        gguf_files = list(vault_dir.glob("*.gguf"))
+        gguf_name = gguf_files[0].name if gguf_files else "?.gguf"
+        ollama_cmd = f"ollama create nucleus-brother:{version} -f {dest / 'Modelfile'}"
+
+        return {
+            "restored_to": str(dest),
+            "artifacts": restored,
+            "ollama_command": ollama_cmd,
+            "gguf": gguf_name,
+        }
+
+    def rollback_model(self, to_version: str) -> Dict[str, Any]:
+        """Rollback: retire current primary, restore and promote a previous version.
+
+        This is the undo button. It:
+        1. Retires the current active model
+        2. Restores the target version from vault
+        3. Promotes it back to the previous status
+        4. Prints the ollama command to deploy
+
+        Args:
+            to_version: Version to rollback to (e.g., "v1").
+
+        Returns:
+            Rollback report.
+        """
+        # Find current active model
+        active = self.get_active_model()
+        if active and active["version"] == to_version:
+            return {"error": f"{to_version} is already active ({active['status']})"}
+
+        # Check target exists in vault
+        vault_dir = self.vault_version_path(to_version)
+        if not vault_dir.exists():
+            return {"error": f"{to_version} not found in vault. Available: "
+                             + ", ".join(v["version"] for v in self.vault_list())}
+
+        # Check target exists in registry
+        registry = self.get_registry()
+        target_entry = next((e for e in registry if e["version"] == to_version), None)
+        if not target_entry:
+            return {"error": f"{to_version} not in registry"}
+
+        report = {"from_version": None, "to_version": to_version}
+
+        # 1. Retire current
+        if active:
+            report["from_version"] = active["version"]
+            self.update_model_status(active["version"], "retired")
+
+        # 2. Restore from vault
+        restore = self.vault_restore(to_version)
+        report["restore"] = restore
+
+        # 3. Re-promote (to shadow — safe starting point)
+        self.update_model_status(to_version, "shadow")
+        report["new_status"] = "shadow"
+
+        # 4. Ollama command
+        report["ollama_command"] = restore.get("ollama_command", "")
+        report["instructions"] = (
+            f"Retired {report['from_version'] or 'none'}, "
+            f"restored {to_version} to shadow. Run:\n"
+            f"  {restore.get('ollama_command', '')}\n"
+            f"  nucleus archive graduation  # to check promotion readiness"
+        )
+
+        return report
+
+    def _update_registry_artifact(self, version: str, artifact_path: str):
+        """Add artifact_path to a registry entry."""
+        registry = self.get_registry()
+        for entry in registry:
+            if entry["version"] == version:
+                entry["artifact_path"] = artifact_path
+                break
+        else:
+            return  # Version not found
+
+        registry_path = self.training_dir / "model_registry.jsonl"
+        with open(registry_path, "w", encoding="utf-8") as f:
+            for entry in registry:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
     # ── Regression Gate (block promotion if model got worse) ──
 
     def regression_check(self, version: Optional[str] = None) -> Dict[str, Any]:

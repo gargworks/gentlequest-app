@@ -405,7 +405,14 @@ def main():
                 dpo_stats = dpo_trainer.train()
                 print(f"   ✅ DPO complete! Loss: {dpo_stats.training_loss:.4f}")
 
-                # Save updated adapter
+                # Save SFT checkpoint before DPO overwrites it
+                sft_backup = output_dir / "sft_adapter_backup"
+                if not sft_backup.exists():
+                    import shutil
+                    shutil.copytree(str(lora_path), str(sft_backup))
+                    print(f"   📦 SFT adapter preserved: {sft_backup}")
+
+                # Save DPO-updated adapter
                 model.save_pretrained(str(lora_path))
                 print(f"   LoRA adapter updated with DPO alignment")
 
@@ -452,23 +459,8 @@ PARAMETER num_ctx {max_seq_len}
     modelfile_path.write_text(modelfile_content)
     print(f"   Modelfile: {modelfile_path}")
 
-    # ── Final instructions ──
-    print(f"""
-{'='*50}
-🧬 THIRD BROTHER — READY TO DEPLOY
-{'='*50}
-
-  1. Create Ollama model:
-     ollama create nucleus-brother -f {modelfile_path}
-
-  2. Test it:
-     ollama run nucleus-brother "What should we build next?"
-
-  3. Use in Nucleus:
-     nucleus brother --provider local
-
-{'='*50}
-""")
+    # vtag set after vault storage if --register is used
+    vtag = "latest"
 
     # Record this training as a loop turn + mark archive as trained
     try:
@@ -552,8 +544,50 @@ PARAMETER num_ctx {max_seq_len}
                 print(f"\n   Check progress: nucleus archive shadow-stats")
                 print(f"   Promotion check: nucleus archive graduation")
 
+            # Store in Model Vault (SSD)
+            try:
+                sft_backup = output_dir / "sft_adapter_backup"
+                vault_result = archive.vault_store(
+                    version=version,
+                    output_dir=output_dir,
+                    sft_adapter_dir=sft_backup if sft_backup.exists() else None,
+                )
+                vault_path = vault_result.get("vault_path", "?")
+                ssd_mounted = vault_result.get("ssd_mounted", False)
+                loc = "SSD" if ssd_mounted else "LOCAL (⚠️ SSD not mounted)"
+                print(f"\n🏦 Model Vault: {loc}")
+                print(f"   Stored: {vault_path}")
+                for art in vault_result.get("artifacts", []):
+                    size_str = f" ({art['size'] // 1024 // 1024}MB)" if art.get("size") else ""
+                    print(f"   - {art['name']}{size_str}")
+                vtag = version  # Update for ollama instructions
+            except Exception as ve:
+                print(f"\n⚠️  Vault storage failed: {ve}")
+                print(f"   Model is still in {output_dir}")
+
     except Exception:
         pass
+
+    # ── Deploy instructions ──
+    print(f"""
+{'='*50}
+🧬 THIRD BROTHER — READY TO DEPLOY
+{'='*50}
+
+  1. Create Ollama model (versioned):
+     ollama create nucleus-brother:{vtag} -f {modelfile_path}
+
+  2. Test it:
+     ollama run nucleus-brother:{vtag} "What should we build next?"
+
+  3. Use in Nucleus:
+     nucleus brother --provider local
+
+  4. Rollback to any previous version:
+     nucleus archive rollback <version>
+
+{'='*50}
+""")
 
 
 if __name__ == "__main__":

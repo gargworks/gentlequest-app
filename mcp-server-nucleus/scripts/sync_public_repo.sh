@@ -307,7 +307,18 @@ if [ -f "$CLI" ]; then
     sed -i '' '/archive graduation/d' "$CLI"
     sed -i '' '/promote_canary/d' "$CLI"
     sed -i '' '/promote_primary/d' "$CLI"
-    echo "  Sanitized: $CLI (full training stack: all 12 phases)"
+    # Strip Model Vault (Phase 15)
+    sed -i '' '/VAULT_BLOCK_START/,/VAULT_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_vault/d' "$CLI"
+    sed -i '' '/archive_rollback/d' "$CLI"
+    sed -i '' '/vault_store/d' "$CLI"
+    sed -i '' '/vault_list/d' "$CLI"
+    sed -i '' '/vault_restore/d' "$CLI"
+    sed -i '' '/rollback_model/d' "$CLI"
+    sed -i '' '/MODEL VAULT/d' "$CLI"
+    sed -i '' '/nucleus-vault/d' "$CLI"
+    sed -i '' '/vault-restore/d' "$CLI"
+    echo "  Sanitized: $CLI (full training stack: all 15 phases)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──
