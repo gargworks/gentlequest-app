@@ -144,6 +144,19 @@ src/share_to_spotify.py export-ignore
 docs/Sovereign_Compliance_Officer_Handbook.md export-ignore
 scripts/telemetry-validate.mjs export-ignore
 
+# ── Feature Exposure Gate: HOLD modules (assessed 2026-03-17) ──
+# Scored >= 8 on competitive moat, security risk, or reversibility.
+# Private/hosted builds only. To re-enable for public, remove the line
+# here AND remove the corresponding entry from validate_public_surface.sh
+# SOVEREIGN_FILES array, then re-run the gate.
+src/mcp_server_nucleus/siphon.py export-ignore
+src/mcp_server_nucleus/distill.py export-ignore
+src/mcp_server_nucleus/replay.py export-ignore
+src/mcp_server_nucleus/validate.py export-ignore
+src/mcp_server_nucleus/runtime/token_budget.py export-ignore
+src/mcp_server_nucleus/runtime/recovery_ops.py export-ignore
+src/mcp_server_nucleus/runtime/firestore_bridge.py export-ignore
+
 # ── Hosted-only modules (not included in open-source distribution) ──
 src/mcp_server_nucleus/runtime/autopilot.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore

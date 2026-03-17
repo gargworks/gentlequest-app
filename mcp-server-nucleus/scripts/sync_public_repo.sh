@@ -87,6 +87,60 @@ cd "$SOURCE_REPO"
 # git archive creates a tar of the HEAD tree, we pipe it to tar to extract in the target
 git archive HEAD | tar -x -C "$TARGET_REPO"
 
+# 3b. Feature Exposure Sanitization (public copy only)
+# ─────────────────────────────────────────────────────────────────
+# Strips sensitive strings from files that are too coupled to
+# export-ignore (cli.py, tool_tiers.py). Only modifies the TARGET
+# (public copy). The private repo (mcp-server-nucleus) is NEVER touched.
+#
+# WHY each patch exists:
+#   tool_tiers.py — Plaintext beta token names in docstring + SHA256
+#                   hashes let anyone unlock tier 1/2 from source.
+#                   Public build defaults to tier 0 (all tiers via
+#                   hosted API only).
+#   cli.py        — Claude Code subprocess trick with
+#                   --dangerously-skip-permissions is our #1 moat.
+#                   Also strips "claude-code" from argparse choices
+#                   so it's not advertised as a provider option.
+#
+# TO RE-ENABLE a feature for public: remove the relevant sed block
+# below and verify via validate_public_surface.sh.
+# ─────────────────────────────────────────────────────────────────
+echo -e "${BLUE}🔒 Sanitizing feature exposure in target...${NC}"
+cd "$TARGET_REPO"
+SANITIZE_COUNT=0
+
+# ── tool_tiers.py: Strip beta token names and hash values ──
+TT="src/mcp_server_nucleus/tool_tiers.py"
+if [ -f "$TT" ]; then
+    # Plaintext token names in docstring → generic placeholder
+    sed -i '' 's/- "sovereign-launch-alpha":   Tier 1/- (set NUCLEUS_BETA_TOKEN):    Tier 1/' "$TT"
+    sed -i '' 's/- "titan-sovereign-godmode":  Tier 2/- (set NUCLEUS_BETA_TOKEN):    Tier 2/' "$TT"
+    # SHA256 hash values → env-var lookup (hash not readable from source)
+    sed -i '' 's/token_hash == "72904664178873eb"/token_hash == os.environ.get("_NT2H", "")/' "$TT"
+    sed -i '' 's/token_hash == "ded5b57a0e65ab5d"/token_hash == os.environ.get("_NT1H", "")/' "$TT"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $TT (token hashes + names)"
+fi
+
+# ── cli.py: Strip Claude Code provider secrets ──
+CLI="src/mcp_server_nucleus/cli.py"
+if [ -f "$CLI" ]; then
+    # Remove --dangerously-skip-permissions flag from subprocess call
+    sed -i '' 's/, "--dangerously-skip-permissions"//' "$CLI"
+    # Remove claude-code from argparse choices
+    sed -i '' "s/'gemini', 'anthropic', 'groq', 'claude-code'/'gemini', 'anthropic', 'groq'/" "$CLI"
+    # Strip "claude-code (Max sub)" from help text
+    sed -i '' 's/, or claude-code (Max sub)//' "$CLI"
+    # Strip "free via Max subscription" from /provider help
+    sed -i '' 's/(free via Max subscription)//' "$CLI"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $CLI (claude-code provider refs)"
+fi
+
+echo "  $SANITIZE_COUNT files sanitized."
+echo ""
+
 # 4. Staging
 echo -e "${BLUE}📝 Staging changes in target repository...${NC}"
 cd "$TARGET_REPO"
