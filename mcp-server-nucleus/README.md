@@ -12,7 +12,7 @@
 🌐 [**Website**](https://nucleusos.dev) • 🏦 [**Live KYC Demo**](https://nucleusos.dev/kyc-demo.html) • 🛠 [**170+ Tool Catalog**](https://hud.nucleusos.dev) • 💬 [**Discord**](https://discord.gg/RJuBNNJ5MT)
 
 > [!CAUTION]
-> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> **Agent security is no longer optional.** Recent incidents across the ecosystem — leaked API keys, supply-chain attacks, unaudited tool execution — prove that ungoverned agents are a liability.
 > Nucleus is built security-first: hypervisor controls, resource locking, compliance governance, and full audit trails — all 100% local.
 
 ---
@@ -278,15 +278,15 @@ Shows: sovereignty score (0-100), memory health, governance posture, DSoR integr
 
 ## ⚡ Comparison
 
-| | OpenClaw | Claude Code | **Nucleus** |
+| | Cloud Agent Platforms | IDE-Native Agents | **Nucleus** |
 |---|----------|-------------|-------------|
-| **Security** | ❌ Key leaks, sleeper agents | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
+| **Security** | ⚠️ Varies widely | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
 | **Compliance** | ❌ None | ❌ None | ✅ DORA, MAS TRM, SOC2 |
 | **Audit Trail** | ❌ | ⚠️ Basic logs | ✅ Full DSoR + HTML reports |
 | **HITL** | ❌ | ⚠️ Limited | ✅ Jurisdiction-configurable |
-| **Cross-Platform** | ❌ | ❌ | ✅ Any MCP client |
-| **Local-First** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
-| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+| **Cross-Platform** | ⚠️ Vendor lock-in | ❌ Single IDE | ✅ Any MCP client |
+| **Local-First** | ❌ Cloud-required | ⚠️ Some cloud | ✅ 100% local |
+| **Open Source** | ⚠️ Varies | ❌ Mostly closed | ✅ MIT |
 
 ---
 

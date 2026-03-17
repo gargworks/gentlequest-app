@@ -1,51 +1,32 @@
-# Nucleus Agent Roles & Responsibilities
+# Nucleus Agent Guidelines
 
-> **Source of truth for agent role definitions:** `.brain/system_architecture_and_hierarchy.md`
-
-This file defines the division of labor between AI agents operating on the Nucleus codebase.
+This file defines guidelines for AI agents working on the Nucleus codebase.
 
 ---
 
-## Agent Hierarchy
+## Principles
 
-### 🧠 Antigravity (Sovereign Strategic Brain)
-- Owns long-horizon strategy, phase design, and mission scoping.
-- Maintains sovereign memory, governance, and zero-shortcut proofs.
-- Authorizes major architectural changes and autonomy envelope shifts.
-- **Do not bypass Antigravity for: phase gating, policy changes, or autonomy escalation.**
+1. **Read before write** — understand existing code before modifying it
+2. **Branch, don't mutate** — work on branches, test, merge only after tests pass
+3. **Append-only brain** — never overwrite engrams, ledger entries, or event logs
+4. **Test coverage** — new features require tests. Bug fixes require regression tests.
+5. **Security first** — no secrets in committed files. Run pre-commit hooks.
 
-### ⚡ Windsurf (Execution Architect & Orchestrator)
-- Drives repo-local workflows: tests, CI, releases, and sync scripts.
-- Owns `/publish-public`, pre-launch validation gates, and multi-registry releases.
-- Edits `.brain` operational docs, task lists, walkthroughs, and decisions ledger.
-- **Do not bypass Windsurf for: release tagging, CI changes, or `.brain` config edits.**
+## Guardrails
 
-### 🔧 Claude Code (Tactical Coding Muscle)
-- Generates and refactors code, tests, and docs within guardrails set by Antigravity and Windsurf.
-- Operates on implementation details (modules, functions, fixtures), not governance or release protocols.
-- Proposes changes; final integration into critical flows is mediated by Windsurf.
-- **Do not let Claude Code touch: `.brain/`, release scripts, CI gates, or autonomy policies.**
+| Area | Do | Don't |
+|------|-----|-------|
+| Code | Generate modules, functions, refactors, tests | Rewrite release scripts or CI gates |
+| Docs | Draft comments, docstrings, README sections | Edit governance docs without review |
+| Brain | Read engrams, query state, write new engrams | Overwrite or delete existing brain data |
+| Releases | Propose version bumps with changelog | Push releases without test validation |
 
----
+## Safety
 
-## Claude Code Guardrails
-
-| Area        | ✅ Do                                                           | ❌ Don't                                              |
-|-------------|----------------------------------------------------------------|------------------------------------------------------|
-| Code        | Generate modules, functions, refactors, tests, type hints      | Rewrite release scripts or `.brain` helpers          |
-| Docs        | Draft comments, docstrings, local README snippets              | Edit governance docs or zero-shortcut proofs         |
-| Experiments | Prototype new features on branches, spike ideas                | Change autonomy policies or incident controller core |
-| Integration | Propose changes for Windsurf to review and merge               | Directly modify CI gates or `/publish-public` flow   |
+- Pre-launch validation must show ≥18/20 tests passing before any release tag
+- Any destructive operation (delete, overwrite, force-push) requires confirmation
+- Circuit breaker: if 3 consecutive operations fail, stop and report
 
 ---
 
-## Safety Envelope
-
-- Default autonomy mode: `observe_only`
-- `allow_disable_command: false` (always)
-- Any autonomy escalation requires Antigravity authorization.
-- Pre-launch validation must show ≥18/20 tests passing before any release tag.
-
----
-
-*See `.brain/system_architecture_and_hierarchy.md` for the full Recursive Sovereignty architecture and agent communication protocols.*
+*For contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).*
