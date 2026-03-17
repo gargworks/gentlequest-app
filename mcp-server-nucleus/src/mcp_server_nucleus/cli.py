@@ -4011,6 +4011,17 @@ def main():
     archive_synth = archive_subparsers.add_parser('synthesize', help='Self-play: manufacture DPO pairs from existing prompts via LLM')
     archive_synth.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation (default: gemini)')
     archive_synth.add_argument('--count', type=int, default=100, help='Number of pairs to synthesize (default: 100)')
+    archive_synth.add_argument('--judge', type=str, default=None, help='LLM provider for judging (enables LLM-as-Judge instead of heuristic)')
+    archive_spin = archive_subparsers.add_parser('spin', help='Iterative self-play: trained model vs base model (SPIN)')
+    archive_spin.add_argument('--current', type=str, required=True, help='Current trained model provider (e.g., local)')
+    archive_spin.add_argument('--base', type=str, default='gemini', help='Base model provider (default: gemini)')
+    archive_spin.add_argument('--judge', type=str, default=None, help='LLM judge provider (default: heuristic)')
+    archive_spin.add_argument('--count', type=int, default=100, help='Number of comparisons (default: 100)')
+    archive_spin.add_argument('--round', type=int, default=1, help='SPIN round number (default: 1)')
+    archive_active = archive_subparsers.add_parser('active-learn', help='Active learning: generate targeted data for model weaknesses')
+    archive_active.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation')
+    archive_active.add_argument('--eval-provider', type=str, default=None, help='Run eval first against this provider to find weaknesses')
+    archive_active.add_argument('--count', type=int, default=20, help='Pairs per weakness (default: 20)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -5038,11 +5049,13 @@ def handle_archive_command(args) -> int:
     elif cmd == 'synthesize':  # SYNTH_BLOCK_START
         synth_provider = getattr(args, 'provider', 'gemini')
         synth_count = getattr(args, 'count', 100)
+        judge_provider = getattr(args, 'judge', None)
 
         print("=" * 50)
         print("🧪 SELF-PLAY SYNTHESIS — Manufacturing DPO Pairs")
         print("=" * 50)
         print(f"  Provider:  {synth_provider}")
+        print(f"  Judge:     {judge_provider or 'heuristic (reference wins)'}")
         print(f"  Target:    {synth_count} pairs")
 
         dpo_before = archive.count_preferences()
@@ -5052,9 +5065,18 @@ def handle_archive_command(args) -> int:
             llm = get_llm_client(synth_provider)
             model_fn = lambda p: llm.generate_content(p).text
 
+            # LLM-as-Judge if provider specified
+            judge_fn = None
+            if judge_provider:
+                judge_llm = get_llm_client(judge_provider)
+                judge_model_fn = lambda p: judge_llm.generate_content(p).text
+                judge_fn = archive.build_judge_fn(judge_model_fn)
+                print(f"  Using LLM-as-Judge ({judge_provider})")
+
             print(f"\n  Generating alternative responses...")
             synthesized = archive.synthesize_preferences(
                 model_fn=model_fn,
+                judge_fn=judge_fn,
                 count=synth_count,
             )
             dpo_after = archive.count_preferences()
@@ -5070,6 +5092,139 @@ def handle_archive_command(args) -> int:
             print(f"     Ensure {synth_provider.upper()}_API_KEY is set.")
         print()
         return 0  # SYNTH_BLOCK_END
+
+    elif cmd == 'spin':  # SPIN_BLOCK_START
+        current_provider = getattr(args, 'current', 'local')
+        base_provider = getattr(args, 'base', 'gemini')
+        judge_provider = getattr(args, 'judge', None)
+        spin_count = getattr(args, 'count', 100)
+        spin_round = getattr(args, 'round', 1)
+
+        print("=" * 50)
+        print("🔄 ITERATIVE SELF-PLAY (SPIN) — The Flywheel")
+        print("=" * 50)
+        print(f"  Current model:  {current_provider}")
+        print(f"  Base model:     {base_provider}")
+        print(f"  Judge:          {judge_provider or 'heuristic'}")
+        print(f"  Round:          {spin_round}")
+        print(f"  Target:         {spin_count} comparisons")
+
+        dpo_before = archive.count_preferences()
+
+        try:
+            from .runtime.llm_client import get_llm_client
+            current_llm = get_llm_client(current_provider)
+            base_llm = get_llm_client(base_provider)
+            current_fn = lambda p: current_llm.generate_content(p).text
+            base_fn = lambda p: base_llm.generate_content(p).text
+
+            judge_fn = None
+            if judge_provider:
+                judge_llm = get_llm_client(judge_provider)
+                judge_model_fn = lambda p: judge_llm.generate_content(p).text
+                judge_fn = archive.build_judge_fn(judge_model_fn)
+
+            print(f"\n  Running SPIN round {spin_round}...")
+            stats = archive.iterative_self_play(
+                current_model_fn=current_fn,
+                base_model_fn=base_fn,
+                judge_fn=judge_fn,
+                count=spin_count,
+                round_num=spin_round,
+            )
+
+            dpo_after = archive.count_preferences()
+            print(f"\n  ✅ SPIN Round {spin_round} Complete")
+            print(f"     Generated:    {stats['generated']} DPO pairs")
+            print(f"     Current wins: {stats['current_wins']}")
+            print(f"     Base wins:    {stats['base_wins']}")
+            print(f"     Ties:         {stats['ties']}")
+            print(f"     DPO total:    {dpo_before} → {dpo_after}")
+
+            if stats['current_wins'] > stats['base_wins']:
+                print(f"\n  Current model is winning — training is working!")
+            elif stats['base_wins'] > stats['current_wins']:
+                print(f"\n  Base model still better — need more training data.")
+            print(f"\n  Next: retrain with new DPO data, then run round {spin_round + 1}")
+        except Exception as e:
+            print(f"\n  ❌ SPIN failed: {e}")
+        print()
+        return 0  # SPIN_BLOCK_END
+
+    elif cmd == 'active-learn':  # ACTIVE_LEARN_BLOCK_START
+        al_provider = getattr(args, 'provider', 'gemini')
+        eval_provider = getattr(args, 'eval_provider', None)
+        al_count = getattr(args, 'count', 20)
+
+        print("=" * 50)
+        print("🎯 ACTIVE LEARNING — Target Weaknesses")
+        print("=" * 50)
+
+        try:
+            from .runtime.llm_client import get_llm_client
+
+            # Step 1: Get or run eval results
+            eval_results_path = archive.training_dir / "eval_results.json"
+            eval_results = None
+
+            if eval_provider:
+                print(f"\n  Running eval against {eval_provider} first...")
+                eval_llm = get_llm_client(eval_provider)
+                eval_fn = lambda p: eval_llm.generate_content(p).text
+                eval_results = archive.run_eval(eval_fn, 50)
+                eval_results_path.parent.mkdir(parents=True, exist_ok=True)
+                eval_results_path.write_text(json.dumps(eval_results, indent=2))
+                print(f"  Eval score: {eval_results['avg_score']}")
+            elif eval_results_path.exists():
+                eval_results = json.loads(eval_results_path.read_text())
+                print(f"  Using cached eval results (score: {eval_results.get('avg_score', '?')})")
+            else:
+                print(f"  No eval results found. Run eval first:")
+                print(f"    nucleus archive eval --run gemini")
+                print(f"    nucleus archive active-learn --provider gemini")
+                return 0
+
+            # Step 2: Identify weaknesses
+            weaknesses = archive.identify_weaknesses(eval_results)
+            if not weaknesses:
+                print(f"\n  No significant weaknesses found. Model is balanced.")
+                return 0
+
+            print(f"\n  Found {len(weaknesses)} weaknesses:")
+            for w in weaknesses[:5]:
+                print(f"    [{w['priority']:8s}] {w['name']:15s} score={w['score']} gap={w['gap']}")
+
+            # Step 3: Generate targeted training data
+            print(f"\n  Generating targeted training data ({al_count} per weakness)...")
+            gen_llm = get_llm_client(al_provider)
+            gen_fn = lambda p: gen_llm.generate_content(p).text
+
+            turns_before = archive.get_stats().get('total_turns', 0)
+            dpo_before = archive.count_preferences()
+
+            al_stats = archive.synthesize_for_weaknesses(
+                model_fn=gen_fn,
+                eval_results=eval_results,
+                count_per_weakness=al_count,
+            )
+
+            turns_after = archive.get_stats().get('total_turns', 0)
+            dpo_after = archive.count_preferences()
+
+            print(f"\n  ✅ Active Learning Complete")
+            print(f"     Generated: {al_stats['total_generated']} targeted pairs")
+            print(f"     SFT turns: {turns_before} → {turns_after}")
+            print(f"     DPO pairs: {dpo_before} → {dpo_after}")
+            for wb in al_stats.get('by_weakness', []):
+                print(f"       {wb['name']:15s}: +{wb['generated']} pairs")
+
+            print(f"\n  Re-export and retrain to close the gaps:")
+            print(f"    nucleus archive export")
+            print(f"    nucleus archive eval --run {eval_provider or 'local'}")
+        except Exception as e:
+            print(f"\n  ❌ Active learning failed: {e}")
+        print()
+        return 0  # ACTIVE_LEARN_BLOCK_END
 
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
@@ -5092,6 +5247,8 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive cot-export  — export <think> data")
         print(f"   nucleus archive eval        — generate eval benchmark")
         print(f"   nucleus archive synthesize  — self-play DPO manufacturing")
+        print(f"   nucleus archive spin        — iterative self-play (SPIN)")
+        print(f"   nucleus archive active-learn — target model weaknesses")
         print(f"   nucleus archive train       — fine-tuning pipeline")
         print(f"   nucleus archive ingest      — bulk import conversations")
         return 0

@@ -1476,6 +1476,340 @@ class ArchivePipeline:
 
         return synthesized
 
+    # ── LLM-as-Judge (replace heuristic with actual quality evaluation) ──
+
+    @staticmethod
+    def build_judge_fn(judge_model_fn) -> callable:
+        """Build a judge function that uses an LLM to evaluate response quality.
+
+        The judge sees both responses (randomized order) and picks the better one.
+        This is how Anthropic, OpenAI, and DeepSeek actually train — not heuristics.
+
+        Args:
+            judge_model_fn: Callable that takes a prompt and returns a response.
+
+        Returns:
+            A judge function compatible with synthesize_preferences(judge_fn=...).
+        """
+        def judge(prompt: str, resp_a: str, resp_b: str) -> str:
+            # Randomize presentation order to eliminate position bias
+            import random
+            if random.random() < 0.5:
+                first, second = resp_a, resp_b
+                mapping = {"1": "a", "2": "b"}
+            else:
+                first, second = resp_b, resp_a
+                mapping = {"1": "b", "2": "a"}
+
+            judge_prompt = f"""You are an expert judge evaluating AI assistant responses.
+
+TASK: Given a user prompt and two responses, decide which response is better.
+
+USER PROMPT:
+{prompt[:1500]}
+
+RESPONSE 1:
+{first[:2000]}
+
+RESPONSE 2:
+{second[:2000]}
+
+CRITERIA:
+- Correctness: Is the response factually and technically accurate?
+- Helpfulness: Does it actually address what the user asked?
+- Completeness: Does it cover the key points without being bloated?
+- Clarity: Is it well-structured and easy to follow?
+
+Reply with ONLY "1" or "2" (the number of the better response). If they are equal, reply "1"."""
+
+            try:
+                verdict = judge_model_fn(judge_prompt).strip()
+                # Extract just the number
+                for char in verdict:
+                    if char in ("1", "2"):
+                        return mapping[char]
+                return "a"  # Default: reference wins
+            except Exception:
+                return "a"
+
+        return judge
+
+    # ── Iterative Self-Play / SPIN (use trained model against itself) ──
+
+    def iterative_self_play(
+        self,
+        current_model_fn,
+        base_model_fn,
+        judge_fn=None,
+        count: int = 100,
+        round_num: int = 1,
+    ) -> Dict[str, Any]:
+        """SPIN-style iterative self-play: trained model vs base model.
+
+        After training the Third Brother (round N), generate responses from both
+        the trained model and the base model. Judge which is better. Create DPO
+        pairs. Retrain (round N+1). This is the flywheel that DeepSeek R1 uses.
+
+        Args:
+            current_model_fn: The current (trained) model.
+            base_model_fn: The base (pre-training) model.
+            judge_fn: LLM judge (use build_judge_fn). Falls back to heuristic.
+            count: Number of comparisons to generate.
+            round_num: Which iteration of self-play this is.
+
+        Returns:
+            Stats: {generated, current_wins, base_wins, ties, round}.
+        """
+        all_pairs = self._collect_quality_pairs()
+        if len(all_pairs) < 20:
+            return {"error": "Not enough data", "generated": 0}
+
+        existing_spin = {
+            p.get("metadata", {}).get("spin_prompt_hash", "")
+            for p in self.get_preferences()
+            if p.get("source") == "spin" and
+               p.get("metadata", {}).get("spin_round") == round_num
+        }
+
+        stats = {"generated": 0, "current_wins": 0, "base_wins": 0,
+                 "ties": 0, "round": round_num}
+
+        for pair in all_pairs[:count * 2]:
+            if stats["generated"] >= count:
+                break
+
+            prompt = pair["user"]
+            prompt_hash = hashlib.md5(
+                (prompt[:200] + f"_r{round_num}").encode()
+            ).hexdigest()[:12]
+            if prompt_hash in existing_spin:
+                continue
+
+            try:
+                current_resp = current_model_fn(prompt)
+                base_resp = base_model_fn(prompt)
+                if not current_resp or not base_resp:
+                    continue
+                if len(current_resp) < 20 or len(base_resp) < 20:
+                    continue
+
+                # Judge
+                if judge_fn:
+                    winner = judge_fn(prompt, current_resp, base_resp)
+                else:
+                    # Heuristic: current model should be better (it's trained)
+                    winner = "a"
+
+                if winner == "a":
+                    chosen, rejected = current_resp, base_resp
+                    stats["current_wins"] += 1
+                elif winner == "b":
+                    chosen, rejected = base_resp, current_resp
+                    stats["base_wins"] += 1
+                else:
+                    stats["ties"] += 1
+                    continue
+
+                pref = self.record_preference(
+                    prompt=prompt,
+                    chosen=chosen,
+                    rejected=rejected,
+                    source="spin",
+                    metadata={
+                        "spin_prompt_hash": prompt_hash,
+                        "spin_round": round_num,
+                        "winner": "current" if winner == "a" else "base",
+                    },
+                )
+                if pref:
+                    stats["generated"] += 1
+
+            except Exception:
+                continue
+
+        return stats
+
+    # ── Active Learning (target weakness, synthesize gap-filling data) ──
+
+    def identify_weaknesses(self, eval_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Analyze eval results to find where the model is weakest.
+
+        Returns targeted prompts for gap-filling synthesis.
+
+        Args:
+            eval_results: Output from run_eval().
+
+        Returns:
+            List of weakness descriptors with target prompts.
+        """
+        weaknesses = []
+
+        # Find weak categories (below average)
+        avg = eval_results.get("avg_score", 0)
+        for cat, score in eval_results.get("by_category", {}).items():
+            if score < avg * 0.8:  # 20% below average
+                weaknesses.append({
+                    "type": "category",
+                    "name": cat,
+                    "score": score,
+                    "gap": round(avg - score, 3),
+                    "priority": "high" if score < avg * 0.5 else "medium",
+                })
+
+        # Find weak difficulties
+        for diff, score in eval_results.get("by_difficulty", {}).items():
+            if score < avg * 0.7:
+                weaknesses.append({
+                    "type": "difficulty",
+                    "name": diff,
+                    "score": score,
+                    "gap": round(avg - score, 3),
+                    "priority": "high",
+                })
+
+        # Find individual failures (score < 0.2)
+        failed_cases = [
+            r for r in eval_results.get("results", [])
+            if r.get("score", 0) < 0.2
+        ]
+        if failed_cases:
+            weaknesses.append({
+                "type": "failures",
+                "name": f"{len(failed_cases)} hard failures",
+                "score": 0,
+                "gap": avg,
+                "priority": "critical",
+                "eval_ids": [r["eval_id"] for r in failed_cases[:20]],
+            })
+
+        return sorted(weaknesses, key=lambda w: w["gap"], reverse=True)
+
+    def synthesize_for_weaknesses(
+        self,
+        model_fn,
+        eval_results: Dict[str, Any],
+        count_per_weakness: int = 20,
+    ) -> Dict[str, Any]:
+        """Active learning: generate targeted training data for weak areas.
+
+        Uses eval results to identify gaps, then generates prompts and
+        reference answers specifically for those categories/difficulties.
+
+        Args:
+            model_fn: LLM to generate prompts and reference answers.
+            eval_results: Output from run_eval().
+            count_per_weakness: How many pairs to generate per weakness.
+
+        Returns:
+            Stats: {total_generated, by_weakness: [{name, generated}]}.
+        """
+        weaknesses = self.identify_weaknesses(eval_results)
+        if not weaknesses:
+            return {"total_generated": 0, "weaknesses_found": 0}
+
+        # Category → prompt generation instructions
+        CATEGORY_PROMPTS = {
+            "debug": "Write a realistic debugging question about a {lang} application. "
+                     "Include an error message or stack trace. Then provide the correct fix.",
+            "code": "Write a realistic coding task: implement a function or feature in {lang}. "
+                    "Then provide the correct, clean implementation.",
+            "decision": "Write a realistic technical decision question (e.g., architecture, "
+                        "tool choice, design pattern). Then provide a well-reasoned recommendation.",
+            "ops": "Write a realistic DevOps/deployment question (CI/CD, Docker, cloud). "
+                   "Then provide the correct procedure or fix.",
+            "general": "Write a realistic software engineering question. "
+                       "Then provide a helpful, accurate answer.",
+        }
+        LANGS = ["Python", "TypeScript", "Go", "Rust", "JavaScript"]
+
+        stats = {"total_generated": 0, "weaknesses_found": len(weaknesses),
+                 "by_weakness": []}
+
+        for weakness in weaknesses[:5]:  # Top 5 weaknesses
+            w_name = weakness["name"]
+            generated = 0
+
+            if weakness["type"] == "category" and w_name in CATEGORY_PROMPTS:
+                template = CATEGORY_PROMPTS[w_name]
+                for i in range(count_per_weakness):
+                    lang = LANGS[i % len(LANGS)]
+                    gen_prompt = (
+                        f"{template.format(lang=lang)}\n\n"
+                        f"Format your response as:\n"
+                        f"QUESTION: <the question>\n"
+                        f"ANSWER: <the answer>"
+                    )
+                    try:
+                        raw = model_fn(gen_prompt)
+                        if not raw or "QUESTION:" not in raw or "ANSWER:" not in raw:
+                            continue
+                        parts = raw.split("ANSWER:", 1)
+                        question = parts[0].replace("QUESTION:", "").strip()
+                        answer = parts[1].strip()
+                        if len(question) < 20 or len(answer) < 50:
+                            continue
+
+                        # Record as a high-quality SFT turn
+                        self.record_turn(
+                            brother="synthesis",
+                            intent=f"active_learning_{w_name}",
+                            actions=[f"Generated {w_name} training pair"],
+                            tools_used=["active_learning"],
+                            decisions=[f"Target weakness: {w_name}"],
+                            outcome="Synthetic training pair",
+                            signal_absorbed=[],
+                            signal_produced=[],
+                            confidence=0.7,
+                            context=f"Active learning for {w_name} (gap={weakness['gap']})",
+                            conversation=[
+                                {"role": "user", "content": question},
+                                {"role": "assistant", "content": answer},
+                            ],
+                        )
+                        generated += 1
+                    except Exception:
+                        continue
+
+            elif weakness["type"] == "failures":
+                # Re-generate better answers for failed eval cases
+                suite = self.generate_eval_suite(100)
+                failed_ids = set(weakness.get("eval_ids", []))
+                for case in suite:
+                    if case["eval_id"] not in failed_ids:
+                        continue
+                    if generated >= count_per_weakness:
+                        break
+                    try:
+                        # Ask the model for a better answer
+                        better_prompt = (
+                            f"Give the best possible answer to this question. "
+                            f"Be thorough, accurate, and well-structured.\n\n"
+                            f"Question: {case['prompt']}"
+                        )
+                        better_answer = model_fn(better_prompt)
+                        if not better_answer or len(better_answer) < 50:
+                            continue
+
+                        # Create a DPO pair: better answer vs failed reference
+                        self.record_preference(
+                            prompt=case["prompt"],
+                            chosen=better_answer,
+                            rejected=case["reference"][:500],  # Original was bad
+                            source="active_learning",
+                            metadata={
+                                "weakness": w_name,
+                                "eval_id": case["eval_id"],
+                            },
+                        )
+                        generated += 1
+                    except Exception:
+                        continue
+
+            stats["by_weakness"].append({"name": w_name, "generated": generated})
+            stats["total_generated"] += generated
+
+        return stats
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:

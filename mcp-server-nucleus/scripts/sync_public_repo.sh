@@ -226,7 +226,27 @@ if [ -f "$CLI" ]; then
     sed -i '' '/SELF-PLAY/d' "$CLI"
     sed -i '' '/Manufacturing DPO/d' "$CLI"
     sed -i '' '/archive synthesize/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine/eval/synth refs)"
+    # Strip SPIN / iterative self-play (Phase 8)
+    sed -i '' '/SPIN_BLOCK_START/,/SPIN_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_spin/d' "$CLI"
+    sed -i '' '/iterative_self_play/d' "$CLI"
+    sed -i '' '/SPIN/d' "$CLI"
+    sed -i '' '/spin_round/d' "$CLI"
+    sed -i '' '/spin_count/d' "$CLI"
+    sed -i '' '/archive spin/d' "$CLI"
+    # Strip active learning (Phase 9)
+    sed -i '' '/ACTIVE_LEARN_BLOCK_START/,/ACTIVE_LEARN_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_active/d' "$CLI"
+    sed -i '' '/active-learn/d' "$CLI"
+    sed -i '' '/active_learn/d' "$CLI"
+    sed -i '' '/identify_weaknesses/d' "$CLI"
+    sed -i '' '/synthesize_for_weaknesses/d' "$CLI"
+    sed -i '' '/ACTIVE LEARNING/d' "$CLI"
+    # Strip LLM-as-Judge refs
+    sed -i '' '/build_judge_fn/d' "$CLI"
+    sed -i '' '/LLM-as-Judge/d' "$CLI"
+    sed -i '' '/judge_model_fn/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine/eval/synth/spin/active refs)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──
