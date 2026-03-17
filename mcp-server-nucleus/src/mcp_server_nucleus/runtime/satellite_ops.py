@@ -393,12 +393,7 @@ def _format_satellite_cli(view: Dict) -> str:
     products = view.get("products")
     if products:
         lines.append("│  🚀 CORE PRODUCTS                                       │")
-        p_list = [
-            ("Nucleus OS", products.get("nucleus_os", {})),
-            ("GentleQuest", products.get("gentlequest", {})),
-            ("Believe-it-bot", products.get("believe_it_bot", {})),
-            ("Sovereign Studio", products.get("sovereign_studio", {}))
-        ]
+        p_list = [(k.replace("_", " ").title(), v) for k, v in products.items()]
         for name, data in p_list:
             status = data.get("status", "🔴 OFFLINE")
             line_str = f"│     {name:<18} {status:<34} │"

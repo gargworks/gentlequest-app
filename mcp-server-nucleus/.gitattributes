@@ -1,4 +1,8 @@
-# Precision Sync: Exclude internal tools and private scripts from public repository
+# Export-ignore: files excluded from public archive via git archive
+# Stale CI pipeline (not Nucleus)
+.github/workflows/ci_cd_pipeline.yml export-ignore
+
+# Internal tools and private scripts
 scripts/sync_public_repo.sh export-ignore
 scripts/validate_public_surface.sh export-ignore
 scripts/publish_pypi.sh export-ignore
@@ -92,6 +96,8 @@ patch_orchestration.py export-ignore
 install_phase73.sh export-ignore
 demo_governance.sh export-ignore
 fuzzer_report.txt export-ignore
+test3.txt export-ignore
+tests/test3.txt export-ignore
 hr_report_sample.txt export-ignore
 *.log export-ignore
 shortcut_plan.md export-ignore
@@ -126,7 +132,7 @@ TERMINAL_SYNC_QUICKSTART.md export-ignore
 examples/claude_desktop_config.example.json export-ignore
 package.json export-ignore
 
-# ── SOVEREIGN: Internal strategy (zero user value) ──
+# ── Internal-only modules ──
 src/mcp_server_nucleus/runtime/growth_ops.py export-ignore
 src/mcp_server_nucleus/runtime/outbound_ops.py export-ignore
 src/mcp_server_nucleus/runtime/dogfood_tracker.py export-ignore
@@ -136,7 +142,7 @@ src/share_to_spotify.py export-ignore
 docs/Sovereign_Compliance_Officer_Handbook.md export-ignore
 scripts/telemetry-validate.mjs export-ignore
 
-# ── SOVEREIGN: Competitive moat engines (black-box only) ──
+# ── Hosted-only modules (not included in open-source distribution) ──
 src/mcp_server_nucleus/runtime/autopilot.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/pulse_and_polish.py export-ignore

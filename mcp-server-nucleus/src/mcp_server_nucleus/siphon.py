@@ -32,13 +32,11 @@ class ArtifactSiphon:
         self.allowed_extensions = {".md", ".txt", ".resolved", ".json", ".log"}
         self.blocked_extensions = {".exe", ".db", ".bin", ".dylib", ".sfl4", ".exe"}
         
-        # Sovereign Fingerprinting Signatures
+        # Project fingerprinting signatures
         self.signatures = {
             self.project_name,
             "Nucleus",
             "mcp-server-nucleus",
-            "ai-mvp-backend",
-            "GentleQuest"
         }
         
     def is_semantic_context(self, file_path: Path) -> bool:

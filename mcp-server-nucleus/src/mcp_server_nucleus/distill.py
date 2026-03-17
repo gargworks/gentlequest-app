@@ -37,7 +37,7 @@ from typing import List, Dict, Any, Optional, Tuple
 # DCA SCHEMA V1 (JSON-LD)
 # ============================================================================
 
-DCA_CONTEXT = "https://nucleus.dev/dca/v1"
+DCA_CONTEXT = "https://nucleusos.dev/dca/v1"
 DCA_TYPE = "DecisionAtom"
 VIBE_TYPE = "VibeEngram"
 
