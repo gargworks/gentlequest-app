@@ -229,7 +229,7 @@ PARAMETER num_ctx {max_seq_len}
 {'='*50}
 """)
 
-    # Record this training as a loop turn
+    # Record this training as a loop turn + mark archive as trained
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
         from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
@@ -246,6 +246,8 @@ PARAMETER num_ctx {max_seq_len}
             confidence=0.9,
             context="Third Brother training pipeline",
         )
+        archive.mark_trained()
+        print("  Retrain counter reset.")
     except Exception:
         pass
 

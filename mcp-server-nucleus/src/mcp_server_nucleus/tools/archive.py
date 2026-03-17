@@ -66,11 +66,17 @@ def register(mcp, helpers):
             "output_dir": str(out_dir),
         })
 
+    def _h_retrain_status():
+        from ..runtime.archive_pipeline import ArchivePipeline
+        archive = ArchivePipeline()
+        return make_response(True, data=archive.should_retrain())
+
     ACTION_MAP = {
         "stats": (_h_stats, "Show archive statistics"),
         "recent": (_h_recent, "Show recent loop turns"),
         "record": (_h_record, "Record a loop turn"),
         "export": (_h_export, "Export training data for fine-tuning"),
+        "retrain_status": (_h_retrain_status, "Check if new training is recommended"),
     }
 
     @mcp.tool()
@@ -82,6 +88,7 @@ def register(mcp, helpers):
         - recent: Show recent loop turns (params: limit=10)
         - record: Record a loop turn (params: brother, intent, outcome, decisions, actions, tools_used, context, confidence, conversation)
         - export: Export training data (params: format=all|gemini|openai|anthropic)
+        - retrain_status: Check if enough new data has accumulated to retrain
         """
         return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
 

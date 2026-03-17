@@ -110,7 +110,39 @@ class SwarmsOrchestrator:
         self.trainer = PrivateGraphTrainer(brain_path)
         
         self._active_missions = {}
+        self._local_available = None  # Cached check for Third Brother
         self._load_state()
+
+    def _get_best_model(self, job_type: str = "ORCHESTRATION"):
+        """Route to Third Brother (local) when available, Gemini otherwise.
+
+        The Third Brother handles routine orchestration at $0 cost.
+        Complex tasks (PREMIUM tier) always go to frontier models.
+        """
+        # Premium/complex tasks → always frontier
+        if job_type in ("PREMIUM", "CRITICAL"):
+            return DualEngineLLM(job_type=job_type)
+
+        # Check if local model is available (cached)
+        if self._local_available is None:
+            try:
+                from .llm_client import LocalLLM
+                local = LocalLLM()
+                local.generate_content("test", max_tokens=5)
+                self._local_available = True
+                logger.info("🧬 Third Brother (local) available — routing routine tasks locally")
+            except Exception:
+                self._local_available = False
+
+        if self._local_available:
+            try:
+                from .llm_client import LocalLLM
+                return LocalLLM()
+            except Exception:
+                pass
+
+        # Fallback: Gemini
+        return DualEngineLLM(job_type=job_type)
 
     def _load_state(self):
         """Load swarm state with BrainLock"""
@@ -275,12 +307,11 @@ CRITICAL: When using files or tools, always search within the Project Root first
 """
                     context["system_prompt"] = awareness_injection + context["system_prompt"]
                     
-                    # 2. Get LLM with correct tier routing
-                    # DualEngineLLM takes job_type in constructor and IS the model (has generate_content)
+                    # 2. Get LLM — prefer Third Brother (local) for routine, Gemini for complex
                     job_type = context.get('job_type', 'ORCHESTRATION')
-                    model = DualEngineLLM(job_type=job_type)
-                    
-                    logger.info(f"📡 Agent {agent_persona} using job_type={job_type}, tier={model.tier}")
+                    model = self._get_best_model(job_type)
+
+                    logger.info(f"📡 Agent {agent_persona} using {model.__class__.__name__}, job_type={job_type}")
                     
                     # 3. Spawn and run agent (DualEngineLLM has generate_content method)
                     agent = EphemeralAgent(context, model)

@@ -2133,7 +2133,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   Search: /recall <query>")
                 else:
                     print(f"📚 Archive is empty. Auto-saves every turn.")
-                # Training data stats
+                # Training data stats + retrain status
                 try:
                     from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
                     _ta = ArchivePipeline()
@@ -2141,8 +2141,11 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     _total = _ts.get('total_turns', 0)
                     _by = _ts.get('by_brother', {})
                     _brothers = ", ".join(f"{k}={v}" for k, v in sorted(_by.items()))
+                    _rt = _ta.should_retrain()
+                    _rt_flag = "  RETRAIN READY" if _rt['should_retrain'] else f"  {_rt['new_turns']}/{_rt['threshold']} to retrain"
                     print(f"\n🧬 Third Brother Training Data:")
                     print(f"   Turns: {_total}  |  By: {_brothers}")
+                    print(f"   Status:{_rt_flag}")
                     print(f"   Export: nucleus archive export")
                     print(f"   Train:  nucleus archive train\n")
                 except Exception:
@@ -3847,6 +3850,7 @@ def main():
     # ============================================================
     archive_parser = subparsers.add_parser('archive', help='📊 Training data archive — the Third Brother flywheel')
     archive_subparsers = archive_parser.add_subparsers(dest='archive_command')
+    archive_subparsers.add_parser('status', help='Retrain readiness check — should you train now?')
     archive_subparsers.add_parser('stats', help='Show archive statistics')
     archive_subparsers.add_parser('recent', help='Show recent loop turns')
     archive_export = archive_subparsers.add_parser('export', help='Export training data for fine-tuning')
@@ -3864,6 +3868,7 @@ def main():
     archive_ingest = archive_subparsers.add_parser('ingest', help='Bulk import conversations from Gemini/Claude transcripts')
     archive_ingest.add_argument('paths', nargs='+', help='Paths to conversation files (Gemini .json or Claude .md)')
     archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
+    archive_subparsers.add_parser('mark-trained', help='Mark current archive as trained (resets retrain counter)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4474,17 +4479,57 @@ def handle_archive_command(args) -> int:
         print(f"✅ Recorded turn {turn.turn_id} ({args.brother})")
         return 0
 
+    elif cmd == 'status':
+        stats = archive.get_stats()
+        retrain = archive.should_retrain()
+        total = stats.get('total_turns', 0)
+
+        print("=" * 50)
+        print("🧬 THIRD BROTHER — Training Status")
+        print("=" * 50)
+        print(f"  Archive turns:    {total}")
+        by_bro = stats.get('by_brother', {})
+        for bro, count in sorted(by_bro.items()):
+            print(f"    {bro:12s}:  {count}")
+        print()
+
+        # Quality pair count
+        out_dir = str(archive.training_dir / "exports")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        p = str(Path(out_dir) / "openai_training.jsonl")
+        pair_count = archive.export_openai(p)
+        print(f"  Quality pairs:    {pair_count}")
+        print(f"  Last trained at:  {retrain['last_trained_at']} turns")
+        print(f"  New turns:        {retrain['new_turns']}")
+        print(f"  Retrain threshold:{retrain['threshold']}")
+        print()
+
+        if retrain['should_retrain']:
+            print(f"  ✅ RETRAIN RECOMMENDED — {retrain['reason']}")
+            print(f"     → nucleus archive train")
+        else:
+            print(f"  ⏳ {retrain['reason']}")
+        print()
+        return 0
+
     elif cmd == 'train':
         stats = archive.get_stats()
         total = stats.get('total_turns', 0)
         target = getattr(args, 'target', 'local')
         dry_run = getattr(args, 'dry_run', False)
+        retrain = archive.should_retrain()
 
         print("=" * 50)
         print("🧬 THIRD BROTHER — Fine-Tuning Pipeline")
         print("=" * 50)
         print(f"  Archive turns:  {total}")
         print(f"  Target:         {target}")
+        if retrain['last_trained_at'] > 0:
+            print(f"  New since last:  {retrain['new_turns']} turns")
+            if retrain['should_retrain']:
+                print(f"  Status:         RETRAIN RECOMMENDED")
+            else:
+                print(f"  Status:         {retrain['reason']}")
 
         # Minimum viable training set
         MIN_TURNS = 50
@@ -4577,11 +4622,22 @@ def handle_archive_command(args) -> int:
         print(f"  Total archive: {stats.get('total_turns', 0)} turns")
         return 0
 
+    elif cmd == 'mark-trained':
+        archive.mark_trained()
+        stats = archive.get_stats()
+        print(f"✅ Marked archive as trained at {stats.get('total_turns', 0)} turns.")
+        print(f"   Retrain counter reset. New data will accumulate from here.")
+        return 0
+
     else:
-        # bare `nucleus archive` — show stats
+        # bare `nucleus archive` — show stats + retrain indicator
         stats = archive.get_stats()
         total = stats.get('total_turns', 0)
-        print(f"📊 Archive: {total} turns | Run `nucleus archive stats` for details")
+        retrain = archive.should_retrain()
+        retrain_flag = " | RETRAIN READY" if retrain['should_retrain'] else ""
+        print(f"📊 Archive: {total} turns{retrain_flag}")
+        print(f"   nucleus archive status   — retrain readiness check")
+        print(f"   nucleus archive stats    — full stats breakdown")
         print(f"   nucleus archive recent   — see last 10 turns")
         print(f"   nucleus archive export   — export for fine-tuning")
         print(f"   nucleus archive record   — manually record a turn")

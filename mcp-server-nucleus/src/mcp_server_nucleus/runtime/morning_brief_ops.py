@@ -65,7 +65,15 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 5: ADHD GUARDRAIL STATUS ────────────────────────
     brief["sections"]["adhd_status"] = _retrieve_adhd_status()
 
-    # ── SECTION 6: RECOMMENDATION ──────────────────────────────
+    # ── SECTION 6: THIRD BROTHER TRAINING STATUS ─────────────
+    try:
+        from .archive_pipeline import ArchivePipeline
+        ap = ArchivePipeline(brain_path=brain)
+        brief["sections"]["training"] = ap.should_retrain()
+    except Exception:
+        brief["sections"]["training"] = {}
+
+    # ── SECTION 7: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
 
     # ── META ────────────────────────────────────────────────────
@@ -388,6 +396,17 @@ def _format_brief(brief: Dict) -> str:
         lines.append(f"  Context switches: {switch_count}/{adhd.get('max_switches', 5)}  |  Depth: {depth}/{adhd.get('max_depth', 5)}")
         if adhd.get("recommendation"):
             lines.append(f"  {adhd['recommendation']}")
+
+    # Training status
+    training = brief["sections"].get("training", {})
+    if training.get("total_turns", 0) > 0:
+        lines.append(f"\n🧬 THIRD BROTHER TRAINING")
+        lines.append("-" * 40)
+        lines.append(f"  Archive: {training.get('total_turns', 0)} turns  |  New: {training.get('new_turns', 0)}")
+        if training.get("should_retrain"):
+            lines.append(f"  ✅ RETRAIN RECOMMENDED — {training.get('reason', '')}")
+        else:
+            lines.append(f"  ⏳ {training.get('reason', 'waiting for data')}")
 
     # Recommendation
     rec = brief.get("recommendation", {})

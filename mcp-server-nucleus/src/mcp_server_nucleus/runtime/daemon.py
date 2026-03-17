@@ -83,25 +83,32 @@ class DaemonManager:
     async def main_loop(self):
         """The Core Preemptive Loop"""
         logger.info("🚀 Daemon is active. Entering Main Loop.")
-        
+        tick_count = 0
+
         while self.running:
+            tick_count += 1
+
             # Heartbeat (The Ambient Pulse)
             status = "busy" if self.orchestrator._active_missions else "idle"
             self.pulse.beat(status, len(self.orchestrator._active_missions))
             logger.debug(f"❤️ Heartbeat ({status})")
-            
+
             # Monitor Swarms
             active_count = len(self.orchestrator._active_missions)
             if active_count > 0:
                 logger.info(f"🦾 Active Swarms: {active_count}")
-            
-            # TODO: Phase A Components
-            # - Check AsyncFileWatcher
-            # - Check Pending Commitments (SwarmsOrchestrator)
-            
-            # Simulation of work (Polling interval)
-            # In future, this is replaced by Event triggers to avoid busy wait
-            await asyncio.sleep(5) 
+
+            # Check retrain status every ~5 min (60 ticks * 5s)
+            if tick_count % 60 == 0:
+                try:
+                    from .archive_pipeline import ArchivePipeline
+                    rt = ArchivePipeline(brain_path=self.brain_path).should_retrain()
+                    if rt["should_retrain"]:
+                        logger.info(f"🧬 Third Brother retrain recommended: {rt['reason']}")
+                except Exception:
+                    pass
+
+            await asyncio.sleep(5)
             
     async def shutdown(self):
         """Graceful Shutdown"""

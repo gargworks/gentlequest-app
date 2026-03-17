@@ -129,6 +129,16 @@ def main():
         }, indent=2))
         print(f"\n   Job info saved: {job_file}")
 
+        # Mark archive as trained (resets retrain counter)
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+            from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+            archive = ArchivePipeline(brain_path=brain)
+            archive.mark_trained()
+            print(f"   Retrain counter reset.")
+        except Exception:
+            pass
+
     except Exception as e:
         print(f"❌ Tuning failed: {e}")
         print(f"\n   If the API doesn't support tuning with your key,")

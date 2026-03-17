@@ -448,6 +448,45 @@ class ArchivePipeline:
 
         return count
 
+    def should_retrain(self) -> Dict[str, Any]:
+        """Check if there's enough new data since last training to justify retraining."""
+        stats = self.get_stats()
+        total = stats.get("total_turns", 0)
+
+        # Check last training timestamp
+        last_train_file = self.training_dir / "last_train.json"
+        if last_train_file.exists():
+            last_train = json.loads(last_train_file.read_text(encoding="utf-8"))
+            last_count = last_train.get("turn_count", 0)
+            new_turns = total - last_count
+        else:
+            last_count = 0
+            new_turns = total
+
+        # Retrain if 20%+ new data or 100+ new turns
+        threshold_pct = max(int(last_count * 0.2), 50) if last_count > 0 else 50
+        should = new_turns >= threshold_pct
+
+        return {
+            "should_retrain": should,
+            "total_turns": total,
+            "last_trained_at": last_count,
+            "new_turns": new_turns,
+            "threshold": threshold_pct,
+            "reason": f"{new_turns} new turns since last train ({threshold_pct} needed)" if not should
+                     else f"{new_turns} new turns — retrain recommended",
+        }
+
+    def mark_trained(self, turn_count: int = 0):
+        """Mark the current archive as trained (resets retrain counter)."""
+        if not turn_count:
+            turn_count = self.get_stats().get("total_turns", 0)
+        last_train_file = self.training_dir / "last_train.json"
+        last_train_file.write_text(json.dumps({
+            "turn_count": turn_count,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }, indent=2), encoding="utf-8")
+
     def _get_existing_hashes(self) -> set:
         """Get content hashes of all existing turns for dedup."""
         turns = self.get_turns()
