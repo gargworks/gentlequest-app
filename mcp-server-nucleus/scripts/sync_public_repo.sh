@@ -56,6 +56,22 @@ if ! bash scripts/validate_public_surface.sh; then
 fi
 echo ""
 
+# 1c. LLM Review Gate (runs if GEMINI_API_KEY or ANTHROPIC_API_KEY is set)
+if [ -n "${GEMINI_API_KEY:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    echo -e "${BLUE}🧠 Running LLM Review Gate (two-persona paranoid review)...${NC}"
+    cd "$SOURCE_REPO"
+    PROVIDER="gemini"
+    [ -z "${GEMINI_API_KEY:-}" ] && PROVIDER="anthropic"
+    if ! python3 scripts/llm_review_gate.py --quick --provider "$PROVIDER"; then
+        echo -e "${RED}BLOCKED: LLM Review Gate found CRITICAL issues.${NC}"
+        exit 1
+    fi
+    echo ""
+else
+    echo -e "${YELLOW}⚠️  Skipping LLM Review Gate (no API key set). Set GEMINI_API_KEY to enable.${NC}"
+    echo ""
+fi
+
 # 2. Target Preparation (The Wipe)
 echo -e "${BLUE}🧹 Wiping target repository working tree...${NC}"
 cd "$TARGET_REPO"

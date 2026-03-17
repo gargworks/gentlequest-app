@@ -113,6 +113,7 @@ SOVEREIGN_FILES=(
   "src/share_to_spotify.py"
   "scripts/validate_public_surface.sh"
   "scripts/sync_public_repo.sh"
+  "scripts/llm_review_gate.py"
   "docs/Sovereign_Compliance_Officer_Handbook.md"
   "docs/strategy/"
   "docs/COMPARISON.md"

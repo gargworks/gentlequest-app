@@ -5,6 +5,8 @@
 # Internal tools and private scripts
 scripts/sync_public_repo.sh export-ignore
 scripts/validate_public_surface.sh export-ignore
+scripts/llm_review_gate.py export-ignore
+llm_review_findings.json export-ignore
 scripts/publish_pypi.sh export-ignore
 scripts/build_dual_artifacts.sh export-ignore
 scripts/build_dark_wheel.py export-ignore
