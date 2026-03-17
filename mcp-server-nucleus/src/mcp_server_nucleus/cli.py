@@ -3193,6 +3193,31 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     except Exception:
                         pass
 
+                # SHADOW_CAPTURE: Run Third Brother in shadow mode alongside primary
+                if reply and current_input and brain_dir:
+                    try:
+                        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline as _ShadowArchive
+                        _shadow_archive = _ShadowArchive()
+                        _active_model = _shadow_archive.get_active_model()
+                        if _active_model and _active_model.get("status") in ("shadow", "canary"):
+                            import threading
+                            def _shadow_task():
+                                try:
+                                    from mcp_server_nucleus.runtime.llm_client import get_llm_client
+                                    _shadow_llm = get_llm_client("local")
+                                    _shadow_fn = lambda p: _shadow_llm.generate_content(p).text
+                                    _shadow_archive.shadow_compare(
+                                        prompt=current_input,
+                                        primary_response=reply,
+                                        shadow_fn=_shadow_fn,
+                                    )
+                                except Exception:
+                                    pass
+                            # Run in background — don't block the user
+                            threading.Thread(target=_shadow_task, daemon=True).start()
+                    except Exception:
+                        pass
+
                 # Auto-save (context window state — overwrites each time)
                 if brain_dir:
                     try:
@@ -4034,6 +4059,15 @@ def main():
     archive_quality.add_argument('--export', type=str, default=None, help='Export filtered data to path')
     archive_quality.add_argument('--min-quality', type=float, default=0.4, help='Minimum quality threshold (default: 0.4)')
     archive_quality.add_argument('--format', choices=['openai', 'gemini', 'anthropic'], default='openai', help='Export format')
+    archive_register = archive_subparsers.add_parser('register', help='Register a trained model version in the registry')
+    archive_register.add_argument('version', help='Version string (e.g., v1, v2.1)')
+    archive_register.add_argument('--base', type=str, default='llama3.2:3b', help='Base model used (default: llama3.2:3b)')
+    archive_subparsers.add_parser('registry', help='Show all registered model versions')
+    archive_promote = archive_subparsers.add_parser('promote', help='Promote a model version (shadow → canary → primary)')
+    archive_promote.add_argument('version', help='Version to promote')
+    archive_promote.add_argument('--to', type=str, required=True, choices=['shadow', 'canary', 'primary', 'retired'], help='Target status')
+    archive_subparsers.add_parser('shadow-stats', help='Show shadow mode performance (Third Brother vs primary)')
+    archive_subparsers.add_parser('graduation', help='Check if Third Brother should be promoted')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -5429,6 +5463,123 @@ def handle_archive_command(args) -> int:
         print()
         return 0  # QUALITY_BLOCK_END
 
+    elif cmd == 'register':  # REGISTRY_BLOCK_START
+        version = getattr(args, 'version', 'v1')
+        base_model = getattr(args, 'base', 'llama3.2:3b')
+
+        entry = archive.register_model(version=version, base_model=base_model)
+        print(f"✅ Registered model {version}")
+        print(f"   Base: {base_model}")
+        print(f"   SFT turns: {entry['data']['sft_turns']}")
+        print(f"   DPO pairs: {entry['data']['dpo_pairs']}")
+        print(f"   CoT chains: {entry['data']['cot_chains']}")
+        print(f"   Status: {entry['status']}")
+        print(f"\n   Next: nucleus archive promote {version} --to shadow")
+        return 0
+
+    elif cmd == 'registry':
+        registry = archive.get_registry()
+        if not registry:
+            print("No models registered. Train first, then:")
+            print("  nucleus archive register v1 --base llama3.2:3b")
+            return 0
+
+        print("=" * 60)
+        print("📋 MODEL REGISTRY")
+        print("=" * 60)
+        for entry in registry:
+            status_icon = {
+                "registered": "⬜", "shadow": "👻", "canary": "🐤",
+                "primary": "🟢", "retired": "⬛",
+            }.get(entry.get("status", ""), "?")
+            v = entry.get("version", "?")
+            base = entry.get("base_model", "?")
+            s = entry.get("status", "?")
+            data = entry.get("data", {})
+            scores = entry.get("eval_scores", {})
+            score_str = f" score={scores.get('avg_score', '?')}" if scores else ""
+            print(f"  {status_icon} {v:8s} | {base:20s} | {s:12s} | "
+                  f"sft={data.get('sft_turns', 0)} dpo={data.get('dpo_pairs', 0)}{score_str}")
+        return 0
+
+    elif cmd == 'promote':
+        version = getattr(args, 'version', '')
+        target = getattr(args, 'to', '')
+        if archive.update_model_status(version, target):
+            print(f"✅ {version} → {target}")
+            if target == "shadow":
+                print(f"   Shadow mode active. Third Brother will generate alongside primary.")
+                print(f"   DPO pairs created automatically from comparisons.")
+            elif target == "canary":
+                print(f"   Canary mode active. Third Brother serves 10% of traffic.")
+            elif target == "primary":
+                print(f"   🎓 GRADUATED. Third Brother is now the primary model.")
+        else:
+            print(f"❌ Version {version} not found in registry.")
+        return 0
+
+    elif cmd == 'shadow-stats':  # SHADOW_BLOCK_START
+        stats = archive.get_shadow_stats()
+        if stats["total"] == 0:
+            print("No shadow comparisons yet.")
+            print("Shadow mode generates Third Brother responses alongside the primary LLM.")
+            print("Enable: nucleus archive promote <version> --to shadow")
+            return 0
+
+        print("=" * 50)
+        print("👻 SHADOW MODE — Third Brother vs Primary")
+        print("=" * 50)
+        print(f"  Total comparisons: {stats['total']}")
+        print(f"  Shadow wins:       {stats['shadow_wins']}")
+        print(f"  Primary wins:      {stats['primary_wins']}")
+        print(f"  Shadow win rate:   {stats['win_rate']:.1%}")
+
+        if stats['win_rate'] >= 0.5:
+            print(f"\n  Third Brother is winning! Consider promotion:")
+            print(f"    nucleus archive graduation")
+        elif stats['win_rate'] >= 0.3:
+            print(f"\n  Third Brother is competitive. Keep accumulating.")
+        else:
+            print(f"\n  Third Brother needs more training. Check:")
+            print(f"    nucleus archive conductor")
+        return 0  # SHADOW_BLOCK_END
+
+    elif cmd == 'graduation':  # GRADUATION_BLOCK_START
+        grad = archive.graduation_check()
+
+        print("=" * 50)
+        print("🎓 GRADUATION PROTOCOL — Promotion Check")
+        print("=" * 50)
+        print(f"  Current status: {grad['current_status']}")
+
+        stats = grad.get("shadow_stats", {})
+        if stats.get("total", 0) > 0:
+            print(f"  Shadow comparisons: {stats['total']}")
+            print(f"  Win rate: {stats.get('win_rate', 0):.1%}")
+
+        rec = grad["recommendation"]
+        reason = grad["reason"]
+        rec_icon = {
+            "start_shadow": "👻", "promote_canary": "🐤",
+            "promote_primary": "🟢", "retrain": "🔄",
+            "hold": "⏳", "monitor": "✅",
+        }.get(rec, "❓")
+
+        print(f"\n  {rec_icon} Recommendation: {rec.upper()}")
+        print(f"     {reason}")
+
+        if rec == "promote_canary":
+            active = archive.get_active_model()
+            if active:
+                print(f"\n     $ nucleus archive promote {active['version']} --to canary")
+        elif rec == "promote_primary":
+            active = archive.get_active_model()
+            if active:
+                print(f"\n     $ nucleus archive promote {active['version']} --to primary")
+        elif rec == "retrain":
+            print(f"\n     $ nucleus archive conductor")
+        return 0  # GRADUATION_BLOCK_END
+
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
         stats = archive.get_stats()
@@ -5456,6 +5607,8 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive quality     — score data quality")
         print(f"   nucleus archive conductor   — what should I do next?")
         print(f"   nucleus archive pipeline    — run full loop automatically")
+        print(f"   nucleus archive registry    — model version history")
+        print(f"   nucleus archive graduation  — promotion check")
         print(f"   nucleus archive train       — fine-tuning pipeline")
         print(f"   nucleus archive ingest      — bulk import conversations")
         return 0

@@ -2394,6 +2394,278 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             "min_quality": min_quality,
         }
 
+    # ── Model Registry (version tracking + lineage) ──
+
+    def register_model(
+        self,
+        version: str,
+        base_model: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Register a new model version in the registry.
+
+        Called after training. Records what data went in, what params were used,
+        so you can trace any model version back to its exact training run.
+
+        Args:
+            version: Version string (e.g., "v1", "v2.1").
+            base_model: Base model used (e.g., "llama3.2:3b", "qwen2.5:7b").
+            params: Training params (epochs, lr, batch_size, etc.).
+
+        Returns:
+            The registered model entry.
+        """
+        registry_path = self.training_dir / "model_registry.jsonl"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        stats = self.get_stats()
+        entry = {
+            "version": version,
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+            "base_model": base_model,
+            "params": params or {},
+            "data": {
+                "sft_turns": stats.get("total_turns", 0),
+                "dpo_pairs": self.count_preferences(),
+                "cot_chains": self.count_reasoning_chains(),
+            },
+            "eval_scores": {},  # Filled in after eval
+            "status": "registered",  # registered → shadow → canary → primary → retired
+            "promoted_at": None,
+            "retired_at": None,
+        }
+
+        with open(registry_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        return entry
+
+    def get_registry(self) -> List[Dict[str, Any]]:
+        """Get all registered model versions."""
+        registry_path = self.training_dir / "model_registry.jsonl"
+        if not registry_path.exists():
+            return []
+        entries = []
+        for line in registry_path.read_text().strip().split("\n"):
+            if line.strip():
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return entries
+
+    def update_model_status(
+        self,
+        version: str,
+        status: str,
+        eval_scores: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Update a model's status in the registry.
+
+        Args:
+            version: Version to update.
+            status: New status (shadow/canary/primary/retired).
+            eval_scores: Optional eval results to attach.
+
+        Returns:
+            True if updated, False if version not found.
+        """
+        registry = self.get_registry()
+        updated = False
+        for entry in registry:
+            if entry["version"] == version:
+                entry["status"] = status
+                if status in ("canary", "primary"):
+                    entry["promoted_at"] = datetime.now(timezone.utc).isoformat()
+                elif status == "retired":
+                    entry["retired_at"] = datetime.now(timezone.utc).isoformat()
+                if eval_scores:
+                    entry["eval_scores"] = eval_scores
+                updated = True
+                break
+
+        if updated:
+            registry_path = self.training_dir / "model_registry.jsonl"
+            with open(registry_path, "w", encoding="utf-8") as f:
+                for entry in registry:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        return updated
+
+    def get_active_model(self) -> Optional[Dict[str, Any]]:
+        """Get the currently active (primary or canary) model version."""
+        registry = self.get_registry()
+        # Prefer primary, fallback to canary
+        for status in ("primary", "canary", "shadow"):
+            for entry in reversed(registry):
+                if entry.get("status") == status:
+                    return entry
+        return None
+
+    # ── Shadow Mode (parallel inference for free DPO pairs) ──
+
+    def shadow_compare(
+        self,
+        prompt: str,
+        primary_response: str,
+        shadow_fn,
+        judge_fn=None,
+    ) -> Optional[Dict[str, Any]]:
+        """Run shadow inference and compare with primary response.
+
+        Called during live chat: the primary LLM serves the user,
+        the shadow (Third Brother) generates in parallel. The comparison
+        becomes a DPO pair — free training data from production.
+
+        Args:
+            prompt: The user's prompt.
+            primary_response: What the primary LLM returned.
+            shadow_fn: Shadow model callable (e.g., Third Brother via Ollama).
+            judge_fn: Optional LLM judge. If None, primary always wins.
+
+        Returns:
+            Comparison result, or None if shadow failed.
+        """
+        try:
+            shadow_response = shadow_fn(prompt)
+            if not shadow_response or len(shadow_response) < 20:
+                return None
+
+            # Judge
+            if judge_fn:
+                winner = judge_fn(prompt, primary_response, shadow_response)
+            else:
+                winner = "a"  # Primary (the one the user saw) wins by default
+
+            if winner == "a":
+                chosen, rejected = primary_response, shadow_response
+                shadow_won = False
+            else:
+                chosen, rejected = shadow_response, primary_response
+                shadow_won = True
+
+            # Record as DPO pair
+            pref = self.record_preference(
+                prompt=prompt,
+                chosen=chosen,
+                rejected=rejected,
+                source="shadow",
+                metadata={
+                    "shadow_won": shadow_won,
+                    "primary_len": len(primary_response),
+                    "shadow_len": len(shadow_response),
+                },
+            )
+
+            return {
+                "shadow_won": shadow_won,
+                "pref_id": pref.get("pref_id") if pref else None,
+                "primary_len": len(primary_response),
+                "shadow_len": len(shadow_response),
+            }
+
+        except Exception:
+            return None
+
+    def get_shadow_stats(self) -> Dict[str, Any]:
+        """Get shadow mode performance statistics."""
+        prefs = self.get_preferences()
+        shadow_prefs = [p for p in prefs if p.get("source") == "shadow"]
+        if not shadow_prefs:
+            return {"total": 0, "shadow_wins": 0, "primary_wins": 0, "win_rate": 0}
+
+        shadow_wins = sum(
+            1 for p in shadow_prefs
+            if p.get("metadata", {}).get("shadow_won", False)
+        )
+        primary_wins = len(shadow_prefs) - shadow_wins
+
+        return {
+            "total": len(shadow_prefs),
+            "shadow_wins": shadow_wins,
+            "primary_wins": primary_wins,
+            "win_rate": round(shadow_wins / len(shadow_prefs), 3) if shadow_prefs else 0,
+        }
+
+    # ── Graduation Protocol (Shadow → Canary → Primary) ──
+
+    def graduation_check(self, min_shadow_comparisons: int = 50,
+                         min_win_rate: float = 0.3,
+                         canary_win_rate: float = 0.5) -> Dict[str, Any]:
+        """Check if the Third Brother should be promoted.
+
+        Graduation ladder:
+        1. Shadow → Canary: After min_shadow_comparisons with win_rate >= min_win_rate
+        2. Canary → Primary: After canary phase shows win_rate >= canary_win_rate
+
+        Args:
+            min_shadow_comparisons: Minimum shadow comparisons before canary (default: 50).
+            min_win_rate: Minimum shadow win rate for canary promotion (default: 0.3).
+            canary_win_rate: Win rate required for primary promotion (default: 0.5).
+
+        Returns:
+            Graduation recommendation.
+        """
+        shadow_stats = self.get_shadow_stats()
+        active_model = self.get_active_model()
+        current_status = active_model.get("status", "registered") if active_model else "none"
+
+        result = {
+            "current_status": current_status,
+            "shadow_stats": shadow_stats,
+            "recommendation": "hold",
+            "reason": "",
+        }
+
+        if current_status == "none" or current_status == "registered":
+            result["recommendation"] = "start_shadow"
+            result["reason"] = "No active model. Deploy to shadow mode first."
+            return result
+
+        if current_status == "shadow":
+            if shadow_stats["total"] < min_shadow_comparisons:
+                result["recommendation"] = "hold"
+                result["reason"] = (
+                    f"Need {min_shadow_comparisons} shadow comparisons "
+                    f"(have {shadow_stats['total']}). Keep accumulating."
+                )
+            elif shadow_stats["win_rate"] >= min_win_rate:
+                result["recommendation"] = "promote_canary"
+                result["reason"] = (
+                    f"Shadow win rate {shadow_stats['win_rate']:.1%} >= "
+                    f"{min_win_rate:.0%} threshold. Ready for canary."
+                )
+            else:
+                result["recommendation"] = "retrain"
+                result["reason"] = (
+                    f"Shadow win rate {shadow_stats['win_rate']:.1%} < "
+                    f"{min_win_rate:.0%}. Needs more training."
+                )
+            return result
+
+        if current_status == "canary":
+            # In canary, shadow stats represent canary performance
+            if shadow_stats["win_rate"] >= canary_win_rate:
+                result["recommendation"] = "promote_primary"
+                result["reason"] = (
+                    f"Canary win rate {shadow_stats['win_rate']:.1%} >= "
+                    f"{canary_win_rate:.0%}. Ready for primary!"
+                )
+            else:
+                result["recommendation"] = "hold"
+                result["reason"] = (
+                    f"Canary win rate {shadow_stats['win_rate']:.1%} < "
+                    f"{canary_win_rate:.0%}. Needs improvement."
+                )
+            return result
+
+        if current_status == "primary":
+            result["recommendation"] = "monitor"
+            result["reason"] = "Model is primary. Monitor for regression."
+            return result
+
+        return result
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:
