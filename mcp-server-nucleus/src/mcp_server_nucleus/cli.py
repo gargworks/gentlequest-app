@@ -5684,8 +5684,12 @@ def handle_archive_command(args) -> int:
         print(f"  Location: {vault_path}")
         print(f"  Storage:  {'SSD (Samsung 990 PRO 2TB)' if ssd_mounted else 'LOCAL (⚠️ SSD not mounted)'}")
 
+        if not ssd_mounted:
+            print(f"\n  ⚠️  SSD not connected. Models stored on SSD won't appear.")
+            print(f"     Plug in Samsung SSD to see all versions.")
+
         if not vault_versions:
-            print(f"\n  No models in vault yet.")
+            print(f"\n  No models in vault{' (locally)' if not ssd_mounted else ''}.")
             print(f"  Train with --register to auto-vault:")
             print(f"    python scripts/train_third_brother.py --register --auto-shadow")
         else:
@@ -5695,7 +5699,9 @@ def handle_archive_command(args) -> int:
                 size = v.get("total_size_bytes", 0)
                 size_str = f"{size // 1024 // 1024}MB" if size else "?"
                 stored = v.get("stored_at", "?")[:10]
-                print(f"    {v.get('version', '?'):8s}  {arts} artifacts  {size_str:>8s}  {stored}")
+                loc = v.get("_location", "?")
+                loc_icon = "💾" if loc == "ssd" else "💻"
+                print(f"    {loc_icon} {v.get('version', '?'):8s}  {arts} artifacts  {size_str:>8s}  {stored}")
         print()
         return 0
 

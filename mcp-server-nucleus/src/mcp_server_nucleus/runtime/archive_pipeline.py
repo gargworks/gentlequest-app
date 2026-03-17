@@ -3087,9 +3087,29 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         local = self.training_dir / "vault"
         return local
 
+    def _ssd_mounted(self) -> bool:
+        """Check if the SSD is currently mounted."""
+        return self.DEFAULT_VAULT_PATH.parent.exists()
+
     def vault_version_path(self, version: str) -> Path:
-        """Get the versioned directory for a model in the vault."""
-        return self.get_vault_path() / version
+        """Get the versioned directory for a model in the vault.
+
+        Checks both SSD and local vault — a model stored on SSD can be
+        found even if SSD is currently the active vault path, and vice versa.
+        """
+        # Check active vault first
+        active = self.get_vault_path() / version
+        if active.exists():
+            return active
+        # Check the other location
+        ssd_path = self.DEFAULT_VAULT_PATH / version
+        local_path = self.training_dir / "vault" / version
+        if ssd_path.exists():
+            return ssd_path
+        if local_path.exists():
+            return local_path
+        # Not found anywhere — return active vault path (for new stores)
+        return active
 
     def vault_store(
         self,
@@ -3183,18 +3203,24 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         return manifest
 
     def vault_list(self) -> List[Dict[str, Any]]:
-        """List all versions in the vault."""
-        vault = self.get_vault_path()
-        if not vault.exists():
-            return []
+        """List all versions in the vault (checks both SSD and local)."""
+        seen = set()
         versions = []
-        for d in sorted(vault.iterdir()):
-            if d.is_dir() and (d / "MANIFEST.json").exists():
-                try:
-                    manifest = json.loads((d / "MANIFEST.json").read_text())
-                    versions.append(manifest)
-                except (json.JSONDecodeError, OSError):
-                    versions.append({"version": d.name, "error": "bad manifest"})
+
+        # Check both possible vault locations
+        for vault in [self.DEFAULT_VAULT_PATH, self.training_dir / "vault"]:
+            if not vault.exists():
+                continue
+            for d in sorted(vault.iterdir()):
+                if d.is_dir() and d.name not in seen and (d / "MANIFEST.json").exists():
+                    seen.add(d.name)
+                    try:
+                        manifest = json.loads((d / "MANIFEST.json").read_text())
+                        manifest["_location"] = "ssd" if "nucleus-vault" in str(vault) else "local"
+                        versions.append(manifest)
+                    except (json.JSONDecodeError, OSError):
+                        versions.append({"version": d.name, "error": "bad manifest",
+                                         "_location": str(vault)})
         return versions
 
     def vault_restore(self, version: str, restore_to: Optional[Path] = None) -> Dict[str, Any]:
@@ -3214,6 +3240,12 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
 
         vault_dir = self.vault_version_path(version)
         if not vault_dir.exists():
+            # Check if it might be on the unplugged SSD
+            ssd_would_be = self.DEFAULT_VAULT_PATH / version
+            if not self._ssd_mounted():
+                return {"error": f"Version {version} not found locally. "
+                                 f"Your SSD is not connected — plug in your Samsung SSD "
+                                 f"and try again (models may be stored at {ssd_would_be})."}
             return {"error": f"Version {version} not found in vault"}
 
         dest = restore_to or (self.training_dir / "output")
@@ -3275,8 +3307,11 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         # Check target exists in vault
         vault_dir = self.vault_version_path(to_version)
         if not vault_dir.exists():
-            return {"error": f"{to_version} not found in vault. Available: "
-                             + ", ".join(v["version"] for v in self.vault_list())}
+            if not self._ssd_mounted():
+                return {"error": f"{to_version} not found locally. "
+                                 f"Plug in your Samsung SSD — the model may be stored there."}
+            available = ", ".join(v["version"] for v in self.vault_list())
+            return {"error": f"{to_version} not found in vault. Available: {available or 'none'}"}
 
         # Check target exists in registry
         registry = self.get_registry()
