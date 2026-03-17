@@ -22,14 +22,11 @@ from .policy import DirectivesLoader
 from .orchestrator import SwarmsOrchestrator
 from .hooks import IdentityKey, AmbientTelemetry, InsightExchange, RemoteExecutionProtocol
 
-# Configure logging
+# Configure logging (file handler added in DaemonManager.start() once brain_path is known)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stderr),
-        logging.FileHandler("daemon.log")
-    ]
+    handlers=[logging.StreamHandler(sys.stderr)]
 )
 logger = logging.getLogger("NucleusDaemon")
 
@@ -49,6 +46,13 @@ class DaemonManager:
         
     async def start(self):
         """Start the Daemon sequence"""
+        # Attach file handler now that brain_path is known
+        log_dir = self.brain_path / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(log_dir / "daemon.log")
+        fh.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+        logger.addHandler(fh)
+
         logger.info("Nucleus Daemon Starting...")
         
         # 1. Acquire Lock
