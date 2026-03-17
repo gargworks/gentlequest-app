@@ -1429,15 +1429,26 @@ class LocalLLM:
 
         logger.info(f"🧬 LLM Client: Local/Third Brother → {self.model_name} @ {self.endpoint}")
 
-    def generate_content(self, prompt: str, **kwargs) -> AnthropicResponse:
-        """Generate text via OpenAI-compatible chat completions API."""
+    def generate_content(self, prompt, **kwargs) -> AnthropicResponse:
+        """Generate text via OpenAI-compatible chat completions API.
+
+        Args:
+            prompt: Either a string (single user message) or a list of
+                    message dicts [{"role": "user", "content": "..."}].
+        """
         import urllib.request
         import json as _json
 
         messages = []
-        if self.system_instruction:
-            messages.append({"role": "system", "content": self.system_instruction})
-        messages.append({"role": "user", "content": prompt})
+        if isinstance(prompt, list):
+            # Native messages array — inject system prompt if not already present
+            if self.system_instruction and not any(m.get("role") == "system" for m in prompt):
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.extend(prompt)
+        else:
+            if self.system_instruction:
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.append({"role": "user", "content": prompt})
 
         payload = {
             "model": self.model_name,
@@ -1479,15 +1490,24 @@ class LocalLLM:
             },
         )
 
-    def generate_content_stream(self, prompt: str, **kwargs):
-        """Streaming via OpenAI-compatible SSE endpoint."""
+    def generate_content_stream(self, prompt, **kwargs):
+        """Streaming via OpenAI-compatible SSE endpoint.
+
+        Args:
+            prompt: Either a string or a list of message dicts.
+        """
         import urllib.request
         import json as _json
 
         messages = []
-        if self.system_instruction:
-            messages.append({"role": "system", "content": self.system_instruction})
-        messages.append({"role": "user", "content": prompt})
+        if isinstance(prompt, list):
+            if self.system_instruction and not any(m.get("role") == "system" for m in prompt):
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.extend(prompt)
+        else:
+            if self.system_instruction:
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.append({"role": "user", "content": prompt})
 
         payload = {
             "model": self.model_name,
@@ -1530,6 +1550,7 @@ class LocalLLM:
             yield response.text
 
     generate = generate_content
+    stream_content = generate_content_stream
 
     @property
     def active_engine(self):

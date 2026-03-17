@@ -247,6 +247,8 @@ def process_event_for_engram(event_type: str, event_data: Dict[str, Any]) -> Opt
             key = result.get("details", [{}])[0].get("key", "?")
             _record_metric(event_type, "ADD", elapsed_ms, key, brain)
             logger.info(f"🧠 Auto-engram: [{event_type}] → {key}")
+            # Feed high-value events to training archive
+            _record_to_training_archive(event_type, event_data, brain)
         elif result and result.get("skipped", 0) > 0:
             _record_metric(event_type, "NOOP", elapsed_ms, None, brain)
         elif result and result.get("updated", 0) > 0:
@@ -320,6 +322,49 @@ class _SafeDict(dict):
     """Dict subclass that returns '?' for missing keys in str.format_map()."""
     def __missing__(self, key):
         return "?"
+
+
+# ═══════════════════════════════════════════════════════════════
+# TRAINING ARCHIVE BRIDGE (feeds high-value events to Third Brother)
+# ═══════════════════════════════════════════════════════════════
+
+# Only these events produce meaningful training signal.
+# Session starts, brief reads, and other low-signal events are skipped.
+_ARCHIVE_WORTHY_EVENTS = {
+    "task_completed_with_fence", "slot_task_completed",
+    "deploy_complete", "code_critiqued", "task_escalated",
+    "handoff_requested", "sprint_started",
+}
+
+
+def _record_to_training_archive(event_type: str, event_data: Dict[str, Any], brain: Path):
+    """Record significant events as training data for the Third Brother.
+
+    Creates a LoopTurn with the event as a synthetic conversation pair:
+    user = "What happened?" + event context, assistant = structured outcome.
+    Only fires for high-value events (completions, deploys, reviews).
+    """
+    if event_type not in _ARCHIVE_WORTHY_EVENTS:
+        return
+    try:
+        from .archive_pipeline import ArchivePipeline
+        config = TRIGGER_EVENTS[event_type]
+        description = _fill_template(config["template"], event_data)
+        archive = ArchivePipeline(brain_path=brain)
+        archive.record_turn(
+            brother="code",
+            intent=description,
+            actions=[f"event:{event_type}"],
+            tools_used=[],
+            decisions=[],
+            outcome=description,
+            signal_absorbed=[],
+            signal_produced=[f"event/{event_type}"],
+            confidence=0.7,
+            context=f"Auto-hook: {event_type}",
+        )
+    except Exception:
+        pass  # Never block the hook pipeline
 
 
 # ═══════════════════════════════════════════════════════════════

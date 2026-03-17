@@ -2750,7 +2750,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 # Claude Code maintains its own context via --resume, so just pass current input
                 if _provider in ("claude-code", "claude_code", "max"):
                     prompt = current_input  # Plain string — Claude Code has the full session
-                elif _provider in ("anthropic", "groq"):
+                elif _provider in ("anthropic", "groq", "local"):
                     prompt = _build_messages(current_input)
                 else:
                     prompt = _build_prompt(current_input)
