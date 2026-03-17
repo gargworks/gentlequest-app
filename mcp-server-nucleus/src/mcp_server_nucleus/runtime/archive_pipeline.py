@@ -198,11 +198,14 @@ class ArchivePipeline:
         noise_markers = [
             "*Running MCP tool*", "*Edited relevant file*",
             "*Viewed [", "*Created file*", "*Grep search*",
+            "*Read file*", "*Searched for*", "*Listed files*",
         ]
-        # If user message is mostly noise markers (>50% of content)
-        noise_chars = sum(len(m) for m in noise_markers if m in user)
-        if noise_chars > len(user) * 0.5:
-            return False
+
+        # Check BOTH user and assistant for noise
+        for text, threshold in [(user, 0.5), (asst, 0.3)]:
+            noise_chars = sum(len(m) for m in noise_markers if m in text)
+            if noise_chars > len(text) * threshold:
+                return False
 
         # Placeholder / continuation-only messages
         if user.strip().lower() in ("continue", "continue.", "continue...", "yes", "ok", "go"):
@@ -220,6 +223,10 @@ class ArchivePipeline:
                 if self._is_quality_pair(pair):
                     pairs.append(pair)
         return pairs
+
+    def count_quality_pairs(self) -> int:
+        """Count quality pairs without writing any files."""
+        return len(self._collect_quality_pairs())
 
     @staticmethod
     def _split_train_eval(pairs: List, eval_ratio: float = 0.1, seed: int = 42) -> tuple:

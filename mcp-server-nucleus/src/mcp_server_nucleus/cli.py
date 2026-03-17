@@ -4531,11 +4531,8 @@ def handle_archive_command(args) -> int:
             print(f"    {bro:12s}:  {count}")
         print()
 
-        # Quality pair count
-        out_dir = str(archive.training_dir / "exports")
-        Path(out_dir).mkdir(parents=True, exist_ok=True)
-        p = str(Path(out_dir) / "openai_training.jsonl")
-        pair_count = archive.export_openai(p)
+        # Quality pair count (no file I/O)
+        pair_count = archive.count_quality_pairs()
         print(f"  Quality pairs:    {pair_count}")
         print(f"  Last trained at:  {retrain['last_trained_at']} turns")
         print(f"  New turns:        {retrain['new_turns']}")
@@ -4609,8 +4606,10 @@ def handle_archive_command(args) -> int:
         elif target == 'local':
             # Export both OpenAI format (for unsloth/axolotl) and raw
             p = str(Path(out_dir) / "openai_training.jsonl")
-            count = archive.export_openai(p)
-            print(f"\n  Exported: {count} pairs → {p}")
+            ep = str(Path(out_dir) / "openai_training.eval.jsonl")
+            count = archive.export_openai(p, eval_path=ep)
+            ev = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
+            print(f"\n  Exported: {count} train + {ev} eval pairs → {p}")
             if not dry_run:
                 print(f"\n  One-shot training script:")
                 print(f"    python scripts/train_third_brother.py")

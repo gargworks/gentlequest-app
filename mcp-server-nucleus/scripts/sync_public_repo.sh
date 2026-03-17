@@ -175,6 +175,18 @@ if [ -f "$CLI" ]; then
     echo "  Sanitized: $CLI (archive/Third Brother refs)"
 fi
 
+# ── engram_hooks.py: Strip training archive bridge ──
+HOOKS="src/mcp_server_nucleus/runtime/engram_hooks.py"
+if [ -f "$HOOKS" ]; then
+    sed -i '' '/archive_pipeline/d' "$HOOKS"
+    sed -i '' '/ARCHIVE_WORTHY/d' "$HOOKS"
+    sed -i '' '/_record_to_training_archive/d' "$HOOKS"
+    sed -i '' '/TRAINING ARCHIVE BRIDGE/d' "$HOOKS"
+    sed -i '' '/Third Brother/d' "$HOOKS"
+    SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
+    echo "  Sanitized: $HOOKS (training archive bridge)"
+fi
+
 # ── daemon.py + morning_brief_ops.py: Strip Third Brother retrain blocks ──
 DAEMON="src/mcp_server_nucleus/runtime/daemon.py"
 if [ -f "$DAEMON" ]; then
