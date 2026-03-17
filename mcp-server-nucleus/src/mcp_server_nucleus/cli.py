@@ -3816,6 +3816,22 @@ def main():
     rescue_parser.add_argument('--force', action='store_true', help='Force rescue even if current_id is locked')
 
     # ============================================================
+    # ARCHIVE COMMAND — Training data flywheel (Third Brother)
+    # ============================================================
+    archive_parser = subparsers.add_parser('archive', help='📊 Training data archive — the Third Brother flywheel')
+    archive_subparsers = archive_parser.add_subparsers(dest='archive_command')
+    archive_subparsers.add_parser('stats', help='Show archive statistics')
+    archive_subparsers.add_parser('recent', help='Show recent loop turns')
+    archive_export = archive_subparsers.add_parser('export', help='Export training data for fine-tuning')
+    archive_export.add_argument('--format', choices=['gemini', 'openai', 'anthropic', 'all'], default='all', help='Export format (default: all)')
+    archive_export.add_argument('--output', type=str, default=None, help='Output directory (default: .brain/training/exports/)')
+    archive_record = archive_subparsers.add_parser('record', help='Manually record a loop turn')
+    archive_record.add_argument('--brother', choices=['code', 'cowork', 'father'], default='father', help='Who is recording')
+    archive_record.add_argument('--intent', type=str, required=True, help='What this turn set out to do')
+    archive_record.add_argument('--outcome', type=str, required=True, help='What happened')
+    archive_record.add_argument('--decisions', type=str, nargs='*', default=[], help='Key decisions made')
+
+    # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
     # ============================================================
     config_parser = subparsers.add_parser('config', help='⚙️  View or change Nucleus configuration')
@@ -4050,7 +4066,10 @@ def main():
             sys.exit(handle_growth_command(args))
         elif cli_command == 'outbound':
             sys.exit(handle_outbound_command(args))
-        
+
+        elif cli_command == 'archive':
+            sys.exit(handle_archive_command(args))
+
         elif cli_command is None:
             # Claude Code Model: bare `nucleus` → launches chat
             # Same as `claude`, `gemini`, `python` (bare → REPL/chat)
@@ -4339,6 +4358,98 @@ def handle_growth_command(args) -> int:
     else:
         print("Usage: nucleus growth <pulse|status>", file=sys.stderr)
         return 1
+
+
+def handle_archive_command(args) -> int:
+    """Handle nucleus archive — training data flywheel for the Third Brother."""
+    from .runtime.archive_pipeline import ArchivePipeline
+
+    archive = ArchivePipeline()
+    cmd = getattr(args, 'archive_command', None)
+
+    if cmd == 'stats':
+        stats = archive.get_stats()
+        print("=" * 50)
+        print("📊 ARCHIVE STATS — Third Brother Training Data")
+        print("=" * 50)
+        print(f"  Total turns:  {stats.get('total_turns', 0)}")
+        by_bro = stats.get('by_brother', {})
+        for bro, count in sorted(by_bro.items()):
+            print(f"  {bro:12s}:  {count}")
+        print(f"  First turn:   {stats.get('first_turn', 'n/a')}")
+        print(f"  Last turn:    {stats.get('last_turn', 'n/a')}")
+        print()
+        print(f"  Archive:  {archive.turns_file}")
+        return 0
+
+    elif cmd == 'recent':
+        turns = archive.get_turns(limit=10)
+        if not turns:
+            print("No turns recorded yet. Start a chat session or run an agent.")
+            return 0
+        print("=" * 50)
+        print(f"📜 RECENT LOOP TURNS (last {len(turns)})")
+        print("=" * 50)
+        for t in turns:
+            ts = t.get('timestamp', '')[:19]
+            bro = t.get('brother', '?')
+            intent = t.get('intent', '')[:60]
+            has_conv = "💬" if t.get('conversation') else "📝"
+            print(f"  {has_conv} [{ts}] {bro:7s} — {intent}")
+        print()
+        total = archive.get_stats().get('total_turns', len(turns))
+        print(f"  Showing {len(turns)} of {total} total turns.")
+        return 0
+
+    elif cmd == 'export':
+        fmt = getattr(args, 'format', 'all')
+        out_dir = args.output or str(archive.training_dir / "exports")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+        results = {}
+        if fmt in ('gemini', 'all'):
+            p = str(Path(out_dir) / "gemini_training.jsonl")
+            results['gemini'] = archive.export_gemini(p)
+        if fmt in ('openai', 'all'):
+            p = str(Path(out_dir) / "openai_training.jsonl")
+            results['openai'] = archive.export_openai(p)
+        if fmt in ('anthropic', 'all'):
+            p = str(Path(out_dir) / "anthropic_training.jsonl")
+            results['anthropic'] = archive.export_anthropic(p)
+
+        print("=" * 50)
+        print("📦 EXPORTED TRAINING DATA")
+        print("=" * 50)
+        for name, count in results.items():
+            print(f"  {name:12s}: {count} conversation pairs")
+        print(f"\n  Output: {out_dir}")
+        return 0
+
+    elif cmd == 'record':
+        turn = archive.record_turn(
+            brother=args.brother,
+            intent=args.intent,
+            actions=[],
+            tools_used=[],
+            decisions=args.decisions or [],
+            outcome=args.outcome,
+            signal_absorbed=[],
+            signal_produced=[],
+            confidence=1.0,
+            context="Manual CLI recording",
+        )
+        print(f"✅ Recorded turn {turn.turn_id} ({args.brother})")
+        return 0
+
+    else:
+        # bare `nucleus archive` — show stats
+        stats = archive.get_stats()
+        total = stats.get('total_turns', 0)
+        print(f"📊 Archive: {total} turns | Run `nucleus archive stats` for details")
+        print(f"   nucleus archive recent   — see last 10 turns")
+        print(f"   nucleus archive export   — export for fine-tuning")
+        print(f"   nucleus archive record   — manually record a turn")
+        return 0
 
 
 def handle_outbound_command(args) -> int:

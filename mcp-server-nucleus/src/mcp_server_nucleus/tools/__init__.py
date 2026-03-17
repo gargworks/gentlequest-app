@@ -28,6 +28,7 @@ from . import (
     observability,
     federation,
     engrams,
+    archive,
 )
 
 _ALL_MODULES = {
@@ -40,6 +41,7 @@ _ALL_MODULES = {
     "observability": observability,
     "federation": federation,
     "engrams": engrams,
+    "archive": archive,
 }
 
 
