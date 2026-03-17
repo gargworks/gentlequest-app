@@ -1511,9 +1511,14 @@ Reply with ONLY three numbers separated by commas, like: 4,3,5"""
                 if judge_fn:
                     winner = judge_fn(prompt, reference, alternative)
                 else:
-                    # Heuristic judge: reference wins (it's the actual response
-                    # from the session — the founder accepted it)
-                    winner = "a"
+                    # Heuristic: compare specificity + length. Reference has a
+                    # slight home-field advantage (it was accepted in session).
+                    ref_score = self._score_pair(prompt, reference)
+                    alt_score = self._score_pair(prompt, alternative)
+                    if alt_score > ref_score + 0.1:
+                        winner = "b"  # Alternative is meaningfully better
+                    else:
+                        winner = "a"  # Reference wins ties
 
                 if winner == "a":
                     chosen, rejected = reference, alternative
@@ -1612,16 +1617,26 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         the trained model and the base model. Judge which is better. Create DPO
         pairs. Retrain (round N+1). This is the flywheel that DeepSeek R1 uses.
 
+        REQUIRES judge_fn. Without a judge, SPIN creates DPO pairs where the
+        trained model always "wins" — even on prompts where it's worse. This
+        teaches the model that its mistakes are correct. Use build_judge_fn().
+
         Args:
             current_model_fn: The current (trained) model.
             base_model_fn: The base (pre-training) model.
-            judge_fn: LLM judge (use build_judge_fn). Falls back to heuristic.
+            judge_fn: LLM judge (use build_judge_fn). REQUIRED.
             count: Number of comparisons to generate.
             round_num: Which iteration of self-play this is.
 
         Returns:
             Stats: {generated, current_wins, base_wins, ties, round}.
         """
+        if not judge_fn:
+            return {"error": "SPIN requires --judge. Without a judge, the trained model "
+                             "always 'wins' — even when it's wrong. This teaches the model "
+                             "that its mistakes are correct. Pass --judge <provider>.",
+                    "generated": 0}
+
         all_pairs = self._collect_quality_pairs()
         if len(all_pairs) < 20:
             return {"error": "Not enough data", "generated": 0}
@@ -1655,12 +1670,8 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                 if len(current_resp) < 20 or len(base_resp) < 20:
                     continue
 
-                # Judge
-                if judge_fn:
-                    winner = judge_fn(prompt, current_resp, base_resp)
-                else:
-                    # Heuristic: current model should be better (it's trained)
-                    winner = "a"
+                # Judge (guaranteed non-None — checked at top)
+                winner = judge_fn(prompt, current_resp, base_resp)
 
                 if winner == "a":
                     chosen, rejected = current_resp, base_resp
@@ -1852,16 +1863,26 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                         if not better_answer or len(better_answer) < 50:
                             continue
 
-                        # Create a DPO pair: better answer vs failed reference
-                        self.record_preference(
-                            prompt=case["prompt"],
-                            chosen=better_answer,
-                            rejected=case["reference"][:500],  # Original was bad
-                            source="active_learning",
-                            metadata={
-                                "weakness": w_name,
-                                "eval_id": case["eval_id"],
-                            },
+                        # Create SFT pair instead of DPO — we don't know for
+                        # certain the model's answer is better than the reference.
+                        # DPO with inverted preferences (marking real session data
+                        # as "rejected") teaches the model to prefer slop over
+                        # authentic answers. SFT is safer: "here's another example."
+                        self.record_turn(
+                            brother="synthesis",
+                            intent=f"active_learning_{w_name}_regen",
+                            actions=[f"Regenerated answer for failed eval {case['eval_id']}"],
+                            tools_used=["active_learning"],
+                            decisions=[f"Target weakness: {w_name}"],
+                            outcome="Regenerated training pair",
+                            signal_absorbed=[],
+                            signal_produced=[],
+                            confidence=0.6,
+                            context=f"Active learning regen for {w_name}",
+                            conversation=[
+                                {"role": "user", "content": case["prompt"]},
+                                {"role": "assistant", "content": better_answer},
+                            ],
                         )
                         generated += 1
                     except Exception:
@@ -2556,8 +2577,10 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             # Judge
             if judge_fn:
                 winner = judge_fn(prompt, primary_response, shadow_response)
+                judged = True
             else:
                 winner = "a"  # Primary (the one the user saw) wins by default
+                judged = False
 
             if winner == "a":
                 chosen, rejected = primary_response, shadow_response
@@ -2576,6 +2599,7 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                     "shadow_won": shadow_won,
                     "primary_len": len(primary_response),
                     "shadow_len": len(shadow_response),
+                    "judged": judged,
                 },
             )
 
@@ -2655,6 +2679,19 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             result["reason"] = "No active model. Deploy to shadow mode first."
             return result
 
+        # Regression gate: block any promotion if eval scores dropped
+        regression = self.regression_check(
+            active_model.get("version") if active_model else None
+        )
+        result["regression"] = regression
+        if regression["regressed"]:
+            result["recommendation"] = "blocked_regression"
+            result["reason"] = (
+                f"BLOCKED: {regression['details']} "
+                f"Fix the regression before promoting."
+            )
+            return result
+
         if current_status == "shadow":
             if shadow_stats["total"] < min_shadow_comparisons:
                 result["recommendation"] = "hold"
@@ -2698,6 +2735,91 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             return result
 
         return result
+
+    # ── Regression Gate (block promotion if model got worse) ──
+
+    def regression_check(self, version: Optional[str] = None) -> Dict[str, Any]:
+        """Compare a model's eval scores against the previous version.
+
+        If the new version scored lower than the previous, this is a regression
+        and graduation should be blocked.
+
+        Args:
+            version: Version to check. If None, checks the most recent.
+
+        Returns:
+            {regressed: bool, delta: float, current: {...}, previous: {...}, details: str}
+        """
+        registry = self.get_registry()
+        if len(registry) < 2:
+            return {"regressed": False, "delta": 0,
+                    "details": "Not enough model versions to compare."}
+
+        # Find current and previous
+        if version:
+            current = next((e for e in registry if e["version"] == version), None)
+            if not current:
+                return {"regressed": False, "delta": 0,
+                        "details": f"Version {version} not found in registry."}
+            # Previous = the one registered right before this version
+            idx = next((i for i, e in enumerate(registry) if e["version"] == version), -1)
+            previous = registry[idx - 1] if idx > 0 else None
+        else:
+            current = registry[-1]
+            previous = registry[-2]
+
+        if not previous:
+            return {"regressed": False, "delta": 0,
+                    "details": "No previous version to compare against."}
+
+        cur_scores = current.get("eval_scores", {})
+        prev_scores = previous.get("eval_scores", {})
+
+        if not cur_scores or not prev_scores:
+            missing = []
+            if not cur_scores:
+                missing.append(f"{current['version']} (current)")
+            if not prev_scores:
+                missing.append(f"{previous['version']} (previous)")
+            return {"regressed": False, "delta": 0,
+                    "details": f"Missing eval scores for: {', '.join(missing)}. "
+                               f"Run eval before checking regression."}
+
+        cur_avg = cur_scores.get("avg_score", 0)
+        prev_avg = prev_scores.get("avg_score", 0)
+        delta = round(cur_avg - prev_avg, 3)
+        regressed = delta < -0.02  # Allow 2% noise margin
+
+        # Per-category regression check
+        category_regressions = []
+        cur_cats = cur_scores.get("by_category", {})
+        prev_cats = prev_scores.get("by_category", {})
+        for cat in set(cur_cats) | set(prev_cats):
+            c = cur_cats.get(cat, 0)
+            p = prev_cats.get(cat, 0)
+            if p > 0 and c < p - 0.05:  # 5% category-level threshold
+                category_regressions.append(
+                    f"{cat}: {p:.3f} → {c:.3f} ({c - p:+.3f})"
+                )
+
+        if regressed:
+            details = (f"REGRESSION: {previous['version']} ({prev_avg:.3f}) → "
+                       f"{current['version']} ({cur_avg:.3f}), delta={delta:+.3f}")
+        elif category_regressions:
+            details = (f"Overall OK (delta={delta:+.3f}) but category regressions: "
+                       + "; ".join(category_regressions))
+        else:
+            details = (f"No regression: {previous['version']} ({prev_avg:.3f}) → "
+                       f"{current['version']} ({cur_avg:.3f}), delta={delta:+.3f}")
+
+        return {
+            "regressed": regressed,
+            "delta": delta,
+            "current": {"version": current["version"], "avg_score": cur_avg},
+            "previous": {"version": previous["version"], "avg_score": prev_avg},
+            "category_regressions": category_regressions,
+            "details": details,
+        }
 
     # ── Internal ──
 

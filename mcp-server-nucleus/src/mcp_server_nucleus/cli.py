@@ -5115,8 +5115,11 @@ def handle_archive_command(args) -> int:
         print("🧪 SELF-PLAY SYNTHESIS — Manufacturing DPO Pairs")
         print("=" * 50)
         print(f"  Provider:  {synth_provider}")
-        print(f"  Judge:     {judge_provider or 'heuristic (reference wins)'}")
+        print(f"  Judge:     {judge_provider or 'heuristic (quality comparison)'}")
         print(f"  Target:    {synth_count} pairs")
+        if not judge_provider:
+            print(f"\n  ⚠️  No --judge. Using quality heuristic (length/specificity).")
+            print(f"     For accurate DPO pairs, add: --judge gemini")
 
         dpo_before = archive.count_preferences()
 
@@ -5165,9 +5168,17 @@ def handle_archive_command(args) -> int:
         print("=" * 50)
         print(f"  Current model:  {current_provider}")
         print(f"  Base model:     {base_provider}")
-        print(f"  Judge:          {judge_provider or 'heuristic'}")
+        print(f"  Judge:          {judge_provider or 'REQUIRED'}")
         print(f"  Round:          {spin_round}")
         print(f"  Target:         {spin_count} comparisons")
+
+        if not judge_provider:
+            print(f"\n  ❌ SPIN requires --judge <provider>.")
+            print(f"     Without a judge, the trained model always 'wins' — even when")
+            print(f"     it's wrong. This teaches the model that mistakes are correct.")
+            print(f"\n     Fix: nucleus archive spin --current local --judge gemini")
+            print()
+            return 1
 
         dpo_before = archive.count_preferences()
 
@@ -5178,11 +5189,9 @@ def handle_archive_command(args) -> int:
             current_fn = lambda p: current_llm.generate_content(p).text
             base_fn = lambda p: base_llm.generate_content(p).text
 
-            judge_fn = None
-            if judge_provider:
-                judge_llm = get_llm_client(judge_provider)
-                judge_model_fn = lambda p: judge_llm.generate_content(p).text
-                judge_fn = archive.build_judge_fn(judge_model_fn)
+            judge_llm = get_llm_client(judge_provider)
+            judge_model_fn = lambda p: judge_llm.generate_content(p).text
+            judge_fn = archive.build_judge_fn(judge_model_fn)
 
             print(f"\n  Running SPIN round {spin_round}...")
             stats = archive.iterative_self_play(
@@ -5571,12 +5580,26 @@ def handle_archive_command(args) -> int:
             print(f"  Shadow comparisons: {stats['total']}")
             print(f"  Win rate: {stats.get('win_rate', 0):.1%}")
 
+        # Regression gate
+        regression = grad.get("regression", {})
+        if regression.get("regressed"):
+            print(f"\n  🚨 REGRESSION DETECTED")
+            print(f"     {regression['details']}")
+            if regression.get("category_regressions"):
+                for cr in regression["category_regressions"]:
+                    print(f"     - {cr}")
+        elif regression.get("category_regressions"):
+            print(f"\n  ⚠️  Category regressions (overall OK):")
+            for cr in regression["category_regressions"]:
+                print(f"     - {cr}")
+
         rec = grad["recommendation"]
         reason = grad["reason"]
         rec_icon = {
             "start_shadow": "👻", "promote_canary": "🐤",
             "promote_primary": "🟢", "retrain": "🔄",
             "hold": "⏳", "monitor": "✅",
+            "blocked_regression": "🚨",
         }.get(rec, "❓")
 
         print(f"\n  {rec_icon} Recommendation: {rec.upper()}")
