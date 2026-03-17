@@ -11,7 +11,11 @@ except ImportError:
     Observer = None
     FileSystemEventHandler = object
     HAS_WATCHDOG = False
-from mcp_server_nucleus.runtime.common import assert_path_in_workspace
+try:
+    from mcp_server_nucleus.runtime.common import assert_path_in_workspace
+except ImportError:
+    def assert_path_in_workspace(path: str, workspace_root=None):
+        return Path(path).resolve()
 
 from .locker import Locker
 
