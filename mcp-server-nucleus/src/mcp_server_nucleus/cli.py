@@ -587,7 +587,7 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
 # Slash commands are a SUPERSET of Claude Code + Gemini CLI.
 # ============================================================
 
-def _run_chat(tier_name: str = "local_free", model_override: str = None, system_prompt: str = None, batch: bool = False, prompt: str = None, provider: str = None):
+def _run_chat(tier_name: str = "local_free", model_override: str = None, system_prompt: str = None, batch: bool = False, prompt: str = None, provider: str = None, output_format: str = "text", brother_context: str = None):
     """Interactive multi-turn chat. Works from any install location.
 
     Args:
@@ -739,11 +739,46 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 gemini_file = brain_dir / "gemini.md"
             
             parts = []
+            # Commandments: father's encoded intent — read first, always
+            _commandments_file = brain_dir / "commandments.md"
+            if _commandments_file.exists():
+                parts.append(f"### COMMANDMENTS (father's encoded intent — hard rules)\n{_commandments_file.read_text()[:3000]}")
             if session_file.exists():
                 parts.append(f"### CURRENT SESSION CONTEXT ({session_file.name})\n{session_file.read_text()[:4000]}")
             if gemini_file.exists():
                 parts.append(f"### KNOWLEDGE BASE ({gemini_file.name})\n{gemini_file.read_text()[:4000]}")
-                
+
+            # Breadcrumb: notes left by brother or heartbeat
+            _breadcrumb_file = brain_dir / "heartbeat" / "breadcrumb.json"
+            if _breadcrumb_file.exists():
+                try:
+                    _bc = json.loads(_breadcrumb_file.read_text())
+                    _bc_age_s = (datetime.now(timezone.utc) - datetime.fromisoformat(_bc["ts"])).total_seconds()
+                    if _bc_age_s < 7200:  # Only show if < 2h old
+                        _bc_lines = [f"### RECENT ACTIVITY (breadcrumb from heartbeat, {int(_bc_age_s/60)}m ago)"]
+                        _bc_lines.append(f"Summary: {_bc.get('summary', '?')}")
+                        if _bc.get("files_changed"):
+                            _bc_lines.append(f"Files: {', '.join(_bc['files_changed'][:5])}")
+                        if _bc.get("commits"):
+                            _bc_lines.append(f"Commits: {'; '.join(_bc['commits'][:3])}")
+                        parts.append("\n".join(_bc_lines))
+                except Exception:
+                    pass
+
+            # Pending escalations — show brothers what father needs to decide
+            _esc_dir = brain_dir / "escalations"
+            if _esc_dir.exists():
+                try:
+                    _pending = []
+                    for _ef in sorted(_esc_dir.glob("*.json")):
+                        _ed = json.loads(_ef.read_text())
+                        if _ed.get("status") == "pending":
+                            _pending.append(f"- [{_ed.get('id')}] {_ed.get('question', '?')} (options: {', '.join(_ed.get('options', []))})")
+                    if _pending:
+                        parts.append("### PENDING ESCALATIONS (waiting for father's decision)\n" + "\n".join(_pending[:5]))
+                except Exception:
+                    pass
+
             if parts:
                 brain_context = "\n\n" + "\n\n".join(parts) + "\n\n"
 
@@ -878,8 +913,28 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     default_system = _base_system + _execute_tag_instructions + _tail_system
     native_tool_system = _base_system + _native_tool_instructions + _tail_system
 
+    # Claude Code provider: lighter prompt that complements (not conflicts with) CC's own system prompt
+    _claude_code_system = (
+        "You are running inside Nucleus Chat, powered by Claude Code with a Max subscription.\n"
+        "You have your standard Claude Code tools (Read, Edit, Bash, Glob, Grep, etc.) "
+        "PLUS Nucleus MCP tools (nucleus_engrams, nucleus_tasks, nucleus_sessions, etc.).\n\n"
+        "IMPORTANT CONTEXT:\n"
+        "- The USER is typing in Nucleus Chat, a terminal-based AI coding assistant.\n"
+        "- The user's available slash commands are: /help, /model, /provider, /status, /cost, "
+        "/diff, /files, /undo, /clear, /cc-session, /retry, /compact. These are NOT your tools.\n"
+        "- Do NOT list Claude Code skills (/browse, /ship, /review, /qa etc.) as user commands — "
+        "those are internal to your process and the user cannot type them.\n"
+        "- You have access to the Sovereign Brain (.brain folder) for persistent memory.\n"
+        "- Use nucleus_engrams MCP tool for brain memory (search/write engrams).\n"
+        "- Use nucleus_tasks MCP tool for task management.\n"
+        "- Prefer MCP tools over shell commands for brain operations — they're structured and faster.\n"
+        "- Be direct and concise. The user is a technical founder who prefers surgical answers.\n"
+        f"{brain_context}"
+    )
+
     sys_prompt = system_prompt or default_system
     _native_tool_sys_prompt = system_prompt or native_tool_system
+    _claude_code_sys_prompt = system_prompt or _claude_code_system
     tier = TIER_MAP.get(tier_name, LLMTier.LOCAL_FREE)
 
     # ── Proxy Sovereignty Auto-Discovery ───────────────────────
@@ -913,7 +968,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     def _model_supports_tools(model_name: str) -> bool:
         """Check if the model reliably supports native tool calling."""
-        if _provider == "anthropic":
+        if _provider in ("anthropic", "claude-code", "claude_code", "max"):
             return True  # All Claude models support tool_use
         return model_name in _TOOL_CAPABLE_MODELS
 
@@ -921,18 +976,19 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     def _init_llm(t, model=None, sys_instruction=None):
         kwargs = {"model_name": model} if model else {}
         if sys_instruction:
-            # Anthropic/Groq with tool-capable models get native tool instructions
-            if _provider in ("anthropic", "groq") and sys_instruction == sys_prompt:
+            if _provider in ("claude-code", "claude_code", "max") and sys_instruction == sys_prompt:
+                # Claude Code has its own system prompt — we append a lighter one
+                kwargs["system_instruction"] = _claude_code_sys_prompt
+            elif _provider in ("anthropic", "groq") and sys_instruction == sys_prompt:
                 if _model_supports_tools(model or ""):
                     kwargs["system_instruction"] = _native_tool_sys_prompt
                 else:
-                    # Small models get <execute> tag instructions (more reliable)
                     kwargs["system_instruction"] = sys_prompt
             else:
                 kwargs["system_instruction"] = sys_instruction
         if _provider == "gemini":
             return DualEngineLLM(tier=t, **kwargs)
-        # Non-Gemini providers go through the factory (Anthropic, etc.)
+        # Non-Gemini providers go through the factory (Anthropic, Groq, Claude Code)
         return get_llm_client(provider=_provider, **kwargs)
 
     try:
@@ -950,6 +1006,24 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             print("   Get a free key at: https://console.groq.com\n")
         return
 
+    # ── Auto-Bridge: Brothers discover each other without human coordination ──
+    if _provider in ("claude-code", "claude_code", "max") and brain_dir:
+        _bridge_path = brain_dir / "sessions" / "cc_bridge.json"
+        if _bridge_path.exists() and not getattr(llm, "_session_id", None):
+            try:
+                _bridge = json.loads(_bridge_path.read_text())
+                _bridge_ts = _bridge.get("ts", "")
+                # Auto-resume if bridge is fresh (< 24h)
+                if _bridge_ts:
+                    from datetime import datetime as _dt, timezone as _tz
+                    _bridge_age = (_dt.now(_tz.utc) - _dt.fromisoformat(_bridge_ts)).total_seconds()
+                    if _bridge_age < 86400:  # 24 hours
+                        llm._session_id = _bridge.get("claude_code_session")
+                        _bridge_src = _bridge.get("source", "brother")
+                        logger.info(f"Auto-bridged to {_bridge_src} session: {llm._session_id}")
+            except Exception as _e:
+                logger.debug(f"Auto-bridge skipped: {_e}")
+
     # ── Stdin Piping Support (CLI Parity) ──────────────────────
     # Check for stdin input (enables: echo "prompt" | nucleus chat)
     stdin_prompt = None
@@ -961,6 +1035,52 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         except Exception:
             pass
     
+    # ── Archive Setup (before batch — both paths need it) ──────
+    _archive_dir = brain_dir / "chat" / "archive" if brain_dir else None
+    _archive_file = None
+    if _archive_dir:
+        _archive_dir.mkdir(parents=True, exist_ok=True)
+        _archive_file = _archive_dir / "thread.jsonl"
+
+    # Secret patterns — same as pre-commit hook for consistency
+    import re as _re
+    _SECRET_PATTERNS = [
+        _re.compile(r'AIzaSy[A-Za-z0-9_-]{33}'),
+        _re.compile(r'pplx-[A-Za-z0-9]{40,}'),
+        _re.compile(r'sk_[a-f0-9]{40,}'),
+        _re.compile(r'whsec_[A-Za-z0-9]+'),
+        _re.compile(r'AKIA[0-9A-Z]{16}'),
+        _re.compile(r'ghp_[A-Za-z0-9]{36}'),
+        _re.compile(r'gho_[A-Za-z0-9]{36}'),
+        _re.compile(r'glpat-[A-Za-z0-9_-]{20}'),
+        _re.compile(r'[0-9]{10}:AA[A-Za-z0-9_-]{33}'),
+    ]
+
+    def _scrub_secrets(text: str) -> str:
+        """Replace secret patterns with [REDACTED] before archiving."""
+        for pat in _SECRET_PATTERNS:
+            text = pat.sub("[REDACTED]", text)
+        return text
+
+    def _archive_turn(role: str, content: str, meta: dict = None):
+        """Append a single turn to the persistent archive. Never blocks, never fails."""
+        if not _archive_file:
+            return
+        try:
+            entry = {
+                "ts": datetime.now().isoformat(),
+                "role": role,
+                "content": _scrub_secrets(content[:2000]),
+                "provider": _provider,
+                "model": getattr(llm, "model_name", ""),
+            }
+            if meta:
+                entry.update(meta)
+            with open(_archive_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
+
     # ── Batch Mode (CLI Parity) ────────────────────────────────
     # Non-interactive mode: single turn, then exit
     if batch or stdin_prompt:
@@ -968,11 +1088,44 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         if not batch_prompt:
             print("❌ Error: --batch requires --prompt or stdin input", file=sys.stderr)
             sys.exit(1)
-        
+
+        # ── Circuit Breaker (Commandment 10) ──────────────────────
+        # If 3+ consecutive batch failures, refuse to run and escalate.
+        _cb_file = brain_dir / "heartbeat" / "circuit_breaker.json" if brain_dir else None
+        if _cb_file and _cb_file.exists():
+            try:
+                _cb = json.loads(_cb_file.read_text())
+                _consecutive_fails = _cb.get("consecutive_failures", 0)
+                if _consecutive_fails >= 3:
+                    _cb_msg = f"🛑 CIRCUIT BREAKER OPEN: {_consecutive_fails} consecutive batch failures. Self-repair halted per Commandment 10. Father must /resolve or reset."
+                    if output_format == "json":
+                        print(json.dumps({"ok": False, "error": _cb_msg, "circuit_breaker": True}))
+                    else:
+                        print(_cb_msg, file=sys.stderr)
+                    # Auto-escalate
+                    try:
+                        from mcp_server_nucleus.runtime.heartbeat_ops import escalate_to_father
+                        escalate_to_father(
+                            question=f"Circuit breaker tripped: {_consecutive_fails} consecutive failures. Review and reset.",
+                            context=f"Last error: {_cb.get('last_error', 'unknown')}",
+                            options=["reset and retry", "investigate manually", "pause autonomous work"],
+                            source="circuit-breaker",
+                        )
+                    except Exception:
+                        pass
+                    sys.exit(1)
+            except Exception:
+                pass
+
+        # Brother context: big brother guiding small brother
+        if brother_context:
+            batch_prompt = f"[CONTEXT FROM BIG BROTHER]\n{brother_context}\n[END CONTEXT]\n\n{batch_prompt}"
+
         try:
             response = None
             success = False
             last_err = ""
+            _batch_start = time.time() if 'time' in dir() else __import__('time').time()
 
             if _provider == "gemini":
                 # --- Gemini: Sweeper Key Extraction + Model Cascade ---
@@ -1008,7 +1161,6 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                 break
             else:
                 # --- Non-Gemini (Anthropic, etc.): single attempt, no key sweeping ---
-                # system_instruction already baked in at llm construction time
                 try:
                     response = llm.generate_content(batch_prompt).text
                     success = True
@@ -1016,13 +1168,62 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     last_err = str(e)
 
             if not success:
-                print(f"❌ Batch failed. Last error: {last_err}", file=sys.stderr)
+                # Circuit breaker: track consecutive failures
+                if _cb_file:
+                    try:
+                        _cb = json.loads(_cb_file.read_text()) if _cb_file.exists() else {}
+                        _cb["consecutive_failures"] = _cb.get("consecutive_failures", 0) + 1
+                        _cb["last_error"] = last_err[:200]
+                        _cb["last_failure_ts"] = datetime.now(timezone.utc).isoformat()
+                        _cb_file.parent.mkdir(parents=True, exist_ok=True)
+                        _cb_file.write_text(json.dumps(_cb, indent=2))
+                    except Exception:
+                        pass
+                if output_format == "json":
+                    import json as _bj
+                    print(_bj.dumps({"ok": False, "error": last_err, "provider": _provider, "model": getattr(llm, 'model_name', '')}))
+                else:
+                    print(f"❌ Batch failed. Last error: {last_err}", file=sys.stderr)
                 sys.exit(1)
-                
-            print(response.text if hasattr(response, 'text') else response)
+
+            # Circuit breaker: reset on success
+            if _cb_file and _cb_file.exists():
+                try:
+                    _cb_file.write_text(json.dumps({"consecutive_failures": 0, "last_success_ts": datetime.now(timezone.utc).isoformat()}, indent=2))
+                except Exception:
+                    pass
+
+            _response_text = response.text if hasattr(response, 'text') else str(response)
+            _batch_elapsed = __import__('time').time() - _batch_start
+
+            # Archive the batch turn
+            if _archive_file:
+                try:
+                    _archive_turn("user", batch_prompt)
+                    _archive_turn("assistant", _response_text, {"batch": True})
+                except Exception:
+                    pass
+
+            if output_format == "json":
+                import json as _bj
+                print(_bj.dumps({
+                    "ok": True,
+                    "response": _response_text,
+                    "provider": _provider,
+                    "model": getattr(llm, 'model_name', ''),
+                    "brain_loaded": bool(brain_context),
+                    "commandments_loaded": bool(brain_dir and (brain_dir / "commandments.md").exists()),
+                    "elapsed_s": round(_batch_elapsed, 2),
+                }, ensure_ascii=False))
+            else:
+                print(_response_text)
             return
         except Exception as e:
-            print(f"❌ Error: {e}", file=sys.stderr)
+            if output_format == "json":
+                import json as _bj
+                print(_bj.dumps({"ok": False, "error": str(e), "provider": _provider}))
+            else:
+                print(f"❌ Error: {e}", file=sys.stderr)
             sys.exit(1)
 
     # ── Auto-Session Detection (Zero-Conf) ────────────────────
@@ -1069,17 +1270,27 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║  /help              Show this help                           ║
 ║  /model [name]      Show or switch model                     ║
 ║  /provider [name]   Show or switch provider (gemini/         ║
-║                     anthropic/groq)                           ║
+║                     anthropic/groq/claude-code)               ║
 ║  /dual [provider]   Enable dual-agent review mode            ║
 ║  /dual off          Disable dual-agent mode                  ║
 ║  /auth [key]        Show or set API key for current provider ║
 ║  /status            Show full chat status                     ║
 ║  /tools             Show available tools                      ║
-║  /brain             Brain dashboard (engrams, tasks, memory)  ║
+║  /brain [cmd]       Brain ops (pulse/consolidate/engrams/     ║
+║                     tasks/health) — try /brain help           ║
+║  /cc-session [id]   Claude Code session (show/set/continue)  ║
 ║  /learn <text>      Save knowledge to brain memory            ║
 ║  /tier              Show current tier info                    ║
 ║  /history           Show conversation stats                  ║
 ║  /compact           Compress conversation history            ║
+║  /diff              Show git diff for files edited this session║
+║  /files             List all files touched this session       ║
+║  /recall [query]    Search conversation archive (on-demand RAG)║
+║  /recall inject Q   Search + inject results into context     ║
+║  /archive           Show archive stats                        ║
+║  /escalate <Q>      Escalate decision to father               ║
+║  /resolve [id]      Resolve pending escalation (father only)  ║
+║  /undo              Revert last file edit/write               ║
 ║  /retry             Re-send last message                      ║
 ║  /clear             Clear conversation history               ║
 ║  /chat save [tag]   Save conversation                        ║
@@ -1096,7 +1307,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║──────────────────────────────────────────────────────────────║
 ║  /help for commands  •  /model to switch  •  Ctrl+C to quit ║
 ╚══════════════════════════════════════════════════════════════╝""")
-    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: 11")
+    _tool_count = "35 (23 native + 12 MCP)" if _provider in ("claude-code", "claude_code", "max") and getattr(llm, "_mcp_config", None) else "11"
+    print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: {_tool_count}")
     if _workspace_info:
         # Show compact one-liner from workspace
         _ws_oneliner = _workspace_info.split("\n")[0]  # e.g. "Git: branch=main"
@@ -1111,10 +1323,30 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     }
     _auth_key_env = _auth_env_map.get(_provider, "GEMINI_API_KEY")
     key_hint = os.environ.get(_auth_key_env, "")
-    if key_hint:
+    _oauth_mode = getattr(llm, "_oauth_mode", False)
+    if _provider in ("claude-code", "claude_code", "max"):
+        _cc_sid = getattr(llm, "_session_id", None)
+        _cc_mcp = getattr(llm, "_mcp_config", None)
+        _cc_parts = ["$0 via Max"]
+        if _cc_sid:
+            _cc_parts.append(f"session: {_cc_sid[:8]}...")
+        if _cc_mcp:
+            _cc_parts.append("MCP: nucleus")
+        print(f"  Auth:  Claude Code Max — {' | '.join(_cc_parts)}")
+    elif _oauth_mode:
+        print(f"  Auth:  Claude Code Max (OAuth) — $0 API cost")
+    elif key_hint:
         print(f"  Auth:  ...{key_hint[-6:]}")
     else:
-        print(f"  Auth:  ⚠️  No {_provider} API key set. Use /auth <key>")
+        if _provider == "anthropic":
+            # Check if Claude Code OAuth is available
+            _has_oauth = hasattr(llm, "_get_claude_code_oauth_token") and llm._get_claude_code_oauth_token()
+            if _has_oauth:
+                print(f"  Auth:  Claude Code Max available! Will auto-detect on /provider anthropic")
+            else:
+                print(f"  Auth:  ⚠️  No API key. Use /auth <key> or install Claude Code Max")
+        else:
+            print(f"  Auth:  ⚠️  No {_provider} API key set. Use /auth <key>")
         
     if brain_context:
         _engram_count = brain_context.count("- [")  # Count injected engrams
@@ -1125,21 +1357,220 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             print(f"           • {session_label}: {session_id[:16]}")
         if latest_turns > 0:
             print(f"           • Resuming prior session ({latest_turns} turns)")
+        # Archive stats (check file directly — setup comes later)
+        _archive_path = brain_dir / "chat" / "archive" / "thread.jsonl" if brain_dir else None
+        if _archive_path and _archive_path.exists():
+            try:
+                _a_size = _archive_path.stat().st_size
+                _a_turns = sum(1 for l in open(_archive_path) if l.strip())
+                print(f"           • Archive: {_a_turns} turns ({round(_a_size/1024, 1)} KB) — /recall to search")
+            except Exception:
+                pass
     else:
         print("  Context: ⚪️ Sandboxed (No .brain found)")
     print()
 
     # Resume saved history (cap at last 10 turns to avoid blowing context)
+    # Normalize entries: ensure each is (role, content) tuple, not dict or malformed
+    def _normalize_history(raw):
+        result = []
+        for item in raw:
+            if isinstance(item, (list, tuple)) and len(item) >= 2:
+                result.append((str(item[0]), str(item[1])))
+            elif isinstance(item, dict):
+                role = item.get("role", "user")
+                content = item.get("content", "")
+                result.append((str(role), str(content)))
+            # skip malformed entries
+        return result
+
     _max_resume_msgs = 20  # 10 turns × 2 messages each
-    if len(_saved_history) > _max_resume_msgs:
-        history = list(_saved_history[-_max_resume_msgs:])
+    _normalized = _normalize_history(_saved_history)
+    if len(_normalized) > _max_resume_msgs:
+        history = _normalized[-_max_resume_msgs:]
     else:
-        history = list(_saved_history)
+        history = _normalized
     turn_count = latest_turns
+
+    # ── Session File Tracker (Governance: audit what AI touched) ──
+    # Tracks every file operation for /diff and auto-engram on exit
+    _session_files = {
+        "read": [],      # files read
+        "written": [],   # files created/overwritten
+        "edited": [],    # files edited (find/replace)
+        "searched": [],  # code search paths
+    }
+
+    def _track_file(op: str, path: str):
+        """Record a file operation for session audit."""
+        if path and path not in _session_files.get(op, []):
+            _session_files.setdefault(op, []).append(path)
+
+    # ── Conversation Archive (search + stats — setup already done above) ──
+    # _archive_dir, _archive_file, _archive_turn already defined before batch mode
+
+    def _search_archive(query: str, limit: int = 10) -> list:
+        """Search the conversation archive for past turns matching query."""
+        if not _archive_file or not _archive_file.exists():
+            return []
+        results = []
+        query_lower = query.lower()
+        try:
+            with open(_archive_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                        content = entry.get("content", "")
+                        if query_lower in content.lower():
+                            results.append(entry)
+                    except json.JSONDecodeError:
+                        continue
+            # Return most recent matches
+            return results[-limit:]
+        except Exception:
+            return []
+
+    def _archive_stats() -> dict:
+        """Get archive stats (total turns, file size, date range)."""
+        if not _archive_file or not _archive_file.exists():
+            return {"turns": 0, "size_kb": 0}
+        try:
+            size = _archive_file.stat().st_size
+            turns = 0
+            first_ts = None
+            last_ts = None
+            with open(_archive_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        turns += 1
+                        try:
+                            entry = json.loads(line)
+                            ts = entry.get("ts", "")
+                            if not first_ts:
+                                first_ts = ts
+                            last_ts = ts
+                        except json.JSONDecodeError:
+                            pass
+            return {
+                "turns": turns,
+                "size_kb": round(size / 1024, 1),
+                "first": first_ts,
+                "last": last_ts,
+            }
+        except Exception:
+            return {"turns": 0, "size_kb": 0}
+
+    # ── Undo Stack (reversible file changes) ───────────────────
+    # Each entry: {"path": str, "op": "edit"|"write", "backup": str|None, "existed": bool}
+    _undo_stack = []
+    _MAX_UNDO = 50
+
+    def _snapshot_before(path: str, op: str):
+        """Snapshot file content before a destructive op (edit/write)."""
+        p = Path(path).expanduser()
+        existed = p.exists()
+        backup = p.read_text() if existed else None
+        _undo_stack.append({"path": str(p), "op": op, "backup": backup, "existed": existed})
+        if len(_undo_stack) > _MAX_UNDO:
+            _undo_stack.pop(0)
 
     # No global SIGINT handler — let KeyboardInterrupt propagate naturally.
     # Ctrl+C during streaming → cancel response (caught in ReAct loop)
     # Ctrl+C at prompt → exit (caught in main loop)
+
+    def _expand_at_files(user_input: str) -> str:
+        """Expand @file references in user input. Like Cursor's @-mentions.
+
+        Patterns:
+          @path/to/file.py      → reads and attaches full file
+          @path/to/file.py:42   → reads and attaches lines around line 42
+          @src/**/*.py           → glob and list matching files (no content)
+        """
+        import re as _re
+        # Find all @references (not @mentions like @user)
+        _at_pattern = _re.compile(r'@([\w./\-*]+(?::\d+)?)')
+        matches = _at_pattern.findall(user_input)
+        if not matches:
+            return user_input
+
+        attachments = []
+        for ref in matches:
+            # Split line number: @file.py:42 → file.py, 42
+            if ":" in ref and ref.rsplit(":", 1)[1].isdigit():
+                fpath, line_str = ref.rsplit(":", 1)
+                target_line = int(line_str)
+            else:
+                fpath = ref
+                target_line = None
+
+            p = Path(fpath).expanduser()
+
+            # Glob pattern (contains *)
+            if "*" in fpath:
+                try:
+                    glob_matches = sorted(Path(".").glob(fpath))[:20]
+                    if glob_matches:
+                        file_list = "\n".join(f"  {m}" for m in glob_matches)
+                        attachments.append(f"[Files matching @{fpath}]\n{file_list}")
+                except Exception:
+                    pass
+                continue
+
+            # Single file
+            if not p.exists():
+                # Try relative to cwd
+                p = Path.cwd() / fpath
+            if not p.exists():
+                continue
+
+            try:
+                text = p.read_text()
+                lines = text.split("\n")
+                _track_file("read", str(p))
+
+                if target_line:
+                    # Show ~20 lines around target
+                    start = max(0, target_line - 10)
+                    end = min(len(lines), target_line + 10)
+                    selected = lines[start:end]
+                    numbered = [f"{start + i + 1:>5}│ {l}" for i, l in enumerate(selected)]
+                    attachments.append(
+                        f"[File: {p.name}:{target_line} (lines {start+1}-{end})]\n" +
+                        "\n".join(numbered)
+                    )
+                    print(f"   📎 Attached: {p.name}:{target_line} ({len(selected)} lines)")
+                else:
+                    # Full file (cap at 200 lines for context efficiency)
+                    if len(lines) > 200:
+                        numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines[:200])]
+                        attachments.append(
+                            f"[File: {p.name} ({len(lines)} lines, showing first 200)]\n" +
+                            "\n".join(numbered)
+                        )
+                        print(f"   📎 Attached: {p.name} (first 200 of {len(lines)} lines)")
+                    else:
+                        numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines)]
+                        attachments.append(
+                            f"[File: {p.name} ({len(lines)} lines)]\n" +
+                            "\n".join(numbered)
+                        )
+                        print(f"   📎 Attached: {p.name} ({len(lines)} lines)")
+
+                # Also attach brain context
+                brain_ctx = _brain_context_for(str(p))
+                if brain_ctx:
+                    attachments.append(brain_ctx)
+                    print(f"   📎 🧠 brain context for {p.name}")
+            except Exception:
+                pass
+
+        if not attachments:
+            return user_input
+
+        return user_input + "\n\n" + "\n\n".join(attachments)
 
     def _build_prompt(user_input: str) -> str:
         """String-concatenated prompt (Gemini path)."""
@@ -1207,7 +1638,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         from prompt_toolkit.patch_stdout import patch_stdout as _pt_patch_stdout
 
         _slash_commands = ["/help", "/model", "/auth", "/provider", "/dual",
-                           "/tier", "/status", "/tools", "/brain", "/learn", "/history", "/retry", "/compact", "/chat", "/quit", "/exit"]
+                           "/tier", "/status", "/tools", "/brain", "/learn", "/history", "/retry",
+                           "/compact", "/diff", "/files", "/undo", "/clear", "/chat", "/quit", "/exit"]
         _pt_session = PromptSession(
             history=InMemoryHistory(),
             completer=WordCompleter(_slash_commands, sentence=True),
@@ -1299,6 +1731,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             offset = tool_input.get("offset", 1)
             limit = tool_input.get("limit", 500)
             print(f"   [Step {step}: read {fpath}]")
+            _track_file("read", fpath)
             try:
                 p = Path(fpath).expanduser()
                 if not p.exists():
@@ -1323,6 +1756,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             fpath = tool_input.get("path", "")
             content = tool_input.get("content", "")
             print(f"   [Step {step}: write {fpath}]")
+            _track_file("written", fpath)
+            _snapshot_before(fpath, "write")
             try:
                 p = Path(fpath).expanduser()
                 p.parent.mkdir(parents=True, exist_ok=True)
@@ -1338,6 +1773,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             old = tool_input.get("old_string", "")
             new = tool_input.get("new_string", "")
             print(f"   [Step {step}: edit {fpath}]")
+            _track_file("edited", fpath)
+            _snapshot_before(fpath, "edit")
             try:
                 p = Path(fpath).expanduser()
                 if not p.exists():
@@ -1381,6 +1818,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             search_path = tool_input.get("path", ".")
             file_glob = tool_input.get("glob", "")
             print(f"   [Step {step}: grep '{pattern}']")
+            _track_file("searched", search_path)
             try:
                 import subprocess as _sp
                 cmd = ["grep", "-rn", "--include", file_glob, pattern, search_path] if file_glob else ["grep", "-rn", pattern, search_path]
@@ -1536,10 +1974,223 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(HELP_TEXT)
                 continue
 
+            elif cmd == "/brain":
+                # Quick brain operations — runs via nucleus CLI
+                import subprocess as _brain_sp
+                _brain_cmds = {
+                    "": ("status", ["nucleus", "status"]),
+                    "status": ("status", ["nucleus", "status"]),
+                    "pulse": ("pulse & polish", ["nucleus", "combo", "pulse"]),
+                    "consolidate": ("consolidation", ["nucleus", "combo", "consolidate"]),
+                    "engrams": ("engram list", ["nucleus", "engram", "list"]),
+                    "tasks": ("task list", ["nucleus", "task", "list"]),
+                    "health": ("health check", ["nucleus", "combo", "self-healing-sre"]),
+                }
+                _bcmd = cmd_arg.lower().strip()
+                if _bcmd == "help":
+                    print("🧠 /brain commands:")
+                    print("   /brain           — system status")
+                    print("   /brain pulse     — run pulse & polish (health + cleanup)")
+                    print("   /brain consolidate — brain consolidation (archive stale)")
+                    print("   /brain engrams   — list engrams")
+                    print("   /brain tasks     — list tasks")
+                    print("   /brain health    — self-healing SRE check\n")
+                elif _bcmd in _brain_cmds:
+                    _label, _argv = _brain_cmds[_bcmd]
+                    print(f"🧠 Running brain {_label}...")
+                    try:
+                        _br = _brain_sp.run(_argv, capture_output=True, text=True, timeout=30)
+                        print(_br.stdout[:2000] if _br.stdout else f"(no output, exit {_br.returncode})")
+                        if _br.stderr:
+                            print(f"   {_br.stderr[:200]}")
+                    except Exception as _be:
+                        print(f"❌ {_be}")
+                    print()
+                else:
+                    print(f"❓ Unknown brain command '{_bcmd}'. Try /brain help\n")
+                continue
+
             elif cmd in ("/clear", "/reset"):
                 history.clear()
                 turn_count = 0
                 print("🔄 Conversation cleared.\n")
+                continue
+
+            elif cmd == "/cc-session":
+                if _provider not in ("claude-code", "claude_code", "max"):
+                    print(f"⚠️  /cc-session only works with claude-code provider. Current: {_provider}\n")
+                elif not cmd_arg:
+                    _sid = getattr(llm, "_session_id", None)
+                    if _sid:
+                        print(f"🔗 Claude Code session: {_sid}")
+                    else:
+                        print(f"🔗 No active session (will auto-create on first message)")
+                    # Show bridge info if available
+                    _bridge_path = brain_dir / "sessions" / "cc_bridge.json" if brain_dir else None
+                    if _bridge_path and _bridge_path.exists():
+                        try:
+                            _b = json.loads(_bridge_path.read_text())
+                            print(f"   Bridge: {_b.get('claude_code_session', '?')[:16]}... ({_b.get('source', '?')} @ {_b.get('ts', '?')[:16]})")
+                        except Exception:
+                            pass
+                    print(f"   Usage: /cc-session <session-id>  — resume a specific session")
+                    print(f"          /cc-session continue      — resume most recent session")
+                    print(f"          /cc-session bridge        — resume from bridge (shared with Claude Code normal)\n")
+                else:
+                    if cmd_arg.lower() == "bridge":
+                        # Resume from bridge — pick up the session the other brother left
+                        _bridge_path = brain_dir / "sessions" / "cc_bridge.json" if brain_dir else None
+                        if _bridge_path and _bridge_path.exists():
+                            try:
+                                _b = json.loads(_bridge_path.read_text())
+                                llm._session_id = _b.get("claude_code_session")
+                                _src = _b.get("source", "unknown")
+                                print(f"🔗 Bridged to session from {_src}: {llm._session_id}")
+                                print(f"   Both brothers now share the same context.\n")
+                            except Exception as _e:
+                                print(f"❌ Failed to read bridge: {_e}\n")
+                        else:
+                            print(f"⚠️  No bridge found. Start a session first — the bridge auto-creates.\n")
+                    elif cmd_arg.lower() == "continue":
+                        # Find the most recent session for this directory
+                        import subprocess as _sp
+                        try:
+                            _test = _sp.run(
+                                ["claude", "-p", "say OK", "--output-format", "json", "--continue", "--model", llm._cli_model, "--dangerously-skip-permissions"],
+                                capture_output=True, text=True, timeout=30, cwd=os.getcwd(),
+                            )
+                            _out = json.loads(_test.stdout.strip())
+                            llm._session_id = _out.get("session_id")
+                            print(f"🔗 Resumed most recent session: {llm._session_id}")
+                            print(f"   Claude Code now shares context with that session.\n")
+                        except Exception as _e:
+                            print(f"❌ Failed to resume: {_e}\n")
+                    else:
+                        llm._session_id = cmd_arg.strip()
+                        print(f"🔗 Set Claude Code session: {llm._session_id}")
+                        print(f"   Next message will resume this session's full context.\n")
+                continue
+
+            elif cmd == "/recall":
+                if not cmd_arg:
+                    stats = _archive_stats()
+                    if stats["turns"]:
+                        print(f"📚 Conversation Archive:")
+                        print(f"   Turns: {stats['turns']}  |  Size: {stats['size_kb']} KB")
+                        print(f"   Range: {stats.get('first', '?')[:10]} → {stats.get('last', '?')[:10]}")
+                        print(f"   Usage: /recall <query>  — search past conversations")
+                        print(f"          /recall inject <query>  — search + inject into context\n")
+                    else:
+                        print(f"📚 Archive is empty. Conversations will auto-save as you chat.\n")
+                else:
+                    # Check if user wants to inject results into context
+                    _inject = False
+                    _query = cmd_arg
+                    if cmd_arg.lower().startswith("inject "):
+                        _inject = True
+                        _query = cmd_arg[7:].strip()
+
+                    results = _search_archive(_query, limit=10)
+                    if not results:
+                        print(f"📚 No matches for '{_query}' in archive.\n")
+                    else:
+                        print(f"📚 Found {len(results)} matches for '{_query}':\n")
+                        for r in results:
+                            _ts = r.get("ts", "")[:16]
+                            _role = r.get("role", "?")
+                            _content = r.get("content", "")
+                            # Truncate long content
+                            _preview = _content[:200] + ("..." if len(_content) > 200 else "")
+                            _icon = "👤" if _role == "user" else "🧠"
+                            print(f"  {_icon} [{_ts}] {_preview}")
+                        print()
+
+                        if _inject:
+                            # Inject relevant turns into conversation context
+                            _recall_text = "\n".join(
+                                f"[{r.get('ts', '')[:16]}] {r.get('role', 'user')}: {r.get('content', '')[:500]}"
+                                for r in results[-5:]  # Last 5 matches
+                            )
+                            history.append(("system", f"[Recalled from archive — matching '{_query}']\n{_recall_text}"))
+                            print(f"   💉 Injected {min(len(results), 5)} turns into context. The AI can now reference them.\n")
+                continue
+
+            elif cmd == "/archive":
+                stats = _archive_stats()
+                if stats["turns"]:
+                    print(f"📚 Conversation Archive:")
+                    print(f"   File: {_archive_file}")
+                    print(f"   Turns: {stats['turns']}  |  Size: {stats['size_kb']} KB")
+                    print(f"   Range: {stats.get('first', '?')[:10]} → {stats.get('last', '?')[:10]}")
+                    print(f"   Search: /recall <query>\n")
+                else:
+                    print(f"📚 Archive is empty. Auto-saves every turn.\n")
+                continue
+
+            elif cmd == "/escalate":
+                if not cmd_arg:
+                    print(f"🚨 Escalate a decision to father.")
+                    print(f"   Usage: /escalate <question>")
+                    print(f"   Example: /escalate Should we migrate auth to OAuth2?\n")
+                else:
+                    try:
+                        from mcp_server_nucleus.runtime.heartbeat_ops import escalate_to_father
+                        _esc_id = escalate_to_father(
+                            question=cmd_arg,
+                            context=f"Raised from nucleus chat ({_provider})",
+                            source=f"nucleus-chat-{_provider}",
+                        )
+                        print(f"🚨 Escalation created: {_esc_id}")
+                        print(f"   Father will see this on next heartbeat or session.\n")
+                    except Exception as _e:
+                        print(f"❌ Failed to escalate: {_e}\n")
+                continue
+
+            elif cmd == "/resolve":
+                if not brain_dir:
+                    print(f"⚠️  No brain found. Cannot resolve escalations.\n")
+                    continue
+                _esc_dir = brain_dir / "escalations"
+                if not cmd_arg:
+                    # List pending escalations
+                    if not _esc_dir.exists():
+                        print(f"✅ No pending escalations.\n")
+                        continue
+                    _found = False
+                    for _ef in sorted(_esc_dir.glob("*.json")):
+                        try:
+                            _ed = json.loads(_ef.read_text())
+                            if _ed.get("status") == "pending":
+                                _opts = ", ".join(_ed.get("options", [])) or "open-ended"
+                                print(f"  🚨 [{_ed['id']}] {_ed.get('question', '?')}")
+                                print(f"     Options: {_opts}  |  From: {_ed.get('source', '?')}")
+                                _found = True
+                        except Exception:
+                            continue
+                    if _found:
+                        print(f"\n   Resolve: /resolve <id> <decision>\n")
+                    else:
+                        print(f"✅ No pending escalations.\n")
+                else:
+                    # Parse: /resolve esc_123456 migrate
+                    _parts = cmd_arg.split(None, 1)
+                    _esc_id = _parts[0]
+                    _decision = _parts[1] if len(_parts) > 1 else "approved"
+                    _esc_file = _esc_dir / f"{_esc_id}.json"
+                    if _esc_file.exists():
+                        try:
+                            _ed = json.loads(_esc_file.read_text())
+                            _ed["status"] = "resolved"
+                            _ed["decision"] = _decision
+                            _ed["resolved_at"] = datetime.now(timezone.utc).isoformat()
+                            _ed["resolved_by"] = "father"
+                            _esc_file.write_text(json.dumps(_ed, indent=2))
+                            print(f"✅ Resolved [{_esc_id}]: {_decision}")
+                            print(f"   Brothers will see this decision on next startup.\n")
+                        except Exception as _e:
+                            print(f"❌ Failed to resolve: {_e}\n")
+                    else:
+                        print(f"⚠️  Escalation '{_esc_id}' not found.\n")
                 continue
 
             elif cmd == "/model":
@@ -1556,6 +2207,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             "qwen/qwen3-32b",
                         ]
                         print(f"   Available: {', '.join(groq_models)}\n")
+                    elif _provider in ("claude-code", "claude_code", "max"):
+                        cc_models = ["sonnet", "opus", "haiku"]
+                        print(f"   Available: {', '.join(cc_models)}  ($0 via Max subscription)\n")
                     else:
                         anthropic_models = [
                             "claude-sonnet-4-6-20250514",
@@ -1641,15 +2295,15 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         except Exception as e:
                             print(f"❌ Failed to init reviewer: {e}\n")
                 else:
-                    print(f"❌ Unknown provider '{cmd_arg}'. Available: gemini, anthropic, groq\n")
+                    print(f"❌ Unknown provider '{cmd_arg}'. Available: gemini, anthropic, groq, claude-code\n")
                 continue
 
             elif cmd == "/provider":
-                available = ["gemini", "anthropic", "groq"]
+                available = ["gemini", "anthropic", "groq", "claude-code"]
                 if not cmd_arg:
                     print(f"🔌 Current provider: {_provider}")
                     print(f"   Available: {', '.join(available)}")
-                    print(f"   Usage: /provider groq\n")
+                    print(f"   Usage: /provider claude-code  (free via Max subscription)\n")
                 elif cmd_arg.lower() in available:
                     new_provider = cmd_arg.lower()
                     try:
@@ -1676,6 +2330,56 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"📜 Conversation: {turn_count} turn(s), {len(history)} messages\n")
                 continue
 
+            elif cmd == "/files":
+                _total = sum(len(v) for v in _session_files.values())
+                if _total == 0:
+                    print("📂 No files touched this session.\n")
+                else:
+                    print(f"📂 Session File Tracker ({_total} operations)")
+                    for op, label in [("read", "📖 Read"), ("edited", "✏️  Edited"), ("written", "📝 Written"), ("searched", "🔍 Searched")]:
+                        paths = _session_files.get(op, [])
+                        if paths:
+                            print(f"  {label}:")
+                            for fp in paths:
+                                print(f"    {fp}")
+                    print()
+                continue
+
+            elif cmd == "/diff":
+                # Show git diff for all files edited/written this session
+                _modified = list(set(_session_files.get("edited", []) + _session_files.get("written", [])))
+                if not _modified:
+                    print("📋 No files edited or written this session.\n")
+                else:
+                    print(f"📋 Session Diff ({len(_modified)} file(s) modified)")
+                    import subprocess as _sp
+                    for fp in _modified:
+                        try:
+                            # Try git diff first (tracked files)
+                            res = _sp.run(["git", "diff", "--no-color", fp], capture_output=True, text=True, timeout=5)
+                            if res.stdout.strip():
+                                # Show compact diff
+                                diff_lines = res.stdout.strip().split("\n")
+                                print(f"\n  ── {fp} ──")
+                                for dl in diff_lines:
+                                    if dl.startswith("+") and not dl.startswith("+++"):
+                                        print(f"  \033[32m{dl}\033[0m")
+                                    elif dl.startswith("-") and not dl.startswith("---"):
+                                        print(f"  \033[31m{dl}\033[0m")
+                                    elif dl.startswith("@@"):
+                                        print(f"  \033[36m{dl}\033[0m")
+                            else:
+                                # New file or no git changes — show file size
+                                try:
+                                    _sz = Path(fp).stat().st_size
+                                    print(f"\n  ── {fp} (new file, {_sz} bytes) ──")
+                                except Exception:
+                                    print(f"\n  ── {fp} (no diff available) ──")
+                        except Exception:
+                            print(f"\n  ── {fp} (diff failed) ──")
+                    print()
+                continue
+
             elif cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
                 _tool_count = "11 tools (native)" if _native_tools else "11 tools (<execute> tags)"
@@ -1689,6 +2393,22 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 else:
                     print(f"   Dual-agent: OFF")
                 print(f"   History: {turn_count} turns, {len(history)} messages")
+                _files_edited = len(_session_files.get("edited", [])) + len(_session_files.get("written", []))
+                _files_read = len(_session_files.get("read", []))
+                print(f"   Files: {_files_read} read, {_files_edited} modified (/diff to review)")
+                # Token budget
+                try:
+                    from mcp_server_nucleus.runtime.token_budget import get_budget_manager
+                    _bm = get_budget_manager()
+                    _sid = os.environ.get("NUCLEUS_SESSION_ID", "default")
+                    _usage = _bm.get_usage(_sid) if hasattr(_bm, "get_usage") else None
+                    if _usage:
+                        _used = _usage.get("total_tokens", 0)
+                        _limit = _usage.get("limit", 0)
+                        _pct = int((_used / _limit) * 100) if _limit else 0
+                        print(f"   Tokens: {_used:,}/{_limit:,} ({_pct}%) — /compact to free space")
+                except Exception:
+                    pass
                 _k = os.environ.get(_auth_env_map.get(_provider, ""), "")
                 print(f"   Auth: ...{_k[-6:]}" if _k else "   Auth: ⚠️ no key")
                 print()
@@ -1800,9 +2520,74 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"📎 Compacted: {old_count} → {len(history)} messages\n")
                 continue
 
+            elif cmd == "/clear":
+                history.clear()
+                turn_count = 0
+                for k in _session_files:
+                    _session_files[k].clear()
+                print("🗑️  Conversation and file tracker cleared.\n")
+                continue
+
+            elif cmd == "/undo":
+                if not _undo_stack:
+                    print("⏪ Nothing to undo.\n")
+                else:
+                    entry = _undo_stack.pop()
+                    fpath = entry["path"]
+                    fname = Path(fpath).name
+                    try:
+                        p = Path(fpath)
+                        if entry["backup"] is not None:
+                            # Restore previous content
+                            p.write_text(entry["backup"])
+                            print(f"⏪ Reverted {fname} ({entry['op']}) — restored previous version")
+                        elif not entry["existed"]:
+                            # File was newly created — delete it
+                            if p.exists():
+                                p.unlink()
+                                print(f"⏪ Reverted {fname} (write) — deleted newly created file")
+                            else:
+                                print(f"⏪ {fname} already gone.")
+                        else:
+                            print(f"⏪ Cannot undo {fname} — no backup available")
+                        if _undo_stack:
+                            print(f"   ({len(_undo_stack)} more undo(s) available)")
+                        print()
+                    except Exception as e:
+                        print(f"❌ Undo failed for {fname}: {e}\n")
+                continue
+
             elif cmd in ("/cost", "/stats"):
-                print(f"📊 Session: {turn_count} turns, ~{turn_count * 500} tokens estimated")
-                print(f"   Model: {llm.model_name}")
+                print(f"📊 Session Stats")
+                print(f"   Turns: {turn_count} | Messages: {len(history)}")
+                print(f"   Model: {llm.model_name} | Provider: {_provider}")
+                _files_mod = len(set(_session_files.get("edited", []) + _session_files.get("written", [])))
+                _files_rd = len(_session_files.get("read", []))
+                print(f"   Files: {_files_rd} read, {_files_mod} modified, {len(_undo_stack)} undo(s)")
+                # Token budget from BudgetManager
+                try:
+                    from mcp_server_nucleus.runtime.token_budget import get_budget_manager, estimate_tokens
+                    _bm = get_budget_manager()
+                    _sid = os.environ.get("NUCLEUS_SESSION_ID", "default")
+                    _usage = _bm.get_usage(_sid) if hasattr(_bm, "get_usage") else None
+                    if _usage:
+                        _used = _usage.get("total_tokens", 0)
+                        _limit = _usage.get("limit", 0)
+                        _pct = int((_used / _limit) * 100) if _limit else 0
+                        # Estimate cost (rough: $0.50/1M input tokens for Gemini Flash)
+                        _cost_per_1m = {"gemini": 0.50, "anthropic": 3.00, "groq": 0.05}
+                        _cpm = _cost_per_1m.get(_provider, 0.50)
+                        _est_cost = (_used / 1_000_000) * _cpm
+                        print(f"   Tokens: {_used:,}/{_limit:,} ({_pct}%)")
+                        print(f"   Est. cost: ${_est_cost:.4f} (~${_cpm}/1M tokens for {_provider})")
+                    else:
+                        # Estimate from history
+                        _hist_chars = sum(len(c) for _, c in history)
+                        _est_tokens = _hist_chars // 4
+                        print(f"   Tokens: ~{_est_tokens:,} estimated (from history)")
+                except Exception:
+                    _est_tokens = sum(len(c) for _, c in history) // 4
+                    print(f"   Tokens: ~{_est_tokens:,} estimated")
                 cascade = getattr(TierRouter, "FREE_TIER_CASCADE", [])
                 if cascade:
                     print(f"   Free cascade: {' → '.join(cascade)}")
@@ -1839,7 +2624,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             import json
                             data = json.loads(file_path.read_text())
                             history.clear()
-                            history.extend(data.get("history", []))
+                            history.extend(_normalize_history(data.get("history", [])))
                             turn_count = data.get("turn_count", 0)
                             print(f"✅ Chat resumed from tag '{chat_tag}' ({turn_count} turns)\n")
                         except Exception as e:
@@ -1903,12 +2688,15 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         _suppress_echo()  # Block keystroke echo while agent is working
         reply_chunks = []  # Defined here so KeyboardInterrupt handler can access partial output
         try:
-            current_input = user_input
+            current_input = _expand_at_files(user_input)
             react_step = 0
 
             while True:
                 # Native multi-turn for Anthropic/Groq; string-concat for Gemini
-                if _provider in ("anthropic", "groq"):
+                # Claude Code maintains its own context via --resume, so just pass current input
+                if _provider in ("claude-code", "claude_code", "max"):
+                    prompt = current_input  # Plain string — Claude Code has the full session
+                elif _provider in ("anthropic", "groq"):
                     prompt = _build_messages(current_input)
                 else:
                     prompt = _build_prompt(current_input)
@@ -1966,6 +2754,26 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                     continue
                                 else:
                                     break
+                elif _provider in ("claude-code", "claude_code", "max"):
+                    # --- Claude Code: tools handled internally by claude CLI ---
+                    # Claude Code has its own agent loop (Read, Edit, Bash, etc.)
+                    # We just stream the final response — no ReAct loop needed.
+                    try:
+                        reply_chunks = []
+                        _first_chunk = True
+                        for chunk in llm.stream_content(prompt):
+                            if _first_chunk:
+                                sys.stdout.write("\n🧠 ")
+                                _first_chunk = False
+                            sys.stdout.write(chunk)
+                            sys.stdout.flush()
+                            reply_chunks.append(chunk)
+                        print("\n")
+                        reply = "".join(reply_chunks).strip()
+                        success = True
+                    except Exception as e:
+                        last_err = str(e)
+
                 elif hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name):
                     # --- Native Tool Calling (Anthropic / Groq 70b+) ---
                     _tool_stop_reasons = ("tool_use", "tool_calls")
@@ -2091,9 +2899,22 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 if not success:
                     # Friendly error messages for known issues
                     _le = last_err.lower()
-                    if "credit balance" in _le or "purchase credits" in _le:
-                        print(f"⚠️  {_provider.capitalize()} credits exhausted. Top up at your provider's billing page.")
-                        print(f"   Or switch: /provider groq (free) or /provider gemini\n")
+                    _is_oauth = getattr(llm, "_oauth_mode", False)
+                    if ("authentication" in _le or "invalid x-api-key" in _le or "invalid api key" in _le or "401" in last_err) and _is_oauth:
+                        # OAuth token might be expired or invalid
+                        print(f"⚠️  OAuth authentication failed. Token may be expired.")
+                        print(f"   Try: Open Claude Code once to refresh the token, then retry.\n")
+                        # Attempt auto-refresh
+                        if hasattr(llm, "refresh_oauth_token") and llm.refresh_oauth_token():
+                            print(f"   🔑 Token refreshed! Try your message again.\n")
+                    elif "credit balance" in _le or "purchase credits" in _le:
+                        if _is_oauth:
+                            print(f"⚠️  Claude Code OAuth error (may be auth, not billing).")
+                            print(f"   Raw: {last_err[:200]}")
+                            print(f"   Try: Open Claude Code to refresh session, then retry.\n")
+                        else:
+                            print(f"⚠️  {_provider.capitalize()} credits exhausted. Top up at your provider's billing page.")
+                            print(f"   Or switch: /provider groq (free) or /provider gemini\n")
                     elif "429" in last_err or "rate_limit" in _le or "Rate limit" in last_err:
                         import re as _re
                         wait = _re.search(r"try again in (\d+m[\d.]+s|\d+[\d.]*s)", last_err)
@@ -2215,8 +3036,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 history.append(("user", current_input))
                 history.append(("assistant", reply))
                 turn_count += 1
-                
-                # Auto-save
+
+                # Archive to disk (permanent, append-only — survives /compact and session end)
+                _archive_turn("user", current_input)
+                _archive_turn("assistant", reply, {"tools_used": react_step})
+
+                # Auto-save (context window state — overwrites each time)
                 if brain_dir:
                     try:
                         import json
@@ -2227,6 +3052,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         latest_file.write_text(json.dumps(data, indent=2))
                     except Exception:
                         pass
+
+                # Per-turn cost estimate (quiet — just a subtle line)
+                if react_step > 0:
+                    # Multi-step turn: show step count
+                    print(f"   [{react_step} tool call(s) this turn]")
+
                 break # Exit ReAct loop
 
         except KeyboardInterrupt:
@@ -2242,8 +3073,39 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             _restore_echo()
             err = str(e)
             _el = err.lower()
-            if "credit balance" in _el or "purchase credits" in _el:
-                print(f"\n⚠️  {_provider.capitalize()} credits exhausted. Top up or switch: /provider groq\n")
+            if "token budget exceeded" in _el or "budget exceeded" in _el:
+                print(f"\n⚠️  Token budget exceeded. Auto-compacting conversation...")
+                # Auto-compact: save context to brain, then slim history
+                if len(history) > 4:
+                    old_count = len(history)
+                    dropped = history[:-4]
+                    _topics = []
+                    for role, msg in dropped:
+                        if role == "user" and not msg.startswith("[Tool Result"):
+                            _topics.append(msg.strip().split("\n")[0][:60])
+                    if _topics and brain_dir:
+                        try:
+                            from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
+                            from datetime import datetime
+                            ts = datetime.now().strftime("%Y%m%d_%H%M")
+                            _summary = f"Auto-compacted ({len(dropped)//2} turns): " + " | ".join(_topics[:5])
+                            _brain_write_engram_impl(f"compact_{ts}", _summary[:500], "Decision", 3)
+                        except Exception:
+                            pass
+                    kept = history[-4:]
+                    history.clear()
+                    history.append(("system", f"[Previous {old_count // 2 - 2} turn(s) auto-compacted — context saved to brain]"))
+                    history.extend(kept)
+                    print(f"   📎 Compacted: {old_count} → {len(history)} messages. Try your message again.\n")
+                else:
+                    print(f"   History too short to compact. Try /provider groq (free) or wait for budget reset.\n")
+            elif "credit balance" in _el or "purchase credits" in _el:
+                _is_oauth = getattr(llm, "_oauth_mode", False)
+                if _is_oauth:
+                    print(f"\n⚠️  Claude Code OAuth error. Raw: {err[:200]}")
+                    print(f"   Try: Open Claude Code to refresh, then retry.\n")
+                else:
+                    print(f"\n⚠️  {_provider.capitalize()} credits exhausted. Top up or switch: /provider groq\n")
             elif "429" in err or "RESOURCE_EXHAUSTED" in err or "rate_limit" in _el:
                 print(f"\n⚠️  Rate limited on {llm.model_name}. Try /model <other> or /provider <other>\n")
             elif "decommissioned" in _el or "no longer supported" in _el:
@@ -2270,7 +3132,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             if topics:
                 from datetime import datetime
                 ts = datetime.now().strftime("%Y%m%d_%H%M")
-                summary = f"Chat session ({turn_count} turns): " + " | ".join(topics[:5])
+                # Include file changes in summary
+                _mod_files = list(set(_session_files.get("edited", []) + _session_files.get("written", [])))
+                _files_note = ""
+                if _mod_files:
+                    _short_names = [Path(f).name for f in _mod_files[:5]]
+                    _files_note = f" | Modified: {', '.join(_short_names)}"
+                summary = f"Chat session ({turn_count} turns): " + " | ".join(topics[:5]) + _files_note
                 _brain_write_engram_impl(
                     f"session_{ts}",
                     summary[:500],
@@ -2647,12 +3515,16 @@ def main():
                              default='local_free', help='LLM tier to use (default: local_free, 500 RPD)')
     chat_parser.add_argument('--model', default=None, help='Override model name directly (e.g., gemini-3-flash)')
     chat_parser.add_argument('--system', default=None, help='Custom system prompt')
-    chat_parser.add_argument('--provider', choices=['gemini', 'anthropic', 'groq'], default=None,
-                             help='LLM provider: gemini (default), anthropic, or groq. '
+    chat_parser.add_argument('--provider', choices=['gemini', 'anthropic', 'groq', 'claude-code'], default=None,
+                             help='LLM provider: gemini (default), anthropic, groq, or claude-code (Max sub). '
                                   'Anthropic requires NUCLEUS_ANTHROPIC_API_KEY. '
                                   'Groq requires NUCLEUS_GROQ_API_KEY (free at console.groq.com).')
     chat_parser.add_argument('--batch', action='store_true', help='Non-interactive batch mode (single turn, then exit)')
     chat_parser.add_argument('--prompt', type=str, help='Initial prompt for batch mode')
+    chat_parser.add_argument('--output-format', choices=['text', 'json'], default='text',
+                             help='Output format for batch mode: text (default) or json (structured)')
+    chat_parser.add_argument('--context', type=str, default=None,
+                             help='Extra context from big brother (injected into prompt for guided delegation)')
     kyc_subparsers.add_parser('list', help='List available demo applications')
 
     # nucleus kyc demo (runs all 3 in sequence)
@@ -3007,6 +3879,8 @@ def main():
                 prompt=getattr(args, 'prompt', None),
                 system_prompt=getattr(args, 'system', None),
                 provider=getattr(args, 'provider', None),
+                output_format=getattr(args, 'output_format', 'text') or 'text',
+                brother_context=getattr(args, 'context', None),
             )
             return
 
