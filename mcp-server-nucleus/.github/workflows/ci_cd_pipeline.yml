@@ -204,5 +204,5 @@ jobs:
       
       - name: Smoke test production
         run: |
-          curl -f https://gentlequest.onrender.com/api/health || exit 1
+          curl -f ${PRODUCTION_URL:-https://nucleusos.dev}/api/health || exit 1
           echo "✅ Production health check passed"

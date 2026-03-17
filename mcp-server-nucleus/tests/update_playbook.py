@@ -1,6 +1,6 @@
 import os
 
-path = "/Users/lokeshgarg/.gemini/antigravity/brain/f8ab537c-2707-49bd-a467-9a6baea30c68/manual_testing_playbook.md"
+path = os.path.expanduser("~/.gemini/antigravity/brain/f8ab537c-2707-49bd-a467-9a6baea30c68/manual_testing_playbook.md")
 
 tools = [
     "identify_agent", "sync_status", "sync_now", "sync_auto", "sync_resolve", 

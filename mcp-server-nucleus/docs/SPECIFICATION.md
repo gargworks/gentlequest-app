@@ -335,7 +335,7 @@ LangGraph state is in-memory (dies on crash).
 Nucleus state is on disk (survives restarts).
 
 ### Why Not mcp-server-memory?
-Memory MCP stores **facts** ("Lokesh likes Python").
+Memory MCP stores **facts** ("User likes Python").
 Nucleus stores **process** ("Sprint 2 is 50% done, Architect is blocked").
 
 ### Competitive Matrix

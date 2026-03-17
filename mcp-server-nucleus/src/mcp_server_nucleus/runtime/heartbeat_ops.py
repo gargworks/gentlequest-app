@@ -168,7 +168,7 @@ YOUR MANDATE:
                     ),
                     "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576"),
                     "GOOGLE_CLOUD_LOCATION": "global",
-                    "PATH": "/Users/lokeshgarg/.nvm/versions/node/v22.18.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/lokeshgarg/ai-mvp-backend/.venv/bin"
+                    "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
                 }
             )
             logger.info(f"🧠 [Autonomic] Spawned TMUX session: {tmux_session}")

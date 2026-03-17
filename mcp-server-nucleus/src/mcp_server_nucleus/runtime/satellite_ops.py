@@ -177,11 +177,13 @@ def _get_products_health() -> Dict:
     import os
     from pathlib import Path
     
-    # Check paths
-    nucleus_path = Path("/Users/lokeshgarg/ai-mvp-backend")
-    gq_path = Path("/Users/lokeshgarg/ai-mvp-backend/gentlequest-blog")
-    bib_path = Path("/Users/lokeshgarg/apps/believe-it-bot")
-    studio_path = Path("/Users/lokeshgarg/apps/believe-it-bot/AQUILA_VOICE_ARCHITECTURE")
+    # Check paths (auto-detect from brain location or env)
+    home = Path.home()
+    project_root = Path(os.environ.get("NUCLEUS_PROJECT_ROOT", str(Path.cwd())))
+    nucleus_path = project_root
+    gq_path = project_root / "gentlequest-blog"
+    bib_path = home / "apps" / "believe-it-bot"
+    studio_path = bib_path / "AQUILA_VOICE_ARCHITECTURE"
     
     return {
         "nucleus_os": {
