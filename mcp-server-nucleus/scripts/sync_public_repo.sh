@@ -47,6 +47,15 @@ if [ -n "$(git status --porcelain)" ]; then
     fi
 fi
 
+# 1b. Publication Protocol Gate (MANDATORY)
+echo -e "${BLUE}🔒 Running Publication Protocol Gate...${NC}"
+cd "$SOURCE_REPO"
+if ! bash scripts/validate_public_surface.sh; then
+    echo -e "${RED}BLOCKED: Publication Protocol Gate failed. Fix issues before syncing.${NC}"
+    exit 1
+fi
+echo ""
+
 # 2. Target Preparation (The Wipe)
 echo -e "${BLUE}🧹 Wiping target repository working tree...${NC}"
 cd "$TARGET_REPO"
