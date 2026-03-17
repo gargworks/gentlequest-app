@@ -42,10 +42,10 @@ echo ""
 
 # ── Step 2: Identity scan ──
 echo "── IDENTITY SCAN ──"
-IDENTITY_HITS=$(grep -rln 'lokeshgarg\|lokesh\|gentlequest\.app' "$TMPDIR" 2>/dev/null | wc -l | tr -d ' ')
+IDENTITY_HITS=$( (grep -rln 'lokeshgarg\|lokesh\|gentlequest\.app' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$IDENTITY_HITS" -gt 0 ]; then
   fail "Identity leak: $IDENTITY_HITS files contain 'lokeshgarg' or 'gentlequest.app'"
-  grep -rln 'lokeshgarg\|lokesh\|gentlequest\.app' "$TMPDIR" 2>/dev/null | sed "s|$TMPDIR/||" | head -10
+  (grep -rln 'lokeshgarg\|lokesh\|gentlequest\.app' "$TMPDIR" 2>/dev/null || true) | sed "s|$TMPDIR/||" | head -10
 else
   pass "No identity leaks"
 fi
@@ -53,10 +53,10 @@ fi
 # ── Step 3: Moat language scan ──
 echo ""
 echo "── MOAT LANGUAGE SCAN ──"
-MOAT_HITS=$(grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop' "$TMPDIR" 2>/dev/null | wc -l | tr -d ' ')
+MOAT_HITS=$( (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$MOAT_HITS" -gt 0 ]; then
   fail "Moat language: $MOAT_HITS files"
-  grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop' "$TMPDIR" 2>/dev/null | sed "s|$TMPDIR/||"
+  (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop' "$TMPDIR" 2>/dev/null || true) | sed "s|$TMPDIR/||"
 else
   pass "No moat language"
 fi
@@ -64,10 +64,10 @@ fi
 # ── Step 4: Competitor attack scan ──
 echo ""
 echo "── COMPETITOR ATTACK SCAN ──"
-ATTACK_HITS=$(grep -rln 'OpenClaw.*leak\|OpenClaw.*sleeper\|OpenClaw.*crisis\|OpenClaw.*banned' "$TMPDIR" 2>/dev/null | wc -l | tr -d ' ')
+ATTACK_HITS=$( (grep -rln 'OpenClaw.*leak\|OpenClaw.*sleeper\|OpenClaw.*crisis\|OpenClaw.*banned' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$ATTACK_HITS" -gt 0 ]; then
   fail "Competitor attack: $ATTACK_HITS files name competitors by security failures"
-  grep -rln 'OpenClaw.*leak\|OpenClaw.*sleeper\|OpenClaw.*crisis' "$TMPDIR" 2>/dev/null | sed "s|$TMPDIR/||"
+  (grep -rln 'OpenClaw.*leak\|OpenClaw.*sleeper\|OpenClaw.*crisis' "$TMPDIR" 2>/dev/null || true) | sed "s|$TMPDIR/||"
 else
   pass "No competitor attacks"
 fi
@@ -75,10 +75,10 @@ fi
 # ── Step 5: Hardcoded paths scan ──
 echo ""
 echo "── HARDCODED PATHS SCAN ──"
-PATH_HITS=$(grep -rn '/Users/[a-z]' "$TMPDIR/src/" 2>/dev/null | wc -l | tr -d ' ')
+PATH_HITS=$( (grep -rn '/Users/[a-z]' "$TMPDIR/src/" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$PATH_HITS" -gt 0 ]; then
   fail "Hardcoded user paths in src/: $PATH_HITS hits"
-  grep -rn '/Users/[a-z]' "$TMPDIR/src/" 2>/dev/null | head -5
+  (grep -rn '/Users/[a-z]' "$TMPDIR/src/" 2>/dev/null || true) | head -5
 else
   pass "No hardcoded user paths in src/"
 fi
@@ -86,10 +86,10 @@ fi
 # ── Step 6: Hardcoded credentials scan ──
 echo ""
 echo "── CREDENTIALS SCAN ──"
-CRED_HITS=$(grep -rn 'gen-lang-client-\|srv-d2r3i1f\|0ccfed02970a' "$TMPDIR" 2>/dev/null | wc -l | tr -d ' ')
+CRED_HITS=$( (grep -rn 'gen-lang-client-\|srv-d2r3i1f\|0ccfed02970a' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$CRED_HITS" -gt 0 ]; then
   fail "Hardcoded credentials/service IDs: $CRED_HITS hits"
-  grep -rn 'gen-lang-client-\|srv-d2r3i1f\|0ccfed02970a' "$TMPDIR" 2>/dev/null | head -5
+  (grep -rn 'gen-lang-client-\|srv-d2r3i1f\|0ccfed02970a' "$TMPDIR" 2>/dev/null || true) | head -5
 else
   pass "No hardcoded credentials"
 fi
@@ -127,7 +127,7 @@ for f in "${SOVEREIGN_FILES[@]}"; do
   fi
 done
 
-SOVEREIGN_LEAKED=$(echo $FAILURES) # capture current count
+SOVEREIGN_LEAKED=$FAILURES
 if [ "$SOVEREIGN_LEAKED" -eq 0 ]; then
   pass "No SOVEREIGN files in archive"
 fi
@@ -135,10 +135,10 @@ fi
 # ── Step 8: /tmp/ hardcoding (Windows compat) ──
 echo ""
 echo "── CROSS-PLATFORM SCAN ──"
-TMP_HITS=$(grep -rn '"/tmp/' "$TMPDIR/src/" 2>/dev/null | wc -l | tr -d ' ')
+TMP_HITS=$( (grep -rn '"/tmp/' "$TMPDIR/src/" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$TMP_HITS" -gt 0 ]; then
   warn "Hardcoded /tmp/ in src/: $TMP_HITS hits (breaks Windows)"
-  grep -rn '"/tmp/' "$TMPDIR/src/" 2>/dev/null | head -5
+  (grep -rn '"/tmp/' "$TMPDIR/src/" 2>/dev/null || true) | head -5
 else
   pass "No hardcoded /tmp/ paths"
 fi
@@ -146,10 +146,10 @@ fi
 # ── Step 9: FORCE_VERTEX default ──
 echo ""
 echo "── FRESH INSTALL SCAN ──"
-VERTEX_HITS=$(grep -rn 'FORCE_VERTEX.*"1"' "$TMPDIR/src/" 2>/dev/null | grep -v '== "1"' | wc -l | tr -d ' ')
+VERTEX_HITS=$( (grep -rn 'FORCE_VERTEX.*"1"' "$TMPDIR/src/" 2>/dev/null || true) | (grep -v '== "1"' || true) | wc -l | tr -d ' ')
 if [ "$VERTEX_HITS" -gt 0 ]; then
   fail "FORCE_VERTEX defaults to 1 (breaks fresh installs)"
-  grep -rn 'FORCE_VERTEX.*"1"' "$TMPDIR/src/" 2>/dev/null | grep -v '== "1"'
+  (grep -rn 'FORCE_VERTEX.*"1"' "$TMPDIR/src/" 2>/dev/null || true) | (grep -v '== "1"' || true)
 else
   pass "FORCE_VERTEX defaults to 0 (API key mode)"
 fi
