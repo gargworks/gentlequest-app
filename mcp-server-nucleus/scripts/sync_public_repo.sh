@@ -204,7 +204,29 @@ if [ -f "$CLI" ]; then
     sed -i '' '/mine_reasoning/d' "$CLI"
     sed -i '' "/'mine'/d" "$CLI"
     sed -i '' '/MINING/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine refs)"
+    # Strip eval harness (Phase 6) — block delete + subparser + help lines
+    sed -i '' '/EVAL_BLOCK_START/,/EVAL_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_eval/d' "$CLI"
+    sed -i '' '/eval_results/d' "$CLI"
+    sed -i '' '/eval_suite/d' "$CLI"
+    sed -i '' '/generate_eval_suite/d' "$CLI"
+    sed -i '' '/export_eval_suite/d' "$CLI"
+    sed -i '' '/run_eval/d' "$CLI"
+    sed -i '' '/EVAL BENCHMARK/d' "$CLI"
+    sed -i '' '/eval_path/d' "$CLI"
+    sed -i '' '/eval\.jsonl/d' "$CLI"
+    sed -i '' '/eval pairs/d' "$CLI"
+    sed -i '' '/eval chains/d' "$CLI"
+    sed -i '' '/archive eval/d' "$CLI"
+    # Strip self-play synthesis (Phase 7) — block delete + subparser + help lines
+    sed -i '' '/SYNTH_BLOCK_START/,/SYNTH_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_synth/d' "$CLI"
+    sed -i '' '/synthesize_preferences/d' "$CLI"
+    sed -i '' '/self_play/d' "$CLI"
+    sed -i '' '/SELF-PLAY/d' "$CLI"
+    sed -i '' '/Manufacturing DPO/d' "$CLI"
+    sed -i '' '/archive synthesize/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine/eval/synth refs)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──

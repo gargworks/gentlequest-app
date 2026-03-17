@@ -1249,6 +1249,233 @@ class ArchivePipeline:
 
         return mined
 
+    # ── Eval Harness (measure before & after training) ──
+
+    def generate_eval_suite(self, count: int = 50) -> List[Dict[str, Any]]:
+        """Generate an evaluation suite from held-out archive data.
+
+        Mines the archive for high-quality question/answer pairs and
+        creates a benchmark. Used to measure the Third Brother before
+        and after training — can't improve what you can't measure.
+
+        Returns a list of eval cases, each with:
+        - prompt: The question
+        - reference: The known-good answer (from Code/Cowork)
+        - category: Type of question (code, strategy, decision, debug)
+        - difficulty: easy/medium/hard based on answer complexity
+        """
+        all_pairs = self._collect_quality_pairs()
+        if len(all_pairs) < 20:
+            return []
+
+        # Use the eval split (deterministic) as our benchmark set
+        _, eval_pairs = self._split_train_eval(all_pairs, eval_ratio=0.05)
+        if not eval_pairs:
+            # Fallback: take last N pairs
+            eval_pairs = all_pairs[-count:]
+
+        suite = []
+        for pair in eval_pairs[:count]:
+            user = pair["user"]
+            assistant = pair["assistant"]
+
+            # Categorize by content
+            lower = user.lower()
+            if any(k in lower for k in ("fix", "bug", "error", "broken", "failing")):
+                category = "debug"
+            elif any(k in lower for k in ("build", "implement", "create", "add", "write")):
+                category = "code"
+            elif any(k in lower for k in ("should we", "strategy", "plan", "decide", "approach")):
+                category = "decision"
+            elif any(k in lower for k in ("deploy", "ship", "release", "launch")):
+                category = "ops"
+            else:
+                category = "general"
+
+            # Difficulty by answer length
+            if len(assistant) > 1000:
+                difficulty = "hard"
+            elif len(assistant) > 300:
+                difficulty = "medium"
+            else:
+                difficulty = "easy"
+
+            suite.append({
+                "eval_id": f"eval-{hashlib.md5(user[:100].encode()).hexdigest()[:8]}",
+                "prompt": user,
+                "reference": assistant,
+                "category": category,
+                "difficulty": difficulty,
+            })
+
+        return suite
+
+    def export_eval_suite(self, output_path: str, count: int = 50) -> int:
+        """Export eval suite to JSONL for benchmarking."""
+        suite = self.generate_eval_suite(count)
+        if not suite:
+            return 0
+        with open(output_path, "w", encoding="utf-8") as f:
+            for case in suite:
+                f.write(json.dumps(case, ensure_ascii=False) + "\n")
+        return len(suite)
+
+    def run_eval(self, model_fn, count: int = 50) -> Dict[str, Any]:
+        """Run evaluation against the generated suite.
+
+        Args:
+            model_fn: Callable that takes a prompt string and returns a response string.
+                      e.g., lambda prompt: llm.generate_content(prompt).text
+            count: Number of eval cases to test.
+
+        Returns:
+            Eval results with scores by category and difficulty.
+        """
+        suite = self.generate_eval_suite(count)
+        if not suite:
+            return {"error": "No eval suite generated", "total": 0}
+
+        results = []
+        for case in suite:
+            try:
+                response = model_fn(case["prompt"])
+                # Score: simple length-ratio + keyword overlap
+                ref_words = set(case["reference"].lower().split())
+                resp_words = set(response.lower().split()) if response else set()
+                overlap = len(ref_words & resp_words)
+                precision = overlap / len(resp_words) if resp_words else 0
+                recall = overlap / len(ref_words) if ref_words else 0
+                f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0
+                # Length ratio (penalize too short or too long)
+                len_ratio = min(len(response or ""), len(case["reference"])) / max(len(response or ""), len(case["reference"]), 1)
+
+                score = 0.6 * f1 + 0.4 * len_ratio  # Weighted composite
+
+                results.append({
+                    "eval_id": case["eval_id"],
+                    "category": case["category"],
+                    "difficulty": case["difficulty"],
+                    "score": round(score, 3),
+                    "f1": round(f1, 3),
+                    "len_ratio": round(len_ratio, 3),
+                    "response_len": len(response or ""),
+                    "reference_len": len(case["reference"]),
+                })
+            except Exception as e:
+                results.append({
+                    "eval_id": case["eval_id"],
+                    "category": case["category"],
+                    "difficulty": case["difficulty"],
+                    "score": 0,
+                    "error": str(e)[:200],
+                })
+
+        # Aggregate
+        total_score = sum(r["score"] for r in results) / len(results) if results else 0
+        by_category: Dict[str, List[float]] = {}
+        by_difficulty: Dict[str, List[float]] = {}
+        for r in results:
+            by_category.setdefault(r["category"], []).append(r["score"])
+            by_difficulty.setdefault(r["difficulty"], []).append(r["score"])
+
+        return {
+            "total_cases": len(results),
+            "avg_score": round(total_score, 3),
+            "by_category": {
+                k: round(sum(v) / len(v), 3) for k, v in by_category.items()
+            },
+            "by_difficulty": {
+                k: round(sum(v) / len(v), 3) for k, v in by_difficulty.items()
+            },
+            "results": results,
+        }
+
+    # ── Self-Play Synthesis (manufacture DPO pairs at scale) ──
+
+    def synthesize_preferences(
+        self,
+        model_fn,
+        judge_fn=None,
+        count: int = 100,
+    ) -> int:
+        """Generate synthetic DPO pairs via self-play.
+
+        Takes existing SFT prompts, generates alternative responses via
+        model_fn, then uses judge_fn (or heuristic) to determine which
+        is better. This turns 50 DPO pairs into 500+.
+
+        Args:
+            model_fn: Callable that takes prompt and returns response.
+                      e.g., lambda p: llm.generate_content(p).text
+            judge_fn: Optional callable that takes (prompt, resp_a, resp_b) and
+                      returns "a" or "b" for the winner. If None, uses heuristic.
+            count: Number of synthetic pairs to generate.
+
+        Returns:
+            Number of new preference pairs created.
+        """
+        # Get high-quality prompts + reference answers from the archive
+        all_pairs = self._collect_quality_pairs()
+        if len(all_pairs) < 20:
+            return 0
+
+        # Sample prompts (deterministic, skip already-synthesized)
+        existing_synth = {
+            p.get("metadata", {}).get("synth_prompt_hash", "")
+            for p in self.get_preferences()
+            if p.get("source") == "self_play"
+        }
+
+        synthesized = 0
+        for pair in all_pairs[:count * 2]:  # Over-sample since some will be skipped
+            if synthesized >= count:
+                break
+
+            prompt = pair["user"]
+            reference = pair["assistant"]
+
+            # Dedup
+            prompt_hash = hashlib.md5(prompt[:200].encode()).hexdigest()[:12]
+            if prompt_hash in existing_synth:
+                continue
+
+            try:
+                # Generate alternative response
+                alternative = model_fn(prompt)
+                if not alternative or len(alternative) < 20:
+                    continue
+
+                # Judge: which response is better?
+                if judge_fn:
+                    winner = judge_fn(prompt, reference, alternative)
+                else:
+                    # Heuristic judge: reference wins (it's the actual response
+                    # from the session — the founder accepted it)
+                    winner = "a"
+
+                if winner == "a":
+                    chosen, rejected = reference, alternative
+                else:
+                    chosen, rejected = alternative, reference
+
+                pref = self.record_preference(
+                    prompt=prompt,
+                    chosen=chosen,
+                    rejected=rejected,
+                    source="self_play",
+                    metadata={
+                        "synth_prompt_hash": prompt_hash,
+                        "winner": winner,
+                    },
+                )
+                if pref:
+                    synthesized += 1
+
+            except Exception:
+                continue  # Skip failed generations
+
+        return synthesized
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:

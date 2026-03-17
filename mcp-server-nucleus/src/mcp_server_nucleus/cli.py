@@ -4004,6 +4004,13 @@ def main():
     archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export reasoning chains as <think>-tagged training data')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
     archive_subparsers.add_parser('mine', help='Mine DPO + CoT data from existing archive (retroactive extraction)')
+    archive_eval = archive_subparsers.add_parser('eval', help='Generate eval benchmark from archive (measure before/after training)')
+    archive_eval.add_argument('--count', type=int, default=50, help='Number of eval cases (default: 50)')
+    archive_eval.add_argument('--export', type=str, default=None, help='Export eval suite to JSONL')
+    archive_eval.add_argument('--run', type=str, default=None, help='Run eval against a provider (gemini/anthropic/groq/local)')
+    archive_synth = archive_subparsers.add_parser('synthesize', help='Self-play: manufacture DPO pairs from existing prompts via LLM')
+    archive_synth.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation (default: gemini)')
+    archive_synth.add_argument('--count', type=int, default=100, help='Number of pairs to synthesize (default: 100)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4963,6 +4970,107 @@ def handle_archive_command(args) -> int:
         print()
         return 0
 
+    elif cmd == 'eval':  # EVAL_BLOCK_START
+        eval_count = getattr(args, 'count', 50)
+        export_path = getattr(args, 'export', None)
+        run_provider = getattr(args, 'run', None)
+
+        print("=" * 50)
+        print("📏 EVAL BENCHMARK — Measure the Third Brother")
+        print("=" * 50)
+
+        suite = archive.generate_eval_suite(eval_count)
+        if not suite:
+            print(f"  Not enough data to generate eval suite (need 20+ quality pairs).")
+            return 0
+
+        # Category breakdown
+        from collections import Counter
+        cats = Counter(c["category"] for c in suite)
+        diffs = Counter(c["difficulty"] for c in suite)
+        print(f"  Generated {len(suite)} eval cases:")
+        print(f"    Categories:  {dict(cats)}")
+        print(f"    Difficulty:  {dict(diffs)}")
+
+        if export_path:
+            exported = archive.export_eval_suite(export_path, eval_count)
+            print(f"\n  Exported {exported} cases to: {export_path}")
+
+        if run_provider:
+            print(f"\n  Running eval against {run_provider}...")
+            try:
+                from .runtime.llm_client import get_llm_client
+                llm = get_llm_client(run_provider)
+                model_fn = lambda p: llm.generate_content(p).text
+
+                results = archive.run_eval(model_fn, eval_count)
+                print(f"\n  {'='*40}")
+                print(f"  EVAL RESULTS ({run_provider})")
+                print(f"  {'='*40}")
+                print(f"  Overall score:  {results['avg_score']}")
+                print(f"  By category:")
+                for cat, score in sorted(results.get('by_category', {}).items()):
+                    print(f"    {cat:12s}: {score}")
+                print(f"  By difficulty:")
+                for diff, score in sorted(results.get('by_difficulty', {}).items()):
+                    print(f"    {diff:12s}: {score}")
+
+                # Save results
+                eval_results_path = archive.training_dir / "eval_results.json"
+                eval_results_path.write_text(json.dumps(results, indent=2))
+                print(f"\n  Results saved: {eval_results_path}")
+            except Exception as e:
+                print(f"  ❌ Eval failed: {e}")
+
+        if not export_path and not run_provider:
+            # Default: export to standard location
+            out = str(archive.training_dir / "exports" / "eval_suite.jsonl")
+            Path(out).parent.mkdir(parents=True, exist_ok=True)
+            exported = archive.export_eval_suite(out, eval_count)
+            print(f"\n  Exported {exported} cases to: {out}")
+            print(f"\n  Usage:")
+            print(f"    nucleus archive eval --run gemini    — benchmark against Gemini")
+            print(f"    nucleus archive eval --run local     — benchmark the Third Brother")
+            print(f"    Compare scores to measure training improvement.")
+        print()
+        return 0  # EVAL_BLOCK_END
+
+    elif cmd == 'synthesize':  # SYNTH_BLOCK_START
+        synth_provider = getattr(args, 'provider', 'gemini')
+        synth_count = getattr(args, 'count', 100)
+
+        print("=" * 50)
+        print("🧪 SELF-PLAY SYNTHESIS — Manufacturing DPO Pairs")
+        print("=" * 50)
+        print(f"  Provider:  {synth_provider}")
+        print(f"  Target:    {synth_count} pairs")
+
+        dpo_before = archive.count_preferences()
+
+        try:
+            from .runtime.llm_client import get_llm_client
+            llm = get_llm_client(synth_provider)
+            model_fn = lambda p: llm.generate_content(p).text
+
+            print(f"\n  Generating alternative responses...")
+            synthesized = archive.synthesize_preferences(
+                model_fn=model_fn,
+                count=synth_count,
+            )
+            dpo_after = archive.count_preferences()
+
+            print(f"\n  ✅ Synthesized {synthesized} new DPO pairs")
+            print(f"     DPO total: {dpo_before} → {dpo_after}")
+
+            if dpo_after >= 50:
+                print(f"\n  Ready for DPO training!")
+                print(f"    nucleus archive dpo-export")
+        except Exception as e:
+            print(f"\n  ❌ Synthesis failed: {e}")
+            print(f"     Ensure {synth_provider.upper()}_API_KEY is set.")
+        print()
+        return 0  # SYNTH_BLOCK_END
+
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
         stats = archive.get_stats()
@@ -4982,6 +5090,8 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive dpo-export  — export DPO data")
         print(f"   nucleus archive cot-status  — reasoning chain stats")
         print(f"   nucleus archive cot-export  — export <think> data")
+        print(f"   nucleus archive eval        — generate eval benchmark")
+        print(f"   nucleus archive synthesize  — self-play DPO manufacturing")
         print(f"   nucleus archive train       — fine-tuning pipeline")
         print(f"   nucleus archive ingest      — bulk import conversations")
         return 0
