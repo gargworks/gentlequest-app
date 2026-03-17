@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Train the Third Brother — full 3-phase pipeline on the archive.
+"""Train the Third Brother — full pipeline integrated with the Training Stack.
 
+Phase 0: Mine + Quality Score + Export (auto)
 Phase 1: SFT (Supervised Fine-Tuning) — teach knowledge from 2,460+ pairs
 Phase 2: DPO (Direct Preference Optimization) — teach taste from corrections
 Phase 3: CoT (Chain-of-Thought) — mixed into SFT data as <think> blocks
+Phase 4: Register + Deploy (Model Registry → Shadow Mode)
 
 This script uses unsloth for fast LoRA fine-tuning on consumer GPUs.
 Produces a GGUF model that runs in Ollama.
@@ -11,6 +13,15 @@ Produces a GGUF model that runs in Ollama.
 Usage:
     # Full pipeline (auto-detects available phases):
     python scripts/train_third_brother.py
+
+    # With quality filtering (remove low-quality training data):
+    python scripts/train_third_brother.py --quality-filter 0.5
+
+    # Auto-register and deploy to shadow mode:
+    python scripts/train_third_brother.py --register --auto-shadow
+
+    # Specific version:
+    python scripts/train_third_brother.py --version v2 --register
 
     # SFT only:
     python scripts/train_third_brother.py --sft-only
@@ -63,6 +74,14 @@ def main():
                         help="Run retroactive mining before training (default: True)")
     parser.add_argument("--no-mine", dest="mine_first", action="store_false",
                         help="Skip retroactive mining")
+    parser.add_argument("--quality-filter", type=float, default=0,
+                        help="Filter training data below this quality score (0=disabled, 0.4=recommended)")
+    parser.add_argument("--version", type=str, default=None,
+                        help="Model version string (default: auto-increment from registry)")
+    parser.add_argument("--register", action="store_true",
+                        help="Register model in the Model Registry after training")
+    parser.add_argument("--auto-shadow", action="store_true",
+                        help="Auto-promote to shadow mode after registration")
     args = parser.parse_args()
 
     brain = find_brain_path()
@@ -96,11 +115,28 @@ def main():
                 print(f"   Mined: {dpo_mined} DPO pairs, {cot_mined} CoT chains")
 
         if not args.dpo:
-            # Export SFT data
+            # Quality scoring
+            if args.quality_filter > 0:
+                print(f"🔬 Scoring data quality (threshold={args.quality_filter})...")
+                quality = archive.score_training_data()
+                print(f"   Total: {quality['total']}, Avg: {quality['avg_quality']}")
+                dist = quality.get('quality_distribution', {})
+                print(f"   Excellent: {dist.get('excellent', 0)}, Good: {dist.get('good', 0)}, "
+                      f"Fair: {dist.get('fair', 0)}, Poor: {dist.get('poor', 0)}")
+
+            # Export SFT data (with optional quality filter)
             exports_dir.mkdir(parents=True, exist_ok=True)
-            sft_path = str(exports_dir / "openai_training.jsonl")
-            sft_eval = str(exports_dir / "openai_eval.jsonl")
-            sft_count = archive.export_openai(sft_path, eval_path=sft_eval)
+            if args.quality_filter > 0:
+                sft_path = str(exports_dir / "openai_training_filtered.jsonl")
+                filter_result = archive.export_filtered(sft_path, args.quality_filter, "openai")
+                sft_count = filter_result["exported"]
+                print(f"   Exported {sft_count}/{filter_result['total']} (filtered {filter_result['filtered_out']})")
+                sft_eval = str(exports_dir / "openai_eval.jsonl")
+                archive.export_eval_suite(sft_eval, 50)
+            else:
+                sft_path = str(exports_dir / "openai_training.jsonl")
+                sft_eval = str(exports_dir / "openai_eval.jsonl")
+                sft_count = archive.export_openai(sft_path, eval_path=sft_eval)
             train_data = sft_path
 
             # Mix CoT reasoning into SFT if available
@@ -461,6 +497,45 @@ PARAMETER num_ctx {max_seq_len}
             },
         )
         print("  Retrain counter reset.")
+
+        # ── Phase 4: Register + Deploy ──
+        if args.register:
+            # Auto-version from registry
+            version = args.version
+            if not version:
+                existing = archive.get_registry()
+                max_v = 0
+                for e in existing:
+                    v = e.get("version", "")
+                    if v.startswith("v"):
+                        try:
+                            max_v = max(max_v, int(v[1:].split(".")[0]))
+                        except ValueError:
+                            pass
+                version = f"v{max_v + 1}"
+
+            entry = archive.register_model(
+                version=version,
+                base_model=base_model,
+                params={
+                    "epochs": epochs, "batch_size": batch_size,
+                    "max_seq_len": max_seq_len, "lora_r": 16,
+                    "quant": "Q4_K_M", "phases": phases_run,
+                    "sft_pairs": pair_count, "dpo_pairs": dpo_count,
+                    "quality_filter": args.quality_filter,
+                },
+            )
+            print(f"\n📋 Registered as {version}")
+            print(f"   SFT: {entry['data']['sft_turns']}, DPO: {entry['data']['dpo_pairs']}, "
+                  f"CoT: {entry['data']['cot_chains']}")
+
+            if args.auto_shadow:
+                archive.update_model_status(version, "shadow")
+                print(f"   👻 Auto-promoted to shadow mode")
+                print(f"   Shadow comparisons will generate DPO pairs automatically.")
+                print(f"\n   Check progress: nucleus archive shadow-stats")
+                print(f"   Promotion check: nucleus archive graduation")
+
     except Exception:
         pass
 
