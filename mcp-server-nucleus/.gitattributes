@@ -163,6 +163,8 @@ src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 # This is the core IP. Never public.
 src/mcp_server_nucleus/runtime/archive_pipeline.py export-ignore
 src/mcp_server_nucleus/tools/archive.py export-ignore
+scripts/train_third_brother.py export-ignore
+scripts/Modelfile export-ignore
 
 # ── Hosted-only modules (not included in open-source distribution) ──
 src/mcp_server_nucleus/runtime/autopilot.py export-ignore
