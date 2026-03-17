@@ -184,6 +184,32 @@ class ArchivePipeline:
 
     # ── Export converters ──
 
+    @staticmethod
+    def _is_quality_pair(pair: Dict[str, str]) -> bool:
+        """Filter out low-quality training pairs."""
+        user = pair.get("user", "")
+        asst = pair.get("assistant", "")
+
+        # Too short to be useful
+        if len(user) < 20 or len(asst) < 50:
+            return False
+
+        # MCP noise (tool execution artifacts, not real conversation)
+        noise_markers = [
+            "*Running MCP tool*", "*Edited relevant file*",
+            "*Viewed [", "*Created file*", "*Grep search*",
+        ]
+        # If user message is mostly noise markers (>50% of content)
+        noise_chars = sum(len(m) for m in noise_markers if m in user)
+        if noise_chars > len(user) * 0.5:
+            return False
+
+        # Placeholder / continuation-only messages
+        if user.strip().lower() in ("continue", "continue.", "continue...", "yes", "ok", "go"):
+            return False
+
+        return True
+
     def export_gemini(self, output_path: str) -> int:
         """Export as Gemini (Vertex AI) fine-tuning JSONL.
 
@@ -196,6 +222,8 @@ class ArchivePipeline:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
                 for pair in turn.to_conversation_pairs():
+                    if not self._is_quality_pair(pair):
+                        continue
                     gemini_row = {
                         "contents": [
                             {"role": "user", "parts": [{"text": pair["user"]}]},
@@ -226,6 +254,8 @@ class ArchivePipeline:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
                 for pair in turn.to_conversation_pairs():
+                    if not self._is_quality_pair(pair):
+                        continue
                     messages = [{"role": "system", "content": system_prompt}]
                     messages.append({"role": "user", "content": pair["user"]})
                     messages.append({"role": "assistant", "content": pair["assistant"]})
@@ -245,6 +275,8 @@ class ArchivePipeline:
             for turn_data in turns:
                 turn = self._dict_to_turn(turn_data)
                 for pair in turn.to_conversation_pairs():
+                    if not self._is_quality_pair(pair):
+                        continue
                     row = {
                         "messages": [
                             {"role": "user", "content": pair["user"]},
