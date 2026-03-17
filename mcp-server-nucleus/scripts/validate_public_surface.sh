@@ -20,8 +20,8 @@ NC='\033[0m'
 FAILURES=0
 WARNINGS=0
 
-fail() { echo -e "${RED}FAIL${NC}: $1"; ((FAILURES++)); }
-warn() { echo -e "${YELLOW}WARN${NC}: $1"; ((WARNINGS++)); }
+fail() { echo -e "${RED}FAIL${NC}: $1"; FAILURES=$((FAILURES + 1)); }
+warn() { echo -e "${YELLOW}WARN${NC}: $1"; WARNINGS=$((WARNINGS + 1)); }
 pass() { echo -e "${GREEN}PASS${NC}: $1"; }
 
 TMPDIR=$(mktemp -d)
