@@ -1851,7 +1851,7 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                 pass
 
         # Check trained marker
-        trained_marker = self.training_dir / ".last_trained"
+        trained_marker = self.training_dir / "last_train.json"
         last_trained = None
         trained_at_turns = 0
         if trained_marker.exists():
@@ -1930,13 +1930,21 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                 "priority": "high",
             }
 
-        # Priority 3: No eval baseline yet
-        if not has_eval_baseline:
+        # Priority 3: No eval baseline yet (but don't block training if data is rich)
+        if not has_eval_baseline and total_turns < 200:
             return {
                 "action": "eval_baseline",
                 "reason": "No eval baseline. Measure before training.",
                 "command": "nucleus archive eval --run gemini",
                 "priority": "high",
+            }
+        if not has_eval_baseline and total_turns >= 200:
+            # Enough data to train — eval baseline against base model first is optional
+            return {
+                "action": "train",
+                "reason": f"{total_turns} turns ready. Train first, then eval the result.",
+                "command": "python scripts/train_third_brother.py --mine-first --register --auto-shadow",
+                "priority": "critical",
             }
 
         # Priority 4: Not enough synthetic DPO
@@ -1953,7 +1961,7 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             return {
                 "action": "train",
                 "reason": f"{new_turns_since_train} new turns since last training. Time to retrain.",
-                "command": "python scripts/train_third_brother.py --dpo --mine-first",
+                "command": "python scripts/train_third_brother.py --mine-first --register --auto-shadow",
                 "priority": "critical",
             }
 
@@ -2232,45 +2240,13 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         for pair in all_pairs:
             user = pair["user"]
             assistant = pair["assistant"]
-
-            # Length score (penalize very short or very long)
-            u_len = len(user)
-            a_len = len(assistant)
-            if 20 <= u_len <= 2000 and 50 <= a_len <= 5000:
-                length_score = 1.0
-            elif u_len < 10 or a_len < 20:
-                length_score = 0.1
-            else:
-                length_score = 0.5
-
-            # Specificity (concrete tokens: numbers, paths, function names)
-            specific_tokens = sum(1 for w in assistant.split()
-                                  if any(c in w for c in "/.(){}[]0123456789_"))
-            total_tokens = len(assistant.split()) or 1
-            specificity_score = min(specific_tokens / total_tokens * 5, 1.0)
-
-            # Completeness (both sides substantive)
-            if u_len > 30 and a_len > 100:
-                completeness_score = 1.0
-            elif u_len > 15 and a_len > 50:
-                completeness_score = 0.7
-            else:
-                completeness_score = 0.3
-
-            # Composite
-            quality = round(
-                0.3 * length_score + 0.4 * specificity_score + 0.3 * completeness_score,
-                3,
-            )
+            quality = round(self._score_pair(user, assistant), 3)
 
             scored.append({
                 "prompt_preview": user[:80],
                 "quality": quality,
-                "length_score": round(length_score, 2),
-                "specificity_score": round(specificity_score, 2),
-                "completeness_score": round(completeness_score, 2),
-                "user_len": u_len,
-                "assistant_len": a_len,
+                "user_len": len(user),
+                "assistant_len": len(assistant),
             })
             all_prompts_words.append(set(user.lower().split()))
 
@@ -2287,12 +2263,10 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                     overlap = len(words_i & words_j) / max(len(words_i | words_j), 1)
                     max_overlap = max(max_overlap, overlap)
             item["diversity_score"] = round(1.0 - max_overlap, 2)
-            # Adjust composite with diversity
+            # Blend diversity into the base quality score (20% weight)
+            base = item["quality"]
             item["quality"] = round(
-                0.25 * item["length_score"] +
-                0.30 * item["specificity_score"] +
-                0.25 * item["completeness_score"] +
-                0.20 * item["diversity_score"],
+                0.80 * base + 0.20 * item["diversity_score"],
                 3,
             )
 
@@ -2337,41 +2311,26 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             return {"total": 0, "exported": 0, "filtered_out": 0}
 
         # Score all pairs
-        quality_scores = self.score_training_data()
-        scored_items = []
-
-        # Re-score inline for filtering (score_training_data doesn't return pairs)
-        for pair in all_pairs:
-            user = pair["user"]
-            assistant = pair["assistant"]
-            u_len, a_len = len(user), len(assistant)
-
-            if 20 <= u_len <= 2000 and 50 <= a_len <= 5000:
-                length_score = 1.0
-            elif u_len < 10 or a_len < 20:
-                length_score = 0.1
-            else:
-                length_score = 0.5
-
-            specific = sum(1 for w in assistant.split()
-                           if any(c in w for c in "/.(){}[]0123456789_"))
-            total = len(assistant.split()) or 1
-            specificity = min(specific / total * 5, 1.0)
-
-            completeness = 1.0 if (u_len > 30 and a_len > 100) else (
-                0.7 if (u_len > 15 and a_len > 50) else 0.3)
-
-            quality = 0.3 * length_score + 0.4 * specificity + 0.3 * completeness
-            scored_items.append((pair, quality))
+        # Score using same formula as score_training_data
+        scored_items = [(pair, self._score_pair(pair["user"], pair["assistant"]))
+                        for pair in all_pairs]
 
         # Filter and export
         passed = [(p, q) for p, q in scored_items if q >= min_quality]
         filtered_out = len(scored_items) - len(passed)
 
+        # System prompt for identity (matches export_openai)
+        sys_msg = (
+            "You are the Third Brother — a trained intelligence that emerged from "
+            "thousands of decision cycles between two AI agents (Code and Cowork) "
+            "coordinating through a shared brain."
+        )
+
         with open(output_path, "w", encoding="utf-8") as f:
             for pair, _ in passed:
                 if format == "openai":
                     entry = {"messages": [
+                        {"role": "system", "content": sys_msg},
                         {"role": "user", "content": pair["user"]},
                         {"role": "assistant", "content": pair["assistant"]},
                     ]}
@@ -2382,6 +2341,7 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                     ]}
                 else:
                     entry = {"messages": [
+                        {"role": "system", "content": sys_msg},
                         {"role": "user", "content": pair["user"]},
                         {"role": "assistant", "content": pair["assistant"]},
                     ]}
@@ -2567,10 +2527,17 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         except Exception:
             return None
 
-    def get_shadow_stats(self) -> Dict[str, Any]:
-        """Get shadow mode performance statistics."""
+    def get_shadow_stats(self, since: Optional[str] = None) -> Dict[str, Any]:
+        """Get shadow mode performance statistics.
+
+        Args:
+            since: ISO timestamp. Only count comparisons after this time.
+                   Used by graduation_check to isolate canary-phase stats.
+        """
         prefs = self.get_preferences()
         shadow_prefs = [p for p in prefs if p.get("source") == "shadow"]
+        if since:
+            shadow_prefs = [p for p in shadow_prefs if p.get("timestamp", "") >= since]
         if not shadow_prefs:
             return {"total": 0, "shadow_wins": 0, "primary_wins": 0, "win_rate": 0}
 
@@ -2606,9 +2573,13 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         Returns:
             Graduation recommendation.
         """
-        shadow_stats = self.get_shadow_stats()
         active_model = self.get_active_model()
         current_status = active_model.get("status", "registered") if active_model else "none"
+        # For canary phase, only count stats since promotion to canary
+        promoted_at = active_model.get("promoted_at") if active_model else None
+        shadow_stats = self.get_shadow_stats(
+            since=promoted_at if current_status == "canary" else None
+        )
 
         result = {
             "current_status": current_status,
@@ -2667,6 +2638,36 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         return result
 
     # ── Internal ──
+
+    @staticmethod
+    def _score_pair(user: str, assistant: str) -> float:
+        """Score a single training pair on quality. Used by both
+        score_training_data() and export_filtered() for consistency."""
+        u_len, a_len = len(user), len(assistant)
+
+        # Length score
+        if 20 <= u_len <= 2000 and 50 <= a_len <= 5000:
+            length_score = 1.0
+        elif u_len < 10 or a_len < 20:
+            length_score = 0.1
+        else:
+            length_score = 0.5
+
+        # Specificity (concrete tokens)
+        specific = sum(1 for w in assistant.split()
+                       if any(c in w for c in "/.(){}[]0123456789_"))
+        total = len(assistant.split()) or 1
+        specificity_score = min(specific / total * 5, 1.0)
+
+        # Completeness
+        if u_len > 30 and a_len > 100:
+            completeness_score = 1.0
+        elif u_len > 15 and a_len > 50:
+            completeness_score = 0.7
+        else:
+            completeness_score = 0.3
+
+        return 0.3 * length_score + 0.4 * specificity_score + 0.3 * completeness_score
 
     def _get_existing_hashes(self) -> set:
         """Get content hashes of all existing turns for dedup."""

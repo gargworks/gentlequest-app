@@ -5448,7 +5448,7 @@ def handle_archive_command(args) -> int:
         if quality.get("worst_5"):
             print(f"\n  Worst 5:")
             for w in quality["worst_5"]:
-                print(f"    q={w['quality']} len={w['specificity_score']} spec={w['specificity_score']} | {w['prompt_preview'][:60]}")
+                print(f"    q={w['quality']} ulen={w.get('user_len', '?')} alen={w.get('assistant_len', '?')} | {w['prompt_preview'][:60]}")
 
         if export_path:
             print(f"\n  Exporting filtered data (min_quality={min_quality})...")
@@ -5511,7 +5511,7 @@ def handle_archive_command(args) -> int:
                 print(f"   Shadow mode active. Third Brother will generate alongside primary.")
                 print(f"   DPO pairs created automatically from comparisons.")
             elif target == "canary":
-                print(f"   Canary mode active. Third Brother serves 10% of traffic.")
+                print(f"   Canary mode active. Logging comparisons for graduation check.")
             elif target == "primary":
                 print(f"   🎓 GRADUATED. Third Brother is now the primary model.")
         else:

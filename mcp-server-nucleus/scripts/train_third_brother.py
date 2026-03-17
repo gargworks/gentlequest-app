@@ -251,7 +251,11 @@ def main():
             conversations.append({"messages": row["messages"]})
 
     # Train/eval split (10% held out for eval)
+    # Check both naming conventions: openai_eval.jsonl and openai_training.eval.jsonl
     eval_path = str(Path(train_data).with_suffix(".eval.jsonl"))
+    eval_path_alt = str(Path(train_data).parent / Path(train_data).stem.replace("_training", "_eval").replace("_filtered", "_eval") + ".jsonl")
+    if not Path(eval_path).exists() and Path(eval_path_alt).exists():
+        eval_path = eval_path_alt
     if Path(eval_path).exists():
         eval_conversations = []
         with open(eval_path) as f:
