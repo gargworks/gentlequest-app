@@ -200,7 +200,11 @@ if [ -f "$CLI" ]; then
     sed -i '' '/get_reasoning/d' "$CLI"
     sed -i '' '/export_reasoning/d' "$CLI"
     sed -i '' '/Chain-of-Thought/d' "$CLI"
-    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT refs)"
+    sed -i '' '/mine_preferences/d' "$CLI"
+    sed -i '' '/mine_reasoning/d' "$CLI"
+    sed -i '' "/'mine'/d" "$CLI"
+    sed -i '' '/MINING/d' "$CLI"
+    echo "  Sanitized: $CLI (archive/Third Brother/DPO/CoT/mine refs)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──

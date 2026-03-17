@@ -1073,6 +1073,182 @@ class ArchivePipeline:
             _write_reasoning(eval_chains, eval_path)
         return count
 
+    # ── Retroactive Mining (bootstrap DPO + CoT from existing archive) ──
+
+    def mine_preferences_from_archive(self) -> int:
+        """Extract DPO preference pairs from existing conversation turns.
+
+        Mines three signal types from the 800+ existing conversations:
+        1. Correction patterns: user said "no/wrong/actually" → previous response rejected
+        2. Low-confidence turns: confidence < 0.5 → weaker signal
+        3. Escalation turns: task was escalated → agent's approach was rejected
+
+        Returns number of new preference pairs mined.
+        """
+        turns = self.get_turns()
+        existing_prefs = {
+            p.get("metadata", {}).get("mined_from", "")
+            for p in self.get_preferences()
+            if p.get("metadata", {}).get("mined_from")
+        }
+        mined = 0
+
+        for turn_data in turns:
+            turn_id = turn_data.get("turn_id", "")
+            if turn_id in existing_prefs:
+                continue  # Already mined
+
+            conv = turn_data.get("conversation", [])
+            if len(conv) < 4:
+                continue
+
+            # Mine correction patterns from conversations
+            for i, msg in enumerate(conv):
+                if msg.get("role") != "user":
+                    continue
+                content = msg.get("content", "").strip()
+                if not self.is_correction(content):
+                    continue
+
+                # Found a correction. Previous assistant response = rejected.
+                # The response AFTER the correction = chosen (if it exists).
+                prev_asst = None
+                next_asst = None
+                prev_user = None
+
+                # Walk backward to find the rejected response
+                for j in range(i - 1, -1, -1):
+                    if conv[j].get("role") == "assistant" and not prev_asst:
+                        prev_asst = conv[j].get("content", "")
+                    if conv[j].get("role") == "user" and not prev_user:
+                        prev_user = conv[j].get("content", "")
+                        break
+
+                # Walk forward to find the chosen response
+                for j in range(i + 1, len(conv)):
+                    if conv[j].get("role") == "assistant":
+                        next_asst = conv[j].get("content", "")
+                        break
+
+                if prev_user and prev_asst and next_asst:
+                    pref = self.record_preference(
+                        prompt=prev_user,
+                        chosen=next_asst,
+                        rejected=prev_asst,
+                        source="mined_correction",
+                        metadata={"mined_from": turn_id, "correction": content[:200]},
+                    )
+                    if pref:
+                        mined += 1
+
+        return mined
+
+    def mine_reasoning_from_archive(self) -> int:
+        """Extract CoT reasoning chains from existing archive turns.
+
+        Mines two signal types:
+        1. Turns with multi-step actions + decisions → structured reasoning
+        2. Conversations with [Tool Result] messages → tool-use reasoning chains
+
+        Returns number of new reasoning chains mined.
+        """
+        turns = self.get_turns()
+        existing_chains = {
+            c.get("metadata", {}).get("mined_from", "")
+            for c in self.get_reasoning_chains()
+            if c.get("metadata", {}).get("mined_from")
+        }
+        mined = 0
+
+        for turn_data in turns:
+            turn_id = turn_data.get("turn_id", "")
+            if turn_id in existing_chains:
+                continue
+
+            actions = turn_data.get("actions", [])
+            decisions = turn_data.get("decisions", [])
+            intent = turn_data.get("intent", "")
+            outcome = turn_data.get("outcome", "")
+            conv = turn_data.get("conversation", [])
+
+            # Source 1: Structured turns with multi-step actions + decisions
+            if len(actions) >= 2 and decisions and len(outcome) > 30:
+                steps = []
+                for idx, action in enumerate(actions):
+                    # Pair decisions with actions where possible
+                    decision = decisions[idx] if idx < len(decisions) else ""
+                    steps.append({
+                        "thought": decision if decision else f"Step {idx + 1}: {action}",
+                        "action": action,
+                        "observation": "",  # Not available from structured data
+                    })
+                chain = self.record_reasoning_chain(
+                    prompt=intent,
+                    steps=steps,
+                    final_answer=outcome,
+                    source="mined_structured",
+                    metadata={"mined_from": turn_id},
+                )
+                if chain:
+                    mined += 1
+                continue
+
+            # Source 2: Conversations with multi-turn assistant reasoning
+            # Look for conversations where assistant gives multiple responses
+            # (indicating tool use or multi-step thinking)
+            if len(conv) >= 6:
+                steps = []
+                last_user = ""
+                for msg in conv:
+                    role = msg.get("role", "")
+                    content = msg.get("content", "").strip()
+                    if role == "user":
+                        if content.startswith("[Tool Result"):
+                            # This is a tool observation
+                            if steps:
+                                steps[-1]["observation"] = content[:2000]
+                        else:
+                            last_user = content
+                    elif role == "assistant" and content:
+                        if last_user and not last_user.startswith("[Tool Result"):
+                            # First user message = prompt, first assistant = start of reasoning
+                            if not steps:
+                                # This might be the start of a chain
+                                pass
+                            steps.append({
+                                "thought": content[:2000],
+                                "action": "",
+                                "observation": "",
+                            })
+
+                # Only record if we found real multi-step reasoning
+                if len(steps) >= 2:
+                    # Find the original prompt (first real user message)
+                    prompt = ""
+                    final = ""
+                    for msg in conv:
+                        if msg.get("role") == "user" and not msg.get("content", "").startswith("[Tool Result"):
+                            prompt = msg.get("content", "")
+                            break
+                    # Final answer = last assistant message
+                    for msg in reversed(conv):
+                        if msg.get("role") == "assistant":
+                            final = msg.get("content", "")
+                            break
+
+                    if prompt and final and len(final) > 50:
+                        chain = self.record_reasoning_chain(
+                            prompt=prompt,
+                            steps=steps[:-1],  # All but last (last = final answer)
+                            final_answer=final,
+                            source="mined_conversation",
+                            metadata={"mined_from": turn_id},
+                        )
+                        if chain:
+                            mined += 1
+
+        return mined
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:

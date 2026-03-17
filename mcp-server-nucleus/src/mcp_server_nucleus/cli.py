@@ -4003,6 +4003,7 @@ def main():
     archive_subparsers.add_parser('cot-status', help='Show reasoning chain (Chain-of-Thought) statistics')
     archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export reasoning chains as <think>-tagged training data')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
+    archive_subparsers.add_parser('mine', help='Mine DPO + CoT data from existing archive (retroactive extraction)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4923,6 +4924,42 @@ def handle_archive_command(args) -> int:
             print(f"\n  To train (mix with SFT data):")
             print(f"    Combine {p} with openai_training.jsonl")
             print(f"    Both use the same OpenAI chat format.")
+        print()
+        return 0
+
+    elif cmd == 'mine':
+        print("=" * 50)
+        print("⛏️  MINING DPO + CoT FROM EXISTING ARCHIVE")
+        print("=" * 50)
+
+        # Mine DPO from corrections
+        dpo_before = archive.count_preferences()
+        print(f"\n  Mining DPO preference pairs from corrections...")
+        dpo_mined = archive.mine_preferences_from_archive()
+        dpo_after = archive.count_preferences()
+        print(f"  ✅ Mined {dpo_mined} new DPO pairs (total: {dpo_after})")
+
+        # Mine CoT from conversations
+        cot_before = archive.count_reasoning_chains()
+        print(f"\n  Mining CoT reasoning chains from conversations...")
+        cot_mined = archive.mine_reasoning_from_archive()
+        cot_after = archive.count_reasoning_chains()
+        print(f"  ✅ Mined {cot_mined} new CoT chains (total: {cot_after})")
+
+        print(f"\n  Summary:")
+        print(f"    DPO:  {dpo_before} → {dpo_after} (+{dpo_mined})")
+        print(f"    CoT:  {cot_before} → {cot_after} (+{cot_mined})")
+
+        if dpo_mined + cot_mined == 0:
+            print(f"\n  No new data to mine (already extracted or insufficient signal).")
+        else:
+            print(f"\n  Next steps:")
+            if dpo_after >= 50:
+                print(f"    nucleus archive dpo-export   — export for DPO training")
+            cot_quality = sum(1 for c in archive.get_reasoning_chains() if archive._is_quality_chain(c))
+            if cot_quality >= 20:
+                print(f"    nucleus archive cot-export   — export for CoT training")
+            print(f"    nucleus archive train        — SFT + mixed training")
         print()
         return 0
 
