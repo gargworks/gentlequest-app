@@ -164,6 +164,8 @@ src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 src/mcp_server_nucleus/runtime/archive_pipeline.py export-ignore
 src/mcp_server_nucleus/tools/archive.py export-ignore
 scripts/train_third_brother.py export-ignore
+scripts/train_third_brother.ipynb export-ignore
+scripts/train_gemini.py export-ignore
 scripts/Modelfile export-ignore
 
 # ── Hosted-only modules (not included in open-source distribution) ──

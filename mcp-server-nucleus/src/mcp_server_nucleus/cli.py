@@ -4509,12 +4509,10 @@ def handle_archive_command(args) -> int:
             count = archive.export_gemini(p)
             print(f"\n  Exported: {count} pairs → {p}")
             if not dry_run:
-                print(f"\n  To launch Vertex AI fine-tuning:")
-                print(f"    gcloud ai custom-jobs create \\")
-                print(f"      --region=us-central1 \\")
-                print(f"      --display-name=nucleus-brother \\")
-                print(f"      --config=train_config.yaml")
-                print(f"\n  Or upload to AI Studio: https://aistudio.google.com/tuning")
+                print(f"\n  One-command cloud fine-tuning (no GPU needed):")
+                print(f"    python scripts/train_gemini.py")
+                print(f"\n  Or upload manually:")
+                print(f"    https://aistudio.google.com/tuning")
 
         elif target == 'openai':
             p = str(Path(out_dir) / "openai_training.jsonl")
