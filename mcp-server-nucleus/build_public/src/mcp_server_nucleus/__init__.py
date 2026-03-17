@@ -7467,7 +7467,7 @@ def brain_audit_log(limit: int = 20) -> str:
     Each interaction is SHA-256 hashed for integrity verification.
     This is the "Why-Trace" that proves agent decisions.
     
-    Part of the Governance Moat (N-SOS V1).
+    Part of the Governance Layer (N-SOS V1).
     
     Args:
         limit: Number of recent entries to return (default 20)
@@ -7733,7 +7733,7 @@ def brain_governance_status() -> str:
     - Engram count
     - Security configuration
     
-    Part of the Governance Moat (N-SOS V1).
+    Part of the Governance Layer (N-SOS V1).
     """
     return _brain_governance_status_impl()
 

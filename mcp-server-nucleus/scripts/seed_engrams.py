@@ -93,14 +93,14 @@ SEED_ENGRAMS = [
         "intensity": 8,
     },
     {
-        "key": "openclaw_competitor",
-        "value": "OpenClaw had viral moment 1 month ago. Key lesson: they won on autonomous ACTION via familiar channels (WhatsApp/Telegram), not on memory. Differentiator: Nucleus = governed agents.",
+        "key": "competitive_awareness",
+        "value": "Agent frameworks are growing fast. Differentiator: Nucleus = governed agents with persistent memory and compliance. No other framework provides this.",
         "context": "Strategy",
         "intensity": 8,
     },
     {
-        "key": "compounding_flywheel",
-        "value": "Core value prop: each day of Nucleus use makes the next day better. Engrams compound. This is what no competitor does. 7-day loop: Write → Recall → Apply → Measure.",
+        "key": "compounding_value",
+        "value": "Core value prop: each day of Nucleus use makes the next day better. Engrams compound. 7-day loop: Write → Recall → Apply → Measure.",
         "context": "Strategy",
         "intensity": 9,
     },

@@ -148,6 +148,25 @@ claude project export data-*/
 # Temp files
 tmp/
 
+# ============================================================
+# PUBLICATION PROTOCOL — SOVEREIGN (never public)
+# ============================================================
+# Moat strategy docs
+DATA_MOAT_SUMMARY.md
+*MOAT*.md
+*SUPER_PROMPT*.md
+*HANDOFF*.md
+
+# Competitive analysis
+*COMPETITIVE*.md
+*OPENCLAW*.md
+
+# Launch internals (strategy, not product)
+nucleus-launch-internal/
+
+# Internal prompts and agent workflows
+.agent/
+
 # Test brain instances and local state
 .brain_test*/
 .telemetry/

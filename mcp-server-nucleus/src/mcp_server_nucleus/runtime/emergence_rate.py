@@ -1,13 +1,11 @@
 """
 Nucleus Emergence Rate Engine
 ==============================
-Implements anonymized pattern aggregation for the data network effects moat.
+Implements anonymized pattern aggregation for data network effects.
 
-From the 42-Round Audit + Oxx VC Research:
-- Data network effects are the #1 moat in AI (2026).
-- "Emergence Rate" = system learns from aggregated user patterns and improves over time.
-- Examples: Harvey (legal), Hebbia (finance), Grammarly, GitHub.
-- Target: 20% faster task completion for new users after 100 users contribute patterns.
+The Emergence Rate measures how the system learns from aggregated user
+patterns and improves over time. As more users contribute anonymized
+patterns, new users benefit from better default suggestions.
 
 This module provides:
 1. PatternCollector: Captures usage patterns from engrams, tasks, self-healing fixes
@@ -363,7 +361,7 @@ class PatternAggregator:
 class PatternSuggester:
     """
     Suggests patterns to new users based on aggregated data.
-    This is the core of the Emergence Rate moat — system gets smarter as more users contribute.
+    This is the core of the Emergence Rate — the system gets smarter as more users contribute.
     """
 
     def __init__(self, brain_path: Optional[Path] = None):

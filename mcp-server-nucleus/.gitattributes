@@ -50,18 +50,29 @@ microservices_analysis.json export-ignore
 aws_microservices.json export-ignore
 
 # Internal docs/notes
+docs/TITAN_HANDOVER_PROTOCOL.md export-ignore
+docs/TELEMETRY_SCALING_PLAN.md export-ignore
+docs/TELEMETRY_UPSTASH_WORKER.md export-ignore
 AGENTS.md export-ignore
 GEMINI.md export-ignore
 NOTES.md export-ignore
 TODO.md export-ignore
 docs/internal/ export-ignore
+docs/strategy/ export-ignore
+docs/COMPARISON.md export-ignore
+docs/REDDIT_LAUNCH_POST.md export-ignore
+docs/architecture/BINARY_SHIELDING_TRACK_1_5.md export-ignore
 README_GODMODE.md export-ignore
 README_TELEMETRY.md export-ignore
 COMBOS.md export-ignore
 DAILY_USAGE_GUIDE.md export-ignore
 
 # Infrastructure/State
+engrams/ export-ignore
+.agent/ export-ignore
+brain/ export-ignore
 .brain*/ export-ignore
+debug*.py export-ignore
 .gemini/ export-ignore
 .vscode/ export-ignore
 .idea/ export-ignore

@@ -20,7 +20,7 @@ Claude's `CLAUDE.md` provides **static context**. Nucleus provides **active cont
 | **Tools** | Suggestions only | **Orchestrated Execution** (DAGs) |
 | **Audit** | None | **Full Decision Trail** (Who/Why/When) |
 
-## ✨ Governance Features (The Moat)
+## ✨ Governance Features (Core Differentiator)
 
 - **Default Deny Security** — All mounted servers start with NO network/filesystem access.
 - **Explicit Consent** — You approve every command. No silent execution.
@@ -271,7 +271,7 @@ Or click `brain://context` in Claude Desktop's sidebar.
 - **Health Monitoring** endpoints for production use
 - **E2E Test Suite** — 18/18 critical path tests passing
 
-### The Governance Moat (v0.5.1)
+### The Governance Layer (v0.5.1)
 
 | Policy | Description |
 |--------|-------------|
