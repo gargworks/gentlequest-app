@@ -66,7 +66,7 @@ def get_nucleus_bin_path() -> str:
 
 def get_brain_path() -> Path:
     """Get the brain path from environment variable or auto-detect from working directory."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
     
     if brain_path:
         path = Path(brain_path)
