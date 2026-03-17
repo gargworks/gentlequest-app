@@ -1,0 +1,205 @@
+name: GentleQuest CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      runner_type:
+        description: "Where to run the build"
+        type: choice
+        required: true
+        default: "github_hosted"
+        options:
+          - github_hosted
+          - self_hosted
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  backend-tests:
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy-gemini-key' }}
+    
+    services:
+      # Services are kept for parity but tests run against sqlite to avoid
+      # PG role/seed issues in CI
+      postgres:
+        image: ankane/pgvector:v0.5.1
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e ".[dev]"
+          pip install pytest pytest-cov pytest-mock alembic
+          # Additional test dependencies
+          pip install playwright PyYAML google-genai
+          playwright install --with-deps chromium
+      
+      - name: Run tests (sqlite)
+        env:
+          CI: true
+          GITHUB_ACTIONS: true
+          DATABASE_URL: sqlite:///test.db
+          TEST_DATABASE_URL: sqlite:///test.db
+          REDIS_URL: redis://localhost:6379
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy-gemini-key' }}
+          ENVIRONMENT: test
+          PYTEST_CURRENT_TEST: true
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term -v \
+            --ignore=tests/test_backend_fixes.py \
+            --ignore=tests/test_hud_e2e.py \
+            --ignore=tests/test_memory_endpoint.py \
+            --ignore=tests/test_context_injection.py \
+            --ignore=tests/test_docs.py
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+      
+      - name: Check code quality
+        continue-on-error: true
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+  
+  frontend-tests:
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.27.x
+          channel: stable
+      
+      - name: Cache Flutter packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ai_buddy_web/.dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+      
+      - name: Install dependencies
+        run: |
+          cd ai_buddy_web
+          flutter pub get
+      
+      - name: Run Compliance Tests (CI Gate)
+        run: |
+          cd ai_buddy_web
+          echo "🔒 Running compliance verification tests..."
+          flutter test test/services/compliance_service_test.dart --reporter expanded
+          echo "✅ Compliance tests passed"
+      
+      - name: Run tests
+        run: |
+          cd ai_buddy_web
+          flutter test
+      
+      - name: Analyze code
+        working-directory: ai_buddy_web
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      
+      - name: Check formatting
+        continue-on-error: true
+        run: |
+          cd ai_buddy_web
+          dart format --output=none --set-exit-if-changed .
+  
+
+  
+  deploy-staging:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Render (Staging)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_STAGING: ${{ secrets.RENDER_SERVICE_ID_STAGING }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_STAGING/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}'
+  
+  deploy-production:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Render (Production)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_PROD: ${{ secrets.RENDER_SERVICE_ID_PROD }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_PROD/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}'
+      
+      - name: Wait for deployment
+        run: sleep 60
+      
+      - name: Smoke test production
+        run: |
+          curl -f https://gentlequest.onrender.com/api/health || exit 1
+          echo "✅ Production health check passed"
