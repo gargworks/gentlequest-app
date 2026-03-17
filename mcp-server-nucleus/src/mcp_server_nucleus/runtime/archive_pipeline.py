@@ -2378,6 +2378,7 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         output_path: str,
         min_quality: float = 0.4,
         format: str = "openai",
+        curriculum: bool = False,
     ) -> Dict[str, int]:
         """Export only training data above a quality threshold.
 
@@ -2385,22 +2386,38 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             output_path: Path for filtered export.
             min_quality: Minimum quality score (0-1). Default 0.4.
             format: Export format (openai/gemini/anthropic).
+            curriculum: If True, sort easy→hard for curriculum learning.
 
         Returns:
-            {total, exported, filtered_out}.
+            {total, exported, filtered_out, eval_excluded, snapshot}.
         """
         all_pairs = self._collect_quality_pairs()
         if not all_pairs:
-            return {"total": 0, "exported": 0, "filtered_out": 0}
+            return {"total": 0, "exported": 0, "filtered_out": 0,
+                    "eval_excluded": 0}
 
-        # Score all pairs
+        # Contamination firewall: exclude eval prompts from training
+        eval_hashes = self._get_eval_prompt_hashes()
+        clean_pairs = []
+        eval_excluded = 0
+        for pair in all_pairs:
+            h = hashlib.md5(pair["user"][:100].encode()).hexdigest()[:8]
+            if f"eval-{h}" in eval_hashes:
+                eval_excluded += 1
+            else:
+                clean_pairs.append(pair)
+
         # Score using same formula as score_training_data
         scored_items = [(pair, self._score_pair(pair["user"], pair["assistant"]))
-                        for pair in all_pairs]
+                        for pair in clean_pairs]
 
-        # Filter and export
+        # Filter by quality
         passed = [(p, q) for p, q in scored_items if q >= min_quality]
         filtered_out = len(scored_items) - len(passed)
+
+        # Curriculum ordering: easy→hard (short answers first, then longer)
+        if curriculum:
+            passed.sort(key=lambda x: len(x[0]["assistant"]))
 
         # System prompt for identity (matches export_openai)
         sys_msg = (
@@ -2430,12 +2447,94 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
                     ]}
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
+        # Snapshot: save a manifest of what went into this export
+        snapshot = self._save_export_snapshot(
+            output_path, len(passed), eval_excluded, filtered_out,
+            min_quality, format, curriculum
+        )
+
         return {
-            "total": len(scored_items),
+            "total": len(all_pairs),
             "exported": len(passed),
             "filtered_out": filtered_out,
+            "eval_excluded": eval_excluded,
             "min_quality": min_quality,
+            "curriculum": curriculum,
+            "snapshot": snapshot,
         }
+
+    def _get_eval_prompt_hashes(self) -> set:
+        """Get eval_id hashes for contamination checking.
+
+        Returns the set of eval_ids from the most recent eval suite.
+        These prompts must never appear in training data.
+        """
+        eval_hashes = set()
+        # Check exported eval files
+        exports_dir = self.training_dir / "exports"
+        if exports_dir.exists():
+            for f in exports_dir.iterdir():
+                if "eval" in f.name and f.suffix == ".jsonl":
+                    try:
+                        for line in f.read_text().strip().split("\n"):
+                            if line.strip():
+                                entry = json.loads(line)
+                                eid = entry.get("eval_id", "")
+                                if eid:
+                                    eval_hashes.add(eid)
+                    except (json.JSONDecodeError, OSError):
+                        continue
+        # Also generate fresh from current data (covers case where no export exists)
+        if not eval_hashes:
+            suite = self.generate_eval_suite(100)
+            eval_hashes = {case["eval_id"] for case in suite}
+        return eval_hashes
+
+    def _save_export_snapshot(
+        self, output_path: str, exported: int, eval_excluded: int,
+        filtered_out: int, min_quality: float, format: str, curriculum: bool,
+    ) -> str:
+        """Save a snapshot manifest for reproducibility.
+
+        Records exactly what data went into an export so any training
+        run can be traced back to its exact inputs.
+        """
+        snapshots_dir = self.training_dir / "snapshots"
+        snapshots_dir.mkdir(parents=True, exist_ok=True)
+
+        # Snapshot ID: timestamp-based
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        snap_id = f"snap_{ts}"
+        snap_path = snapshots_dir / f"{snap_id}.json"
+
+        # Compute content hash of the exported file for integrity
+        content_hash = ""
+        try:
+            import hashlib as _hl
+            h = _hl.sha256()
+            with open(output_path, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    h.update(chunk)
+            content_hash = h.hexdigest()[:16]
+        except OSError:
+            pass
+
+        manifest = {
+            "snapshot_id": snap_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "output_path": str(output_path),
+            "format": format,
+            "exported_pairs": exported,
+            "eval_excluded": eval_excluded,
+            "quality_filtered_out": filtered_out,
+            "min_quality": min_quality,
+            "curriculum": curriculum,
+            "content_hash": content_hash,
+            "archive_stats": self.get_stats(),
+        }
+
+        snap_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        return snap_id
 
     # ── Model Registry (version tracking + lineage) ──
 

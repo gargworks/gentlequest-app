@@ -76,6 +76,8 @@ def main():
                         help="Skip retroactive mining")
     parser.add_argument("--quality-filter", type=float, default=0,
                         help="Filter training data below this quality score (0=disabled, 0.4=recommended)")
+    parser.add_argument("--curriculum", action="store_true",
+                        help="Sort training data easy→hard (curriculum learning, proven to improve convergence)")
     parser.add_argument("--version", type=str, default=None,
                         help="Model version string (default: auto-increment from registry)")
     parser.add_argument("--register", action="store_true",
@@ -128,9 +130,19 @@ def main():
             exports_dir.mkdir(parents=True, exist_ok=True)
             if args.quality_filter > 0:
                 sft_path = str(exports_dir / "openai_training_filtered.jsonl")
-                filter_result = archive.export_filtered(sft_path, args.quality_filter, "openai")
+                filter_result = archive.export_filtered(
+                    sft_path, args.quality_filter, "openai", curriculum=args.curriculum
+                )
                 sft_count = filter_result["exported"]
+                excluded = filter_result.get("eval_excluded", 0)
+                snap = filter_result.get("snapshot", "")
                 print(f"   Exported {sft_count}/{filter_result['total']} (filtered {filter_result['filtered_out']})")
+                if excluded:
+                    print(f"   🛡️  Eval contamination firewall: excluded {excluded} eval prompts")
+                if snap:
+                    print(f"   📸 Snapshot: {snap}")
+                if args.curriculum:
+                    print(f"   📚 Curriculum ordering: easy→hard")
                 sft_eval = str(exports_dir / "openai_eval.jsonl")
                 archive.export_eval_suite(sft_eval, 50)
             else:

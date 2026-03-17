@@ -4060,6 +4060,7 @@ def main():
     archive_quality.add_argument('--export', type=str, default=None, help='Export filtered data to path')
     archive_quality.add_argument('--min-quality', type=float, default=0.4, help='Minimum quality threshold (default: 0.4)')
     archive_quality.add_argument('--format', choices=['openai', 'gemini', 'anthropic'], default='openai', help='Export format')
+    archive_quality.add_argument('--curriculum', action='store_true', help='Sort training data easy→hard (curriculum learning)')
     archive_register = archive_subparsers.add_parser('register', help='Register a trained model version in the registry')
     archive_register.add_argument('version', help='Version string (e.g., v1, v2.1)')
     archive_register.add_argument('--base', type=str, default='llama3.2:3b', help='Base model used (default: llama3.2:3b)')
@@ -5474,10 +5475,19 @@ def handle_archive_command(args) -> int:
                 print(f"    q={w['quality']} ulen={w.get('user_len', '?')} alen={w.get('assistant_len', '?')} | {w['prompt_preview'][:60]}")
 
         if export_path:
+            curriculum = getattr(args, 'curriculum', False)
             print(f"\n  Exporting filtered data (min_quality={min_quality})...")
-            result = archive.export_filtered(export_path, min_quality, export_format)
+            if curriculum:
+                print(f"  📚 Curriculum learning: sorting easy→hard")
+            result = archive.export_filtered(
+                export_path, min_quality, export_format, curriculum=curriculum
+            )
             print(f"  ✅ Exported {result['exported']}/{result['total']} pairs")
             print(f"     Filtered out: {result['filtered_out']} low-quality")
+            if result.get('eval_excluded', 0) > 0:
+                print(f"     🛡️  Eval excluded: {result['eval_excluded']} (contamination firewall)")
+            if result.get('snapshot'):
+                print(f"     📸 Snapshot: {result['snapshot']}")
             print(f"     Output: {export_path}")
         else:
             print(f"\n  To export filtered data:")
