@@ -13,6 +13,7 @@ import asyncio
 import signal
 import sys
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -98,13 +99,32 @@ class DaemonManager:
             if active_count > 0:
                 logger.info(f"🦾 Active Swarms: {active_count}")
 
-            # Check retrain status every ~5 min (60 ticks * 5s)
+            # Training Conductor check every ~5 min (60 ticks * 5s)
             if tick_count % 60 == 0:
                 try:
                     from .archive_pipeline import ArchivePipeline
-                    rt = ArchivePipeline(brain_path=self.brain_path).should_retrain()
-                    if rt["should_retrain"]:
-                        logger.info(f"🧬 Third Brother retrain recommended: {rt['reason']}")
+                    archive = ArchivePipeline(brain_path=self.brain_path)
+                    status = archive.training_status()
+                    na = status.get("next_action", {})
+                    if na.get("priority") in ("critical", "high"):
+                        logger.info(
+                            f"🧬 Training Conductor [{na['priority'].upper()}]: "
+                            f"{na['action']} — {na['reason']}"
+                        )
+                        # Write conductor signal for external tools to pick up
+                        signal_path = self.brain_path / "training" / "conductor_signal.json"
+                        signal_path.parent.mkdir(parents=True, exist_ok=True)
+                        import json as _json
+                        signal_path.write_text(_json.dumps({
+                            "timestamp": datetime.now().isoformat(),
+                            "action": na["action"],
+                            "priority": na["priority"],
+                            "reason": na["reason"],
+                            "command": na.get("command"),
+                            "sft_turns": status["sft"]["turns"],
+                            "dpo_pairs": status["dpo"]["total"],
+                            "cot_quality": status["cot"]["quality"],
+                        }, indent=2))
                 except Exception:
                     pass
 

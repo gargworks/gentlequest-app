@@ -261,7 +261,23 @@ if [ -f "$CLI" ]; then
     sed -i '' '/pipe_provider/d' "$CLI"
     sed -i '' '/pipe_judge/d' "$CLI"
     sed -i '' '/pipe_dry_run/d' "$CLI"
-    echo "  Sanitized: $CLI (all training refs: DPO/CoT/mine/eval/synth/spin/active/conductor/pipeline)"
+    # Strip Constitutional AI (Phase 11)
+    sed -i '' '/CONSTITUTIONAL_BLOCK_START/,/CONSTITUTIONAL_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_constitutional/d' "$CLI"
+    sed -i '' '/constitutional_revise/d' "$CLI"
+    sed -i '' '/constitutional_hash/d' "$CLI"
+    sed -i '' '/CONSTITUTIONAL/d' "$CLI"
+    sed -i '' '/CONSTITUTION/d' "$CLI"
+    sed -i '' '/archive constitutional/d' "$CLI"
+    # Strip Data Quality Scoring (Phase 11)
+    sed -i '' '/QUALITY_BLOCK_START/,/QUALITY_BLOCK_END/d' "$CLI"
+    sed -i '' '/archive_quality/d' "$CLI"
+    sed -i '' '/score_training_data/d' "$CLI"
+    sed -i '' '/export_filtered/d' "$CLI"
+    sed -i '' '/DATA QUALITY/d' "$CLI"
+    sed -i '' '/min_quality/d' "$CLI"
+    sed -i '' '/archive quality/d' "$CLI"
+    echo "  Sanitized: $CLI (all training refs: DPO/CoT/mine/eval/synth/spin/active/conductor/pipeline/constitutional/quality)"
 fi
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──
@@ -289,8 +305,15 @@ if [ -f "$DAEMON" ]; then
     sed -i '' '/archive_pipeline/d' "$DAEMON"
     sed -i '' '/should_retrain/d' "$DAEMON"
     sed -i '' '/Third Brother/d' "$DAEMON"
+    sed -i '' '/training_status/d' "$DAEMON"
+    sed -i '' '/Training Conductor/d' "$DAEMON"
+    sed -i '' '/conductor_signal/d' "$DAEMON"
+    sed -i '' '/next_action/d' "$DAEMON"
+    sed -i '' '/sft_turns/d' "$DAEMON"
+    sed -i '' '/dpo_pairs/d' "$DAEMON"
+    sed -i '' '/cot_quality/d' "$DAEMON"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
-    echo "  Sanitized: $DAEMON (retrain check)"
+    echo "  Sanitized: $DAEMON (training conductor hook)"
 fi
 BRIEF="src/mcp_server_nucleus/runtime/morning_brief_ops.py"
 if [ -f "$BRIEF" ]; then

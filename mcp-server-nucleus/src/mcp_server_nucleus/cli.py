@@ -4027,6 +4027,13 @@ def main():
     archive_pipeline.add_argument('--provider', type=str, default=None, help='LLM provider for synthesis (omit to skip synthesis)')
     archive_pipeline.add_argument('--judge', type=str, default=None, help='LLM provider for judging (enables LLM-as-Judge)')
     archive_pipeline.add_argument('--dry-run', action='store_true', help='Show what would happen without executing')
+    archive_constitutional = archive_subparsers.add_parser('constitutional', help='Constitutional AI: self-critique → self-revision → DPO pairs')
+    archive_constitutional.add_argument('--provider', type=str, default='gemini', help='LLM for critique and revision')
+    archive_constitutional.add_argument('--count', type=int, default=100, help='Number of turns to process (default: 100)')
+    archive_quality = archive_subparsers.add_parser('quality', help='Score training data quality and show distribution')
+    archive_quality.add_argument('--export', type=str, default=None, help='Export filtered data to path')
+    archive_quality.add_argument('--min-quality', type=float, default=0.4, help='Minimum quality threshold (default: 0.4)')
+    archive_quality.add_argument('--format', choices=['openai', 'gemini', 'anthropic'], default='openai', help='Export format')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -5340,6 +5347,88 @@ def handle_archive_command(args) -> int:
         print()
         return 0  # PIPELINE_BLOCK_END
 
+    elif cmd == 'constitutional':  # CONSTITUTIONAL_BLOCK_START
+        const_provider = getattr(args, 'provider', 'gemini')
+        const_count = getattr(args, 'count', 100)
+
+        print("=" * 50)
+        print("📜 CONSTITUTIONAL AI — Self-Critique → Self-Revision")
+        print("=" * 50)
+        print(f"  Provider:    {const_provider}")
+        print(f"  Target:      {const_count} turns")
+        print(f"  Principles:  {len(archive.CONSTITUTION)}")
+        for i, p in enumerate(archive.CONSTITUTION, 1):
+            print(f"    {i}. {p}")
+
+        dpo_before = archive.count_preferences()
+
+        try:
+            from .runtime.llm_client import get_llm_client
+            llm = get_llm_client(const_provider)
+            model_fn = lambda p: llm.generate_content(p).text
+
+            print(f"\n  Running critique + revision loop...")
+            created = archive.constitutional_revise(
+                model_fn=model_fn,
+                count=const_count,
+            )
+            dpo_after = archive.count_preferences()
+
+            print(f"\n  ✅ Constitutional AI Complete")
+            print(f"     Created: {created} DPO pairs (critique → revision)")
+            print(f"     DPO total: {dpo_before} → {dpo_after}")
+
+            if created == 0:
+                print(f"\n  All reviewed responses passed — no revisions needed.")
+        except Exception as e:
+            print(f"\n  ❌ Constitutional revision failed: {e}")
+        print()
+        return 0  # CONSTITUTIONAL_BLOCK_END
+
+    elif cmd == 'quality':  # QUALITY_BLOCK_START
+        export_path = getattr(args, 'export', None)
+        min_quality = getattr(args, 'min_quality', 0.4)
+        export_format = getattr(args, 'format', 'openai')
+
+        print("=" * 50)
+        print("🔬 DATA QUALITY SCORING")
+        print("=" * 50)
+
+        quality = archive.score_training_data()
+        if quality["total"] == 0:
+            print("  No training data to score.")
+            return 0
+
+        print(f"\n  Total pairs:   {quality['total']}")
+        print(f"  Avg quality:   {quality['avg_quality']}")
+        print(f"  High (≥0.6):   {quality['high_quality']}")
+        print(f"  Low (<0.3):    {quality['low_quality']}")
+
+        dist = quality["quality_distribution"]
+        print(f"\n  Distribution:")
+        print(f"    Excellent (≥0.8): {dist['excellent']}")
+        print(f"    Good (0.6-0.8):   {dist['good']}")
+        print(f"    Fair (0.3-0.6):   {dist['fair']}")
+        print(f"    Poor (<0.3):      {dist['poor']}")
+
+        if quality.get("worst_5"):
+            print(f"\n  Worst 5:")
+            for w in quality["worst_5"]:
+                print(f"    q={w['quality']} len={w['specificity_score']} spec={w['specificity_score']} | {w['prompt_preview'][:60]}")
+
+        if export_path:
+            print(f"\n  Exporting filtered data (min_quality={min_quality})...")
+            result = archive.export_filtered(export_path, min_quality, export_format)
+            print(f"  ✅ Exported {result['exported']}/{result['total']} pairs")
+            print(f"     Filtered out: {result['filtered_out']} low-quality")
+            print(f"     Output: {export_path}")
+        else:
+            print(f"\n  To export filtered data:")
+            print(f"    nucleus archive quality --export training_filtered.jsonl --min-quality 0.5")
+
+        print()
+        return 0  # QUALITY_BLOCK_END
+
     else:
         # bare `nucleus archive` — show stats + retrain indicator + DPO + CoT
         stats = archive.get_stats()
@@ -5363,6 +5452,8 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive synthesize  — self-play DPO manufacturing")
         print(f"   nucleus archive spin        — iterative self-play (SPIN)")
         print(f"   nucleus archive active-learn — target model weaknesses")
+        print(f"   nucleus archive constitutional — self-critique DPO pairs")
+        print(f"   nucleus archive quality     — score data quality")
         print(f"   nucleus archive conductor   — what should I do next?")
         print(f"   nucleus archive pipeline    — run full loop automatically")
         print(f"   nucleus archive train       — fine-tuning pipeline")

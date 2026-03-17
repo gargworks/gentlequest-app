@@ -2085,6 +2085,315 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
 
         return report
 
+    # ── Constitutional AI / RLAIF (self-critique → self-revision → DPO) ──
+
+    CONSTITUTION = [
+        "Is the response technically accurate? If not, what is wrong?",
+        "Does the response directly address what the user asked, or does it go off-topic?",
+        "Is the response complete without being unnecessarily verbose?",
+        "Does the response follow coding best practices (if code is involved)?",
+        "Would a senior engineer approve this response, or would they send it back?",
+    ]
+
+    def constitutional_revise(
+        self,
+        model_fn,
+        count: int = 100,
+        principles: Optional[List[str]] = None,
+    ) -> int:
+        """Constitutional AI: self-critique and self-revision to create DPO pairs.
+
+        For each archive turn:
+        1. Take the original assistant response
+        2. Ask the model to critique it against constitutional principles
+        3. Ask the model to revise the response based on the critique
+        4. Record (prompt, revised, original) as a DPO pair
+
+        This is how Anthropic trains Claude — no human labelers needed.
+
+        Args:
+            model_fn: LLM for critique and revision.
+            count: Number of turns to process.
+            principles: Custom principles (default: built-in CONSTITUTION).
+
+        Returns:
+            Number of new DPO pairs created.
+        """
+        rules = principles or self.CONSTITUTION
+        all_pairs = self._collect_quality_pairs()
+        if len(all_pairs) < 20:
+            return 0
+
+        existing_constitutional = {
+            p.get("metadata", {}).get("constitutional_hash", "")
+            for p in self.get_preferences()
+            if p.get("source") == "constitutional"
+        }
+
+        created = 0
+        for pair in all_pairs[:count * 2]:
+            if created >= count:
+                break
+
+            prompt = pair["user"]
+            original = pair["assistant"]
+            pair_hash = hashlib.md5(
+                (prompt[:100] + original[:100]).encode()
+            ).hexdigest()[:12]
+
+            if pair_hash in existing_constitutional:
+                continue
+
+            try:
+                # Step 1: Critique
+                critique_prompt = (
+                    f"You are a strict code reviewer. Critique this AI response.\n\n"
+                    f"USER QUESTION:\n{prompt[:1500]}\n\n"
+                    f"AI RESPONSE:\n{original[:2000]}\n\n"
+                    f"EVALUATE AGAINST THESE PRINCIPLES:\n"
+                )
+                for i, rule in enumerate(rules, 1):
+                    critique_prompt += f"{i}. {rule}\n"
+                critique_prompt += (
+                    "\nList specific issues found. If the response is already "
+                    "excellent, say 'NO ISSUES FOUND'."
+                )
+
+                critique = model_fn(critique_prompt)
+                if not critique:
+                    continue
+
+                # If no issues, skip (response is already good)
+                if "NO ISSUES FOUND" in critique.upper():
+                    continue
+
+                # Step 2: Revise
+                revise_prompt = (
+                    f"Revise this AI response to fix the issues identified.\n\n"
+                    f"USER QUESTION:\n{prompt[:1500]}\n\n"
+                    f"ORIGINAL RESPONSE:\n{original[:2000]}\n\n"
+                    f"CRITIQUE:\n{critique[:1500]}\n\n"
+                    f"Write the REVISED response only. Do not include the critique."
+                )
+
+                revised = model_fn(revise_prompt)
+                if not revised or len(revised) < 30:
+                    continue
+
+                # Skip if revision is too similar (no real improvement)
+                orig_words = set(original.lower().split())
+                rev_words = set(revised.lower().split())
+                if orig_words and rev_words:
+                    jaccard = len(orig_words & rev_words) / len(orig_words | rev_words)
+                    if jaccard > 0.95:  # Too similar — revision didn't change much
+                        continue
+
+                # Step 3: Record DPO pair (revised is chosen, original is rejected)
+                pref = self.record_preference(
+                    prompt=prompt,
+                    chosen=revised,
+                    rejected=original,
+                    source="constitutional",
+                    metadata={
+                        "constitutional_hash": pair_hash,
+                        "critique_summary": critique[:500],
+                        "principles_used": len(rules),
+                    },
+                )
+                if pref:
+                    created += 1
+
+            except Exception:
+                continue
+
+        return created
+
+    # ── Data Quality Scoring (auto-score and filter training data) ──
+
+    def score_training_data(self) -> Dict[str, Any]:
+        """Score every training example on quality dimensions.
+
+        Returns aggregate quality stats and identifies low-quality data
+        that should be filtered before training.
+
+        Scoring dimensions:
+        - length: Reasonable length (not too short, not bloated)
+        - specificity: Contains concrete details, not vague
+        - diversity: Low overlap with other examples (dedup signal)
+        - completeness: Both sides of the conversation are substantive
+        """
+        all_pairs = self._collect_quality_pairs()
+        if not all_pairs:
+            return {"total": 0, "scored": 0}
+
+        scored = []
+        all_prompts_words = []
+
+        for pair in all_pairs:
+            user = pair["user"]
+            assistant = pair["assistant"]
+
+            # Length score (penalize very short or very long)
+            u_len = len(user)
+            a_len = len(assistant)
+            if 20 <= u_len <= 2000 and 50 <= a_len <= 5000:
+                length_score = 1.0
+            elif u_len < 10 or a_len < 20:
+                length_score = 0.1
+            else:
+                length_score = 0.5
+
+            # Specificity (concrete tokens: numbers, paths, function names)
+            specific_tokens = sum(1 for w in assistant.split()
+                                  if any(c in w for c in "/.(){}[]0123456789_"))
+            total_tokens = len(assistant.split()) or 1
+            specificity_score = min(specific_tokens / total_tokens * 5, 1.0)
+
+            # Completeness (both sides substantive)
+            if u_len > 30 and a_len > 100:
+                completeness_score = 1.0
+            elif u_len > 15 and a_len > 50:
+                completeness_score = 0.7
+            else:
+                completeness_score = 0.3
+
+            # Composite
+            quality = round(
+                0.3 * length_score + 0.4 * specificity_score + 0.3 * completeness_score,
+                3,
+            )
+
+            scored.append({
+                "prompt_preview": user[:80],
+                "quality": quality,
+                "length_score": round(length_score, 2),
+                "specificity_score": round(specificity_score, 2),
+                "completeness_score": round(completeness_score, 2),
+                "user_len": u_len,
+                "assistant_len": a_len,
+            })
+            all_prompts_words.append(set(user.lower().split()))
+
+        # Diversity pass: penalize near-duplicates
+        for i, item in enumerate(scored):
+            if i == 0:
+                item["diversity_score"] = 1.0
+                continue
+            max_overlap = 0.0
+            words_i = all_prompts_words[i]
+            for j in range(max(0, i - 50), i):  # Check last 50 neighbors
+                words_j = all_prompts_words[j]
+                if words_i and words_j:
+                    overlap = len(words_i & words_j) / max(len(words_i | words_j), 1)
+                    max_overlap = max(max_overlap, overlap)
+            item["diversity_score"] = round(1.0 - max_overlap, 2)
+            # Adjust composite with diversity
+            item["quality"] = round(
+                0.25 * item["length_score"] +
+                0.30 * item["specificity_score"] +
+                0.25 * item["completeness_score"] +
+                0.20 * item["diversity_score"],
+                3,
+            )
+
+        # Aggregate
+        qualities = [s["quality"] for s in scored]
+        avg_quality = sum(qualities) / len(qualities) if qualities else 0
+        high_quality = sum(1 for q in qualities if q >= 0.6)
+        low_quality = sum(1 for q in qualities if q < 0.3)
+
+        return {
+            "total": len(scored),
+            "avg_quality": round(avg_quality, 3),
+            "high_quality": high_quality,
+            "low_quality": low_quality,
+            "quality_distribution": {
+                "excellent": sum(1 for q in qualities if q >= 0.8),
+                "good": sum(1 for q in qualities if 0.6 <= q < 0.8),
+                "fair": sum(1 for q in qualities if 0.3 <= q < 0.6),
+                "poor": sum(1 for q in qualities if q < 0.3),
+            },
+            "worst_5": sorted(scored, key=lambda s: s["quality"])[:5],
+        }
+
+    def export_filtered(
+        self,
+        output_path: str,
+        min_quality: float = 0.4,
+        format: str = "openai",
+    ) -> Dict[str, int]:
+        """Export only training data above a quality threshold.
+
+        Args:
+            output_path: Path for filtered export.
+            min_quality: Minimum quality score (0-1). Default 0.4.
+            format: Export format (openai/gemini/anthropic).
+
+        Returns:
+            {total, exported, filtered_out}.
+        """
+        all_pairs = self._collect_quality_pairs()
+        if not all_pairs:
+            return {"total": 0, "exported": 0, "filtered_out": 0}
+
+        # Score all pairs
+        quality_scores = self.score_training_data()
+        scored_items = []
+
+        # Re-score inline for filtering (score_training_data doesn't return pairs)
+        for pair in all_pairs:
+            user = pair["user"]
+            assistant = pair["assistant"]
+            u_len, a_len = len(user), len(assistant)
+
+            if 20 <= u_len <= 2000 and 50 <= a_len <= 5000:
+                length_score = 1.0
+            elif u_len < 10 or a_len < 20:
+                length_score = 0.1
+            else:
+                length_score = 0.5
+
+            specific = sum(1 for w in assistant.split()
+                           if any(c in w for c in "/.(){}[]0123456789_"))
+            total = len(assistant.split()) or 1
+            specificity = min(specific / total * 5, 1.0)
+
+            completeness = 1.0 if (u_len > 30 and a_len > 100) else (
+                0.7 if (u_len > 15 and a_len > 50) else 0.3)
+
+            quality = 0.3 * length_score + 0.4 * specificity + 0.3 * completeness
+            scored_items.append((pair, quality))
+
+        # Filter and export
+        passed = [(p, q) for p, q in scored_items if q >= min_quality]
+        filtered_out = len(scored_items) - len(passed)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            for pair, _ in passed:
+                if format == "openai":
+                    entry = {"messages": [
+                        {"role": "user", "content": pair["user"]},
+                        {"role": "assistant", "content": pair["assistant"]},
+                    ]}
+                elif format == "gemini":
+                    entry = {"contents": [
+                        {"role": "user", "parts": [{"text": pair["user"]}]},
+                        {"role": "model", "parts": [{"text": pair["assistant"]}]},
+                    ]}
+                else:
+                    entry = {"messages": [
+                        {"role": "user", "content": pair["user"]},
+                        {"role": "assistant", "content": pair["assistant"]},
+                    ]}
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        return {
+            "total": len(scored_items),
+            "exported": len(passed),
+            "filtered_out": filtered_out,
+            "min_quality": min_quality,
+        }
+
     # ── Internal ──
 
     def _get_existing_hashes(self) -> set:
