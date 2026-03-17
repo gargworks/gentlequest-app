@@ -210,36 +210,73 @@ class ArchivePipeline:
 
         return True
 
-    def export_gemini(self, output_path: str) -> int:
+    def _collect_quality_pairs(self) -> List[Dict[str, str]]:
+        """Collect all quality-filtered conversation pairs from the archive."""
+        turns = self.get_turns()
+        pairs = []
+        for turn_data in turns:
+            turn = self._dict_to_turn(turn_data)
+            for pair in turn.to_conversation_pairs():
+                if self._is_quality_pair(pair):
+                    pairs.append(pair)
+        return pairs
+
+    @staticmethod
+    def _split_train_eval(pairs: List, eval_ratio: float = 0.1, seed: int = 42) -> tuple:
+        """Deterministic train/eval split. Returns (train_pairs, eval_pairs)."""
+        if len(pairs) < 20 or eval_ratio <= 0:
+            return pairs, []
+        # Deterministic shuffle via hash-based ordering (no random import needed)
+        scored = []
+        for i, p in enumerate(pairs):
+            h = hashlib.md5(f"{seed}:{i}".encode()).hexdigest()
+            scored.append((h, p))
+        scored.sort(key=lambda x: x[0])
+        eval_count = max(1, int(len(scored) * eval_ratio))
+        eval_pairs = [s[1] for s in scored[:eval_count]]
+        train_pairs = [s[1] for s in scored[eval_count:]]
+        return train_pairs, eval_pairs
+
+    def export_gemini(self, output_path: str, eval_path: str = "", eval_ratio: float = 0.1) -> int:
         """Export as Gemini (Vertex AI) fine-tuning JSONL.
 
         Format: {"contents": [{"role": "user", "parts": [{"text": "..."}]},
                                {"role": "model", "parts": [{"text": "..."}]}]}
+        If eval_path is set, writes a held-out eval split alongside training data.
         """
-        turns = self.get_turns()
-        count = 0
-        with open(output_path, "w", encoding="utf-8") as f:
-            for turn_data in turns:
-                turn = self._dict_to_turn(turn_data)
-                for pair in turn.to_conversation_pairs():
-                    if not self._is_quality_pair(pair):
-                        continue
-                    gemini_row = {
+        all_pairs = self._collect_quality_pairs()
+        if eval_path:
+            train_pairs, eval_pairs = self._split_train_eval(all_pairs, eval_ratio)
+        else:
+            train_pairs, eval_pairs = all_pairs, []
+
+        def _write_gemini(pairs, path):
+            count = 0
+            with open(path, "w", encoding="utf-8") as f:
+                for pair in pairs:
+                    row = {
                         "contents": [
                             {"role": "user", "parts": [{"text": pair["user"]}]},
                             {"role": "model", "parts": [{"text": pair["assistant"]}]},
                         ]
                     }
-                    f.write(json.dumps(gemini_row, ensure_ascii=False) + "\n")
+                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
                     count += 1
+            return count
+
+        count = _write_gemini(train_pairs, output_path)
+        if eval_path and eval_pairs:
+            _write_gemini(eval_pairs, eval_path)
         return count
 
-    def export_openai(self, output_path: str, system_prompt: str = "") -> int:
+    def export_openai(self, output_path: str, system_prompt: str = "",
+                      eval_path: str = "", eval_ratio: float = 0.1) -> int:
         """Export as OpenAI/Llama/Mistral chat JSONL.
 
         Format: {"messages": [{"role": "system", "content": "..."},
                                {"role": "user", "content": "..."},
                                {"role": "assistant", "content": "..."}]}
+        If eval_path is set, writes a held-out eval split alongside training data.
         """
         if not system_prompt:
             system_prompt = (
@@ -248,35 +285,48 @@ class ArchivePipeline:
                 "coordinating through a shared brain. You think like the founder, "
                 "know the codebase like Code, and know the market like Cowork."
             )
-        turns = self.get_turns()
-        count = 0
-        with open(output_path, "w", encoding="utf-8") as f:
-            for turn_data in turns:
-                turn = self._dict_to_turn(turn_data)
-                for pair in turn.to_conversation_pairs():
-                    if not self._is_quality_pair(pair):
-                        continue
-                    messages = [{"role": "system", "content": system_prompt}]
-                    messages.append({"role": "user", "content": pair["user"]})
-                    messages.append({"role": "assistant", "content": pair["assistant"]})
+        all_pairs = self._collect_quality_pairs()
+        if eval_path:
+            train_pairs, eval_pairs = self._split_train_eval(all_pairs, eval_ratio)
+        else:
+            train_pairs, eval_pairs = all_pairs, []
+
+        def _write_openai(pairs, path):
+            count = 0
+            with open(path, "w", encoding="utf-8") as f:
+                for pair in pairs:
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": pair["user"]},
+                        {"role": "assistant", "content": pair["assistant"]},
+                    ]
                     f.write(json.dumps({"messages": messages}, ensure_ascii=False) + "\n")
                     count += 1
+            return count
+
+        count = _write_openai(train_pairs, output_path)
+        if eval_path and eval_pairs:
+            _write_openai(eval_pairs, eval_path)
         return count
 
-    def export_anthropic(self, output_path: str) -> int:
+    def export_anthropic(self, output_path: str,
+                         eval_path: str = "", eval_ratio: float = 0.1) -> int:
         """Export as Anthropic fine-tuning JSONL.
 
         Format: {"messages": [{"role": "user", "content": "..."},
                                {"role": "assistant", "content": "..."}]}
+        If eval_path is set, writes a held-out eval split alongside training data.
         """
-        turns = self.get_turns()
-        count = 0
-        with open(output_path, "w", encoding="utf-8") as f:
-            for turn_data in turns:
-                turn = self._dict_to_turn(turn_data)
-                for pair in turn.to_conversation_pairs():
-                    if not self._is_quality_pair(pair):
-                        continue
+        all_pairs = self._collect_quality_pairs()
+        if eval_path:
+            train_pairs, eval_pairs = self._split_train_eval(all_pairs, eval_ratio)
+        else:
+            train_pairs, eval_pairs = all_pairs, []
+
+        def _write_anthropic(pairs, path):
+            count = 0
+            with open(path, "w", encoding="utf-8") as f:
+                for pair in pairs:
                     row = {
                         "messages": [
                             {"role": "user", "content": pair["user"]},
@@ -285,6 +335,11 @@ class ArchivePipeline:
                     }
                     f.write(json.dumps(row, ensure_ascii=False) + "\n")
                     count += 1
+            return count
+
+        count = _write_anthropic(train_pairs, output_path)
+        if eval_path and eval_pairs:
+            _write_anthropic(eval_pairs, eval_path)
         return count
 
     # ── Internal ──
@@ -448,6 +503,71 @@ class ArchivePipeline:
 
         return count
 
+    def ingest_thread_archive(self, thread_path: str = "", brother: str = "code") -> int:
+        """Bridge thread.jsonl (RAG archive) into loop_turns.jsonl (training archive).
+
+        thread.jsonl format: {"ts": "...", "role": "user|assistant", "content": "...", ...}
+        Groups sequential user/assistant pairs into conversation windows and records them.
+        Deduplicates by content hash to avoid re-ingesting already-recorded sessions.
+        """
+        if not thread_path:
+            thread_path = str(self.brain_path / "chat" / "archive" / "thread.jsonl")
+        if not Path(thread_path).exists():
+            return 0
+
+        # Read thread entries
+        entries = []
+        with open(thread_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+
+        if len(entries) < 4:
+            return 0
+
+        # Convert to conversation format
+        conversation = []
+        for entry in entries:
+            role = entry.get("role", "")
+            content = entry.get("content", "")
+            if role in ("user", "assistant") and content and len(content) > 3:
+                conversation.append({"role": role, "content": content[:3000]})
+
+        # Chunk and record (same windowing as other ingest methods)
+        WINDOW = 20
+        count = 0
+        existing_hashes = self._get_existing_hashes()
+
+        for i in range(0, len(conversation), WINDOW):
+            chunk = conversation[i:i + WINDOW]
+            if len(chunk) < 4:
+                continue
+
+            first_user = next((m["content"][:100] for m in chunk if m["role"] == "user"), "Chat session")
+            content_sig = f"{brother}:thread:{first_user}:{i}"
+            content_hash = hashlib.sha256(content_sig.encode()).hexdigest()[:16]
+            if content_hash in existing_hashes:
+                continue
+
+            self.record_turn(
+                brother=brother,
+                intent=first_user,
+                actions=[],
+                tools_used=[],
+                decisions=[],
+                outcome=f"Thread archive chunk {i // WINDOW + 1} ({len(chunk)} messages)",
+                signal_absorbed=[],
+                signal_produced=[],
+                confidence=0.7,
+                context="Ingested from thread.jsonl",
+                conversation=chunk,
+                metadata={"source": thread_path, "chunk_index": i // WINDOW},
+            )
+            count += 1
+
+        return count
+
     def should_retrain(self) -> Dict[str, Any]:
         """Check if there's enough new data since last training to justify retraining."""
         stats = self.get_stats()
@@ -477,15 +597,37 @@ class ArchivePipeline:
                      else f"{new_turns} new turns — retrain recommended",
         }
 
-    def mark_trained(self, turn_count: int = 0):
-        """Mark the current archive as trained (resets retrain counter)."""
+    def mark_trained(self, turn_count: int = 0, model_path: str = "",
+                     base_model: str = "", target: str = "",
+                     hyperparams: Optional[Dict] = None):
+        """Mark the current archive as trained (resets retrain counter).
+
+        Also records model metadata for versioning. Previous training runs
+        are preserved in a training_history.jsonl file.
+        """
         if not turn_count:
             turn_count = self.get_stats().get("total_turns", 0)
-        last_train_file = self.training_dir / "last_train.json"
-        last_train_file.write_text(json.dumps({
+
+        record = {
             "turn_count": turn_count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-        }, indent=2), encoding="utf-8")
+            "model_path": model_path,
+            "base_model": base_model,
+            "target": target,  # "local", "gemini", "openai"
+        }
+        if hyperparams:
+            record["hyperparams"] = hyperparams
+
+        # Write current checkpoint
+        last_train_file = self.training_dir / "last_train.json"
+        last_train_file.write_text(
+            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+        # Append to training history (never overwritten)
+        history_file = self.training_dir / "training_history.jsonl"
+        with open(history_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     def _get_existing_hashes(self) -> set:
         """Get content hashes of all existing turns for dedup."""

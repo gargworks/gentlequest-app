@@ -111,6 +111,8 @@ class SwarmsOrchestrator:
         
         self._active_missions = {}
         self._local_available = None  # Cached check for Third Brother
+        self._local_checked_at = 0.0  # Timestamp of last check
+        self._LOCAL_TTL = 300  # Re-check every 5 minutes
         self._load_state()
 
     def _get_best_model(self, job_type: str = "ORCHESTRATION"):
@@ -118,6 +120,8 @@ class SwarmsOrchestrator:
 
         The Third Brother handles routine orchestration at $0 cost.
         Complex tasks (PREMIUM tier) always go to frontier models.
+        Cache TTL: re-checks local availability every 5 minutes so
+        starting Ollama after the orchestrator is detected.
         """
         from .llm_client import DualEngineLLM
 
@@ -125,16 +129,22 @@ class SwarmsOrchestrator:
         if job_type in ("PREMIUM", "CRITICAL"):
             return DualEngineLLM(job_type=job_type)
 
-        # Check if local model is available (cached)
-        if self._local_available is None:
+        # Check if local model is available (cached with TTL)
+        now = time.time()
+        if self._local_available is None or (now - self._local_checked_at) > self._LOCAL_TTL:
+            prev = self._local_available
             try:
                 from .llm_client import LocalLLM
                 local = LocalLLM()
                 local.generate_content("test", max_tokens=5)
                 self._local_available = True
-                logger.info("🧬 Third Brother (local) available — routing routine tasks locally")
+                if not prev:
+                    logger.info("🧬 Third Brother (local) available — routing routine tasks locally")
             except Exception:
                 self._local_available = False
+                if prev:
+                    logger.info("🧬 Third Brother (local) went offline — falling back to Gemini")
+            self._local_checked_at = now
 
         if self._local_available:
             try:

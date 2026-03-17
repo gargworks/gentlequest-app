@@ -3897,6 +3897,7 @@ def main():
     archive_ingest = archive_subparsers.add_parser('ingest', help='Bulk import conversations from Gemini/Claude transcripts')
     archive_ingest.add_argument('paths', nargs='+', help='Paths to conversation files (Gemini .json or Claude .md)')
     archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
+    archive_subparsers.add_parser('ingest-threads', help='Bridge thread.jsonl (chat history) into training archive')
     archive_subparsers.add_parser('mark-trained', help='Mark current archive as trained (resets retrain counter)')
 
     # ============================================================
@@ -4474,21 +4475,29 @@ def handle_archive_command(args) -> int:
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
         results = {}
+        eval_results = {}
         if fmt in ('gemini', 'all'):
             p = str(Path(out_dir) / "gemini_training.jsonl")
-            results['gemini'] = archive.export_gemini(p)
+            ep = str(Path(out_dir) / "gemini_eval.jsonl")
+            results['gemini'] = archive.export_gemini(p, eval_path=ep)
+            eval_results['gemini'] = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
         if fmt in ('openai', 'all'):
             p = str(Path(out_dir) / "openai_training.jsonl")
-            results['openai'] = archive.export_openai(p)
+            ep = str(Path(out_dir) / "openai_eval.jsonl")
+            results['openai'] = archive.export_openai(p, eval_path=ep)
+            eval_results['openai'] = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
         if fmt in ('anthropic', 'all'):
             p = str(Path(out_dir) / "anthropic_training.jsonl")
-            results['anthropic'] = archive.export_anthropic(p)
+            ep = str(Path(out_dir) / "anthropic_eval.jsonl")
+            results['anthropic'] = archive.export_anthropic(p, eval_path=ep)
+            eval_results['anthropic'] = sum(1 for _ in open(ep)) if Path(ep).exists() else 0
 
         print("=" * 50)
         print("📦 EXPORTED TRAINING DATA")
         print("=" * 50)
         for name, count in results.items():
-            print(f"  {name:12s}: {count} conversation pairs")
+            ev = eval_results.get(name, 0)
+            print(f"  {name:12s}: {count} train + {ev} eval pairs")
         print(f"\n  Output: {out_dir}")
         return 0
 
@@ -4651,6 +4660,16 @@ def handle_archive_command(args) -> int:
         print(f"  Total archive: {stats.get('total_turns', 0)} turns")
         return 0
 
+    elif cmd == 'ingest-threads':
+        count = archive.ingest_thread_archive()
+        stats = archive.get_stats()
+        if count > 0:
+            print(f"✅ Ingested {count} new turns from thread.jsonl")
+        else:
+            print(f"  No new data to ingest (already up to date or thread.jsonl empty)")
+        print(f"   Total archive: {stats.get('total_turns', 0)} turns")
+        return 0
+
     elif cmd == 'mark-trained':
         archive.mark_trained()
         stats = archive.get_stats()
@@ -4672,6 +4691,7 @@ def handle_archive_command(args) -> int:
         print(f"   nucleus archive record   — manually record a turn")
         print(f"   nucleus archive train    — fine-tuning pipeline")
         print(f"   nucleus archive ingest   — bulk import conversations")
+        print(f"   nucleus archive ingest-threads — bridge chat history → training")
         return 0
 
 

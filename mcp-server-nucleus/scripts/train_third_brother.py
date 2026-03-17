@@ -126,6 +126,21 @@ def main():
             row = json.loads(line)
             conversations.append({"messages": row["messages"]})
 
+    # Train/eval split (10% held out for eval)
+    eval_path = str(Path(train_data).with_suffix(".eval.jsonl"))
+    if Path(eval_path).exists():
+        eval_conversations = []
+        with open(eval_path) as f:
+            for line in f:
+                eval_conversations.append({"messages": json.loads(line)["messages"]})
+        print(f"   Eval set: {len(eval_conversations)} examples (from {eval_path})")
+    else:
+        # Auto-split if no separate eval file
+        split_idx = max(1, int(len(conversations) * 0.9))
+        eval_conversations = conversations[split_idx:]
+        conversations = conversations[:split_idx]
+        print(f"   Auto-split: {len(conversations)} train, {len(eval_conversations)} eval")
+
     dataset = Dataset.from_list(conversations)
 
     def format_chat(example):
@@ -137,39 +152,54 @@ def main():
         return {"text": text}
 
     dataset = dataset.map(format_chat)
-    print(f"   Loaded {len(dataset)} examples")
+    eval_dataset = None
+    if eval_conversations:
+        eval_dataset = Dataset.from_list(eval_conversations).map(format_chat)
+    print(f"   Loaded {len(dataset)} train examples")
 
     # ── Train ──
     print(f"\n🚀 Starting fine-tuning...")
+    training_args = TrainingArguments(
+        per_device_train_batch_size=batch_size,
+        gradient_accumulation_steps=4,
+        warmup_steps=5,
+        num_train_epochs=epochs,
+        learning_rate=2e-4,
+        fp16=True,
+        logging_steps=10,
+        optim="adamw_8bit",
+        weight_decay=0.01,
+        lr_scheduler_type="linear",
+        seed=42,
+        output_dir=str(output_dir / "checkpoints"),
+        report_to="none",
+    )
+    if eval_dataset:
+        training_args.eval_strategy = "epoch"
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
+        eval_dataset=eval_dataset,
         dataset_text_field="text",
         max_seq_length=max_seq_len,
         dataset_num_proc=2,
         packing=False,
-        args=TrainingArguments(
-            per_device_train_batch_size=batch_size,
-            gradient_accumulation_steps=4,
-            warmup_steps=5,
-            num_train_epochs=epochs,
-            learning_rate=2e-4,
-            fp16=True,
-            logging_steps=10,
-            optim="adamw_8bit",
-            weight_decay=0.01,
-            lr_scheduler_type="linear",
-            seed=42,
-            output_dir=str(output_dir / "checkpoints"),
-            report_to="none",
-        ),
+        args=training_args,
     )
 
     stats = trainer.train()
     print(f"\n✅ Training complete!")
-    print(f"   Loss: {stats.training_loss:.4f}")
+    print(f"   Train loss: {stats.training_loss:.4f}")
     print(f"   Steps: {stats.global_step}")
+    if eval_dataset:
+        eval_results = trainer.evaluate()
+        eval_loss = eval_results.get("eval_loss", 0)
+        print(f"   Eval loss:  {eval_loss:.4f}")
+        # Save eval metrics
+        eval_file = output_dir / "eval_metrics.json"
+        eval_file.write_text(json.dumps(eval_results, indent=2))
 
     # ── Save LoRA adapter ──
     lora_path = output_dir / "lora_adapter"
@@ -246,7 +276,14 @@ PARAMETER num_ctx {max_seq_len}
             confidence=0.9,
             context="Third Brother training pipeline",
         )
-        archive.mark_trained()
+        archive.mark_trained(
+            model_path=str(gguf_path),
+            base_model=base_model,
+            target="local",
+            hyperparams={"epochs": epochs, "batch_size": batch_size,
+                         "max_seq_len": max_seq_len, "lora_r": 16,
+                         "quant": "Q4_K_M"},
+        )
         print("  Retrain counter reset.")
     except Exception:
         pass

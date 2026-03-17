@@ -134,7 +134,12 @@ def main():
             sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
             from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
             archive = ArchivePipeline(brain_path=brain)
-            archive.mark_trained()
+            archive.mark_trained(
+                model_path=tuning_job.name,
+                base_model=base_model,
+                target="gemini",
+                hyperparams={"epochs": epochs, "training_pairs": len(examples)},
+            )
             print(f"   Retrain counter reset.")
         except Exception:
             pass
