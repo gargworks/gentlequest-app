@@ -99,6 +99,7 @@ class DaemonManager:
             if active_count > 0:
                 logger.info(f"🦾 Active Swarms: {active_count}")
 
+            # TRAINING_CONDUCTOR_START
             # Training Conductor check every ~5 min (60 ticks * 5s)
             if tick_count % 60 == 0:
                 try:
@@ -127,6 +128,7 @@ class DaemonManager:
                         }, indent=2))
                 except Exception:
                     pass
+            # TRAINING_CONDUCTOR_END
 
             await asyncio.sleep(5)
             

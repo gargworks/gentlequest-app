@@ -1320,13 +1320,78 @@ class ArchivePipeline:
                 f.write(json.dumps(case, ensure_ascii=False) + "\n")
         return len(suite)
 
-    def run_eval(self, model_fn, count: int = 50) -> Dict[str, Any]:
+    @staticmethod
+    def _score_heuristic(response: str, reference: str) -> Dict[str, float]:
+        """Offline heuristic scoring (no LLM needed). Fallback when no judge."""
+        ref_words = set(reference.lower().split())
+        resp_words = set(response.lower().split()) if response else set()
+        overlap = len(ref_words & resp_words)
+        precision = overlap / len(resp_words) if resp_words else 0
+        recall = overlap / len(ref_words) if ref_words else 0
+        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0
+        len_ratio = min(len(response or ""), len(reference)) / max(len(response or ""), len(reference), 1)
+        score = 0.6 * f1 + 0.4 * len_ratio
+        return {"score": round(score, 3), "f1": round(f1, 3), "len_ratio": round(len_ratio, 3),
+                "method": "heuristic"}
+
+    @staticmethod
+    def _score_llm_judge(prompt: str, response: str, reference: str,
+                         judge_fn) -> Dict[str, float]:
+        """LLM-as-Judge scoring. Asks an LLM to rate 1-5 on correctness,
+        helpfulness, and completeness. Returns normalized 0-1 score."""
+        judge_prompt = f"""Rate this AI response on a scale of 1-5 for each criterion.
+
+USER QUESTION:
+{prompt[:1000]}
+
+REFERENCE (known-good answer):
+{reference[:1500]}
+
+RESPONSE TO EVALUATE:
+{response[:1500]}
+
+CRITERIA (rate each 1-5):
+1. Correctness: Is the response factually and technically accurate compared to the reference?
+2. Helpfulness: Does it address what the user actually asked?
+3. Completeness: Does it cover the key points from the reference?
+
+Reply with ONLY three numbers separated by commas, like: 4,3,5"""
+
+        try:
+            verdict = judge_fn(judge_prompt).strip()
+            # Parse "4,3,5" format
+            nums = []
+            for part in verdict.replace(" ", "").split(","):
+                for ch in part:
+                    if ch.isdigit():
+                        nums.append(int(ch))
+                        break
+                if len(nums) >= 3:
+                    break
+
+            if len(nums) >= 3:
+                # Weighted: correctness 40%, helpfulness 30%, completeness 30%
+                raw = 0.4 * nums[0] + 0.3 * nums[1] + 0.3 * nums[2]
+                score = round((raw - 1) / 4, 3)  # Normalize 1-5 → 0-1
+                return {"score": score, "correctness": nums[0], "helpfulness": nums[1],
+                        "completeness": nums[2], "method": "llm_judge"}
+            else:
+                # Couldn't parse — fall back
+                return {"score": 0.5, "method": "llm_judge_parse_error"}
+        except Exception:
+            return {"score": 0.5, "method": "llm_judge_error"}
+
+    def run_eval(self, model_fn, count: int = 50,
+                 judge_fn=None) -> Dict[str, Any]:
         """Run evaluation against the generated suite.
 
         Args:
             model_fn: Callable that takes a prompt string and returns a response string.
                       e.g., lambda prompt: llm.generate_content(prompt).text
             count: Number of eval cases to test.
+            judge_fn: Optional LLM judge for scoring. If provided, uses LLM-as-Judge
+                      (accurate for code/decision tasks). If None, uses word-overlap
+                      heuristic (fast, offline, good for relative comparison).
 
         Returns:
             Eval results with scores by category and difficulty.
@@ -1339,27 +1404,21 @@ class ArchivePipeline:
         for case in suite:
             try:
                 response = model_fn(case["prompt"])
-                # Score: simple length-ratio + keyword overlap
-                ref_words = set(case["reference"].lower().split())
-                resp_words = set(response.lower().split()) if response else set()
-                overlap = len(ref_words & resp_words)
-                precision = overlap / len(resp_words) if resp_words else 0
-                recall = overlap / len(ref_words) if ref_words else 0
-                f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0
-                # Length ratio (penalize too short or too long)
-                len_ratio = min(len(response or ""), len(case["reference"])) / max(len(response or ""), len(case["reference"]), 1)
 
-                score = 0.6 * f1 + 0.4 * len_ratio  # Weighted composite
+                if judge_fn:
+                    score_data = self._score_llm_judge(
+                        case["prompt"], response, case["reference"], judge_fn
+                    )
+                else:
+                    score_data = self._score_heuristic(response, case["reference"])
 
                 results.append({
                     "eval_id": case["eval_id"],
                     "category": case["category"],
                     "difficulty": case["difficulty"],
-                    "score": round(score, 3),
-                    "f1": round(f1, 3),
-                    "len_ratio": round(len_ratio, 3),
                     "response_len": len(response or ""),
                     "reference_len": len(case["reference"]),
+                    **score_data,
                 })
             except Exception as e:
                 results.append({
@@ -1378,9 +1437,12 @@ class ArchivePipeline:
             by_category.setdefault(r["category"], []).append(r["score"])
             by_difficulty.setdefault(r["difficulty"], []).append(r["score"])
 
+        scoring_method = results[0].get("method", "heuristic") if results else "none"
+
         return {
             "total_cases": len(results),
             "avg_score": round(total_score, 3),
+            "scoring_method": scoring_method,
             "by_category": {
                 k: round(sum(v) / len(v), 3) for k, v in by_category.items()
             },

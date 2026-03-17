@@ -332,16 +332,12 @@ fi
 # ── daemon.py + morning_brief_ops.py: Strip Third Brother retrain blocks ──
 DAEMON="src/mcp_server_nucleus/runtime/daemon.py"
 if [ -f "$DAEMON" ]; then
+    # Block-delete the entire Training Conductor block (safe range delete)
+    sed -i '' '/TRAINING_CONDUCTOR_START/,/TRAINING_CONDUCTOR_END/d' "$DAEMON"
+    # Catch any remaining stray references
     sed -i '' '/archive_pipeline/d' "$DAEMON"
     sed -i '' '/should_retrain/d' "$DAEMON"
     sed -i '' '/Third Brother/d' "$DAEMON"
-    sed -i '' '/training_status/d' "$DAEMON"
-    sed -i '' '/Training Conductor/d' "$DAEMON"
-    sed -i '' '/conductor_signal/d' "$DAEMON"
-    sed -i '' '/next_action/d' "$DAEMON"
-    sed -i '' '/sft_turns/d' "$DAEMON"
-    sed -i '' '/dpo_pairs/d' "$DAEMON"
-    sed -i '' '/cot_quality/d' "$DAEMON"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
     echo "  Sanitized: $DAEMON (training conductor hook)"
 fi

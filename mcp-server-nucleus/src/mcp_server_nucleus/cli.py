@@ -4033,6 +4033,7 @@ def main():
     archive_eval.add_argument('--count', type=int, default=50, help='Number of eval cases (default: 50)')
     archive_eval.add_argument('--export', type=str, default=None, help='Export eval suite to JSONL')
     archive_eval.add_argument('--run', type=str, default=None, help='Run eval against a provider (gemini/anthropic/groq/local)')
+    archive_eval.add_argument('--judge', type=str, default=None, help='LLM provider for scoring (accurate). Omit for fast offline heuristic.')
     archive_synth = archive_subparsers.add_parser('synthesize', help='Self-play: manufacture DPO pairs from existing prompts via LLM')
     archive_synth.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation (default: gemini)')
     archive_synth.add_argument('--count', type=int, default=100, help='Number of pairs to synthesize (default: 100)')
@@ -4599,7 +4600,12 @@ def handle_growth_command(args) -> int:
 
 def handle_archive_command(args) -> int:
     """Handle nucleus archive — training data flywheel for the Third Brother."""
-    from .runtime.archive_pipeline import ArchivePipeline
+    try:
+        from .runtime.archive_pipeline import ArchivePipeline
+    except ImportError:
+        print("Archive commands are not available in this build.")
+        print("Install the full version: pip install nucleus-mcp[full]")
+        return 1
 
     archive = ArchivePipeline()
     cmd = getattr(args, 'archive_command', None)
@@ -5031,6 +5037,7 @@ def handle_archive_command(args) -> int:
         eval_count = getattr(args, 'count', 50)
         export_path = getattr(args, 'export', None)
         run_provider = getattr(args, 'run', None)
+        judge_provider = getattr(args, 'judge', None)
 
         print("=" * 50)
         print("📏 EVAL BENCHMARK — Measure the Third Brother")
@@ -5054,13 +5061,20 @@ def handle_archive_command(args) -> int:
             print(f"\n  Exported {exported} cases to: {export_path}")
 
         if run_provider:
-            print(f"\n  Running eval against {run_provider}...")
+            scoring = "LLM-as-Judge" if judge_provider else "heuristic (word-overlap)"
+            print(f"\n  Running eval against {run_provider} (scoring: {scoring})...")
             try:
                 from .runtime.llm_client import get_llm_client
                 llm = get_llm_client(run_provider)
                 model_fn = lambda p: llm.generate_content(p).text
 
-                results = archive.run_eval(model_fn, eval_count)
+                # LLM-as-Judge for accurate scoring
+                judge_fn = None
+                if judge_provider:
+                    judge_llm = get_llm_client(judge_provider)
+                    judge_fn = lambda p: judge_llm.generate_content(p).text
+
+                results = archive.run_eval(model_fn, eval_count, judge_fn=judge_fn)
                 print(f"\n  {'='*40}")
                 print(f"  EVAL RESULTS ({run_provider})")
                 print(f"  {'='*40}")
