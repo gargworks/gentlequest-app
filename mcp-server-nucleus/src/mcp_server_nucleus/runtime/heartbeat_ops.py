@@ -2,11 +2,8 @@
 
 v1.5.0: "The Alive Brain"
 
-Design Thinking Output Reference:
-  "Transform Nucleus from a reactive tool into an alive companion by adding
-   context-triggered proactive engagement — the same pattern that made 
-   Peter's agent check on him in the hospital, but sovereign and local-first."
-  — design_thinking_heartbeat_proactive/10_stage8_synthesis.md
+Transform Nucleus from a reactive tool into an alive companion by adding
+context-triggered proactive engagement — sovereign and local-first.
 
 What it does:
   1. CHECK   — Read engrams, evaluate 4 context trigger signals

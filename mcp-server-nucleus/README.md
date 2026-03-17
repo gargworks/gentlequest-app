@@ -25,7 +25,7 @@ AI agents are powerful, but **ungoverned**:
 - **No compliance** — regulators can't approve what they can't trace
 - **No sovereignty** — your data flows through someone else's cloud
 
-**For regulated industries (BFSI, healthcare, legal), this is a dealbreaker.**
+**For regulated industries (banking, healthcare, legal), this is a dealbreaker.**
 
 ---
 
@@ -74,7 +74,7 @@ nucleus chat
 # See your sovereignty posture
 nucleus sovereign
 
-# Run a KYC compliance demo (15-minute BFSI demo)
+# Run a KYC compliance demo
 nucleus kyc demo
 
 # Apply EU DORA compliance

@@ -2126,7 +2126,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
             elif cmd == "/escalate":
                 if not cmd_arg:
-                    print(f"🚨 Escalate a decision to father.")
+                    print(f"🚨 Escalate a decision to the operator.")
                     print(f"   Usage: /escalate <question>")
                     print(f"   Example: /escalate Should we migrate auth to OAuth2?\n")
                 else:

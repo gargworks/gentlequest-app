@@ -21,9 +21,9 @@ class SignatureGuard:
         """Load the same secret used by IPCAuthProvider."""
         key_file = self.brain_path / "secrets" / ".ipc_secret"
         if not key_file.exists():
-            # If it doesn't exist, we can't sign/verify reliably 
-            # or we create a fallback (but IPCAuthProvider should have created it)
-            return b"nucleus-dev-fallback-secret-6789"
+            # Generate ephemeral secret if IPCAuthProvider hasn't created one yet
+            import os
+            return os.urandom(32)
         return key_file.read_bytes()
 
     def sign_payload(self, task_id: str, description: str) -> str:
