@@ -153,6 +153,7 @@ class Watchdog:
         try:
             handler = SecurityEventHandler(self, self.locker)
             self.observer.schedule(handler, str(self.workspace_root), recursive=True)
+            self.observer.daemon = True  # Don't block process exit (fixes pytest hang)
             self.observer.start()
             import sys
             _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json', 'chat']) or any('--format' in arg for arg in sys.argv) or (len(sys.argv) == 1)
