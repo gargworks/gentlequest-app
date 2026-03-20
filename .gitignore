@@ -16,6 +16,7 @@ IDENTITY_MAP_PRIVATE.md
 *.secret
 *.credentials
 key.properties
+.secrets/
 
 # Flutter/Dart
 .dart_tool/
