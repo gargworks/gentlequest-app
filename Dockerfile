@@ -1,22 +1,31 @@
-# Use a lightweight Python base image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy the server directory
-COPY mcp-server-nucleus/ /app/mcp-server-nucleus/
+# Install system dependencies (for psycopg, etc.)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-WORKDIR /app/mcp-server-nucleus
-RUN pip install --no-cache-dir .
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose no ports (stdio based)
-# Glama environment uses stdio for inspection
+# Copy Application Code
+COPY . .
 
-# Labels
-LABEL version="1.0.7"
-LABEL maintainer="Nucleus Team <hello@nucleusos.dev>"
+# Environment
+ENV PORT=5055
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Set the command to run the server
-ENTRYPOINT ["nucleus-mcp"]
+# Expose the port
+EXPOSE 5055
+
+# Run the application
+# Using custom entrypoint to handle creation of DATABASE_URL from secrets
+COPY scripts/cloud_run_entrypoint.sh .
+RUN chmod +x cloud_run_entrypoint.sh
+CMD ["./cloud_run_entrypoint.sh"]
