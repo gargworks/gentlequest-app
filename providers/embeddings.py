@@ -46,26 +46,16 @@ def generate_embedding(text: str) -> Optional[List[float]]:
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
-            try:
-                from google import genai
-                client = genai.Client(api_key=api_key)
-                result = client.models.embed_content(
-                    model=EMBEDDING_MODEL,
-                    contents=text,
-                    config={'task_type': 'RETRIEVAL_DOCUMENT'}
-                )
-                if result and hasattr(result, 'embeddings') and result.embeddings:
-                    return result.embeddings[0].values
-            except ImportError:
-                import google.generativeai as genai_legacy
-                genai_legacy.configure(api_key=api_key)
-                result = genai_legacy.embed_content(
-                    model=EMBEDDING_MODEL,
-                    content=text,
-                    task_type="retrieval_document"
-                )
-                if result and 'embedding' in result:
-                    return result['embedding']
+            # Fallback to native google.generativeai
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            result = genai.embed_content(
+                model=EMBEDDING_MODEL,
+                content=text,
+                task_type="retrieval_document"
+            )
+            if result and 'embedding' in result:
+                return result['embedding']
         
         return None
         
@@ -92,26 +82,16 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
-            try:
-                from google import genai
-                client = genai.Client(api_key=api_key)
-                result = client.models.embed_content(
-                    model=EMBEDDING_MODEL,
-                    contents=query,
-                    config={'task_type': 'RETRIEVAL_QUERY'}
-                )
-                if result and hasattr(result, 'embeddings') and result.embeddings:
-                    return result.embeddings[0].values
-            except ImportError:
-                import google.generativeai as genai_legacy
-                genai_legacy.configure(api_key=api_key)
-                result = genai_legacy.embed_content(
-                    model=EMBEDDING_MODEL,
-                    content=query,
-                    task_type="retrieval_query"
-                )
-                if result and 'embedding' in result:
-                    return result['embedding']
+            # Fallback to native google.generativeai
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            result = genai.embed_content(
+                model=EMBEDDING_MODEL,
+                content=query,
+                task_type="retrieval_query"
+            )
+            if result and 'embedding' in result:
+                return result['embedding']
             
         return None
         
