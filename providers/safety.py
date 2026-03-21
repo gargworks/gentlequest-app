@@ -37,10 +37,18 @@ def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
             llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
             response = llm.generate_content(prompt)
         except ImportError:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(prompt)
+            try:
+                from google import genai
+                client = genai.Client(api_key=api_key)
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt
+                )
+            except ImportError:
+                import google.generativeai as genai_legacy
+                genai_legacy.configure(api_key=api_key)
+                model = genai_legacy.GenerativeModel('gemini-2.0-flash')
+                response = model.generate_content(prompt)
 
         text = response.text.strip()
         
