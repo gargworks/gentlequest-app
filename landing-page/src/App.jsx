@@ -3,7 +3,7 @@ import { Heart, MessageCircle, Brain, Download, Smartphone, ExternalLink } from 
 function App() {
   const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
   const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
-  const WEB_APP_URL = 'https://app.gentlequest.app';
+  const WEB_APP_URL = 'https://nucleus.gentlequest.app';
 
   return (
     <div className="min-h-screen">
@@ -163,8 +163,8 @@ function App() {
             <span className="text-sm text-gray-400">© 2026 GentleQuest</span>
           </div>
           <div className="flex gap-6 text-sm text-gray-400">
-            <a href="https://app.gentlequest.app/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="https://app.gentlequest.app/terms" className="hover:text-white transition-colors">Terms</a>
+            <a href="https://nucleus.gentlequest.app/privacy" className="hover:text-white transition-colors">Privacy</a>
+            <a href="https://nucleus.gentlequest.app/terms" className="hover:text-white transition-colors">Terms</a>
             <a href="mailto:support@gentlequest.app" className="hover:text-white transition-colors">Support</a>
           </div>
         </div>
