@@ -22,6 +22,17 @@ permissions:
   pull-requests: write
 
 jobs:
+  dockerfile-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Verify root Dockerfile is GentleQuest
+        run: |
+          grep -q 'EXPOSE 5055' Dockerfile || { echo "FAIL: Root Dockerfile missing EXPOSE 5055 — was it overwritten?"; exit 1; }
+          grep -q 'cloud_run_entrypoint' Dockerfile || { echo "FAIL: Root Dockerfile missing cloud_run_entrypoint — was it overwritten?"; exit 1; }
+          grep -q 'requirements.txt' Dockerfile || { echo "FAIL: Root Dockerfile missing requirements.txt — was it overwritten?"; exit 1; }
+          echo "Root Dockerfile fingerprint OK (GentleQuest Flask)"
+
   backend-tests:
     runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     env:
@@ -160,7 +171,7 @@ jobs:
 
   
   deploy-staging:
-    needs: [backend-tests, frontend-tests]
+    needs: [backend-tests, frontend-tests, dockerfile-guard]
     runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     if: github.ref == 'refs/heads/develop'
     
@@ -178,7 +189,7 @@ jobs:
             -d '{"clearCache": false}'
   
   deploy-production:
-    needs: [backend-tests, frontend-tests]
+    needs: [backend-tests, frontend-tests, dockerfile-guard]
     runs-on: ${{ github.event.inputs.runner_type == 'self_hosted' && 'self-hosted' || 'ubuntu-latest' }}
     if: github.ref == 'refs/heads/main'
     

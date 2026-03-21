@@ -1,3 +1,8 @@
+# ============================================================
+# GentleQuest Flask App — Production Dockerfile (Render)
+# DO NOT replace with Nucleus content.
+# Nucleus Dockerfiles: mcp-server-nucleus/Dockerfile, deploy/Dockerfile.nucleus
+# ============================================================
 FROM python:3.11-slim
 
 WORKDIR /app
