@@ -297,18 +297,11 @@ def get_gemini_response(
                             llm = DualEngineLLM(model_name, api_key=api_key)
                             response = llm.generate_content(prompt)
                         except ImportError:
-                            try:
-                                from google import genai
-                                client = genai.Client(api_key=api_key)
-                                response = client.models.generate_content(
-                                    model=model_name,
-                                    contents=prompt
-                                )
-                            except ImportError:
-                                import google.generativeai as genai_legacy
-                                genai_legacy.configure(api_key=api_key)
-                                model = genai_legacy.GenerativeModel(model_name)
-                                response = model.generate_content(prompt)
+                            # Fallback to native google.generativeai when mcp_server_nucleus unavailable
+                            import google.generativeai as genai
+                            genai.configure(api_key=api_key)
+                            model = genai.GenerativeModel(model_name)
+                            response = model.generate_content(prompt)
                         
                         if not response or not getattr(response, "text", None):
                             _debug(f"empty_response model={model_name}")
@@ -544,28 +537,16 @@ DO NOT mention crisis hotlines - system handles that separately."""
                     system_instruction=system_prompt
                 )
             except ImportError:
-                try:
-                    from google import genai
-                    from google.genai import types
-                    client = genai.Client(api_key=api_key)
-                    config = types.GenerateContentConfig(
-                        system_instruction=system_prompt,
-                        tools=[WELLNESS_TOOLS_CONFIG]
-                    )
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=full_prompt,
-                        config=config
-                    )
-                except ImportError:
-                    import google.generativeai as genai_legacy
-                    genai_legacy.configure(api_key=api_key)
-                    model = genai_legacy.GenerativeModel(
-                        model_name="gemini-2.0-flash",
-                        tools=WELLNESS_TOOLS_CONFIG,
-                        system_instruction=system_prompt
-                    )
-                    response = model.generate_content(full_prompt)
+                # Fallback to native google.generativeai when mcp_server_nucleus unavailable
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                # CRITICAL: Pass system_instruction to GenerativeModel
+                model = genai.GenerativeModel(
+                    model_name="gemini-2.0-flash",
+                    tools=WELLNESS_TOOLS_CONFIG,
+                    system_instruction=system_prompt
+                )
+                response = model.generate_content(full_prompt)
         except Exception as e:
             _debug(f"LLM Client execution failed: {e}")
             # Fallback to text-only if tools fail (Safety)
