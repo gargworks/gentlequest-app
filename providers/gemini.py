@@ -389,7 +389,7 @@ Please remember that these intense feelings can pass, and there is hope for thin
 
         # If all keys/models failed
         if last_error:
-            return f"Error generating response (All Bakcups Failed): {str(last_error)}"
+            return "I'm having trouble connecting to my AI services. Please try again in a moment."
         return "I'm having trouble connecting to my AI services. Please try again in a moment."
 
     except Exception as e:
@@ -542,7 +542,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 genai.configure(api_key=api_key)
                 # CRITICAL: Pass system_instruction to GenerativeModel
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash", 
+                    model_name="gemini-2.0-flash",
                     tools=WELLNESS_TOOLS_CONFIG,
                     system_instruction=system_prompt
                 )
