@@ -296,6 +296,7 @@ def _get_environment_config(environment: str) -> Dict[str, Any]:
                 "https://gentlequest.app",
                 "https://www.gentlequest.app",
                 "https://app.gentlequest.app",
+                "https://nucleus.gentlequest.app",
             ],
         },
     }
@@ -1183,7 +1184,7 @@ def _register_routes(app: Flask) -> None:
         """Serve the 'Quiet Launch' landing page, or the App if strictly on 'app.*' domain."""
         host = request.headers.get("Host", "").lower()
         # If accessing via app.gentlequest.app (or similar app.*), serve the Flutter app
-        if host.startswith("app."):
+        if host.startswith("app.") or host.startswith("nucleus."):
             return _serve_app_logic()
         
         # Otherwise, serve the marketing landing page
