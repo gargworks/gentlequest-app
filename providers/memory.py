@@ -444,18 +444,10 @@ def summarize_interaction_llm(
             llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
             response = llm.generate_content(prompt)
         except ImportError:
-            try:
-                from google import genai
-                client = genai.Client(api_key=api_key)
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
-                )
-            except ImportError:
-                import google.generativeai as genai_legacy
-                genai_legacy.configure(api_key=api_key)
-                model = genai_legacy.GenerativeModel('gemini-2.0-flash')
-                response = model.generate_content(prompt)
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(prompt)
         
         if not response or not getattr(response, "text", None):
             return False
