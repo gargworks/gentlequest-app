@@ -361,11 +361,13 @@ def get_memory_context_for_prompt(session_id: str, message: str) -> str:
     
     if not memories:
         return ""
-    
-    context_lines = ["Previous context about this user:"]
+
+    context_lines = ["You remember this about the person you're talking to:"]
     for mem in memories:
         context_lines.append(f"- {mem['content']}")
-    
+    context_lines.append("")
+    context_lines.append("Reference at least one of these memories naturally in your response. Ask a follow-up about something from a previous conversation when appropriate.")
+
     return "\n".join(context_lines)
 
 

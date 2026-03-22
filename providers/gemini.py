@@ -555,6 +555,16 @@ DO NOT mention crisis hotlines - system handles that separately."""
             context_parts.append(memory_context)
         if db_history:
             context_parts.append(db_history)
+
+        # Conversation count for relationship depth
+        try:
+            from models import db, UserSession
+            _sess = db.session.get(UserSession, session_id)
+            _conv_count = (_sess.conversation_count or 0) if _sess else 0
+            if _conv_count > 1:
+                context_parts.append(f"This is conversation #{_conv_count} with this user. Acknowledge the relationship naturally — you know each other.")
+        except Exception:
+            pass
         
         # Build prompt with minimal context
         if context_parts:

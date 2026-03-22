@@ -1636,6 +1636,44 @@ def _register_routes(app: Flask) -> None:
         )
         return jsonify({"ok": True}), 201
 
+    @app.route("/api/compliance/ip-region-check", methods=["GET"])
+    @app.limiter.limit("10 per minute")
+    def ip_region_check():
+        """IP-based region fallback when GPS fails. Returns region + blocked status."""
+        ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        if not ip:
+            ip = request.headers.get("X-Real-IP", "")
+        if not ip:
+            ip = request.remote_addr
+
+        try:
+            if ip in ["127.0.0.1", "localhost", "::1"] or ip.startswith(("10.", "172.", "192.168.")):
+                return jsonify({"region": "unknown", "country": "unknown", "blocked": False, "method": "ip_fallback"}), 200
+
+            response = requests.get(f"https://ipinfo.io/{ip}/json", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                region = data.get("region", "")
+                country = data.get("country", "").upper()
+
+                # Same blocked list as Flutter compliance_service.dart
+                HARD_BAN = {"Illinois"}
+                PENDING = {"Utah", "Washington"}
+                blocked = region in HARD_BAN or region in PENDING
+
+                session_id = _get_or_create_session()
+                background_executor.submit(
+                    _log_analytics_event, current_app._get_current_object(),
+                    session_id, "compliance_ip_fallback", {
+                        "region": region, "country": country, "blocked": blocked, "ip_masked": ip[:8] + "***",
+                    }
+                )
+                return jsonify({"region": region, "country": country, "blocked": blocked, "method": "ip_fallback"}), 200
+        except Exception:
+            pass
+
+        return jsonify({"region": "unknown", "country": "unknown", "blocked": False, "method": "ip_fallback"}), 200
+
     @app.route("/api/chat", methods=["POST"])
     @app.limiter.limit("30 per minute")
     def chat():
@@ -1700,7 +1738,14 @@ def _register_routes(app: Flask) -> None:
                 "crisis_msg": crisis_data["crisis_msg"],
                 "crisis_numbers": crisis_data["crisis_numbers"],
                 "is_first_conversation": _is_first_message,
+                "conversation_count": _get_conversation_count(session_id),
             }
+
+            # Increment conversation_count on first message of each conversation
+            if _is_first_message:
+                background_executor.submit(
+                    _increment_conversation_count, current_app._get_current_object(), session_id
+                )
 
             # Server-side behavioral event (fire-and-forget)
             _evt_type = "first_chat_message" if _is_first_message else "chat_message"
@@ -1735,6 +1780,62 @@ def _register_routes(app: Flask) -> None:
                 _log_chat_request, session_id, len(user_message),
                 len(ai_response), _latency, 200, _model,
             )
+
+            # --- SSE streaming mode: ?stream=true ---
+            if request.args.get("stream") == "true":
+                import re as _re
+
+                def _sse_generator():
+                    def sse(obj):
+                        return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+                    # 1. Meta event (crisis, session, exercise data)
+                    meta = {
+                        "type": "meta",
+                        "session_id": session_id,
+                        "risk_level": risk_level,
+                        "crisis_msg": crisis_data["crisis_msg"],
+                        "crisis_numbers": crisis_data["crisis_numbers"],
+                        "is_first_conversation": _is_first_message,
+                    }
+                    if exercise_data:
+                        meta.update(exercise_data)
+                    yield sse(meta)
+
+                    # 2. Stream response text as token events
+                    text = ai_response or ""
+                    if "\n" in text:
+                        chunks = text.split("\n")
+                        joiner = "\n"
+                    else:
+                        parts = [p for p in _re.split(r"(?<=[.!?])\s+", text) if p]
+                        if len(parts) <= 1:
+                            chunks = text.split(" ")
+                            joiner = " "
+                        else:
+                            chunks = [
+                                p + (" " if i < len(parts) - 1 else "")
+                                for i, p in enumerate(parts)
+                            ]
+                            joiner = ""
+
+                    for idx, ch in enumerate(chunks):
+                        yield sse({
+                            "type": "token",
+                            "text": (joiner + ch) if (idx > 0 and joiner) else ch,
+                        })
+
+                    # 3. Done signal
+                    yield sse({"type": "done"})
+
+                return Response(
+                    _sse_generator(),
+                    headers={
+                        "Content-Type": "text/event-stream",
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                    },
+                )
 
             return (
                 jsonify(response_data),
@@ -2539,6 +2640,27 @@ def _update_session_last_active(app_ctx, session_id: str):
                 db.session.commit()
     except Exception:
         pass  # Non-critical — stale timestamp is acceptable
+
+
+def _get_conversation_count(session_id: str) -> int:
+    """Get the conversation count for a session (lightweight query)."""
+    try:
+        session = db.session.get(UserSession, session_id)
+        return (session.conversation_count or 0) if session else 0
+    except Exception:
+        return 0
+
+
+def _increment_conversation_count(app_ctx, session_id: str):
+    """Background: increment conversation_count on UserSession."""
+    try:
+        with app_ctx.app_context():
+            session = db.session.get(UserSession, session_id)
+            if session:
+                session.conversation_count = (session.conversation_count or 0) + 1
+                db.session.commit()
+    except Exception:
+        pass  # Non-critical
 
 
 def _log_analytics_event(app_ctx, session_id: str, event_type: str, metadata: dict = None):
