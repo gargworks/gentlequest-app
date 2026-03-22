@@ -532,32 +532,19 @@ DO NOT mention crisis hotlines - system handles that separately."""
 
         api_key = _GEMINI_KEYS[key_idx]
         
-        # Use Dual-Engine abstraction with native fallback
+        # Use native SDK directly for minimal overhead (DualEngineLLM adds ~10s)
         _pt3 = _time.monotonic()
         try:
-            try:
-                from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-                model_name = "gemini-3.1-flash-lite-preview"
-                llm = DualEngineLLM(model_name, api_key=api_key)
-                # Pass system_prompt for persona and tool guidance
-                response = llm.generate_content(
-                    full_prompt,
-                    tools=WELLNESS_TOOLS_CONFIG,
-                    system_instruction=system_prompt
-                )
-            except ImportError:
-                # Fallback to native google.generativeai when mcp_server_nucleus unavailable
-                import google.generativeai as genai
-                genai.configure(api_key=api_key)
-                # CRITICAL: Pass system_instruction to GenerativeModel
-                model = genai.GenerativeModel(
-                    model_name="gemini-3.1-flash-lite-preview",
-                    tools=WELLNESS_TOOLS_CONFIG,
-                    system_instruction=system_prompt
-                )
-                response = model.generate_content(full_prompt)
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(
+                model_name="gemini-3.1-flash-lite-preview",
+                tools=WELLNESS_TOOLS_CONFIG,
+                system_instruction=system_prompt
+            )
+            response = model.generate_content(full_prompt)
         except Exception as e:
-            _debug(f"LLM Client execution failed: {e}")
+            _debug(f"LLM call failed: {e}")
             # Fallback to text-only if tools fail (Safety)
             response = get_gemini_response(message, mode, session_id, risk_level)
             return response, []
