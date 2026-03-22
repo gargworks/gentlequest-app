@@ -1581,6 +1581,8 @@ def _register_routes(app: Flask) -> None:
     def chat():
         """Enhanced chat endpoint with geography-specific crisis detection"""
         try:
+            import time as _time
+            _t0 = _time.monotonic()
             data = request.get_json()
             if not data or "message" not in data:
                 return jsonify({"error": "Message is required"}), 400
@@ -1594,10 +1596,12 @@ def _register_routes(app: Flask) -> None:
             # Get country from request
             country = get_country_from_request(request)
 
+            _t1 = _time.monotonic()
             # Process message with AI provider
             ai_response, risk_level, tool_calls = _process_chat_message(
                 user_message, session_id
             )
+            _t2 = _time.monotonic()
 
             # Get geography-specific crisis data
             crisis_data = get_crisis_response_and_resources(risk_level, country)
@@ -1621,6 +1625,7 @@ def _register_routes(app: Flask) -> None:
                     }
                     break  # Only include first exercise
 
+            _t3 = _time.monotonic()
             response_data = {
                 "response": ai_response,
                 "risk_level": risk_level,
@@ -1629,6 +1634,12 @@ def _register_routes(app: Flask) -> None:
                 "session_id": session_id,
                 "crisis_msg": crisis_data["crisis_msg"],
                 "crisis_numbers": crisis_data["crisis_numbers"],
+                "_debug_timing": {
+                    "setup_ms": round((_t1 - _t0) * 1000),
+                    "llm_ms": round((_t2 - _t1) * 1000),
+                    "post_ms": round((_t3 - _t2) * 1000),
+                    "total_ms": round((_t3 - _t0) * 1000),
+                },
             }
 
             # Merge exercise data if present

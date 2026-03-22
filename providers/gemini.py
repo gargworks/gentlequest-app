@@ -472,6 +472,10 @@ Available tools:
 
 DO NOT mention crisis hotlines - system handles that separately."""
 
+        import time as _time
+        _perf = {}
+        _pt0 = _time.monotonic()
+
         # Get memory context (if available)
         memory_context = ""
         try:
@@ -489,6 +493,8 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 db.session.rollback()
             except:
                 pass
+        _pt1 = _time.monotonic()
+        _perf["memory_ms"] = round((_pt1 - _pt0) * 1000)
 
         # Get conversation history from database (more reliable than in-memory)
         db_history = ""
@@ -499,6 +505,8 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 db_history = format_history_for_prompt(recent)
         except Exception as e:
             _debug(f"db_history_error: {e}")
+        _pt2 = _time.monotonic()
+        _perf["db_history_ms"] = round((_pt2 - _pt1) * 1000)
 
         # Minimal agentic context
         context_parts = []
@@ -525,6 +533,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
         api_key = _GEMINI_KEYS[key_idx]
         
         # Use Dual-Engine abstraction with native fallback
+        _pt3 = _time.monotonic()
         try:
             try:
                 from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
@@ -532,7 +541,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 llm = DualEngineLLM(model_name, api_key=api_key)
                 # Pass system_prompt for persona and tool guidance
                 response = llm.generate_content(
-                    full_prompt, 
+                    full_prompt,
                     tools=WELLNESS_TOOLS_CONFIG,
                     system_instruction=system_prompt
                 )
@@ -552,6 +561,10 @@ DO NOT mention crisis hotlines - system handles that separately."""
             # Fallback to text-only if tools fail (Safety)
             response = get_gemini_response(message, mode, session_id, risk_level)
             return response, []
+        _pt4 = _time.monotonic()
+        _perf["llm_ms"] = round((_pt4 - _pt3) * 1000)
+        _perf["total_ms"] = round((_pt4 - _pt0) * 1000)
+        _debug(f"PERF: {_perf}")
 
         if not response.candidates:
             _debug("no candidates in response")
