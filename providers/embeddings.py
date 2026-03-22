@@ -9,8 +9,8 @@ from typing import List, Optional
 from datetime import datetime
 
 # Embedding model configuration
-EMBEDDING_MODEL = "models/text-embedding-004"  # Gemini's embedding model
-EMBEDDING_DIMENSION = 768  # Dimension of text-embedding-004
+EMBEDDING_MODEL = "models/gemini-embedding-001"  # Replaces deprecated text-embedding-004
+EMBEDDING_DIMENSION = 768  # Use output_dimensionality=768 to match pgvector column
 
 
 def _get_api_key() -> Optional[str]:
@@ -42,7 +42,8 @@ def generate_embedding(text: str) -> Optional[List[float]]:
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
             llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(text, task_type="retrieval_document")
+            result = llm.embed_content(text, task_type="retrieval_document",
+                                       output_dimensionality=EMBEDDING_DIMENSION)
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
@@ -52,7 +53,8 @@ def generate_embedding(text: str) -> Optional[List[float]]:
             result = genai.embed_content(
                 model=EMBEDDING_MODEL,
                 content=text,
-                task_type="retrieval_document"
+                task_type="retrieval_document",
+                output_dimensionality=EMBEDDING_DIMENSION,
             )
             if result and 'embedding' in result:
                 return result['embedding']
@@ -78,7 +80,8 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
             llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(query, task_type="retrieval_query")
+            result = llm.embed_content(query, task_type="retrieval_query",
+                                       output_dimensionality=EMBEDDING_DIMENSION)
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
@@ -88,7 +91,8 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
             result = genai.embed_content(
                 model=EMBEDDING_MODEL,
                 content=query,
-                task_type="retrieval_query"
+                task_type="retrieval_query",
+                output_dimensionality=EMBEDDING_DIMENSION,
             )
             if result and 'embedding' in result:
                 return result['embedding']
