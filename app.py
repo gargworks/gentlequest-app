@@ -1634,14 +1634,17 @@ def _register_routes(app: Flask) -> None:
                 "session_id": session_id,
                 "crisis_msg": crisis_data["crisis_msg"],
                 "crisis_numbers": crisis_data["crisis_numbers"],
-                "_debug_timing": {
+            }
+
+            # Include timing only when ?debug=1
+            if request.args.get("debug") == "1":
+                response_data["_debug_timing"] = {
                     "setup_ms": round((_t1 - _t0) * 1000),
                     "llm_ms": round((_t2 - _t1) * 1000),
                     "post_ms": round((_t3 - _t2) * 1000),
                     "total_ms": round((_t3 - _t0) * 1000),
                     "inner": getattr(g, '_gemini_perf', {}),
-                },
-            }
+                }
 
             # Merge exercise data if present
             if exercise_data:
