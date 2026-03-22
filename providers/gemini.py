@@ -254,10 +254,10 @@ def get_gemini_response(
         # Model fallback order (best first) - use broadly compatible identifiers
         # Prefer newer 2.5 flash models, then 2.0, then stable 1.5 variants, then older names
         default_models = [
+            "gemini-3.1-flash-lite-preview",  # 500 RPD free tier
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
             "gemini-2.0-flash",
-            "gemini-2.0-flash-lite",
         ]
 
         # Outer loop over keys with hierarchal fallback (Primary -> Backup 1 -> Backup 2...)
@@ -528,7 +528,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
         try:
             try:
                 from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-                model_name = "gemini-2.5-flash"
+                model_name = "gemini-3.1-flash-lite-preview"
                 llm = DualEngineLLM(model_name, api_key=api_key)
                 # Pass system_prompt for persona and tool guidance
                 response = llm.generate_content(
@@ -542,7 +542,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 genai.configure(api_key=api_key)
                 # CRITICAL: Pass system_instruction to GenerativeModel
                 model = genai.GenerativeModel(
-                    model_name="gemini-2.5-flash",
+                    model_name="gemini-3.1-flash-lite-preview",
                     tools=WELLNESS_TOOLS_CONFIG,
                     system_instruction=system_prompt
                 )

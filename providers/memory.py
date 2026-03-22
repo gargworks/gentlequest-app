@@ -441,12 +441,12 @@ def summarize_interaction_llm(
         # Try Nucleus DualEngineLLM first, fallback to native google.generativeai
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
-            llm = DualEngineLLM('gemini-2.5-flash', api_key=api_key)
+            llm = DualEngineLLM('gemini-3.1-flash-lite-preview', api_key=api_key)
             response = llm.generate_content(prompt)
         except ImportError:
             import google.generativeai as genai
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-3.1-flash-lite-preview')
             response = model.generate_content(prompt)
         
         if not response or not getattr(response, "text", None):
