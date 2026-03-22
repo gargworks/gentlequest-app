@@ -948,6 +948,38 @@ def _setup_session(app: Flask) -> None:
     Session(app)
 
 
+_CHAT_LOG_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), ".brain", "ledger", "chat_requests.jsonl"
+)
+_chat_log_lock = threading.Lock()
+
+
+def _log_chat_request(
+    session_id: str,
+    prompt_len: int,
+    response_len: int,
+    latency_ms: int,
+    status: int,
+    model: str = "",
+):
+    """Append a single chat request/response record to chat_requests.jsonl."""
+    record = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "session_id": session_id,
+        "prompt_len": prompt_len,
+        "response_len": response_len,
+        "latency_ms": latency_ms,
+        "status": status,
+        "model": model,
+    }
+    try:
+        with _chat_log_lock:
+            with open(_CHAT_LOG_PATH, "a") as f:
+                f.write(json.dumps(record) + "\n")
+    except Exception:
+        logging.getLogger(__name__).debug("chat request log write failed", exc_info=True)
+
+
 def _rate_limit_enabled() -> bool:
     """Return True if rate limiting should be applied for this request."""
     try:
@@ -1489,6 +1521,10 @@ def _register_routes(app: Flask) -> None:
             redis_status = _check_redis_health()
             redis_ms = int((time.monotonic() - t1) * 1000)
 
+            t2 = time.monotonic()
+            ollama_status = _check_ollama_health()
+            ollama_ms = int((time.monotonic() - t2) * 1000)
+
             overall = "healthy"
             if ("unhealthy" in db_status.lower()) or (
                 "unhealthy" in str(redis_status).lower()
@@ -1503,9 +1539,11 @@ def _register_routes(app: Flask) -> None:
                 "provider": app.config.get("AI_PROVIDER"),
                 "database": db_status,
                 "redis": redis_status,
+                "ollama": ollama_status,
                 "latency_ms": {
                     "db_check": db_ms,
                     "redis_check": redis_ms,
+                    "ollama_check": ollama_ms,
                 },
                 "cors_enabled": True,
                 "cors_origins": app.config.get("CORS_ORIGINS", []),
@@ -1578,6 +1616,26 @@ def _register_routes(app: Flask) -> None:
             200,
         )
 
+    @app.route("/api/compliance/log", methods=["POST"])
+    @app.limiter.limit("60 per minute")
+    def log_compliance_event():
+        """Log compliance check outcomes from Flutter for funnel analysis."""
+        data = request.get_json() or {}
+        event_type = data.get("event_type", "")
+        session_id = _get_or_create_session()
+        ALLOWED = {
+            "gps_timeout", "gps_permission_denied", "gps_services_disabled",
+            "gps_mock_detected", "compliance_passed", "compliance_blocked_region",
+            "compliance_error", "compliance_age_blocked", "compliance_web_blocked",
+        }
+        if event_type not in ALLOWED:
+            return jsonify({"error": "invalid event_type"}), 400
+        background_executor.submit(
+            _log_analytics_event, current_app._get_current_object(),
+            session_id, f"compliance_{event_type}", data.get("metadata", {})
+        )
+        return jsonify({"ok": True}), 201
+
     @app.route("/api/chat", methods=["POST"])
     @app.limiter.limit("30 per minute")
     def chat():
@@ -1595,13 +1653,18 @@ def _register_routes(app: Flask) -> None:
             if not user_message:
                 return jsonify({"error": "Message cannot be empty"}), 400
 
+            # Detect first-time vs returning user (lightweight query)
+            _is_first_message = Message.query.filter_by(
+                session_id=session_id, is_user=True
+            ).first() is None
+
             # Get country from request
             country = get_country_from_request(request)
 
             _t1 = _time.monotonic()
             # Process message with AI provider
             ai_response, risk_level, tool_calls = _process_chat_message(
-                user_message, session_id
+                user_message, session_id, is_first_message=_is_first_message
             )
             _t2 = _time.monotonic()
 
@@ -1636,7 +1699,20 @@ def _register_routes(app: Flask) -> None:
                 "session_id": session_id,
                 "crisis_msg": crisis_data["crisis_msg"],
                 "crisis_numbers": crisis_data["crisis_numbers"],
+                "is_first_conversation": _is_first_message,
             }
+
+            # Server-side behavioral event (fire-and-forget)
+            _evt_type = "first_chat_message" if _is_first_message else "chat_message"
+            background_executor.submit(
+                _log_analytics_event, current_app._get_current_object(),
+                session_id, _evt_type, {
+                    "message_length": len(user_message),
+                    "response_length": len(ai_response),
+                    "latency_ms": round((_t3 - _t0) * 1000),
+                    "has_exercise": bool(exercise_data),
+                }
+            )
 
             # Include timing only when ?debug=1
             if request.args.get("debug") == "1":
@@ -1652,6 +1728,14 @@ def _register_routes(app: Flask) -> None:
             if exercise_data:
                 response_data.update(exercise_data)
 
+            # Log request/response for training data
+            _latency = round((_t3 - _t0) * 1000)
+            _model = os.environ.get("AI_PROVIDER", "gemini")
+            background_executor.submit(
+                _log_chat_request, session_id, len(user_message),
+                len(ai_response), _latency, 200, _model,
+            )
+
             return (
                 jsonify(response_data),
                 200,
@@ -1660,6 +1744,11 @@ def _register_routes(app: Flask) -> None:
         except Exception as e:
             import traceback
             app.logger.error(f"Chat endpoint error: {e}")
+            _err_latency = round((_time.monotonic() - _t0) * 1000) if '_t0' in dir() else 0
+            background_executor.submit(
+                _log_chat_request, data.get("session_id", "") if data else "",
+                len(data.get("message", "")) if data else 0, 0, _err_latency, 500,
+            )
             # DEBUG: Return traceback to client to identify the crash
             return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
@@ -1677,6 +1766,11 @@ def _register_routes(app: Flask) -> None:
             # Session handling: prefer provided session_id (from web EventSource cannot set headers)
             session_id = request.args.get("session_id") or _get_or_create_session()
 
+            # Detect first-time user for warm greeting
+            _is_first_msg = Message.query.filter_by(
+                session_id=session_id, is_user=True
+            ).first() is None
+
             # Country for geo-specific crisis resources
             country = request.args.get("country") or "generic"
 
@@ -1689,7 +1783,7 @@ def _register_routes(app: Flask) -> None:
 
             # Generate AI response with tool support (function calling)
             full_text, actual_risk, tool_calls = _process_chat_message(
-                message, session_id
+                message, session_id, is_first_message=_is_first_msg,
             )
             # Use detected risk level from the response if available
             if actual_risk:
@@ -1724,6 +1818,7 @@ def _register_routes(app: Flask) -> None:
                     "risk_level": risk_level,
                     "crisis_msg": crisis_data.get("crisis_msg"),
                     "crisis_numbers": crisis_data.get("crisis_numbers", []),
+                    "is_first_conversation": _is_first_msg,
                 }
                 # Include exercise data in meta if present
                 if exercise_data:
@@ -2446,6 +2541,22 @@ def _update_session_last_active(app_ctx, session_id: str):
         pass  # Non-critical — stale timestamp is acceptable
 
 
+def _log_analytics_event(app_ctx, session_id: str, event_type: str, metadata: dict = None):
+    """Background: log a behavioral event to analytics_events table."""
+    try:
+        with app_ctx.app_context():
+            from models import AnalyticsEvent
+            event = AnalyticsEvent(
+                session_id=session_id,
+                event_type=event_type,
+                event_metadata=metadata or {},
+            )
+            db.session.add(event)
+            db.session.commit()
+    except Exception:
+        pass  # Non-critical — analytics should never block
+
+
 def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
     """
     Directly call Gemini for structured data (skips chat persona/history).
@@ -2557,7 +2668,7 @@ def _run_crisis_watchdog(flask_app, message: str, session_id: str, sync_risk: st
             flask_app.logger.error(f"❌ Crisis Watchdog error: {e}")
 
 
-def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List[Dict]]:
+def _process_chat_message(message: str, session_id: str, is_first_message: bool = False) -> Tuple[str, str, List[Dict]]:
     """Process chat message with AI provider and crisis detection.
 
     When using Gemini, this enables function calling for wellness tools.
@@ -2597,7 +2708,7 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
             from providers.gemini import get_gemini_response_with_tools
 
             ai_response, tool_calls = get_gemini_response_with_tools(
-                message, session_id, risk_level
+                message, session_id, risk_level, is_first_message=is_first_message,
             )
 
             # Guardrail Layer 2: Output Safety Verification (async — don't block response)
@@ -2818,6 +2929,27 @@ def _check_redis_health() -> str:
             return "using filesystem"
     except Exception as e:
         return f"unhealthy: {str(e)}"
+
+
+def _check_ollama_health() -> dict:
+    """Check Ollama reachability and whether the third-brother model is loaded."""
+    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    result = {"status": "unknown", "model_loaded": False}
+    try:
+        resp = requests.get(f"{base}/api/tags", timeout=2)
+        resp.raise_for_status()
+        models = [m.get("name", "") for m in resp.json().get("models", [])]
+        result["status"] = "healthy"
+        result["models"] = models
+        # Check if any third-brother variant is loaded
+        result["model_loaded"] = any("third-brother" in m for m in models)
+    except requests.ConnectionError:
+        result["status"] = "unreachable"
+    except requests.Timeout:
+        result["status"] = "timeout"
+    except Exception as e:
+        result["status"] = f"unhealthy: {str(e)}"
+    return result
 
 
 def _detect_platform() -> str:
