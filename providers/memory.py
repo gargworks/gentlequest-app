@@ -280,11 +280,24 @@ def retrieve_relevant_memories(
     """
     if not MEMORY_ENABLED or not PGVECTOR_ENABLED or not _check_memory_tables_exist():
         return []
-    
+
     raw_conn = None
     try:
+        # Fast-path: skip embedding call if session has zero memories
+        _pre_conn = db.engine.raw_connection()
+        try:
+            with _pre_conn.cursor() as _cur:
+                _cur.execute(
+                    "SELECT 1 FROM memory_summaries WHERE session_id = %s LIMIT 1",
+                    (session_id,),
+                )
+                if not _cur.fetchone():
+                    return []
+        finally:
+            _pre_conn.close()
+
         from providers.embeddings import generate_query_embedding
-        
+
         # Generate query embedding
         query_embedding = generate_query_embedding(query)
         if not query_embedding:
