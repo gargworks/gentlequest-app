@@ -297,9 +297,35 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
             const SizedBox(height: 16),
             const Text("Verification Failed", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text("We couldn't verify your eligibility. Please check your internet/location settings and try again."),
-             const SizedBox(height: 24),
-            ElevatedButton(onPressed: _checkStatus, child: const Text("Retry"))
+            const Text(
+              "We couldn't verify your location. This usually resolves on a second try.",
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _checkStatus,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF667EEA),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              ),
+              child: const Text("Try Again"),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _checkStatus,
+              child: const Text(
+                "Having trouble? We can verify your region another way",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF667EEA)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Alternative verification uses your internet connection instead of GPS.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
         ),
       ),

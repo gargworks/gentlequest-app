@@ -87,6 +87,10 @@ class ComplianceService {
   // v3.1 Hardening: Reduced from 365 days to 24 HOURS
   static const int _reVerificationHours = 24;
 
+  // GPS retry counter — after 2 failures, offer IP-based fallback
+  int _gpsAttempts = 0;
+  static const int _maxGpsAttemptsBeforeFallback = 2;
+
   // ============================================
   // PUBLIC API
   // ============================================
@@ -271,14 +275,40 @@ class ComplianceService {
 
     } catch (e) {
       debugPrint('Compliance: Location verification error - $e');
+      _gpsAttempts++;
+
       // Log GPS failure to backend for funnel analytics
       final errorType = e.toString().contains('timeout') ? 'gps_timeout' : 'gps_error';
       try {
         await ApiService().post('/api/compliance/log', data: {
           'event_type': errorType,
-          'metadata': {'error': e.toString().substring(0, 100)},
+          'metadata': {'error': e.toString().substring(0, 100), 'attempt': _gpsAttempts},
         });
       } catch (_) {} // Analytics should never block
+
+      // After 2 GPS failures, try IP-based region fallback
+      if (_gpsAttempts >= _maxGpsAttemptsBeforeFallback) {
+        try {
+          final result = await ApiService().get('/api/compliance/ip-region-check');
+          if (result != null && result is Map) {
+            final blocked = result['blocked'] == true;
+            final region = result['region'] ?? 'ip_verified';
+            if (!blocked) {
+              await _storeLocationVerification(region);
+              await FirebaseService().logEvent('compliance_result', {
+                'status': 'allowed',
+                'region': region,
+                'method': 'ip_fallback',
+              });
+              return ComplianceStatus.allowed;
+            } else {
+              await _logBlockEvent('blocked_region_ip', region);
+              return ComplianceStatus.blockedRegion;
+            }
+          }
+        } catch (_) {} // IP fallback failed too — show retry UI
+      }
+
       // On error, we cannot verify -> treat as needing retry
       return ComplianceStatus.error;
     }

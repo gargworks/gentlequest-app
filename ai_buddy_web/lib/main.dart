@@ -2,6 +2,7 @@ import 'package:ai_buddy_web/screens/dhiwise_chat_screen.dart';
 import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/quest_preview_screen.dart';
 import 'package:ai_buddy_web/screens/clinical_assessment_screen.dart';
+import 'package:ai_buddy_web/screens/welcome_screen.dart';
 import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart'
     as dhiwise_wellness;
 import 'dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
@@ -235,11 +236,37 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  bool _resolved = false;
+  bool _showWelcome = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkWelcome();
+  }
+
+  Future<void> _checkWelcome() async {
+    final seen = await WelcomeScreen.hasBeenSeen();
+    if (!mounted) return;
+    setState(() {
+      _showWelcome = !seen;
+      _resolved = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const ComplianceGuardScreen();
+    if (!_resolved) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return _showWelcome ? const WelcomeScreen() : const ComplianceGuardScreen();
   }
 }

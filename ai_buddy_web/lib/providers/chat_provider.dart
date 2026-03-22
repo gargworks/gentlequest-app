@@ -7,6 +7,7 @@ import '../models/message.dart';
 import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
 import '../services/firebase_service.dart';
+import '../services/notification_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
 
 class ChatProvider extends ChangeNotifier {
@@ -181,11 +182,16 @@ class ChatProvider extends ChangeNotifier {
       final handle = await _apiService.streamMessage(content, country: country);
       if (handle != null) {
         await _handleStreamingMessage(handle, content, country);
+        // Schedule 24h follow-up notification after first successful chat
+        if (isFirstMessage) _scheduleFollowUpNotification();
         return; // streaming path initiated
       }
 
       // Fallback: non-streaming request, progressively reveal locally
       await _processNonStreamingResponse(content, country: country);
+
+      // Schedule 24h follow-up notification after first successful chat
+      if (isFirstMessage) _scheduleFollowUpNotification();
     } on DioException catch (e) {
       debugPrint('🚨 DIO Exception in sendMessage:');
       debugPrint('   Type: ${e.type}');
@@ -410,6 +416,21 @@ class ChatProvider extends ChangeNotifier {
           .toList();
     }
     return parts;
+  }
+
+  /// Schedule a 24h follow-up push notification after the user's first chat.
+  void _scheduleFollowUpNotification() {
+    try {
+      NotificationService.scheduleOneShot(
+        target: DateTime.now().add(const Duration(hours: 24)),
+        title: 'Alex here',
+        body: "How are you doing today? I'm here if you want to talk.",
+        payload: 'open_talk',
+        debugTag: 'first_chat_followup',
+      );
+    } catch (e) {
+      debugPrint('Notification scheduling error: $e');
+    }
   }
 
   Future<void> prefetchSession() async {
