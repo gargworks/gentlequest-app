@@ -20,6 +20,7 @@ import requests
 import time
 import threading
 import uuid
+import functools
 from concurrent.futures import ThreadPoolExecutor
 
 # Add mcp-server-nucleus to python path for local imports
@@ -199,8 +200,9 @@ CRISIS_RESOURCES_BY_COUNTRY = {
 }
 
 
+@functools.lru_cache(maxsize=1024)
 def get_country_code_from_ip(ip: str) -> str:
-    """Get country code from IP address using ipinfo.io"""
+    """Get country code from IP address using ipinfo.io (cached per IP)."""
     try:
         # Skip local/private IPs
         if ip in ["127.0.0.1", "localhost", "::1"] or ip.startswith(
@@ -2415,16 +2417,14 @@ def _get_or_create_session() -> str:
         session = db.session.get(UserSession, session_id)
 
         if not session:
-            # Create new session
+            # Create new session (must be sync — downstream needs the row)
             new_session = UserSession(id=session_id)
             db.session.add(new_session)
             db.session.commit()
-            current_app.logger.info(f"Created new session: {session_id}")
         else:
-            # Update last active timestamp
-            session.last_active = datetime.utcnow()
-            db.session.commit()
-            current_app.logger.info(f"Using existing session: {session_id}")
+            # Defer last_active update to background (informational only)
+            _app = current_app._get_current_object()
+            background_executor.submit(_update_session_last_active, _app, session_id)
 
     except Exception as e:
         from flask import current_app
@@ -2432,6 +2432,18 @@ def _get_or_create_session() -> str:
 
     return session_id
 
+
+def _update_session_last_active(app_ctx, session_id: str):
+    """Background: update session last_active timestamp."""
+    try:
+        with app_ctx.app_context():
+            from models import UserSession
+            session = db.session.get(UserSession, session_id)
+            if session:
+                session.last_active = datetime.utcnow()
+                db.session.commit()
+    except Exception:
+        pass  # Non-critical — stale timestamp is acceptable
 
 
 def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
