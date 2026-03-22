@@ -107,6 +107,33 @@ _GEMINI_KEYS: List[str] = _parse_api_keys()
 _key_lock = threading.Lock()
 _key_index = 0
 
+# ── Model cache: reuse GenerativeModel across requests (OPT-2) ──
+# Keyed by (key_index, model_name). Falls back to fresh creation on any error.
+import google.generativeai as genai
+
+_model_cache: Dict[Tuple[int, str], Any] = {}
+_configured_key_idx: Optional[int] = None
+
+def _get_cached_model(key_idx: int, model_name: str, system_prompt: str,
+                      tools=None):
+    """Return a cached GenerativeModel, or create + cache a new one."""
+    global _configured_key_idx
+    cache_key = (key_idx, model_name)
+
+    # Re-configure SDK only when the key actually changes
+    if _configured_key_idx != key_idx:
+        genai.configure(api_key=_GEMINI_KEYS[key_idx])
+        _configured_key_idx = key_idx
+        _model_cache.clear()  # keys changed — stale models
+
+    if cache_key not in _model_cache:
+        kwargs = {"model_name": model_name, "system_instruction": system_prompt}
+        if tools:
+            kwargs["tools"] = tools
+        _model_cache[cache_key] = genai.GenerativeModel(**kwargs)
+
+    return _model_cache[cache_key]
+
 
 def _next_key_index() -> int:
     global _key_index
@@ -534,20 +561,30 @@ DO NOT mention crisis hotlines - system handles that separately."""
         
         # Use native SDK directly for minimal overhead (DualEngineLLM adds ~10s)
         _pt3 = _time.monotonic()
+        _model_name = "gemini-3.1-flash-lite-preview"
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(
-                model_name="gemini-3.1-flash-lite-preview",
-                tools=WELLNESS_TOOLS_CONFIG,
-                system_instruction=system_prompt
-            )
+            # OPT-2: Try cached model first (saves ~100-200ms on warm requests)
+            model = _get_cached_model(key_idx, _model_name, system_prompt,
+                                      tools=WELLNESS_TOOLS_CONFIG)
             response = model.generate_content(full_prompt)
-        except Exception as e:
-            _debug(f"LLM call failed: {e}")
-            # Fallback to text-only if tools fail (Safety)
-            response = get_gemini_response(message, mode, session_id, risk_level)
-            return response, []
+        except Exception as _cache_err:
+            _debug(f"Cached model failed ({_cache_err}), falling back to fresh")
+            # Fallback: fresh model per-request (original behavior)
+            try:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel(
+                    model_name=_model_name,
+                    tools=WELLNESS_TOOLS_CONFIG,
+                    system_instruction=system_prompt
+                )
+                response = model.generate_content(full_prompt)
+                # Evict bad cache entry so next request retries cache
+                _model_cache.pop((key_idx, _model_name), None)
+            except Exception as e:
+                _debug(f"LLM call failed: {e}")
+                # Fallback to text-only if tools fail (Safety)
+                response = get_gemini_response(message, mode, session_id, risk_level)
+                return response, []
         _pt4 = _time.monotonic()
         _perf["llm_ms"] = round((_pt4 - _pt3) * 1000)
         _perf["total_ms"] = round((_pt4 - _pt0) * 1000)
