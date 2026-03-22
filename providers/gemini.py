@@ -565,6 +565,12 @@ DO NOT mention crisis hotlines - system handles that separately."""
         _perf["llm_ms"] = round((_pt4 - _pt3) * 1000)
         _perf["total_ms"] = round((_pt4 - _pt0) * 1000)
         _debug(f"PERF: {_perf}")
+        # Stash inner timing on Flask g for endpoint to pick up
+        try:
+            from flask import g as _flask_g
+            _flask_g._gemini_perf = _perf
+        except Exception:
+            pass
 
         if not response.candidates:
             _debug("no candidates in response")

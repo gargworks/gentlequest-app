@@ -1639,6 +1639,7 @@ def _register_routes(app: Flask) -> None:
                     "llm_ms": round((_t2 - _t1) * 1000),
                     "post_ms": round((_t3 - _t2) * 1000),
                     "total_ms": round((_t3 - _t0) * 1000),
+                    "inner": getattr(g, '_gemini_perf', {}),
                 },
             }
 
