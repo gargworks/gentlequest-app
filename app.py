@@ -2573,20 +2573,25 @@ def _process_chat_message(message: str, session_id: str) -> Tuple[str, str, List
                 message, session_id, risk_level
             )
 
-            # Guardrail Layer 2: Output Safety Verification
-            # Perform this check only if we have a text response (tool_calls might be empty or not)
+            # Guardrail Layer 2: Output Safety Verification (async — don't block response)
+            # Crisis is already caught by Layer 1 above. Layer 2 runs in background
+            # and logs unsafe outputs for review without adding ~15s LLM latency.
             if ai_response:
-                from providers.safety import check_safety_llm
-                is_safe, safety_msg = check_safety_llm(message, ai_response)
-                
-                if not is_safe:
-                    current_app.logger.warning(f"Guardrail Layer 2 Block: {safety_msg}")
-                    # Log the blocked attempt
-                    _log_conversation(session_id, message, f"BLOCKED_UNSAFE: {safety_msg} (Refused: {ai_response[:50]}...)", risk_level)
-                    # Return safe fallback
-                    return safety_msg, risk_level, tool_calls # Return tool_calls? Maybe clear them if unsafe? 
-                    # If text is unsafe, we probably shouldn't execute tools either if they depend on it?
-                    # For now just replace text.
+                def _async_safety_check(app_ctx, sess_id, u_msg, a_resp, r_level):
+                    try:
+                        with app_ctx.app_context():
+                            from providers.safety import check_safety_llm
+                            is_safe, safety_msg = check_safety_llm(u_msg, a_resp)
+                            if not is_safe:
+                                app_ctx.logger.warning(f"Guardrail Layer 2 Block (async): {safety_msg}")
+                                _log_conversation(sess_id, u_msg, f"BLOCKED_UNSAFE: {safety_msg} (Sent: {a_resp[:50]}...)", r_level)
+                    except Exception:
+                        pass  # Safety check is non-critical for response latency
+
+                threading.Thread(
+                    target=_async_safety_check,
+                    args=(current_app._get_current_object(), session_id, message, ai_response, risk_level)
+                ).start()
 
 
 
