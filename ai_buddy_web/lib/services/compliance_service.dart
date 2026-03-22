@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ai_buddy_web/services/firebase_service.dart';
+import 'package:ai_buddy_web/services/api_service.dart';
 
 /// Compliance Status for the Pragmatic Defense v3.0 Strategy
 /// 
@@ -206,16 +207,19 @@ class ComplianceService {
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_services_disabled'}); } catch (_) {}
       return ComplianceStatus.locationServicesDisabled;
     }
 
     // Check permission status
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_permission_denied'}); } catch (_) {}
       return ComplianceStatus.locationPermissionRequired;
     }
-    
+
     if (permission == LocationPermission.deniedForever) {
+      try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_permission_denied', 'metadata': {'forever': true}}); } catch (_) {}
       return ComplianceStatus.locationPermissionRequired;
     }
 
@@ -224,7 +228,7 @@ class ComplianceService {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low, // Coarse is sufficient for state-level
-          timeLimit: Duration(seconds: 15),
+          timeLimit: Duration(seconds: 30), // 30s for cold GPS locks (was 15s)
         ),
       );
 
@@ -267,6 +271,14 @@ class ComplianceService {
 
     } catch (e) {
       debugPrint('Compliance: Location verification error - $e');
+      // Log GPS failure to backend for funnel analytics
+      final errorType = e.toString().contains('timeout') ? 'gps_timeout' : 'gps_error';
+      try {
+        await ApiService().post('/api/compliance/log', data: {
+          'event_type': errorType,
+          'metadata': {'error': e.toString().substring(0, 100)},
+        });
+      } catch (_) {} // Analytics should never block
       // On error, we cannot verify -> treat as needing retry
       return ComplianceStatus.error;
     }

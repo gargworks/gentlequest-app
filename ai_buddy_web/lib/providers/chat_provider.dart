@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
+import '../services/firebase_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
 
 class ChatProvider extends ChangeNotifier {
@@ -168,6 +169,14 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Track first message for retention analytics
+      final isFirstMessage = _messages.length == 1; // only the user msg we just added
+      if (isFirstMessage) {
+        FirebaseService().logEvent('first_chat_message_sent', {
+          'message_length': content.length,
+        });
+      }
+
       // Try streaming first (web-only, feature-gated). Fallback to non-streaming.
       final handle = await _apiService.streamMessage(content, country: country);
       if (handle != null) {
