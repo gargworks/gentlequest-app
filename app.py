@@ -1881,6 +1881,9 @@ def _register_routes(app: Flask) -> None:
             if not message:
                 return jsonify({"error": "Message is required"}), 400
 
+            if len(message) > 5000:
+                return jsonify({"error": "Message too long (max 5000 characters)"}), 400
+
             # Session handling: prefer provided session_id (from web EventSource cannot set headers)
             session_id = request.args.get("session_id") or _get_or_create_session()
 

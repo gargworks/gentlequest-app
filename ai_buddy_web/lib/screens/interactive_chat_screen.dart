@@ -21,6 +21,7 @@ import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
 import '../models/interactive_exercise.dart';
 import '../providers/quest_provider.dart';
+import '../services/firebase_service.dart';
 import '../widgets/exercises/breathing_exercise_widget.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
@@ -150,6 +151,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   Future<void> _showAllCrisisResourcesSheet(
       List<Map<String, dynamic>> numbers) async {
     if (numbers.isEmpty) return;
+    FirebaseService().logCrisisResourceAccess();
     await showModalBottomSheet(
       context: context,
       showDragHandle: true,

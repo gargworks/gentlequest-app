@@ -489,6 +489,7 @@ class ChatProvider extends ChangeNotifier {
       effectiveness: effectiveness,
       feedback: feedback,
     );
+    FirebaseService().logExerciseCompleted(exerciseType);
   }
 
   @override
