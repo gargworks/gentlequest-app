@@ -25,6 +25,7 @@ import 'navigation/home_shell.dart';
 import 'navigation/home_tab_deeplink.dart';
 import 'widgets/app_bottom_nav.dart' show AppTab;
 import 'services/notification_service.dart';
+import 'services/deep_link_service.dart';
 import 'screens/legal/legal_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
@@ -157,6 +158,13 @@ Future<void> main() async {
     }
   }
 
+  // Initialize deep link handling (app links / universal links)
+  try {
+    await DeepLinkService().initialize();
+  } catch (e) {
+    debugPrint('DeepLinkService initialization error: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -194,7 +202,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         navigatorKey: rootNavigatorKey,
-        navigatorObservers: [routeObserver],
+        navigatorObservers: [routeObserver, AnalyticsRouteObserver()],
         // UpgradeAlert is for mobile app store version checks - skip on web
         home: kIsWeb
             ? const SplashScreen()

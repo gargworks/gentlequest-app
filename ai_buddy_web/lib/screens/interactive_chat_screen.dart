@@ -938,6 +938,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final exerciseId =
         '${exercise.type.toString().split('.').last}_${exercise.name.hashCode}';
 
+    // Track that user saw/accepted an intervention
+    FirebaseService().logEvent('intervention_accepted', {
+      'exercise_type': exercise.type.toString().split('.').last,
+    });
+
     switch (exercise.type) {
       case ExerciseType.breathing:
         return BreathingExerciseWidget(

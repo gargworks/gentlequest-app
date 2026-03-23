@@ -2716,13 +2716,10 @@ def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
     import random
     api_key = random.choice(api_keys).strip()
     
-    # Fallback chain: Newest/Fastest -> Stable -> Legacy
+    # Fallback chain: Newest/Fastest -> Stable
     models_to_try = [
         "gemini-2.5-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro",
-        "gemini-pro"
+        "gemini-2.0-flash",
     ]
     
     full_content = prompt
