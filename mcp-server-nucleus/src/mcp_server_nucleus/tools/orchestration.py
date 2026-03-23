@@ -359,6 +359,10 @@ Actions:
         from ._dispatch import get_dispatch_telemetry
         return json.dumps(get_dispatch_telemetry().get_metrics(), indent=2, default=str)
 
+    def _h_rate_limit_status():
+        from ._dispatch import get_dispatch_rate_limiter
+        return json.dumps(get_dispatch_rate_limiter().get_status(), indent=2, default=str)
+
     TELEM_ROUTER = {
         "set_llm_tier": _h_set_llm_tier,
         "get_llm_status": _h_get_llm_status,
@@ -374,6 +378,7 @@ Actions:
         "get_handoffs": _h_get_handoffs,
         "agent_cost_dashboard": _h_agent_cost_dashboard,
         "dispatch_metrics": _h_dispatch_metrics,
+        "rate_limit_status": _h_rate_limit_status,
     }
 
     @mcp.tool()
@@ -395,6 +400,7 @@ Actions:
   get_handoffs         - Get pending handoffs. params: {agent_id?}
   agent_cost_dashboard - Get agent cost tracking dashboard
   dispatch_metrics     - Get dispatch telemetry (per-action timing, error rates)
+  rate_limit_status    - Get dispatch rate limiter status (calls per facade, window)
 """
         return dispatch(action, params, TELEM_ROUTER, "nucleus_telemetry")
 
