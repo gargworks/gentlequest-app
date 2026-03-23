@@ -42,20 +42,12 @@ function App() {
      Active Nodes/DSoR: Projected Milestone Targets
   */
   const [stars, setStars] = useState(0);
-  const [pulseCount, setPulseCount] = useState(2401055);
 
   useEffect(() => {
-    // Fetch GitHub stars
     fetch('https://api.github.com/repos/eidetic-works/nucleus-mcp')
       .then(res => res.json())
       .then(data => setStars(data.stargazers_count || 0))
       .catch(() => setStars(0));
-
-    // Simulate engram pulse
-    const interval = setInterval(() => {
-      setPulseCount(prev => prev + Math.floor(Math.random() * 5));
-    }, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -67,11 +59,11 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.0.7</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.6</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
-          <a href="#pledge" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">The Pledge</a>
-          <a href="#governance" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Governance</a>
+          <a href="#governance" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Features</a>
+          <a href="#install" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Install</a>
           <a href="#enterprise" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Enterprise</a>
         </div>
         <div className="flex items-center gap-3">
@@ -105,25 +97,21 @@ function App() {
 
       <div className="bg-purple-900/10 border-b border-white/5 py-4">
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center md:justify-between items-center gap-6 md:gap-4 font-mono text-[10px] md:text-xs tracking-widest uppercase text-slate-500">
-          {/* SIMULATED: Representational network liveness */}
           <div className="flex items-center gap-2">
-            <Activity className="w-3 h-3 text-purple-500 animate-pulse" />
-            <span>Sovereign Pulse: <span className="text-purple-400">{pulseCount.toLocaleString()}</span> ENGRAMS</span>
+            <Database className="w-3 h-3 text-purple-500" />
+            <span>Persistent Memory <span className="text-purple-400">Engrams</span></span>
           </div>
-          {/* TARGET: v1.0 Milestone Goal */}
           <div className="flex items-center gap-2">
             <Zap className="w-3 h-3 text-yellow-500" />
-            <span>Active Nodes: <span className="text-yellow-400">14,021</span></span>
+            <span>170+ <span className="text-yellow-400">MCP Tools</span></span>
           </div>
-          {/* TARGET: v1.0 Compliance Goal */}
           <div className="flex items-center gap-2">
             <Shield className="w-3 h-3 text-green-500" />
-            <span>DSoR Verified: <span className="text-green-400">100%</span></span>
+            <span>Full <span className="text-green-400">Audit Trail</span></span>
           </div>
-          {/* LIVE: Real-time GitHub Fetch */}
           <div className="hidden lg:flex items-center gap-2">
-            <Github className="w-3 h-3" />
-            <span>Community: <span className="text-white">Active Registry</span></span>
+            <Activity className="w-3 h-3 text-cyan-500" />
+            <span>Multi-Agent <span className="text-cyan-400">Coordination</span></span>
           </div>
         </div>
       </div>
@@ -133,11 +121,11 @@ function App() {
         <div className="flex flex-wrap justify-center gap-4 mb-8 text-[10px] md:text-sm">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 font-medium">
             <Shield className="w-3 h-3" />
-            <span>Nucleus OS – The Sovereign BYOB™ Control Plane</span>
+            <span>MCP Server &middot; 100% Local</span>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 font-medium">
             <Lock className="w-3 h-3" />
-            <span>Absolute Hardening & No Amnesia</span>
+            <span>Persistent Memory &middot; Full Governance</span>
           </div>
         </div>
 
@@ -147,7 +135,7 @@ function App() {
         </h1>
 
         <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-          The shared brain for Cursor, Claude, and Windsurf. Local-first identity, no context amnesia, and 100% sovereign.
+          Give your AI agents a persistent brain. Memory that survives sessions, decisions that leave audit trails, governance that enforces boundaries — all running locally.
         </p>
 
         {/* Sovereign Monolith (Unified Entry Point) */}
@@ -214,8 +202,8 @@ function App() {
                 ></iframe>
               </div>
               <div className="p-6 border-t border-white/5 bg-slate-900/80 backdrop-blur-xl">
-                <h3 className="text-xl font-bold mb-2">Technical Walkthrough (v1.0.7)</h3>
-                <p className="text-sm text-slate-400">Everything you need to know about the Sovereign MCP Layer.</p>
+                <h3 className="text-xl font-bold mb-2">Technical Walkthrough</h3>
+                <p className="text-sm text-slate-400">How Nucleus gives AI agents persistent memory and governance.</p>
               </div>
             </div>
           </div>
@@ -480,32 +468,117 @@ function App() {
               />
               <PledgeItem
                 title="Local Sovereignty First"
-                desc="Your strategic memory (Engrams) stays on your hardware. We build for the Chairman who demands truth and data ownership over cloud convenience."
+                desc="Your memory (Engrams) stays on your hardware. No cloud calls, no external dependencies. You own your data."
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Governance Grid */}
+      {/* Features Grid */}
       <section id="governance" className="px-6 py-24 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-16">The Governance Moat</h2>
-        <div className="grid md:grid-cols-3 gap-8">
+        <h2 className="text-3xl font-bold text-center mb-16">What Nucleus Does</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <FeatureCard
-            icon={<Lock className="w-6 h-6 text-purple-400" />}
-            title="Default Deny"
-            desc="All mounted servers start with zero network/filesystem access. Trust is explicitly granted, never assumed."
+            icon={<Database className="w-6 h-6 text-purple-400" />}
+            title="Brain Persistence"
+            desc="Engrams — persistent knowledge that survives across sessions. Write once, recall forever. No more re-explaining your project."
           />
           <FeatureCard
-            icon={<GitBranch className="w-6 h-6 text-pink-400" />}
-            title="Isolation Boundaries"
-            desc="Tools cannot see each other or the full chat history. Nucleus mediates all context exchange."
+            icon={<Activity className="w-6 h-6 text-cyan-400" />}
+            title="Heartbeat"
+            desc="Proactive check-ins that catch stale blockers, velocity drops, and idle sessions before they cost you time."
           />
           <FeatureCard
-            icon={<Server className="w-6 h-6 text-blue-400" />}
-            title="Auth Firewall"
-            desc="API tokens are stored in the Nucleus Host, never passed to agent prompts or logs."
+            icon={<Terminal className="w-6 h-6 text-green-400" />}
+            title="Multi-Provider Chat"
+            desc="Built-in terminal chat with Gemini, Anthropic, and Groq. Hot-switch providers, native tool calling, session resume."
           />
+          <FeatureCard
+            icon={<Share2 className="w-6 h-6 text-pink-400" />}
+            title="Multi-Agent Sync"
+            desc="Task queues, agent slots, shared state, and brain sync. Multiple agents coordinate through the brain without direct communication."
+          />
+        </div>
+        <div className="grid md:grid-cols-3 gap-8 mt-8">
+          <FeatureCard
+            icon={<Lock className="w-6 h-6 text-yellow-400" />}
+            title="Governance"
+            desc="HITL approval gates, kill switch, resource locking, default-deny policies. Trust is granted, never assumed."
+          />
+          <FeatureCard
+            icon={<Shield className="w-6 h-6 text-blue-400" />}
+            title="Audit Trail"
+            desc="Every agent decision logged with reasoning. SHA-256 hashed interaction log. Full decision provenance."
+          />
+          <FeatureCard
+            icon={<Server className="w-6 h-6 text-orange-400" />}
+            title="170+ MCP Tools"
+            desc="Memory, sessions, tasks, governance, compliance, orchestration — organized into facade tools for any MCP client."
+          />
+        </div>
+      </section>
+
+      {/* Install Section */}
+      <section id="install" className="px-6 py-24 max-w-4xl mx-auto border-t border-white/5">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Get Started</h2>
+          <p className="text-slate-400">Three commands. Works with any MCP client.</p>
+        </div>
+
+        <div className="bg-slate-950/50 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_50px_-12px_rgba(168,85,247,0.2)] mb-12">
+          <div className="bg-white/5 px-4 py-2 border-b border-white/10 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider ml-2">Terminal</span>
+          </div>
+          <div className="p-6 font-mono text-sm space-y-3">
+            <div><span className="text-purple-400">$</span> <span className="text-slate-300">pip install nucleus-mcp</span></div>
+            <div><span className="text-purple-400">$</span> <span className="text-slate-300">nucleus self-setup</span></div>
+            <div><span className="text-purple-400">$</span> <span className="text-slate-300">nucleus status --health</span></div>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <img src={CLAUDE_LOGO} alt="Claude" className="w-5 h-5" style={{ filter: 'brightness(0) invert(1)' }} />
+              Claude Desktop / Cursor
+            </h3>
+            <div className="bg-slate-950/50 rounded-xl border border-white/10 p-4 font-mono text-xs overflow-x-auto">
+              <pre className="text-slate-300">{`{
+  "mcpServers": {
+    "nucleus": {
+      "command": "python3",
+      "args": ["-m", "nucleus_mcp"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/path/to/.brain"
+      }
+    }
+  }
+}`}</pre>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-green-400" />
+              Claude Code (.mcp.json)
+            </h3>
+            <div className="bg-slate-950/50 rounded-xl border border-white/10 p-4 font-mono text-xs overflow-x-auto">
+              <pre className="text-slate-300">{`{
+  "mcpServers": {
+    "nucleus": {
+      "command": "python3",
+      "args": ["-m", "nucleus_mcp"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": ".brain"
+      }
+    }
+  }
+}`}</pre>
+            </div>
+          </div>
         </div>
       </section>
 
