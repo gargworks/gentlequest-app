@@ -22,8 +22,11 @@ def _get_shared_dir() -> Path:
 
 def _sanitize_key(key: str) -> str:
     """Sanitize key to prevent path traversal."""
+    if not key or not key.strip():
+        raise ValueError(f"Invalid key: {key!r}")
     # Strip path separators and dots that could escape the directory
     sanitized = key.replace("/", "_").replace("\\", "_").replace("..", "_")
+    sanitized = sanitized.rstrip(".")
     if not sanitized or sanitized.startswith("."):
         raise ValueError(f"Invalid key: {key!r}")
     return sanitized
