@@ -565,6 +565,18 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 context_parts.append(f"This is conversation #{_conv_count} with this user. Acknowledge the relationship naturally — you know each other.")
         except Exception:
             pass
+
+        # Recent mood data for personalized responses
+        try:
+            from models import db, MoodEntry
+            _recent_moods = db.session.query(MoodEntry).filter_by(
+                session_id=session_id
+            ).order_by(MoodEntry.timestamp.desc()).limit(3).all()
+            if _recent_moods:
+                _mood_lines = [f"level {m.mood_level}/5{' — ' + m.note if m.note else ''}" for m in _recent_moods]
+                context_parts.append(f"User's recent mood logs (newest first): {'; '.join(_mood_lines)}. Weave this awareness into your response naturally.")
+        except Exception:
+            pass
         
         # Build prompt with minimal context
         if context_parts:

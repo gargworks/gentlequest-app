@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mood_entry.dart';
 import '../services/api_service.dart';
+import '../services/firebase_service.dart';
 
 class MoodProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -203,6 +204,8 @@ class MoodProvider extends ChangeNotifier {
       };
       await _apiService.addMoodEntry(payload);
       postOk = true;
+      // Fire analytics event
+      FirebaseService().logMoodEntry(moodLevel.toString(), moodLevel);
       try {
         final prefs = await SharedPreferences.getInstance();
         final now = DateTime.now();

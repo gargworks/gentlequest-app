@@ -210,6 +210,13 @@ def get_country_code_from_ip(ip: str) -> str:
         ):
             return "generic"
 
+        # Validate IP format before external call (SSRF prevention)
+        import ipaddress as _ipaddress
+        try:
+            _ipaddress.ip_address(ip)
+        except ValueError:
+            return "generic"
+
         # Use ipinfo.io for geolocation
         response = requests.get(f"https://ipinfo.io/{ip}/json", timeout=5)
         if response.status_code == 200:
@@ -1650,6 +1657,13 @@ def _register_routes(app: Flask) -> None:
             if ip in ["127.0.0.1", "localhost", "::1"] or ip.startswith(("10.", "172.", "192.168.")):
                 return jsonify({"region": "unknown", "country": "unknown", "blocked": False, "method": "ip_fallback"}), 200
 
+            # Validate IP format before external call (SSRF prevention)
+            import ipaddress as _ipaddress
+            try:
+                _ipaddress.ip_address(ip)
+            except ValueError:
+                return jsonify({"region": "unknown", "country": "unknown", "blocked": False, "method": "ip_fallback", "error": "invalid_ip"}), 200
+
             response = requests.get(f"https://ipinfo.io/{ip}/json", timeout=5)
             if response.status_code == 200:
                 data = response.json()
@@ -1690,6 +1704,9 @@ def _register_routes(app: Flask) -> None:
 
             if not user_message:
                 return jsonify({"error": "Message cannot be empty"}), 400
+
+            if len(user_message) > 5000:
+                return jsonify({"error": "Message too long (max 5000 characters)"}), 400
 
             # Detect first-time vs returning user (lightweight query)
             _is_first_message = Message.query.filter_by(
@@ -2411,8 +2428,8 @@ def _register_routes(app: Flask) -> None:
                     try:
                         # SQLite might return "YYYY-MM-DD HH:MM:SS.mmmmmm"
                         return datetime.fromisoformat(ts.replace(' ', 'T'))
-                    except:
-                        return datetime.min # Fallback
+                    except Exception:
+                        return datetime.min  # Fallback
                 return ts
 
             weekly_entries = [entry for entry in entries if _get_ts(entry) >= week_ago]
@@ -3995,7 +4012,7 @@ def _register_additional_routes(app: Flask) -> None:
             if "brain_state" in table_list:
                 try:
                     brain_state_rows = BrainState.query.count()
-                except:
+                except Exception:
                     pass
 
             return jsonify({

@@ -280,6 +280,13 @@ class ChatProvider extends ChangeNotifier {
     if (_isTyping) _isTyping = false;
     notifyListeners();
 
+    // Track exercise offers for analytics
+    if (aiMessage.exercise != null) {
+      FirebaseService().logEvent('intervention_offered', {
+        'exercise_type': aiMessage.exercise!.type,
+      });
+    }
+
     for (var i = 1; i < lines.length; i++) {
       final line = lines[i];
       msg.content += '\n$line';

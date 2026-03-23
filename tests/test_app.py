@@ -709,5 +709,134 @@ class TestIntegration:
         assert wellness_response.status_code == 200
 
 
+class TestComplianceEndpoints:
+    """Test compliance logging and IP region check endpoints"""
+
+    def test_compliance_log_valid_event(self, authenticated_client):
+        """POST /api/compliance/log with allowed event type → 201"""
+        response = authenticated_client.post(
+            '/api/compliance/log',
+            json={'event_type': 'gps_timeout', 'metadata': {'attempt': 1}}
+        )
+        assert response.status_code == 201
+        data = json.loads(response.data)
+        assert data['ok'] is True
+
+    def test_compliance_log_invalid_event(self, authenticated_client):
+        """POST /api/compliance/log with unknown event type → 400"""
+        response = authenticated_client.post(
+            '/api/compliance/log',
+            json={'event_type': 'not_a_real_event'}
+        )
+        assert response.status_code == 400
+
+    def test_compliance_log_missing_event_type(self, authenticated_client):
+        """POST /api/compliance/log without event_type → 400"""
+        response = authenticated_client.post(
+            '/api/compliance/log',
+            json={}
+        )
+        assert response.status_code == 400
+
+    @patch('app.requests.get')
+    def test_ip_region_check_allowed(self, mock_get, client):
+        """IP from non-blocked US state → blocked: false"""
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {'region': 'California', 'country': 'US'}
+        )
+        response = client.get(
+            '/api/compliance/ip-region-check',
+            headers={'X-Forwarded-For': '8.8.8.8'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['blocked'] is False
+        assert data['region'] == 'California'
+
+    @patch('app.requests.get')
+    def test_ip_region_check_blocked_illinois(self, mock_get, client):
+        """IP from Illinois → blocked: true"""
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {'region': 'Illinois', 'country': 'US'}
+        )
+        response = client.get(
+            '/api/compliance/ip-region-check',
+            headers={'X-Forwarded-For': '1.2.3.4'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['blocked'] is True
+
+    def test_ip_region_check_localhost(self, client):
+        """Localhost IP returns unblocked"""
+        response = client.get(
+            '/api/compliance/ip-region-check',
+            headers={'X-Forwarded-For': '127.0.0.1'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['blocked'] is False
+
+
+class TestChatNewFields:
+    """Test new chat response fields: is_first_conversation, conversation_count, message length limit"""
+
+    @patch('app._get_ai_response_with_failover')
+    def test_chat_returns_is_first_conversation(self, mock_ai, authenticated_client):
+        """First message returns is_first_conversation: true"""
+        mock_ai.return_value = ("Hello!", "gemini")
+        response = authenticated_client.post(
+            '/api/chat', json={'message': 'Hi'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data.get('is_first_conversation') is True
+
+    @patch('app._get_ai_response_with_failover')
+    def test_chat_second_message_not_first(self, mock_ai, authenticated_client):
+        """Second message returns is_first_conversation: false"""
+        mock_ai.return_value = ("Hello!", "gemini")
+        authenticated_client.post('/api/chat', json={'message': 'Hi'})
+        # Small delay to let DB write complete
+        response = authenticated_client.post(
+            '/api/chat', json={'message': 'How are you?'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data.get('is_first_conversation') is False
+
+    @patch('app._get_ai_response_with_failover')
+    def test_chat_returns_conversation_count(self, mock_ai, authenticated_client):
+        """Chat response includes conversation_count field"""
+        mock_ai.return_value = ("Hello!", "gemini")
+        response = authenticated_client.post(
+            '/api/chat', json={'message': 'Hi'}
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'conversation_count' in data
+        assert isinstance(data['conversation_count'], int)
+
+    def test_chat_message_too_long(self, authenticated_client):
+        """Message over 5000 chars → 400"""
+        response = authenticated_client.post(
+            '/api/chat', json={'message': 'x' * 5001}
+        )
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'too long' in data['error'].lower()
+
+    @patch('app._get_ai_response_with_failover')
+    def test_chat_message_at_limit(self, mock_ai, authenticated_client):
+        """Message at exactly 5000 chars → 200"""
+        mock_ai.return_value = ("OK!", "gemini")
+        response = authenticated_client.post(
+            '/api/chat', json={'message': 'x' * 5000}
+        )
+        assert response.status_code == 200
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
