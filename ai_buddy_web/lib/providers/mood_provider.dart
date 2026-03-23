@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mood_entry.dart';
 import '../services/api_service.dart';
 import '../services/firebase_service.dart';
+import '../services/app_rating_service.dart';
 
 class MoodProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -204,8 +205,11 @@ class MoodProvider extends ChangeNotifier {
       };
       await _apiService.addMoodEntry(payload);
       postOk = true;
-      // Fire analytics event
+      // Fire analytics event + unlock app rating after positive moods
       FirebaseService().logMoodEntry(moodLevel.toString(), moodLevel);
+      if (moodLevel >= 4) {
+        AppRatingService().recordPositiveMood();
+      }
       try {
         final prefs = await SharedPreferences.getInstance();
         final now = DateTime.now();
