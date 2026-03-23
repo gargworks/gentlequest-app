@@ -123,9 +123,77 @@ class TestHealthEndpoints:
         # assert 'app_cpu_usage' in metrics
 
 
+class TestOllamaHealth:
+    """Test _check_ollama_health helper."""
+
+    def test_healthy_with_model(self):
+        """Returns healthy + model_loaded when third-brother is listed."""
+        from app import _check_ollama_health
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {
+            "models": [{"name": "third-brother:latest"}, {"name": "llama3:8b"}]
+        }
+        mock_resp.raise_for_status = MagicMock()
+        with patch("app.requests.get", return_value=mock_resp) as mock_get:
+            result = _check_ollama_health()
+            mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=2)
+        assert result["status"] == "healthy"
+        assert result["model_loaded"] is True
+
+    def test_healthy_without_model(self):
+        """Returns healthy but model_loaded=False when third-brother absent."""
+        from app import _check_ollama_health
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"models": [{"name": "llama3:8b"}]}
+        mock_resp.raise_for_status = MagicMock()
+        with patch("app.requests.get", return_value=mock_resp):
+            result = _check_ollama_health()
+        assert result["status"] == "healthy"
+        assert result["model_loaded"] is False
+
+    def test_unreachable(self):
+        """Returns unreachable on ConnectionError."""
+        from app import _check_ollama_health
+        import requests as req
+        with patch("app.requests.get", side_effect=req.ConnectionError):
+            result = _check_ollama_health()
+        assert result["status"] == "unreachable"
+        assert result["model_loaded"] is False
+
+    def test_timeout(self):
+        """Returns timeout on Timeout."""
+        from app import _check_ollama_health
+        import requests as req
+        with patch("app.requests.get", side_effect=req.Timeout):
+            result = _check_ollama_health()
+        assert result["status"] == "timeout"
+        assert result["model_loaded"] is False
+
+    def test_custom_base_url(self, monkeypatch):
+        """Respects OLLAMA_BASE_URL env var."""
+        from app import _check_ollama_health
+        monkeypatch.setenv("OLLAMA_BASE_URL", "http://gpu-box:11434")
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"models": []}
+        mock_resp.raise_for_status = MagicMock()
+        with patch("app.requests.get", return_value=mock_resp) as mock_get:
+            _check_ollama_health()
+            mock_get.assert_called_once_with("http://gpu-box:11434/api/tags", timeout=2)
+
+    def test_health_endpoint_includes_ollama(self, client):
+        """The /api/health response includes ollama status."""
+        with patch("app._check_ollama_health", return_value={"status": "unreachable", "model_loaded": False}):
+            response = client.get('/api/health')
+            assert response.status_code == 200
+            data = json.loads(response.data)
+            assert 'ollama' in data
+            assert data['ollama']['status'] == 'unreachable'
+            assert 'ollama_check' in data.get('latency_ms', {})
+
+
 class TestSessionManagement:
     """Test session management functionality"""
-    
+
     def test_get_or_create_session(self, client):
         """Test session creation"""
         response = client.get('/api/get_or_create_session')
