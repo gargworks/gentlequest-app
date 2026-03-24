@@ -489,9 +489,10 @@ def register_community_routes(app: Flask) -> None:
 
     def _check_admin() -> bool:
         try:
+            import secrets
             token = (request.headers.get("X-Admin-Token") or "").strip()
             expected = str(app.config.get("ADMIN_TOKEN") or "").strip()
-            return bool(token) and expected and token == expected
+            return bool(token) and bool(expected) and secrets.compare_digest(token, expected)
         except Exception:
             return False
 
@@ -578,6 +579,7 @@ def register_community_routes(app: Flask) -> None:
             return jsonify({"error": "Failed to fetch reports"}), 500
 
     @app.route("/api/community/moderate", methods=["POST"])
+    @app.limiter.limit("10 per minute")
     def community_moderate():
         if not _enabled():
             return jsonify({"error": "Community disabled"}), 403

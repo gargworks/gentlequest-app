@@ -2050,9 +2050,10 @@ def _register_routes(app: Flask) -> None:
             return Response(stream_generator(), headers=headers)
 
         except Exception as e:
-            # Use app logger in request context
+            from werkzeug.exceptions import HTTPException
+            if isinstance(e, HTTPException):
+                raise
             current_app.logger.error(f"Chat stream error: {e}")
-            # Fallback JSON error (non-SSE)
             return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/api/get_or_create_session", methods=["GET"])
@@ -2220,6 +2221,9 @@ def _register_routes(app: Flask) -> None:
             )
 
         except Exception as e:
+            from werkzeug.exceptions import HTTPException
+            if isinstance(e, HTTPException):
+                raise
             app.logger.error(f"Error adding mood entry: {e}")
             db.session.rollback()
             return jsonify({"error": "Failed to add mood entry"}), 500
@@ -2329,6 +2333,9 @@ def _register_routes(app: Flask) -> None:
             )
 
         except Exception as e:
+            from werkzeug.exceptions import HTTPException
+            if isinstance(e, HTTPException):
+                raise
             app.logger.error(f"Self-assessment error: {e}")
             return jsonify({"error": "Failed to process assessment"}), 500
 

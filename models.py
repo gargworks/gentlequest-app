@@ -78,7 +78,7 @@ class Message(db.Model):
     __tablename__ = "chat_messages"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), index=True)
     content = db.Column(db.Text, nullable=False)
     is_user = db.Column(db.Boolean, default=False)  # True for user, False for AI
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -130,7 +130,7 @@ class MoodEntry(db.Model):
     __tablename__ = "mood_entries"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), index=True)
     mood_level = db.Column(db.Integer, nullable=False)  # 1-5 scale
     note = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
