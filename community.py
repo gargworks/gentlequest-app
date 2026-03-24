@@ -80,8 +80,8 @@ def _moderate_post(body: str) -> Tuple[str, Optional[str]]:
         except ImportError:
             # Fallback to native google.generativeai when mcp_server_nucleus unavailable
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            resp = model.generate_content(prompt)
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            resp = model.generate_content(prompt, request_options={"timeout": 30})
         
         raw = (resp.text or "").strip().upper()
         if "CRISIS" in raw:

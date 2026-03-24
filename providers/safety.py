@@ -40,7 +40,7 @@ def check_safety_llm(user_message: str, ai_response: str) -> Tuple[bool, str]:
             import google.generativeai as genai
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.1-flash-lite-preview')
-            response = model.generate_content(prompt)
+            response = model.generate_content(prompt, request_options={"timeout": 30})
 
         text = response.text.strip()
         
