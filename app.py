@@ -3656,6 +3656,15 @@ def _purge_old_data_inner():
         result = UserSession.query.filter(UserSession.created_at < cutoff).delete()
         counts["sessions"] = result
 
+    # Purge expired memories (pgvector)
+    try:
+        from providers.memory import cleanup_expired_memories, MEMORY_ENABLED
+        if MEMORY_ENABLED:
+            expired = cleanup_expired_memories()
+            counts["expired_memories"] = expired
+    except Exception:
+        pass
+
     return counts
 
 

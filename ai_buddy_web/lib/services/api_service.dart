@@ -11,6 +11,7 @@ import '../models/mood_entry.dart';
 import '../models/community_post.dart';
 import '../config/api_config.dart';
 import 'session_manager.dart';
+import 'firebase_service.dart';
 
 /// Optimized API service with better error handling and performance
 class ApiService {
@@ -135,6 +136,8 @@ class ApiService {
       _sessionId = SessionManager.peekSessionId();
       _sessionId ??= DateTime.now().millisecondsSinceEpoch.toString();
     }
+    // Tie Firebase analytics to this session for cohort tracking
+    FirebaseService().setUserId(_sessionId);
     return _sessionId!;
   }
 
