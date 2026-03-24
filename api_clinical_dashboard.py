@@ -14,9 +14,10 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         # Check for simple API key header or session
         # This is a basic implementation for the MVP
-        auth_header = request.headers.get("X-Admin-Token")
-        admin_token = os.environ.get("ADMIN_TOKEN", "caps-admin-secret-2026")
-        if auth_header != admin_token:
+        import secrets as _secrets
+        auth_header = request.headers.get("X-Admin-Token") or ""
+        admin_token = os.environ.get("ADMIN_TOKEN", "")
+        if not admin_token or not _secrets.compare_digest(auth_header, admin_token):
              # Allow local debug bypass
              if request.remote_addr != "127.0.0.1":
                  return jsonify({"error": "Unauthorized"}), 401
