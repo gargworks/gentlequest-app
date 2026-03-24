@@ -20,6 +20,7 @@ import requests
 import time
 import threading
 import uuid
+import secrets
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
@@ -769,9 +770,9 @@ def create_app() -> Flask:
     # DEBUG: Expose import failure reason (admin-only)
     @app.route("/api/brain/debug_import")
     def debug_brain_import():
-        token = request.headers.get("X-Admin-Token")
-        expected = app.config.get("ADMIN_API_TOKEN")
-        if not expected or token != expected:
+        token = request.headers.get("X-Admin-Token") or ""
+        expected = app.config.get("ADMIN_API_TOKEN") or ""
+        if not expected or not secrets.compare_digest(token, expected):
             return jsonify({"error": "Unauthorized"}), 401
         import traceback
         try:
@@ -2654,9 +2655,9 @@ def _register_routes(app: Flask) -> None:
         """Admin-only: Purge old data per retention policy.
         Requires header X-Admin-Token matching ADMIN_API_TOKEN.
         """
-        token = request.headers.get("X-Admin-Token")
-        expected = app.config.get("ADMIN_API_TOKEN")
-        if not expected or token != expected:
+        token = request.headers.get("X-Admin-Token") or ""
+        expected = app.config.get("ADMIN_API_TOKEN") or ""
+        if not expected or not secrets.compare_digest(token, expected):
             return jsonify({"error": "Unauthorized"}), 401
         try:
             counts = _purge_old_data_inner()
@@ -2667,9 +2668,9 @@ def _register_routes(app: Flask) -> None:
     @app.route("/api/admin/retention_config", methods=["GET"])
     def retention_config():
         """Admin-only: View effective retention configuration."""
-        token = request.headers.get("X-Admin-Token")
-        expected = app.config.get("ADMIN_API_TOKEN")
-        if not expected or token != expected:
+        token = request.headers.get("X-Admin-Token") or ""
+        expected = app.config.get("ADMIN_API_TOKEN") or ""
+        if not expected or not secrets.compare_digest(token, expected):
             return jsonify({"error": "Unauthorized"}), 401
         return (
             jsonify(
