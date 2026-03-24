@@ -618,6 +618,45 @@ class TestSecurity:
                     assert '<script>' not in entry['note']
 
 
+class TestSessionSecurity:
+    """Test session security hardening"""
+
+    def test_invalid_session_id_gets_new_uuid(self, client):
+        """Garbage session ID is replaced with valid UUID"""
+        response = client.get('/api/get_or_create_session',
+            headers={'X-Session-ID': 'not-a-uuid-at-all!!!'})
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        # Should get a valid UUID back (not the garbage we sent)
+        import uuid
+        uuid.UUID(data['session_id'])  # Raises ValueError if invalid
+
+    def test_valid_session_id_preserved(self, client):
+        """Valid UUID session ID is preserved"""
+        import uuid
+        valid_id = str(uuid.uuid4())
+        response = client.get('/api/get_or_create_session',
+            headers={'X-Session-ID': valid_id})
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['session_id'] == valid_id
+
+    def test_debug_import_requires_auth(self, client):
+        """Debug import endpoint requires admin token"""
+        response = client.get('/api/brain/debug_import')
+        assert response.status_code == 401
+
+    def test_health_no_error_details(self, client):
+        """Health endpoint does not leak database error details"""
+        response = client.get('/api/health')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        db_status = data.get('database', '')
+        # Should never contain exception details like connection strings
+        assert 'psycopg' not in db_status
+        assert 'password' not in db_status.lower()
+
+
 class TestAdminEndpoints:
     """Test admin functionality"""
     
