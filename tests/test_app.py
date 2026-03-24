@@ -573,6 +573,19 @@ class TestErrorHandling:
         data = json.loads(response.data)
         assert data['error'] == 'Method not allowed'
     
+    def test_413_request_too_large(self, app, client):
+        """Test request body size limit returns 413 JSON"""
+        app.config['MAX_CONTENT_LENGTH'] = 100  # 100 bytes for test
+        response = client.post('/api/chat',
+            data='x' * 200,
+            content_type='application/json')
+        assert response.status_code == 413
+
+    def test_response_time_header(self, client):
+        """Test X-Response-Time header is present"""
+        response = client.get('/api/health')
+        assert 'X-Response-Time' in response.headers
+
     @pytest.mark.skipif(bool(os.getenv("CI")) or bool(os.getenv("GITHUB_ACTIONS")), reason="DB mock behavior varies in CI")
     def test_database_error_recovery(self, app, authenticated_client):
         """Test recovery from database errors"""

@@ -87,6 +87,10 @@ except Exception:
 # Initialize background executor for async tasks (Scaling Crisis Detection)
 background_executor = ThreadPoolExecutor(max_workers=5)
 
+# Graceful shutdown: wait for background tasks during deployment restarts
+import atexit
+atexit.register(lambda: background_executor.shutdown(wait=True))
+
 # Geography-specific crisis resources
 CRISIS_RESOURCES_BY_COUNTRY = {
     "in": {  # India
@@ -437,6 +441,9 @@ def create_app() -> Flask:
     if app.config.get("ENVIRONMENT") == "production" and \
        app.config.get("SECRET_KEY") == "dev-secret-key-change-in-production":
         raise ValueError("SECRET_KEY must be explicitly set in production")
+
+    # Limit request body size to prevent memory exhaustion (5 MB)
+    app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
     test_mode = bool(os.getenv("CI") or os.getenv("PYTEST_CURRENT_TEST"))
     if test_mode:
@@ -868,10 +875,11 @@ def create_app() -> Flask:
                 }
             )
 
-    # Attach a request ID to each request and response for traceability
+    # Attach request ID and start timer for latency tracking
     @app.before_request
     def _attach_request_id():
         try:
+            g.request_start = time.monotonic()
             rid = request.headers.get("X-Request-ID") or str(uuid.uuid4())
             g.request_id = rid
             # Also set as Sentry tag if available
@@ -888,6 +896,13 @@ def create_app() -> Flask:
             rid = getattr(g, "request_id", None)
             if rid:
                 resp.headers["X-Request-ID"] = rid
+            # Log slow requests (> 5s) for monitoring
+            start = getattr(g, "request_start", None)
+            if start:
+                elapsed_ms = int((time.monotonic() - start) * 1000)
+                resp.headers["X-Response-Time"] = str(elapsed_ms)
+                if elapsed_ms > 5000 and request.path.startswith("/api/"):
+                    app.logger.warning(f"Slow request: {request.method} {request.path} {elapsed_ms}ms")
         except Exception:
             pass
         return resp
@@ -902,6 +917,10 @@ def create_app() -> Flask:
     @app.errorhandler(405)
     def handle_405(e):
         return jsonify({"error": "Method not allowed"}), 405
+
+    @app.errorhandler(413)
+    def handle_413(e):
+        return jsonify({"error": "Request too large", "max_bytes": 5 * 1024 * 1024}), 413
 
     @app.errorhandler(429)
     def handle_429(e):
@@ -1892,12 +1911,16 @@ def _register_routes(app: Flask) -> None:
             )
 
         except Exception as e:
+            from werkzeug.exceptions import HTTPException
+            if isinstance(e, HTTPException):
+                raise  # Let global error handlers handle 413, 429, etc.
             import traceback
             app.logger.error(f"Chat endpoint error: {e}")
             _err_latency = round((_time.monotonic() - _t0) * 1000) if '_t0' in dir() else 0
+            _data = data if 'data' in dir() else None
             background_executor.submit(
-                _log_chat_request, data.get("session_id", "") if data else "",
-                len(data.get("message", "")) if data else 0, 0, _err_latency, 500,
+                _log_chat_request, _data.get("session_id", "") if _data else "",
+                len(_data.get("message", "")) if _data else 0, 0, _err_latency, 500,
             )
             trace = traceback.format_exc() if app.config.get("ENVIRONMENT") == "local" else None
             return jsonify({"error": "Internal server error", "trace": trace}), 500
