@@ -1968,19 +1968,23 @@ def _register_routes(app: Flask) -> None:
                             for i, p in enumerate(parts)
                         ]
 
-                for idx, ch in enumerate(chunks):
-                    yield sse(
-                        {
-                            "type": "token",
-                            "text": (joiner + ch) if (idx > 0 and joiner) else ch,
-                        }
-                    )
-                    # Small human-like pacing
-                    delay_ms = max(60, min(220, int(len(ch.strip()) * 12)))
-                    time.sleep(delay_ms / 1000.0)
+                try:
+                    for idx, ch in enumerate(chunks):
+                        yield sse(
+                            {
+                                "type": "token",
+                                "text": (joiner + ch) if (idx > 0 and joiner) else ch,
+                            }
+                        )
+                        # Small human-like pacing
+                        delay_ms = max(60, min(220, int(len(ch.strip()) * 12)))
+                        time.sleep(delay_ms / 1000.0)
 
-                # Done signal
-                yield sse({"type": "done"})
+                    # Done signal
+                    yield sse({"type": "done"})
+                except GeneratorExit:
+                    # Client disconnected mid-stream — stop yielding immediately
+                    return
 
             headers = {
                 "Cache-Control": "no-cache",
@@ -2734,7 +2738,7 @@ def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
         for model_name in models_to_try:
             try:
                 model = genai.GenerativeModel(model_name)
-                response = model.generate_content(full_content)
+                response = model.generate_content(full_content, request_options={"timeout": 60})
                 if response and hasattr(response, "text"):
                     return response.text
             except Exception as e:

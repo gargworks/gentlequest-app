@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 # Store conversations with timestamp for cleanup
 conversations: Dict[str, List[dict]] = {}
 CONVERSATION_TIMEOUT = timedelta(hours=1)  # Clear conversations older than 1 hour
+MAX_CONVERSATIONS = 500  # Hard cap to prevent unbounded memory growth
 
 # ============================================================================
 # AGENTIC WELLNESS TOOLS (Smart, Context-Aware)
@@ -114,6 +115,11 @@ import google.generativeai as genai
 _model_cache: Dict[Tuple[int, str], Any] = {}
 _configured_key_idx: Optional[int] = None
 
+# Timeout for LLM generate_content() calls (seconds). Prevents thread pool
+# exhaustion when Gemini hangs.
+_LLM_TIMEOUT = 60
+_LLM_REQUEST_OPTIONS = {"timeout": _LLM_TIMEOUT}
+
 def _get_cached_model(key_idx: int, model_name: str, system_prompt: str,
                       tools=None):
     """Return a cached GenerativeModel, or create + cache a new one."""
@@ -194,7 +200,7 @@ def _should_rotate_key(err: Exception) -> bool:
 
 
 def cleanup_old_conversations():
-    """Remove conversations that are older than the timeout"""
+    """Remove conversations that are older than the timeout, and enforce max cap."""
     current_time = datetime.now()
     to_remove = []
     for session_id in conversations:
@@ -208,6 +214,16 @@ def cleanup_old_conversations():
 
     for session_id in to_remove:
         del conversations[session_id]
+
+    # Hard cap: evict oldest sessions if over limit
+    if len(conversations) > MAX_CONVERSATIONS:
+        sorted_sessions = sorted(
+            conversations.items(),
+            key=lambda kv: kv[1][-1].get("timestamp", datetime.min) if kv[1] else datetime.min,
+        )
+        excess = len(conversations) - MAX_CONVERSATIONS
+        for session_id, _ in sorted_sessions[:excess]:
+            del conversations[session_id]
 
 
 def get_gemini_response(
@@ -328,7 +344,7 @@ def get_gemini_response(
                             import google.generativeai as genai
                             genai.configure(api_key=api_key)
                             model = genai.GenerativeModel(model_name)
-                            response = model.generate_content(prompt)
+                            response = model.generate_content(prompt, request_options=_LLM_REQUEST_OPTIONS)
                         
                         if not response or not getattr(response, "text", None):
                             _debug(f"empty_response model={model_name}")
@@ -602,7 +618,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
             # OPT-2: Try cached model first (saves ~100-200ms on warm requests)
             model = _get_cached_model(key_idx, _model_name, system_prompt,
                                       tools=WELLNESS_TOOLS_CONFIG)
-            response = model.generate_content(full_prompt)
+            response = model.generate_content(full_prompt, request_options=_LLM_REQUEST_OPTIONS)
         except Exception as _cache_err:
             _debug(f"Cached model failed ({_cache_err}), falling back to fresh")
             # Fallback: fresh model per-request (original behavior)
@@ -613,7 +629,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
                     tools=WELLNESS_TOOLS_CONFIG,
                     system_instruction=system_prompt
                 )
-                response = model.generate_content(full_prompt)
+                response = model.generate_content(full_prompt, request_options=_LLM_REQUEST_OPTIONS)
                 # Evict bad cache entry so next request retries cache
                 _model_cache.pop((key_idx, _model_name), None)
             except Exception as e:
