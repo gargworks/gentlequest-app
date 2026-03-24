@@ -462,7 +462,7 @@ def summarize_interaction_llm(
             import google.generativeai as genai
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.1-flash-lite-preview')
-            response = model.generate_content(prompt)
+            response = model.generate_content(prompt, request_options={"timeout": 30})
         
         if not response or not getattr(response, "text", None):
             return False
