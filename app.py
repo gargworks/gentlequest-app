@@ -433,6 +433,11 @@ def create_app() -> Flask:
     # Load configuration
     app.config.from_object(Config)
 
+    # Fail-fast if production uses default SECRET_KEY
+    if app.config.get("ENVIRONMENT") == "production" and \
+       app.config.get("SECRET_KEY") == "dev-secret-key-change-in-production":
+        raise ValueError("SECRET_KEY must be explicitly set in production")
+
     test_mode = bool(os.getenv("CI") or os.getenv("PYTEST_CURRENT_TEST"))
     if test_mode:
         app.config["TESTING"] = True
@@ -1867,8 +1872,8 @@ def _register_routes(app: Flask) -> None:
                 _log_chat_request, data.get("session_id", "") if data else "",
                 len(data.get("message", "")) if data else 0, 0, _err_latency, 500,
             )
-            # DEBUG: Return traceback to client to identify the crash
-            return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+            trace = traceback.format_exc() if app.config.get("ENVIRONMENT") == "local" else None
+            return jsonify({"error": "Internal server error", "trace": trace}), 500
 
     @app.route("/api/chat_stream", methods=["GET"])
     def chat_stream():
@@ -2631,6 +2636,12 @@ def _get_or_create_session() -> str:
 
     if not session_id:
         session_id = str(uuid.uuid4())
+    else:
+        # Validate UUID format to prevent garbage input
+        try:
+            uuid.UUID(session_id)
+        except ValueError:
+            session_id = str(uuid.uuid4())
 
     try:
         from models import UserSession
