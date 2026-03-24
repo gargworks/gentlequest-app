@@ -110,6 +110,8 @@ _key_index = 0
 
 # ── Model cache: reuse GenerativeModel across requests (OPT-2) ──
 # Keyed by (key_index, model_name). Falls back to fresh creation on any error.
+import warnings
+warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
 import google.generativeai as genai
 
 _model_cache: Dict[Tuple[int, str], Any] = {}

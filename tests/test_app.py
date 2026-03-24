@@ -841,5 +841,41 @@ class TestChatNewFields:
         assert response.status_code == 200
 
 
+class TestSSEStream:
+    """Test SSE streaming endpoint hardening"""
+
+    def test_stream_message_too_long(self, client):
+        """SSE endpoint rejects messages over 5000 chars"""
+        response = client.get(
+            '/api/chat_stream',
+            query_string={'message': 'x' * 5001},
+            headers={'X-Session-ID': 'test-stream-limit'}
+        )
+        assert response.status_code == 400
+
+    @patch('providers.safety.check_safety_llm', return_value=(True, None))
+    @patch('app._get_ai_response_with_failover')
+    def test_stream_returns_event_stream(self, mock_ai, mock_safety, client):
+        """SSE endpoint returns text/event-stream content type"""
+        mock_ai.return_value = ("Hello!", "gemini")
+        response = client.get(
+            '/api/chat_stream',
+            query_string={'message': 'hi'},
+            headers={'X-Session-ID': 'test-stream-type'}
+        )
+        assert response.status_code == 200
+        assert response.content_type == 'text/event-stream'
+
+    def test_stream_empty_message(self, client):
+        """SSE endpoint rejects empty messages"""
+        response = client.get(
+            '/api/chat_stream',
+            query_string={'message': ''},
+            headers={'X-Session-ID': 'test-stream-empty'}
+        )
+        # Should return 400 or redirect, not 200
+        assert response.status_code in [400, 302]
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
