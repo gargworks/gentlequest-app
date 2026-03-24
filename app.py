@@ -647,7 +647,7 @@ def create_app() -> Flask:
             emit_event
         )
         
-        TG_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        TG_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
         
         @app.route("/api/brain/telegram/webhook", methods=["POST"])
         def brain_telegram_webhook():
@@ -2581,6 +2581,7 @@ def _register_routes(app: Flask) -> None:
             return jsonify({"error": "Failed to fetch analytics"}), 500
 
     @app.route("/api/admin/purge", methods=["POST"])
+    @app.limiter.limit("5 per minute")
     def admin_purge():
         """Admin-only: Purge old data per retention policy.
         Requires header X-Admin-Token matching ADMIN_API_TOKEN.
@@ -3715,6 +3716,7 @@ def _register_additional_routes(app: Flask) -> None:
             )
 
     @app.route("/api/intervention/outcome", methods=["POST"])
+    @app.limiter.limit("30 per minute")
     def log_intervention_outcome():
         """
         Log intervention start/complete/skip for learning and analytics.
@@ -3909,6 +3911,7 @@ def _register_additional_routes(app: Flask) -> None:
     # ========================================================================
 
     @app.route("/api/admin/setup_pgvector", methods=["POST"])
+    @app.limiter.limit("5 per minute")
     def admin_setup_pgvector():
         """Enable pgvector extension on production database."""
         # Simple security check using existing chat ID as a secret key header
@@ -3940,10 +3943,11 @@ def _register_additional_routes(app: Flask) -> None:
             return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/api/admin/init_brain_tables", methods=["POST"])
+    @app.limiter.limit("5 per minute")
     def admin_init_brain_tables():
         """Initialize brain state tables on demand"""
         auth_header = request.headers.get("X-Admin-Key")
-        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "")
         if not auth_header or auth_header != expected_key:
             return jsonify({"error": "Unauthorized"}), 403
 
@@ -3959,10 +3963,11 @@ def _register_additional_routes(app: Flask) -> None:
             return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/api/admin/init_memory_tables", methods=["POST"])
+    @app.limiter.limit("5 per minute")
     def admin_init_memory_tables():
         """Initialize memory system tables on demand with cache invalidation"""
         auth_header = request.headers.get("X-Admin-Key")
-        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "")
         if not auth_header or auth_header != expected_key:
             return jsonify({"error": "Unauthorized"}), 403
 
@@ -3990,9 +3995,10 @@ def _register_additional_routes(app: Flask) -> None:
             return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/api/admin/debug/db", methods=["GET"])
+    @app.limiter.limit("10 per minute")
     def admin_debug_db():
         auth_header = request.headers.get("X-Admin-Key")
-        expected_key = os.getenv("TELEGRAM_CHAT_ID", "7575125475")
+        expected_key = os.getenv("TELEGRAM_CHAT_ID", "")
         if not auth_header or auth_header != expected_key:
             return jsonify({"error": "Unauthorized"}), 403
 
