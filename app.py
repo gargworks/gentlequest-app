@@ -1892,8 +1892,9 @@ def _register_routes(app: Flask) -> None:
                 session_id=session_id, is_user=True
             ).first() is None
 
-            # Country for geo-specific crisis resources
-            country = request.args.get("country") or "generic"
+            # Country for geo-specific crisis resources (sanitize to alpha, max 10 chars)
+            _raw_country = request.args.get("country") or "generic"
+            country = "".join(c for c in _raw_country[:10] if c.isalpha()).lower() or "generic"
 
             # Crisis detection first
             risk_level = detect_crisis_level(message)

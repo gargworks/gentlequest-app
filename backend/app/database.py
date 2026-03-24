@@ -46,7 +46,7 @@ try:
     if "@" in DATABASE_URL:
         safe_url = DATABASE_URL.replace(DATABASE_URL.split("@")[0].split("//")[1].split(":")[1], "***")
         print(f"DEBUG: Connecting to: {safe_url}")
-except:
+except Exception:
     pass
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)

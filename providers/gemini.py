@@ -550,7 +550,7 @@ DO NOT mention crisis hotlines - system handles that separately."""
             try:
                 from models import db
                 db.session.rollback()
-            except:
+            except Exception:
                 pass
         _pt1 = _time.monotonic()
         _perf["memory_ms"] = round((_pt1 - _pt0) * 1000)
