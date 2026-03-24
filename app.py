@@ -2710,9 +2710,11 @@ def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
     Used for background analysis like crisis watchdog.
     Attempts multiple models in order of preference/speed.
     """
+    import warnings as _w
+    _w.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
     import google.generativeai as genai
     import os
-    
+
     api_keys = (os.getenv("GEMINI_API_KEY") or "").split(",")
     if not api_keys[0]:
         return "{}"
