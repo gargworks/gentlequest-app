@@ -672,8 +672,8 @@ def create_app() -> Flask:
                 return jsonify({"ok": True})
             except Exception as e:
                 app.logger.error(f"Telegram webhook error: {e}")
-                return jsonify({"ok": False, "error": str(e)}), 500
-        
+                return jsonify({"ok": False, "error": "Webhook processing failed"}), 500
+
         @app.route("/api/brain/status", methods=["GET"])
         def brain_status():
             """Get Nuclear Brain status via API"""
@@ -681,7 +681,8 @@ def create_app() -> Flask:
                 state = load_state()
                 return jsonify(state)
             except Exception as e:
-                return jsonify({"error": str(e)}), 500
+                app.logger.error(f"Brain status error: {e}")
+                return jsonify({"error": "Failed to load brain status"}), 500
         
         @app.route("/api/brain/alert", methods=["POST"])
         def brain_alert():
@@ -758,9 +759,13 @@ def create_app() -> Flask:
         import traceback
         app.logger.error(f"Brain Telegram routes failed to register: {e}\n{traceback.format_exc()}")
 
-    # DEBUG: Expose import failure reason
+    # DEBUG: Expose import failure reason (admin-only)
     @app.route("/api/brain/debug_import")
     def debug_brain_import():
+        token = request.headers.get("X-Admin-Token")
+        expected = app.config.get("ADMIN_API_TOKEN")
+        if not expected or token != expected:
+            return jsonify({"error": "Unauthorized"}), 401
         import traceback
         try:
             import brain_telegram
@@ -2006,6 +2011,7 @@ def _register_routes(app: Flask) -> None:
             return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/api/get_or_create_session", methods=["GET"])
+    @app.limiter.limit("60 per hour")
     def get_or_create_session_endpoint():
         """Get or create user session"""
         session_id = _get_or_create_session()
@@ -3067,7 +3073,7 @@ def _check_database_health() -> str:
             current_app.logger.error(f"Database health check failed: {e}")
         except Exception:
             pass
-        return f"unhealthy: {str(e)}"
+        return "unhealthy"
 
 
 def _check_redis_health() -> str:
@@ -3086,7 +3092,12 @@ def _check_redis_health() -> str:
         else:
             return "using filesystem"
     except Exception as e:
-        return f"unhealthy: {str(e)}"
+        try:
+            from flask import current_app
+            current_app.logger.error(f"Redis health check failed: {e}")
+        except Exception:
+            pass
+        return "unhealthy"
 
 
 def _check_ollama_health() -> dict:
