@@ -892,6 +892,28 @@ def create_app() -> Flask:
             pass
         return resp
 
+    # Global error handlers — return JSON for API routes, HTML for browser
+    @app.errorhandler(404)
+    def handle_404(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not found"}), 404
+        return render_template("landing.html"), 404
+
+    @app.errorhandler(405)
+    def handle_405(e):
+        return jsonify({"error": "Method not allowed"}), 405
+
+    @app.errorhandler(429)
+    def handle_429(e):
+        return jsonify({"error": "Rate limit exceeded", "retry_after": e.description}), 429
+
+    @app.errorhandler(500)
+    def handle_500(e):
+        app.logger.error(f"Internal error: {e}")
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Internal server error"}), 500
+        return "Internal server error", 500
+
     return app
 
 

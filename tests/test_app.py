@@ -560,9 +560,18 @@ class TestErrorHandling:
     """Test error handling"""
     
     def test_404_error(self, client):
-        """Test 404 error handling"""
+        """Test 404 error handling returns JSON for API routes"""
         response = client.get('/api/nonexistent')
         assert response.status_code == 404
+        data = json.loads(response.data)
+        assert data['error'] == 'Not found'
+
+    def test_405_error(self, client):
+        """Test 405 method not allowed returns JSON"""
+        response = client.delete('/api/health')
+        assert response.status_code == 405
+        data = json.loads(response.data)
+        assert data['error'] == 'Method not allowed'
     
     @pytest.mark.skipif(bool(os.getenv("CI")) or bool(os.getenv("GITHUB_ACTIONS")), reason="DB mock behavior varies in CI")
     def test_database_error_recovery(self, app, authenticated_client):
