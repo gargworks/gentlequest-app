@@ -173,6 +173,10 @@ class ChatProvider extends ChangeNotifier {
       // Track first message for retention analytics
       final isFirstMessage = _messages.length == 1; // only the user msg we just added
       FirebaseService().logChatMessage(isFirstMessage ? 'first' : 'follow_up');
+      FirebaseService().logEvent('chat_session_started', {
+        'message_length': content.length,
+        'is_first': isFirstMessage,
+      });
       if (isFirstMessage) {
         FirebaseService().logEvent('first_chat_message_sent', {
           'message_length': content.length,

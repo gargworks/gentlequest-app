@@ -877,5 +877,235 @@ class TestSSEStream:
         assert response.status_code in [400, 302]
 
 
+class TestMoodPulse:
+    """Test mood pulse (You Are Not Alone) endpoint"""
+
+    def test_mood_pulse_empty(self, client):
+        """Mood pulse returns zero distribution when no entries"""
+        response = client.get('/api/mood_pulse')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['total_checkins_today'] == 0
+        assert data['distribution'] == {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+
+    def test_mood_pulse_with_entries(self, app, authenticated_client):
+        """Mood pulse reflects today's mood entries"""
+        # Add a mood entry for today
+        authenticated_client.post('/api/mood_entry', json={
+            'mood_level': 4, 'note': 'feeling good'
+        })
+        authenticated_client.post('/api/mood_entry', json={
+            'mood_level': 4, 'note': 'still good'
+        })
+        response = app.test_client().get('/api/mood_pulse')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['total_checkins_today'] >= 2
+        assert 'solidarity_messages' in data
+
+    def test_mood_pulse_has_percentages(self, client):
+        """Mood pulse includes percentages dict"""
+        response = client.get('/api/mood_pulse')
+        data = json.loads(response.data)
+        assert 'percentages' in data
+
+
+class TestCrisisDetectionEndpoint:
+    """Test the dedicated crisis detection endpoint"""
+
+    def test_crisis_detection_with_keywords(self, client):
+        """Message with crisis keywords returns detected keywords and resources"""
+        response = client.post('/api/crisis_detection', json={
+            'message': 'I want to kill myself and commit suicide'
+        })
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'risk_level' in data
+        assert 'risk_score' in data
+        assert len(data['keywords']) > 0
+        assert 'resources' in data
+
+    def test_crisis_detection_low_risk_message(self, client):
+        """Normal message returns low risk"""
+        response = client.post('/api/crisis_detection', json={
+            'message': 'I had a nice day at the park'
+        })
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['risk_level'] in ['low', 'none']
+        assert data['immediate_action_required'] is False
+
+    def test_crisis_detection_missing_message(self, client):
+        """Missing message returns 400"""
+        response = client.post('/api/crisis_detection', json={
+            'message': ''
+        })
+        assert response.status_code == 400
+
+    def test_crisis_detection_no_body(self, client):
+        """No JSON body returns 400"""
+        response = client.post('/api/crisis_detection',
+            content_type='application/json', data='{}')
+        assert response.status_code == 400
+
+
+class TestMemoryEndpoints:
+    """Test memory management endpoints"""
+
+    def test_memory_status(self, client):
+        """Memory status returns enabled flags"""
+        response = client.get('/api/memory_status')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'memory_enabled' in data
+        assert 'pgvector_enabled' in data
+
+    def test_clear_memory_requires_session(self, client):
+        """Clear memory requires session ID"""
+        response = client.post('/api/clear_memory')
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'Session ID required' in data.get('error', '')
+
+    def test_clear_memory_graceful_without_pgvector(self, authenticated_client):
+        """Clear memory returns error gracefully when pgvector unavailable"""
+        response = authenticated_client.post('/api/clear_memory')
+        # Without pgvector, endpoint catches the import error and returns 500
+        assert response.status_code in [200, 500]
+
+
+class TestInterventionOutcome:
+    """Test intervention outcome logging endpoint"""
+
+    def test_intervention_outcome_started(self, authenticated_client):
+        """Log a started intervention outcome"""
+        with patch('providers.session_memory.update_intervention_outcome', return_value=True):
+            response = authenticated_client.post('/api/intervention/outcome', json={
+                'intervention_id': 'calm_001',
+                'exercise_type': 'breathing',
+                'outcome': 'started'
+            })
+            assert response.status_code == 200
+            data = json.loads(response.data)
+            assert data['success'] is True
+
+    def test_intervention_outcome_completed(self, authenticated_client):
+        """Log a completed intervention with mood data"""
+        with patch('providers.session_memory.update_intervention_outcome', return_value=True):
+            response = authenticated_client.post('/api/intervention/outcome', json={
+                'intervention_id': 'calm_002',
+                'exercise_type': 'grounding',
+                'outcome': 'completed',
+                'time_spent_seconds': 180,
+                'mood_before': 3,
+                'mood_after': 7
+            })
+            assert response.status_code == 200
+
+    def test_intervention_outcome_missing_id(self, authenticated_client):
+        """Missing intervention_id returns 400"""
+        response = authenticated_client.post('/api/intervention/outcome', json={
+            'exercise_type': 'breathing',
+            'outcome': 'started'
+        })
+        assert response.status_code == 400
+
+    def test_intervention_outcome_invalid_outcome(self, authenticated_client):
+        """Invalid outcome value returns 400"""
+        response = authenticated_client.post('/api/intervention/outcome', json={
+            'intervention_id': 'calm_003',
+            'outcome': 'invalid_value'
+        })
+        assert response.status_code == 400
+
+    def test_intervention_outcome_invalid_mood(self, authenticated_client):
+        """Mood ratings outside 1-10 return 400"""
+        response = authenticated_client.post('/api/intervention/outcome', json={
+            'intervention_id': 'calm_004',
+            'outcome': 'completed',
+            'mood_before': 15
+        })
+        assert response.status_code == 400
+
+    def test_intervention_outcome_requires_session(self, client):
+        """No session ID returns 400"""
+        response = client.post('/api/intervention/outcome', json={
+            'intervention_id': 'calm_005',
+            'outcome': 'started'
+        })
+        assert response.status_code == 400
+
+
+class TestAssessmentEndpoints:
+    """Test clinical assessment endpoints"""
+
+    def test_get_phq9_questions(self, client):
+        """Fetch PHQ-9 questions"""
+        response = client.get('/api/assessment/phq9/questions')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'questions' in data
+        assert len(data['questions']) == 9
+
+    def test_get_gad7_questions(self, client):
+        """Fetch GAD-7 questions"""
+        response = client.get('/api/assessment/gad7/questions')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'questions' in data
+        assert len(data['questions']) == 7
+
+    def test_invalid_assessment_type(self, client):
+        """Invalid assessment type returns 400"""
+        response = client.get('/api/assessment/invalid_type/questions')
+        assert response.status_code == 400
+
+    def test_submit_phq9(self, authenticated_client):
+        """Submit PHQ-9 responses and get scored result"""
+        responses = [0, 1, 1, 0, 0, 1, 0, 0, 0]  # 9 questions, 0-3 scale
+        response = authenticated_client.post('/api/assessment/phq9', json={
+            'responses': responses
+        })
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'total_score' in data
+        assert 'severity' in data
+
+    def test_submit_gad7(self, authenticated_client):
+        """Submit GAD-7 responses and get scored result"""
+        responses = [0, 1, 1, 0, 0, 1, 0]  # 7 questions, 0-3 scale
+        response = authenticated_client.post('/api/assessment/gad7', json={
+            'responses': responses
+        })
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'total_score' in data
+        assert 'severity' in data
+
+    def test_submit_assessment_no_session(self, client):
+        """Submit without session returns 401"""
+        response = client.post('/api/assessment/phq9', json={
+            'responses': [0] * 9
+        })
+        assert response.status_code == 401
+
+    def test_submit_assessment_no_responses(self, authenticated_client):
+        """Submit without responses returns 400"""
+        response = authenticated_client.post('/api/assessment/phq9', json={})
+        assert response.status_code == 400
+
+    def test_assessment_history_requires_session(self, client):
+        """Assessment history without session returns 401"""
+        response = client.get('/api/assessment/history')
+        assert response.status_code == 401
+
+    def test_assessment_history_empty(self, authenticated_client):
+        """Assessment history returns empty list for new user"""
+        response = authenticated_client.get('/api/assessment/history')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert 'history' in data
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
