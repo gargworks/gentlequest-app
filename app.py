@@ -326,9 +326,10 @@ class Config:
     """Configuration class for single codebase usage"""
 
     # Environment detection
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
     RENDER = os.getenv("RENDER", "false").lower() == "true"
     DOCKER_ENV = os.getenv("DOCKER_ENV", "false").lower() == "true"
+    # Auto-detect production: if RENDER is true, treat as production unless overridden
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "production" if RENDER else "local")
 
     # Database configuration
     if RENDER:
