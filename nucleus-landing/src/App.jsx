@@ -12,6 +12,7 @@ const OPENCLAW_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/pac
 const MCP_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages/static-svg/icons/mcp.svg";
 
 import SovereignMonolith from './components/SovereignMonolith_FINAL';
+import FAQ from './components/FAQ';
 
 function LaunchBanner() {
   return (
@@ -35,8 +36,8 @@ function App() {
   const PYPI_URL = 'https://pypi.org/project/nucleus-mcp/';
   const DISCORD_URL = 'https://discord.gg/RJuBNNJ5MT';
 
-  /* 
-     METRICS SYSTEM 
+  /*
+     METRICS SYSTEM
      GitHub Stars: Real-time via API
      Cognitive Pulse: Representational Counter
      Active Nodes/DSoR: Projected Milestone Targets
@@ -49,6 +50,11 @@ function App() {
       .then(data => setStars(data.stargazers_count || 0))
       .catch(() => setStars(0));
   }, []);
+
+  // Simple pathname routing
+  if (window.location.pathname === '/faq') {
+    return <FAQ />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-purple-500/30">
@@ -65,6 +71,7 @@ function App() {
           <a href="#governance" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Features</a>
           <a href="#install" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Install</a>
           <a href="#enterprise" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Enterprise</a>
+          <a href="/faq" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-3">
           <a
