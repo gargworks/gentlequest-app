@@ -122,6 +122,18 @@ _configured_key_idx: Optional[int] = None
 _LLM_TIMEOUT = 60
 _LLM_REQUEST_OPTIONS = {"timeout": _LLM_TIMEOUT}
 
+# ── Exponential backoff config ──
+_BACKOFF_BASE = 2
+_MAX_RETRIES = 10
+_RETRY_DELAY_MIN = 5   # seconds
+_RETRY_DELAY_MAX = 30  # seconds
+
+
+def _backoff_delay(attempt: int) -> float:
+    """Compute capped exponential backoff with jitter."""
+    delay = min(_RETRY_DELAY_MAX, _RETRY_DELAY_MIN * (_BACKOFF_BASE ** attempt))
+    return delay + random.uniform(0, delay * 0.1)  # ~10% jitter
+
 def _get_cached_model(key_idx: int, model_name: str, system_prompt: str,
                       tools=None):
     """Return a cached GenerativeModel, or create + cache a new one."""
@@ -307,13 +319,14 @@ def get_gemini_response(
 
         # Outer loop over keys with hierarchal fallback (Primary -> Backup 1 -> Backup 2...)
         # User requested "first key is always default" (Ephemeral Backup Strategy)
-        start_idx = 0 
+        start_idx = 0
         last_error = None
-        
-        # Exponential backoff multiplier
-        backoff_delay = 1.0
+        retry_count = 0
 
         for k_off in range(len(_GEMINI_KEYS)):
+            if retry_count >= _MAX_RETRIES:
+                _debug(f"max_retries={_MAX_RETRIES} exhausted")
+                break
             key_idx = (start_idx + k_off) % len(_GEMINI_KEYS)
 
             # Skip blocked keys within TTL window (Resilience)
@@ -401,12 +414,12 @@ Please remember that these intense feelings can pass, and there is hope for thin
                             _blocked_until[key_idx] = datetime.now() + timedelta(
                                 hours=_BLOCK_TTL_HOURS
                             )
+                            delay = _backoff_delay(retry_count)
                             _debug(
-                                f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS}"
+                                f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS} backoff={delay:.1f}s attempt={retry_count}"
                             )
-                            # Exponential Backoff Sleep before next key attempt
-                            time.sleep(backoff_delay)
-                            backoff_delay *= 2  # Double the wait for next attempt
+                            time.sleep(delay)
+                            retry_count += 1
                             break
                         # else: try next model under same key
                         continue
@@ -422,12 +435,12 @@ Please remember that these intense feelings can pass, and there is hope for thin
                     _blocked_until[key_idx] = datetime.now() + timedelta(
                         hours=_BLOCK_TTL_HOURS
                     )
+                    delay = _backoff_delay(retry_count)
                     _debug(
-                        f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS}"
+                        f"block_key key_index={key_idx} ttl_hours={_BLOCK_TTL_HOURS} backoff={delay:.1f}s attempt={retry_count}"
                     )
-                    # Exponential Backoff Sleep before next key attempt
-                    time.sleep(backoff_delay)
-                    backoff_delay *= 2
+                    time.sleep(delay)
+                    retry_count += 1
 
             # Small jitter when rotating keys to avoid synchronized spikes
             time.sleep(random.uniform(0.05, 0.2))
