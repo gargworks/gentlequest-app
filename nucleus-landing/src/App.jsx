@@ -130,6 +130,7 @@ function App() {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-8 tracking-tight">
+          <span className="sr-only">Nucleus AI: </span>
           Stop re-explaining your code to <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AI Agents.</span>
         </h1>
@@ -254,7 +255,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-purple-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(168,85,247,0)] group-hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] text-slate-400 group-hover:text-white">
-                <img src={CLAUDE_LOGO} alt="Claude" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={CLAUDE_LOGO} alt="Claude Desktop MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Claude</span>
             </a>
@@ -265,7 +266,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-blue-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(59,130,246,0)] group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] text-slate-400 group-hover:text-white">
-                <img src={CURSOR_LOGO} alt="Cursor" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={CURSOR_LOGO} alt="Cursor IDE MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <div className="flex flex-col">
                 <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Cursor</span>
@@ -279,7 +280,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-cyan-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0)] group-hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] text-slate-300 group-hover:text-white">
-                <img src={WINDSURF_LOGO} alt="Windsurf" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={WINDSURF_LOGO} alt="Windsurf MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <div className="flex flex-col">
                 <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Windsurf</span>
@@ -293,7 +294,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-green-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(34,197,94,0)] group-hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] text-slate-400 group-hover:text-white">
-                <img src={CHATGPT_LOGO} alt="ChatGPT" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={CHATGPT_LOGO} alt="ChatGPT MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">ChatGPT</span>
             </a>
@@ -304,7 +305,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-teal-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(20,184,166,0)] group-hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-slate-400 group-hover:text-white">
-                <img src={PERPLEXITY_LOGO} alt="Perplexity" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={PERPLEXITY_LOGO} alt="Perplexity MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Perplexity</span>
             </a>
@@ -315,7 +316,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-orange-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(249,115,22,0)] group-hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] text-slate-400 group-hover:text-white">
-                <img src={ANTIGRAVITY_LOGO} alt="Antigravity" className="w-full h-full object-contain" />
+                <img src={ANTIGRAVITY_LOGO} alt="Antigravity MCP integration with Nucleus AI" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Antigravity</span>
@@ -329,7 +330,7 @@ function App() {
               className="flex items-center gap-3 group cursor-pointer invisible lg:visible"
             >
               <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-white/50 transition-all duration-500 shadow-[0_0_15px_rgba(255,255,255,0)] group-hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-slate-400 group-hover:text-white">
-                <img src={OPENCLAW_LOGO} alt="OpenClaw" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={OPENCLAW_LOGO} alt="OpenClaw MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">OpenClaw</span>
             </a>
@@ -543,7 +544,7 @@ function App() {
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <img src={CLAUDE_LOGO} alt="Claude" className="w-5 h-5" style={{ filter: 'brightness(0) invert(1)' }} />
+              <img src={CLAUDE_LOGO} alt="Claude Desktop MCP configuration" className="w-5 h-5" style={{ filter: 'brightness(0) invert(1)' }} />
               Claude Desktop / Cursor
             </h3>
             <div className="bg-slate-950/50 rounded-xl border border-white/10 p-4 font-mono text-xs overflow-x-auto">
@@ -594,7 +595,7 @@ function App() {
             <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-900 transition-all group-hover:border-purple-500/50">
               <img
                 src="/social-preview.png"
-                alt="Nucleus Social Preview Standard"
+                alt="Nucleus AI social preview — local-first agent control plane"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
               />
             </div>
@@ -608,7 +609,7 @@ function App() {
             <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-900 transition-all group-hover:border-pink-500/50">
               <img
                 src="/social-preview-hq.png"
-                alt="Nucleus Social Preview HQ"
+                alt="Nucleus AI high-resolution social preview — sovereign agent memory and governance"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
               />
             </div>
