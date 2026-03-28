@@ -1,4 +1,7 @@
+import logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -106,8 +109,12 @@ async def send_chat_message(
     prev_history = history[:-1] if len(history) > 0 else []
     current_msg = request.content
     
-    ai_text = await ai_service.conduct_interview(prev_history, current_msg)
-    
+    try:
+        ai_text = await ai_service.conduct_interview(prev_history, current_msg)
+    except Exception as e:
+        logger.error("Chat AI response failed for session %d: %s", session_id, e)
+        raise HTTPException(status_code=500, detail="Failed to generate AI response. Please try again.")
+
     # 4. Save AI Response
     ai_msg = ChatMessage(
         session_id=session_id,
@@ -167,7 +174,6 @@ async def finalize_chat_session(
         await session.commit()
         await session.refresh(interview)
     except Exception:
-        # Ignore analysis failure, we have the interview
-        pass
+        logger.warning("ANRUM extraction failed for session %d, interview saved without insights", session_id)
         
     return interview

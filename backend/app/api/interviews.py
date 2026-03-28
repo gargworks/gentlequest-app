@@ -1,4 +1,7 @@
+import logging
 from typing import List, Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select, SQLModel
@@ -55,4 +58,5 @@ async def analyze_interview(
         await session.refresh(interview)
         return interview
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        logger.error("Interview analysis failed for interview %d: %s", interview_id, e)
+        raise HTTPException(status_code=500, detail="Interview analysis failed. Please try again.")

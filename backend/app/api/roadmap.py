@@ -1,4 +1,8 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -70,7 +74,8 @@ async def generate_team_roadmap(
     try:
         roadmap_dict = await ai_service.generate_mvp_roadmap(cvp)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Synthesis failed: {str(e)}")
+        logger.error("Roadmap generation failed for team %d: %s", teamid, e)
+        raise HTTPException(status_code=500, detail="AI synthesis failed. Please try again.")
     
     # 3. Save Roadmap and Features
     # Check for existing roadmap to update or create new? 

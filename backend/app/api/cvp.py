@@ -1,4 +1,8 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -65,7 +69,8 @@ async def generate_team_cvp(
         cvp_generated_dict = await ai_service.generate_cvp(personas)
         cvp_generated = CVPCreate(**cvp_generated_dict)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Synthesis failed: {str(e)}")
+        logger.error("CVP generation failed for team %d: %s", teamid, e)
+        raise HTTPException(status_code=500, detail="AI synthesis failed. Please try again.")
     
     # 3. Save/Update CVP (Reuse logic from POST)
     query = select(CVPCanvas).where(CVPCanvas.teamid == teamid)

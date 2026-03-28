@@ -1,4 +1,8 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
@@ -56,7 +60,11 @@ async def send_project_message(
     project_context = await context_service.get_project_context(team_id)
     
     # 4. Get AI Response
-    ai_text = await ai_service.chat_with_project(project_context, request.content)
+    try:
+        ai_text = await ai_service.chat_with_project(project_context, request.content)
+    except Exception as e:
+        logger.error("Project chat failed for team %d session %d: %s", team_id, session_id, e)
+        raise HTTPException(status_code=500, detail="Failed to generate AI response. Please try again.")
     
     # 5. Save AI Message
     ai_msg = ProjectChatMessage(

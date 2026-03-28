@@ -1,4 +1,7 @@
+import logging
 from typing import List, Any
+
+logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +41,8 @@ async def generate_team_tasks(
         # However, .model_dump() usually works if fields are present.
         tasks_data = await ai_service.generate_project_tasks(roadmap)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+        logger.error("Task generation failed for team %d: %s", team_id, e)
+        raise HTTPException(status_code=500, detail="Task generation failed. Please try again.")
 
     if not tasks_data:
         raise HTTPException(status_code=500, detail="AI returned no tasks.")
@@ -119,9 +123,12 @@ async def delegate_task_to_nucleus(
     project_context = await context_service.get_project_context(task.team_id)
         
     # Delegate
-    success = await nucleus_service.delegate_task(task, project_context)
+    try:
+        success = await nucleus_service.delegate_task(task, project_context)
+    except Exception as e:
+        logger.error("Nucleus delegation failed for task %d: %s", task_id, e)
+        raise HTTPException(status_code=502, detail="Task delegation failed. Please try again.")
 
-    
     if success:
         task.status = TaskStatus.IN_PROGRESS # Or a new status "DELEGATED"
         task.updated_at = datetime.utcnow()

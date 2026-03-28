@@ -1,7 +1,8 @@
 import logging
 import traceback
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.database import init_db
 from app.models.persona import Persona # Ensure registration
@@ -26,6 +27,44 @@ async def unicode_decode_handler(request: Request, exc: UnicodeDecodeError):
         content={
             "error": "Request contains invalid character encoding. Use UTF-8.",
             "code": "ENCODING_ERROR",
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    code_map = {
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        409: "CONFLICT",
+        422: "VALIDATION_ERROR",
+        429: "RATE_LIMITED",
+        500: "INTERNAL_ERROR",
+        502: "BAD_GATEWAY",
+        503: "SERVICE_UNAVAILABLE",
+    }
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail,
+            "code": code_map.get(exc.status_code, f"HTTP_{exc.status_code}"),
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Request validation failed",
+            "code": "VALIDATION_ERROR",
+            "details": [
+                {"field": ".".join(str(loc) for loc in e.get("loc", [])), "message": e.get("msg", "")}
+                for e in exc.errors()
+            ],
         },
     )
 

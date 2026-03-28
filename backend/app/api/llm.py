@@ -1,4 +1,8 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
@@ -21,7 +25,11 @@ async def analyze_interview(
         raise HTTPException(status_code=404, detail="Interview not found")
 
     # Call LLM
-    insights = await ai_service.extract_anrum(interview.interview_notes)
+    try:
+        insights = await ai_service.extract_anrum(interview.interview_notes)
+    except Exception as e:
+        logger.error("Interview analysis failed for interview %d: %s", interview_id, e)
+        raise HTTPException(status_code=500, detail="Interview analysis failed. Please try again.")
     
     # Update DB
     # Ensure insights is a list of dicts compatible with JSONB

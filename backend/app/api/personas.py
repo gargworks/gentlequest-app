@@ -1,4 +1,7 @@
+import logging
 from typing import List
+
+logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,7 +87,7 @@ async def generate_personas(
              session.add(db_persona)
              saved_personas.append(db_persona)
         except Exception as e:
-            print(f"Skipping invalid persona data: {e}")
+            logger.warning("Skipping invalid persona data from LLM: %s", e)
             continue
             
     if saved_personas:
