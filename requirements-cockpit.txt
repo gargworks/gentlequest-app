@@ -1,7 +1,7 @@
 # Nuclear Cockpit Dependencies
 # Install with: pip install -r requirements-cockpit.txt
 
-streamlit>=1.28.0
-watchdog>=3.0.0
-filelock>=3.12.0
-plotly>=5.18.0
+streamlit>=1.55.0
+watchdog>=6.0.0
+filelock>=3.25.2
+plotly>=6.6.0
