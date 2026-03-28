@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+import logging
+import traceback
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from app.database import init_db
 from app.models.persona import Persona # Ensure registration
 from app.models.cvp import CVPCanvas # Ensure registration
@@ -10,7 +14,36 @@ from app.api import teams, llm, personas, cvp, roadmap, interviews, tasks, chat,
 
 from fastapi.middleware.cors import CORSMiddleware
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="IIP Module 6 API")
+
+
+@app.exception_handler(UnicodeDecodeError)
+async def unicode_decode_handler(request: Request, exc: UnicodeDecodeError):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": "Request contains invalid character encoding. Use UTF-8.",
+            "code": "ENCODING_ERROR",
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    try:
+        logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, traceback.format_exc())
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        logger.error("Unhandled exception on %s %s (traceback omitted: encoding error)", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "code": "INTERNAL_ERROR",
+        },
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
