@@ -295,27 +295,27 @@ class AIInsightsService:
             return []
 
     async def conduct_interview(
-        self, 
-        history: List[Dict[str, str]], 
+        self,
+        history: List[Dict[str, str]],
         user_message: str
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
         Conducts an interactive interview as a Design Researcher.
         Input: History of messages [{"role": "user/assistant", "content": "..."}]
-        Output: The AI's response text.
+        Output: Dict with "text" and "usage" (prompt_tokens, completion_tokens, total_tokens).
         """
         # Format history for context
         conversation_text = ""
         for msg in history:
             role = "Interviewer" if msg["role"] == "assistant" else "Participant"
             conversation_text += f"{role}: {msg['content']}\n"
-        
+
         conversation_text += f"Participant: {user_message}\n"
-        
+
         prompt = f"""
         You are an expert Design Researcher conducting an empathy interview.
         Your goal is to uncover the user's deep motivations, unmet needs, and mental models regarding their workflow/problem.
-        
+
         GUIDELINES:
         - Be empathetic and curious.
         - Ask one question at a time.
@@ -323,21 +323,26 @@ class AIInsightsService:
         - Keep responses concise (1-2 sentences).
         - Building rapport is key.
         - If the user says "Goodbye" or indicates they are done, wrap up politely.
-        
+
         CURRENT CONVERSATION:
         {conversation_text}
-        
+
         Interviewer Response:
         """
-        
+
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         try:
             response = await self.model.generate_content_async(prompt)
-            # Cleanup response
             text = response.text.replace("Interviewer:", "").strip()
-            return text
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
+                meta = response.usage_metadata
+                usage["prompt_tokens"] = getattr(meta, "prompt_token_count", 0) or 0
+                usage["completion_tokens"] = getattr(meta, "candidates_token_count", 0) or 0
+                usage["total_tokens"] = getattr(meta, "total_token_count", 0) or 0
+            return {"text": text, "usage": usage}
         except Exception as e:
             logger.error("llm_chat_failed", error=str(e))
-            return "I'm listening. Please tell me more."
+            return {"text": "I'm listening. Please tell me more.", "usage": usage}
 
     async def chat_with_project(
         self,
