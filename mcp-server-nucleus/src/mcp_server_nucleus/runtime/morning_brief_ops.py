@@ -235,7 +235,9 @@ def _retrieve_yesterday(brain: Path) -> Dict:
     if not events_path.exists():
         return {"events": [], "count": 0, "message": "No events logged yet."}
 
-    cutoff = datetime.now() - timedelta(hours=24)
+    # On Monday, look back to Friday (72h) to cover the weekend gap
+    lookback_hours = 72 if datetime.now().weekday() == 0 else 24
+    cutoff = datetime.now() - timedelta(hours=lookback_hours)
     recent = []
 
     with open(events_path, "r", encoding='utf-8') as f:
