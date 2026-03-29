@@ -9,7 +9,7 @@ from typing import List, Optional
 from datetime import datetime
 
 # Embedding model configuration
-EMBEDDING_MODEL = "models/gemini-embedding-001"  # Replaces deprecated text-embedding-004
+EMBEDDING_MODEL = "models/gemini-embedding-001"
 EMBEDDING_DIMENSION = 768  # Use output_dimensionality=768 to match pgvector column
 
 

@@ -44,7 +44,8 @@ TG_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7575125475")  # Your ID
 
 # Use database-backed state on production (Render), file-based locally
-USE_DB_STATE = os.getenv("RENDER", "false").lower() == "true"
+from backend.app.utils.is_production import is_production
+USE_DB_STATE = is_production()
 
 # Lazy import for database state (only when needed)
 _db_state_module = None

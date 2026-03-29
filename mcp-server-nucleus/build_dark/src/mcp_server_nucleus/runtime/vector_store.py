@@ -18,7 +18,7 @@ class VectorStore:
 
         if self.enabled:
             # Only initialize LLM if we are actually going to use it (requires API Key)
-            self.llm = DualEngineLLM(model_name="text-embedding-004")
+            self.llm = DualEngineLLM(model_name="gemini-embedding-001")
         else:
             self.llm = None
             logger.warning("⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.")

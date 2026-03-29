@@ -8,6 +8,7 @@ import sys
 import json
 import requests
 from datetime import datetime
+from backend.app.utils.is_production import is_production
 
 def test_environment_detection():
     """Test environment detection functionality"""
@@ -25,7 +26,7 @@ def test_environment_detection():
     print(f"Environment Variables: {json.dumps(env_vars, indent=2)}")
     
     # Detect environment
-    if os.environ.get('RENDER'):
+    if is_production():
         detected_env = 'production'
     elif os.environ.get('DOCKER_ENV'):
         detected_env = 'docker'

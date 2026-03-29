@@ -119,7 +119,7 @@ _configured_key_idx: Optional[int] = None
 
 # Timeout for LLM generate_content() calls (seconds). Prevents thread pool
 # exhaustion when Gemini hangs.
-_LLM_TIMEOUT = 60
+_LLM_TIMEOUT = 30
 _LLM_REQUEST_OPTIONS = {"timeout": _LLM_TIMEOUT}
 
 # ── Exponential backoff config ──
@@ -353,7 +353,7 @@ def get_gemini_response(
                         try:
                             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
                             llm = DualEngineLLM(model_name, api_key=api_key)
-                            response = llm.generate_content(prompt)
+                            response = llm.generate_content(prompt, request_options=_LLM_REQUEST_OPTIONS)
                         except ImportError:
                             # Fallback to native google.generativeai when mcp_server_nucleus unavailable
                             import google.generativeai as genai
@@ -403,7 +403,17 @@ Please remember that these intense feelings can pass, and there is hope for thin
                         _last_good_model[key_idx] = model_name
 
                         return cleaned_response
+                    except (TimeoutError, OSError) as e_timeout:
+                        _debug(f"timeout model={model_name} err={e_timeout}")
+                        last_error = e_timeout
+                        # Timeout → try next model, don't rotate key
+                        continue
                     except Exception as e_model:
+                        # Check for DeadlineExceeded from google.api_core
+                        if "deadline" in str(e_model).lower() or "timeout" in str(e_model).lower():
+                            _debug(f"timeout model={model_name} err={e_model}")
+                            last_error = e_model
+                            continue
                         rotate = _should_rotate_key(e_model)
                         _debug(
                             f"model_error model={model_name} rotate={rotate} err={e_model}"
@@ -446,8 +456,9 @@ Please remember that these intense feelings can pass, and there is hope for thin
             time.sleep(random.uniform(0.05, 0.2))
 
         # If all keys/models failed
-        if last_error:
-            return "I'm having trouble connecting to my AI services. Please try again in a moment."
+        err_str = str(last_error).lower() if last_error else ""
+        if last_error and ("timeout" in err_str or "deadline" in err_str):
+            return "My response is taking longer than usual. Please try again in a moment."
         return "I'm having trouble connecting to my AI services. Please try again in a moment."
 
     except Exception as e:
@@ -634,7 +645,13 @@ DO NOT mention crisis hotlines - system handles that separately."""
             model = _get_cached_model(key_idx, _model_name, system_prompt,
                                       tools=WELLNESS_TOOLS_CONFIG)
             response = model.generate_content(full_prompt, request_options=_LLM_REQUEST_OPTIONS)
+        except (TimeoutError, OSError) as _timeout_err:
+            _debug(f"LLM timeout: {_timeout_err}")
+            return "My response is taking longer than usual. Please try again in a moment.", []
         except Exception as _cache_err:
+            if "deadline" in str(_cache_err).lower() or "timeout" in str(_cache_err).lower():
+                _debug(f"LLM timeout: {_cache_err}")
+                return "My response is taking longer than usual. Please try again in a moment.", []
             _debug(f"Cached model failed ({_cache_err}), falling back to fresh")
             # Fallback: fresh model per-request (original behavior)
             try:
@@ -647,7 +664,13 @@ DO NOT mention crisis hotlines - system handles that separately."""
                 response = model.generate_content(full_prompt, request_options=_LLM_REQUEST_OPTIONS)
                 # Evict bad cache entry so next request retries cache
                 _model_cache.pop((key_idx, _model_name), None)
+            except (TimeoutError, OSError) as _timeout_err:
+                _debug(f"LLM timeout (fallback): {_timeout_err}")
+                return "My response is taking longer than usual. Please try again in a moment.", []
             except Exception as e:
+                if "deadline" in str(e).lower() or "timeout" in str(e).lower():
+                    _debug(f"LLM timeout (fallback): {e}")
+                    return "My response is taking longer than usual. Please try again in a moment.", []
                 _debug(f"LLM call failed: {e}")
                 # Fallback to text-only if tools fail (Safety)
                 response = get_gemini_response(message, mode, session_id, risk_level)

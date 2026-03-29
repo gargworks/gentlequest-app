@@ -18,8 +18,8 @@ if "asyncpg" in DATABASE_URL:
      DATABASE_URL = DATABASE_URL.replace("asyncpg", "psycopg")
 
 # Production SSL and Timeout handling (Mirrors main app logic)
-ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
-if ENVIRONMENT == "production" or os.getenv("RENDER"):
+from backend.app.utils.is_production import is_production
+if is_production():
     try:
         parsed = urlparse(DATABASE_URL)
         if parsed.scheme.startswith("postgresql"):
@@ -49,7 +49,7 @@ try:
 except Exception:
     pass
 
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(DATABASE_URL, echo=not is_production(), future=True)
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(
