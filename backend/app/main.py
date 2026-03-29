@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="IIP Module 6 API")
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.exception_handler(UnicodeDecodeError)
 async def unicode_decode_handler(request: Request, exc: UnicodeDecodeError):
     return JSONResponse(
@@ -97,7 +102,10 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    try:
+        await init_db()
+    except Exception as e:
+        logger.warning("DB init failed (app still serving): %s", e)
 
 app.include_router(teams.router, prefix="/api/v1", tags=["teams"])
 app.include_router(interviews.router, prefix="/api/v1", tags=["interviews"])

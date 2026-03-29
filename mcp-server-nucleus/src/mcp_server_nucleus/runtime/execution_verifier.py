@@ -365,12 +365,6 @@ def _tier2_import_check(py_files: list[str], project_root: Path,
     """Try importing each changed Python module."""
     signals = []
     t0 = time.monotonic()
-    python = python_path or sys.executable
-
-    # Build PYTHONPATH — include project root so imports resolve
-    pythonpath = str(project_root) + ":" + ":".join(sys.path)
-    env = dict(__import__("os").environ)
-    env["PYTHONPATH"] = pythonpath
 
     for relpath in py_files[:5]:  # cap at 5 files
         if time.monotonic() - t0 > budget_s:
@@ -386,16 +380,34 @@ def _tier2_import_check(py_files: list[str], project_root: Path,
         if "-" in relpath:
             continue
 
-        # Convert path to module: backend/app/api/chat.py → backend.app.api.chat
-        module = relpath.replace("/", ".").replace("\\", ".")
-        if module.endswith(".py"):
-            module = module[:-3]
+        # Resolve Python per-file: explicit override > nearest venv > system
+        python = python_path or _find_venv_python(relpath, project_root) or sys.executable
+
+        # Build per-file environment:
+        # For subproject files (e.g. backend/app/main.py), set cwd to subproject
+        # and strip prefix from module — matches how code runs in production
+        parts = Path(relpath).parts
+        env = dict(__import__("os").environ)
+        if len(parts) > 2:
+            cwd = str(project_root / parts[0])
+            # Strip subproject prefix: backend/app/main.py → app.main
+            subrel = str(Path(*parts[1:]))
+            module = subrel.replace("/", ".").replace("\\", ".")
+            if module.endswith(".py"):
+                module = module[:-3]
+            env["PYTHONPATH"] = cwd + ":" + str(project_root)
+        else:
+            cwd = str(project_root)
+            module = relpath.replace("/", ".").replace("\\", ".")
+            if module.endswith(".py"):
+                module = module[:-3]
+            env["PYTHONPATH"] = str(project_root)
 
         cmd = [python, "-c", f"import {module}"]
         try:
             r = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=5,
-                cwd=str(project_root), env=env,
+                cwd=cwd, env=env,
             )
             signals.append({
                 "tier": 2,
@@ -462,9 +474,9 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
         if time.monotonic() - t0 > budget_s:
             break
 
-        python = python_path or sys.executable
+        python = python_path or _find_venv_python(test_file, project_root) or sys.executable
         cmd = [python, "-m", "pytest", test_file, "-x",
-               "-q", "--no-header"]
+               "-q", "--no-header", "-p", "no:timeout"]
         try:
             r = subprocess.run(
                 cmd, capture_output=True, text=True,
@@ -524,11 +536,18 @@ def _tier4_runtime_check(checks: list[dict], project_root: Path,
             continue
 
         # http_health or http_json — need to start a server
-        cmd = check.get("cmd", [])
+        cmd = list(check.get("cmd", []))
         if not cmd:
             continue
 
-        cwd = str(project_root / check.get("cwd", "")) if check.get("cwd") else str(project_root)
+        # Resolve bare "python" to nearest venv Python
+        cwd_rel = check.get("cwd", "")
+        if cmd[0] in ("python", "python3"):
+            resolved = _find_venv_python(cwd_rel, project_root) if cwd_rel else None
+            if resolved:
+                cmd[0] = resolved
+
+        cwd = str(project_root / cwd_rel) if cwd_rel else str(project_root)
         startup_wait = min(check.get("startup_wait_s", 8), remaining)
         url_path = check.get("url", "/health")
         expect_status = check.get("expect_status", 200)
@@ -540,6 +559,8 @@ def _tier4_runtime_check(checks: list[dict], project_root: Path,
             # PYTHONUNBUFFERED ensures startup message isn't stuck in buffer
             import os as _os
             popen_env = {**_os.environ, "PYTHONUNBUFFERED": "1"}
+            if cwd_rel:
+                popen_env["PYTHONPATH"] = cwd + ":" + str(project_root)
             proc = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 cwd=cwd, text=True, env=popen_env,
@@ -619,9 +640,12 @@ def _poll_for_port(proc: subprocess.Popen, timeout_s: float) -> int | None:
         except Exception:
             time.sleep(wait)
 
-        # Look for port patterns: "Uvicorn running on http://127.0.0.1:PORT"
-        # or "Serving HTTP on :: port PORT" or "Listening on 0.0.0.0:PORT"
-        m = re.search(r'(?:port\s+|:\s*)(\d{4,5})\b', collected, re.IGNORECASE)
+        # Look for HTTP server port: "Uvicorn running on http://127.0.0.1:PORT"
+        # Match http(s)://host:PORT specifically to avoid DB connection strings
+        m = re.search(r'https?://[\w.]+:(\d{4,5})\b', collected, re.IGNORECASE)
+        if not m:
+            # Fallback: "Serving HTTP on :: port PORT"
+            m = re.search(r'(?:serving|listening)\s+.*port\s+(\d{4,5})\b', collected, re.IGNORECASE)
         if m:
             return int(m.group(1))
 
@@ -757,6 +781,23 @@ def _check_json(fpath: Path, relpath: str) -> dict:
     except Exception as e:
         return {"check": "json_parse", "file": relpath,
                 "passed": False, "error": str(e)[:200]}
+
+
+def _find_venv_python(relpath: str, project_root: Path) -> str | None:
+    """Walk up from file's directory to project_root looking for a venv Python."""
+    fpath = (project_root / relpath).resolve()
+    start = fpath.parent if fpath.is_file() else fpath
+    root = project_root.resolve()
+    current = start
+    while True:
+        for venv_name in (".venv", "venv"):
+            candidate = current / venv_name / "bin" / "python"
+            if candidate.exists():
+                return str(candidate)
+        if current == root or current == current.parent:
+            break
+        current = current.parent
+    return None
 
 
 def _check_yaml(fpath: Path, relpath: str) -> dict:
