@@ -17,6 +17,8 @@ STATE_PATH = DRIVER_DIR / "state.json"
 STOP_FILE = DRIVER_DIR / "stop"
 ALERTS_PATH = DRIVER_DIR / "alerts.jsonl"
 RUNS_PATH = DRIVER_DIR / "runs.jsonl"
+VERIFICATION_LOG_PATH = DRIVER_DIR / "verification_log.jsonl"
+MANIFEST_PATH = DRIVER_DIR / "session_manifest.json"
 
 # ── Default config (authoritative source) ─────────────────────
 DEFAULT_CONFIG = {
@@ -28,6 +30,25 @@ DEFAULT_CONFIG = {
     "claude_effort": "max",
     "claude_model": "claude-opus-4-6",
     "cost_cap_tokens": 500000,
+    # Frontier 1: GROUND — execution verification
+    "execution_verification_enabled": True,
+    "execution_verification_timeout_s": 30,
+    "execution_verification_tiers": [0, 1, 2, 3],
+    "execution_verification_hard_gate": False,
+    # Tier 4: runtime checks (server startup + endpoint validation)
+    "execution_verification_runtime_checks": [
+        {
+            "type": "http_health",
+            "cmd": ["python", "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "0"],
+            "url": "/health",
+            "expect_status": 200,
+            "startup_wait_s": 8,
+            "cwd": "backend",
+        }
+    ],
+    # Frontier 3: COMPOUND — calibration DPO from verification failures
+    "calibration_dpo_enabled": True,
+    "calibration_window_size": 50,
     "trust_ladder": {
         "current_phase": 1,
         "thresholds": {

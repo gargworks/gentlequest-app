@@ -4087,6 +4087,41 @@ def main():
     config_parser.add_argument('--telemetry', action='store_true', help='Opt in to anonymous usage telemetry')
     config_parser.add_argument('--telemetry-endpoint', type=str, default=None, help='Set anonymous telemetry endpoint')
 
+    # ============================================================
+    # PROJECT PURPLE 2: One Turn of the Key
+    # ============================================================
+    start_parser = subparsers.add_parser('start', help='Start the Nucleus daemon — one command, zero crons')
+    start_parser.add_argument('--foreground', '--fg', action='store_true', help='Run in foreground (no daemonize)')
+    start_parser.add_argument('--no-compound', action='store_true', help='Disable auto-compound triggering')
+    start_parser.add_argument('--no-cron', action='store_true', help='Disable scheduled jobs (debug)')
+
+    stop_parser = subparsers.add_parser('stop', help='Gracefully stop the Nucleus daemon')
+
+    drive_parser = subparsers.add_parser('drive', help='Manually trigger the compound intelligence loop')
+    drive_parser.add_argument('--compound', type=int, default=5, help='Sparring rounds (default: 5)')
+    drive_parser.add_argument('--branch', default='tb/nucleus-work', help='Git branch for driver')
+
+    train_parser = subparsers.add_parser('train', help='Manually trigger training pipeline')
+    train_parser.add_argument('--refresh', action='store_true', help='Run full training data refresh')
+    train_parser.add_argument('--check', action='store_true', help='Check retrain readiness only')
+
+    # Frontier 2: ALIGN — Human review of escalated tasks
+    review_parser = subparsers.add_parser('review', help='Review escalated tasks (Frontier 2: ALIGN)')
+    review_parser.add_argument('task_id', nargs='?', help='Task ID to review (omit to list all blocked)')
+    review_parser.add_argument('--accept', action='store_true', help='Accept task output (platinum SFT)')
+    review_parser.add_argument('--reject', type=str, metavar='REASON', help='Reject with reason (platinum DPO)')
+    review_parser.add_argument('--correct', type=str, metavar='CORRECTION', help='Provide correction (platinum DPO)')
+    review_parser.add_argument('--direction', type=str, metavar='NOTE', help='Strategic redirect (logged)')
+
+    # Frontier 1: GROUND — Execution verification (kills Gödel)
+    verify_parser = subparsers.add_parser('verify', help='GROUND — tiered execution verification')
+    verify_parser.add_argument('--project-root', type=str, help='Project root (auto-detected if omitted)')
+    verify_parser.add_argument('--python-path', type=str, help='Python interpreter (auto-detected if omitted)')
+    verify_parser.add_argument('--tiers', type=str, default='0,1,2,3', help='Comma-separated tiers: 0=diff, 1=syntax, 2=imports, 3=tests, 4=runtime (default: 0,1,2,3)')
+    verify_parser.add_argument('--timeout', type=int, default=30, help='Total time budget in seconds (default: 30)')
+    verify_parser.add_argument('--pre-head', type=str, help='Git ref before session started')
+    verify_parser.add_argument('--json', dest='json_output', action='store_true', help='Output raw JSON receipt')
+
     args = parser.parse_args()
     cli_command = args.cli_command
 
@@ -4287,6 +4322,25 @@ def main():
         elif cli_command == 'config':
             handle_config_command(args)
 
+        # ── Project Purple 2: Daemon + Drive + Train ──────────────
+        elif cli_command == 'start':
+            handle_start_command(args)
+
+        elif cli_command == 'stop':
+            handle_stop_command(args)
+
+        elif cli_command == 'drive':
+            handle_drive_command(args)
+
+        elif cli_command == 'train':
+            handle_train_command(args)
+
+        elif cli_command == 'review':
+            handle_review_command(args)
+
+        elif cli_command == 'verify':
+            handle_verify_command(args)
+
         elif cli_command == 'schema':
             handle_schema_command(args)
 
@@ -4372,6 +4426,220 @@ def main():
                 print("[self-heal] ⚠ This error needs human review.", file=sys.stderr)
             print(f"[self-heal] Incident logged: {heal.get('error_id', 'unknown')}", file=sys.stderr)
         sys.exit(err.get('exit_code', EXIT_ERROR))
+
+
+# ════════════════════════════════════════════════════════════════
+# PROJECT PURPLE 2 HANDLERS — "One Turn of the Key"
+# ════════════════════════════════════════════════════════════════
+
+def handle_start_command(args):
+    """nucleus start — launch the daemon with scheduler."""
+    from .runtime.daemon import run_daemon
+
+    no_compound = getattr(args, 'no_compound', False)
+    no_cron = getattr(args, 'no_cron', False)
+    fg = getattr(args, 'foreground', False)
+
+    if not fg:
+        # Daemonize: fork and run in background
+        pid = os.fork()
+        if pid > 0:
+            print(f"Nucleus daemon started (PID {pid})")
+            print(f"  Logs: .brain/logs/daemon.log")
+            print(f"  Stop: nucleus stop")
+            sys.exit(0)
+        # Child process — detach
+        os.setsid()
+        sys.stdin = open(os.devnull)
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
+
+    run_daemon(no_compound=no_compound, no_cron=no_cron)
+
+
+def handle_stop_command(args):
+    """nucleus stop — graceful shutdown via PID file."""
+    from .runtime.common import get_brain_path
+    brain_path = get_brain_path()
+    pid_path = brain_path / "daemon" / "daemon.pid"
+
+    if not pid_path.exists():
+        print("No daemon running (no PID file found)")
+        sys.exit(1)
+
+    try:
+        pid = int(pid_path.read_text().strip())
+        os.kill(pid, signal.SIGTERM)
+        print(f"Sent SIGTERM to daemon (PID {pid})")
+    except ProcessLookupError:
+        print(f"Daemon not running (stale PID file). Cleaning up.")
+        pid_path.unlink(missing_ok=True)
+    except Exception as e:
+        print(f"Failed to stop daemon: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def handle_drive_command(args):
+    """nucleus drive — manual compound trigger."""
+    import asyncio as _asyncio
+    from .runtime.jobs.driver_job import run_compound
+
+    rounds = getattr(args, 'compound', 5)
+    branch = getattr(args, 'branch', 'tb/nucleus-work')
+
+    print(f"Triggering compound mode: {rounds} rounds on {branch}")
+    result = _asyncio.run(run_compound(branch=branch, rounds=rounds))
+
+    if result.get("ok"):
+        print("Compound mode completed successfully.")
+    else:
+        print(f"Compound mode failed: {result.get('error')}", file=sys.stderr)
+        sys.exit(1)
+
+
+def handle_train_command(args):
+    """nucleus train — manual training pipeline trigger."""
+    import asyncio as _asyncio
+
+    if getattr(args, 'check', False):
+        from .runtime.jobs.training_refresh_job import check_readiness
+        result = _asyncio.run(check_readiness())
+        if result.get("ok"):
+            readiness = result.get("readiness", {})
+            if readiness.get("ready"):
+                print(f"RETRAIN RECOMMENDED: {readiness.get('reason')}")
+            else:
+                print(f"Not ready yet. {readiness.get('reason', '')}")
+        else:
+            print(f"Check failed: {result.get('error')}", file=sys.stderr)
+            sys.exit(1)
+    elif getattr(args, 'refresh', False):
+        from .runtime.jobs.training_refresh_job import run_refresh
+        print("Running training data refresh pipeline...")
+        result = _asyncio.run(run_refresh(index=True))
+        if result.get("ok"):
+            print("Training refresh completed.")
+            readiness = result.get("readiness", {})
+            if readiness and readiness.get("ready"):
+                print(f"RETRAIN RECOMMENDED: {readiness.get('reason')}")
+        else:
+            print(f"Refresh failed: {result.get('error')}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print("Usage: nucleus train --refresh | nucleus train --check")
+        sys.exit(1)
+
+
+def handle_review_command(args):
+    """nucleus review — Frontier 2: ALIGN. Human review of escalated tasks."""
+    from pathlib import Path as _Path
+    verdicts_path = _Path.cwd() / ".brain" / "driver" / "human_verdicts.jsonl"
+
+    if not getattr(args, 'task_id', None):
+        if not verdicts_path.exists():
+            print("No escalated tasks found.")
+            return
+        pending = []
+        for line in verdicts_path.read_text().strip().splitlines():
+            try:
+                entry = json.loads(line)
+                if entry.get("verdict") == "pending":
+                    pending.append(entry)
+            except json.JSONDecodeError:
+                pass
+        if not pending:
+            print("No pending reviews.")
+            return
+        print(f"{len(pending)} task(s) pending review:\n")
+        for e in pending:
+            tid = e.get("task_id", "?")
+            desc = e.get("task_description", "")[:80]
+            ts = e.get("ts", "")
+            print(f"  {tid}  {ts}  {desc}")
+        return
+
+    task_id = args.task_id
+    if not verdicts_path.exists():
+        print("No verdicts file found.")
+        sys.exit(1)
+
+    lines = verdicts_path.read_text().strip().splitlines()
+    updated = False
+    new_lines = []
+    for line in lines:
+        try:
+            entry = json.loads(line)
+            if entry.get("task_id") == task_id and entry.get("verdict") == "pending":
+                if getattr(args, 'accept', False):
+                    entry["verdict"] = "accepted"
+                    entry["human_notes"] = "Accepted via nucleus review"
+                    updated = True
+                elif getattr(args, 'reject', None):
+                    entry["verdict"] = "rejected"
+                    entry["human_notes"] = args.reject
+                    updated = True
+                elif getattr(args, 'correct', None):
+                    entry["verdict"] = "corrected"
+                    entry["correction"] = args.correct
+                    updated = True
+                elif getattr(args, 'direction', None):
+                    entry["verdict"] = "redirected"
+                    entry["human_notes"] = args.direction
+                    updated = True
+            new_lines.append(json.dumps(entry, default=str))
+        except json.JSONDecodeError:
+            new_lines.append(line)
+
+    if updated:
+        verdicts_path.write_text("\n".join(new_lines) + "\n")
+        print(f"Task {task_id} updated.")
+    else:
+        print(f"Task {task_id} not found or not pending.")
+        sys.exit(1)
+
+
+def handle_verify_command(args):
+    """nucleus verify — Frontier 1: GROUND. Execution verification."""
+    from .runtime.ground import run_ground
+
+    tiers = [int(t.strip()) for t in args.tiers.split(",")]
+    receipt = run_ground(
+        project_root=args.project_root,
+        python_path=args.python_path,
+        tiers=tiers,
+        timeout_s=args.timeout,
+        pre_head=args.pre_head,
+    )
+
+    if args.json_output:
+        print(json.dumps(receipt, indent=2, default=str))
+        return
+
+    verified = receipt.get("verified", False)
+    tier_reached = receipt.get("tier_reached", -1)
+    duration = receipt.get("duration_s", 0)
+    status = "PASS" if verified else "FAIL"
+
+    print(f"GROUND: {status} (tier {tier_reached}, {duration}s)")
+    for sig in receipt.get("signals", []):
+        passed = sig.get("passed", False)
+        marker = "[+]" if passed else "[x]"
+        check = sig.get("check", "?")
+        target = sig.get("file", sig.get("module", ""))
+        line = f"  {marker} T{sig.get('tier', '?')} {check}"
+        if target:
+            line += f" {target}"
+        err = sig.get("error", "")
+        if err and not passed:
+            line += f" -- {err[:80]}"
+        print(line)
+
+    python_used = receipt.get("python_used", "")
+    if python_used:
+        print(f"  python: {python_used}")
+
+    if not verified:
+        sys.exit(1)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -6519,6 +6787,9 @@ def handle_status_command(args):
         else:
             output = _format_satellite_cli(view)
             print(output)
+
+            # Append daemon/scheduler status if daemon is running
+            _show_daemon_status(brain_path)
     except Exception as e:
         if as_json:
             import json as _json
@@ -6531,6 +6802,46 @@ def handle_status_command(args):
 
 
 
+
+
+def _show_daemon_status(brain_path):
+    """Show daemon + scheduler status if daemon is running."""
+    pid_path = brain_path / "daemon" / "daemon.pid"
+    state_path = brain_path / "daemon" / "scheduler_state.json"
+
+    if not pid_path.exists():
+        print("\n  Daemon: not running")
+        print("  Start:  nucleus start")
+        return
+
+    try:
+        pid = int(pid_path.read_text().strip())
+        os.kill(pid, 0)  # Check if alive
+        print(f"\n  Daemon: running (PID {pid})")
+    except (ProcessLookupError, ValueError):
+        print("\n  Daemon: not running (stale PID)")
+        return
+
+    if state_path.exists():
+        try:
+            state = json.loads(state_path.read_text())
+            running = [k for k, v in state.items() if v.get("last_result") == "never"]
+            completed = [k for k, v in state.items() if v.get("last_result") not in ("never", None)]
+            print(f"  Jobs: {len(state)} registered, {len(completed)} have run")
+            # Show next 3 due jobs
+            from .runtime.scheduler import NucleusScheduler
+            sched = NucleusScheduler(brain_path)
+            # Restore just for display
+            for name, info in state.items():
+                from .runtime.scheduler import ScheduledJob, ScheduleType
+                # We don't have full job info, just show last_run times
+                lr = info.get("last_run")
+                result = info.get("last_result", "?")
+                dur = info.get("last_duration", 0)
+                if lr:
+                    print(f"    {name:<22} last: {lr[:16]}  ({result}, {dur:.0f}s)")
+        except Exception:
+            pass
 
 
 def handle_schema_command(args):
