@@ -913,6 +913,18 @@ def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict
 
         task_desc = f"{task.get('title', '')} — {task.get('description', '')}"
 
+        # Load verification stats for calibration context
+        _cal_window = config.get("calibration_window_size", 50)
+        _vstats = load_verification_stats(_cal_window)
+        _cal_block = ""
+        if _vstats["total"] > 0:
+            _cal_block = (
+                f"\nCALIBRATION: In last {_vstats['total']} tasks, GROUND verification passed "
+                f"{_vstats['accuracy']:.0%} of the time. {_vstats['calibration_dpo_count']} calibration "
+                f"DPO pairs were generated from false \"done\" declarations.\n"
+                f"Penalize overcalibrated confidence. TB should learn honest uncertainty.\n"
+            )
+
         git_diff = executor_result.get("git_diff", "")
         eval_prompt = f"""Score Third Brother's instruction. DO NOT read any files.
 
@@ -925,7 +937,7 @@ TB REVIEW VERDICT: {review.get('verdict', '?')} — {review.get('reason', '')[:2
 EXECUTOR RESULT: {str(executor_result.get('result', ''))[:500]}
 
 GIT DIFF: {git_diff[:500]}
-
+{_cal_block}
 Reply with ONLY this JSON:
 {{"score": 1-5, "hallucinations": ["items"], "confidence_correct": true/false, "reason": "one sentence", "correction": "DO: ...\\nWHERE: ...\\nDONT TOUCH: ...\\nVERIFY: ...\\nCONFIDENCE: ..."}}"""
 
@@ -962,6 +974,7 @@ Reply with ONLY this JSON:
 
         score = eval_data.get("score", 0)
         correction = eval_data.get("correction", "")
+        confidence_correct = eval_data.get("confidence_correct")
 
         sys_msg = ("You are Third Brother, project manager for the Nucleus codebase. "
                    "When given a task, write a short, actionable instruction for Claude Code "
@@ -982,6 +995,7 @@ Reply with ONLY this JSON:
                     "source": "tb_sparring_live",
                     "task_id": task.get("id", ""),
                     "score": score,
+                    "confidence_correct": confidence_correct,
                     "ts": datetime.now().isoformat(),
                 }
             }
@@ -1027,7 +1041,7 @@ EXECUTOR RESULT: {str(executor_result.get('result', ''))[:500]}
 GIT DIFF: {git_diff[:500]}
 
 TB REVIEW: {tb_review_text}
-
+{_cal_block}
 Was the review correct? Did TB catch real issues or rubber-stamp?
 Reply with ONLY this JSON:
 {{"review_score": 1-5, "verdict_correct": true, "should_be": "ACCEPT/DEEPEN/ESCALATE", "reason": "one sentence", "better_review": "VERDICT: ...\\nREASON: ...\\nNOTES: ..."}}"""
@@ -1062,6 +1076,7 @@ Reply with ONLY this JSON:
                     if rd:
                         review_score = rd.get("review_score", 0)
                         better_review = rd.get("better_review", "")
+                        verdict_correct = rd.get("verdict_correct")
 
                         review_sys = ("You are Third Brother, reviewing work done by Claude Code. "
                                       "Respond with VERDICT, REASON, and NOTES.")
@@ -1082,6 +1097,7 @@ Reply with ONLY this JSON:
                                     "source": "tb_review_sparring",
                                     "task_id": task.get("id", ""),
                                     "review_score": review_score,
+                                    "verdict_correct": verdict_correct,
                                     "category": "review_quality",
                                     "ts": datetime.now().isoformat(),
                                 }
@@ -1858,6 +1874,50 @@ def load_alerts() -> List[Dict]:
     return entries
 
 
+def load_verification_stats(window_size: int = 50) -> dict:
+    """Compute rolling verification accuracy from verification_log.jsonl."""
+    entries = []
+    if VERIFICATION_LOG_PATH.exists():
+        for line in VERIFICATION_LOG_PATH.read_text().strip().split('\n'):
+            if line.strip():
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
+
+    window = entries[-window_size:] if entries else []
+    total = len(window)
+    verified_true = sum(1 for e in window if e.get("verified"))
+    verified_false = total - verified_true
+    accuracy = verified_true / total if total else 0.0
+
+    recent_failures = [
+        {"task_id": e.get("task_id", ""), "tiers_failed": e.get("tiers_failed", []), "ts": e.get("ts", "")}
+        for e in window if not e.get("verified")
+    ][-5:]  # last 5 failures
+
+    # Count calibration DPO pairs in window (written to sparring_dpo.jsonl with source=calibration_dpo)
+    calibration_dpo_count = 0
+    if SPARRING_DPO_PATH.exists():
+        for line in SPARRING_DPO_PATH.read_text().strip().split('\n'):
+            if line.strip():
+                try:
+                    entry = json.loads(line)
+                    if entry.get("metadata", {}).get("source") == "calibration_dpo":
+                        calibration_dpo_count += 1
+                except json.JSONDecodeError:
+                    pass
+
+    return {
+        "total": total,
+        "verified_true": verified_true,
+        "verified_false": verified_false,
+        "accuracy": round(accuracy, 3),
+        "recent_failures": recent_failures,
+        "calibration_dpo_count": calibration_dpo_count,
+    }
+
+
 def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
     """Evaluate trust ladder and return (current_phase, new_phase, reason).
 
@@ -1894,6 +1954,15 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
             if new_phase != current_phase:
                 return current_phase, new_phase, f"{consec_fail_limit} consecutive failures"
 
+    # Verification accuracy demotion: if accuracy < 60%, demote regardless
+    _vwindow = config.get("calibration_window_size", 50)
+    _vstats = load_verification_stats(_vwindow)
+    if _vstats["total"] >= 5 and _vstats["accuracy"] < 0.60 and current_phase > 1:
+        new_phase = max(1, current_phase - 1)
+        return current_phase, new_phase, (
+            f"verification accuracy {_vstats['accuracy']:.0%} < 60% "
+            f"({_vstats['verified_false']}/{_vstats['total']} failures)")
+
     # ── PROMOTION checks ──
     # Non-actionable outcomes (infrastructure issues, not task failures)
     _NON_ACTIONABLE = {"session_exhausted", "timeout", "session_busy", "completed_no_pr"}
@@ -1922,7 +1991,11 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
             denom = len(actionable) or 1
             ratio = accepted / denom
             if ratio >= acceptance_ratio:
-                return current_phase, 3, f"Phase 2->3: {accepted}/{denom} ({ratio:.0%} >= {acceptance_ratio:.0%})"
+                # Gate: verification accuracy must be >= 80% for Phase 2->3
+                if _vstats["total"] >= 5 and _vstats["accuracy"] < 0.80:
+                    pass  # block promotion — verification accuracy too low
+                else:
+                    return current_phase, 3, f"Phase 2->3: {accepted}/{denom} ({ratio:.0%} >= {acceptance_ratio:.0%}), verify={_vstats['accuracy']:.0%}"
 
     elif current_phase == 3:
         cfg = thresholds.get("phase_3_to_4", {})
@@ -1935,7 +2008,11 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
                 if a.get("ts", "") >= earliest_ts
             ]
             if not critical_in_window:
-                return current_phase, 4, f"Phase 3->4: {consec_needed} runs, 0 CRITICALs"
+                # Gate: verification accuracy must be >= 90% for Phase 3->4
+                if _vstats["total"] >= 5 and _vstats["accuracy"] < 0.90:
+                    pass  # block promotion — verification accuracy too low
+                else:
+                    return current_phase, 4, f"Phase 3->4: {consec_needed} runs, 0 CRITICALs, verify={_vstats['accuracy']:.0%}"
 
     return current_phase, current_phase, "no phase change"
 
