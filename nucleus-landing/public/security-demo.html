@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nucleus Agentic Hypervisor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    padding: 40px;
+  }
+
+  .container {
+    width: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .header-bar {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid #2a2a4a;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-icon { font-size: 22px; }
+
+  .header-title {
+    color: #00f5ff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-badge {
+    background: rgba(255, 59, 48, 0.15);
+    border: 1px solid rgba(255, 59, 48, 0.4);
+    color: #ff3b30;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    animation: pulse-badge 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .terminal {
+    background: #0d0d14;
+    border: 1px solid #2a2a4a;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 28px 28px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .terminal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #2a2a4a, transparent);
+  }
+
+  .log-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 6px;
+    line-height: 1.7;
+    font-size: 13.5px;
+  }
+
+  .timestamp {
+    color: #555577;
+    font-size: 12px;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 70px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .tag-agent {
+    background: rgba(0, 245, 255, 0.1);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.2);
+  }
+
+  .tag-hyper {
+    background: rgba(255, 214, 10, 0.1);
+    color: #ffd60a;
+    border: 1px solid rgba(255, 214, 10, 0.2);
+  }
+
+  .tag-block {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    animation: flash-tag 1s ease-in-out 3;
+  }
+
+  .tag-govern {
+    background: rgba(50, 215, 75, 0.1);
+    color: #32d74b;
+    border: 1px solid rgba(50, 215, 75, 0.2);
+  }
+
+  @keyframes flash-tag {
+    0%, 100% { background: rgba(255, 59, 48, 0.15); }
+    50% { background: rgba(255, 59, 48, 0.35); }
+  }
+
+  .content { color: #b0b0cc; }
+  .content-agent { color: #8888aa; }
+  .content-block { color: #ff3b30; font-weight: 700; }
+  .content-govern { color: #32d74b; }
+
+  .highlight-path {
+    color: #ff6b6b;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 107, 107, 0.4);
+  }
+
+  .highlight-safe { color: #32d74b; }
+  .highlight-cyan { color: #00f5ff; }
+
+  .divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #ff3b30, transparent);
+    margin: 14px 0;
+    opacity: 0.5;
+  }
+
+  .divider-subtle {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #2a2a4a, transparent);
+    opacity: 0.3;
+    margin: 8px 0;
+  }
+
+  .block-banner {
+    background: linear-gradient(135deg, rgba(255, 59, 48, 0.08) 0%, rgba(255, 59, 48, 0.02) 100%);
+    border: 1px solid rgba(255, 59, 48, 0.25);
+    border-left: 3px solid #ff3b30;
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .block-banner-title {
+    color: #ff3b30;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .block-banner-detail {
+    color: #cc8888;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .block-banner-detail span {
+    color: #ff6b6b;
+    font-weight: 700;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #1a1a2e;
+  }
+
+  .footer-left {
+    color: #32d74b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .footer-right {
+    color: #555577;
+    font-size: 11px;
+  }
+
+  .footer-right a {
+    color: #00f5ff;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header-bar">
+    <div class="header-left">
+      <span class="header-icon">🛡️</span>
+      <span class="header-title">Nucleus Agentic Hypervisor</span>
+    </div>
+    <span class="header-badge">INTENTION MISMATCH DETECTED</span>
+  </div>
+
+  <div class="terminal">
+    <div class="log-line">
+      <span class="timestamp">02:14:07</span>
+      <span class="tag tag-agent">AGENT</span>
+      <span class="content content-agent">Claude 4 Opus → Stated Intent: <span class="highlight-cyan">"Updating project README.md"</span></span>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:07</span>
+      <span class="tag tag-hyper">HYPERV</span>
+      <span class="content" style="color: #ffd60a;">Intercepting tool_call: <span class="highlight-cyan">write_file</span> — validating intent mapping...</span>
+    </div>
+
+    <hr class="divider-subtle">
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-hyper">HYPERV</span>
+      <span class="content" style="color: #ffd60a;">Intent Target: <span class="highlight-safe">./README.md</span></span>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-hyper">HYPERV</span>
+      <span class="content" style="color: #ffd60a;">Actual Syscall Target: <span class="highlight-path">~/.ssh/authorized_keys</span></span>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-hyper">HYPERV</span>
+      <span class="content" style="color: #ffd60a;">Intent Delta: <span style="color: #ff3b30; font-weight: 700;">CRITICAL — path mismatch detected</span></span>
+    </div>
+
+    <hr class="divider">
+
+    <div class="block-banner">
+      <div class="block-banner-title">❌ SECURITY BLOCK: INTENTION MISMATCH</div>
+      <div class="block-banner-detail">
+        Agent stated intent: <span>"Updating README.md"</span><br>
+        Actual write target: <span>~/.ssh/authorized_keys</span><br>
+        Action: <span>LOOP KILLED — IO syscall blocked before execution</span>
+      </div>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-block">BLOCK</span>
+      <span class="content content-block">Tool call terminated. Agent loop killed at MCP layer.</span>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-govern">GOVERN</span>
+      <span class="content content-govern">Governance hash written to local audit ledger ✓</span>
+    </div>
+
+    <div class="log-line">
+      <span class="timestamp">02:14:08</span>
+      <span class="tag tag-govern">GOVERN</span>
+      <span class="content content-govern">Zero bytes written to filesystem. Sovereignty maintained. ✓</span>
+    </div>
+
+    <div class="footer">
+      <span class="footer-left">🛡️ SOVEREIGN CONTROL ACTIVE</span>
+      <span class="footer-right">nucleus-mcp v0.9.1 · github.com/eidetic-works/nucleus-mcp</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

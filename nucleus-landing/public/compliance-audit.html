@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Audit Report - 2026-03-03</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nucleus: {
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            accent: '#38BDF8',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                            danger: '#EF4444'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0F172A; color: #E2E8F0; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+        }
+        @media print {
+            body { background-color: white; color: black; }
+            .glass-panel { background: white; border: 1px solid #ccc; color: black; }
+            .text-white { color: black !important; }
+            .text-slate-400 { color: #666 !important; }
+            .bg-nucleus-900 { background: #f8f9fa !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8 text-sm">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-8 glass-panel p-6">
+        <div class="flex items-center gap-4">
+            <div class="h-10 w-10 rounded-full bg-nucleus-accent/20 flex items-center justify-center text-nucleus-accent border border-nucleus-accent/50">
+                <i class="fa-solid fa-atom text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Nucleus</h1>
+                <p class="text-slate-400 text-xs tracking-wider uppercase font-semibold">Sovereign Compliance Audit Report</p>
+                <p class="text-slate-500 text-xs font-mono mt-1">Generated: 2026-03-03T04:30:53.969284Z</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-col items-end">
+            <div class="px-4 py-2 rounded-full border border-nucleus-warning/50 bg-nucleus-warning/10 text-nucleus-warning font-mono font-bold flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>PASSED: 4/5 | GRADE B</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 font-mono">Jurisdiction: EU DORA (Digital Operational Resilience Act)</p>
+        </div>
+    </header>
+
+    <div class="space-y-6">
+        <!-- Checklist -->
+        <div class="glass-panel p-6">
+            <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-check-double mr-2 text-nucleus-success"></i>Regulatory Checklist</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-success/20 flex items-center justify-center text-nucleus-success">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">Decision trail exists</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">53 decision records found</p>
+                    </div>
+                </div>
+
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-success/20 flex items-center justify-center text-nucleus-success">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">Event log exists</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">1546 events recorded</p>
+                    </div>
+                </div>
+
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-danger/20 flex items-center justify-center text-nucleus-danger">
+                        <i class="fa-solid fa-xmark"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">HITL approvals tracked</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">0 approval records</p>
+                    </div>
+                </div>
+
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-success/20 flex items-center justify-center text-nucleus-success">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">Jurisdiction configured</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">EU DORA (Digital Operational Resilience Act)</p>
+                    </div>
+                </div>
+
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-success/20 flex items-center justify-center text-nucleus-success">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">All data local (sovereignty verified)</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">Nucleus is local-first. No external data transmission by default.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Ledger Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Decisions -->
+            <div class="glass-panel p-6 flex flex-col">
+                <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-list-check mr-2 text-nucleus-accent"></i>DSoR Event Ledger (53)</h2>
+                <div class="bg-nucleus-900/50 border border-white/5 rounded-lg overflow-y-auto max-h-[400px]">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 uppercase bg-nucleus-900/80 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">Timestamp</th>
+                                <th class="px-4 py-3 font-medium">Trace Event</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-17 09:40:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-17 11:01:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-17 19:46:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-18 05:54:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-18 07:48:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-18 12:15:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-19 04:12:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-19 07:59:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-19 13:13:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-19 16:42:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-20 23:47:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-21 03:28:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-21 04:52:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-21 07:24:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-21 11:24:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-21 17:16:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-22 00:50:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-22 16:33:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-23 10:16:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-23 11:50:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-23 14:56:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-24 03:39:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-24 06:01:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-24 17:47:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-02-25 04:56:23</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium"></span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: ?</span>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Approvals & General Events -->
+            <div class="glass-panel p-6 flex flex-col">
+                <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-user-shield mr-2 text-slate-400"></i>HITL & Audit Events (1546)</h2>
+                <div class="bg-nucleus-900/50 border border-white/5 rounded-lg overflow-y-auto max-h-[400px]">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 uppercase bg-nucleus-900/80 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">Timestamp</th>
+                                <th class="px-4 py-3 font-medium">Event Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:30:01</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">daily_digest_generated</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:09:00</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 03:04:09</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 02:45:02</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-03 01:07:45</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:27</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:27</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:27</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:27</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:27</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:24</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:24</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 21:09:24</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block">Manual trigger for test_agent</span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:36</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:36</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:36</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:36</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:36</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:32</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">2026-03-02 20:19:32</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-nucleus-accent font-mono text-[10px] bg-nucleus-accent/10 px-1 py-0.5 rounded border border-nucleus-accent/30">None</span><br/>
+                                    <span class="text-slate-300 mt-1 block"></span>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sovereignty Footer -->
+        <div class="glass-panel p-6 border-l-4 border-nucleus-accent">
+            <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-lock mr-2 text-nucleus-accent"></i>Sovereignty Guarantee</h3>
+            <p class="text-slate-300 mb-4">This report was generated by <strong>Nucleus Agent OS</strong> — a sovereign, local-first platform.</p>
+            <div class="flex gap-4 flex-wrap">
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-hard-drive mr-1 text-slate-400"></i> Local Filesystem Strict Residency</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-wifi mr-1 text-slate-400"></i> Local Engine - No Data Exfiltration</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-fingerprint mr-1 text-slate-400"></i> Immutable DSoR Hashes</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-stopwatch mr-1 text-slate-400"></i> Algorithmic Governance Hook Active</span>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

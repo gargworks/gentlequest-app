@@ -1,7 +1,7 @@
 {
   "product": "nucleus",
-  "last_updated": "2026-01-24T03:05:35+0000",
-  "total_features": 1,
+  "last_updated": "2026-02-28T19:13:32+0530",
+  "total_features": 2,
   "features": [
     {
       "id": "smoke_test_feature",
@@ -19,6 +19,21 @@
       "created_at": "2026-01-24T03:04:44+0000",
       "last_validated": "2026-01-24T03:05:35+0000",
       "validation_result": "passed"
+    },
+    {
+      "id": "qa_swarm_test_feature",
+      "name": "QA Swarm Test Feature",
+      "description": "Updated description from QA Swarm",
+      "product": "Nucleus",
+      "source": "Playbook",
+      "version": "1.0.1",
+      "status": "IN_PROGRESS",
+      "how_to_test": "Check list",
+      "expected_result": "Feature is added",
+      "created_at": "2026-02-28T19:13:03+0530",
+      "last_validated": "2026-02-28T19:13:32+0530",
+      "validation_result": "passed",
+      "tags": "qa,test"
     }
   ]
 }

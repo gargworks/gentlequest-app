@@ -195,3 +195,95 @@ gemini-conversation-*.json
 # Session/context local state
 session/
 
+# GCP service account keys (NEVER commit)
+key.json
+*.json.key
+service_account*.json
+
+# Database backups (local only)
+*.sql
+!**/migrations/*.sql
+
+# iOS build artifacts (binary)
+release_artifacts/
+*.ipa
+*.apk
+*.aab
+
+# Temp test files at root
+test_*.py
+!tests/test_*.py
+twin_spyglass_test.py
+tmux_live_fire_test_2.py
+update_tasks.py
+billion_dollar_script.py
+perfect_sync_test.py
+nightly_auditor.py
+ssl_monitor.py
+db_monitor.py
+task_005_db_monitor.py
+task_006_env_script.sh
+redeploy_hud.py
+redeploy_hud.sh
+gemini_proxy.py
+fix-gemini-auth.sh
+fix_cloudbuild_password.py
+force_trigger_env_test.py
+force_trigger_test.py
+patch_cron.py
+compliance_demo.html
+
+# Temp root-level markdown (one-off reports)
+CURRENT_STATUS.md
+DNS_HARDENING_COMPLETE.md
+PR_CHECK_ANALYSIS.md
+REMINDERS.md
+ROOT_README.md
+SECURITY_RECOVERY_REPORT.md
+SELF_HEAL_COORDINATOR_TEST_SUITE.md
+VERTEX_AI_SETUP.md
+cli_changes.md
+shortcut_plan.md
+
+# Temp directories
+-d
+.brain-id
+metrics/
+notebooks/
+orchestration/
+launch/
+training/
+
+# Nucleus test/temp files
+nucleus/.brain/
+nucleus/agents/
+nucleus_accuracy_receipt.json
+openclaw_benchmark_results.json
+models.json
+gemini-policy.json
+ledger/
+
+# Test screenshots and artifacts
+test/screenshots/
+test/all_results.json
+test/chat_latency_results.json
+
+# Duplicate app directory (if exists)
+app/
+
+# One-off test scripts at root
+test_autonomic_blocker.sh
+test_genai.js
+test_nucleus_engram.sh
+
+# One-off test directory (not tests/)
+test/
+
+# Lock files
+mcp-server-nucleus/test_metadata.lock
+
+# Nucleus public assets (separate repo)
+nucleus-public-assets/
+
+# Backend duplicate
+backend/
