@@ -118,8 +118,9 @@ _model_cache: Dict[Tuple[int, str], Any] = {}
 _configured_key_idx: Optional[int] = None
 
 # Timeout for LLM generate_content() calls (seconds). Prevents thread pool
-# exhaustion when Gemini hangs.
-_LLM_TIMEOUT = 30
+# exhaustion when Gemini hangs. Set to 25s (less than app's 30s) so backend
+# can return fallback message before app times out.
+_LLM_TIMEOUT = 25
 _LLM_REQUEST_OPTIONS = {"timeout": _LLM_TIMEOUT}
 
 # ── Exponential backoff config ──
