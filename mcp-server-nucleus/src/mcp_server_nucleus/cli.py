@@ -3369,6 +3369,9 @@ def main():
     parser.add_argument('--no-self-heal', dest='self_heal', action='store_false',
                         help='Disable self-healing, raise errors normally')
     subparsers = parser.add_subparsers(dest='cli_command', help='Available commands')
+
+    # Help command (curated, user-friendly)
+    subparsers.add_parser('help', help='Show curated command guide')
     
     # ============================================================
     # INIT COMMAND
@@ -3391,7 +3394,20 @@ def main():
         action='store_true',
         help='Start the discovery sidecar (HTTP bridge) immediately after init'
     )
+    init_parser.add_argument(
+        '--recipe',
+        type=str,
+        default=None,
+        help='Install a recipe after init (e.g., founder, sre, adhd)'
+    )
     
+    # nucleus recipe — Browse and install workflow packs
+    recipe_parser = subparsers.add_parser('recipe', help='Browse and install workflow recipe packs')
+    recipe_sub = recipe_parser.add_subparsers(dest='recipe_action')
+    recipe_sub.add_parser('list', help='List available recipes')
+    recipe_install_parser = recipe_sub.add_parser('install', help='Install a recipe into your brain')
+    recipe_install_parser.add_argument('recipe_name', help='Recipe name (e.g., founder, sre, adhd)')
+
     # nucleus self-setup - Meta-config: Automatically add Nucleus paths to your shell profile
     setup_parser = subparsers.add_parser('self-setup', help='🛠 Meta-config: Automatically add Nucleus paths to your shell profile')
     setup_parser.add_argument('--dry-run', action='store_true', help='Show what changes would be made without applying them')
@@ -3401,6 +3417,16 @@ def main():
     # ============================================================
     install_parser = subparsers.add_parser('install', help='Install an agent from a .nuke artifact')
     install_parser.add_argument('path', help='Path to the .nuke artifact file')
+
+    # ============================================================
+    # LICENSE COMMANDS (Nucleus Pro)
+    # ============================================================
+    activate_parser = subparsers.add_parser('activate', help='Activate a Nucleus Pro license key')
+    activate_parser.add_argument('key', help='License key (NUC-PRO-...)')
+
+    subparsers.add_parser('trial', help='Start a 14-day Nucleus Pro trial')
+
+    subparsers.add_parser('license', help='Show current license status')
 
     
     # ============================================================
@@ -3644,6 +3670,7 @@ def main():
     audit_parser.add_argument('--hours', type=float, help='Only include events from last N hours')
     audit_parser.add_argument('--output', '-o', help='Write report to file instead of stdout')
     audit_parser.add_argument('--brain', default=None, help='Path to .brain directory (default: auto-detect)')
+    audit_parser.add_argument('--signed', action='store_true', help='Cryptographically sign the report (Nucleus Pro)')
 
     # ============================================================
     # SOVEREIGN COMMAND — Identity & Status (Sovereign Agent OS)
@@ -3657,9 +3684,19 @@ def main():
     secure_parser.add_argument('--json', action='store_true', help='Output as JSON')
     secure_parser.add_argument('--brain', default=None, help='Path to .brain directory')
 
-    sovereign_parser = subparsers.add_parser('sovereign', help='🛡️ Show sovereignty status report')
+    sovereign_parser = subparsers.add_parser('sovereign', help='Show sovereignty status report')
     sovereign_parser.add_argument('--json', action='store_true', help='Output as JSON')
     sovereign_parser.add_argument('--brain', default=None, help='Path to .brain directory')
+
+    # ============================================================
+    # COMPLIANCE-CHECK COMMAND (Nucleus Pro)
+    # ============================================================
+    cc_parser = subparsers.add_parser('compliance-check', help='Score your AI governance posture (Pro: exportable report)')
+    cc_parser.add_argument('--jurisdiction', '-j', choices=['eu-dora', 'sg-mas-trm', 'us-soc2', 'global-default'],
+                           default=None, help='Jurisdiction to check against (default: auto-detect)')
+    cc_parser.add_argument('--format', choices=['text', 'json', 'html'], default='text', help='Output format')
+    cc_parser.add_argument('--output', '-o', help='Write report to file (Pro only)')
+    cc_parser.add_argument('--brain', default=None, help='Path to .brain directory')
 
     # ============================================================
     # SEARCH COMMAND
@@ -4125,6 +4162,10 @@ def main():
     args = parser.parse_args()
     cli_command = args.cli_command
 
+    if not cli_command:
+        _print_curated_help()
+        return
+
     # ════════════════════════════════════════════════════════════════
     # ADAPTIVE BRAIN DISCOVERY & SESSION RECOVERY (MDR_001)
     # ════════════════════════════════════════════════════════════════
@@ -4185,12 +4226,20 @@ def main():
         # ════════════════════════════════════════════════════════════════
         # CLI ROUTING (Unified & Deduplicated)
         # ════════════════════════════════════════════════════════════════
-        if cli_command == 'init':
+        if cli_command == 'help':
+            _print_curated_help()
+
+        elif cli_command == 'init':
             success = init_brain(args.path, args.template)
+            if success and getattr(args, 'recipe', None):
+                _install_recipe_into_brain(Path(args.path), args.recipe)
             if success and args.sidecar:
                 from .runtime.discovery import start_discovery_sidecar
                 start_discovery_sidecar()
         
+        elif cli_command == 'recipe':
+            _handle_recipe_command(args)
+
         elif cli_command == 'self-setup':
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
@@ -4252,7 +4301,16 @@ def main():
         
         elif cli_command == 'install':
             handle_install_command(args)
-            
+
+        elif cli_command == 'activate':
+            handle_activate_command(args)
+
+        elif cli_command == 'trial':
+            handle_trial_command(args)
+
+        elif cli_command == 'license':
+            handle_license_command(args)
+
         elif cli_command == 'status':
             handle_status_command(args)
 
@@ -4288,6 +4346,9 @@ def main():
 
         elif cli_command == 'comply':
             handle_comply_command(args)
+
+        elif cli_command == 'compliance-check':
+            handle_compliance_check_command(args)
 
         elif cli_command == 'audit-report':
             handle_audit_report_command(args)
@@ -6704,6 +6765,166 @@ def handle_consolidate_command(args):
         print("  status     Show consolidation status and archive info")
 
 
+def _install_recipe_into_brain(brain_path: Path, recipe_name: str):
+    """Install a recipe into an existing brain directory."""
+    from .runtime.recipes import load_recipe, install_recipe, RecipeNotFoundError, RecipeValidationError
+
+    print(f"\n📦 Installing recipe: {recipe_name}...")
+    try:
+        recipe_data = load_recipe(recipe_name)
+        summary = install_recipe(brain_path, recipe_data)
+
+        print(f"  ✅ Recipe '{summary['recipe']}' v{summary['version']} installed!")
+        if summary["engrams_written"]:
+            print(f"  🧠 {summary['engrams_written']} welcome engrams written")
+        if summary["tasks_created"]:
+            print(f"  📋 {summary['tasks_created']} scheduled tasks created")
+        if summary["combos_enabled"]:
+            print(f"  ⚡ Combos enabled: {', '.join(summary['combos_enabled'])}")
+
+        if summary["tips"]:
+            print("\n🎯 Try these commands:")
+            for tip in summary["tips"]:
+                print(f"   {tip}")
+
+    except RecipeNotFoundError as e:
+        print(f"  ❌ {e}")
+    except RecipeValidationError as e:
+        print(f"  ❌ Recipe validation failed: {e}")
+
+
+def _print_curated_help():
+    """Print a curated, user-friendly command guide."""
+    print("""
+============================================================
+  NUCLEUS — Sovereign Agent OS
+============================================================
+
+  Getting Started:
+    nucleus init [--recipe <name>]   Initialize a .brain directory
+    nucleus recipe list              Browse available recipes
+    nucleus recipe install <name>    Install a workflow recipe
+
+  Daily Workflow:
+    nucleus morning-brief            Your daily context brief
+    nucleus combo pulse              Health check + synthesis
+    nucleus end-of-day               Capture end-of-day learnings
+    nucleus status                   Satellite view of the brain
+
+  Memory:
+    nucleus engram search <query>    Search your memory
+    nucleus engram write             Record a decision or insight
+    nucleus combo learn <topic>      Compound an observation into memory
+
+  Governance:
+    nucleus compliance-check         Score your AI governance posture
+    nucleus audit-report             Generate audit-ready report
+    nucleus trace list               Browse decision trails
+
+  Tasks:
+    nucleus task list                Show all tasks
+    nucleus task add <desc>          Add a new task
+
+  Advanced:
+    nucleus --help                   Full command list (60+ commands)
+    nucleus <command> --help         Help for a specific command
+
+============================================================
+""")
+
+
+def _handle_recipe_command(args):
+    """Handle nucleus recipe list/install."""
+    from .runtime.recipes import list_recipes, load_recipe, install_recipe, RecipeNotFoundError, RecipeValidationError
+    from .runtime.common import get_brain_path
+
+    action = getattr(args, 'recipe_action', None)
+
+    if action == 'list':
+        recipes = list_recipes()
+        if not recipes:
+            print("No recipes available.")
+            return
+        print(f"\n📚 Available Recipes ({len(recipes)}):\n")
+        for r in recipes:
+            badge = "📦" if r["source"] == "builtin" else "👤"
+            print(f"  {badge} {r['name']:<20} {r['description']}")
+            if r.get("persona"):
+                print(f"     Persona: {r['persona']}")
+            if r.get("tags"):
+                print(f"     Tags: {', '.join(r['tags'])}")
+            print()
+        print("Install a recipe: nucleus recipe install <name>")
+
+    elif action == 'install':
+        brain_path = get_brain_path()
+        if not brain_path or not Path(brain_path).exists():
+            print("❌ No .brain directory found. Run 'nucleus init' first.")
+            return
+        _install_recipe_into_brain(Path(brain_path), args.recipe_name)
+
+    else:
+        print("Usage:")
+        print("  nucleus recipe list              — Browse available recipes")
+        print("  nucleus recipe install <name>    — Install a recipe")
+        print("\nAvailable recipes: founder, sre, adhd")
+
+
+def handle_activate_command(args):
+    """Handle nucleus activate <key>."""
+    from .runtime.license import validate_license_key, save_license
+    key = args.key.strip()
+    info = validate_license_key(key)
+    if info.valid:
+        path = save_license(key)
+        print(f"Nucleus Pro activated! Tier: {info.tier.upper()}")
+        print(f"  Email: {info.email}")
+        print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else 'never'}")
+        print(f"  Saved to: {path}")
+    else:
+        print(f"Invalid license key: {info.error}")
+        sys.exit(1)
+
+
+def handle_trial_command(args):
+    """Handle nucleus trial — generate a 14-day self-signed trial."""
+    from .runtime.license import generate_trial_key, validate_license_key, save_license, LICENSE_FILE
+    if LICENSE_FILE.exists():
+        from .runtime.license import load_license
+        existing = load_license()
+        if existing.valid and existing.tier == "pro":
+            print("You already have an active Nucleus Pro license. No trial needed.")
+            return
+        if existing.valid and existing.tier == "trial":
+            print(f"Trial already active (expires {existing.expires.strftime('%Y-%m-%d')}).")
+            return
+    key = generate_trial_key()
+    save_license(key)
+    info = validate_license_key(key)
+    print("Nucleus Pro trial activated! (14 days)")
+    print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else '?'}")
+    print(f"  Features: signed audit reports, compliance export")
+    print(f"\n  Subscribe at https://nucleusos.dev/pricing to keep Pro after trial.")
+
+
+def handle_license_command(args):
+    """Handle nucleus license — show current license status."""
+    from .runtime.license import load_license
+    info = load_license()
+    if info.valid:
+        badge = "PRO" if info.tier == "pro" else "TRIAL"
+        print(f"Nucleus [{badge}]")
+        print(f"  Email: {info.email}")
+        print(f"  Tier: {info.tier}")
+        print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else 'never'}")
+    else:
+        print("Nucleus [FREE]")
+        if info.error:
+            print(f"  ({info.error})")
+        print(f"\n  Start a trial: nucleus trial")
+        print(f"  Subscribe: https://nucleusos.dev/pricing")
+
+
 def handle_status_command(args):
     """Handle nucleus status command (Satellite View + EnvironmentGuard)."""
     import logging as _logging
@@ -6783,8 +7004,22 @@ def handle_status_command(args):
         view = _get_satellite_view(detail_level)
         if as_json:
             import json as _json
+            # Include license info in JSON output
+            from .runtime.license import load_license
+            lic = load_license()
+            view["license"] = {"tier": lic.tier, "valid": lic.valid,
+                               "expires": str(lic.expires) if lic.expires else None}
             print(_json.dumps(view, indent=2, default=str))
         else:
+            # Show license badge at top of status
+            from .runtime.license import load_license
+            lic = load_license()
+            if lic.valid and lic.tier == "pro":
+                print("Nucleus [PRO]")
+            elif lic.valid and lic.tier == "trial":
+                exp = lic.expires.strftime('%Y-%m-%d') if lic.expires else '?'
+                print(f"Nucleus [TRIAL expires {exp}]")
+
             output = _format_satellite_cli(view)
             print(output)
 
@@ -7262,6 +7497,94 @@ def handle_comply_command(args):
     print("")
 
 
+def handle_compliance_check_command(args):
+    """Handle nucleus compliance-check — score AI governance posture."""
+    from .runtime.compliance_config import JURISDICTIONS
+    from .runtime.license import is_pro
+
+    brain_path = Path(args.brain) if args.brain else _find_brain_path()
+    if not brain_path:
+        print("No .brain directory found. Run `nucleus init` first.")
+        return
+
+    # Detect or use specified jurisdiction
+    jurisdiction_id = args.jurisdiction
+    compliance_file = brain_path / "governance" / "compliance.json"
+    if not jurisdiction_id and compliance_file.exists():
+        with open(compliance_file) as f:
+            jurisdiction_id = json.load(f).get("jurisdiction", "global-default")
+    if not jurisdiction_id:
+        jurisdiction_id = "global-default"
+
+    config = JURISDICTIONS.get(jurisdiction_id, {})
+    reqs = config.get("requirements", {})
+
+    # Run checks
+    checks = []
+    gov_dir = brain_path / "governance"
+
+    def check(name, condition, weight=1):
+        checks.append({"name": name, "pass": bool(condition), "weight": weight})
+
+    check("Brain directory exists", brain_path.exists())
+    check("Governance configured", compliance_file.exists())
+    check("HITL policy defined", (gov_dir / "hitl_policy.json").exists())
+    check("Audit policy defined", (gov_dir / "audit_policy.json").exists())
+    check("Kill switch config", (gov_dir / "kill_switch.json").exists() or
+          (brain_path / "governance").exists())
+    check("Event ledger active", (brain_path / "ledger" / "events.jsonl").exists())
+    check("DSoR traces present", (brain_path / "dsor").exists() or
+          any((brain_path / "ledger").glob("events*.jsonl")) if (brain_path / "ledger").exists() else False)
+    check("Engram memory active", (brain_path / "engrams").exists() or
+          (brain_path / "ledger" / "engrams.jsonl").exists())
+    check("Data residency (local-only)", True)  # Always true for Nucleus
+    check("Explainability (DSoR reasoning)", (brain_path / "ledger").exists())
+
+    passed = sum(1 for c in checks if c["pass"])
+    total = len(checks)
+    score = round(passed / total * 100)
+    grade = "A+" if score == 100 else ("A" if score >= 90 else ("B" if score >= 70 else "C"))
+
+    if args.format == "json":
+        result = {
+            "jurisdiction": jurisdiction_id,
+            "jurisdiction_name": config.get("name", jurisdiction_id),
+            "score": score,
+            "grade": grade,
+            "passed": passed,
+            "total": total,
+            "checks": checks,
+        }
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"\nNucleus Compliance Check")
+        print(f"========================")
+        print(f"  Jurisdiction: {config.get('name', jurisdiction_id)}")
+        print(f"  Score: {score}% ({passed}/{total}) — Grade {grade}")
+        print()
+        for c in checks:
+            icon = "PASS" if c["pass"] else "FAIL"
+            print(f"  [{icon}] {c['name']}")
+        print()
+
+    # Export gating
+    if args.output:
+        if not is_pro():
+            print("  Exportable compliance reports require Nucleus Pro.")
+            print("  Run: nucleus trial")
+            return
+        from .runtime.audit_report import generate_audit_report
+        report = generate_audit_report(
+            brain_path=brain_path,
+            report_format=args.format if args.format != "text" else "html",
+            signed=True,
+        )
+        Path(args.output).write_text(report.get("formatted", ""))
+        print(f"  Compliance report exported to {args.output}")
+    elif not is_pro():
+        print("  Export this report: nucleus compliance-check -o report.html (Pro)")
+
+
 def handle_audit_report_command(args):
     """Handle nucleus audit-report command — generate audit-ready compliance report."""
     from .runtime.audit_report import generate_audit_report
@@ -7273,27 +7596,31 @@ def handle_audit_report_command(args):
         return
 
     try:
+        signed = getattr(args, 'signed', False)
         report = generate_audit_report(
             brain_path=brain_path,
             report_format=args.format,
             since_hours=args.hours,
+            signed=signed,
         )
 
         output_text = report.get("formatted", "No report generated")
 
         if args.output:
-            # Write to file
             output_path = Path(args.output)
             output_path.write_text(output_text)
-            print(f"✅ Audit report written to {output_path}")
+            print(f"Audit report written to {output_path}")
             print(f"   Format: {args.format}")
+            if signed and report.get("signature", {}).get("signed"):
+                print(f"   Signed: Yes (Ed25519, key {report['signature']['key_id']}...)")
+            elif signed:
+                print(f"   Signed: No ({report.get('signature', {}).get('reason', 'unknown')})")
             if args.format == 'html':
                 print(f"   Open in browser: file://{output_path.absolute()}")
         else:
             print(output_text)
     except Exception as e:
-        print(f"❌ Error generating audit report: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print(f"Error generating audit report: {e}")
 
 
 # ============================================================

@@ -17,11 +17,13 @@ This is a solo founder project. Built because I needed it, open-sourced because 
 
 ```bash
 pip install nucleus-mcp
-nucleus self-setup
-nucleus status --health
+nucleus init --recipe founder
+nucleus morning-brief
 ```
 
-That's it. Nucleus is running.
+Three commands. You now have a persistent brain with memory, governance, and a daily workflow.
+
+Other recipes: `nucleus recipe list` (SRE, ADHD, and more).
 
 ---
 
@@ -59,6 +61,30 @@ That's it. Nucleus is running.
 - **Governance** — HITL approval gates, kill switch, resource locking, compliance configuration.
 - **Decision trails** — Every agent decision logged with reasoning. Full audit trail.
 - **170+ MCP tools** — Organized into facade tools for memory, governance, orchestration, sessions, and more.
+
+---
+
+## Nucleus Pro
+
+Everything above is free (MIT). Nucleus Pro adds verifiable governance:
+
+```bash
+nucleus trial                              # 14-day free trial
+nucleus compliance-check                   # Score your AI governance
+nucleus audit-report --signed -o report.html  # Cryptographically signed report
+```
+
+**$19/month** or **$149/year** — [nucleusos.dev/pricing](https://nucleusos.dev/pricing)
+
+| | Free | Pro |
+|---|---|---|
+| 170+ MCP tools | Yes | Yes |
+| Persistent memory | Yes | Yes |
+| Governance & HITL | Yes | Yes |
+| Audit trails (DSoR) | Yes | Yes |
+| **Signed audit reports** | - | Ed25519 |
+| **Compliance exports** | Score only | Full PDF/HTML |
+| **Priority issues** | - | Yes |
 
 ---
 
