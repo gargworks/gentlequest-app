@@ -1,6 +1,6 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.4.1",
+    "version": "1.7.0",
     "description": "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents",
     "main": "index.js",
     "bin": {

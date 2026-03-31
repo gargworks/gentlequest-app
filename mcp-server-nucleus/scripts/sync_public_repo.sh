@@ -141,9 +141,27 @@ fi
 # ── orchestrator.py: Strip Third Brother routing ──
 ORCH="src/mcp_server_nucleus/runtime/orchestrator.py"
 if [ -f "$ORCH" ]; then
-    sed -i '' '/Third Brother/d' "$ORCH"
-    sed -i '' '/LocalLLM/d' "$ORCH"
-    sed -i '' '/_local_available/d' "$ORCH"
+    # Replace entire _get_best_model method with simplified version
+    python3 -c "
+import re
+with open('$ORCH') as f: code = f.read()
+# Replace the _get_best_model method
+code = re.sub(
+    r'    def _get_best_model\(self.*?\n(    def )',
+    '''    def _get_best_model(self, job_type: str = \"ORCHESTRATION\"):
+        \"\"\"Get the best available LLM for the given job type.\"\"\"
+        from .llm_client import DualEngineLLM
+        return DualEngineLLM(job_type=job_type)
+
+\1''',
+    code, flags=re.DOTALL
+)
+# Also strip remaining stray references
+code = re.sub(r'.*Third Brother.*\n', '', code)
+code = re.sub(r'.*_local_available.*\n', '', code)
+code = re.sub(r'.*archive_pipeline.*\n', '', code)
+with open('$ORCH', 'w') as f: f.write(code)
+"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
     echo "  Sanitized: $ORCH (Third Brother routing)"
 fi
@@ -355,9 +373,12 @@ fi
 BRIEF="src/mcp_server_nucleus/runtime/morning_brief_ops.py"
 if [ -f "$BRIEF" ]; then
     sed -i '' '/archive_pipeline/d' "$BRIEF"
-    sed -i '' '/should_retrain/d' "$BRIEF"
     sed -i '' '/Third Brother/d' "$BRIEF"
     sed -i '' '/THIRD BROTHER/d' "$BRIEF"
+    # Delete entire training if/else block (should_retrain + its else) — keep indentation valid
+    sed -i '' '/should_retrain/{N;N;N;d;}' "$BRIEF"
+    # Delete the whole "Training status" section (from comment to empty line)
+    sed -i '' '/# Training status/,/^$/{/^$/!d;}' "$BRIEF"
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
     echo "  Sanitized: $BRIEF (training status section)"
 fi

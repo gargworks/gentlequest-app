@@ -1,0 +1,145 @@
+# =============================================================================
+# ROOT-LEVEL EXPORT-IGNORE — SAFETY NET
+# =============================================================================
+# This mono-repo contains TWO products (Nucleus + GentleQuest) plus private
+# infrastructure. The ONLY directory that should ever appear in git archive
+# for public distribution is mcp-server-nucleus/.
+#
+# This file is the LAST LINE OF DEFENSE. Even if the sync script's CWD-scoping
+# fails, these rules prevent the entire mono-repo from leaking.
+# =============================================================================
+
+# ── GentleQuest (separate product — NEVER in Nucleus releases) ───
+flutter_app/ export-ignore
+flutter/ export-ignore
+ai_buddy_web/ export-ignore
+ai_buddy_web_backup/ export-ignore
+gentlequest-blog/ export-ignore
+app_store_assets/ export-ignore
+landing-page/ export-ignore
+
+# ── Brain / Memory / Ledger (private data) ───────────────────────
+.brain/ export-ignore
+.brain-archive/ export-ignore
+.brain-backup-*/ export-ignore
+.brain.backup-*/ export-ignore
+BRAIN_PRODUCT_V1/ export-ignore
+engrams/ export-ignore
+ledger/ export-ignore
+memoir/ export-ignore
+
+# ── Private infrastructure ───────────────────────────────────────
+secret/ export-ignore
+secrets/ export-ignore
+.env export-ignore
+.env.* export-ignore
+believe_it_bot/ export-ignore
+training/ export-ignore
+checkpoints/ export-ignore
+notebooks/ export-ignore
+
+# ── Internal launch / strategy / outreach ────────────────────────
+nucleus-launch-internal/ export-ignore
+nucleus-nar/ export-ignore
+strategy_archive/ export-ignore
+outreach_campaign_v1/ export-ignore
+mission_artifacts/ export-ignore
+mission-*/ export-ignore
+revenue/ export-ignore
+growth/ export-ignore
+scale/ export-ignore
+commitments/ export-ignore
+community/ export-ignore
+
+# ── Nested git repos (have their own remotes) ───────────────────
+nucleus-mcp/ export-ignore
+nucleus-landing/ export-ignore
+nucleus-public-assets/ export-ignore
+mcp-get/ export-ignore
+
+# ── Development / CI / Infra ─────────────────────────────────────
+.agent/ export-ignore
+.claude/ export-ignore
+.gemini/ export-ignore
+.venv/ export-ignore
+.idea/ export-ignore
+.vscode/ export-ignore
+.pytest_cache/ export-ignore
+.ruff_cache/ export-ignore
+.telemetry/ export-ignore
+.wrangler/ export-ignore
+__pycache__/ export-ignore
+node_modules/ export-ignore
+tmp/ export-ignore
+logs/ export-ignore
+flask_session/ export-ignore
+instance/ export-ignore
+
+# ── Backend / Web / Experiments (GQ-era legacy) ──────────────────
+backend/ export-ignore
+app/ export-ignore
+archive/ export-ignore
+automation/ export-ignore
+consciousness/ export-ignore
+crisis_v2/ export-ignore
+code_red_migration/ export-ignore
+data/ export-ignore
+demos/ export-ignore
+experiments/ export-ignore
+features/ export-ignore
+god_mode_test/ export-ignore
+meta/ export-ignore
+metrics/ export-ignore
+monitoring/ export-ignore
+orchestration/ export-ignore
+output/ export-ignore
+packages/ export-ignore
+providers/ export-ignore
+raw/ export-ignore
+session/ export-ignore
+swarms/ export-ignore
+test/ export-ignore
+test_output/ export-ignore
+test_reports/ export-ignore
+ux_test_dir/ export-ignore
+
+# ── Cloud / Deploy / Infra ───────────────────────────────────────
+deploy/ export-ignore
+cloudrun_deploy/ export-ignore
+gcp-migration-foundation/ export-ignore
+infra/ export-ignore
+terraform/ export-ignore
+nginx/ export-ignore
+ci-cd/ export-ignore
+runbooks/ export-ignore
+
+# ── Misc root files that should never leak ───────────────────────
+nop_v3_refactor/ export-ignore
+npm-wrapper/ export-ignore
+nucleus/ export-ignore
+nucleusos.dev/ export-ignore
+ai_optimization/ export-ignore
+analysis/ export-ignore
+blog-export-*/ export-ignore
+claude?project?export*/ export-ignore
+config/ export-ignore
+dist/ export-ignore
+registry-submissions/ export-ignore
+release_artifacts/ export-ignore
+security/ export-ignore
+static/ export-ignore
+templates/ export-ignore
+tools/ export-ignore
+
+# ── Root scripts (mono-repo level, not Nucleus package) ──────────
+scripts/ export-ignore
+tests/ export-ignore
+migrations/ export-ignore
+
+# ── Root config files ────────────────────────────────────────────
+Makefile export-ignore
+docker-compose*.yml export-ignore
+Dockerfile export-ignore
+*.db export-ignore
+*.log export-ignore
+RELEASES.md export-ignore
