@@ -122,10 +122,8 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[types.Text
         return [types.TextContent(type="text", text=f"Bridge Exception: {str(e)}")]
 
 # --- Starlette Web app ---
-app = Starlette(debug=True)
 sse = SseServerTransport("/messages")
 
-@app.route("/sse")
 async def handle_sse(request):
     """Bridge endpoint for ChatGPT."""
     logger.info("New SSE Connection established from ChatGPT.")
@@ -143,7 +141,13 @@ async def handle_sse(request):
             ),
         )
 
-app.mount("/messages", Mount("", app=sse.handle_post_resource))
+app = Starlette(
+    debug=True,
+    routes=[
+        Route("/sse", handle_sse),
+        Mount("/messages", app=sse.handle_post_message),
+    ],
+)
 
 def main():
     port = int(os.environ.get("PORT", 8000))
