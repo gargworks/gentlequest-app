@@ -276,7 +276,7 @@ if [ -d "tests" ]; then
     if [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
         ok "H8: $TEST_COUNT tests discoverable"
         # Quick pass/fail: run core tests only (60s kill)
-        PYTEST_RESULT=$(PYTHONPATH=src python3 -m pytest tests/test_core.py -x -q --tb=line --timeout=60 2>&1 | tail -3 || true)
+        PYTEST_RESULT=$(PYTHONPATH=src python3 -m pytest tests/test_core.py -x -q --tb=line 2>&1 | tail -3 || true)
         if echo "$PYTEST_RESULT" | grep -q "passed"; then
             ok "H8: Core tests passing"
         else

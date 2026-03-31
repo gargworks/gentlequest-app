@@ -123,19 +123,20 @@ if [ -f "$TT" ]; then
     echo "  Sanitized: $TT (token hashes + names)"
 fi
 
-# ── cli.py: Strip Claude Code provider secrets ──
+# ── cli.py: AST-guided sanitization (replaces sed line-deletion) ──
 CLI="src/mcp_server_nucleus/cli.py"
 if [ -f "$CLI" ]; then
-    # Remove --dangerously-skip-permissions flag from subprocess call
-    sed -i '' 's/, "--dangerously-skip-permissions"//' "$CLI"
-    # Remove claude-code and local from argparse choices
-    sed -i '' "s/'gemini', 'anthropic', 'groq', 'claude-code', 'local'/'gemini', 'anthropic', 'groq'/" "$CLI"
-    # Strip "claude-code (Max sub)" from help text
-    sed -i '' 's/, or claude-code (Max sub)//' "$CLI"
-    # Strip "free via Max subscription" from /provider help
-    sed -i '' 's/(free via Max subscription)//' "$CLI"
+    # Use Python AST sanitizer — handles text replacement, function removal,
+    # surgical block deletion, and orphaned-syntax repair in one pass.
+    # This replaces ~200 individual sed commands that broke Python control flow.
+    SANITIZER="$SCRIPT_DIR/sanitize_cli.py"
+    if [ -f "$SANITIZER" ]; then
+        python3 "$SANITIZER" "$CLI"
+    else
+        echo "  ERROR: sanitize_cli.py not found at $SANITIZER" >&2
+        exit 1
+    fi
     SANITIZE_COUNT=$((SANITIZE_COUNT + 1))
-    echo "  Sanitized: $CLI (claude-code provider refs)"
 fi
 
 # ── orchestrator.py: Strip Third Brother routing ──
@@ -179,165 +180,10 @@ if [ -f "$LLM" ]; then
     echo "  Sanitized: $LLM (LocalLLM/Third Brother provider)"
 fi
 
-# ── cli.py: Strip archive/Third Brother/DPO references ──
-if [ -f "$CLI" ]; then
-    # Remove archive_pipeline import + record_turn block (try/except wrapped, safe to strip)
-    sed -i '' '/archive_pipeline/d' "$CLI"
-    sed -i '' '/Third Brother/d' "$CLI"
-    sed -i '' '/training.flywheel/d' "$CLI"
-    # Remove the archive subparser block entirely
-    sed -i '' "/ARCHIVE COMMAND/,/archive_record.add_argument.*decisions/d" "$CLI"
-    # Remove archive dispatch
-    sed -i '' "/cli_command == 'archive'/d" "$CLI"
-    sed -i '' '/handle_archive_command/d' "$CLI"
-    # Strip DPO preference capture (private training infrastructure)
-    sed -i '' '/DPO/d' "$CLI"
-    sed -i '' '/_retry_rejected/d' "$CLI"
-    sed -i '' '/_retry_prompt/d' "$CLI"
-    sed -i '' '/_DPOArchive/d' "$CLI"
-    sed -i '' '/record_preference/d' "$CLI"
-    sed -i '' '/is_correction/d' "$CLI"
-    sed -i '' '/dpo_count/d' "$CLI"
-    sed -i '' '/count_preferences/d' "$CLI"
-    sed -i '' '/preference pair/d' "$CLI"
-    sed -i '' '/export_dpo/d' "$CLI"
-    sed -i '' '/get_preference_stats/d' "$CLI"
-    # Strip CoT/reasoning chain refs (Phase 5 training)
-    sed -i '' '/CoT/d' "$CLI"
-    sed -i '' '/_reasoning_steps/d' "$CLI"
-    sed -i '' '/_reasoning_prompt/d' "$CLI"
-    sed -i '' '/_CoTArchive/d' "$CLI"
-    sed -i '' '/record_reasoning_chain/d' "$CLI"
-    sed -i '' '/COT_CAPTURE/d' "$CLI"
-    sed -i '' '/cot-status/d' "$CLI"
-    sed -i '' '/cot-export/d' "$CLI"
-    sed -i '' '/cot_count/d' "$CLI"
-    sed -i '' '/cot_flag/d' "$CLI"
-    sed -i '' '/count_reasoning/d' "$CLI"
-    sed -i '' '/reasoning chain/d' "$CLI"
-    sed -i '' '/get_reasoning/d' "$CLI"
-    sed -i '' '/export_reasoning/d' "$CLI"
-    sed -i '' '/Chain-of-Thought/d' "$CLI"
-    sed -i '' '/mine_preferences/d' "$CLI"
-    sed -i '' '/mine_reasoning/d' "$CLI"
-    sed -i '' "/'mine'/d" "$CLI"
-    sed -i '' '/MINING/d' "$CLI"
-    # Strip eval harness (Phase 6) — block delete + subparser + help lines
-    sed -i '' '/EVAL_BLOCK_START/,/EVAL_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_eval/d' "$CLI"
-    sed -i '' '/eval_results/d' "$CLI"
-    sed -i '' '/eval_suite/d' "$CLI"
-    sed -i '' '/generate_eval_suite/d' "$CLI"
-    sed -i '' '/export_eval_suite/d' "$CLI"
-    sed -i '' '/run_eval/d' "$CLI"
-    sed -i '' '/EVAL BENCHMARK/d' "$CLI"
-    sed -i '' '/eval_path/d' "$CLI"
-    sed -i '' '/eval\.jsonl/d' "$CLI"
-    sed -i '' '/eval pairs/d' "$CLI"
-    sed -i '' '/eval chains/d' "$CLI"
-    sed -i '' '/archive eval/d' "$CLI"
-    # Strip self-play synthesis (Phase 7) — block delete + subparser + help lines
-    sed -i '' '/SYNTH_BLOCK_START/,/SYNTH_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_synth/d' "$CLI"
-    sed -i '' '/synthesize_preferences/d' "$CLI"
-    sed -i '' '/self_play/d' "$CLI"
-    sed -i '' '/SELF-PLAY/d' "$CLI"
-    sed -i '' '/Manufacturing DPO/d' "$CLI"
-    sed -i '' '/archive synthesize/d' "$CLI"
-    # Strip SPIN / iterative self-play (Phase 8)
-    sed -i '' '/SPIN_BLOCK_START/,/SPIN_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_spin/d' "$CLI"
-    sed -i '' '/iterative_self_play/d' "$CLI"
-    sed -i '' '/SPIN/d' "$CLI"
-    sed -i '' '/spin_round/d' "$CLI"
-    sed -i '' '/spin_count/d' "$CLI"
-    sed -i '' '/archive spin/d' "$CLI"
-    # Strip active learning (Phase 9)
-    sed -i '' '/ACTIVE_LEARN_BLOCK_START/,/ACTIVE_LEARN_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_active/d' "$CLI"
-    sed -i '' '/active-learn/d' "$CLI"
-    sed -i '' '/active_learn/d' "$CLI"
-    sed -i '' '/identify_weaknesses/d' "$CLI"
-    sed -i '' '/synthesize_for_weaknesses/d' "$CLI"
-    sed -i '' '/ACTIVE LEARNING/d' "$CLI"
-    # Strip LLM-as-Judge refs
-    sed -i '' '/build_judge_fn/d' "$CLI"
-    sed -i '' '/LLM-as-Judge/d' "$CLI"
-    sed -i '' '/judge_model_fn/d' "$CLI"
-    # Strip Training Conductor (Phase 10)
-    sed -i '' '/CONDUCTOR_BLOCK_START/,/CONDUCTOR_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_conductor/d' "$CLI"
-    sed -i '' '/archive conductor/d' "$CLI"
-    sed -i '' '/TRAINING CONDUCTOR/d' "$CLI"
-    sed -i '' '/training_status/d' "$CLI"
-    # Strip Training Pipeline (Phase 10)
-    sed -i '' '/PIPELINE_BLOCK_START/,/PIPELINE_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_pipeline/d' "$CLI"
-    sed -i '' '/archive pipeline/d' "$CLI"
-    sed -i '' '/TRAINING PIPELINE/d' "$CLI"
-    sed -i '' '/run_full_pipeline/d' "$CLI"
-    sed -i '' '/pipe_provider/d' "$CLI"
-    sed -i '' '/pipe_judge/d' "$CLI"
-    sed -i '' '/pipe_dry_run/d' "$CLI"
-    # Strip Constitutional AI (Phase 11)
-    sed -i '' '/CONSTITUTIONAL_BLOCK_START/,/CONSTITUTIONAL_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_constitutional/d' "$CLI"
-    sed -i '' '/constitutional_revise/d' "$CLI"
-    sed -i '' '/constitutional_hash/d' "$CLI"
-    sed -i '' '/CONSTITUTIONAL/d' "$CLI"
-    sed -i '' '/CONSTITUTION/d' "$CLI"
-    sed -i '' '/archive constitutional/d' "$CLI"
-    # Strip Data Quality Scoring (Phase 11)
-    sed -i '' '/QUALITY_BLOCK_START/,/QUALITY_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_quality/d' "$CLI"
-    sed -i '' '/score_training_data/d' "$CLI"
-    sed -i '' '/export_filtered/d' "$CLI"
-    sed -i '' '/DATA QUALITY/d' "$CLI"
-    sed -i '' '/min_quality/d' "$CLI"
-    sed -i '' '/archive quality/d' "$CLI"
-    # Strip Model Registry + Shadow + Graduation (Phase 12)
-    sed -i '' '/REGISTRY_BLOCK_START/,/REGISTRY_BLOCK_END/d' "$CLI"
-    sed -i '' '/SHADOW_BLOCK_START/,/SHADOW_BLOCK_END/d' "$CLI"
-    sed -i '' '/GRADUATION_BLOCK_START/,/GRADUATION_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_register/d' "$CLI"
-    sed -i '' '/archive_promote/d' "$CLI"
-    sed -i '' '/register_model/d' "$CLI"
-    sed -i '' '/get_registry/d' "$CLI"
-    sed -i '' '/update_model_status/d' "$CLI"
-    sed -i '' '/get_active_model/d' "$CLI"
-    sed -i '' '/shadow_compare/d' "$CLI"
-    sed -i '' '/get_shadow_stats/d' "$CLI"
-    sed -i '' '/graduation_check/d' "$CLI"
-    sed -i '' '/MODEL REGISTRY/d' "$CLI"
-    sed -i '' '/SHADOW MODE/d' "$CLI"
-    sed -i '' '/GRADUATION/d' "$CLI"
-    sed -i '' '/shadow-stats/d' "$CLI"
-    sed -i '' '/shadow_stats/d' "$CLI"
-    sed -i '' '/shadow_won/d' "$CLI"
-    sed -i '' '/SHADOW_CAPTURE/d' "$CLI"
-    sed -i '' '/_ShadowArchive/d' "$CLI"
-    sed -i '' '/_shadow_archive/d' "$CLI"
-    sed -i '' '/_active_model/d' "$CLI"
-    sed -i '' '/_shadow_task/d' "$CLI"
-    sed -i '' '/_shadow_llm/d' "$CLI"
-    sed -i '' '/_shadow_fn/d' "$CLI"
-    sed -i '' '/archive registry/d' "$CLI"
-    sed -i '' '/archive graduation/d' "$CLI"
-    sed -i '' '/promote_canary/d' "$CLI"
-    sed -i '' '/promote_primary/d' "$CLI"
-    # Strip Model Vault (Phase 15)
-    sed -i '' '/VAULT_BLOCK_START/,/VAULT_BLOCK_END/d' "$CLI"
-    sed -i '' '/archive_vault/d' "$CLI"
-    sed -i '' '/archive_rollback/d' "$CLI"
-    sed -i '' '/vault_store/d' "$CLI"
-    sed -i '' '/vault_list/d' "$CLI"
-    sed -i '' '/vault_restore/d' "$CLI"
-    sed -i '' '/rollback_model/d' "$CLI"
-    sed -i '' '/MODEL VAULT/d' "$CLI"
-    sed -i '' '/nucleus-vault/d' "$CLI"
-    sed -i '' '/vault-restore/d' "$CLI"
-    echo "  Sanitized: $CLI (full training stack: all 15 phases)"
-fi
+# ── cli.py sed sanitization removed ──
+# All cli.py sanitization is now handled by sanitize_cli.py (AST-guided) above.
+# The old approach used ~160 sed '/pattern/d' commands that broke Python
+# try/except/else/finally control flow. See sanitize_cli.py for details.
 
 # ── engram_hooks.py: Strip training archive bridge (block delete) ──
 HOOKS="src/mcp_server_nucleus/runtime/engram_hooks.py"
