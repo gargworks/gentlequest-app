@@ -367,7 +367,44 @@ def init_brain_solo(brain_path: Path) -> bool:
 
 
 
-def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str, Any]):
+def _build_nucleus_mcp_config(brain_path: str) -> dict:
+    """Single source of truth for generating MCP config."""
+    from .runtime.common import get_nucleus_mcp_command
+    cmd = get_nucleus_mcp_command()
+    config = {"command": cmd[0]}
+    if len(cmd) > 1:
+        config["args"] = cmd[1:]
+    config["env"] = {
+        "NUCLEUS_BRAIN_PATH": brain_path,
+        "NUCLEAR_BRAIN_PATH": brain_path,  # legacy compat
+    }
+    return config
+
+
+def _get_ide_config_paths() -> list:
+    """Return list of (Path, display_name) for all known MCP clients."""
+    import platform
+    home = Path.home()
+    paths = []
+    # Claude Desktop (platform-specific)
+    if platform.system() == "Darwin":
+        paths.append((home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    elif platform.system() == "Linux":
+        paths.append((home / ".config" / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    else:
+        paths.append((Path(os.environ.get("APPDATA", "")) / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    # Claude Code
+    paths.append((home / ".claude" / ".mcp.json", "Claude Code"))
+    # Cursor
+    paths.append((home / ".cursor" / "mcp.json", "Cursor"))
+    # Windsurf
+    paths.append((home / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf"))
+    # Antigravity
+    paths.append((home / ".gemini" / "antigravity" / "mcp_config.json", "Antigravity"))
+    return paths
+
+
+def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str, Any], force: bool = False):
     """Inject nucleus server into IDE-specific MCP configuration."""
     if not config_path.exists():
         return False
@@ -378,23 +415,29 @@ def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str
         if not backup_path.exists():
             shutil.copy2(config_path, backup_path)
             print(f"  📦 Created backup at {backup_path}")
-        
+
         with open(config_path, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
-        
+
         # Normalize to standard 'mcpServers' block
         target_key = "mcpServers"
         if target_key not in config_data:
             config_data[target_key] = {}
-        
+
         if "nucleus" not in config_data[target_key]:
             config_data[target_key]["nucleus"] = nucleus_config
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(config_data, f, indent=2, ensure_ascii=False)
             print(f"  ✅ Auto-configured 'nucleus' in {ide_name} settings!")
             return True
+        elif force:
+            config_data[target_key]["nucleus"] = nucleus_config
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=2, ensure_ascii=False)
+            print(f"  ✅ Overwrote 'nucleus' config in {ide_name}!")
+            return True
         else:
-            print(f"  ℹ️  'nucleus' already configured in {ide_name}.")
+            print(f"  ℹ️  'nucleus' already configured in {ide_name} (use --force to overwrite).")
             return True
     except Exception as e:
         print(f"  ⚠️  Could not auto-configure {ide_name}: {e}")
@@ -447,19 +490,11 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
     
     # Generate config and auto-configure
     abs_path = str(brain_path.absolute())
-    nucleus_config = {
-        "command": "python3",
-        "args": ["-m", "mcp_server_nucleus"],
-        "env": {"NUCLEAR_BRAIN_PATH": abs_path}
-    }
-    
+    nucleus_config = _build_nucleus_mcp_config(abs_path)
+
     # Paths to known MCP configs
-    ide_configs = [
-        (Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json", "Claude Desktop"),
-        (Path.home() / ".cursor" / "mcp.json", "Cursor"),
-        (Path.home() / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf")
-    ]
-    
+    ide_configs = _get_ide_config_paths()
+
     auto_configured_any = False
     for path_obj, name in ide_configs:
         if _patch_mcp_config(path_obj, name, nucleus_config):
@@ -519,25 +554,13 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
         print("=" * 60)
         
         # OS-specific config file locations
-        import platform
-        system = platform.system()
         print("\n📍 Config file locations:")
-        if system == "Darwin":
-            print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
-            print("   Cursor:         ~/.cursor/mcp.json")
-            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
-        elif system == "Linux":
-            print("   Claude Desktop: ~/.config/Claude/claude_desktop_config.json")
-            print("   Cursor:         ~/.cursor/mcp.json")
-            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
-        else:  # Windows
-            print("   Claude Desktop: %APPDATA%\\Claude\\claude_desktop_config.json")
-            print("   Cursor:         %USERPROFILE%\\.cursor\\mcp.json")
-            print("   Windsurf:       %USERPROFILE%\\.codeium\\windsurf\\mcp_config.json")
+        for ide_path, ide_name in _get_ide_config_paths():
+            print(f"   {ide_name}: {ide_path}")
     else:
         print("\n✅ Auto-configured your MCP client(s). Config used:")
         print(f'   Brain path: {abs_path}')
-        print('   Command:    python3 -m mcp_server_nucleus')
+        print(f'   Command:    {nucleus_config["command"]}')
     
     # ── Progressive Disclosure: Persona-Aware Next Steps ──────
     print("\n" + "=" * 60)
@@ -3409,6 +3432,16 @@ def main():
     recipe_install_parser = recipe_sub.add_parser('install', help='Install a recipe into your brain')
     recipe_install_parser.add_argument('recipe_name', help='Recipe name (e.g., founder, sre, adhd)')
 
+    # nucleus setup — Configure MCP clients for your brain
+    setup_ide_parser = subparsers.add_parser('setup',
+        help='Configure MCP clients (Claude, Cursor, Windsurf, etc.) for your brain')
+    setup_ide_parser.add_argument('--brain-path', type=str, default=None,
+        help='Path to .brain directory (auto-detects if not set)')
+    setup_ide_parser.add_argument('--dry-run', action='store_true',
+        help='Show what would be configured without writing')
+    setup_ide_parser.add_argument('--force', action='store_true',
+        help='Overwrite existing nucleus config in each IDE')
+
     # nucleus self-setup - Meta-config: Automatically add Nucleus paths to your shell profile
     setup_parser = subparsers.add_parser('self-setup', help='🛠 Meta-config: Automatically add Nucleus paths to your shell profile')
     setup_parser.add_argument('--dry-run', action='store_true', help='Show what changes would be made without applying them')
@@ -4244,6 +4277,55 @@ def main():
         
         elif cli_command == 'recipe':
             _handle_recipe_command(args)
+
+        elif cli_command == 'setup':
+            # Auto-detect brain path
+            brain_path_str = args.brain_path
+            if not brain_path_str:
+                # Try to find .brain in cwd or parents
+                cwd = Path.cwd()
+                if (cwd / ".brain").exists():
+                    brain_path_str = str((cwd / ".brain").absolute())
+                else:
+                    for parent in cwd.parents:
+                        if (parent / ".brain").exists():
+                            brain_path_str = str((parent / ".brain").absolute())
+                            break
+            if not brain_path_str:
+                print("❌ No .brain directory found. Run 'nucleus init' first or pass --brain-path.")
+                sys.exit(1)
+
+            nucleus_config = _build_nucleus_mcp_config(brain_path_str)
+            ide_configs = _get_ide_config_paths()
+
+            print(f"🧠 Brain path: {brain_path_str}")
+            print(f"   Command:    {nucleus_config['command']}")
+
+            if args.dry_run:
+                print("\n[DRY RUN] Would configure these IDEs:\n")
+                for ide_path, ide_name in ide_configs:
+                    status = "EXISTS" if ide_path.exists() else "not found"
+                    print(f"  {ide_name}: {ide_path} [{status}]")
+                print("\nConfig that would be written:")
+                print(json.dumps({"mcpServers": {"nucleus": nucleus_config}}, indent=2))
+            else:
+                configured = 0
+                for ide_path, ide_name in ide_configs:
+                    if _patch_mcp_config(ide_path, ide_name, nucleus_config, force=args.force):
+                        configured += 1
+
+                if configured == 0:
+                    full_config = json.dumps({"mcpServers": {"nucleus": nucleus_config}}, indent=2)
+                    print("\n⚠️  No IDE config files found. Copy this config manually:\n")
+                    print(full_config)
+                else:
+                    print(f"\n✅ Configured {configured} IDE(s). Restart them to pick up changes.")
+
+                # Perplexity manual instructions (GUI-only, no config file)
+                print("\n📝 Perplexity (manual — GUI only):")
+                print("   Settings → MCP Servers → Add Server")
+                print(f'   Name: nucleus | Command: {nucleus_config["command"]}')
+                print(f'   Env: NUCLEUS_BRAIN_PATH={brain_path_str}')
 
         elif cli_command == 'self-setup':
             from .setup import install_nucleus_path

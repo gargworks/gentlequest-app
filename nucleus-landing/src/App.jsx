@@ -65,7 +65,7 @@ function App() {
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
             <Cpu className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.6</span></span>
+          <span className="text-xl font-bold tracking-tight">Nucleus™ <span className="hidden sm:inline text-purple-400 font-mono text-sm ml-1">v1.7.0</span></span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#governance" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Features</a>
@@ -110,7 +110,7 @@ function App() {
           </div>
           <div className="flex items-center gap-2">
             <Zap className="w-3 h-3 text-yellow-500" />
-            <span>170+ <span className="text-yellow-400">MCP Tools</span></span>
+            <span>114+ <span className="text-yellow-400">MCP Tools</span></span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="w-3 h-3 text-green-500" />
@@ -521,7 +521,7 @@ function App() {
           />
           <FeatureCard
             icon={<Server className="w-6 h-6 text-orange-400" />}
-            title="170+ MCP Tools"
+            title="114+ MCP Tools"
             desc="Memory, sessions, tasks, governance, compliance, orchestration — organized into facade tools for any MCP client."
           />
         </div>
@@ -558,10 +558,9 @@ function App() {
               <pre className="text-slate-300">{`{
   "mcpServers": {
     "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
+      "command": "nucleus-mcp",
       "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/.brain"
+        "NUCLEUS_BRAIN_PATH": "/path/to/.brain"
       }
     }
   }
@@ -577,10 +576,9 @@ function App() {
               <pre className="text-slate-300">{`{
   "mcpServers": {
     "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
+      "command": "nucleus-mcp",
       "env": {
-        "NUCLEAR_BRAIN_PATH": ".brain"
+        "NUCLEUS_BRAIN_PATH": ".brain"
       }
     }
   }
@@ -655,7 +653,7 @@ function App() {
 
         <div className="text-center">
           <a
-            href="mailto:enterprise@nucleusos.dev?subject=Enterprise%20Inquiry"
+            href="mailto:hello@nucleusos.dev?subject=Enterprise%20Inquiry"
             className="inline-flex items-center gap-2 px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-full text-white font-medium transition-colors"
           >
             Contact for Enterprise
