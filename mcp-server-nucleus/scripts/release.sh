@@ -728,6 +728,11 @@ elif [ "$TEST_PYPI" = true ]; then
     uv publish --publish-url https://test.pypi.org/legacy/ dist/*
     echo -e "  ${GREEN}Published to TestPyPI${NC}"
 else
+    # Extract token from ~/.pypirc if UV_PUBLISH_TOKEN not set
+    if [ -z "$UV_PUBLISH_TOKEN" ] && [ -f ~/.pypirc ]; then
+        UV_PUBLISH_TOKEN=$(grep password ~/.pypirc | head -1 | awk '{print $3}')
+        export UV_PUBLISH_TOKEN
+    fi
     if ! uv publish dist/*; then
         echo -e "  ${RED}PyPI publish FAILED.${NC}"
         echo -e "  ${YELLOW}Rollback: GitHub tag + commit already pushed. To undo:${NC}"
