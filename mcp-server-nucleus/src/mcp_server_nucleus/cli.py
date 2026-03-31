@@ -3363,7 +3363,8 @@ def main():
         description='Nucleus Control Plane CLI - Manage your AI coordination system'
     )
     
-    parser.add_argument('--version', action='version', version='%(prog)s 1.5.1')
+    from mcp_server_nucleus import __version__
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument('--self-heal', action='store_true', default=True,
                         help='Enable self-healing error handler (default: on)')
     parser.add_argument('--no-self-heal', dest='self_heal', action='store_false',
@@ -3917,6 +3918,10 @@ def main():
     _p.add_argument('--context', default=None, help='Filter by context')
     _p.add_argument('--min-intensity', type=int, default=1, help='Minimum intensity (default: 1)')
     _p.add_argument('--limit', type=int, default=50, help='Max results (default: 50)')
+
+    _p = engram_subs.add_parser('quarantine', help='Quarantine an engram (exclude from brief/search)')
+    _p.add_argument('key', help='Engram key to quarantine')
+    _p.add_argument('--undo', action='store_true', help='Remove quarantine')
 
     # --- TASK COMMANDS ---
     task_parser = subparsers.add_parser('task', aliases=['tasks'], help='📋 Task management: list, add, update')
@@ -4760,8 +4765,44 @@ def handle_engram_command(args) -> int:
             return output(engrams, fmt, columns=["key", "value", "context", "intensity"])
         return output(data, fmt)
 
+    elif action == 'quarantine':
+        from .runtime.common import get_brain_path
+        import json
+        brain = get_brain_path()
+        ledger = brain / "engrams" / "ledger.jsonl"
+        if not ledger.exists():
+            print("No engram ledger found.", file=sys.stderr)
+            return 1
+        undo = getattr(args, 'undo', False)
+        lines = []
+        found = False
+        with open(ledger, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        e = json.loads(line)
+                        if e.get("key") == args.key and not e.get("deleted", False):
+                            found = True
+                            if undo:
+                                e.pop("quarantined", None)
+                            else:
+                                e["quarantined"] = True
+                        lines.append(json.dumps(e, ensure_ascii=False) + "\n")
+                    except json.JSONDecodeError:
+                        lines.append(line)
+                else:
+                    lines.append(line)
+        if not found:
+            print(f"Engram '{args.key}' not found.", file=sys.stderr)
+            return 3
+        with open(ledger, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        verb = "unquarantined" if undo else "quarantined"
+        print(f"Engram '{args.key}' {verb}. It will be {'included in' if undo else 'excluded from'} morning-brief and search.")
+        return 0
+
     else:
-        print("Usage: nucleus engram <search|write|query>", file=sys.stderr)
+        print("Usage: nucleus engram <search|write|query|quarantine>", file=sys.stderr)
         return 1
 
 

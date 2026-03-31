@@ -143,7 +143,7 @@ def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
             if line.strip():
                 try:
                     e = json.loads(line)
-                    if e.get("deleted", False):
+                    if e.get("deleted", False) or e.get("quarantined", False):
                         continue
 
                     # Compute score: intensity × 2 + recency_bonus + context_bonus
