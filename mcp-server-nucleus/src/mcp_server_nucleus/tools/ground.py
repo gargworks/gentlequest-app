@@ -38,6 +38,21 @@ def register(mcp, helpers):
         # Log receipt
         _log_receipt(receipt)
 
+        # Emit ground_verified event (Phase 3: Three Frontiers)
+        try:
+            from ..runtime.event_ops import _emit_event
+            tier_reached = receipt.get("tier_reached", 0)
+            tiers_failed = receipt.get("tiers_failed", [])
+            _emit_event("ground_verified", "execution_verifier", {
+                "receipt_id": receipt.get("receipt_id", ""),
+                "tier_reached": tier_reached,
+                "verified": len(tiers_failed) == 0,
+                "tiers_passed": receipt.get("tiers_passed", []),
+                "tiers_failed": tiers_failed,
+            })
+        except Exception:
+            pass  # Never let event emission break verification
+
         return json.dumps(receipt, indent=2, default=str)
 
     def _receipt():

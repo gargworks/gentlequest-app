@@ -4740,6 +4740,20 @@ def handle_review_command(args):
 
     if updated:
         verdicts_path.write_text("\n".join(new_lines) + "\n")
+
+        # Emit align_reviewed event (Phase 3: Three Frontiers)
+        try:
+            from .runtime.event_ops import _emit_event
+            verdict_type = entry.get("verdict", "unknown")
+            _emit_event("align_reviewed", "human", {
+                "task_id": task_id,
+                "verdict": verdict_type,
+                "human_notes": entry.get("human_notes", ""),
+                "correction": entry.get("correction", ""),
+            })
+        except Exception:
+            pass  # Never let event emission break the review command
+
         print(f"Task {task_id} updated.")
     else:
         print(f"Task {task_id} not found or not pending.")

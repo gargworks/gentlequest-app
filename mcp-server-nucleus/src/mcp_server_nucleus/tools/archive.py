@@ -140,6 +140,62 @@ def register(mcp, helpers):
         patterns = extract_patterns(since=since, frontier=frontier)
         return make_response(True, data=patterns)
 
+    def _h_frontier_health(timerange="7d"):
+        """Three Frontiers health dashboard — GROUND/ALIGN/COMPOUND metrics."""
+        from ..runtime.common import get_brain_path
+        from ..runtime.hardening import safe_read_jsonl
+        from ..runtime.delta_ops import extract_patterns
+        brain = get_brain_path()
+
+        # GROUND: verification receipts
+        ground = {"total_verifications": 0, "pass_rate": 0.0, "avg_tier_reached": 0.0}
+        try:
+            vlog = brain / "verification_log.jsonl"
+            if vlog.exists():
+                receipts = safe_read_jsonl(vlog)
+                if receipts:
+                    ground["total_verifications"] = len(receipts)
+                    passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                    ground["pass_rate"] = round(passed / len(receipts), 3)
+                    ground["avg_tier_reached"] = round(
+                        sum(r.get("tier_reached", 0) for r in receipts) / len(receipts), 1
+                    )
+        except Exception:
+            pass
+
+        # ALIGN: human verdicts
+        align = {"total_reviews": 0, "accepted": 0, "rejected": 0, "corrected": 0, "redirected": 0}
+        try:
+            vpath = brain / "driver" / "human_verdicts.jsonl"
+            if vpath.exists():
+                verdicts = safe_read_jsonl(vpath)
+                non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+                align["total_reviews"] = len(non_pending)
+                for v in non_pending:
+                    vtype = v.get("verdict", "")
+                    if vtype in align:
+                        align[vtype] += 1
+        except Exception:
+            pass
+
+        # COMPOUND: delta patterns
+        compound = {"total_deltas": 0, "compound_rate": 0.0, "recurring_patterns": 0}
+        try:
+            patterns = extract_patterns(since=timerange)
+            compound["total_deltas"] = patterns.get("total_deltas", 0)
+            compound["compound_rate"] = patterns.get("compound_rate", 0.0)
+            compound["recurring_patterns"] = len(patterns.get("recurring_negatives", []))
+            compound["frontier_health"] = patterns.get("frontier_health", {})
+        except Exception:
+            pass
+
+        return make_response(True, data={
+            "timerange": timerange,
+            "GROUND": ground,
+            "ALIGN": align,
+            "COMPOUND": compound,
+        })
+
     ACTION_MAP = {
         "stats": (_h_stats, "Show archive statistics"),
         "recent": (_h_recent, "Show recent loop turns"),
@@ -152,6 +208,7 @@ def register(mcp, helpers):
         "record_delta": (_h_record_delta, "Record a Delta — measured gap between intent and reality"),
         "query_deltas": (_h_query_deltas, "Query accumulated deltas (filter by frontier, direction, since)"),
         "extract_patterns": (_h_extract_patterns, "Extract meta-patterns from accumulated deltas"),
+        "frontier_health": (_h_frontier_health, "Three Frontiers health dashboard — GROUND/ALIGN/COMPOUND metrics"),
     }
 
     @mcp.tool()
@@ -170,6 +227,7 @@ def register(mcp, helpers):
         - record_delta: Record a Delta — gap between intent and reality (params: frontier, expected_source, expected_intent, actual_source, actual_outcome, insight, corrections)
         - query_deltas: Query deltas (params: frontier, direction, since, limit)
         - extract_patterns: Extract meta-patterns from accumulated deltas (params: since, frontier)
+        - frontier_health: Three Frontiers health dashboard (params: timerange=7d)
         """
         return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
 

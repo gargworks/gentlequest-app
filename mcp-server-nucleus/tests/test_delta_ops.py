@@ -355,11 +355,18 @@ class TestReinvestment:
                 brain=delta_brain,
             )
 
-            mock_instance.process.assert_called_once()
-            call_kwargs = mock_instance.process.call_args[1]
+            # Phase 3: delta_recorded event also triggers auto-engram via hooks,
+            # so MemoryPipeline.process may be called more than once.
+            # Find the recurring pattern call specifically.
+            assert mock_instance.process.call_count >= 1
+            recurring_calls = [
+                c for c in mock_instance.process.call_args_list
+                if c[1].get("key", "").startswith("recurring_")
+            ]
+            assert len(recurring_calls) == 1, f"Expected 1 recurring pattern call, got {len(recurring_calls)}"
+            call_kwargs = recurring_calls[0][1]
             assert call_kwargs["intensity"] == 9
             assert call_kwargs["context"] == "Strategy"
-            assert "recurring_" in call_kwargs["key"]
             assert "RECURRING PATTERN" in call_kwargs["text"]
 
 

@@ -68,7 +68,7 @@ logger = logging.getLogger("nucleus.engram_hooks")
 
 
 # ═══════════════════════════════════════════════════════════════
-# COMPLETE EVENT CLASSIFICATION (21 events — no unknowns)
+# COMPLETE EVENT CLASSIFICATION (24 events — no unknowns)
 # ═══════════════════════════════════════════════════════════════
 
 TRIGGER_EVENTS = {
@@ -176,6 +176,29 @@ TRIGGER_EVENTS = {
         "key_prefix": "brief",
         "data_fields": ["action", "engram_count", "task_count"],
     },
+
+    # ── Three Frontiers (3 triggers — Phase 3) ──────────────
+    "ground_verified": {
+        "context": "Architecture",
+        "intensity": 5,
+        "template": "GROUND T{tier_reached}: verified={verified}",
+        "key_prefix": "ground",
+        "data_fields": ["receipt_id", "tier_reached", "verified", "tiers_passed", "tiers_failed"],
+    },
+    "align_reviewed": {
+        "context": "Strategy",
+        "intensity": 8,
+        "template": "ALIGN: {verdict} — {human_notes}",
+        "key_prefix": "align",
+        "data_fields": ["task_id", "verdict", "human_notes", "correction"],
+    },
+    "delta_recorded": {
+        "context": "Strategy",
+        "intensity": 6,
+        "template": "DELTA [{frontier}] {direction}: {insight}",
+        "key_prefix": "delta",
+        "data_fields": ["delta_id", "frontier", "direction", "magnitude", "insight"],
+    },
 }
 
 # Events that should NEVER create engrams (noisy/circular/redundant)
@@ -196,7 +219,7 @@ SKIP_EVENTS = {
     "session_saved",             # Duplicate of session_ended (save != end)
 }
 
-# All 21 events must be in exactly one set (enforced at import time)
+# All events must be in exactly one set (enforced at import time)
 _ALL_EVENTS = set(TRIGGER_EVENTS.keys()) | SKIP_EVENTS
 assert len(_ALL_EVENTS) == len(TRIGGER_EVENTS) + len(SKIP_EVENTS), \
     "BUG: Event appears in both TRIGGER and SKIP sets"
@@ -334,6 +357,8 @@ _ARCHIVE_WORTHY_EVENTS = {
     "task_completed_with_fence", "slot_task_completed",
     "deploy_complete", "code_critiqued", "task_escalated",
     "handoff_requested", "sprint_started",
+    # Phase 3: Three Frontiers — every verification, review, and delta is training signal
+    "ground_verified", "align_reviewed", "delta_recorded",
 }
 
 
