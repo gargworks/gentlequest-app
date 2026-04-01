@@ -99,6 +99,47 @@ def register(mcp, helpers):
         archive = ArchivePipeline()
         return make_response(True, data=archive.get_reasoning_stats())
 
+    # ── Phase 2: Delta Operations ────────────────────────────────
+
+    def _h_record_delta(frontier="GROUND", expected_source="", expected_intent="",
+                        actual_source="", actual_outcome="", insight="",
+                        corrections=None):
+        from ..runtime.delta_ops import record_delta
+        delta_id = record_delta(
+            frontier=frontier,
+            expected_source=expected_source,
+            expected_intent=expected_intent,
+            actual_source=actual_source,
+            actual_outcome=actual_outcome,
+            insight=insight,
+            corrections=corrections,
+        )
+        if delta_id:
+            return make_response(True, data={
+                "delta_id": delta_id,
+                "frontier": frontier,
+                "message": f"Delta recorded: {delta_id}",
+            })
+        return make_response(False, error="Failed to record delta (invalid frontier or no brain path)")
+
+    def _h_query_deltas(frontier=None, direction=None, since=None, limit=200):
+        from ..runtime.delta_ops import query_deltas
+        results = query_deltas(
+            frontier=frontier,
+            direction=direction,
+            since=since,
+            limit=int(limit),
+        )
+        return make_response(True, data={
+            "deltas": results,
+            "count": len(results),
+        })
+
+    def _h_extract_patterns(since=None, frontier=None):
+        from ..runtime.delta_ops import extract_patterns
+        patterns = extract_patterns(since=since, frontier=frontier)
+        return make_response(True, data=patterns)
+
     ACTION_MAP = {
         "stats": (_h_stats, "Show archive statistics"),
         "recent": (_h_recent, "Show recent loop turns"),
@@ -108,6 +149,9 @@ def register(mcp, helpers):
         "dpo_status": (_h_dpo_status, "Show DPO preference pair statistics"),
         "record_preference": (_h_record_preference, "Record a DPO preference pair (prompt, chosen, rejected)"),
         "cot_status": (_h_cot_status, "Show reasoning chain (CoT) statistics"),
+        "record_delta": (_h_record_delta, "Record a Delta — measured gap between intent and reality"),
+        "query_deltas": (_h_query_deltas, "Query accumulated deltas (filter by frontier, direction, since)"),
+        "extract_patterns": (_h_extract_patterns, "Extract meta-patterns from accumulated deltas"),
     }
 
     @mcp.tool()
@@ -123,6 +167,9 @@ def register(mcp, helpers):
         - dpo_status: Show DPO preference pair statistics (source breakdown)
         - record_preference: Record a DPO pair (params: prompt, chosen, rejected, source)
         - cot_status: Show reasoning chain (Chain-of-Thought) statistics
+        - record_delta: Record a Delta — gap between intent and reality (params: frontier, expected_source, expected_intent, actual_source, actual_outcome, insight, corrections)
+        - query_deltas: Query deltas (params: frontier, direction, since, limit)
+        - extract_patterns: Extract meta-patterns from accumulated deltas (params: since, frontier)
         """
         return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
 
