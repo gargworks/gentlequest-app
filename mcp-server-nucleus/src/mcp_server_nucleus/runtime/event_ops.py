@@ -5,12 +5,22 @@ Core logic for event stream management.
 """
 
 import json
+import os
 import time
 import uuid
 from typing import Dict, Any, List
 from datetime import datetime, timezone
 
 from .common import get_brain_path, logger
+
+# Artery 5: Extensible event hook registry
+_event_hooks: list = []
+
+def register_event_hook(callback):
+    """Register a callback to be called on every emitted event.
+    Callback signature: (event_type: str, emitter: str, data: dict) -> None
+    """
+    _event_hooks.append(callback)
 
 def _log_interaction(emitter: str, event_type: str, data: Dict[str, Any]) -> None:
     """Log a cryptographic hash of the interaction for user trust (V9 Security)."""
@@ -91,6 +101,38 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             get_change_ledger().record_change("events.jsonl", event_type)
         except Exception:
             pass  # Never let ledger updates break event emission
+
+        # Evaluate triggers for this event (Artery 4: alive nervous system)
+        if not os.environ.get("NUCLEUS_DISABLE_ARTERY_4"):
+            try:
+                from .trigger_ops import _evaluate_triggers_impl
+                matching_agents = _evaluate_triggers_impl(event_type, emitter)
+                if matching_agents:
+                    logger.info(f"Triggers matched: {matching_agents} for {event_type}")
+                    try:
+                        summary_path = brain / "ledger" / "activity_summary.json"
+                        if summary_path.exists():
+                            with open(summary_path, "r") as f:
+                                summary = json.load(f)
+                            summary["last_trigger_match"] = {
+                                "event_type": event_type,
+                                "matched_agents": matching_agents,
+                                "timestamp": timestamp
+                            }
+                            summary["trigger_match_count"] = summary.get("trigger_match_count", 0) + 1
+                            with open(summary_path, "w") as f:
+                                json.dump(summary, f, indent=2)
+                    except Exception:
+                        pass
+            except Exception:
+                pass  # Never let trigger evaluation break event emission
+
+        # Artery 5: Fire registered event hooks
+        for hook in _event_hooks:
+            try:
+                hook(event_type, emitter, data)
+            except Exception:
+                pass  # Never let hooks break event emission
 
         return event_id
     except Exception as e:

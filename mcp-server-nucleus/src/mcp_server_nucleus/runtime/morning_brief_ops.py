@@ -21,12 +21,62 @@ Usage via MCP:
 
 import json
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 logger = logging.getLogger("nucleus.morning_brief")
+
+
+def _find_engram_by_key(brain: Path, key: str) -> Optional[dict]:
+    """Find a specific engram by exact key match. Returns None if not found."""
+    ledger = brain / "engrams" / "ledger.jsonl"
+    if not ledger.exists():
+        return None
+    result = None
+    try:
+        with open(ledger, "r") as f:
+            for line in f:
+                try:
+                    e = json.loads(line.strip())
+                    if e.get("key") == key and not e.get("deleted", False):
+                        result = e
+                except (json.JSONDecodeError, KeyError):
+                    continue
+    except OSError:
+        return None
+    return result
+
+
+def _check_recommendation_followed(yesterday_rec: dict, tasks_data: dict, events_list: list) -> bool:
+    """Check if yesterday's brief recommendation was acted upon."""
+    rec_value = yesterday_rec.get("value", "")
+    task_ref = ""
+    if "]" in rec_value:
+        after_bracket = rec_value.split("]", 1)[1]
+        task_ref = after_bracket.split("|")[0].strip()
+    if not task_ref:
+        return False
+    ref_words = set(task_ref.lower().split())
+    if len(ref_words) < 2:
+        return False
+    for event in events_list:
+        event_type = event.get("event", event.get("type", ""))
+        if event_type in ("task_completed", "task_claimed", "slot_task_completed",
+                          "task_completed_with_fence", "task_state_changed"):
+            event_data = json.dumps(event.get("detail", event.get("data", {}))).lower()
+            matches = sum(1 for w in ref_words if w in event_data)
+            if matches >= 2:
+                return True
+    for status_key in ("in_progress", "pending"):
+        for task in (tasks_data.get(status_key) or []):
+            task_desc = task.get("description", "").lower()
+            matches = sum(1 for w in ref_words if w in task_desc)
+            if matches >= 2 and status_key == "in_progress":
+                return True
+    return False
 
 
 def _morning_brief_impl() -> Dict:
@@ -75,6 +125,41 @@ def _morning_brief_impl() -> Dict:
 
     # ── SECTION 7: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
+
+    # ── ARTERY 1: Persist recommendation as Strategy engram ───
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_1"):
+        try:
+            from .memory_pipeline import MemoryPipeline
+            today_str = datetime.now().strftime('%Y%m%d')
+            rec = brief["recommendation"]
+            rec_key = f"brief_rec_{today_str}"
+            rec_value = f"[{rec.get('action', '?')}] {rec.get('task', '')}"
+            if rec.get("context_reminder"):
+                rec_value += f" | Context: {rec['context_reminder'][:80]}"
+
+            pipeline = MemoryPipeline(brain_path=brain)
+            pipeline.process(
+                text=rec_value,
+                context="Strategy",
+                intensity=7,
+                source_agent="morning_brief",
+                key=rec_key,
+            )
+
+            # Compare to yesterday's recommendation
+            yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
+            yesterday_rec = _find_engram_by_key(brain, f"brief_rec_{yesterday_str}")
+            if yesterday_rec:
+                events_list = brief["sections"].get("yesterday", {}).get("events", [])
+                tasks_data = brief["sections"].get("tasks", {})
+                followed = _check_recommendation_followed(yesterday_rec, tasks_data, events_list)
+                brief["sections"]["yesterday_recommendation"] = {
+                    "recommendation": yesterday_rec.get("value", ""),
+                    "followed": followed,
+                    "delta": "ALIGNED" if followed else "DIVERGED",
+                }
+        except Exception:
+            pass  # Never let recommendation persistence break the brief
 
     # ── META ────────────────────────────────────────────────────
     elapsed = (time.time() - start) * 1000

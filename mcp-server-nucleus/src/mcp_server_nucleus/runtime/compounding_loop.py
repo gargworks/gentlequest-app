@@ -31,11 +31,115 @@ Daily Plan:
 
 import json
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, List
 
 logger = logging.getLogger("nucleus.compounding")
+
+
+# ── Artery 7: Compounding cycle state machine ──────────────────
+
+def _compute_compounding_score(brain: Path) -> int:
+    """Compute compounding score from brain state.
+
+    Extracted from inline computation for reuse by cycle state machine.
+    """
+    engram_count = 0
+    auto_writes = 0
+    errors = 0
+
+    ledger = brain / "engrams" / "ledger.jsonl"
+    if ledger.exists():
+        try:
+            for line in ledger.read_text().splitlines():
+                try:
+                    e = json.loads(line.strip())
+                    if not e.get("deleted", False):
+                        engram_count += 1
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        except OSError:
+            pass
+
+    metrics = brain / "engrams" / "hook_metrics.jsonl"
+    if metrics.exists():
+        try:
+            for line in metrics.read_text().splitlines():
+                try:
+                    m = json.loads(line.strip())
+                    outcome = m.get("outcome", "")
+                    if outcome == "ADD":
+                        auto_writes += 1
+                    elif outcome == "ERROR":
+                        errors += 1
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        except OSError:
+            pass
+
+    efficiency = auto_writes / max(auto_writes + errors, 1)
+
+    return min(100, int(
+        (engram_count * 0.5) +
+        (auto_writes * 2) +
+        (efficiency * 50) -
+        (errors * 5)
+    ))
+
+
+def _load_or_create_cycle(brain: Path, cycle_path: Path) -> dict:
+    """Load existing cycle state or create a fresh one."""
+    if cycle_path.exists():
+        try:
+            return json.loads(cycle_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass  # Corrupted — create fresh
+    return _create_new_cycle(brain, cycle_id=1)
+
+
+def _create_new_cycle(brain: Path, cycle_id: int) -> dict:
+    """Create a new weekly cycle starting from this week's Monday."""
+    today = datetime.now()
+    monday = today - timedelta(days=today.weekday())
+    week_start = monday.strftime("%Y-%m-%d")
+
+    daily_actions = {
+        0: "GAP_ANALYSIS", 1: "BUILD", 2: "TEST",
+        3: "REFLECT", 4: "SHIP", 5: "AUDIT", 6: "CONSOLIDATE",
+    }
+
+    days = {}
+    for i in range(7):
+        day = monday + timedelta(days=i)
+        day_str = day.strftime("%Y-%m-%d")
+        days[day_str] = {
+            "action": daily_actions[i],
+            "planned": True,
+            "completed": False,
+            "score_at_start": None,
+            "score_at_end": None,
+        }
+
+    return {
+        "cycle_id": cycle_id,
+        "week_start": week_start,
+        "days": days,
+        "weekly_score_start": _compute_compounding_score(brain),
+        "weekly_score_end": None,
+        "weekly_delta": None,
+        "previous_cycles": [],
+    }
+
+
+def _save_cycle(cycle: dict, path: Path):
+    """Atomic JSON write with temp file + rename."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix('.tmp')
+    with open(tmp, 'w') as f:
+        json.dump(cycle, f, indent=2)
+    tmp.rename(path)
 
 
 def _get_day_of_week() -> str:
@@ -135,7 +239,7 @@ def _compounding_loop_status_impl() -> Dict:
         (errors * 5)
     ))
     
-    return {
+    response = {
         "day_of_week": day,
         "week_number": week,
         "today": today,
@@ -148,6 +252,47 @@ def _compounding_loop_status_impl() -> Dict:
         "recommendation": brief.get("recommendation", {}),
         "formatted": _format_loop_status(day, week, today, compounding_score, brief),
     }
+
+    # ── Artery 7: Track cycle state ──
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_7"):
+        try:
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            cycle = _load_or_create_cycle(brain, cycle_path)
+
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            today_entry = cycle.get("days", {}).get(today_str, {})
+
+            # Record score at day start if not yet recorded
+            if today_entry and today_entry.get("score_at_start") is None:
+                today_entry["score_at_start"] = compounding_score
+                cycle["days"][today_str] = today_entry
+                _save_cycle(cycle, cycle_path)
+
+            # Build cycle context for response
+            prev = cycle.get("previous_cycles", [])
+            days_completed = sum(
+                1 for d in cycle.get("days", {}).values() if d.get("completed")
+            )
+            avg_delta = (
+                sum(p.get("delta", 0) for p in prev) / len(prev) if prev else 0
+            )
+            current_delta = compounding_score - cycle.get("weekly_score_start", 0)
+
+            response["cycle"] = {
+                "cycle_id": cycle.get("cycle_id"),
+                "week_start": cycle.get("week_start"),
+                "days_completed": days_completed,
+                "days_total": len(cycle.get("days", {})),
+                "weekly_score_start": cycle.get("weekly_score_start"),
+                "current_score": compounding_score,
+                "current_delta": current_delta,
+                "trend": "accelerating" if current_delta > avg_delta else "steady" if not prev else "decelerating",
+                "previous_delta": prev[-1].get("delta") if prev else None,
+            }
+        except Exception:
+            pass  # Never let cycle tracking break status
+
+    return response
 
 
 def _format_loop_status(day: str, week: int, today: Dict, score: int, brief: Dict) -> str:
@@ -267,6 +412,20 @@ def _end_of_day_capture_impl(
         "blockers_count": len(blockers) if blockers else 0,
     })
     
+    # ── Artery 7: Mark today as completed in cycle state ──
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_7"):
+        try:
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                cycle = json.loads(cycle_path.read_text())
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                if today_str in cycle.get("days", {}):
+                    cycle["days"][today_str]["completed"] = True
+                    cycle["days"][today_str]["score_at_end"] = _compute_compounding_score(brain)
+                    _save_cycle(cycle, cycle_path)
+        except Exception:
+            pass  # Never let cycle tracking break EOD capture
+
     return {
         "success": True,
         "day": day,
@@ -436,5 +595,94 @@ def _weekly_consolidation_impl(dry_run: bool = True) -> Dict:
             "action": "weekly_synthesis",
             "error": str(e),
         })
-    
+
+    # ── Artery 7: Close compounding cycle + write spiral engram ──
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_7"):
+        try:
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                cycle = json.loads(cycle_path.read_text())
+                final_score = _compute_compounding_score(brain)
+
+                cycle["weekly_score_end"] = final_score
+                cycle["weekly_delta"] = final_score - cycle.get("weekly_score_start", 0)
+
+                completed = sum(
+                    1 for d in cycle.get("days", {}).values() if d.get("completed")
+                )
+
+                # Archive this cycle
+                prev = cycle.get("previous_cycles", [])
+                prev.append({
+                    "cycle_id": cycle["cycle_id"],
+                    "delta": cycle["weekly_delta"],
+                    "week_start": cycle["week_start"],
+                    "days_completed": completed,
+                    "score_start": cycle.get("weekly_score_start", 0),
+                    "score_end": final_score,
+                })
+
+                results["actions"].append({
+                    "action": "close_cycle",
+                    "cycle_id": cycle["cycle_id"],
+                    "delta": cycle["weekly_delta"],
+                    "days_completed": completed,
+                })
+
+                # Write spiral engram (visible compound curve)
+                if not dry_run and prev:
+                    try:
+                        avg_delta = sum(p.get("delta", 0) for p in prev) / len(prev)
+
+                        # Sparkline from last 12 cycles
+                        deltas_12 = [p.get("delta", 0) for p in prev[-12:]]
+                        bars = "▁▂▃▄▅▆▇█"
+                        max_d = max(abs(d) for d in deltas_12) if deltas_12 else 1
+                        sparkline = "".join(
+                            bars[min(int(((d - min(0, min(deltas_12))) / max(max_d, 1)) * 7), 7)]
+                            for d in deltas_12
+                        ) if deltas_12 else ""
+
+                        spiral_text = (
+                            f"Week {cycle['cycle_id']}: "
+                            f"score {cycle.get('weekly_score_start', '?')}->{final_score} "
+                            f"(d{cycle['weekly_delta']:+d}). "
+                            f"Avg: d{avg_delta:+.1f}/wk. {sparkline}"
+                        )
+
+                        from .memory_pipeline import MemoryPipeline
+                        pipeline = MemoryPipeline(brain_path=brain)
+                        pipeline.process(
+                            text=spiral_text,
+                            context="Strategy",
+                            intensity=8,
+                            source_agent="compounding_loop",
+                            key=f"spiral_week_{cycle['cycle_id']}",
+                        )
+
+                        results["actions"].append({
+                            "action": "spiral_engram",
+                            "written": True,
+                            "delta": cycle["weekly_delta"],
+                            "avg_delta": round(avg_delta, 1),
+                            "sparkline": sparkline,
+                        })
+                    except Exception:
+                        pass  # Spiral engram is nice-to-have
+
+                # Create new cycle
+                new_cycle = _create_new_cycle(brain, cycle["cycle_id"] + 1)
+                new_cycle["previous_cycles"] = prev[-52:]  # Keep 1 year
+                _save_cycle(new_cycle, cycle_path)
+
+                results["actions"].append({
+                    "action": "new_cycle",
+                    "cycle_id": new_cycle["cycle_id"],
+                })
+        except Exception as e:
+            results["actions"].append({
+                "action": "close_cycle",
+                "error": str(e),
+            })
+
     return results
