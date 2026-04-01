@@ -5,6 +5,7 @@ Tests that:
 2. All three are in _ARCHIVE_WORTHY_EVENTS (auto-produce training data)
 3. frontier_health action returns GROUND/ALIGN/COMPOUND metrics
 4. Auto-engram creation works for frontier events
+5. Phase 3e: quality_grade field on LoopTurn + frontier scoring integration
 """
 
 import json
@@ -233,3 +234,244 @@ class TestGroundEventEmission:
             assert data["receipt_id"] == "test_receipt"
             assert data["tier_reached"] == 3
             assert data["verified"] is True
+
+
+# ── Phase 3e: Quality Grade ──────────────────────────────────────────────
+
+
+class TestQualityGrade:
+    """Verify quality_grade on LoopTurn and frontier scoring integration."""
+
+    def test_loopturn_default_grade_is_copper(self):
+        """New LoopTurns should default to copper grade."""
+        from mcp_server_nucleus.runtime.archive_pipeline import LoopTurn
+        turn = LoopTurn(
+            brother="code", intent="test", actions=[], tools_used=[],
+            decisions=[], outcome="done", signal_absorbed=[], signal_produced=[],
+        )
+        assert turn.quality_grade == "copper"
+
+    def test_loopturn_grade_persists_in_dict(self):
+        """quality_grade should survive to_dict() and back."""
+        from mcp_server_nucleus.runtime.archive_pipeline import LoopTurn
+        turn = LoopTurn(
+            brother="code", intent="test", actions=[], tools_used=[],
+            decisions=[], outcome="done", signal_absorbed=[], signal_produced=[],
+            quality_grade="gold",
+        )
+        d = turn.to_dict()
+        assert d["quality_grade"] == "gold"
+
+    def test_loopturn_grade_reconstructed(self):
+        """_dict_to_turn should restore quality_grade."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        d = {
+            "brother": "code", "intent": "test", "actions": [], "tools_used": [],
+            "decisions": [], "outcome": "done", "signal_absorbed": [],
+            "signal_produced": [], "quality_grade": "platinum",
+        }
+        turn = pipeline._dict_to_turn(d)
+        assert turn.quality_grade == "platinum"
+
+    def test_loopturn_grade_defaults_copper_on_missing(self):
+        """Old LoopTurns without quality_grade should default to copper."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        d = {
+            "brother": "code", "intent": "test", "actions": [], "tools_used": [],
+            "decisions": [], "outcome": "done", "signal_absorbed": [],
+            "signal_produced": [],
+            # no quality_grade key
+        }
+        turn = pipeline._dict_to_turn(d)
+        assert turn.quality_grade == "copper"
+
+    def test_scoring_platinum_override(self):
+        """Platinum grade should always score 1.0 regardless of text."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        score = ArchivePipeline._score_pair("hi", "ok", quality_grade="platinum")
+        assert score == 1.0
+
+    def test_scoring_gold_bonus(self):
+        """Gold grade should add +0.2 bonus to base score."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        base = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+        )
+        boosted = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+            quality_grade="gold",
+        )
+        assert boosted == min(base + 0.2, 1.0)
+
+    def test_scoring_silver_bonus(self):
+        """Silver grade should add +0.1 bonus to base score."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        base = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+        )
+        boosted = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+            quality_grade="silver",
+        )
+        assert boosted == min(base + 0.1, 1.0)
+
+    def test_scoring_copper_no_bonus(self):
+        """Copper (default) grade should add no bonus."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        base = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+        )
+        copper = ArchivePipeline._score_pair(
+            "What should I focus on this sprint?",
+            "Based on the velocity data, prioritize the auth migration — it blocks 3 downstream tasks.",
+            quality_grade="copper",
+        )
+        assert copper == base
+
+    def test_grade_order_constant(self):
+        """_GRADE_ORDER should have correct hierarchy."""
+        from mcp_server_nucleus.runtime.archive_pipeline import _GRADE_ORDER
+        assert _GRADE_ORDER["copper"] < _GRADE_ORDER["silver"]
+        assert _GRADE_ORDER["silver"] < _GRADE_ORDER["gold"]
+        assert _GRADE_ORDER["gold"] < _GRADE_ORDER["platinum"]
+
+
+class TestFrontierGradeResolution:
+    """Verify _resolve_frontier_grades cross-references GROUND/ALIGN data."""
+
+    def test_resolve_empty_brain(self, brain):
+        """No receipts or verdicts = no grade upgrades."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        pipeline.training_dir = brain / "training"
+        pipeline.turns_file = pipeline.training_dir / "loop_turns.jsonl"
+        pipeline.turns_file.touch()
+        grades = pipeline._resolve_frontier_grades()
+        assert grades == {}
+
+    def test_resolve_ground_silver(self, brain):
+        """GROUND receipt (tier < 3) near a turn → silver."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline, LoopTurn
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        pipeline.training_dir = brain / "training"
+        pipeline.turns_file = pipeline.training_dir / "loop_turns.jsonl"
+
+        # Record a turn
+        ts = datetime.now(timezone.utc).isoformat()
+        turn = LoopTurn(
+            brother="code", intent="fix bug", actions=["edited file"],
+            tools_used=["edit"], decisions=["quick fix"], outcome="fixed",
+            signal_absorbed=[], signal_produced=[],
+        )
+        turn.timestamp = ts
+        with open(pipeline.turns_file, "w") as f:
+            f.write(json.dumps(turn.to_dict()) + "\n")
+
+        # Write a matching GROUND receipt (same timestamp, tier 2)
+        vlog = brain / "verification_log.jsonl"
+        with open(vlog, "w") as f:
+            f.write(json.dumps({
+                "receipt_id": "r1", "tier_reached": 2,
+                "tiers_passed": [0, 1, 2], "tiers_failed": [],
+                "timestamp": ts,
+            }) + "\n")
+
+        grades = pipeline._resolve_frontier_grades()
+        assert grades.get(turn.turn_id) == "silver"
+
+    def test_resolve_ground_gold(self, brain):
+        """GROUND receipt (tier >= 3) near a turn → gold."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline, LoopTurn
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        pipeline.training_dir = brain / "training"
+        pipeline.turns_file = pipeline.training_dir / "loop_turns.jsonl"
+
+        ts = datetime.now(timezone.utc).isoformat()
+        turn = LoopTurn(
+            brother="code", intent="add feature", actions=["wrote code"],
+            tools_used=["write"], decisions=["new approach"], outcome="done",
+            signal_absorbed=[], signal_produced=[],
+        )
+        turn.timestamp = ts
+        with open(pipeline.turns_file, "w") as f:
+            f.write(json.dumps(turn.to_dict()) + "\n")
+
+        vlog = brain / "verification_log.jsonl"
+        with open(vlog, "w") as f:
+            f.write(json.dumps({
+                "receipt_id": "r1", "tier_reached": 4,
+                "tiers_passed": [0, 1, 2, 3, 4], "tiers_failed": [],
+                "timestamp": ts,
+            }) + "\n")
+
+        grades = pipeline._resolve_frontier_grades()
+        assert grades.get(turn.turn_id) == "gold"
+
+    def test_resolve_align_platinum(self, brain):
+        """ALIGN accepted verdict near a turn → platinum."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline, LoopTurn
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        pipeline.training_dir = brain / "training"
+        pipeline.turns_file = pipeline.training_dir / "loop_turns.jsonl"
+
+        ts = datetime.now(timezone.utc).isoformat()
+        turn = LoopTurn(
+            brother="code", intent="refactor auth", actions=["restructured"],
+            tools_used=["edit"], decisions=["cleaner API"], outcome="shipped",
+            signal_absorbed=[], signal_produced=[],
+        )
+        turn.timestamp = ts
+        with open(pipeline.turns_file, "w") as f:
+            f.write(json.dumps(turn.to_dict()) + "\n")
+
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        with open(vpath, "w") as f:
+            f.write(json.dumps({
+                "verdict": "accepted", "task_id": "t1", "timestamp": ts,
+            }) + "\n")
+
+        grades = pipeline._resolve_frontier_grades()
+        assert grades.get(turn.turn_id) == "platinum"
+
+    def test_resolve_highest_grade_wins(self, brain):
+        """If both GROUND and ALIGN match, highest grade wins."""
+        from mcp_server_nucleus.runtime.archive_pipeline import ArchivePipeline, LoopTurn
+        pipeline = ArchivePipeline.__new__(ArchivePipeline)
+        pipeline.training_dir = brain / "training"
+        pipeline.turns_file = pipeline.training_dir / "loop_turns.jsonl"
+
+        ts = datetime.now(timezone.utc).isoformat()
+        turn = LoopTurn(
+            brother="code", intent="deploy", actions=["pushed"],
+            tools_used=["deploy"], decisions=["go live"], outcome="live",
+            signal_absorbed=[], signal_produced=[],
+        )
+        turn.timestamp = ts
+        with open(pipeline.turns_file, "w") as f:
+            f.write(json.dumps(turn.to_dict()) + "\n")
+
+        # GROUND gives gold (tier 3)
+        vlog = brain / "verification_log.jsonl"
+        with open(vlog, "w") as f:
+            f.write(json.dumps({
+                "receipt_id": "r1", "tier_reached": 3,
+                "tiers_passed": [0, 1, 2, 3], "tiers_failed": [],
+                "timestamp": ts,
+            }) + "\n")
+
+        # ALIGN gives platinum (accepted)
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        with open(vpath, "w") as f:
+            f.write(json.dumps({
+                "verdict": "accepted", "task_id": "t1", "timestamp": ts,
+            }) + "\n")
+
+        grades = pipeline._resolve_frontier_grades()
+        assert grades.get(turn.turn_id) == "platinum"  # platinum > gold

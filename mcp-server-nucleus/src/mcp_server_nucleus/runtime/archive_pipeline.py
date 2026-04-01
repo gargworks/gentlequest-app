@@ -72,6 +72,9 @@ from typing import Dict, Any, List, Optional
 
 from .common import get_brain_path
 
+# Phase 3e: Quality grade hierarchy for training data
+_GRADE_ORDER = {"copper": 0, "silver": 1, "gold": 2, "platinum": 3}
+
 
 class LoopTurn:
     """One turn of the Code^Cowork exponential loop."""
@@ -90,6 +93,7 @@ class LoopTurn:
         context: Optional[str] = None,  # Extra context (e.g., "responding to Cowork's competitive scan")
         conversation: Optional[List[Dict[str, str]]] = None,  # Full chat: [{"role": "user", "content": "..."}, ...]
         metadata: Optional[Dict[str, Any]] = None,
+        quality_grade: str = "copper",  # copper < silver < gold < platinum (Phase 3e)
     ):
         self.turn_id = f"turn-{uuid.uuid4().hex[:12]}"
         self.timestamp = datetime.now(timezone.utc).isoformat()
@@ -105,6 +109,7 @@ class LoopTurn:
         self.context = context or ""
         self.conversation = conversation or []  # Father's words + brother's responses
         self.metadata = metadata or {}
+        self.quality_grade = quality_grade
 
         # Content hash for dedup
         content = f"{brother}:{intent}:{outcome}"
@@ -127,6 +132,7 @@ class LoopTurn:
             "content_hash": self.content_hash,
             "conversation": self.conversation,
             "metadata": self.metadata,
+            "quality_grade": self.quality_grade,
         }
 
     def to_conversation_pairs(self) -> List[Dict[str, str]]:
@@ -256,13 +262,25 @@ class ArchivePipeline:
         return True
 
     def _collect_quality_pairs(self) -> List[Dict[str, str]]:
-        """Collect all quality-filtered conversation pairs from the archive."""
+        """Collect all quality-filtered conversation pairs from the archive.
+
+        Phase 3e: Each pair carries _quality_grade from its parent turn,
+        resolved via GROUND receipts and ALIGN verdicts.
+        """
         turns = self.get_turns()
+        # Resolve frontier-based quality upgrades
+        try:
+            frontier_grades = self._resolve_frontier_grades()
+        except Exception:
+            frontier_grades = {}
         pairs = []
         for turn_data in turns:
             turn = self._dict_to_turn(turn_data)
+            # Grade priority: frontier override > stored grade > default
+            grade = frontier_grades.get(turn.turn_id, turn.quality_grade)
             for pair in turn.to_conversation_pairs():
                 if self._is_quality_pair(pair):
+                    pair["_quality_grade"] = grade
                     pairs.append(pair)
         return pairs
 
@@ -2562,11 +2580,13 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         for pair in all_pairs:
             user = pair["user"]
             assistant = pair["assistant"]
-            quality = round(self._score_pair(user, assistant), 3)
+            grade = pair.get("_quality_grade", "copper")
+            quality = round(self._score_pair(user, assistant, grade), 3)
 
             scored.append({
                 "prompt_preview": user[:80],
                 "quality": quality,
+                "quality_grade": grade,
                 "user_len": len(user),
                 "assistant_len": len(assistant),
             })
@@ -2646,8 +2666,9 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
             else:
                 clean_pairs.append(pair)
 
-        # Score using same formula as score_training_data
-        scored_items = [(pair, self._score_pair(pair["user"], pair["assistant"]))
+        # Score using same formula as score_training_data (Phase 3e: includes frontier grade)
+        scored_items = [(pair, self._score_pair(pair["user"], pair["assistant"],
+                                                pair.get("_quality_grade", "copper")))
                         for pair in clean_pairs]
 
         # Filter by quality
@@ -3447,10 +3468,112 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
 
     # ── Internal ──
 
+    def _resolve_frontier_grades(self) -> Dict[str, str]:
+        """Cross-reference GROUND receipts and ALIGN verdicts with turns.
+
+        Returns {turn_id: quality_grade} for turns that earned upgrades.
+        Grade hierarchy: copper < silver < gold < platinum.
+        - GROUND pass (tier < 3): silver
+        - GROUND pass (tier >= 3): gold
+        - ALIGN accepted: platinum
+        - ALIGN corrected: gold (human-improved = valuable)
+        - ALIGN rejected: copper (DPO reject side, not SFT)
+        """
+        grades: Dict[str, str] = {}
+        # Derive brain from training_dir (training_dir = brain/training)
+        brain = self.training_dir.parent
+        turns = self.get_turns()
+        if not turns:
+            return grades
+
+        # Build timestamp index for proximity matching
+        turn_timestamps = []
+        for t in turns:
+            try:
+                ts = datetime.fromisoformat(t["timestamp"].replace("Z", "+00:00"))
+            except (KeyError, ValueError):
+                ts = None
+            turn_timestamps.append((t.get("turn_id", ""), ts))
+
+        def _find_nearest_turn(event_ts_str: str, max_delta_s: int = 300) -> Optional[str]:
+            """Find turn closest in time to an event (within max_delta_s)."""
+            try:
+                evt_ts = datetime.fromisoformat(event_ts_str.replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                return None
+            best_id, best_gap = None, max_delta_s
+            for tid, tts in turn_timestamps:
+                if tts is None:
+                    continue
+                gap = abs((evt_ts - tts).total_seconds())
+                if gap < best_gap:
+                    best_id, best_gap = tid, gap
+            return best_id
+
+        def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
+            """Read JSONL without file locking (read-only, no contention risk)."""
+            records = []
+            for line in path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+            return records
+
+        # GROUND: verification receipts → silver/gold
+        vlog = brain / "verification_log.jsonl"
+        if vlog.exists():
+            try:
+                for receipt in _read_jsonl(vlog):
+                    if receipt.get("tiers_failed"):
+                        continue  # failed verification = no upgrade
+                    tier = receipt.get("tier_reached", 0)
+                    grade = "gold" if tier >= 3 else "silver"
+                    tid = _find_nearest_turn(receipt.get("timestamp", ""))
+                    if tid and _GRADE_ORDER.get(grade, 0) > _GRADE_ORDER.get(grades.get(tid, "copper"), 0):
+                        grades[tid] = grade
+            except Exception:
+                pass
+
+        # ALIGN: human verdicts → platinum/gold
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        if vpath.exists():
+            try:
+                for verdict in _read_jsonl(vpath):
+                    vtype = verdict.get("verdict", "")
+                    if vtype == "pending":
+                        continue
+                    if vtype == "accepted":
+                        grade = "platinum"
+                    elif vtype == "corrected":
+                        grade = "gold"
+                    else:
+                        continue  # rejected/redirected = no upgrade
+                    tid = _find_nearest_turn(verdict.get("timestamp", ""))
+                    if tid and _GRADE_ORDER.get(grade, 0) > _GRADE_ORDER.get(grades.get(tid, "copper"), 0):
+                        grades[tid] = grade
+            except Exception:
+                pass
+
+        return grades
+
     @staticmethod
-    def _score_pair(user: str, assistant: str) -> float:
+    def _score_pair(user: str, assistant: str, quality_grade: str = "copper") -> float:
         """Score a single training pair on quality. Used by both
-        score_training_data() and export_filtered() for consistency."""
+        score_training_data() and export_filtered() for consistency.
+
+        Phase 3e: quality_grade from GROUND/ALIGN frontiers boosts the score.
+        - platinum (human-reviewed): override to 1.0
+        - gold (GROUND T3+ or ALIGN corrected): +0.2
+        - silver (GROUND T0-T2): +0.1
+        - copper (default): no bonus
+        """
+        # Platinum override: human-verified = max quality
+        if quality_grade == "platinum":
+            return 1.0
+
         u_len, a_len = len(user), len(assistant)
 
         # Length score
@@ -3475,7 +3598,11 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         else:
             completeness_score = 0.3
 
-        return 0.3 * length_score + 0.4 * specificity_score + 0.3 * completeness_score
+        base = 0.3 * length_score + 0.4 * specificity_score + 0.3 * completeness_score
+
+        # Frontier bonus (Phase 3e)
+        bonus = _GRADE_ORDER.get(quality_grade, 0) * 0.1  # silver=0.1, gold=0.2
+        return min(base + bonus, 1.0)
 
     def _get_existing_hashes(self) -> set:
         """Get content hashes of all existing turns for dedup."""
@@ -3501,4 +3628,5 @@ Reply with ONLY "1" or "2" (the number of the better response). If they are equa
         turn.turn_id = d.get("turn_id", turn.turn_id)
         turn.timestamp = d.get("timestamp", turn.timestamp)
         turn.content_hash = d.get("content_hash", turn.content_hash)
+        turn.quality_grade = d.get("quality_grade", "copper")
         return turn
