@@ -123,7 +123,13 @@ def _morning_brief_impl() -> Dict:
     except Exception:
         brief["sections"]["training"] = {}
 
-    # ── SECTION 7: RECOMMENDATION ──────────────────────────────
+    # ── SECTION 7: GROWTH (Phase 4 — Business Functions) ─────
+    brief["sections"]["growth"] = _retrieve_growth_status(brain)
+
+    # ── SECTION 8: FRONTIER HEALTH (Phase 4 — Three Frontiers) ─
+    brief["sections"]["frontier_health"] = _retrieve_frontier_health(brain)
+
+    # ── SECTION 9: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
 
     # ── ARTERY 1: Persist recommendation as Strategy engram ───
@@ -212,6 +218,86 @@ def _retrieve_adhd_status() -> Dict:
         }
     except Exception:
         return {"focus_status": "🟢 FOCUSED", "switch_count": 0, "message": "ADHD metrics unavailable"}
+
+
+def _retrieve_growth_status(brain: Path) -> Dict:
+    """Retrieve latest growth gate metrics for the brief (Phase 4)."""
+    try:
+        from .growth_ops import capture_metrics, GATES
+        # Read the most recent growth metrics engram instead of hitting APIs
+        ledger = brain / "engrams" / "ledger.jsonl"
+        if not ledger.exists():
+            return {"message": "No growth data yet"}
+
+        latest = None
+        with open(ledger, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        e = json.loads(line)
+                        if e.get("key", "").startswith("growth_metrics_"):
+                            latest = e
+                    except json.JSONDecodeError:
+                        continue
+
+        if not latest:
+            return {"message": "No growth metrics engrams found. Run growth_pulse first."}
+
+        # Parse the engram value for gate status
+        return {
+            "latest_date": latest.get("key", "").replace("growth_metrics_", ""),
+            "value": latest.get("value", "")[:200],
+            "gates_target": GATES,
+        }
+    except Exception as e:
+        return {"message": f"Growth data unavailable: {e}"}
+
+
+def _retrieve_frontier_health(brain: Path) -> Dict:
+    """Retrieve Three Frontiers health summary for the brief (Phase 4)."""
+    try:
+        from .hardening import safe_read_jsonl
+        from .delta_ops import extract_patterns
+
+        result = {}
+
+        # GROUND: verification pass rate
+        vlog = brain / "verification_log.jsonl"
+        if vlog.exists():
+            receipts = safe_read_jsonl(vlog)
+            if receipts:
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                result["ground"] = {
+                    "total": len(receipts),
+                    "pass_rate": round(passed / len(receipts) * 100, 1),
+                }
+
+        # ALIGN: review counts
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        if vpath.exists():
+            verdicts = safe_read_jsonl(vpath)
+            non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+            if non_pending:
+                result["align"] = {
+                    "total_reviews": len(non_pending),
+                    "pending": len(verdicts) - len(non_pending),
+                }
+
+        # COMPOUND: delta count + rate
+        try:
+            patterns = extract_patterns(since="7d")
+            if patterns.get("total_deltas", 0) > 0:
+                result["compound"] = {
+                    "deltas_7d": patterns["total_deltas"],
+                    "compound_rate": patterns.get("compound_rate", 0),
+                }
+        except Exception:
+            pass
+
+        return result if result else {"message": "No frontier data yet"}
+    except Exception as e:
+        return {"message": f"Frontier health unavailable: {e}"}
 
 
 def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:

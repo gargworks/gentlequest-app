@@ -153,7 +153,58 @@ def capture_metrics(write_engram: bool = True) -> Dict[str, Any]:
     if write_engram:
         result["engram_written"] = _write_metrics_engram(github, pypi, gates_passed, gates_total)
 
+    # Phase 4: Emit growth_gate_measured events + auto-Deltas
+    _emit_growth_events(gates_status)
+
     return result
+
+
+def _emit_growth_events(gates_status: Dict[str, Any]):
+    """Emit growth_gate_measured events and auto-Deltas for each gate.
+
+    Phase 4: Makes growth metrics flow through the compounding substrate.
+    Each gate emits an event (→ auto-engram via hooks) and records a Delta
+    comparing current progress to pace expectations.
+    """
+    try:
+        from .event_ops import _emit_event
+    except Exception:
+        return  # Event system unavailable
+
+    for gate_name, gate_data in gates_status.items():
+        current = gate_data.get("current", 0)
+        target = gate_data.get("target", 0)
+        on_track = gate_data.get("passed", False)
+        pace = f"{current}/{target}" if target else "?"
+
+        # Emit event → auto-engram via engram_hooks
+        try:
+            _emit_event("growth_gate_measured", "growth_pulse", {
+                "gate": gate_name,
+                "current": current,
+                "target": target,
+                "pace": pace,
+                "on_track": on_track,
+            })
+        except Exception:
+            pass
+
+        # Auto-Delta: expected vs actual progress
+        try:
+            from .delta_ops import record_delta
+            direction = "positive" if on_track else "negative"
+            pct = round(current / target * 100, 1) if target else 0
+            record_delta(
+                frontier="GROUND",
+                expected_source="growth_gate",
+                expected_intent=f"{gate_name} target: {target}",
+                actual_source="growth_metrics",
+                actual_outcome=f"{gate_name} current: {current} ({pct}%)",
+                insight=f"{'On track' if on_track else 'Behind pace'}: {gate_name} at {pct}% of target",
+                corrections=[],
+            )
+        except Exception:
+            pass
 
 
 def _write_metrics_engram(

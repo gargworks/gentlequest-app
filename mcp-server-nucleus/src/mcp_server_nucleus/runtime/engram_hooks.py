@@ -68,7 +68,7 @@ logger = logging.getLogger("nucleus.engram_hooks")
 
 
 # ═══════════════════════════════════════════════════════════════
-# COMPLETE EVENT CLASSIFICATION (24 events — no unknowns)
+# COMPLETE EVENT CLASSIFICATION (36 events — no unknowns)
 # ═══════════════════════════════════════════════════════════════
 
 TRIGGER_EVENTS = {
@@ -198,6 +198,50 @@ TRIGGER_EVENTS = {
         "template": "DELTA [{frontier}] {direction}: {insight}",
         "key_prefix": "delta",
         "data_fields": ["delta_id", "frontier", "direction", "magnitude", "insight"],
+    },
+
+    # ── Business Functions (6 triggers — Phase 4) ──────────────
+    "growth_gate_measured": {
+        "context": "Strategy",
+        "intensity": 6,
+        "template": "GROWTH: {gate} {current}/{target} ({pace})",
+        "key_prefix": "growth",
+        "data_fields": ["gate", "current", "target", "pace", "on_track"],
+    },
+    "content_published": {
+        "context": "Strategy",
+        "intensity": 5,
+        "template": "CONTENT: {content_type} — {title}",
+        "key_prefix": "content",
+        "data_fields": ["content_type", "title", "url", "channel"],
+    },
+    "content_performance_measured": {
+        "context": "Strategy",
+        "intensity": 5,
+        "template": "CONTENT PERF: {title} views={views} bounce={bounce_rate}",
+        "key_prefix": "content_perf",
+        "data_fields": ["title", "views", "time_on_page", "bounce_rate", "source"],
+    },
+    "distribution_signal": {
+        "context": "Strategy",
+        "intensity": 7,
+        "template": "DISTRIBUTION: {channel} — {signal}",
+        "key_prefix": "dist",
+        "data_fields": ["channel", "signal", "referrals", "conversions"],
+    },
+    "feature_usage_measured": {
+        "context": "Architecture",
+        "intensity": 4,
+        "template": "USAGE: {hub}:{action_name} count={count}",
+        "key_prefix": "usage",
+        "data_fields": ["hub", "action_name", "count", "period"],
+    },
+    "dogfood_entry": {
+        "context": "Strategy",
+        "intensity": 7,
+        "template": "DOGFOOD day {day_number}: pain={pain_if_broken}/10 pay={would_pay}",
+        "key_prefix": "dogfood",
+        "data_fields": ["day_number", "pain_if_broken", "would_pay", "decisions_faster", "notes"],
     },
 }
 
@@ -359,6 +403,8 @@ _ARCHIVE_WORTHY_EVENTS = {
     "handoff_requested", "sprint_started",
     # Phase 3: Three Frontiers — every verification, review, and delta is training signal
     "ground_verified", "align_reviewed", "delta_recorded",
+    # Phase 4: Business functions — growth gates and dogfood are high-value founder signals
+    "growth_gate_measured", "dogfood_entry",
 }
 
 
