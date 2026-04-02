@@ -196,19 +196,107 @@ def register(mcp, helpers):
             "COMPOUND": compound,
         })
 
+    def _h_weekly_synthesis():
+        """Phase 5: Unified weekly synthesis — compound curve + all frontiers + business."""
+        from ..runtime.common import get_brain_path
+        from ..runtime.hardening import safe_read_jsonl
+        brain = get_brain_path()
+        sections = {}
+
+        # 1. COMPOUND CURVE — sparkline from cycle history
+        try:
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                cycle = json.loads(cycle_path.read_text())
+                prev = cycle.get("previous_cycles", [])
+                if prev:
+                    deltas = [p.get("delta", 0) for p in prev[-12:]]
+                    bars = "\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"
+                    max_d = max(abs(d) for d in deltas) if deltas else 1
+                    sparkline = "".join(
+                        bars[min(int(((d - min(0, min(deltas))) / max(max_d, 1)) * 7), 7)]
+                        for d in deltas
+                    ) if deltas else ""
+                    latest = prev[-1]
+                    avg = sum(deltas) / len(deltas)
+                    sections["compound_curve"] = {
+                        "sparkline": sparkline,
+                        "current_score": latest.get("score_end", 0),
+                        "last_delta": latest.get("delta", 0),
+                        "avg_delta_per_week": round(avg, 1),
+                        "weeks_tracked": len(prev),
+                    }
+        except Exception:
+            pass
+
+        # 2. FRONTIER HEALTH — reuse frontier_health logic
+        try:
+            fh = _h_frontier_health(timerange="7d")
+            if hasattr(fh, "get") and fh.get("data"):
+                sections["frontier_health"] = fh["data"]
+            elif isinstance(fh, str):
+                fh_data = json.loads(fh)
+                sections["frontier_health"] = fh_data.get("data", fh_data)
+        except Exception:
+            pass
+
+        # 3. TRAINING PIPELINE
+        try:
+            from ..runtime.archive_pipeline import ArchivePipeline
+            ap = ArchivePipeline(brain_path=brain)
+            retrain = ap.should_retrain()
+            stats = ap.get_stats()
+            sections["training"] = {
+                "should_retrain": retrain.get("should_retrain", False),
+                "new_turns": retrain.get("new_turns", 0),
+                "total_turns": stats.get("total_turns", 0),
+            }
+        except Exception:
+            pass
+
+        # 4. GROWTH — latest gate status
+        try:
+            from ..runtime.morning_brief_ops import _retrieve_growth_status
+            sections["growth"] = _retrieve_growth_status(brain)
+        except Exception:
+            pass
+
+        # 5. ENGINEERING — tasks + events this week
+        try:
+            events_path = brain / "ledger" / "events.jsonl"
+            if events_path.exists():
+                events = safe_read_jsonl(events_path)
+                completed = sum(1 for e in events
+                                if e.get("type") in ("task_completed_with_fence", "slot_task_completed"))
+                escalated = sum(1 for e in events if e.get("type") == "task_escalated")
+                sections["engineering"] = {
+                    "tasks_completed": completed,
+                    "tasks_escalated": escalated,
+                    "total_events": len(events),
+                }
+        except Exception:
+            pass
+
+        return make_response(True, data={
+            "type": "weekly_synthesis",
+            "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            "sections": sections,
+        })
+
     ACTION_MAP = {
-        "stats": (_h_stats, "Show archive statistics"),
-        "recent": (_h_recent, "Show recent loop turns"),
-        "record": (_h_record, "Record a loop turn"),
-        "export": (_h_export, "Export training data for fine-tuning"),
-        "retrain_status": (_h_retrain_status, "Check if new training is recommended"),
-        "dpo_status": (_h_dpo_status, "Show DPO preference pair statistics"),
-        "record_preference": (_h_record_preference, "Record a DPO preference pair (prompt, chosen, rejected)"),
-        "cot_status": (_h_cot_status, "Show reasoning chain (CoT) statistics"),
-        "record_delta": (_h_record_delta, "Record a Delta — measured gap between intent and reality"),
-        "query_deltas": (_h_query_deltas, "Query accumulated deltas (filter by frontier, direction, since)"),
-        "extract_patterns": (_h_extract_patterns, "Extract meta-patterns from accumulated deltas"),
-        "frontier_health": (_h_frontier_health, "Three Frontiers health dashboard — GROUND/ALIGN/COMPOUND metrics"),
+        "stats": _h_stats,
+        "recent": _h_recent,
+        "record": _h_record,
+        "export": _h_export,
+        "retrain_status": _h_retrain_status,
+        "dpo_status": _h_dpo_status,
+        "record_preference": _h_record_preference,
+        "cot_status": _h_cot_status,
+        "record_delta": _h_record_delta,
+        "query_deltas": _h_query_deltas,
+        "extract_patterns": _h_extract_patterns,
+        "frontier_health": _h_frontier_health,
+        "weekly_synthesis": _h_weekly_synthesis,
     }
 
     @mcp.tool()
@@ -228,7 +316,8 @@ def register(mcp, helpers):
         - query_deltas: Query deltas (params: frontier, direction, since, limit)
         - extract_patterns: Extract meta-patterns from accumulated deltas (params: since, frontier)
         - frontier_health: Three Frontiers health dashboard (params: timerange=7d)
+        - weekly_synthesis: Unified weekly synthesis — compound curve + frontiers + business
         """
-        return dispatch("nucleus_archive", action, params or {}, ACTION_MAP, make_response)
+        return dispatch(action, params or {}, ACTION_MAP, "nucleus_archive")
 
     return [("nucleus_archive", nucleus_archive)]
