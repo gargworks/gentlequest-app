@@ -200,29 +200,24 @@ class TestGroundEventEmission:
     """Verify ground.py emits ground_verified event after verification."""
 
     def test_ground_verify_emits_event(self, brain):
-        """The _verify function should call _emit_event with ground_verified."""
+        """run_ground() in runtime should emit ground_verified event."""
+        from mcp_server_nucleus.runtime.ground import run_ground
+
         with patch("mcp_server_nucleus.runtime.event_ops._emit_event") as mock_emit, \
-             patch("mcp_server_nucleus.runtime.ground.run_ground") as mock_run:
-            mock_run.return_value = {
+             patch("mcp_server_nucleus.runtime.execution_verifier.verify_execution") as mock_verify:
+            mock_verify.return_value = {
+                "verified": True,
                 "receipt_id": "test_receipt",
                 "tier_reached": 3,
                 "tiers_passed": [0, 1, 2, 3],
                 "tiers_failed": [],
+                "signals": [],
+                "duration_s": 0.01,
+                "commit_sha": "abc123",
+                "task_id": "",
             }
 
-            # Import and call — the ground tool's _verify function
-            # is defined inside register(), so we need to go through the tool
-            from mcp_server_nucleus.tools.ground import register
-
-            class FakeMCP:
-                def tool(self): return lambda f: f
-
-            helpers = {"make_response": lambda ok, **kw: {"ok": ok, **kw}}
-            tools = register(FakeMCP(), helpers)
-
-            for name, func in tools:
-                if name == "nucleus_ground":
-                    result = func(action="verify", params={})
+            run_ground()
 
             # Check _emit_event was called with ground_verified
             ground_calls = [

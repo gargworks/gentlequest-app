@@ -28,8 +28,10 @@ def brain(tmp_path):
     (b / "engrams" / "ledger.jsonl").touch()
     (b / "engrams" / "hook_metrics.jsonl").touch()
     os.environ["NUCLEUS_BRAIN_PATH"] = str(b)
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(b)
     yield b
     os.environ.pop("NUCLEUS_BRAIN_PATH", None)
+    os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 # ── Phase 4a: Business event registration ─────────────────────────────

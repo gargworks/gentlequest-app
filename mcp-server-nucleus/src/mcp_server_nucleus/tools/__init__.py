@@ -29,6 +29,7 @@ from . import (
     federation,
     engrams,
     archive,
+    align,
 )
 
 _ALL_MODULES = {
@@ -42,6 +43,7 @@ _ALL_MODULES = {
     "federation": federation,
     "engrams": engrams,
     "archive": archive,
+    "align": align,
 }
 
 
