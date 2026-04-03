@@ -35,6 +35,7 @@ TIER_0_LAUNCH: Set[str] = {
     # ═══════════════════════════════════════════════════════════════════════
     "nucleus_engrams",           # Memory: write, query, search, health, version, morning brief
     "nucleus_governance",        # Governance: lock, unlock, watch, audit, hypervisor, mode
+    "nucleus_align",             # Human corrections: correct, approve, stats (Three Frontiers)
 }
 
 TIER_1_CORE: Set[str] = {
@@ -45,8 +46,8 @@ TIER_1_CORE: Set[str] = {
     "nucleus_sessions",          # Session management (save, resume, start, checkpoint, etc.)
     "nucleus_sync",              # Multi-agent sync (identify, sync_now, read/write artifacts)
     "nucleus_orchestration",     # Core orchestration (satellite, commitments, loops, metrics)
-    "nucleus_slots",             # Slot management (orchestrate, missions, sprints)
-    "nucleus_telemetry",         # Telemetry (LLM tiers, interactions, protocols)
+    "nucleus_archive",           # Training pipeline: SFT/DPO, deltas, frontier health
+    "nucleus_observability",     # Telemetry, Prometheus, performance metrics
 }
 
 TIER_2_ADVANCED: Set[str] = {
@@ -67,15 +68,26 @@ TIER_2_ADVANCED: Set[str] = {
 _ACTIVE_TIER_CACHE = None
 
 def get_active_tier() -> int:
-    """Determine the active tier based on environment variables."""
+    """Determine the active tier based on environment variables.
+
+    Resolution order:
+    1. NUCLEUS_TOOL_TIER env var (explicit numeric tier: 0, 1, 2)
+    2. NUCLEUS_BETA_TOKEN (legacy token-based gating)
+    3. Default: 0 (LAUNCH)
+    """
     global _ACTIVE_TIER_CACHE
     if _ACTIVE_TIER_CACHE is not None:
         return _ACTIVE_TIER_CACHE
-        
-    beta_token = os.environ.get("NUCLEUS_BETA_TOKEN", "").strip()
 
+    # Explicit tier override (preferred — no tokens needed)
+    explicit = os.environ.get("NUCLEUS_TOOL_TIER", "").strip()
+    if explicit in ("0", "1", "2"):
+        _ACTIVE_TIER_CACHE = int(explicit)
+        return _ACTIVE_TIER_CACHE
+
+    # Legacy token-based resolution
+    beta_token = os.environ.get("NUCLEUS_BETA_TOKEN", "").strip()
     if beta_token:
-        # Token validation: tier 2 if token matches full access, tier 1 otherwise
         import hashlib
         token_hash = hashlib.sha256(beta_token.encode()).hexdigest()[:16]
         if token_hash == "72904664178873eb":
@@ -85,8 +97,8 @@ def get_active_tier() -> int:
         else:
             _ACTIVE_TIER_CACHE = 0
     else:
-        _ACTIVE_TIER_CACHE = 0  # Default to Journal Mode
-        
+        _ACTIVE_TIER_CACHE = 0
+
     return _ACTIVE_TIER_CACHE
 
 
