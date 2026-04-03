@@ -375,8 +375,8 @@ def _build_nucleus_mcp_config(brain_path: str) -> dict:
     if len(cmd) > 1:
         config["args"] = cmd[1:]
     config["env"] = {
-        "NUCLEUS_BRAIN_PATH": brain_path,
-        "NUCLEAR_BRAIN_PATH": brain_path,  # legacy compat
+        "NUCLEAR_BRAIN_PATH": brain_path,
+        "NUCLEUS_AMBIENT_HEALTH": "1",
     }
     return config
 
