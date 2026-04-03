@@ -9,7 +9,7 @@ const PLANS = [
     cta: "pip install nucleus-mcp",
     ctaStyle: "border border-white/20 text-white hover:bg-white/10",
     features: [
-      { text: "170+ MCP tools", included: true },
+      { text: "114+ MCP tools", included: true },
       { text: "Persistent memory (Engrams)", included: true },
       { text: "Session management", included: true },
       { text: "Governance & HITL gates", included: true },

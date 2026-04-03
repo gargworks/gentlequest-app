@@ -8,7 +8,7 @@ const FAQ_DATA = [
   },
   {
     q: "How does Nucleus work?",
-    a: "Nucleus installs as a Python package and runs as an MCP server on your local machine. It provides 170+ tools that AI agents call to store memory (Engrams), log decisions, enforce governance policies, and coordinate multi-agent workflows. All data is stored locally in a .brain directory."
+    a: "Nucleus installs as a Python package and runs as an MCP server on your local machine. It provides 114+ tools that AI agents call to store memory (Engrams), log decisions, enforce governance policies, and coordinate multi-agent workflows. All data is stored locally in a .brain directory."
   },
   {
     q: "What is an Engram in Nucleus?",
@@ -20,7 +20,7 @@ const FAQ_DATA = [
   },
   {
     q: "Is Nucleus free to use?",
-    a: "Nucleus is open source and free for individual developers. The core MCP server, all 170+ tools, and the local-first architecture are available at no cost via PyPI and npm. Enterprise deployments with priority support and SLA guarantees are available by contacting the Nucleus team."
+    a: "Nucleus is open source and free for individual developers. The core MCP server, all 114+ tools, and the local-first architecture are available at no cost via PyPI and npm. Enterprise deployments with priority support and SLA guarantees are available by contacting the Nucleus team."
   },
   {
     q: "How does Nucleus handle AI compliance and audit trails?",
@@ -72,7 +72,7 @@ const FAQ_DATA = [
   },
   {
     q: "What makes Nucleus different from other AI memory tools?",
-    a: "Nucleus combines persistent memory, governance enforcement, and cryptographic audit trails in a single local-first MCP server. Unlike cloud-based memory solutions, Nucleus runs entirely on your hardware. Unlike simple context files, it provides active control with 170+ orchestrated tools."
+    a: "Nucleus combines persistent memory, governance enforcement, and cryptographic audit trails in a single local-first MCP server. Unlike cloud-based memory solutions, Nucleus runs entirely on your hardware. Unlike simple context files, it provides active control with 114+ orchestrated tools."
   },
   {
     q: "How does Nucleus handle security?",
