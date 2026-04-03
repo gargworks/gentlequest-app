@@ -73,32 +73,20 @@ def get_active_tier() -> int:
     Resolution order:
     1. NUCLEUS_TOOL_TIER env var (explicit numeric tier: 0, 1, 2)
     2. NUCLEUS_BETA_TOKEN (legacy token-based gating)
-    3. Default: 0 (LAUNCH)
+    3. Default: 2 (ALL tools — everything is MIT, no gating)
     """
     global _ACTIVE_TIER_CACHE
     if _ACTIVE_TIER_CACHE is not None:
         return _ACTIVE_TIER_CACHE
 
-    # Explicit tier override (preferred — no tokens needed)
+    # Explicit tier override
     explicit = os.environ.get("NUCLEUS_TOOL_TIER", "").strip()
     if explicit in ("0", "1", "2"):
         _ACTIVE_TIER_CACHE = int(explicit)
         return _ACTIVE_TIER_CACHE
 
-    # Legacy token-based resolution
-    beta_token = os.environ.get("NUCLEUS_BETA_TOKEN", "").strip()
-    if beta_token:
-        import hashlib
-        token_hash = hashlib.sha256(beta_token.encode()).hexdigest()[:16]
-        if token_hash == "72904664178873eb":
-            _ACTIVE_TIER_CACHE = 2
-        elif token_hash == "ded5b57a0e65ab5d":
-            _ACTIVE_TIER_CACHE = 1
-        else:
-            _ACTIVE_TIER_CACHE = 0
-    else:
-        _ACTIVE_TIER_CACHE = 0
-
+    # Default: all tools. Everything is open source.
+    _ACTIVE_TIER_CACHE = 2
     return _ACTIVE_TIER_CACHE
 
 
