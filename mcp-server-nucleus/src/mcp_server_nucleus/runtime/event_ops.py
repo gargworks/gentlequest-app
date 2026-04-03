@@ -134,9 +134,62 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             except Exception:
                 pass  # Never let hooks break event emission
 
+        # Substrate auto-wiring: make the organism REACT to its own events
+        _substrate_react(event_type, data)
+
         return event_id
     except Exception as e:
         return f"Error emitting event: {str(e)}"
+
+def _substrate_react(event_type: str, data: Dict[str, Any]):
+    """Auto-wire substrate reactions to lifecycle events.
+
+    This is what makes the substrate ALIVE — not just callable, but reactive.
+    Each reaction is guarded: failures never break event emission.
+    """
+    # Growth hook: compound growth signals on trigger events
+    try:
+        from .growth_ops import process_event_for_growth
+        process_event_for_growth(event_type, data)
+    except Exception:
+        pass
+
+    # Cycle bootstrap: ensure compounding_cycle.json exists on session start
+    if event_type == "session_started":
+        try:
+            brain = get_brain_path()
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if not cycle_path.exists():
+                from .compounding_loop import _load_or_create_cycle, _save_cycle
+                cycle = _load_or_create_cycle(brain, cycle_path)
+                _save_cycle(cycle, cycle_path)
+        except Exception:
+            pass
+
+    # EOD capture: persist learnings when session ends
+    if event_type == "session_ended":
+        try:
+            from .compounding_loop import _end_of_day_capture_impl
+            summary = data.get("summary", "Session ended")
+            _end_of_day_capture_impl(summary=summary)
+        except Exception:
+            pass
+
+    # Weekly consolidation: auto-run on Sunday morning brief
+    if event_type == "morning_brief_generated":
+        try:
+            if datetime.now().weekday() == 6:  # Sunday
+                brain = get_brain_path()
+                lock = brain / "meta" / ".weekly_consolidation_done"
+                week_str = datetime.now().strftime("%Y-W%W")
+                if not lock.exists() or lock.read_text().strip() != week_str:
+                    from .compounding_loop import _weekly_consolidation_impl
+                    _weekly_consolidation_impl(dry_run=False)
+                    lock.parent.mkdir(parents=True, exist_ok=True)
+                    lock.write_text(week_str)
+        except Exception:
+            pass
+
 
 def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
     """Core logic for reading events."""
