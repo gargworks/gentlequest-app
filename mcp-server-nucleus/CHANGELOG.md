@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-03 — "Three Frontiers"
+
+### Added
+- **Three Frontiers Loop** — GROUND/ALIGN/COMPOUND reliability cycle now fully wired and firing
+- **GROUND Runtime** — 5-tier execution verification with receipt logging moved to runtime layer (all callers get evidence)
+- **ALIGN Tool** — `nucleus_align` MCP tool: one-call corrections (verdict + delta + DPO pair + event)
+- **COMPOUND Deltas** — Gap-between-intent-and-reality primitive with Jaccard similarity, pattern extraction, reinvestment
+- **Ambient Health Footer** — Every tool response shows `[frontiers: GROUND N | ALIGN N | COMPOUND N]`
+- **brain://health Resource** — IDE sidebar visibility for frontier counts (pass rate, corrections, deltas)
+- **7 Compounding Arteries** — Brief→Engram, Heartbeat→Tasks, Orchestrator←Engrams, Triggers→Events, Hook Registry, Session Continuity, Compounding State Machine
+- **Quality Grades** — copper/silver/gold/platinum on training pairs, weighted by GROUND+ALIGN evidence
+- **6 Business Events** — growth_gate_measured, content_published, content_performance_measured, distribution_signal, feature_usage_measured, dogfood_entry
+- **Weekly Synthesis** — Unified convergence view: compound curve, frontier health, training readiness, growth gates, engineering metrics
+- **Substrate Wiring** — `_substrate_react()` makes events trigger growth hooks, cycle bootstrap, EOD capture, weekly consolidation
+- **Claude Code Hook** — PostToolUse GROUND Tier 1-2 on every file edit
+- **Session Guardrails** — CLAUDE.md with $5T direction, .brain/ execution, zero-users reality checks
+
+### Fixed
+- **GROUND receipt logging** — Was in tool layer only; moved to runtime so ALL callers get evidence trail
+- **`_get_log_path()`** — Used CWD instead of `get_brain_path()`; fixed
+- **`session_started` event** — Now fires at MCP server boot (was never emitted)
+- **Phase 3/4 test isolation** — Fixed `NUCLEAR_BRAIN_PATH` env var in test fixtures (was leaking to real `.brain/`)
+
 ## [1.7.0] - 2026-03-31 — "First User"
 
 ### Added
