@@ -75,6 +75,18 @@ tests/test_*.py export-ignore
 tests/test_core.py -export-ignore
 tests/test_integration.py -export-ignore
 tests/test_uchg.py -export-ignore
+# PR #6 tests — real tests, not scratch
+tests/test_artifact_feature_sync.py -export-ignore
+tests/test_channels.py -export-ignore
+tests/test_circuit_breaker.py -export-ignore
+tests/test_dispatch.py -export-ignore
+tests/test_engram_cache.py -export-ignore
+tests/test_engram_ops.py -export-ignore
+tests/test_live_integration.py -export-ignore
+tests/test_onboarding.py -export-ignore
+tests/test_orchestrate_ops.py -export-ignore
+tests/test_session_ops.py -export-ignore
+tests/test_task_ops.py -export-ignore
 # Test helpers with hardcoded paths
 tests/update_playbook.py export-ignore
 tests/update_sync_playbook.py export-ignore
