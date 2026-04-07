@@ -111,7 +111,7 @@ def sanitize(filepath):
         'SHADOW_CAPTURE', '_ShadowArchive', '_shadow_archive',
         '_archive_turn', '_archive_dir', '_archive_file',
         'archive_pipeline', 'training.flywheel', 'self_play',
-        'synthesize_preferences', 'archive_synth', 'DPO',
+        'synthesize_preferences', 'archive_synth',
         'archive_eval', 'eval_results', 'eval_suite', 'generate_eval_suite',
         'export_eval_suite', 'run_eval', 'shadow-stats', 'graduation',
         # Phase 8: SPIN
