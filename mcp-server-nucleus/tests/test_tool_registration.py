@@ -27,7 +27,8 @@ def test_tier_based_registration():
     tool_registration_impl._original_mcp_tool = None
     tool_registration_impl._REGISTERING_TOOL = False
     
-    # Force Tier 0 (LAUNCH mode) by clearing the beta token and resetting cache
+    # Force Tier 0 (LAUNCH mode) via NUCLEUS_TOOL_TIER and resetting cache
+    os.environ["NUCLEUS_TOOL_TIER"] = "0"
     os.environ.pop("NUCLEUS_BETA_TOKEN", None)
     tool_tiers_module._ACTIVE_TIER_CACHE = None
     
@@ -55,8 +56,9 @@ def test_tier_based_registration():
     # Use a FRESH mock to avoid recursion (previous mock_mcp.tool was replaced with wrapper)
     mock_mcp_t2 = MagicMock()
     
-    # Force Tier 2 by setting the godmode token
-    os.environ["NUCLEUS_BETA_TOKEN"] = "titan-sovereign-godmode"
+    # Force Tier 2 via NUCLEUS_TOOL_TIER
+    os.environ["NUCLEUS_TOOL_TIER"] = "2"
+    os.environ.pop("NUCLEUS_BETA_TOKEN", None)
     tool_tiers_module._ACTIVE_TIER_CACHE = None
     
     configured_mcp_t2 = tool_registration_impl.configure_tiered_tool_registration(mock_mcp_t2)
@@ -70,6 +72,7 @@ def test_tier_based_registration():
     assert len(tier_manager.filtered_tools) == 0
     
     # Cleanup
+    os.environ.pop("NUCLEUS_TOOL_TIER", None)
     os.environ.pop("NUCLEUS_BETA_TOKEN", None)
     tool_tiers_module._ACTIVE_TIER_CACHE = None
 

@@ -1,6 +1,7 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.7.0",
+    "version": "1.8.1",
+    "mcpName": "io.github.eidetic-works/nucleus",
     "description": "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents",
     "main": "index.js",
     "bin": {

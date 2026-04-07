@@ -12,6 +12,10 @@
  *   3. If direct fails or times out (2s), buffer to Upstash Redis queue.
  *   4. Drain script on Mac pulls from Upstash → local OTel Collector.
  *
+ * Server-side enrichment:
+ *   - Country code from Cloudflare edge (request.cf.country, ISO 3166-1 alpha-2)
+ *   - No IP address is logged or stored
+ *
  * Env vars (set in Cloudflare dashboard):
  *   - UPSTASH_REDIS_REST_URL   — e.g. https://moral-swine-69544.upstash.io
  *   - UPSTASH_REDIS_REST_TOKEN — Upstash REST auth token
@@ -59,6 +63,10 @@ export default {
       return new Response("Empty body", { status: 400 });
     }
 
+    // Server-side geo enrichment: country code from Cloudflare edge
+    // No IP is logged — only the ISO 3166-1 alpha-2 country code
+    const country = request.cf?.country || "XX";
+
     let directOk = false;
 
     // ── Step 1: Try direct delivery via Cloudflare Tunnel ──
@@ -74,7 +82,10 @@ export default {
       const res = await fetch(`${tunnelBase}${incomingPath}`, {
         method: "POST",
         body: spanBody,
-        headers: { "Content-Type": contentType },
+        headers: {
+          "Content-Type": contentType,
+          "X-Nucleus-Country": country,
+        },
         signal: controller.signal,
       });
 
@@ -106,8 +117,18 @@ export default {
       // The drain script (drain-upstash-spans.js) decodes with Buffer.from(val, 'base64').
       const base64Span = toBase64(spanBody);
 
+      // Wrap span with server-side metadata (geo, timestamp).
+      // Format v2: JSON envelope. Drain script detects by leading '{'.
+      // Old format (raw base64) is still supported by drain for backwards compat.
+      const entry = JSON.stringify({
+        _v: 2,
+        span: base64Span,
+        country: country,
+        ts: Date.now(),
+      });
+
       // Upstash REST API: RPUSH to list key "nucleus:spans"
-      const payload = ["RPUSH", "nucleus:spans", base64Span];
+      const payload = ["RPUSH", "nucleus:spans", entry];
 
       const res = await fetch(url, {
         method: "POST",

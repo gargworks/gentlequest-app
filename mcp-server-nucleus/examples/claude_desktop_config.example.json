@@ -1,14 +1,10 @@
 {
     "mcpServers": {
-        "nucleus-brain": {
-            "command": "/opt/homebrew/bin/python3.11",
-            "args": [
-                "-m",
-                "mcp_server_nucleus"
-            ],
+        "nucleus": {
+            "command": "npx",
+            "args": ["-y", "nucleus-mcp"],
             "env": {
-                "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain",
-                "PYTHONPATH": "/path/to/nucleus/src"
+                "NUCLEAR_BRAIN_PATH": ".brain"
             }
         }
     }

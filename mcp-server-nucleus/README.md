@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.eidetic-works/nucleus -->
 # Nucleus
 
 > The MCP server that makes AI outputs more reliable every week.
@@ -6,6 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 [![NPM](https://img.shields.io/badge/npm-nucleus--mcp-red)](https://www.npmjs.com/package/nucleus-mcp)
+[![nucleus-mcp MCP server](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp/badges/score.svg)](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp)
 
 AI agents hallucinate, break code, and repeat mistakes. Nucleus catches this. Every AI output is verified, every correction is recorded, and every mistake trains the system to not repeat it. Locally, on your machine.
 
@@ -81,7 +83,7 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 | | Free | Pro |
 |---|---|---|
-| 114 MCP tools | Yes | Yes |
+| 12 tools, 8 resources, 3 prompts | Yes | Yes |
 | Persistent memory | Yes | Yes |
 | Governance & HITL | Yes | Yes |
 | Audit trails (DSoR) | Yes | Yes |
@@ -90,6 +92,28 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 | **Priority issues** | - | Yes |
 
 ---
+
+## Install
+
+### One-Click
+
+| IDE | Install |
+|-----|---------|
+| Cursor | [Add to Cursor](cursor://mcp/install?name=Nucleus%20MCP&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJudWNsZXVzLW1jcCJdfQ==) |
+| Claude Code | `npx -y nucleus-mcp` |
+| Any IDE | `pip install nucleus-mcp` |
+
+### pip / npx
+
+```bash
+pip install nucleus-mcp
+```
+
+Or use npx (zero Python setup required):
+
+```bash
+npx -y nucleus-mcp
+```
 
 ## Configure Your MCP Client
 
@@ -101,8 +125,22 @@ Add to your MCP config (`claude_desktop_config.json` or equivalent):
 {
   "mcpServers": {
     "nucleus": {
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
+    }
+  }
+}
+```
+
+<details>
+<summary>Alternative: use pip install directly</summary>
+
+```json
+{
+  "mcpServers": {
+    "nucleus": {
       "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
+      "args": ["-m", "mcp_server_nucleus"],
       "env": {
         "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
       }
@@ -110,6 +148,7 @@ Add to your MCP config (`claude_desktop_config.json` or equivalent):
   }
 }
 ```
+</details>
 
 ### Claude Code
 
@@ -119,11 +158,8 @@ Add to `.mcp.json` in your project root:
 {
   "mcpServers": {
     "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": ".brain"
-      }
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
     }
   }
 }

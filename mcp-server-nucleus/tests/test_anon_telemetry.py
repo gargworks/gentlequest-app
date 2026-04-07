@@ -19,6 +19,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
+import uuid
 
 
 class TestAnonTelemetryDisabledViaEnv(unittest.TestCase):
@@ -306,18 +307,234 @@ class TestAnonTelemetryReset(unittest.TestCase):
 class TestAnonTelemetryPrivacy(unittest.TestCase):
     """Verify no sensitive data leaks into telemetry attributes."""
 
-    def test_static_attributes_contain_no_pii(self):
-        """Static attributes should only contain version/platform info."""
+    def test_static_attributes_contain_expected_keys(self):
+        """Static attributes should contain version/platform info plus telemetry signals."""
         import mcp_server_nucleus.runtime.anon_telemetry as mod
         attrs = mod._get_static_attributes()
-        # Only safe keys
-        allowed_keys = {"nucleus.version", "python.version", "os.platform", "os.arch"}
-        self.assertEqual(set(attrs.keys()), allowed_keys)
-        # No file paths
-        for v in attrs.values():
-            self.assertNotIn("/", str(v))
-            self.assertNotIn("\\", str(v))
-            self.assertNotIn("home", str(v).lower())
+        expected_keys = {
+            "nucleus.version", "python.version", "os.platform", "os.arch",
+            "nucleus.install_id", "nucleus.session_id",
+            "nucleus.is_ci", "nucleus.is_dev",
+        }
+        self.assertEqual(set(attrs.keys()), expected_keys)
+
+    def test_static_attributes_no_file_paths(self):
+        """No attribute value should contain file paths or home directory references."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        attrs = mod._get_static_attributes()
+        for k, v in attrs.items():
+            val = str(v)
+            # install_id and session_id are hex UUIDs, skip path checks
+            if k in ("nucleus.install_id", "nucleus.session_id"):
+                continue
+            self.assertNotIn("/", val)
+            self.assertNotIn("\\", val)
+            self.assertNotIn("home", val.lower())
+
+
+class TestSessionId(unittest.TestCase):
+    """Verify session_id behavior."""
+
+    def test_session_id_is_hex(self):
+        """Session ID should be a valid hex string."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        sid = mod._SESSION_ID
+        self.assertEqual(len(sid), 32)
+        int(sid, 16)  # Should not raise
+
+    def test_session_id_stable_within_module(self):
+        """Session ID should be the same across multiple reads."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertEqual(mod._SESSION_ID, mod._SESSION_ID)
+
+    def test_session_id_in_static_attrs(self):
+        """Session ID should appear in static attributes."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        attrs = mod._get_static_attributes()
+        self.assertEqual(attrs["nucleus.session_id"], mod._SESSION_ID)
+
+
+class TestInstallId(unittest.TestCase):
+    """Verify install_id behavior."""
+
+    def test_install_id_created_on_first_call(self):
+        """Install ID should be created if it doesn't exist."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_home = Path(tmpdir)
+            id_file = fake_home / ".config" / "nucleus" / "install_id"
+            self.assertFalse(id_file.exists())
+            with patch.object(Path, 'home', return_value=fake_home):
+                result = mod._get_install_id()
+            self.assertTrue(id_file.exists())
+            self.assertEqual(len(result), 32)
+            int(result, 16)  # Valid hex
+
+    def test_install_id_persists_across_calls(self):
+        """Install ID should return the same value on subsequent calls."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_home = Path(tmpdir)
+            with patch.object(Path, 'home', return_value=fake_home):
+                first = mod._get_install_id()
+                second = mod._get_install_id()
+            self.assertEqual(first, second)
+
+    def test_install_id_returns_unknown_on_error(self):
+        """Install ID should return 'unknown' if filesystem fails."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_home = Path(tmpdir)
+            id_file = fake_home / ".config" / "nucleus" / "install_id"
+            # Make the parent dir a file so mkdir fails
+            id_file.parent.parent.mkdir(parents=True, exist_ok=True)
+            (fake_home / ".config" / "nucleus").mkdir(parents=True, exist_ok=True)
+            # Remove write permission on the directory
+            os.chmod(str(fake_home / ".config" / "nucleus"), 0o000)
+            try:
+                with patch.object(Path, 'home', return_value=fake_home):
+                    result = mod._get_install_id()
+                self.assertEqual(result, "unknown")
+            finally:
+                os.chmod(str(fake_home / ".config" / "nucleus"), 0o755)
+
+
+class TestIsCi(unittest.TestCase):
+    """Verify CI detection."""
+
+    @patch.dict(os.environ, {"CI": "true"})
+    def test_ci_true(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertTrue(mod._is_ci())
+
+    @patch.dict(os.environ, {"CI": "1"})
+    def test_ci_one(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertTrue(mod._is_ci())
+
+    @patch.dict(os.environ, {"CI": "yes"})
+    def test_ci_yes(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertTrue(mod._is_ci())
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_ci_not_set(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        os.environ.pop("CI", None)
+        self.assertFalse(mod._is_ci())
+
+    @patch.dict(os.environ, {"CI": "false"})
+    def test_ci_false(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertFalse(mod._is_ci())
+
+
+class TestIsDev(unittest.TestCase):
+    """Verify dev machine detection."""
+
+    @patch.dict(os.environ, {"NUCLEUS_DEV": "1"})
+    def test_dev_env_var(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        self.assertTrue(mod._is_dev())
+
+    def test_dev_marker_file(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_home = Path(tmpdir)
+            marker = fake_home / ".config" / "nucleus" / "is_dev"
+            marker.parent.mkdir(parents=True)
+            marker.touch()
+            with patch.object(Path, 'home', return_value=fake_home):
+                with patch.dict(os.environ, {}, clear=True):
+                    os.environ.pop("NUCLEUS_DEV", None)
+                    self.assertTrue(mod._is_dev())
+
+    def test_not_dev_by_default(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_home = Path(tmpdir)
+            with patch.object(Path, 'home', return_value=fake_home):
+                with patch.dict(os.environ, {}, clear=True):
+                    os.environ.pop("NUCLEUS_DEV", None)
+                    self.assertFalse(mod._is_dev())
+
+
+class TestV2TelemetryNotice(unittest.TestCase):
+    """Verify version-gated v2 telemetry notice."""
+
+    def setUp(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        mod.reset_anon_telemetry_state()
+
+    def tearDown(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        mod.reset_anon_telemetry_state()
+
+    @patch.dict(os.environ, {"NUCLEUS_ANON_TELEMETRY": "true"})
+    def test_v2_notice_creates_marker(self):
+        """show_v2_telemetry_notice should create v2 marker file."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        mod.reset_anon_telemetry_state()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            marker = Path(tmpdir) / mod._TELEMETRY_V2_MARKER
+            self.assertFalse(marker.exists())
+            with patch.dict(os.environ, {"NUCLEAR_BRAIN_PATH": tmpdir}):
+                mod.show_v2_telemetry_notice()
+            self.assertTrue(marker.exists())
+
+    @patch.dict(os.environ, {"NUCLEUS_ANON_TELEMETRY": "true"})
+    def test_v2_notice_skips_when_marker_exists(self):
+        """show_v2_telemetry_notice should be silent if v2 marker exists."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        mod.reset_anon_telemetry_state()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            marker = Path(tmpdir) / mod._TELEMETRY_V2_MARKER
+            marker.touch()
+            with patch.dict(os.environ, {"NUCLEAR_BRAIN_PATH": tmpdir}):
+                with patch('builtins.print') as mock_print:
+                    mod.show_v2_telemetry_notice()
+                    mock_print.assert_not_called()
+
+    @patch.dict(os.environ, {"NUCLEUS_ANON_TELEMETRY": "false"})
+    def test_v2_notice_skips_when_disabled(self):
+        """show_v2_telemetry_notice should be silent if telemetry disabled."""
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        mod.reset_anon_telemetry_state()
+        with patch('builtins.print') as mock_print:
+            mod.show_v2_telemetry_notice()
+            mock_print.assert_not_called()
+
+
+class TestSpanContainsNewFields(unittest.TestCase):
+    """Verify built OTLP spans include the new telemetry fields."""
+
+    def test_span_has_install_id(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        span = mod._build_otlp_span("test-cmd", "cli", 100.0)
+        attrs = span["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["attributes"]
+        keys = [a["key"] for a in attrs]
+        self.assertIn("nucleus.install_id", keys)
+
+    def test_span_has_session_id(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        span = mod._build_otlp_span("test-cmd", "cli", 100.0)
+        attrs = span["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["attributes"]
+        keys = [a["key"] for a in attrs]
+        self.assertIn("nucleus.session_id", keys)
+
+    def test_span_has_ci_flag(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        span = mod._build_otlp_span("test-cmd", "cli", 100.0)
+        attrs = span["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["attributes"]
+        ci_attr = [a for a in attrs if a["key"] == "nucleus.is_ci"][0]
+        self.assertIn(ci_attr["value"]["stringValue"], ("true", "false"))
+
+    def test_span_has_dev_flag(self):
+        import mcp_server_nucleus.runtime.anon_telemetry as mod
+        span = mod._build_otlp_span("test-cmd", "cli", 100.0)
+        attrs = span["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["attributes"]
+        dev_attr = [a for a in attrs if a["key"] == "nucleus.is_dev"][0]
+        self.assertIn(dev_attr["value"]["stringValue"], ("true", "false"))
 
 
 if __name__ == "__main__":

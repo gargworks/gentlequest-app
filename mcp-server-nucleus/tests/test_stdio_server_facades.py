@@ -188,7 +188,7 @@ class TestToolsCallFacadeDispatch:
             }
         })
         assert "error" in resp
-        assert resp["error"]["code"] == -32000
+        assert resp["error"]["code"] == -32602
         assert "Unknown tool" in resp["error"]["message"]
 
     @pytest.mark.asyncio
@@ -350,7 +350,7 @@ class TestProtocolHandshake:
             "params": {}
         })
         assert resp["result"]["serverInfo"]["name"] == "nucleus"
-        assert resp["result"]["protocolVersion"] == "2024-11-05"
+        assert resp["result"]["protocolVersion"] == "2025-03-26"
 
     @pytest.mark.asyncio
     async def test_initialized_notification(self, server):

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.8.0"
+version = "1.8.8"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
@@ -14,6 +14,8 @@ urls = { Homepage = "https://github.com/eidetic-works/nucleus-mcp", Repository =
 requires-python = ">=3.9"
 dependencies = [
     "pydantic",
+    "fastmcp",
+    "cffi",
     "watchdog>=6.0.0",
     "google-cloud-firestore>=2.26.0",
     "duckduckgo-search>=8.1.1",
@@ -38,6 +40,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov",
     "pytest-asyncio>=1.3.0",
+    "pytest-timeout",
     "ruff"
 ]
 
@@ -53,6 +56,19 @@ packages = ["src/mcp_server_nucleus"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end integration tests",
+    "timeout: override default test timeout",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/mcp_server_nucleus"]
+omit = ["**/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
 
 [tool.ruff]
 line-length = 100
