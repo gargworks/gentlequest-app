@@ -72,7 +72,32 @@ else
     echo ""
 fi
 
-# 2. Target Preparation (The Wipe)
+# 2. Deletion Safety Check
+# Compare what's in the target vs what git archive would produce.
+# Warn if files in the target would be deleted (indicates they aren't
+# committed in the source — likely a back-port gap).
+echo -e "${BLUE}🔍 Checking for files that would be deleted...${NC}"
+cd "$SOURCE_REPO"
+ARCHIVE_FILES=$(git archive HEAD | tar -tf - | sort)
+cd "$TARGET_REPO"
+TARGET_FILES=$(git ls-files | sort)
+WOULD_DELETE=$(comm -23 <(echo "$TARGET_FILES") <(echo "$ARCHIVE_FILES") | grep -v '\.mcp\.json')
+if [ -n "$WOULD_DELETE" ]; then
+    DEL_COUNT=$(echo "$WOULD_DELETE" | wc -l | tr -d ' ')
+    echo -e "${RED}WARNING: $DEL_COUNT files in public repo are NOT in private git archive:${NC}"
+    echo "$WOULD_DELETE" | head -20
+    [ "$DEL_COUNT" -gt 20 ] && echo "  ... and $((DEL_COUNT - 20)) more"
+    echo ""
+    echo "These files will be DELETED from the public repo."
+    echo "If this is unintentional, commit them in the private repo first."
+    read -p "Continue with deletion? [y/N]: " del_proceed
+    if [[ "$del_proceed" != "y" && "$del_proceed" != "Y" ]]; then
+        echo "Sync aborted. Commit missing files first."
+        exit 1
+    fi
+fi
+
+# 3. Target Preparation (The Wipe)
 echo -e "${BLUE}🧹 Wiping target repository working tree...${NC}"
 cd "$TARGET_REPO"
 # Reset to HEAD and clean untracked files
@@ -81,13 +106,13 @@ git clean -fd > /dev/null
 # Remove all tracked files to ensure deleted files in source are deleted in target
 git ls-files | xargs rm -f
 
-# 3. Source Extraction (The Precision Copy)
+# 4. Source Extraction (The Precision Copy)
 echo -e "${BLUE}📦 Extracting clean archive from source...${NC}"
 cd "$SOURCE_REPO"
 # git archive creates a tar of the HEAD tree, we pipe it to tar to extract in the target
 git archive HEAD | tar -x -C "$TARGET_REPO"
 
-# 3b. Minimal text sanitization (public copy only)
+# 4b. Minimal text sanitization (public copy only)
 # ─────────────────────────────────────────────────────────────────
 # Sovereign code lives in sovereign/ (export-ignored by .gitattributes).
 # LocalLLM, PrivateGraphTrainer, handle_archive_command etc. are
@@ -126,7 +151,7 @@ fi
 echo "  $SANITIZE_COUNT files sanitized."
 echo ""
 
-# 4. Staging
+# 5. Staging
 echo -e "${BLUE}📝 Staging changes in target repository...${NC}"
 cd "$TARGET_REPO"
 git add -A
@@ -140,7 +165,7 @@ fi
 echo -e "${GREEN}✅ Synchronization complete!${NC}"
 echo ""
 
-# 5. Enforce Clean Author Config
+# 6. Enforce Clean Author Config
 CURRENT_NAME=$(git config user.name 2>/dev/null || echo "")
 CURRENT_EMAIL=$(git config user.email 2>/dev/null || echo "")
 if [[ "$CURRENT_NAME" != "Nucleus Team" || "$CURRENT_EMAIL" != "hello@nucleusos.dev" ]]; then
