@@ -172,6 +172,34 @@ else
   pass "FORCE_VERTEX defaults to 0 (API key mode)"
 fi
 
+# ── EXPORT-IGNORE DRIFT CHECK ──
+# Detect files that match a wildcard export-ignore but have no explicit entry.
+# These are silently excluded — the developer may not know.
+echo ""
+echo "── EXPORT-IGNORE DRIFT CHECK ──"
+DRIFT_COUNT=0
+ARCHIVE_LIST=$(find "$TMPDIR" -type f | sed "s|$TMPDIR/||" | sort)
+# Extract wildcard export-ignore patterns from .gitattributes
+WILDCARDS=$(grep 'export-ignore' .gitattributes | grep -v '^\s*#' | grep '\*' | grep -v '\-export-ignore' | awk '{print $1}')
+for pattern in $WILDCARDS; do
+    MATCHED=$(git ls-files -- "$pattern" 2>/dev/null)
+    for f in $MATCHED; do
+        # File matches wildcard. Check if it's in the archive.
+        if ! echo "$ARCHIVE_LIST" | grep -qx "$f" 2>/dev/null; then
+            # Not in archive. Check if it has an explicit .gitattributes entry.
+            if ! grep -qF "$f" .gitattributes 2>/dev/null; then
+                echo -e "${YELLOW}DRIFT${NC}: '$f' matches wildcard '$pattern' but has no explicit .gitattributes entry"
+                DRIFT_COUNT=$((DRIFT_COUNT + 1))
+            fi
+        fi
+    done
+done
+if [ "$DRIFT_COUNT" -eq 0 ]; then
+    pass "No export-ignore drift detected"
+else
+    warn "$DRIFT_COUNT files silently excluded by wildcards without explicit entries"
+fi
+
 # ── Summary ──
 echo ""
 echo "================================================"

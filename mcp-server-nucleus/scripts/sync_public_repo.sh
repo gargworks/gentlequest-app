@@ -85,8 +85,7 @@ WOULD_DELETE=$(comm -23 <(echo "$TARGET_FILES") <(echo "$ARCHIVE_FILES") | grep 
 if [ -n "$WOULD_DELETE" ]; then
     DEL_COUNT=$(echo "$WOULD_DELETE" | wc -l | tr -d ' ')
     echo -e "${RED}WARNING: $DEL_COUNT files in public repo are NOT in private git archive:${NC}"
-    echo "$WOULD_DELETE" | head -20
-    [ "$DEL_COUNT" -gt 20 ] && echo "  ... and $((DEL_COUNT - 20)) more"
+    echo "$WOULD_DELETE"
     echo ""
     echo "These files will be DELETED from the public repo."
     echo "If this is unintentional, commit them in the private repo first."
@@ -97,9 +96,14 @@ if [ -n "$WOULD_DELETE" ]; then
     fi
 fi
 
-# 3. Target Preparation (The Wipe)
-echo -e "${BLUE}🧹 Wiping target repository working tree...${NC}"
+# 3. Backup tag (recovery safety net)
 cd "$TARGET_REPO"
+BACKUP_TAG="pre-sync-$(date +%Y%m%d-%H%M%S)"
+git tag "$BACKUP_TAG" HEAD 2>/dev/null
+echo -e "${BLUE}📌 Backup: git reset --hard $BACKUP_TAG to restore${NC}"
+
+# 3b. Target Preparation (The Wipe)
+echo -e "${BLUE}🧹 Wiping target repository working tree...${NC}"
 # Reset to HEAD and clean untracked files
 git reset --hard > /dev/null
 git clean -fd > /dev/null
