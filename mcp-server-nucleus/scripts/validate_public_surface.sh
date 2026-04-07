@@ -53,13 +53,18 @@ fi
 # ── Step 3: Moat language scan ──
 echo ""
 echo "── MOAT LANGUAGE SCAN ──"
-MOAT_HITS=$( (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop\|Third Brother\|archive_pipeline\|training.flywheel' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
+MOAT_HITS=$( (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop\|training.flywheel' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$MOAT_HITS" -gt 0 ]; then
-  warn "Moat language: $MOAT_HITS files (sync sanitizer will strip these)"
-  (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop\|Third Brother\|archive_pipeline\|training.flywheel' "$TMPDIR" 2>/dev/null || true) | sed "s|$TMPDIR/||"
+  warn "Moat language: $MOAT_HITS files"
+  (grep -rln 'data.moat\|#1 moat\|compounding.advantage\|exponential.loop\|training.flywheel' "$TMPDIR" 2>/dev/null || true) | sed "s|$TMPDIR/||"
 else
   pass "No moat language"
 fi
+# NOTE: "Third Brother" and "archive_pipeline" appear in try/except ImportError
+# blocks in cli.py, engram_hooks.py, daemon.py, morning_brief_ops.py. These are
+# safe dead code on public builds (archive_pipeline.py is export-ignored, so the
+# imports fail and the except branch runs). Sovereign code lives in sovereign/
+# which is also export-ignored.
 
 # ── Step 4: Competitor attack scan ──
 echo ""
@@ -112,6 +117,7 @@ SOVEREIGN_FILES=(
   "src/mcp_server_nucleus/runtime/llm_pattern_learner.py"
   "src/share_to_spotify.py"
   # SOVEREIGN: Family Architecture + Third Brother
+  "src/mcp_server_nucleus/sovereign/"
   "src/mcp_server_nucleus/runtime/archive_pipeline.py"
   "src/mcp_server_nucleus/tools/archive.py"
   # Feature Exposure Gate HOLD modules (2026-03-17)

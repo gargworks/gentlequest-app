@@ -166,6 +166,7 @@ src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 
 # ── SOVEREIGN: Family Architecture (2026-03-17) ──
 # Core IP. Never public.
+src/mcp_server_nucleus/sovereign/ export-ignore
 src/mcp_server_nucleus/runtime/archive_pipeline.py export-ignore
 src/mcp_server_nucleus/tools/archive.py export-ignore
 scripts/train_third_brother.py export-ignore

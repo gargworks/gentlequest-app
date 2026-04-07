@@ -61,37 +61,15 @@ _setup_flywheel_logger()
 logger = logging.getLogger(__name__)
 
 
-class PrivateGraphTrainer:
-    """
-    Interface for Local Fine-Tuning (Path D: Nucleus-GPT).
-    Currently a stub, but architecturally placed for Phase 60.
-    """
-    def __init__(self, brain_path: Path):
-        self.brain_path = brain_path
-        
-    async def train_on_session(self, session_id: str, content: str):
-        """
-        Future: Fine-tune local SLM on this session.
-        Current: Log intent.
-        """
-        logger.info(f"🎓 [TRAINER] Recording session {session_id} to archive")
-        try:
-            from .archive_pipeline import ArchivePipeline
-            archive = ArchivePipeline(brain_path=self.brain_path)
-            archive.record_turn(
-                brother="code",
-                intent=f"Orchestrated session {session_id}",
-                actions=[content[:200] if content else ""],
-                tools_used=[],
-                decisions=[],
-                outcome=f"Session {session_id} completed",
-                signal_absorbed=[],
-                signal_produced=[f"session/{session_id}"],
-                confidence=0.8,
-                context="Orchestrator auto-archive",
-            )
-        except Exception:
-            pass  # Non-blocking
+try:
+    from ..sovereign.orchestrator_ext import PrivateGraphTrainer
+except ImportError:
+    class PrivateGraphTrainer:
+        """Stub — sovereign training not available in this build."""
+        def __init__(self, brain_path: Path):
+            self.brain_path = brain_path
+        async def train_on_session(self, session_id: str, content: str):
+            pass
 
 
 class SwarmsOrchestrator:
@@ -116,45 +94,13 @@ class SwarmsOrchestrator:
         self._load_state()
 
     def _get_best_model(self, job_type: str = "ORCHESTRATION"):
-        """Route to Third Brother (local) when available, Gemini otherwise.
-
-        The Third Brother handles routine orchestration at $0 cost.
-        Complex tasks (PREMIUM tier) always go to frontier models.
-        Cache TTL: re-checks local availability every 5 minutes so
-        starting Ollama after the orchestrator is detected.
-        """
-        from .llm_client import DualEngineLLM
-
-        # Premium/complex tasks → always frontier
-        if job_type in ("PREMIUM", "CRITICAL"):
+        """Get the best available LLM for the given job type."""
+        try:
+            from ..sovereign.orchestrator_ext import sovereign_get_best_model
+            return sovereign_get_best_model(self, job_type)
+        except ImportError:
+            from .llm_client import DualEngineLLM
             return DualEngineLLM(job_type=job_type)
-
-        # Check if local model is available (cached with TTL)
-        now = time.time()
-        if self._local_available is None or (now - self._local_checked_at) > self._LOCAL_TTL:
-            prev = self._local_available
-            try:
-                from .llm_client import LocalLLM
-                local = LocalLLM()
-                local.generate_content("test", max_tokens=5)
-                self._local_available = True
-                if not prev:
-                    logger.info("🧬 Third Brother (local) available — routing routine tasks locally")
-            except Exception:
-                self._local_available = False
-                if prev:
-                    logger.info("🧬 Third Brother (local) went offline — falling back to Gemini")
-            self._local_checked_at = now
-
-        if self._local_available:
-            try:
-                from .llm_client import LocalLLM
-                return LocalLLM()
-            except Exception:
-                pass
-
-        # Fallback: Gemini
-        return DualEngineLLM(job_type=job_type)
 
     def _load_state(self):
         """Load swarm state with BrainLock"""
