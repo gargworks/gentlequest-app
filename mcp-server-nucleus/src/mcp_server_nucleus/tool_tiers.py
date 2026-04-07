@@ -10,10 +10,10 @@ Tiers:
 - Tier 1 (CORE): Tier 0 + orchestration/task/session facades
 - Tier 2 (ADVANCED): All 12 facade tools
 
-Set NUCLEUS_BETA_TOKEN to control which tier is active:
-- (unset):                    Tier 0 — Journal Mode (default)
-- "sovereign-launch-alpha":   Tier 1 — Manager Suite
-- "titan-sovereign-godmode":  Tier 2 — Everything
+Set NUCLEUS_TOOL_TIER to control which tier is active:
+- 0:                          Tier 0 — Journal Mode
+- 1:                          Tier 1 — Manager Suite
+- 2 (default):                Tier 2 — Everything
 
 Author: Nucleus Team
 Version: 2.0.0
