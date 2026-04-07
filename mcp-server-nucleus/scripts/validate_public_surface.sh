@@ -112,10 +112,7 @@ SOVEREIGN_FILES=(
   "src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py"
   "src/mcp_server_nucleus/runtime/god_combos/pulse_and_polish.py"
   "src/mcp_server_nucleus/runtime/god_combos/self_healing_v2.py"
-  "src/mcp_server_nucleus/runtime/emergence_rate.py"
   "src/mcp_server_nucleus/runtime/siphon_engine.py"
-  "src/mcp_server_nucleus/runtime/llm_pattern_learner.py"
-  "src/share_to_spotify.py"
   # SOVEREIGN: Family Architecture + Third Brother
   "src/mcp_server_nucleus/sovereign/"
   "src/mcp_server_nucleus/runtime/archive_pipeline.py"
@@ -126,7 +123,6 @@ SOVEREIGN_FILES=(
   "src/mcp_server_nucleus/replay.py"
   "src/mcp_server_nucleus/validate.py"
   "src/mcp_server_nucleus/runtime/token_budget.py"
-  "src/mcp_server_nucleus/runtime/recovery_ops.py"
   "src/mcp_server_nucleus/runtime/firestore_bridge.py"
   "scripts/validate_public_surface.sh"
   "scripts/sync_public_repo.sh"
