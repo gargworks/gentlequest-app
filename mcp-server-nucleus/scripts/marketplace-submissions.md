@@ -166,7 +166,7 @@ pip install nucleus-mcp
 **Quick resize command (run once to generate all sizes):**
 
 ```bash
-cd /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus
+cd /path/to/mcp-server-nucleus
 mkdir -p docs/assets
 sips -z 400 400 logo.png --out docs/assets/logo-400.png
 sips -z 200 200 logo.png --out docs/assets/logo-200.png
