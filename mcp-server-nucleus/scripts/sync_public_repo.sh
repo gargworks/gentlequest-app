@@ -113,7 +113,7 @@ cd "$SOURCE_REPO"
 ARCHIVE_FILES=$(git archive HEAD | tar -tf - | sort)
 cd "$TARGET_REPO"
 TARGET_FILES=$(git ls-files | sort)
-WOULD_DELETE=$(comm -23 <(echo "$TARGET_FILES") <(echo "$ARCHIVE_FILES") | grep -v '\.mcp\.json')
+WOULD_DELETE=$(comm -23 <(echo "$TARGET_FILES") <(echo "$ARCHIVE_FILES") | grep -v '\.mcp\.json' || true)
 if [ -n "$WOULD_DELETE" ]; then
     DEL_COUNT=$(echo "$WOULD_DELETE" | wc -l | tr -d ' ')
     if [ "$AUTO_MODE" -eq 1 ]; then
