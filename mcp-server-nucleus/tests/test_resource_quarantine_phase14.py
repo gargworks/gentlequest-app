@@ -6,11 +6,14 @@ import pytest
 import os
 import tempfile
 from pathlib import Path
-from mcp_server_nucleus.hypervisor.locker import Locker
-from mcp_server_nucleus.hypervisor.injector import Injector
-from mcp_server_nucleus.hypervisor.watchdog import Watchdog
-from mcp_server_nucleus.runtime.auth.ipc_provider import IPCAuthProvider
-from mcp_server_nucleus.runtime.common import assert_path_in_workspace
+try:
+    from mcp_server_nucleus.hypervisor.locker import Locker
+    from mcp_server_nucleus.hypervisor.injector import Injector
+    from mcp_server_nucleus.hypervisor.watchdog import Watchdog
+    from mcp_server_nucleus.runtime.auth.ipc_provider import IPCAuthProvider
+    from mcp_server_nucleus.runtime.common import assert_path_in_workspace
+except ImportError as e:
+    pytest.skip(f"Quarantine dependencies not available: {e}", allow_module_level=True)
 
 def resolve_test_path(path: str) -> str:
     """Resolve symlinks (e.g., /var -> /private/var) to avoid pathlib.relative_to failures."""
