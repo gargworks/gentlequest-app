@@ -123,5 +123,65 @@ class TestBrainConsolidation(unittest.TestCase):
         self.assertEqual(result.get("files_moved"), 0)
 
 
+class TestJSONLRotation(unittest.TestCase):
+    """Test _rotate_jsonl_if_needed for bounded JSONL growth."""
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp(prefix="nucleus_rotation_test_")
+        self.brain_path = Path(self.test_dir)
+        (self.brain_path / "ledger").mkdir(parents=True)
+        (self.brain_path / "archive").mkdir(parents=True)
+        self.patcher = patch(
+            "mcp_server_nucleus.runtime.consolidation_ops.get_brain_path",
+            return_value=self.brain_path,
+        )
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+        shutil.rmtree(self.test_dir)
+
+    def test_skips_small_file(self):
+        """Files under max_mb should not be rotated."""
+        from mcp_server_nucleus.runtime.consolidation_ops import _rotate_jsonl_if_needed
+
+        f = self.brain_path / "ledger" / "events.jsonl"
+        f.write_text("\n".join(f'{{"i":{i}}}' for i in range(100)) + "\n")
+        result = _rotate_jsonl_if_needed(f, keep_lines=50, max_mb=50.0)
+        self.assertFalse(result["rotated"])
+
+    def test_rotates_oversized_file(self):
+        """File over max_mb should be split: last N kept, rest archived."""
+        from mcp_server_nucleus.runtime.consolidation_ops import _rotate_jsonl_if_needed
+
+        f = self.brain_path / "ledger" / "events.jsonl"
+        # Write enough lines to exceed a tiny threshold
+        lines = [f'{{"i":{i}}}' for i in range(200)]
+        f.write_text("\n".join(lines) + "\n")
+
+        result = _rotate_jsonl_if_needed(f, keep_lines=50, max_mb=0.0001)
+        self.assertTrue(result["rotated"])
+        self.assertEqual(result["archived_lines"], 150)
+        self.assertEqual(result["kept_lines"], 50)
+
+        # Active file should have exactly 50 lines
+        remaining = f.read_text().strip().splitlines()
+        self.assertEqual(len(remaining), 50)
+
+        # Archive file should exist
+        archive_dir = self.brain_path / "archive" / "ledger"
+        self.assertTrue(archive_dir.exists())
+        archived = list(archive_dir.glob("events_*.jsonl"))
+        self.assertEqual(len(archived), 1)
+
+    def test_skips_missing_file(self):
+        """Missing file returns rotated=False."""
+        from mcp_server_nucleus.runtime.consolidation_ops import _rotate_jsonl_if_needed
+
+        f = self.brain_path / "ledger" / "nope.jsonl"
+        result = _rotate_jsonl_if_needed(f)
+        self.assertFalse(result["rotated"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -515,18 +515,32 @@ def _weekly_consolidation_impl(dry_run: bool = True) -> Dict:
         Dict with consolidation results.
     """
     from .common import get_brain_path
-    from .consolidation_ops import _garbage_collect_tasks, _archive_resolved_files
+    from .consolidation_ops import _garbage_collect_tasks, _archive_resolved_files, _rotate_all_jsonl
     from .engram_ops import _brain_query_engrams_impl
-    
+
     brain = get_brain_path()
     week = _get_week_number()
-    
+
     results = {
         "week": week,
         "dry_run": dry_run,
         "actions": [],
     }
-    
+
+    # 0. Rotate oversized JSONL files
+    if not dry_run:
+        try:
+            rotation = _rotate_all_jsonl()
+            rotated = [r for r in rotation if r.get("rotated")]
+            if rotated:
+                results["actions"].append({
+                    "action": "rotate_jsonl",
+                    "rotated_files": [r["file"] for r in rotated],
+                    "total_archived_lines": sum(r["archived_lines"] for r in rotated),
+                })
+        except Exception as e:
+            results["actions"].append({"action": "rotate_jsonl", "error": str(e)})
+
     # 1. Archive old tasks
     try:
         gc_result = _garbage_collect_tasks(max_age_hours=168, dry_run=dry_run)  # 7 days
