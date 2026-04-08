@@ -765,3 +765,142 @@ class TestDeltaResilience:
             )
 
             assert delta_id is not None
+
+
+# ── Brain Federation Tests ────────────────────────────────────────────────
+
+
+class TestBrainFederation:
+    """Verify portable Delta export/import for brain federation."""
+
+    def test_export_empty_returns_empty(self, delta_brain):
+        """No deltas → no portable exports."""
+        from mcp_server_nucleus.runtime.delta_ops import export_portable_deltas
+        result = export_portable_deltas(brain=delta_brain)
+        assert result == []
+
+    def test_export_filters_by_recurrence(self, delta_brain):
+        """Only patterns with count >= min_recurrence are exported."""
+        from mcp_server_nucleus.runtime.delta_ops import export_portable_deltas
+
+        # Write 4 deltas with same negative pattern to trigger recurrence
+        deltas_path = delta_brain / "deltas" / "deltas.jsonl"
+        now = datetime.now(timezone.utc)
+        for i in range(4):
+            delta = {
+                "delta_id": f"d-{i}",
+                "frontier": "GROUND",
+                "expected_intent": "successful deploy",
+                "actual_outcome": "timeout during deploy",
+                "delta": {
+                    "direction": "negative",
+                    "magnitude": 0.8,
+                    "similarity": 0.2,
+                    "insight": "deploy timeout recurring",
+                },
+                "timestamp": (now - timedelta(days=i)).isoformat(),
+            }
+            with open(deltas_path, "a") as f:
+                f.write(json.dumps(delta) + "\n")
+
+        result = export_portable_deltas(brain=delta_brain, min_recurrence=3)
+        assert len(result) >= 1
+        assert result[0]["source_brain"] == delta_brain.name
+
+    def test_import_creates_engrams(self, delta_brain):
+        """Imported deltas become Strategy engrams at intensity 6."""
+        from mcp_server_nucleus.runtime.delta_ops import import_portable_deltas
+
+        portables = [
+            {"insight": "deploy timeout pattern", "count": 5,
+             "frontier": "GROUND", "source_brain": "test_brain"},
+        ]
+
+        with patch("mcp_server_nucleus.runtime.delta_ops.get_brain_path",
+                    return_value=delta_brain):
+            with patch("mcp_server_nucleus.runtime.engram_ops.get_brain_path",
+                        return_value=delta_brain):
+                result = import_portable_deltas(portables, brain=delta_brain)
+
+        assert result["imported"] == 1
+        assert result["total"] == 1
+
+        # Verify engram was written
+        ledger = delta_brain / "engrams" / "ledger.jsonl"
+        content = ledger.read_text().strip()
+        assert "[IMPORTED]" in content
+        assert "deploy timeout pattern" in content
+
+
+# ── Error Frontier Mapping Tests ──────────────────────────────────────────
+
+
+class TestErrorFrontierMapping:
+    """Verify error domain → frontier mapping."""
+
+    def test_llm_errors_map_to_ground(self):
+        from mcp_server_nucleus.runtime.error_telemetry import _DOMAIN_TO_FRONTIER
+        assert _DOMAIN_TO_FRONTIER["LLM"] == "GROUND"
+        assert _DOMAIN_TO_FRONTIER["TOOL_CALLING"] == "GROUND"
+
+    def test_filesystem_errors_map_to_align(self):
+        from mcp_server_nucleus.runtime.error_telemetry import _DOMAIN_TO_FRONTIER
+        assert _DOMAIN_TO_FRONTIER["FILESYSTEM"] == "ALIGN"
+        assert _DOMAIN_TO_FRONTIER["VALIDATION"] == "ALIGN"
+
+    def test_structured_error_has_frontier(self):
+        from mcp_server_nucleus.runtime.error_telemetry import StructuredError, ErrorDomain
+        error = StructuredError(
+            error_id="test-1",
+            domain=ErrorDomain.LLM,
+            code="E100",
+            message="test",
+            source_module="test",
+            frontier="GROUND",
+        )
+        d = error.to_dict()
+        assert d["frontier"] == "GROUND"
+
+
+# ── Compounding Score v2 Tests ────────────────────────────────────────────
+
+
+class TestCompoundingScoreV2:
+    """Verify multi-dimensional scoring."""
+
+    def test_empty_brain_returns_cold(self, delta_brain):
+        """Empty brain should score low (COLD band)."""
+        from mcp_server_nucleus.runtime.compounding_loop import _compute_compounding_score_v2
+        result = _compute_compounding_score_v2(delta_brain)
+        assert "v2_score" in result
+        assert "band" in result
+        assert "dimensions" in result
+        assert result["band"] in ("COLD", "DECAYING")
+
+    def test_all_dimensions_present(self, delta_brain):
+        """All 5 dimensions should be in the result."""
+        from mcp_server_nucleus.runtime.compounding_loop import _compute_compounding_score_v2
+        result = _compute_compounding_score_v2(delta_brain)
+        dims = result["dimensions"]
+        assert "knowledge_metabolism" in dims
+        assert "frontier_health" in dims
+        assert "velocity" in dims
+        assert "continuity" in dims
+        assert "training_signal" in dims
+
+    def test_v0_score_included(self, delta_brain):
+        """v2 result should include v0 score for comparison."""
+        from mcp_server_nucleus.runtime.compounding_loop import _compute_compounding_score_v2
+        result = _compute_compounding_score_v2(delta_brain)
+        assert "v0_score" in result
+
+    def test_dimension_caps_respected(self, delta_brain):
+        """Each dimension should be capped at its max."""
+        from mcp_server_nucleus.runtime.compounding_loop import _compute_compounding_score_v2
+        result = _compute_compounding_score_v2(delta_brain)
+        dims = result["dimensions"]
+        assert dims["knowledge_metabolism"] <= 30
+        assert dims["frontier_health"] <= 30
+        assert dims["velocity"] <= 20
+        assert dims["continuity"] <= 10
+        assert dims["training_signal"] <= 10
