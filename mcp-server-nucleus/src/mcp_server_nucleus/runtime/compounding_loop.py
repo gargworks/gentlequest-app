@@ -89,6 +89,140 @@ def _compute_compounding_score(brain: Path) -> int:
     ))
 
 
+def _compute_compounding_score_v2(brain: Path) -> Dict:
+    """Multi-dimensional compounding score (5 dimensions × 100 pts).
+
+    Dimensions:
+      Knowledge Metabolism (30): engrams, auto-writes, updates
+      Frontier Health (30): GROUND pass rate, ALIGN reviews, COMPOUND rate
+      Velocity (20): this_week / last_week ratio
+      Continuity (10): active days, session gaps
+      Training Signal (10): new SFT + DPO pairs
+
+    Returns dict with dimension scores, total, and band.
+    """
+    from datetime import timedelta
+    dims = {}
+    now = datetime.now()
+    week_ago = now - timedelta(days=7)
+    week_ago_str = week_ago.strftime("%Y-%m-%d")
+
+    # ── Knowledge Metabolism (max 30) ──
+    recent_engrams = 0
+    auto_writes_7d = 0
+    update_writes = 0
+    ledger = brain / "engrams" / "ledger.jsonl"
+    if ledger.exists():
+        try:
+            for line in ledger.read_text().splitlines():
+                try:
+                    e = json.loads(line.strip())
+                    ts = e.get("timestamp", "")[:10]
+                    if ts >= week_ago_str and not e.get("deleted"):
+                        recent_engrams += 1
+                        if e.get("auto_written"):
+                            auto_writes_7d += 1
+                        if e.get("updated"):
+                            update_writes += 1
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        except OSError:
+            pass
+    dims["knowledge_metabolism"] = min(30, round(
+        recent_engrams * 0.3 + auto_writes_7d * 1.5 + update_writes * 2.0
+    ))
+
+    # ── Frontier Health (max 30) ──
+    ground_rate = 0.0
+    align_reviews = 0
+    delta_positive_rate = 0.0
+    try:
+        from .hardening import safe_read_jsonl
+        vlog = brain / "verification_log.jsonl"
+        if vlog.exists():
+            receipts = safe_read_jsonl(vlog)
+            if receipts:
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                ground_rate = passed / len(receipts)
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        if vpath.exists():
+            verdicts = safe_read_jsonl(vpath)
+            align_reviews = len([v for v in verdicts if v.get("verdict") != "pending"])
+        dpath = brain / "deltas" / "deltas.jsonl"
+        if dpath.exists():
+            deltas = safe_read_jsonl(dpath)
+            if deltas:
+                pos = sum(1 for d in deltas if d.get("delta", {}).get("direction") == "positive")
+                delta_positive_rate = pos / len(deltas)
+    except Exception:
+        pass
+    dims["frontier_health"] = min(30, round(
+        ground_rate * 15 + min(align_reviews, 5) * 2 + delta_positive_rate * 15
+    ))
+
+    # ── Velocity (max 20) ──
+    v0_score = _compute_compounding_score(brain)
+    cycle_path = brain / "meta" / "compounding_cycle.json"
+    prev_score = 0
+    if cycle_path.exists():
+        try:
+            cycle = json.loads(cycle_path.read_text())
+            prev_cycles = cycle.get("previous_cycles", [])
+            if prev_cycles:
+                prev_score = prev_cycles[-1].get("score_end", 0)
+        except Exception:
+            pass
+    ratio = v0_score / max(prev_score, 1) if prev_score > 0 else 1.0
+    dims["velocity"] = min(20, round(ratio * 10))
+
+    # ── Continuity (max 10) ──
+    active_days = 0
+    try:
+        sessions_dir = brain / "sessions"
+        if sessions_dir.exists():
+            for sf in sessions_dir.glob("*.json"):
+                try:
+                    s = json.loads(sf.read_text())
+                    ts = s.get("start_time", s.get("timestamp", ""))[:10]
+                    if ts >= week_ago_str:
+                        active_days += 1
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    active_days = min(active_days, 7)
+    dims["continuity"] = min(10, round(active_days * 1.5))
+
+    # ── Training Signal (max 10) ──
+    sft_count = 0
+    dpo_count = 0
+    training_dir = brain / "training"
+    if (training_dir / "loop_turns.jsonl").exists():
+        sft_count = sum(1 for _ in open(training_dir / "loop_turns.jsonl", encoding="utf-8") if _.strip())
+    if (training_dir / "preference_pairs.jsonl").exists():
+        dpo_count = sum(1 for _ in open(training_dir / "preference_pairs.jsonl", encoding="utf-8") if _.strip())
+    dims["training_signal"] = min(10, round(sft_count * 0.3 + dpo_count * 1.0))
+
+    total = sum(dims.values())
+    if total >= 80:
+        band = "COMPOUNDING"
+    elif total >= 60:
+        band = "GROWING"
+    elif total >= 40:
+        band = "STALLING"
+    elif total >= 20:
+        band = "DECAYING"
+    else:
+        band = "COLD"
+
+    return {
+        "v2_score": total,
+        "band": band,
+        "dimensions": dims,
+        "v0_score": v0_score,
+    }
+
+
 def _load_or_create_cycle(brain: Path, cycle_path: Path) -> dict:
     """Load existing cycle state or create a fresh one."""
     if cycle_path.exists():
@@ -617,9 +751,11 @@ def _weekly_consolidation_impl(dry_run: bool = True) -> Dict:
             if cycle_path.exists():
                 cycle = json.loads(cycle_path.read_text())
                 final_score = _compute_compounding_score(brain)
+                v2 = _compute_compounding_score_v2(brain)
 
                 cycle["weekly_score_end"] = final_score
                 cycle["weekly_delta"] = final_score - cycle.get("weekly_score_start", 0)
+                cycle["v2_score"] = v2
 
                 completed = sum(
                     1 for d in cycle.get("days", {}).values() if d.get("completed")
