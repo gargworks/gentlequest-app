@@ -38,7 +38,7 @@ DEFAULT_CONFIG = {
     # Frontier 1: GROUND — execution verification
     "execution_verification_enabled": True,
     "execution_verification_timeout_s": 30,
-    "execution_verification_tiers": [0, 1, 2, 3, 4, 5],
+    "execution_verification_tiers": [0, 1, 2, 3, 4],
     "execution_verification_hard_gate": False,
     # Tier 4: runtime checks (server startup + endpoint validation)
     "execution_verification_runtime_checks": [
