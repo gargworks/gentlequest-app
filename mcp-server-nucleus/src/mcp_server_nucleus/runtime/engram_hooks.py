@@ -176,6 +176,22 @@ TRIGGER_EVENTS = {
         "key_prefix": "brief",
         "data_fields": ["action", "engram_count", "task_count"],
     },
+
+    # ── Governance Goals (2 triggers) ────────────────────────
+    "goal_achieved": {
+        "context": "Feature",
+        "intensity": 8,
+        "template": "Goal {goal_id} ACHIEVED on attempt {attempt} ({metric}, hit_ratio: {hit_ratio})",
+        "key_prefix": "goal_done",
+        "data_fields": ["goal_id", "metric", "attempt", "hit_ratio"],
+    },
+    "goal_progress": {
+        "context": "Strategy",
+        "intensity": 5,
+        "template": "Goal {goal_id} progress: {metric} at {hit_ratio} after attempt {attempt}",
+        "key_prefix": "goal_wip",
+        "data_fields": ["goal_id", "metric", "attempt", "hit_ratio"],
+    },
 }
 
 # Events that should NEVER create engrams (noisy/circular/redundant)
@@ -334,6 +350,7 @@ _ARCHIVE_WORTHY_EVENTS = {
     "task_completed_with_fence", "slot_task_completed",
     "deploy_complete", "code_critiqued", "task_escalated",
     "handoff_requested", "sprint_started",
+    "goal_achieved",
 }
 
 
