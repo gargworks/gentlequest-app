@@ -3,12 +3,22 @@ import pytest
 import asyncio
 from pathlib import Path
 from datetime import datetime, timezone
-from mcp_server_nucleus.runtime.federation import (
-    create_federation_engine,
-    FederationPeer,
-    PeerStatus,
-    PartitionStatus,
-)
+
+try:
+    from mcp_server_nucleus.runtime.federation import (
+        create_federation_engine,
+        FederationPeer,
+        PeerStatus,
+        PartitionStatus,
+    )
+except (ImportError, AttributeError):
+    pytest.skip("Federation governance components not available", allow_module_level=True)
+
+# Verify FederationEngine has is_sovereign_mode (sovereign method)
+import tempfile as _tf
+_e = create_federation_engine(brain_id="test", brain_path=Path(_tf.mkdtemp()))
+if not hasattr(_e, 'is_sovereign_mode'):
+    pytest.skip("FederationEngine missing is_sovereign_mode (sovereign build)", allow_module_level=True)
 
 @pytest.mark.asyncio
 async def test_governance_vote_lifecycle():

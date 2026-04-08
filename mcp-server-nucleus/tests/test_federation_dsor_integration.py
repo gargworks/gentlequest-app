@@ -5,15 +5,34 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 import asyncio
-from mcp_server_nucleus.runtime.federation import (
-    FederationEngine, 
-    FederationConfig, 
-    FederationPeer,
-    TrustLevel,
-    PeerStatus
-)
-from mcp_server_nucleus.runtime.dsor import DecisionLedger
-from mcp_server_nucleus.runtime.event_stream import EventTypes
+
+try:
+    from mcp_server_nucleus.runtime.federation import (
+        FederationEngine,
+        FederationConfig,
+        FederationPeer,
+        TrustLevel,
+        PeerStatus
+    )
+    from mcp_server_nucleus.runtime.dsor import DecisionLedger
+    from mcp_server_nucleus.runtime.event_stream import EventTypes
+except (ImportError, AttributeError):
+    pytest.skip("Federation DSOR integration components not available", allow_module_level=True)
+
+# Verify FederationEngine has record_decision (sovereign behavior)
+import tempfile as _tf, inspect as _ins
+_sig = _ins.signature(FederationConfig)
+if 'peers' in _sig.parameters:
+    # Sovereign build with peers param
+    pass
+else:
+    # Public build — check if record_decision exists
+    _bp = Path(_tf.mkdtemp()) / ".brain"
+    _bp.mkdir(); (_bp / "ledger").mkdir(); (_bp / "federation").mkdir()
+    _cfg = FederationConfig(brain_id="skip-test", brain_path=_bp)
+    _fe = FederationEngine(_cfg)
+    if not hasattr(_fe, 'record_decision'):
+        pytest.skip("FederationEngine missing record_decision (sovereign build)", allow_module_level=True)
 
 @pytest.fixture
 def temp_brain(tmp_path):

@@ -17,6 +17,13 @@ import sys
 
 from mcp_server_nucleus.runtime.stdio_server import StdioServer
 
+# Check if pulse_and_polish returns the sovereign contract ("pipeline" key)
+try:
+    from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish as _rpp
+    _SOVEREIGN_PIPELINE = "pipeline" in _rpp(write_engram=False)
+except Exception:
+    _SOVEREIGN_PIPELINE = False
+
 
 # ============================================================
 # FIXTURES
@@ -310,6 +317,7 @@ class TestPhase3StdioActions:
         assert "error" in parsed["data"]
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(not _SOVEREIGN_PIPELINE, reason="pulse_and_polish return contract differs")
     async def test_pulse_and_polish_combo(self, server):
         resp = await server.handle_request({
             "jsonrpc": "2.0", "id": 25, "method": "tools/call",

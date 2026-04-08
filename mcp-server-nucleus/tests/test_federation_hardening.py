@@ -13,7 +13,7 @@ import tempfile
 import asyncio
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -153,7 +153,7 @@ class TestFederationPeer:
         """Test online status check."""
         peer = FederationPeer("peer_002", "10.0.0.1:9000", "eu-west")
         peer.status = PeerStatus.ONLINE
-        peer.last_heartbeat = datetime.utcnow()
+        peer.last_heartbeat = datetime.now(timezone.utc)
         
         # FederationPeer doesn't have is_online method, just check status
         assert peer.status == PeerStatus.ONLINE
@@ -162,11 +162,11 @@ class TestFederationPeer:
         """Test staleness detection."""
         peer = FederationPeer("peer_003", "10.0.0.2:9000", "ap-south")
         peer.status = PeerStatus.ONLINE
-        peer.last_heartbeat = datetime(2020, 1, 1)  # Very old
+        peer.last_heartbeat = datetime(2020, 1, 1, tzinfo=timezone.utc)  # Very old
         
         # FederationPeer doesn't have is_stale method, check last_heartbeat directly
         assert peer.last_heartbeat is not None
-        assert (datetime.utcnow() - peer.last_heartbeat).total_seconds() > 60
+        assert (datetime.now(timezone.utc) - peer.last_heartbeat).total_seconds() > 60
 
 
 class TestFederationState:
@@ -369,7 +369,7 @@ class TestDiscoveryManager:
             # Setup an online peer acting normally
             peer_good = FederationPeer(peer_id="peer_good", address="host1", region="us")
             peer_good.status = PeerStatus.ONLINE
-            peer_good.last_heartbeat = datetime.utcnow()
+            peer_good.last_heartbeat = datetime.now(timezone.utc)
             engine.state.peers["peer_good"] = peer_good
             
             # Setup a peer that missed heartbeats
@@ -378,7 +378,7 @@ class TestDiscoveryManager:
             import time
             from datetime import timedelta
             # Aged past the 0.5 timeout
-            peer_suspect.last_heartbeat = datetime.utcnow() - timedelta(seconds=1.0)
+            peer_suspect.last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=1.0)
             engine.state.peers["peer_suspect"] = peer_suspect
             
             # Run the probe manually
@@ -399,8 +399,8 @@ class TestDiscoveryManager:
             peer_dead = FederationPeer(peer_id="peer_dead", address="host3", region="us")
             peer_dead.status = PeerStatus.SUSPECT
             from datetime import timedelta
-            peer_dead.last_heartbeat = datetime.utcnow() - timedelta(seconds=2.0)
-            peer_dead.suspect_time = datetime.utcnow() - timedelta(seconds=1.0)
+            peer_dead.last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=2.0)
+            peer_dead.suspect_time = datetime.now(timezone.utc) - timedelta(seconds=1.0)
             engine.state.peers["peer_dead"] = peer_dead
             
             await engine.discovery._probe_round()

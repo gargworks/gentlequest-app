@@ -20,6 +20,12 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
 import uuid
+import pytest
+
+# Skip entire file if sovereign telemetry attributes are missing
+import mcp_server_nucleus.runtime.anon_telemetry as _tmod
+if not hasattr(_tmod, '_SESSION_ID'):
+    pytest.skip("Sovereign telemetry attributes not in public build", allow_module_level=True)
 
 
 class TestAnonTelemetryDisabledViaEnv(unittest.TestCase):

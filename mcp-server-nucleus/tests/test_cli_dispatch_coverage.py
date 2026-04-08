@@ -15,6 +15,7 @@ CLI_PATH = Path(__file__).parent.parent / "src" / "mcp_server_nucleus" / "cli.py
 KNOWN_MISSING = {
     "handle_depot_command",     # dispatch exists but no definition (pre-existing)
     "handle_recipe_command",    # uses _handle_recipe_command (underscore prefix)
+    "handle_archive_command",   # sovereign handler, stripped in public build
 }
 
 

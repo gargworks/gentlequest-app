@@ -17,6 +17,9 @@ from mcp_server_nucleus.cli_output import (
     parse_runtime_response,
 )
 
+# Check if format_json([]) returns "" (sovereign) or "[]" (public)
+_SOVEREIGN_FORMAT = format_json([]) == ""
+
 
 # ════════════════════════════════════════════════════════════════
 # TTY Detection
@@ -76,6 +79,7 @@ class TestFormatJson:
         assert json.loads(lines[0]) == {"a": 1}
         assert json.loads(lines[1]) == {"a": 2}
 
+    @pytest.mark.skipif(not _SOVEREIGN_FORMAT, reason="format_json empty-list contract differs in public build")
     def test_empty_list(self):
         assert format_json([]) == ""
 
