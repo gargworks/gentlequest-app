@@ -106,8 +106,17 @@ INDEX_PRIORITY = {
     # Tier 7 — sessions & meta
     "artifacts/sessions": 7,
     "meta": 7,
+    # Phase 2 sources — indexed by dedicated functions, not dir-walk
+    "conversations": 4,
+    "corrections/dpo": 0,
+    "perplexity/bulk": 3,
+    "perplexity/targeted": 2,
+    "code": 5,
 }
-INDEX_DIRS = list(INDEX_PRIORITY.keys())
+
+# Sources indexed by dedicated functions, not the .brain dir-walk loop
+_NON_DIR_SOURCES = {"conversations", "corrections/dpo", "perplexity/bulk", "perplexity/targeted", "code"}
+INDEX_DIRS = [k for k in INDEX_PRIORITY if k not in _NON_DIR_SOURCES]
 
 # Standalone .brain/ root files worth indexing (not in subdirs)
 INDEX_ROOT_FILES = {
@@ -316,6 +325,28 @@ def chunk_markdown(content: str, max_words: int = CHUNK_MAX_WORDS,
 
 def _content_hash(text: str) -> str:
     return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
+
+
+def _chunk_plain_text(text: str, max_words: int = CHUNK_MAX_WORDS,
+                      overlap: int = CHUNK_OVERLAP_WORDS) -> List[str]:
+    """Split plain text into overlapping word-window chunks.
+
+    Unlike chunk_markdown(), this doesn't split on headings — suitable for
+    JSONL conversation content and other non-markdown sources.
+    """
+    words = text.split()
+    if len(words) <= max_words:
+        return [text] if len(text) >= CHUNK_MIN_CHARS else []
+
+    chunks = []
+    step = max(max_words - overlap, 1)
+    i = 0
+    while i < len(words):
+        chunk = ' '.join(words[i:i + max_words])
+        if len(chunk) >= CHUNK_MIN_CHARS:
+            chunks.append(chunk)
+        i += step
+    return chunks
 
 
 def _get_priority_tier(file_path: str) -> int:
@@ -735,11 +766,306 @@ def index_brain(brain_path: Path = BRAIN_PATH, force: bool = False) -> int:
             print(f"  [training/{rel_path}] Skipped: {e}")
             errors += 1
 
+    # --- Phase 2 sources (non-directory indexers) ---
+    for source_name, indexer in [
+        ("conversations", lambda: _index_conversations(conn, brain_path, force)),
+        ("perplexity", lambda: _index_perplexity(conn, brain_path, force)),
+        ("codebase", lambda: _index_codebase_docstrings(conn, force)),
+    ]:
+        try:
+            n = indexer()
+            indexed += n
+            print(f"\n  [{source_name}] +{n} chunks", flush=True)
+        except Exception as e:
+            print(f"\n  [{source_name}] skipped: {e}", flush=True)
+
+    conn.commit()
     # Rebuild FTS5 index after all inserts
     print("\n  Rebuilding FTS5 index...", flush=True)
     _rebuild_fts(conn)
     conn.close()
     print(f"\n  Done: +{indexed} new, {skipped} cached, {errors} errors")
+    return indexed
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 2 INDEXERS — Conversations, Perplexity, Codebase
+# ═══════════════════════════════════════════════════════════════
+
+def _insert_chunk(conn, file_path: str, section: str, text: str,
+                  priority: int, file_mtime: float, force: bool) -> bool:
+    """Embed and insert a single chunk. Returns True if inserted, False if skipped/error."""
+    import numpy as np
+
+    c_hash = _content_hash(text)
+    existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+    if existing and not force:
+        return False
+
+    emb = _embed(text)
+    if not emb:
+        return False
+
+    emb_blob = np.array(emb, dtype=np.float32).tobytes()
+    wc = len(text.split())
+
+    if existing:
+        conn.execute(
+            "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+            "file_mtime=?, indexed_at=? WHERE content_hash=?",
+            (emb_blob, wc, priority, file_mtime, time.time(), c_hash)
+        )
+    else:
+        conn.execute(
+            "INSERT INTO chunks (file_path, section, content, content_hash, "
+            "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (file_path, section, text, c_hash, emb_blob, wc,
+             priority, file_mtime, time.time())
+        )
+    return True
+
+
+def _index_conversations(conn: sqlite3.Connection, brain_path: Path,
+                         force: bool = False) -> int:
+    """Index distilled conversation turns from Layer 0 archive + DPO corrections.
+
+    Reads loop_turns.jsonl (distilled by conversation_ops.py) and
+    preference_pairs.jsonl (DPO correction pairs).
+    """
+    indexed = 0
+
+    # --- Distilled conversation turns ---
+    turns_file = brain_path / "training" / "loop_turns.jsonl"
+    if turns_file.exists():
+        mtime = turns_file.stat().st_mtime
+        priority = _get_priority_tier("conversations")
+        print(f"\n  [conversations] indexing {turns_file.name}...", flush=True)
+
+        with open(turns_file) as f:
+            for line_num, line in enumerate(f, 1):
+                try:
+                    turn = json.loads(line)
+                    parts = []
+                    for msg in turn.get("conversation", []):
+                        content = msg.get("content", "")
+                        if isinstance(content, str) and content.strip():
+                            parts.append(content.strip())
+                    text = "\n".join(parts)
+                    if len(text) < 50:
+                        continue
+
+                    session_id = turn.get("session_id", f"batch")
+                    turn_idx = turn.get("turn_index", line_num)
+                    fp = f"conversations/{session_id}/turn_{turn_idx}"
+
+                    for i, chunk in enumerate(_chunk_plain_text(text)):
+                        section = f"turn_{turn_idx}" if i == 0 else f"turn_{turn_idx} (part {i+1})"
+                        if _insert_chunk(conn, fp, section, chunk, priority, mtime, force):
+                            indexed += 1
+
+                    if indexed % 50 == 0 and indexed > 0:
+                        conn.commit()
+                        print(f"    +{indexed} chunks", flush=True)
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        conn.commit()
+
+    # --- DPO preference pairs (correction signal) ---
+    pairs_file = brain_path / "training" / "preference_pairs.jsonl"
+    if pairs_file.exists():
+        mtime = pairs_file.stat().st_mtime
+        priority = _get_priority_tier("corrections/dpo")
+        print(f"\n  [corrections/dpo] indexing {pairs_file.name}...", flush=True)
+
+        with open(pairs_file) as f:
+            for line_num, line in enumerate(f, 1):
+                try:
+                    pair = json.loads(line)
+                    prompt = pair.get("prompt", "")
+                    chosen = pair.get("chosen", "")
+                    rejected = pair.get("rejected", "")
+                    if not (prompt and chosen):
+                        continue
+
+                    text = f"Correction:\nPrompt: {prompt}\nWrong: {rejected}\nRight: {chosen}"
+                    fp = f"corrections/dpo/{line_num}"
+
+                    if _insert_chunk(conn, fp, f"dpo_pair_{line_num}", text,
+                                     priority, mtime, force):
+                        indexed += 1
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        conn.commit()
+
+    return indexed
+
+
+# ── Perplexity quality tier cache ────────────────────────────
+_perplexity_quality_cache: Optional[Dict[str, str]] = None
+
+def _load_perplexity_quality(brain_path: Path) -> Dict[str, str]:
+    """Load thread_classification.json → {filename_stem: quality_tier}."""
+    global _perplexity_quality_cache
+    if _perplexity_quality_cache is not None:
+        return _perplexity_quality_cache
+
+    _perplexity_quality_cache = {}
+    cls_file = brain_path / "training" / "inbox" / "perplexity" / "thread_classification.json"
+    if cls_file.exists():
+        try:
+            data = json.loads(cls_file.read_text())
+            for thread in data if isinstance(data, list) else data.get("threads", []):
+                name = thread.get("filename", thread.get("name", ""))
+                tier = thread.get("quality_tier", thread.get("tier", ""))
+                if name and tier:
+                    stem = Path(name).stem
+                    _perplexity_quality_cache[stem] = tier.lower()
+        except Exception:
+            pass
+    return _perplexity_quality_cache
+
+
+def _get_perplexity_quality(file_path: str, brain_path: Path = BRAIN_PATH) -> str:
+    """Look up Perplexity quality tier (gold/silver/copper) for a file_path."""
+    quality_map = _load_perplexity_quality(brain_path)
+    stem = Path(file_path).stem
+    return quality_map.get(stem, "")
+
+
+def _index_perplexity(conn: sqlite3.Connection, brain_path: Path,
+                      force: bool = False) -> int:
+    """Index Perplexity research threads (bulk + targeted)."""
+    indexed = 0
+
+    dirs = [
+        (brain_path / "training" / "inbox" / "perplexity" / "bulk", "perplexity/bulk"),
+        (brain_path / "training" / "inbox" / "perplexity" / "targeted", "perplexity/targeted"),
+    ]
+
+    for src_dir, path_prefix in dirs:
+        if not src_dir.exists():
+            continue
+
+        md_files = sorted(src_dir.rglob("*.md"))
+        if not md_files:
+            continue
+
+        priority = _get_priority_tier(path_prefix)
+        quality_map = _load_perplexity_quality(brain_path)
+        print(f"\n  [{path_prefix}] {len(md_files)} files (priority={priority})", flush=True)
+
+        for md_file in md_files:
+            try:
+                content = md_file.read_text(errors='ignore')
+                if len(content) < 50:
+                    continue
+
+                fname = md_file.stem
+                fp = f"{path_prefix}/{md_file.name}"
+                mtime = md_file.stat().st_mtime
+                quality = quality_map.get(fname, "")
+                chunks = chunk_markdown(content)
+
+                for section, chunk_text in chunks:
+                    sec = f"{section} [{quality}]" if quality else section
+                    if _insert_chunk(conn, fp, sec, chunk_text, priority, mtime, force):
+                        indexed += 1
+
+                if indexed % 50 == 0 and indexed > 0:
+                    conn.commit()
+                    print(f"    +{indexed} chunks", flush=True)
+            except Exception as e:
+                print(f"    Skip {md_file.name}: {e}")
+
+        conn.commit()
+
+    return indexed
+
+
+def _index_codebase_docstrings(conn: sqlite3.Connection,
+                               force: bool = False) -> int:
+    """Extract and index function/class docstrings from Python source files.
+
+    Uses ast.parse() to walk AST nodes. Zero external dependencies.
+    """
+    import ast
+
+    CODE_ROOTS = [
+        PROJECT_ROOT / "providers",
+        PROJECT_ROOT / "mcp-server-nucleus" / "src" / "mcp_server_nucleus",
+        PROJECT_ROOT / "scripts",
+    ]
+
+    indexed = 0
+    priority = _get_priority_tier("code")
+
+    for root in CODE_ROOTS:
+        if not root.exists():
+            continue
+
+        py_files = sorted(root.rglob("*.py"))
+        if not py_files:
+            continue
+
+        print(f"\n  [code/{root.name}] {len(py_files)} .py files (priority={priority})", flush=True)
+
+        for py_file in py_files:
+            if py_file.name.startswith("test_") or "__pycache__" in str(py_file):
+                continue
+
+            try:
+                source = py_file.read_text(errors='ignore')
+                tree = ast.parse(source, filename=str(py_file))
+            except (SyntaxError, UnicodeDecodeError):
+                continue
+
+            rel_path = str(py_file.relative_to(PROJECT_ROOT))
+            mtime = py_file.stat().st_mtime
+
+            for node in ast.walk(tree):
+                if not isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+
+                docstring = ast.get_docstring(node)
+                if not docstring:
+                    continue
+
+                name = node.name
+                if name.startswith('_') and not name.startswith('__'):
+                    continue  # skip private helpers — low retrieval value
+
+                # Build signature for functions
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    try:
+                        args = []
+                        for arg in node.args.args:
+                            ann = ""
+                            if arg.annotation:
+                                ann = f": {ast.unparse(arg.annotation)}"
+                            args.append(f"{arg.arg}{ann}")
+                        sig = ", ".join(args)
+                        text = f"{name}({sig})\n\n{docstring}"
+                    except Exception:
+                        text = f"{name}()\n\n{docstring}"
+                else:
+                    text = f"class {name}\n\n{docstring}"
+
+                fp = f"code/{rel_path}:{name}"
+
+                # Most docstrings fit in one chunk; sub-chunk if long
+                for i, chunk in enumerate(_chunk_plain_text(text)):
+                    section = name if i == 0 else f"{name} (part {i+1})"
+                    if _insert_chunk(conn, fp, section, chunk, priority, mtime, force):
+                        indexed += 1
+
+            if indexed % 50 == 0 and indexed > 0:
+                conn.commit()
+                print(f"    +{indexed} chunks", flush=True)
+
+    conn.commit()
     return indexed
 
 
@@ -818,27 +1144,32 @@ def _rrf_fuse(*rankings: List[Tuple[int, float]], k: int = RRF_K) -> List[Tuple[
 
 def _apply_metadata_boost(fused: List[Tuple[int, float]],
                           conn: sqlite3.Connection) -> List[Tuple[int, float]]:
-    """Apply priority tier + recency boost to fused RRF scores."""
+    """Apply priority tier + recency + Perplexity quality boost to fused RRF scores."""
     if not fused:
         return fused
 
     chunk_ids = [cid for cid, _ in fused]
     placeholders = ','.join('?' * len(chunk_ids))
     meta = conn.execute(
-        f"SELECT id, priority_tier, file_mtime FROM chunks WHERE id IN ({placeholders})",
+        f"SELECT id, priority_tier, file_mtime, file_path FROM chunks WHERE id IN ({placeholders})",
         chunk_ids
     ).fetchall()
-    meta_map = {row[0]: (row[1], row[2]) for row in meta}
+    meta_map = {row[0]: (row[1], row[2], row[3]) for row in meta}
 
     now = time.time()
     recency_cutoff = now - (RECENCY_BOOST_DAYS * 86400)
+    perplexity_quality_boost = {"gold": 1.20, "silver": 1.10}
 
     boosted = []
     for chunk_id, score in fused:
-        tier, mtime = meta_map.get(chunk_id, (5, 0))
+        tier, mtime, file_path = meta_map.get(chunk_id, (5, 0, ""))
         boost = PRIORITY_BOOST.get(tier, 1.0)
         if mtime > recency_cutoff:
             boost *= RECENCY_BOOST_FACTOR
+        # Perplexity quality tier boost
+        if file_path.startswith("perplexity/"):
+            quality = _get_perplexity_quality(file_path)
+            boost *= perplexity_quality_boost.get(quality, 1.0)
         boosted.append((chunk_id, score * boost))
 
     boosted.sort(key=lambda x: x[1], reverse=True)
@@ -1412,8 +1743,9 @@ def show_stats(brain_path: Path = BRAIN_PATH):
         shadow_turns = sum(1 for _ in open(SHADOW_LOG))
 
     tier_names = {
-        0: "memory", 1: "vault", 2: "strategy/synthesis", 3: "execution/arch",
-        4: "research/ideas", 5: "planning/eng", 6: "marketing/gtm", 7: "sessions/meta",
+        0: "memory/corrections", 1: "vault", 2: "strategy/synth/perplexity-deep",
+        3: "execution/arch/perplexity", 4: "research/ideas/conversations",
+        5: "planning/eng/code", 6: "marketing/gtm", 7: "sessions/meta",
     }
 
     print(f"\n  Brain RAG Index (v2 — hybrid search)")
