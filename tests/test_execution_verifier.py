@@ -18,14 +18,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from execution_verifier import (
     verify_execution,
     build_calibration_dpo,
+    capture_outcome_baseline,
+    extract_claims,
     _tier0_diff_nonempty,
     _tier1_syntax_check,
     _tier2_import_check,
     _tier3_test_execution,
     _tier4_runtime_check,
     _tier5_outcome_check,
-    extract_plan_claims,
-    capture_outcome_baseline,
     _get_changed_files,
     _check_json,
 )
@@ -385,182 +385,144 @@ class TestTier4Runtime:
         assert "commit_sha" in result
 
 
-# ---------------------------------------------------------------------------
-# Tier 5 — Outcome Verification (delta-based)
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Tier 5: Outcome verification (delta-based)
+# ===========================================================================
 
-class TestTier5OutcomeCheck:
-    """Tier 5: plan claims vs actual deltas."""
+class TestExtractClaims:
+    def test_extract_count_claims(self):
+        """Plan with '+N tests' and 'add N files' → count claims extracted."""
+        plan = "Add +5 tests for the verifier. Create 3 new modules."
+        claims = extract_claims(plan)
+        count_claims = [c for c in claims if c["claim_type"] == "count"]
+        assert len(count_claims) >= 2
+        units = {c["unit"] for c in count_claims}
+        assert "test" in units
+        assert "module" in units
 
-    def test_catches_noop_expansion(self, project):
-        """THE test: plan claims +3700 chunks, actual delta is 0. Must FAIL."""
-        baseline_dir = project / ".brain" / "driver"
-        baseline_dir.mkdir(parents=True)
-        baseline = {
-            "plan_file": "test-plan.md",
-            "captured_at": "2026-04-09T00:00:00",
-            "metrics": {
-                "chunk_count": {
-                    "actual": 8769,
-                    "claimed_before": 800,
-                    "claimed_after": 4500,
-                }
-            }
-        }
-        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
+    def test_extract_file_claims(self):
+        """Plan with 'create foo.py' → file claim extracted."""
+        plan = "Create file `goal_tracker.py` and add `csr.py`."
+        claims = extract_claims(plan)
+        file_claims = [c for c in claims if c["claim_type"] == "file"]
+        assert len(file_claims) >= 2
+        targets = {c["target"] for c in file_claims}
+        assert "goal_tracker.py" in targets
+        assert "csr.py" in targets
 
-        # Create a fake RAG DB with 8769 chunks (unchanged from baseline)
-        _create_fake_rag_db(project, chunk_count=8769)
+    def test_extract_no_claims(self):
+        """Plan with no measurable claims → empty list."""
+        plan = "Refactor the code to be cleaner and more readable."
+        claims = extract_claims(plan)
+        assert claims == []
 
-        signals = _tier5_outcome_check(project, budget_s=10)
-        assert len(signals) == 1
-        assert signals[0]["passed"] is False
-        assert signals[0]["actual_delta"] == 0
-        assert signals[0]["claimed_delta"] == 3700
-        assert "PREMATURE VICTORY" in signals[0]["detail"]
 
-    def test_passes_real_delta(self, project):
-        """Plan claims +3700, actual delta +3000. Should PASS (81%)."""
-        baseline_dir = project / ".brain" / "driver"
-        baseline_dir.mkdir(parents=True)
-        baseline = {
-            "plan_file": "test-plan.md",
-            "captured_at": "2026-04-09T00:00:00",
-            "metrics": {
-                "chunk_count": {
-                    "actual": 800,
-                    "claimed_before": 800,
-                    "claimed_after": 4500,
-                }
-            }
-        }
-        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
+class TestCaptureBaseline:
+    def test_capture_baseline_creates_driver_dir(self, project):
+        """capture_outcome_baseline creates .brain/driver/ if it doesn't exist."""
+        plan = "Add +3 tests for the parser."
+        result = capture_outcome_baseline(plan, project)
+        assert (project / ".brain" / "driver" / "outcome_baseline.json").exists()
+        assert len(result["claims"]) >= 1
+        assert "captured_at" in result
+        assert "plan_hash" in result
 
-        # DB now has 3800 chunks (delta = 3000)
-        _create_fake_rag_db(project, chunk_count=3800)
+    def test_capture_baseline_records_current_value(self, project):
+        """Baseline captures current test count."""
+        # Create some test functions first
+        (project / "test_hello.py").write_text(
+            "def test_one(): pass\ndef test_two(): pass\n"
+        )
+        plan = "Add +5 tests."
+        result = capture_outcome_baseline(plan, project)
+        count_claims = [c for c in result["claims"]
+                        if c["claim_type"] == "count" and c["unit"] == "test"]
+        assert len(count_claims) == 1
+        # Should have captured the 2 existing tests as baseline
+        assert count_claims[0]["baseline_value"] >= 2
+        assert count_claims[0]["claimed_delta"] == 5
 
-        signals = _tier5_outcome_check(project, budget_s=10)
-        assert len(signals) == 1
-        assert signals[0]["passed"] is True
-        assert signals[0]["actual_delta"] == 3000
-        assert "PREMATURE VICTORY" not in signals[0]["detail"]
+    def test_capture_baseline_file_claims(self, project):
+        """Baseline records whether claimed files exist."""
+        plan = "Create file `new_module.py`."
+        result = capture_outcome_baseline(plan, project)
+        file_claims = [c for c in result["claims"]
+                       if c["claim_type"] == "file"]
+        assert len(file_claims) == 1
+        assert file_claims[0]["target"] == "new_module.py"
+        assert file_claims[0]["baseline_exists"] is False
 
-    def test_skips_when_no_baseline(self, project):
-        """No baseline file → skip (not fail)."""
-        signals = _tier5_outcome_check(project, budget_s=10)
-        assert signals == []
 
-    def test_skips_stale_baseline(self, project):
-        """Baseline older than 24h → skip."""
-        import time as _time
-        baseline_dir = project / ".brain" / "driver"
-        baseline_dir.mkdir(parents=True)
-        baseline = {
-            "plan_file": "old-plan.md",
-            "captured_at": "2026-04-07T00:00:00",  # 2 days ago
-            "metrics": {"chunk_count": {"actual": 100, "claimed_before": 100, "claimed_after": 500}}
-        }
-        bp = baseline_dir / "outcome_baseline.json"
-        bp.write_text(json.dumps(baseline))
-        # Set file mtime to 48h ago
-        old_time = _time.time() - 48 * 3600
-        import os
-        os.utime(str(bp), (old_time, old_time))
+class TestTier5Outcome:
+    def test_tier5_passes_when_delta_sufficient(self, project):
+        """Actual delta >= 25% of claimed → passes."""
+        # Create baseline claiming +4 tests, with 0 existing
+        plan = "Add +4 tests."
+        capture_outcome_baseline(plan, project)
+        # Now create 2 tests (50% of 4 — above 25% threshold)
+        (project / "test_new.py").write_text(
+            "def test_a(): pass\ndef test_b(): pass\n"
+        )
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        assert len(sigs) >= 1
+        test_sig = [s for s in sigs if s.get("metric") == "test"][0]
+        assert test_sig["passed"] is True
+        assert test_sig["hit_ratio"] >= 0.25
 
-        signals = _tier5_outcome_check(project, budget_s=10)
-        assert signals == []
+    def test_tier5_fails_when_zero_delta(self, project):
+        """Zero progress on claimed metric → PREMATURE VICTORY."""
+        plan = "Add +10 tests."
+        capture_outcome_baseline(plan, project)
+        # Don't create any tests
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        assert len(sigs) >= 1
+        test_sig = [s for s in sigs if s.get("metric") == "test"][0]
+        assert test_sig["passed"] is False
+        assert "PREMATURE VICTORY" in test_sig.get("error", "")
+        assert test_sig["hit_ratio"] == 0.0
 
-    def test_integrated_via_verify_execution(self, project):
-        """Tier 5 wired into verify_execution when enabled."""
-        baseline_dir = project / ".brain" / "driver"
-        baseline_dir.mkdir(parents=True)
-        baseline = {
-            "plan_file": "test-plan.md",
-            "captured_at": "2026-04-09T00:00:00",
-            "metrics": {
-                "chunk_count": {
-                    "actual": 8769,
-                    "claimed_before": 800,
-                    "claimed_after": 4500,
-                }
-            }
-        }
-        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
-        _create_fake_rag_db(project, chunk_count=8769)
+    def test_tier5_file_claim_passes(self, project):
+        """File exists after implementation → passes."""
+        plan = "Create file `new_module.py`."
+        capture_outcome_baseline(plan, project)
+        # Create the file
+        (project / "new_module.py").write_text("# new\n")
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        file_sigs = [s for s in sigs if s.get("check") == "outcome_file"]
+        assert len(file_sigs) == 1
+        assert file_sigs[0]["passed"] is True
 
-        # Stage a change so tier 0 passes
+    def test_tier5_file_claim_fails(self, project):
+        """File NOT created → fails."""
+        plan = "Create file `missing_module.py`."
+        capture_outcome_baseline(plan, project)
+        # Don't create it
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        file_sigs = [s for s in sigs if s.get("check") == "outcome_file"]
+        assert len(file_sigs) == 1
+        assert file_sigs[0]["passed"] is False
+
+    def test_tier5_skips_when_no_baseline(self, project):
+        """No baseline file → tier 5 skipped in verify_execution."""
         (project / "hello.py").write_text("x = 2\n")
-        _git(project, "add", "hello.py")
-
         config = _make_config(execution_verification_tiers=[0, 5])
-        result = verify_execution("diff", "", config, project)
-        assert 0 in result["tiers_passed"]
-        assert 5 in result["tiers_failed"]
-        assert result["verified"] is False
+        result = verify_execution("", "", config, project)
+        assert 5 in result["tiers_skipped"]
 
-
-class TestExtractPlanClaims:
-    """Claim extraction from plan markdown."""
-
-    def test_extracts_expected_outcome_table(self):
-        plan = """
-## Expected Outcome
-| Metric | Before | After |
-|--------|--------|-------|
-| Chunk count | ~800 | ~4,500 |
-| Indexed files | ~50 | ~530 |
-"""
-        claims = extract_plan_claims(plan)
-        assert "chunk_count" in claims
-        assert claims["chunk_count"]["claimed_before"] == 800
-        assert claims["chunk_count"]["claimed_after"] == 4500
-
-    def test_extracts_inline_delta(self):
-        plan = "This will add ~2,000 new chunks to the index."
-        claims = extract_plan_claims(plan)
-        assert "chunk_count" in claims
-
-    def test_empty_plan_returns_empty(self):
-        claims = extract_plan_claims("No numbers here, just text.")
-        assert claims == {}
-
-
-class TestCaptureOutcomeBaseline:
-    """Baseline capture from plan + current metrics."""
-
-    def test_captures_baseline_with_rag_db(self, project):
-        plan_text = """
-## Expected Outcome
-| Metric | Before | After |
-|--------|--------|-------|
-| Chunk count | ~800 | ~4,500 |
-"""
-        _create_fake_rag_db(project, chunk_count=8769)
-        baseline_dir = project / ".brain" / "driver"
-        baseline_dir.mkdir(parents=True)
-
-        baseline = capture_outcome_baseline(plan_text, project)
-        assert "chunk_count" in baseline["metrics"]
-        assert baseline["metrics"]["chunk_count"]["actual"] == 8769
-        assert baseline["metrics"]["chunk_count"]["claimed_before"] == 800
-        assert baseline["metrics"]["chunk_count"]["claimed_after"] == 4500
-
-    def test_returns_empty_when_no_claims(self, project):
-        baseline = capture_outcome_baseline("No numbers.", project)
-        assert baseline["metrics"] == {}
-
-
-def _create_fake_rag_db(project_root, chunk_count=100):
-    """Create a minimal SQLite RAG DB for testing."""
-    import sqlite3
-    db_dir = project_root / ".brain"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    db = db_dir / "rag_index.db"
-    conn = sqlite3.connect(str(db))
-    conn.execute("CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_path TEXT, content_hash TEXT)")
-    conn.execute("DELETE FROM chunks")
-    for i in range(chunk_count):
-        conn.execute("INSERT INTO chunks (file_path, content_hash) VALUES (?, ?)",
-                     (f"file_{i // 10}.md", f"hash_{i}"))
-    conn.commit()
-    conn.close()
+    def test_tier5_integrated_via_verify(self, project):
+        """Tier 5 wired into verify_execution when baseline exists."""
+        plan = "Add +2 tests."
+        capture_outcome_baseline(plan, project)
+        # Create tests to satisfy claim
+        (project / "test_new.py").write_text(
+            "def test_a(): pass\ndef test_b(): pass\n"
+        )
+        (project / "hello.py").write_text("x = 2\n")  # trigger tier 0
+        config = _make_config(execution_verification_tiers=[0, 5])
+        result = verify_execution("", "", config, project)
+        assert 5 in result["tiers_passed"]
+        assert result["verified"] is True
