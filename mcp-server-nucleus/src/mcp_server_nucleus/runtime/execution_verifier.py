@@ -23,9 +23,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -124,6 +126,33 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         tiers_skipped.append(4)
     elif not runtime_checks:
         tiers_skipped.append(4)
+
+    # ── Tier 5: outcome verification (delta-based) ──
+    if 5 in enabled_tiers and remaining() > 0:
+        baseline_path = project_root / ".brain" / "driver" / "outcome_baseline.json"
+        plan_path = _find_recent_plan(project_root)
+        if baseline_path.exists() and plan_path:
+            t5_sigs = _tier5_outcome_check(
+                plan_path.read_text(), project_root, remaining(), baseline_path,
+            )
+            signals.extend(t5_sigs)
+            if t5_sigs:
+                if all(s["passed"] for s in t5_sigs):
+                    tiers_passed.append(5)
+                else:
+                    tiers_failed.append(5)
+                # Record goal progress (best-effort)
+                try:
+                    from .goal_tracker import record_goal_attempt
+                    record_goal_attempt(str(plan_path), {}, t5_sigs, project_root)
+                except Exception:
+                    pass
+            else:
+                tiers_skipped.append(5)
+        else:
+            tiers_skipped.append(5)  # No baseline or plan = skip, not fail
+    elif 5 not in enabled_tiers:
+        tiers_skipped.append(5)
 
     duration = round(time.monotonic() - t0, 2)
     verified = len(tiers_failed) == 0 and len(tiers_passed) > 0
@@ -811,3 +840,275 @@ def _check_yaml(fpath: Path, relpath: str) -> dict:
     except Exception as e:
         return {"check": "yaml_parse", "file": relpath,
                 "passed": False, "error": str(e)[:200]}
+
+
+# ---------------------------------------------------------------------------
+# Tier 5: Outcome Verification (Delta-Based)
+# ---------------------------------------------------------------------------
+
+# Regex patterns for extracting measurable claims from plan text.
+# Each pattern captures (quantity, unit/context).
+_CLAIM_PATTERNS = [
+    # "+N tests/files/chunks/items/lines"
+    (r'\+\s*(\d+)\s+(tests?|files?|chunks?|items?|lines?|endpoints?|modules?|functions?)',
+     "count"),
+    # "add N tests/files/..."
+    (r'(?:add|create|write|implement)\s+(\d+)\s+(tests?|files?|chunks?|items?|endpoints?|modules?|functions?)',
+     "count"),
+    # "increase by N"
+    (r'increase\s+(?:by\s+)?(\d+)\s+(\w+)',
+     "count"),
+    # "N new tests/files/..."
+    (r'(\d+)\s+new\s+(tests?|files?|chunks?|items?|endpoints?|modules?|functions?)',
+     "count"),
+    # "create/add <filename>" (file existence claim)
+    (r'(?:create|add|write)\s+(?:file\s+)?[`"\']?([a-zA-Z0-9_/\-\.]+\.(?:py|js|ts|json|yaml|yml|md|sh|sql))[`"\']?',
+     "file"),
+]
+
+# Map unit words to their singular form for consistency.
+_UNIT_NORMALIZE = {
+    "tests": "test", "files": "file", "chunks": "chunk",
+    "items": "item", "lines": "line", "endpoints": "endpoint",
+    "modules": "module", "functions": "function",
+}
+
+
+def extract_claims(plan_text: str) -> list[dict]:
+    """Extract measurable claims from plan text.
+
+    Returns list of dicts with: claim_type, quantity (for count), unit,
+    target (for file), raw_match.
+    """
+    claims = []
+    seen = set()
+
+    for pattern, claim_type in _CLAIM_PATTERNS:
+        for match in re.finditer(pattern, plan_text, re.IGNORECASE):
+            raw = match.group(0)
+            if raw in seen:
+                continue
+            seen.add(raw)
+
+            if claim_type == "count":
+                qty = int(match.group(1))
+                unit = _UNIT_NORMALIZE.get(match.group(2).lower(),
+                                           match.group(2).lower())
+                if qty > 0:
+                    claims.append({
+                        "claim_type": "count",
+                        "quantity": qty,
+                        "unit": unit,
+                        "raw_match": raw,
+                    })
+            elif claim_type == "file":
+                target = match.group(1)
+                claims.append({
+                    "claim_type": "file",
+                    "target": target,
+                    "raw_match": raw,
+                })
+
+    return claims
+
+
+def _measure_count(unit: str, project_root: Path) -> int:
+    """Measure the current count of a unit type in the project."""
+    try:
+        if unit == "test":
+            # Count test functions across all test files
+            count = 0
+            for tf in project_root.rglob("test_*.py"):
+                content = tf.read_text(errors="ignore")
+                count += len(re.findall(r'^\s*def\s+test_', content, re.MULTILINE))
+            return count
+        elif unit == "file":
+            return sum(1 for _ in project_root.rglob("*.py"))
+        elif unit in ("line", "lines"):
+            total = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    total += sum(1 for _ in open(pf, errors="ignore"))
+                except Exception:
+                    pass
+            return total
+        elif unit == "endpoint":
+            count = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    content = pf.read_text(errors="ignore")
+                    count += len(re.findall(
+                        r'@(?:app|router|mcp)\.\s*(?:get|post|put|delete|patch|route|tool)',
+                        content, re.IGNORECASE))
+                except Exception:
+                    pass
+            return count
+        elif unit == "function":
+            count = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    content = pf.read_text(errors="ignore")
+                    count += len(re.findall(r'^\s*def\s+\w+', content, re.MULTILINE))
+                except Exception:
+                    pass
+            return count
+        elif unit == "module":
+            return sum(1 for _ in project_root.rglob("*.py")
+                       if not _.name.startswith("test_"))
+        elif unit == "chunk":
+            # Count JSONL entries in common data files
+            count = 0
+            brain = project_root / ".brain"
+            if brain.exists():
+                for jl in brain.rglob("*.jsonl"):
+                    try:
+                        count += sum(1 for line in open(jl, errors="ignore")
+                                     if line.strip())
+                    except Exception:
+                        pass
+            return count
+    except Exception:
+        pass
+    return 0
+
+
+def capture_outcome_baseline(plan_text: str, project_root: Path) -> dict:
+    """Capture pre-implementation baseline metrics from plan claims.
+
+    Parses plan text for measurable claims (counts, file existence).
+    Records current state of each metric.
+    Writes to .brain/driver/outcome_baseline.json.
+
+    Returns: {"claims": [...], "captured_at": iso_timestamp, "plan_hash": str}
+    """
+    project_root = Path(project_root)
+    claims = extract_claims(plan_text)
+
+    baseline_claims = []
+    for claim in claims:
+        if claim["claim_type"] == "count":
+            current = _measure_count(claim["unit"], project_root)
+            baseline_claims.append({
+                "claim_type": "count",
+                "unit": claim["unit"],
+                "claimed_delta": claim["quantity"],
+                "baseline_value": current,
+                "raw_match": claim["raw_match"],
+            })
+        elif claim["claim_type"] == "file":
+            target = claim["target"]
+            exists = (project_root / target).exists()
+            baseline_claims.append({
+                "claim_type": "file",
+                "target": target,
+                "baseline_exists": exists,
+                "raw_match": claim["raw_match"],
+            })
+
+    plan_hash = hashlib.sha256(plan_text.encode()).hexdigest()[:12]
+    result = {
+        "claims": baseline_claims,
+        "captured_at": datetime.now().isoformat(),
+        "plan_hash": plan_hash,
+    }
+
+    # Persist
+    driver_dir = project_root / ".brain" / "driver"
+    driver_dir.mkdir(parents=True, exist_ok=True)
+    baseline_path = driver_dir / "outcome_baseline.json"
+    baseline_path.write_text(json.dumps(result, indent=2))
+
+    return result
+
+
+def _tier5_outcome_check(plan_text: str, project_root: Path,
+                         budget_s: float,
+                         baseline_path: Path) -> list[dict]:
+    """Tier 5: Compare post-implementation state against baseline claims.
+
+    For each claimed metric in the baseline:
+    - Re-measure the current value
+    - Compute delta (current - baseline)
+    - Compare delta to claimed improvement
+    - Signal passes if actual_delta >= claimed_delta * 0.25 (25% threshold)
+
+    Returns list of signal dicts.
+    """
+    t0 = time.monotonic()
+    signals = []
+
+    try:
+        baseline = json.loads(baseline_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+
+    for claim in baseline.get("claims", []):
+        if time.monotonic() - t0 > budget_s:
+            break
+
+        if claim["claim_type"] == "count":
+            current = _measure_count(claim["unit"], project_root)
+            baseline_val = claim["baseline_value"]
+            claimed_delta = claim["claimed_delta"]
+            actual_delta = current - baseline_val
+            hit_ratio = actual_delta / claimed_delta if claimed_delta > 0 else 0.0
+            passed = hit_ratio >= 0.25  # 25% threshold
+
+            signals.append({
+                "tier": 5,
+                "check": f"outcome_{claim['unit']}",
+                "metric": claim["unit"],
+                "claimed_delta": claimed_delta,
+                "actual_delta": actual_delta,
+                "baseline_value": baseline_val,
+                "current_value": current,
+                "hit_ratio": round(hit_ratio, 4),
+                "passed": passed,
+                "error": "" if passed else
+                    f"PREMATURE VICTORY: claimed +{claimed_delta} {claim['unit']}, "
+                    f"actual +{actual_delta} ({hit_ratio:.0%} of target)",
+            })
+
+        elif claim["claim_type"] == "file":
+            target = claim["target"]
+            exists_now = (project_root / target).exists()
+            existed_before = claim.get("baseline_exists", False)
+            # Pass if file was created (didn't exist before, exists now)
+            # or if it already existed (not a creation claim violation)
+            passed = exists_now
+            signals.append({
+                "tier": 5,
+                "check": f"outcome_file",
+                "metric": "file_exists",
+                "target": target,
+                "existed_before": existed_before,
+                "exists_now": exists_now,
+                "passed": passed,
+                "error": "" if passed else
+                    f"PREMATURE VICTORY: claimed to create {target}, file not found",
+            })
+
+    return signals
+
+
+def _find_recent_plan(project_root: Path) -> Path | None:
+    """Find the most recent plan file.
+
+    Searches:
+    1. ~/.claude/plans/*.md (Claude Code plan files)
+    2. .brain/driver/current_plan.md (manual plan)
+    """
+    # Claude Code plans
+    claude_plans = Path.home() / ".claude" / "plans"
+    if claude_plans.exists():
+        plans = sorted(claude_plans.glob("*.md"),
+                       key=lambda f: f.stat().st_mtime, reverse=True)
+        if plans:
+            return plans[0]
+
+    # Manual plan in brain
+    manual = project_root / ".brain" / "driver" / "current_plan.md"
+    if manual.exists():
+        return manual
+
+    return None

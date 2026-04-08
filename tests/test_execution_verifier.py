@@ -18,11 +18,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from execution_verifier import (
     verify_execution,
     build_calibration_dpo,
+    capture_outcome_baseline,
+    extract_claims,
     _tier0_diff_nonempty,
     _tier1_syntax_check,
     _tier2_import_check,
     _tier3_test_execution,
     _tier4_runtime_check,
+    _tier5_outcome_check,
     _get_changed_files,
     _check_json,
 )
@@ -380,3 +383,146 @@ class TestTier4Runtime:
         # Receipt provenance fields present
         assert "receipt_id" in result
         assert "commit_sha" in result
+
+
+# ===========================================================================
+# Tier 5: Outcome verification (delta-based)
+# ===========================================================================
+
+class TestExtractClaims:
+    def test_extract_count_claims(self):
+        """Plan with '+N tests' and 'add N files' → count claims extracted."""
+        plan = "Add +5 tests for the verifier. Create 3 new modules."
+        claims = extract_claims(plan)
+        count_claims = [c for c in claims if c["claim_type"] == "count"]
+        assert len(count_claims) >= 2
+        units = {c["unit"] for c in count_claims}
+        assert "test" in units
+        assert "module" in units
+
+    def test_extract_file_claims(self):
+        """Plan with 'create foo.py' → file claim extracted."""
+        plan = "Create file `goal_tracker.py` and add `csr.py`."
+        claims = extract_claims(plan)
+        file_claims = [c for c in claims if c["claim_type"] == "file"]
+        assert len(file_claims) >= 2
+        targets = {c["target"] for c in file_claims}
+        assert "goal_tracker.py" in targets
+        assert "csr.py" in targets
+
+    def test_extract_no_claims(self):
+        """Plan with no measurable claims → empty list."""
+        plan = "Refactor the code to be cleaner and more readable."
+        claims = extract_claims(plan)
+        assert claims == []
+
+
+class TestCaptureBaseline:
+    def test_capture_baseline_creates_driver_dir(self, project):
+        """capture_outcome_baseline creates .brain/driver/ if it doesn't exist."""
+        plan = "Add +3 tests for the parser."
+        result = capture_outcome_baseline(plan, project)
+        assert (project / ".brain" / "driver" / "outcome_baseline.json").exists()
+        assert len(result["claims"]) >= 1
+        assert "captured_at" in result
+        assert "plan_hash" in result
+
+    def test_capture_baseline_records_current_value(self, project):
+        """Baseline captures current test count."""
+        # Create some test functions first
+        (project / "test_hello.py").write_text(
+            "def test_one(): pass\ndef test_two(): pass\n"
+        )
+        plan = "Add +5 tests."
+        result = capture_outcome_baseline(plan, project)
+        count_claims = [c for c in result["claims"]
+                        if c["claim_type"] == "count" and c["unit"] == "test"]
+        assert len(count_claims) == 1
+        # Should have captured the 2 existing tests as baseline
+        assert count_claims[0]["baseline_value"] >= 2
+        assert count_claims[0]["claimed_delta"] == 5
+
+    def test_capture_baseline_file_claims(self, project):
+        """Baseline records whether claimed files exist."""
+        plan = "Create file `new_module.py`."
+        result = capture_outcome_baseline(plan, project)
+        file_claims = [c for c in result["claims"]
+                       if c["claim_type"] == "file"]
+        assert len(file_claims) == 1
+        assert file_claims[0]["target"] == "new_module.py"
+        assert file_claims[0]["baseline_exists"] is False
+
+
+class TestTier5Outcome:
+    def test_tier5_passes_when_delta_sufficient(self, project):
+        """Actual delta >= 25% of claimed → passes."""
+        # Create baseline claiming +4 tests, with 0 existing
+        plan = "Add +4 tests."
+        capture_outcome_baseline(plan, project)
+        # Now create 2 tests (50% of 4 — above 25% threshold)
+        (project / "test_new.py").write_text(
+            "def test_a(): pass\ndef test_b(): pass\n"
+        )
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        assert len(sigs) >= 1
+        test_sig = [s for s in sigs if s.get("metric") == "test"][0]
+        assert test_sig["passed"] is True
+        assert test_sig["hit_ratio"] >= 0.25
+
+    def test_tier5_fails_when_zero_delta(self, project):
+        """Zero progress on claimed metric → PREMATURE VICTORY."""
+        plan = "Add +10 tests."
+        capture_outcome_baseline(plan, project)
+        # Don't create any tests
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        assert len(sigs) >= 1
+        test_sig = [s for s in sigs if s.get("metric") == "test"][0]
+        assert test_sig["passed"] is False
+        assert "PREMATURE VICTORY" in test_sig.get("error", "")
+        assert test_sig["hit_ratio"] == 0.0
+
+    def test_tier5_file_claim_passes(self, project):
+        """File exists after implementation → passes."""
+        plan = "Create file `new_module.py`."
+        capture_outcome_baseline(plan, project)
+        # Create the file
+        (project / "new_module.py").write_text("# new\n")
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        file_sigs = [s for s in sigs if s.get("check") == "outcome_file"]
+        assert len(file_sigs) == 1
+        assert file_sigs[0]["passed"] is True
+
+    def test_tier5_file_claim_fails(self, project):
+        """File NOT created → fails."""
+        plan = "Create file `missing_module.py`."
+        capture_outcome_baseline(plan, project)
+        # Don't create it
+        baseline_path = project / ".brain" / "driver" / "outcome_baseline.json"
+        sigs = _tier5_outcome_check(plan, project, 10, baseline_path)
+        file_sigs = [s for s in sigs if s.get("check") == "outcome_file"]
+        assert len(file_sigs) == 1
+        assert file_sigs[0]["passed"] is False
+
+    def test_tier5_skips_when_no_baseline(self, project):
+        """No baseline file → tier 5 skipped in verify_execution."""
+        (project / "hello.py").write_text("x = 2\n")
+        config = _make_config(execution_verification_tiers=[0, 5])
+        result = verify_execution("", "", config, project)
+        assert 5 in result["tiers_skipped"]
+
+    def test_tier5_integrated_via_verify(self, project):
+        """Tier 5 wired into verify_execution when baseline exists."""
+        plan = "Add +2 tests."
+        capture_outcome_baseline(plan, project)
+        # Create tests to satisfy claim
+        (project / "test_new.py").write_text(
+            "def test_a(): pass\ndef test_b(): pass\n"
+        )
+        (project / "hello.py").write_text("x = 2\n")  # trigger tier 0
+        config = _make_config(execution_verification_tiers=[0, 5])
+        result = verify_execution("", "", config, project)
+        assert 5 in result["tiers_passed"]
+        assert result["verified"] is True
