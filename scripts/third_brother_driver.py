@@ -2772,10 +2772,21 @@ def _build_claude_cmd(message: str, classification: Dict, task: Dict,
     if system_context:
         cmd.extend(["--append-system-prompt", system_context[:8000]])
 
+    # Headless: skip permission prompts (requires explicit opt-in + trust phase 2+)
+    headless_active = False
+    if config.get("headless_enabled", False):
+        trust_phase = config.get("trust_ladder", {}).get("current_phase", 1)
+        if trust_phase >= 2:
+            cmd.append("--dangerously-skip-permissions")
+            headless_active = True
+        else:
+            print(f"[DRIVER] headless_enabled but trust phase {trust_phase} < 2 — permissions NOT skipped")
+
     model_label = claude_model or "default"
     stream_label = " [streaming]" if streaming else ""
+    headless_label = " [headless]" if headless_active else ""
     print(f"[DRIVER] Executing: claude -p (model={model_label}, max {max_turns} turns, "
-          f"effort {effort}{stream_label})"
+          f"effort {effort}{stream_label}{headless_label})"
           f"{f', resume={session_id[:12]}...' if session_id else ', fresh session'}")
 
     return cmd, max_turns, effort, timeout_sec, streaming
@@ -3591,6 +3602,17 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             task=task,
             outcome=outcome,
         )
+
+        # Layer 0: Inline conversation ingest
+        if config.get("layer0_ingest_enabled", True) and session_id:
+            try:
+                from mcp_server_nucleus.runtime.conversation_ops import ingest_conversations
+                l0 = ingest_conversations(mode="single", session_id=session_id)
+                l0_t, l0_p = l0.get("turns_created", 0), l0.get("preferences_found", 0)
+                if l0_t or l0_p:
+                    print(f"[LAYER 0] {l0_t} turns, {l0_p} DPO ({l0.get('duration_ms', 0)}ms)")
+            except Exception as e:
+                print(f"[LAYER 0] Ingest failed (non-fatal): {e}")
 
         # ── RING 8: Archive turn for training pipeline ──
         ring_archive_turn(task, outcome, response, duration)

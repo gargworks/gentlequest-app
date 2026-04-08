@@ -30,6 +30,11 @@ DEFAULT_CONFIG = {
     "claude_effort": "max",
     "claude_model": "claude-opus-4-6",
     "cost_cap_tokens": 500000,
+    # Headless + autonomous
+    "headless_enabled": False,              # requires trust phase 2+
+    "layer0_ingest_enabled": True,          # inline conversation capture after each task
+    "autonomous_daily_task_cap": 5,         # max tasks/day when daemon-launched
+    "autonomous_branch": "tb/autonomous",   # git branch for autonomous work
     # Frontier 1: GROUND — execution verification
     "execution_verification_enabled": True,
     "execution_verification_timeout_s": 30,
