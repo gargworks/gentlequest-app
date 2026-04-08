@@ -14,7 +14,7 @@ Data stored in .brain/experiments/dogfood/daily_log.json
 
 import json
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
@@ -79,7 +79,7 @@ def log_daily(
         "would_pay": would_pay,
         "decisions_faster": decisions_faster,
         "notes": notes,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     if existing_idx is not None:

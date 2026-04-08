@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class SprintMode(str, Enum):
@@ -882,8 +882,8 @@ class AutopilotEngine:
         """Calculate elapsed time from start."""
         try:
             start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
-            now = datetime.utcnow()
-            elapsed = now - start.replace(tzinfo=None)
+            now = datetime.now(tz=timezone.utc)
+            elapsed = now - start
             
             hours = int(elapsed.total_seconds() // 3600)
             minutes = int((elapsed.total_seconds() % 3600) // 60)
