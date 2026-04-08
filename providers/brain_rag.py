@@ -644,9 +644,17 @@ def index_brain(brain_path: Path = BRAIN_PATH, force: bool = False) -> int:
                         continue
                     # Extract text based on file type
                     text_parts = []
-                    for key in ("task_description", "instruction", "chosen", "output", "question"):
+                    for key in ("task_description", "instruction", "chosen", "output", "question",
+                                "task", "correction", "reason", "tb_output"):
                         if key in obj and isinstance(obj[key], str):
                             text_parts.append(obj[key])
+                    # Handle messages-format (RAFT SFT): extract user+assistant content
+                    if "messages" in obj and isinstance(obj["messages"], list):
+                        for msg in obj["messages"]:
+                            if isinstance(msg, dict) and msg.get("role") in ("user", "assistant"):
+                                content = msg.get("content", "")
+                                if isinstance(content, str) and len(content) > 20:
+                                    text_parts.append(content[:500])  # cap per message
                     if text_parts:
                         texts.append(" ".join(text_parts))
 
