@@ -23,6 +23,9 @@ from execution_verifier import (
     _tier2_import_check,
     _tier3_test_execution,
     _tier4_runtime_check,
+    _tier5_outcome_check,
+    extract_plan_claims,
+    capture_outcome_baseline,
     _get_changed_files,
     _check_json,
 )
@@ -380,3 +383,184 @@ class TestTier4Runtime:
         # Receipt provenance fields present
         assert "receipt_id" in result
         assert "commit_sha" in result
+
+
+# ---------------------------------------------------------------------------
+# Tier 5 — Outcome Verification (delta-based)
+# ---------------------------------------------------------------------------
+
+class TestTier5OutcomeCheck:
+    """Tier 5: plan claims vs actual deltas."""
+
+    def test_catches_noop_expansion(self, project):
+        """THE test: plan claims +3700 chunks, actual delta is 0. Must FAIL."""
+        baseline_dir = project / ".brain" / "driver"
+        baseline_dir.mkdir(parents=True)
+        baseline = {
+            "plan_file": "test-plan.md",
+            "captured_at": "2026-04-09T00:00:00",
+            "metrics": {
+                "chunk_count": {
+                    "actual": 8769,
+                    "claimed_before": 800,
+                    "claimed_after": 4500,
+                }
+            }
+        }
+        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
+
+        # Create a fake RAG DB with 8769 chunks (unchanged from baseline)
+        _create_fake_rag_db(project, chunk_count=8769)
+
+        signals = _tier5_outcome_check(project, budget_s=10)
+        assert len(signals) == 1
+        assert signals[0]["passed"] is False
+        assert signals[0]["actual_delta"] == 0
+        assert signals[0]["claimed_delta"] == 3700
+        assert "PREMATURE VICTORY" in signals[0]["detail"]
+
+    def test_passes_real_delta(self, project):
+        """Plan claims +3700, actual delta +3000. Should PASS (81%)."""
+        baseline_dir = project / ".brain" / "driver"
+        baseline_dir.mkdir(parents=True)
+        baseline = {
+            "plan_file": "test-plan.md",
+            "captured_at": "2026-04-09T00:00:00",
+            "metrics": {
+                "chunk_count": {
+                    "actual": 800,
+                    "claimed_before": 800,
+                    "claimed_after": 4500,
+                }
+            }
+        }
+        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
+
+        # DB now has 3800 chunks (delta = 3000)
+        _create_fake_rag_db(project, chunk_count=3800)
+
+        signals = _tier5_outcome_check(project, budget_s=10)
+        assert len(signals) == 1
+        assert signals[0]["passed"] is True
+        assert signals[0]["actual_delta"] == 3000
+        assert "PREMATURE VICTORY" not in signals[0]["detail"]
+
+    def test_skips_when_no_baseline(self, project):
+        """No baseline file → skip (not fail)."""
+        signals = _tier5_outcome_check(project, budget_s=10)
+        assert signals == []
+
+    def test_skips_stale_baseline(self, project):
+        """Baseline older than 24h → skip."""
+        import time as _time
+        baseline_dir = project / ".brain" / "driver"
+        baseline_dir.mkdir(parents=True)
+        baseline = {
+            "plan_file": "old-plan.md",
+            "captured_at": "2026-04-07T00:00:00",  # 2 days ago
+            "metrics": {"chunk_count": {"actual": 100, "claimed_before": 100, "claimed_after": 500}}
+        }
+        bp = baseline_dir / "outcome_baseline.json"
+        bp.write_text(json.dumps(baseline))
+        # Set file mtime to 48h ago
+        old_time = _time.time() - 48 * 3600
+        import os
+        os.utime(str(bp), (old_time, old_time))
+
+        signals = _tier5_outcome_check(project, budget_s=10)
+        assert signals == []
+
+    def test_integrated_via_verify_execution(self, project):
+        """Tier 5 wired into verify_execution when enabled."""
+        baseline_dir = project / ".brain" / "driver"
+        baseline_dir.mkdir(parents=True)
+        baseline = {
+            "plan_file": "test-plan.md",
+            "captured_at": "2026-04-09T00:00:00",
+            "metrics": {
+                "chunk_count": {
+                    "actual": 8769,
+                    "claimed_before": 800,
+                    "claimed_after": 4500,
+                }
+            }
+        }
+        (baseline_dir / "outcome_baseline.json").write_text(json.dumps(baseline))
+        _create_fake_rag_db(project, chunk_count=8769)
+
+        # Stage a change so tier 0 passes
+        (project / "hello.py").write_text("x = 2\n")
+        _git(project, "add", "hello.py")
+
+        config = _make_config(execution_verification_tiers=[0, 5])
+        result = verify_execution("diff", "", config, project)
+        assert 0 in result["tiers_passed"]
+        assert 5 in result["tiers_failed"]
+        assert result["verified"] is False
+
+
+class TestExtractPlanClaims:
+    """Claim extraction from plan markdown."""
+
+    def test_extracts_expected_outcome_table(self):
+        plan = """
+## Expected Outcome
+| Metric | Before | After |
+|--------|--------|-------|
+| Chunk count | ~800 | ~4,500 |
+| Indexed files | ~50 | ~530 |
+"""
+        claims = extract_plan_claims(plan)
+        assert "chunk_count" in claims
+        assert claims["chunk_count"]["claimed_before"] == 800
+        assert claims["chunk_count"]["claimed_after"] == 4500
+
+    def test_extracts_inline_delta(self):
+        plan = "This will add ~2,000 new chunks to the index."
+        claims = extract_plan_claims(plan)
+        assert "chunk_count" in claims
+
+    def test_empty_plan_returns_empty(self):
+        claims = extract_plan_claims("No numbers here, just text.")
+        assert claims == {}
+
+
+class TestCaptureOutcomeBaseline:
+    """Baseline capture from plan + current metrics."""
+
+    def test_captures_baseline_with_rag_db(self, project):
+        plan_text = """
+## Expected Outcome
+| Metric | Before | After |
+|--------|--------|-------|
+| Chunk count | ~800 | ~4,500 |
+"""
+        _create_fake_rag_db(project, chunk_count=8769)
+        baseline_dir = project / ".brain" / "driver"
+        baseline_dir.mkdir(parents=True)
+
+        baseline = capture_outcome_baseline(plan_text, project)
+        assert "chunk_count" in baseline["metrics"]
+        assert baseline["metrics"]["chunk_count"]["actual"] == 8769
+        assert baseline["metrics"]["chunk_count"]["claimed_before"] == 800
+        assert baseline["metrics"]["chunk_count"]["claimed_after"] == 4500
+
+    def test_returns_empty_when_no_claims(self, project):
+        baseline = capture_outcome_baseline("No numbers.", project)
+        assert baseline["metrics"] == {}
+
+
+def _create_fake_rag_db(project_root, chunk_count=100):
+    """Create a minimal SQLite RAG DB for testing."""
+    import sqlite3
+    db_dir = project_root / ".brain"
+    db_dir.mkdir(parents=True, exist_ok=True)
+    db = db_dir / "rag_index.db"
+    conn = sqlite3.connect(str(db))
+    conn.execute("CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_path TEXT, content_hash TEXT)")
+    conn.execute("DELETE FROM chunks")
+    for i in range(chunk_count):
+        conn.execute("INSERT INTO chunks (file_path, content_hash) VALUES (?, ?)",
+                     (f"file_{i // 10}.md", f"hash_{i}"))
+    conn.commit()
+    conn.close()
