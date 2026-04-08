@@ -183,7 +183,7 @@ def _compute_compounding_score_v2(brain: Path) -> Dict:
             for sf in sessions_dir.glob("*.json"):
                 try:
                     s = json.loads(sf.read_text())
-                    ts = s.get("start_time", s.get("timestamp", ""))[:10]
+                    ts = s.get("created_at", s.get("start_time", s.get("timestamp", "")))[:10]
                     if ts >= week_ago_str:
                         active_days += 1
                 except Exception:
@@ -197,10 +197,12 @@ def _compute_compounding_score_v2(brain: Path) -> Dict:
     sft_count = 0
     dpo_count = 0
     training_dir = brain / "training"
-    if (training_dir / "loop_turns.jsonl").exists():
-        sft_count = sum(1 for _ in open(training_dir / "loop_turns.jsonl", encoding="utf-8") if _.strip())
-    if (training_dir / "preference_pairs.jsonl").exists():
-        dpo_count = sum(1 for _ in open(training_dir / "preference_pairs.jsonl", encoding="utf-8") if _.strip())
+    turns_path = training_dir / "loop_turns.jsonl"
+    prefs_path = training_dir / "preference_pairs.jsonl"
+    if turns_path.exists():
+        sft_count = sum(1 for line in turns_path.read_text(encoding="utf-8").splitlines() if line.strip())
+    if prefs_path.exists():
+        dpo_count = sum(1 for line in prefs_path.read_text(encoding="utf-8").splitlines() if line.strip())
     dims["training_signal"] = min(10, round(sft_count * 0.3 + dpo_count * 1.0))
 
     total = sum(dims.values())
