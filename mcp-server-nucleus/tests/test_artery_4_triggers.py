@@ -21,6 +21,10 @@ def trigger_brain(tmp_path):
     brain = tmp_path / ".brain"
     (brain / "ledger").mkdir(parents=True)
     (brain / "engrams").mkdir(parents=True)
+    (brain / "config").mkdir(parents=True)
+
+    # Force JSON backend so tests read/write tasks.json directly
+    (brain / "config" / "nucleus.yaml").write_text("storage:\n  backend: json\n")
 
     triggers = {"triggers": [
         {"event_type": "task_completed", "target_agent": "synthesizer", "emitter_filter": None},
@@ -101,6 +105,120 @@ class TestArteryTriggers:
         assert event_id is not None
         events = (trigger_brain / "ledger" / "events.jsonl").read_text().strip()
         assert len(events) > 0
+
+    def test_dispatch_creates_task_when_opted_in(self, trigger_brain):
+        """Trigger with "dispatch": true should create a task."""
+        triggers = {"triggers": [
+            {"id": "t-dispatch", "event_type": "task_completed",
+             "target_agent": "synthesizer", "dispatch": True,
+             "description": "Auto-synthesize on completion"},
+        ]}
+        (trigger_brain / "ledger" / "triggers.json").write_text(json.dumps(triggers))
+        (trigger_brain / "ledger" / "tasks.json").write_text(json.dumps([]))
+
+        with patch("mcp_server_nucleus.runtime.event_ops.get_brain_path",
+                    return_value=trigger_brain):
+            with patch("mcp_server_nucleus.runtime.trigger_ops.get_brain_path",
+                        return_value=trigger_brain):
+                with patch("mcp_server_nucleus.runtime.task_ops.get_brain_path",
+                            return_value=trigger_brain):
+                    from mcp_server_nucleus.runtime.event_ops import _emit_event
+                    _emit_event("task_completed", "test_slot", {"task": "done"})
+
+        tasks = json.loads(
+            (trigger_brain / "ledger" / "tasks.json").read_text()
+        )
+        dispatched = [t for t in tasks
+                      if t.get("source", "").startswith("trigger_dispatch:")]
+        assert len(dispatched) >= 1, "Dispatch trigger should create a task"
+        assert "synthesizer" in dispatched[0]["description"]
+
+    def test_dispatch_skipped_without_opt_in(self, trigger_brain):
+        """Trigger without "dispatch": true should NOT create a task."""
+        triggers = {"triggers": [
+            {"id": "t-nodispatch", "event_type": "task_completed",
+             "target_agent": "synthesizer"},
+        ]}
+        (trigger_brain / "ledger" / "triggers.json").write_text(json.dumps(triggers))
+        (trigger_brain / "ledger" / "tasks.json").write_text(json.dumps([]))
+
+        with patch("mcp_server_nucleus.runtime.event_ops.get_brain_path",
+                    return_value=trigger_brain):
+            with patch("mcp_server_nucleus.runtime.trigger_ops.get_brain_path",
+                        return_value=trigger_brain):
+                with patch("mcp_server_nucleus.runtime.task_ops.get_brain_path",
+                            return_value=trigger_brain):
+                    from mcp_server_nucleus.runtime.event_ops import _emit_event
+                    _emit_event("task_completed", "test_slot", {})
+
+        tasks = json.loads(
+            (trigger_brain / "ledger" / "tasks.json").read_text()
+        )
+        dispatched = [t for t in tasks
+                      if t.get("source", "").startswith("trigger_dispatch:")]
+        assert len(dispatched) == 0, "Non-dispatch trigger should not create tasks"
+
+    def test_chain_depth_prevents_cascade(self, trigger_brain):
+        """Chain depth >= MAX should prevent further dispatch."""
+        from mcp_server_nucleus.runtime.trigger_ops import (
+            _increment_chain_depth, _decrement_chain_depth,
+            _get_chain_depth, _MAX_CHAIN_DEPTH, _dispatch_trigger
+        )
+
+        (trigger_brain / "ledger" / "tasks.json").write_text(json.dumps([]))
+
+        # Push depth to max
+        for _ in range(_MAX_CHAIN_DEPTH):
+            _increment_chain_depth()
+
+        try:
+            with patch("mcp_server_nucleus.runtime.trigger_ops.get_brain_path",
+                        return_value=trigger_brain):
+                _dispatch_trigger(
+                    {"id": "t-deep", "target_agent": "x", "description": "test"},
+                    "test_event", "test_emitter"
+                )
+
+            tasks = json.loads(
+                (trigger_brain / "ledger" / "tasks.json").read_text()
+            )
+            assert len(tasks) == 0, "Max depth should block dispatch"
+        finally:
+            for _ in range(_MAX_CHAIN_DEPTH):
+                _decrement_chain_depth()
+
+    def test_dedup_prevents_duplicate_dispatch(self, trigger_brain):
+        """If a pending task exists for same trigger+event, skip dispatch."""
+        trigger = {"id": "t-dedup", "event_type": "task_completed",
+                   "target_agent": "synthesizer", "dispatch": True,
+                   "description": "Dedup test"}
+        existing_task = {
+            "id": "task-existing",
+            "description": "[auto] synthesizer: test",
+            "status": "PENDING",
+            "source": "trigger_dispatch:trigger:t-dedup:task_completed",
+        }
+        (trigger_brain / "ledger" / "triggers.json").write_text(
+            json.dumps({"triggers": [trigger]})
+        )
+        (trigger_brain / "ledger" / "tasks.json").write_text(
+            json.dumps([existing_task])
+        )
+
+        with patch("mcp_server_nucleus.runtime.event_ops.get_brain_path",
+                    return_value=trigger_brain):
+            with patch("mcp_server_nucleus.runtime.trigger_ops.get_brain_path",
+                        return_value=trigger_brain):
+                with patch("mcp_server_nucleus.runtime.task_ops.get_brain_path",
+                            return_value=trigger_brain):
+                    from mcp_server_nucleus.runtime.event_ops import _emit_event
+                    _emit_event("task_completed", "test_slot", {})
+
+        tasks = json.loads(
+            (trigger_brain / "ledger" / "tasks.json").read_text()
+        )
+        # Should still have only 1 task (the existing one), not 2
+        assert len(tasks) == 1, "Dedup should prevent duplicate task"
 
     def test_artery_4_kill_switch(self, trigger_brain):
         """NUCLEUS_DISABLE_ARTERY_4 should skip trigger evaluation entirely."""
