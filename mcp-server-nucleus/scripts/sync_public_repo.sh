@@ -210,10 +210,27 @@ fi
 if [ "$AUTO_MODE" -eq 1 ]; then
     PRIVATE_MSG=$(cd "$SOURCE_REPO" && git log --format='%s' -1)
     git commit -m "sync: $PRIVATE_MSG" --allow-empty-message > /dev/null 2>&1
+
+    # Pull-rebase before push — handles PRs merged directly on GitHub
+    if ! git pull --rebase origin main > /dev/null 2>&1; then
+        echo -e "${YELLOW}Auto-sync: rebase conflict — attempting reset + re-archive${NC}"
+        git rebase --abort > /dev/null 2>&1 || true
+        git reset --hard "$BACKUP_TAG" > /dev/null 2>&1
+        # Re-extract from source (our archive is authoritative)
+        git ls-files | xargs rm -f
+        cd "$SOURCE_REPO"
+        git archive HEAD | tar -x -C "$TARGET_REPO"
+        cd "$TARGET_REPO"
+        git add -A
+        git commit -m "sync: $PRIVATE_MSG" --allow-empty-message > /dev/null 2>&1
+        # Try rebase again
+        git pull --rebase origin main > /dev/null 2>&1 || true
+    fi
+
     if git push origin main > /dev/null 2>&1; then
         echo "Auto-sync pushed: sync: $PRIVATE_MSG"
     else
-        echo -e "${RED}Auto-sync: push failed — manual push needed${NC}"
+        echo -e "${RED}Auto-sync: push failed after rebase — manual push needed${NC}"
         exit 1
     fi
     exit 0
