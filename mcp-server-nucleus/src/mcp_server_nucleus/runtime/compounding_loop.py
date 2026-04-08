@@ -258,11 +258,14 @@ def _create_new_cycle(brain: Path, cycle_id: int) -> dict:
             "score_at_end": None,
         }
 
+    v2 = _compute_compounding_score_v2(brain)
     return {
         "cycle_id": cycle_id,
         "week_start": week_start,
         "days": days,
-        "weekly_score_start": _compute_compounding_score(brain),
+        "weekly_score_start": v2["v2_score"],
+        "weekly_score_start_v0": v2["v0_score"],
+        "weekly_score_start_v2": v2,
         "weekly_score_end": None,
         "weekly_delta": None,
         "previous_cycles": [],
@@ -362,19 +365,13 @@ def _compounding_loop_status_impl() -> Dict:
     # Calculate week's engram writes
     engram_count = memory.get("count", 0)
     
-    # Calculate compounding score (rough metric)
-    # Higher score = more engrams, more auto-writes, fewer errors
+    # Score v2: multi-dimensional (knowledge, frontier, velocity, continuity, training)
+    v2 = _compute_compounding_score_v2(brain)
+    compounding_score = v2["v2_score"]
+
     auto_writes = hooks.get("outcomes", {}).get("ADD", 0)
     errors = hooks.get("outcomes", {}).get("ERROR", 0)
-    efficiency = hooks.get("efficiency", 0) if isinstance(hooks.get("efficiency"), (int, float)) else 0
-    
-    compounding_score = min(100, int(
-        (engram_count * 0.5) +
-        (auto_writes * 2) +
-        (efficiency * 50) -
-        (errors * 5)
-    ))
-    
+
     response = {
         "day_of_week": day,
         "week_number": week,
@@ -384,9 +381,12 @@ def _compounding_loop_status_impl() -> Dict:
             "auto_writes_this_session": auto_writes,
             "error_count": errors,
             "compounding_score": compounding_score,
+            "band": v2["band"],
+            "dimensions": v2["dimensions"],
+            "v0_score": v2["v0_score"],
         },
         "recommendation": brief.get("recommendation", {}),
-        "formatted": _format_loop_status(day, week, today, compounding_score, brief),
+        "formatted": _format_loop_status(day, week, today, compounding_score, brief, v2),
     }
 
     # ── Artery 7: Track cycle state ──
@@ -431,39 +431,45 @@ def _compounding_loop_status_impl() -> Dict:
     return response
 
 
-def _format_loop_status(day: str, week: int, today: Dict, score: int, brief: Dict) -> str:
+def _format_loop_status(day: str, week: int, today: Dict, score: int, brief: Dict, v2: Dict = None) -> str:
     """Format the loop status as a readable output."""
     lines = []
+    band = (v2 or {}).get("band", "")
     lines.append("=" * 60)
-    lines.append("🔄 COMPOUNDING v0 LOOP STATUS")
+    lines.append(f"🔄 COMPOUNDING LOOP STATUS [{band}]")
     lines.append(f"   Week {week} | {day}")
     lines.append("=" * 60)
-    
+
     lines.append(f"\n📅 TODAY'S ACTION: {today['action']}")
     lines.append("-" * 40)
     lines.append(f"  Task: {today['task']}")
     lines.append(f"  Output: {today['output']}")
     lines.append(f"  Engram to write: {today['engram_key']}")
-    
+
     memory = brief.get("sections", {}).get("memory", {})
     hooks = brief.get("sections", {}).get("hook_health", {})
-    
-    lines.append(f"\n📊 COMPOUNDING METRICS")
+
+    lines.append(f"\n📊 COMPOUNDING SCORE: {score}/100 ({band})")
     lines.append("-" * 40)
+    if v2 and v2.get("dimensions"):
+        dims = v2["dimensions"]
+        lines.append(f"  Knowledge Metabolism: {dims.get('knowledge_metabolism', 0)}/30")
+        lines.append(f"  Frontier Health:      {dims.get('frontier_health', 0)}/30")
+        lines.append(f"  Velocity:             {dims.get('velocity', 0)}/20")
+        lines.append(f"  Continuity:           {dims.get('continuity', 0)}/10")
+        lines.append(f"  Training Signal:      {dims.get('training_signal', 0)}/10")
     lines.append(f"  Total engrams: {memory.get('count', 0)}")
     lines.append(f"  Auto-writes: {hooks.get('outcomes', {}).get('ADD', 0)}")
-    lines.append(f"  Compounding score: {score}/100")
-    
-    # Score interpretation
-    if score >= 80:
-        interpretation = "🚀 EXCELLENT — Nucleus is compounding rapidly"
-    elif score >= 50:
-        interpretation = "📈 GOOD — Keep writing engrams daily"
-    elif score >= 20:
-        interpretation = "⚠️ SLOW — Need more consistent daily use"
-    else:
-        interpretation = "🔴 COLD — Nucleus isn't being used. Start with morning_brief!"
-    lines.append(f"  {interpretation}")
+
+    # Band interpretation
+    interp = {
+        "COMPOUNDING": "🚀 EXCELLENT — Nucleus is compounding rapidly",
+        "GROWING": "📈 GOOD — Keep writing engrams daily",
+        "STALLING": "⚠️ STALLING — Need more consistent daily use",
+        "DECAYING": "🔴 DECAYING — Activity dropping. Resume daily loop.",
+        "COLD": "🔴 COLD — Nucleus isn't being used. Start with morning_brief!",
+    }
+    lines.append(f"  {interp.get(band, interp['COLD'])}")
     
     lines.append(f"\n🎯 MORNING BRIEF RECOMMENDATION")
     lines.append("-" * 40)
@@ -557,7 +563,9 @@ def _end_of_day_capture_impl(
                 today_str = datetime.now().strftime("%Y-%m-%d")
                 if today_str in cycle.get("days", {}):
                     cycle["days"][today_str]["completed"] = True
-                    cycle["days"][today_str]["score_at_end"] = _compute_compounding_score(brain)
+                    v2_eod = _compute_compounding_score_v2(brain)
+                    cycle["days"][today_str]["score_at_end"] = v2_eod["v2_score"]
+                    cycle["days"][today_str]["score_v2"] = v2_eod
                     _save_cycle(cycle, cycle_path)
         except Exception:
             pass  # Never let cycle tracking break EOD capture
@@ -752,10 +760,11 @@ def _weekly_consolidation_impl(dry_run: bool = True) -> Dict:
             cycle_path = brain / "meta" / "compounding_cycle.json"
             if cycle_path.exists():
                 cycle = json.loads(cycle_path.read_text())
-                final_score = _compute_compounding_score(brain)
                 v2 = _compute_compounding_score_v2(brain)
+                final_score = v2["v2_score"]
 
                 cycle["weekly_score_end"] = final_score
+                cycle["weekly_score_end_v0"] = v2["v0_score"]
                 cycle["weekly_delta"] = final_score - cycle.get("weekly_score_start", 0)
                 cycle["v2_score"] = v2
 
