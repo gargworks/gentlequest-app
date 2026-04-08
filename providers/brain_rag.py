@@ -74,22 +74,62 @@ SHADOW_LOG = BRAIN_PATH / "training" / "shadow_log.jsonl"
 
 # ── Index source priorities (lower = higher priority = bigger boost) ──
 INDEX_PRIORITY = {
+    # Tier 0 — highest signal
+    "corrections": 0,
     "memory": 0,
+    # Tier 1 — core knowledge
     "vault": 1,
+    "knowledge": 1,
+    "distill": 1,
+    # Tier 2 — strategic
     "artifacts/strategy": 2,
     "artifacts/synthesis": 2,
+    "strategy": 2,
+    # Tier 3 — execution & missions
     "artifacts/execution": 3,
     "artifacts/architecture": 3,
+    "commitments": 3,
+    "missions": 3,
+    # Tier 4 — research & engrams
     "artifacts/research": 4,
     "artifacts/ideas": 4,
+    "engrams": 4,
+    # Tier 5 — planning & historical
     "artifacts/planning": 5,
     "artifacts/engineering": 5,
+    "archive": 5,
+    # Tier 6 — GTM & handoffs
     "artifacts/marketing": 6,
     "artifacts/gtm": 6,
+    "handoff": 6,
+    "handoffs": 6,
+    # Tier 7 — sessions & meta
     "artifacts/sessions": 7,
     "meta": 7,
 }
 INDEX_DIRS = list(INDEX_PRIORITY.keys())
+
+# Standalone .brain/ root files worth indexing (not in subdirs)
+INDEX_ROOT_FILES = {
+    "commandments.md": 0,
+    "roadmap.md": 2,
+    "strategy.md": 2,
+    "risk_registry.md": 3,
+    "INDEX_READ_ME_FIRST.md": 1,
+    "KNOWLEDGE_BASE_INDEX.md": 1,
+}
+
+# Extra files outside .brain/ (absolute paths resolved at index time)
+INDEX_EXTRA_FILES = {
+    str(PROJECT_ROOT / "CLAUDE.md"): 0,
+}
+
+# Training JSONL files — extract instruction/chosen text, not raw pairs
+TRAINING_JSONL_INDEX = {
+    "training/sparring_log.jsonl": 3,
+    "training/preference_pairs.jsonl": 3,
+    "training/raft_sft_v1.jsonl": 4,
+}
 
 # Priority tier → RRF score multiplier
 PRIORITY_BOOST = {
@@ -339,6 +379,13 @@ def index_brain(brain_path: Path = BRAIN_PATH, force: bool = False) -> int:
                         errors += 1
                         continue
 
+                    # Semantic dedup: skip if near-identical chunk already exists
+                    if not force and not existing:
+                        sim_hits = _dense_search(emb, conn, topk=1)
+                        if sim_hits and sim_hits[0][1] > 0.95:
+                            skipped += 1
+                            continue
+
                     emb_blob = np.array(emb, dtype=np.float32).tobytes()
                     wc = len(chunk_text.split())
 
@@ -367,8 +414,321 @@ def index_brain(brain_path: Path = BRAIN_PATH, force: bool = False) -> int:
                 errors += 1
 
     conn.commit()
+
+    # ── Index standalone .brain/ root files ──
+    for filename, priority in INDEX_ROOT_FILES.items():
+        root_file = brain_path / filename
+        if not root_file.exists():
+            continue
+        try:
+            content = root_file.read_text(errors='ignore')
+            if len(content) < 50:
+                continue
+            file_mtime = root_file.stat().st_mtime
+            for section, chunk_text in chunk_markdown(content):
+                c_hash = _content_hash(chunk_text)
+                existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                if existing and not force:
+                    skipped += 1
+                    continue
+                emb = _embed(chunk_text)
+                if not emb:
+                    errors += 1
+                    continue
+                if not force and not existing:
+                    sim_hits = _dense_search(emb, conn, topk=1)
+                    if sim_hits and sim_hits[0][1] > 0.95:
+                        skipped += 1
+                        continue
+                emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                wc = len(chunk_text.split())
+                if existing:
+                    conn.execute(
+                        "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                        "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                        (emb_blob, wc, priority, file_mtime, time.time(), c_hash))
+                else:
+                    conn.execute(
+                        "INSERT INTO chunks (file_path, section, content, content_hash, "
+                        "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (filename, section, chunk_text, c_hash, emb_blob, wc,
+                         priority, file_mtime, time.time()))
+                indexed += 1
+        except Exception as e:
+            print(f"    Skip {filename}: {e}")
+            errors += 1
+    if INDEX_ROOT_FILES:
+        print(f"  [root-files] scanned {len(INDEX_ROOT_FILES)} files", flush=True)
+
+    # ── Index extra files (CLAUDE.md etc.) ──
+    for abs_path_str, priority in INDEX_EXTRA_FILES.items():
+        extra_file = Path(abs_path_str)
+        if not extra_file.exists():
+            continue
+        try:
+            content = extra_file.read_text(errors='ignore')
+            if len(content) < 50:
+                continue
+            rel_label = extra_file.name
+            file_mtime = extra_file.stat().st_mtime
+            for section, chunk_text in chunk_markdown(content):
+                c_hash = _content_hash(chunk_text)
+                existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                if existing and not force:
+                    skipped += 1
+                    continue
+                emb = _embed(chunk_text)
+                if not emb:
+                    errors += 1
+                    continue
+                if not force and not existing:
+                    sim_hits = _dense_search(emb, conn, topk=1)
+                    if sim_hits and sim_hits[0][1] > 0.95:
+                        skipped += 1
+                        continue
+                emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                wc = len(chunk_text.split())
+                if existing:
+                    conn.execute(
+                        "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                        "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                        (emb_blob, wc, priority, file_mtime, time.time(), c_hash))
+                else:
+                    conn.execute(
+                        "INSERT INTO chunks (file_path, section, content, content_hash, "
+                        "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (rel_label, section, chunk_text, c_hash, emb_blob, wc,
+                         priority, file_mtime, time.time()))
+                indexed += 1
+        except Exception as e:
+            print(f"    Skip {abs_path_str}: {e}")
+            errors += 1
+    if INDEX_EXTRA_FILES:
+        print(f"  [extra-files] scanned {len(INDEX_EXTRA_FILES)} files", flush=True)
+
+    conn.commit()
+
+    # ── Index Claude memory (external, curated) ──
+    claude_mem_dirs = list(Path.home().glob(".claude/projects/*/memory"))
+    claude_mem_count = 0
+    for mem_dir in claude_mem_dirs:
+        md_files = sorted(mem_dir.rglob("*.md"))
+        if not md_files:
+            continue
+        priority = 0  # Tier 0 — curated founder knowledge
+        project_name = mem_dir.parent.name
+        print(f"\n  [claude-memory/{project_name}] {len(md_files)} files (priority={priority})", flush=True)
+        for md_file in md_files:
+            try:
+                content = md_file.read_text(errors='ignore')
+                if len(content) < 50:
+                    continue
+                rel_label = f"claude-memory/{project_name}/{md_file.name}"
+                file_mtime = md_file.stat().st_mtime
+                for section, chunk_text in chunk_markdown(content):
+                    c_hash = _content_hash(chunk_text)
+                    existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                    if existing and not force:
+                        skipped += 1
+                        continue
+                    emb = _embed(chunk_text)
+                    if not emb:
+                        errors += 1
+                        continue
+                    if not force and not existing:
+                        sim_hits = _dense_search(emb, conn, topk=1)
+                        if sim_hits and sim_hits[0][1] > 0.95:
+                            skipped += 1
+                            continue
+                    emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                    wc = len(chunk_text.split())
+                    if existing:
+                        conn.execute(
+                            "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                            "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                            (emb_blob, wc, priority, file_mtime, time.time(), c_hash))
+                    else:
+                        conn.execute(
+                            "INSERT INTO chunks (file_path, section, content, content_hash, "
+                            "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                            "VALUES (?,?,?,?,?,?,?,?,?)",
+                            (rel_label, section, chunk_text, c_hash, emb_blob, wc,
+                             priority, file_mtime, time.time()))
+                    indexed += 1
+                    claude_mem_count += 1
+            except Exception as e:
+                print(f"    Skip {md_file.name}: {e}")
+                errors += 1
+    if claude_mem_count:
+        conn.commit()
+        print(f"  [claude-memory] {claude_mem_count} chunks indexed", flush=True)
+
+    # ── Index git commit history (weekly chunks) ──
+    try:
+        git_result = subprocess.run(
+            ["git", "log", "--all", "--format=%ai|%s", "--since=2025-06-01"],
+            capture_output=True, text=True, cwd=str(brain_path.parent), timeout=30)
+        if git_result.returncode == 0 and git_result.stdout.strip():
+            from collections import defaultdict
+            weekly = defaultdict(list)
+            for line in git_result.stdout.strip().split('\n'):
+                if '|' not in line:
+                    continue
+                date_str, msg = line.split('|', 1)
+                # Group by ISO week
+                week_key = date_str[:10][:8]  # YYYY-MM- prefix → group by ~week
+                try:
+                    from datetime import datetime as _dt
+                    d = _dt.strptime(date_str[:10], "%Y-%m-%d")
+                    week_key = f"{d.isocalendar()[0]}-W{d.isocalendar()[1]:02d}"
+                except Exception:
+                    pass
+                weekly[week_key].append(msg.strip())
+
+            priority = 6
+            git_chunks_count = 0
+            print(f"\n  [git-history] {len(weekly)} weeks of commits", flush=True)
+            for week, msgs in sorted(weekly.items()):
+                chunk_text = f"Git commits — week {week}:\n" + "\n".join(f"- {m}" for m in msgs)
+                if len(chunk_text) < 50:
+                    continue
+                c_hash = _content_hash(chunk_text)
+                existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                if existing and not force:
+                    skipped += 1
+                    continue
+                emb = _embed(chunk_text)
+                if not emb:
+                    errors += 1
+                    continue
+                emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                wc = len(chunk_text.split())
+                if existing:
+                    conn.execute(
+                        "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                        "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                        (emb_blob, wc, priority, time.time(), time.time(), c_hash))
+                else:
+                    conn.execute(
+                        "INSERT INTO chunks (file_path, section, content, content_hash, "
+                        "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (f"git-history/{week}", week, chunk_text, c_hash, emb_blob, wc,
+                         priority, time.time(), time.time()))
+                indexed += 1
+                git_chunks_count += 1
+            if git_chunks_count:
+                conn.commit()
+                print(f"  [git-history] {git_chunks_count} weekly chunks indexed", flush=True)
+    except Exception as e:
+        print(f"  [git-history] Skipped: {e}")
+
+    # ── Index training JSONL metadata ──
+    for rel_path, priority in TRAINING_JSONL_INDEX.items():
+        jsonl_path = brain_path / rel_path
+        if not jsonl_path.exists():
+            continue
+        try:
+            jsonl_count = 0
+            texts = []
+            with open(jsonl_path, 'r', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    # Extract text based on file type
+                    text_parts = []
+                    for key in ("task_description", "instruction", "chosen", "output", "question"):
+                        if key in obj and isinstance(obj[key], str):
+                            text_parts.append(obj[key])
+                    if text_parts:
+                        texts.append(" ".join(text_parts))
+
+            # Batch texts into chunks of ~300 words
+            if texts:
+                batch = []
+                batch_words = 0
+                batch_num = 0
+                source_name = Path(rel_path).stem
+                print(f"\n  [training/{source_name}] {len(texts)} entries", flush=True)
+                for t in texts:
+                    wc = len(t.split())
+                    if batch_words + wc > CHUNK_MAX_WORDS and batch:
+                        chunk_text = "\n".join(batch)
+                        c_hash = _content_hash(chunk_text)
+                        existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                        if existing and not force:
+                            skipped += 1
+                        else:
+                            emb = _embed(chunk_text)
+                            if emb:
+                                if not force and not existing:
+                                    sim_hits = _dense_search(emb, conn, topk=1)
+                                    if sim_hits and sim_hits[0][1] > 0.95:
+                                        skipped += 1
+                                        batch = [t]
+                                        batch_words = wc
+                                        continue
+                                emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                                if existing:
+                                    conn.execute(
+                                        "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                                        "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                                        (emb_blob, batch_words, priority, time.time(), time.time(), c_hash))
+                                else:
+                                    conn.execute(
+                                        "INSERT INTO chunks (file_path, section, content, content_hash, "
+                                        "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                                        (rel_path, f"batch-{batch_num}", chunk_text, c_hash, emb_blob,
+                                         batch_words, priority, time.time(), time.time()))
+                                indexed += 1
+                                jsonl_count += 1
+                            else:
+                                errors += 1
+                        batch = [t]
+                        batch_words = wc
+                        batch_num += 1
+                    else:
+                        batch.append(t)
+                        batch_words += wc
+                # Flush remaining batch
+                if batch:
+                    chunk_text = "\n".join(batch)
+                    c_hash = _content_hash(chunk_text)
+                    existing = conn.execute("SELECT id FROM chunks WHERE content_hash=?", (c_hash,)).fetchone()
+                    if not existing or force:
+                        emb = _embed(chunk_text)
+                        if emb:
+                            emb_blob = np.array(emb, dtype=np.float32).tobytes()
+                            if existing:
+                                conn.execute(
+                                    "UPDATE chunks SET embedding=?, word_count=?, priority_tier=?, "
+                                    "file_mtime=?, indexed_at=? WHERE content_hash=?",
+                                    (emb_blob, batch_words, priority, time.time(), time.time(), c_hash))
+                            else:
+                                conn.execute(
+                                    "INSERT INTO chunks (file_path, section, content, content_hash, "
+                                    "embedding, word_count, priority_tier, file_mtime, indexed_at) "
+                                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                                    (rel_path, f"batch-{batch_num}", chunk_text, c_hash, emb_blob,
+                                     batch_words, priority, time.time(), time.time()))
+                            indexed += 1
+                            jsonl_count += 1
+                conn.commit()
+                print(f"  [training/{source_name}] {jsonl_count} chunks indexed", flush=True)
+        except Exception as e:
+            print(f"  [training/{rel_path}] Skipped: {e}")
+            errors += 1
+
     # Rebuild FTS5 index after all inserts
-    print("  Rebuilding FTS5 index...", flush=True)
+    print("\n  Rebuilding FTS5 index...", flush=True)
     _rebuild_fts(conn)
     conn.close()
     print(f"\n  Done: +{indexed} new, {skipped} cached, {errors} errors")
