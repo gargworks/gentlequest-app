@@ -486,7 +486,7 @@ def extract_skills(
     min_score: float = 0.5,
     min_cluster_size: int = 3,
     use_embeddings: bool = True,
-    max_turns: int = 1000,
+    max_turns: int = 4000,
 ) -> List[dict]:
     """Full pipeline: load turns → dedup → cluster → score → filter → return.
 
