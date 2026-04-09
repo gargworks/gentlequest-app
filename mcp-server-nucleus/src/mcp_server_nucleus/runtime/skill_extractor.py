@@ -203,8 +203,8 @@ def _cosine_sim(a: List[float], b: List[float]) -> float:
 
 def _tokenize_intent(intent: str) -> Set[str]:
     """Lowercase, strip PII/paths/punctuation, remove stopwords."""
-    text = _PII_PATH.sub(" ", intent)     # Strip /Users/username (before lowering)
-    text = _HOSTNAME.sub(" ", text)       # Strip hostnames (lokeshs-air, etc)
+    text = _PII_PATH.sub(" ", intent)     # Strip user paths (before lowering)
+    text = _HOSTNAME.sub(" ", text)       # Strip hostnames
     text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
     text = re.sub(_PATH_PATTERN, " ", text)
