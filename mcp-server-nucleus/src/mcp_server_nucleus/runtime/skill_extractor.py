@@ -365,15 +365,38 @@ def cluster_intents(
         avg_grade = sum(grades) / len(grades) if grades else 0
         avg_quality = reverse_map.get(round(avg_grade), "copper")
 
-        # TF-IDF domain label with verb preference
+        # Verb-object domain label
         tf = cluster_token_freqs[ci]
-        scored_tokens = {}
-        for token, freq in tf.items():
-            idf = math.log(num_clusters / max(doc_freq[token], 1)) if num_clusters > 1 else 1.0
-            verb_boost = 1.5 if token in _ABSTRACT_VERBS else 1.0
-            scored_tokens[token] = freq * max(idf, 0.1) * verb_boost
-        top_tokens = sorted(scored_tokens, key=scored_tokens.get, reverse=True)[:3]
-        domain_label = "-".join(top_tokens) or "general"
+        verbs = sorted(
+            [(tok, tf[tok]) for tok in tf if tok in _ABSTRACT_VERBS],
+            key=lambda x: x[1], reverse=True,
+        )
+        best_verb = verbs[0][0] if verbs else ""
+
+        noun_scores = {}
+        for tok, freq in tf.items():
+            if tok in _ABSTRACT_VERBS:
+                continue
+            idf = math.log(num_clusters / max(doc_freq[tok], 1)) if num_clusters > 1 else 1.0
+            noun_scores[tok] = freq * max(idf, 0.1)
+        best_nouns = sorted(noun_scores, key=noun_scores.get, reverse=True)
+        best_noun = best_nouns[0] if best_nouns else ""
+
+        if best_verb and best_noun:
+            domain_label = f"{best_verb}-{best_noun}"
+        elif best_verb:
+            domain_label = best_verb
+        elif best_noun:
+            domain_label = best_noun
+        else:
+            domain_label = "general"
+
+        # Track session diversity
+        sessions = set()
+        for t in cluster_turns:
+            src = t.get("metadata", {}).get("source", "")
+            if src:
+                sessions.add(src)
 
         clusters.append({
             "domain": domain_label,
@@ -383,6 +406,7 @@ def cluster_intents(
             "turns": cluster_turns,
             "size": len(indices),
             "avg_quality": avg_quality,
+            "unique_sessions": len(sessions),
         })
 
     clusters.sort(key=lambda c: c["size"], reverse=True)
@@ -413,7 +437,7 @@ def score_skill_candidate(cluster: dict) -> dict:
         actionability: fraction of intents with task verbs or ## Task markers
                        separates "write tests for X" from "did we complete"
 
-    Composite: 0.25*freq + 0.15*div + 0.15*qual + 0.20*gen + 0.25*act
+    Composite: 0.15*freq + 0.15*div + 0.10*qual + 0.15*gen + 0.20*act + 0.25*sess_div
     """
     size = cluster.get("size", 0)
 
@@ -465,8 +489,12 @@ def score_skill_candidate(cluster: dict) -> dict:
     else:
         actionability = 0.0
 
-    composite = (0.25 * frequency + 0.15 * diversity + 0.15 * quality
-                 + 0.20 * generality + 0.25 * actionability)
+    # Session diversity — real skills appear across many different sessions
+    unique_sessions = cluster.get("unique_sessions", 1)
+    session_diversity = min(unique_sessions / max(size * 0.5, 1), 1.0)
+
+    composite = (0.15 * frequency + 0.15 * diversity + 0.10 * quality
+                 + 0.15 * generality + 0.20 * actionability + 0.25 * session_diversity)
 
     cluster["score"] = round(composite, 3)
     cluster["score_breakdown"] = {
@@ -475,8 +503,43 @@ def score_skill_candidate(cluster: dict) -> dict:
         "quality": round(quality, 3),
         "generality": round(generality, 3),
         "actionability": round(actionability, 3),
+        "session_diversity": round(session_diversity, 3),
     }
     return cluster
+
+
+# -- Retry dedup --
+
+def _dedup_retries(turns: List[dict], threshold: float = 0.7) -> List[dict]:
+    """Within each session, collapse near-identical intents. Keep the richest turn."""
+    session_groups: Dict[str, List[dict]] = defaultdict(list)
+    for i, t in enumerate(turns):
+        sid = t.get("metadata", {}).get("source", f"__orphan_{i}")
+        session_groups[sid].append(t)
+
+    result = []
+    for sid, group in session_groups.items():
+        if len(group) <= 1 or sid.startswith("__orphan_"):
+            result.extend(group)
+            continue
+        kept = [group[0]]
+        for t in group[1:]:
+            t_tokens = _tokenize_intent(t.get("intent", ""))
+            is_retry = False
+            for ki, k in enumerate(kept):
+                k_tokens = _tokenize_intent(k.get("intent", ""))
+                if t_tokens and k_tokens:
+                    jaccard = len(t_tokens & k_tokens) / len(t_tokens | k_tokens)
+                    if jaccard > threshold:
+                        is_retry = True
+                        # Keep the one with more tools
+                        if len(t.get("tools_used", [])) > len(k.get("tools_used", [])):
+                            kept[ki] = t
+                        break
+            if not is_retry:
+                kept.append(t)
+        result.extend(kept)
+    return result
 
 
 # -- Main entry point --
@@ -515,6 +578,10 @@ def extract_skills(
         unique_turns.append(t)
     logger.info("Deduped %d -> %d unique turns", len(turns), len(unique_turns))
     turns = unique_turns
+
+    # Retry dedup — same session, similar intent → keep richest
+    turns = _dedup_retries(turns)
+    logger.info("After retry dedup: %d turns", len(turns))
 
     if len(turns) > max_turns:
         logger.info("Capping %d turns to most recent %d (O(n²) safety)", len(turns), max_turns)

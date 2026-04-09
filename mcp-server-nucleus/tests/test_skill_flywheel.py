@@ -381,3 +381,137 @@ def test_list_installed(tmp_path):
     assert "debug" in installed
     assert "user-custom-command" not in installed
     assert len(installed) == 2
+
+
+# -- Session-aware helpers and tests --
+
+def _make_session_turns(specs: list) -> list:
+    """Build turn dicts from (intent, session_id, tools) tuples.
+
+    Does NOT modify the existing _make_turns() fixture.
+    """
+    turns = []
+    for i, (intent, session_id, tools) in enumerate(specs):
+        turns.append({
+            "turn_id": f"turn-session-{i:03d}",
+            "intent": intent,
+            "tools_used": tools,
+            "decisions": [],
+            "outcome": f"Completed: {intent}",
+            "quality_grade": "silver",
+            "conversation": [
+                {"role": "user", "content": intent},
+                {"role": "assistant", "content": f"I'll {intent.lower()}."},
+            ],
+            "actions": [],
+            "signal_absorbed": [],
+            "signal_produced": [],
+            "metadata": {"source": session_id},
+        })
+    return turns
+
+
+def test_retry_dedup_collapses_same_session():
+    """Near-identical intents within one session collapse to one per distinct intent."""
+    from mcp_server_nucleus.runtime.skill_extractor import _dedup_retries
+
+    specs = [
+        # Group 1: 3 near-identical "investigate fix post" retries
+        ("investigate and fix the post endpoint 500 error", "session-abc", ["Read", "Grep"]),
+        ("investigate and fix the post endpoint 500 error now", "session-abc", ["Read", "Grep", "Edit"]),
+        ("investigate and fix post endpoint 500 error again", "session-abc", ["Read"]),
+        # Group 2: 3 near-identical "debug chat handler" retries
+        ("debug the chat handler connection timeout issue", "session-abc", ["Read", "Bash"]),
+        ("debug the chat handler connection timeout problem", "session-abc", ["Read"]),
+        ("debug chat handler connection timeout issue fix", "session-abc", ["Read", "Edit", "Bash"]),
+        # Group 3: 3 near-identical "update config" retries
+        ("update the deployment config for production server", "session-abc", ["Read", "Edit"]),
+        ("update deployment config for production server now", "session-abc", ["Read"]),
+        ("update the deployment config production server fix", "session-abc", ["Read", "Edit", "Bash"]),
+    ]
+    turns = _make_session_turns(specs)
+    result = _dedup_retries(turns)
+    # 9 turns from 3 groups of retries → should collapse to ≤3 (one per distinct intent)
+    assert len(result) <= 3
+
+
+def test_retry_dedup_preserves_cross_session():
+    """Same intent across different sessions = reuse, not retry. Preserved."""
+    from mcp_server_nucleus.runtime.skill_extractor import _dedup_retries
+
+    specs = [
+        ("write unit tests for the auth module coverage", "session-A", ["Read", "Edit"]),
+        ("write unit tests for the auth module coverage", "session-A", ["Read", "Edit", "Bash"]),
+        ("write unit tests for the auth module coverage", "session-A", ["Read"]),
+        ("write unit tests for the auth module coverage", "session-B", ["Read", "Edit"]),
+        ("write unit tests for the auth module coverage", "session-B", ["Read", "Edit", "Bash"]),
+        ("write unit tests for the auth module coverage", "session-B", ["Read"]),
+    ]
+    turns = _make_session_turns(specs)
+    result = _dedup_retries(turns)
+    # Cross-session repetition = reuse. Each session collapses to 1, so ≥2 total.
+    assert len(result) >= 2
+
+
+def test_session_diversity_scoring():
+    """Cluster from many sessions scores higher than cluster from one session."""
+    from mcp_server_nucleus.runtime.skill_extractor import score_skill_candidate
+
+    # Cluster A: 9 turns all from 1 session
+    turns_a = _make_session_turns([
+        (f"write unit tests for module {i} coverage", "session-only", ["Read", "Edit", "Bash"])
+        for i in range(9)
+    ])
+    cluster_a = {
+        "domain": "write-tests",
+        "intents": [t["intent"] for t in turns_a],
+        "tools_used": {"Read": 9, "Edit": 9, "Bash": 9},
+        "turns": turns_a,
+        "size": 9,
+        "avg_quality": "silver",
+        "unique_sessions": 1,
+    }
+
+    # Cluster B: 9 turns from 5 different sessions
+    turns_b = _make_session_turns([
+        (f"write unit tests for module {i} coverage", f"session-{i % 5}", ["Read", "Edit", "Bash"])
+        for i in range(9)
+    ])
+    cluster_b = {
+        "domain": "write-tests",
+        "intents": [t["intent"] for t in turns_b],
+        "tools_used": {"Read": 9, "Edit": 9, "Bash": 9},
+        "turns": turns_b,
+        "size": 9,
+        "avg_quality": "silver",
+        "unique_sessions": 5,
+    }
+
+    scored_a = score_skill_candidate(cluster_a)
+    scored_b = score_skill_candidate(cluster_b)
+
+    bd_a = scored_a["score_breakdown"]
+    bd_b = scored_b["score_breakdown"]
+
+    assert bd_b["session_diversity"] > bd_a["session_diversity"]
+    assert scored_b["score"] > scored_a["score"]
+
+
+def test_verb_object_labels():
+    """Domain labels should follow verb-noun structure."""
+    from mcp_server_nucleus.runtime.skill_extractor import cluster_intents
+
+    turns = _make_session_turns([
+        (f"write tests for the {mod} module implementation", f"session-{i}", ["Read", "Edit", "Bash"])
+        for i, mod in enumerate([
+            "auth", "payment", "database", "email", "session",
+            "cache", "upload", "webhook", "search", "config",
+        ])
+    ])
+    clusters = cluster_intents(turns, min_cluster_size=3, use_embeddings=False)
+    assert len(clusters) >= 1
+    label = clusters[0]["domain"]
+    # Should contain a verb like "write" or "test"
+    assert any(v in label for v in ("write", "test")), f"Label '{label}' missing verb"
+    # Should contain a noun (not just a verb)
+    assert "-" in label, f"Label '{label}' should be verb-noun format"

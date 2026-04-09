@@ -49,42 +49,46 @@ def _extract_trigger_phrases(intents: List[str], top_n: int = 5) -> List[str]:
 
 
 def _extract_tool_sequence(turns: List[dict]) -> str:
-    """Find most common tool usage pattern across turns.
-
-    Counts tool co-occurrence across turns, builds description like:
-        "Read files to understand context -> Edit to make changes -> Bash to verify"
-    """
-    tool_sequences: Counter = Counter()
+    """Build a topic-aware tool workflow from cluster turns."""
+    # Count tool frequency across all turns
+    tool_freq: Counter = Counter()
     for turn in turns:
-        tools = turn.get("tools_used", [])
-        if tools:
-            # Deduplicate while preserving order
-            seen = set()
-            ordered = []
-            for t in tools:
-                if t not in seen:
-                    seen.add(t)
-                    ordered.append(t)
-            key = tuple(ordered)
-            tool_sequences[key] += 1
-
-    if not tool_sequences:
+        for tool in turn.get("tools_used", []):
+            tool_freq[tool] += 1
+    if not tool_freq:
         return "No consistent tool pattern detected."
 
-    # Get most common sequence
-    best_seq, _ = tool_sequences.most_common(1)[0]
+    # Extract dominant topic from intents
+    _TOPIC_STOPS = {"the", "and", "for", "with", "from", "that", "this",
+                    "all", "are", "was", "has", "have", "been", "will",
+                    "can", "you", "your", "our", "not", "but"}
+    _TOPIC_VERBS = {"write", "fix", "add", "test", "deploy", "configure",
+                    "refactor", "update", "create", "build", "debug",
+                    "implement", "remove", "setup", "migrate", "optimize",
+                    "review", "integrate", "summarize", "analyze",
+                    "investigate", "extract", "generate", "install", "run"}
+    word_freq: Counter = Counter()
+    for turn in turns:
+        words = re.sub(r"[^\w\s]", " ", turn.get("intent", "").lower()).split()
+        for w in words:
+            if len(w) > 3 and w not in _TOPIC_STOPS and w not in _TOPIC_VERBS:
+                word_freq[w] += 1
+    topic = word_freq.most_common(1)[0][0] if word_freq else "relevant"
 
-    # Build human-readable description
-    tool_descriptions = {
-        "Read": "Read files to understand context",
-        "Edit": "Edit to make changes",
-        "Bash": "Bash to verify",
-        "Write": "Write new files",
-        "Grep": "Search for patterns",
-        "Glob": "Find files",
-        "Agent": "Delegate to sub-agents",
+    # Map tools to topic-aware descriptions
+    templates = {
+        "Read": f"Read {topic} code",
+        "Edit": f"Edit {topic} implementation",
+        "Bash": f"Run {topic} verification",
+        "Write": f"Write new {topic} files",
+        "Grep": f"Search {topic} patterns",
+        "Glob": f"Find {topic} files",
+        "Agent": f"Delegate {topic} subtasks",
     }
-    parts = [tool_descriptions.get(t, t) for t in best_seq]
+
+    # Top 4 tools by frequency
+    top_tools = [t for t, _ in tool_freq.most_common(4)]
+    parts = [templates.get(t, t) for t in top_tools]
     return " -> ".join(parts)
 
 
