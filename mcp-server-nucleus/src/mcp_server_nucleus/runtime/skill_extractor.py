@@ -87,6 +87,57 @@ def _is_noise_intent(intent: str) -> bool:
     return False
 
 
+# -- Intent distillation (extract meaningful intent from conversation data) --
+
+_TEMPLATE_OUTCOME = re.compile(r"^(Claude Code session|Gemini session|Claude session)")
+
+
+def _distill_intent(turn: dict) -> str:
+    """Extract a meaningful intent from conversation data.
+
+    The ingestion pipeline stores first-user-message[:100] as intent,
+    which is often noise. Scan the conversation for the first substantive
+    user message that looks like a real task/request.
+    """
+    conv = turn.get("conversation", [])
+    if not conv:
+        return turn.get("intent", "")
+
+    for msg in conv:
+        if msg.get("role") != "user":
+            continue
+        content = msg.get("content", "").strip()
+        if not content or len(content) < 20:
+            continue
+        # Skip noise patterns
+        if _is_noise_intent(content[:100]):
+            continue
+        return content[:200]
+
+    return turn.get("intent", "")
+
+
+def _distill_outcome(turn: dict) -> str:
+    """Extract a meaningful outcome from conversation or stored outcome.
+
+    Template outcomes ("Claude Code session X chunk N/M") carry no signal.
+    Fall back to the last substantive assistant message.
+    """
+    outcome = turn.get("outcome", "")
+    if outcome and not _TEMPLATE_OUTCOME.match(outcome):
+        return outcome
+
+    conv = turn.get("conversation", [])
+    for msg in reversed(conv):
+        if msg.get("role") != "assistant":
+            continue
+        content = msg.get("content", "").strip()
+        if len(content) > 30:
+            return content[:200]
+
+    return outcome
+
+
 # -- Heuristic quality grading (overrides copper default at extraction time) --
 
 def _heuristic_quality(turn: dict) -> str:
@@ -222,23 +273,18 @@ def cluster_intents(
     if not turns:
         return []
 
-    # Extract intents, filter noise, apply heuristic quality
+    # Extract intents via distillation, filter noise, apply heuristic quality
     filtered_turns = []
     intents = []
     for t in turns:
-        intent = t.get("intent", "")
-        if not intent:
-            # Fallback: first user message content[:100]
-            conv = t.get("conversation", [])
-            for msg in conv:
-                if msg.get("role") == "user" and msg.get("content"):
-                    intent = msg["content"][:100]
-                    break
-        if _is_noise_intent(intent):
+        intent = _distill_intent(t)
+        if _is_noise_intent(intent[:100]):
             continue
         # Override copper grade with heuristic if all turns are copper
         if t.get("quality_grade", "copper") == "copper":
             t = {**t, "quality_grade": _heuristic_quality(t)}
+        # Store distilled intent and outcome back into turn for downstream use
+        t = {**t, "intent": intent, "outcome": _distill_outcome(t)}
         filtered_turns.append(t)
         intents.append(intent)
 
