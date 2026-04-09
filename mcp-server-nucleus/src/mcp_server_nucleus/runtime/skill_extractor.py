@@ -46,6 +46,15 @@ _META_PATTERN = re.compile(r"<[a-z_-]+>|^\s*$")
 _SESSION_CONTINUATION = re.compile(r"^this session is being continued", re.IGNORECASE)
 _MOCK_PATTERNS = re.compile(r"srv-\d+|task_qa_mock|deploy_success|ESCALATED:\s*Testing")
 _CODE_BLOCK = re.compile(r"^```")
+_TERMINAL_NOISE = re.compile(
+    r"^(last login:|source .*/bin/activate|\w+@\w+-\w+|\$\s|%\s|#\s)",
+    re.IGNORECASE,
+)
+_CONVERSATIONAL_FILLER = re.compile(
+    r"^(keep going|what else|do you want|lets think|let me know|sounds good|"
+    r"yes and|no but|ok so|ok let|sure let|go ahead)",
+    re.IGNORECASE,
+)
 _MIN_INTENT_WORDS = 4
 
 
@@ -53,8 +62,8 @@ def _is_noise_intent(intent: str) -> bool:
     """Filter out noise intents that contaminate clustering.
 
     Catches: single-word acknowledgments, HTML/tool markers, session
-    continuations, mock/test fixture data, code blocks, and intents
-    too short to carry meaningful signal.
+    continuations, mock/test fixture data, code blocks, terminal output,
+    and conversational filler too vague to represent a reusable skill.
     """
     stripped = intent.strip().lower()
     if not stripped:
@@ -71,61 +80,9 @@ def _is_noise_intent(intent: str) -> bool:
         return True
     if _CODE_BLOCK.match(stripped):
         return True
-    return False
-
-
-# -- Heuristic quality grading (overrides copper default at extraction time) --
-
-def _heuristic_quality(turn: dict) -> str:
-    """Infer quality grade from turn signals when all turns are copper.
-
-    Signals: tool count, intent length, conversation depth, presence of
-    Edit/Write tools (indicates actual code changes, not just reading).
-    """
-    score = 0
-    tools = turn.get("tools_used", [])
-    if len(tools) >= 3:
-        score += 1
-    if len(turn.get("intent", "")) > 50:
-        score += 1
-    if len(turn.get("conversation", [])) >= 6:
-        score += 1
-    if any(t in tools for t in ("Edit", "Write")):
-        score += 1
-    if score >= 4:
-        return "platinum"
-    if score >= 3:
-        return "gold"
-    if score >= 2:
-        return "silver"
-    return "copper"
-
-# -- Noise filtering (guards against raw first-user-message[:100] garbage) --
-
-_NOISE_INTENTS = frozenset({
-    "yes", "ok", "no", "done", "hi", "hey", "hello", "sure", "yep", "nope",
-    "retry", "continue", "proceed", "wait", "chat", "thanks", "thank you",
-    "go ahead", "next", "stop", "quit", "exit", "help", "back",
-})
-_META_PATTERN = re.compile(r"<[a-z_-]+>|^\s*$")
-_MIN_INTENT_WORDS = 4
-
-
-def _is_noise_intent(intent: str) -> bool:
-    """Filter out noise intents that contaminate clustering.
-
-    Catches: single-word acknowledgments ("yes", "ok", "continue"),
-    HTML/tool-output markers (<session_context>, <task-notification>),
-    and intents too short to carry meaningful signal.
-    """
-    stripped = intent.strip().lower()
-    if not stripped:
+    if _TERMINAL_NOISE.search(stripped):
         return True
-    if stripped in _NOISE_INTENTS:
-        return True
-    if _META_PATTERN.search(stripped):
-        return True
-    if len(stripped.split()) < _MIN_INTENT_WORDS:
+    if _CONVERSATIONAL_FILLER.match(stripped):
         return True
     return False
 
@@ -462,17 +419,13 @@ def extract_skills(
     min_score: float = 0.5,
     min_cluster_size: int = 3,
     use_embeddings: bool = True,
+    max_turns: int = 1000,
 ) -> List[dict]:
-    """Full pipeline: load turns → cluster → score → filter → return.
+    """Full pipeline: load turns → dedup → cluster → score → filter → return.
 
-    Why union-find, not sklearn agglomerative:
-        Zero dependencies. Union-find is O(n*alpha(n)) for merge operations.
-        For 2550 turns, the pairwise comparison is the bottleneck, not clustering.
-
-    Why Jaccard > 0.45:
-        Testing with real data (2,553 turns) showed 0.35 was too permissive,
-        grouping dissimilar noise together. 0.45 captures "write tests
-        for X" / "add tests to Y" while separating from "fix the auth bug".
+    Pairwise comparison is O(n²), so max_turns caps input size.
+    With 1000 turns: ~500K comparisons (fast with Jaccard, ~136s with embeddings).
+    When capped, takes the most recent turns (highest quality signal).
     """
     from .archive_pipeline import ArchivePipeline
 
@@ -495,6 +448,10 @@ def extract_skills(
         unique_turns.append(t)
     logger.info("Deduped %d -> %d unique turns", len(turns), len(unique_turns))
     turns = unique_turns
+
+    if len(turns) > max_turns:
+        logger.info("Capping %d turns to most recent %d (O(n²) safety)", len(turns), max_turns)
+        turns = turns[-max_turns:]
 
     logger.info("Clustering %d turns...", len(turns))
     clusters = cluster_intents(
