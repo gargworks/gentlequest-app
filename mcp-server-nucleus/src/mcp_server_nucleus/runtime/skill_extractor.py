@@ -32,6 +32,73 @@ _STOPWORDS = frozenset({
 
 _PATH_PATTERN = re.compile(r"[/\\]\w{1,4}[/\\]")  # file paths
 _CAMEL_SNAKE = re.compile(r"[a-z]+[A-Z][a-z]+|[a-z]+_[a-z]+_[a-z]+")  # code identifiers
+_PII_PATH = re.compile(r"/Users/\w+")  # macOS user home paths
+_HOSTNAME = re.compile(r"\b\w+-\w+-air\b|\b\w+s-macbook\b", re.IGNORECASE)  # hostnames
+
+# -- Noise filtering (guards against raw first-user-message[:100] garbage) --
+
+_NOISE_INTENTS = frozenset({
+    "yes", "ok", "no", "done", "hi", "hey", "hello", "sure", "yep", "nope",
+    "retry", "continue", "proceed", "wait", "chat", "thanks", "thank you",
+    "go ahead", "next", "stop", "quit", "exit", "help", "back",
+})
+_META_PATTERN = re.compile(r"<[a-z_-]+>|^\s*$")
+_SESSION_CONTINUATION = re.compile(r"^this session is being continued", re.IGNORECASE)
+_MOCK_PATTERNS = re.compile(r"srv-\d+|task_qa_mock|deploy_success|ESCALATED:\s*Testing")
+_CODE_BLOCK = re.compile(r"^```")
+_MIN_INTENT_WORDS = 4
+
+
+def _is_noise_intent(intent: str) -> bool:
+    """Filter out noise intents that contaminate clustering.
+
+    Catches: single-word acknowledgments, HTML/tool markers, session
+    continuations, mock/test fixture data, code blocks, and intents
+    too short to carry meaningful signal.
+    """
+    stripped = intent.strip().lower()
+    if not stripped:
+        return True
+    if stripped in _NOISE_INTENTS:
+        return True
+    if _META_PATTERN.search(stripped):
+        return True
+    if len(stripped.split()) < _MIN_INTENT_WORDS:
+        return True
+    if _SESSION_CONTINUATION.search(stripped):
+        return True
+    if _MOCK_PATTERNS.search(intent):  # case-sensitive for ESCALATED
+        return True
+    if _CODE_BLOCK.match(stripped):
+        return True
+    return False
+
+
+# -- Heuristic quality grading (overrides copper default at extraction time) --
+
+def _heuristic_quality(turn: dict) -> str:
+    """Infer quality grade from turn signals when all turns are copper.
+
+    Signals: tool count, intent length, conversation depth, presence of
+    Edit/Write tools (indicates actual code changes, not just reading).
+    """
+    score = 0
+    tools = turn.get("tools_used", [])
+    if len(tools) >= 3:
+        score += 1
+    if len(turn.get("intent", "")) > 50:
+        score += 1
+    if len(turn.get("conversation", [])) >= 6:
+        score += 1
+    if any(t in tools for t in ("Edit", "Write")):
+        score += 1
+    if score >= 4:
+        return "platinum"
+    if score >= 3:
+        return "gold"
+    if score >= 2:
+        return "silver"
+    return "copper"
 
 # -- Embedding (optional, inlined from brain_rag.py) --
 
@@ -71,12 +138,14 @@ def _cosine_sim(a: List[float], b: List[float]) -> float:
 # -- Clustering --
 
 def _tokenize_intent(intent: str) -> Set[str]:
-    """Lowercase, strip punctuation, remove stopwords, strip file paths."""
-    text = intent.lower()
+    """Lowercase, strip PII/paths/punctuation, remove stopwords."""
+    text = _PII_PATH.sub(" ", intent)     # Strip /Users/username (before lowering)
+    text = _HOSTNAME.sub(" ", text)       # Strip hostnames (lokeshs-air, etc)
+    text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
     text = re.sub(_PATH_PATTERN, " ", text)
     tokens = set(text.split()) - _STOPWORDS
-    return {t for t in tokens if len(t) > 1}
+    return {t for t in tokens if len(t) > 2}  # >2 kills "ai", "ok", "no" etc
 
 
 def _jaccard(a: Set[str], b: Set[str]) -> float:
@@ -114,7 +183,7 @@ def cluster_intents(
     turns: List[dict],
     min_cluster_size: int = 3,
     use_embeddings: bool = True,
-    similarity_threshold: float = 0.35,  # Jaccard
+    similarity_threshold: float = 0.45,  # Jaccard
     embed_threshold: float = 0.80,       # cosine
 ) -> List[dict]:
     """Cluster conversation turn intents into skill domains.
@@ -140,7 +209,8 @@ def cluster_intents(
     if not turns:
         return []
 
-    # Extract intents
+    # Extract intents, filter noise, apply heuristic quality
+    filtered_turns = []
     intents = []
     for t in turns:
         intent = t.get("intent", "")
@@ -151,8 +221,15 @@ def cluster_intents(
                 if msg.get("role") == "user" and msg.get("content"):
                     intent = msg["content"][:100]
                     break
+        if _is_noise_intent(intent):
+            continue
+        # Override copper grade with heuristic if all turns are copper
+        if t.get("quality_grade", "copper") == "copper":
+            t = {**t, "quality_grade": _heuristic_quality(t)}
+        filtered_turns.append(t)
         intents.append(intent)
 
+    turns = filtered_turns
     n = len(intents)
     if n == 0:
         return []
@@ -191,14 +268,32 @@ def cluster_intents(
     for i in range(n):
         groups[uf.find(i)].append(i)
 
-    # Build cluster dicts
-    clusters = []
+    # Collect valid cluster index lists and per-cluster token frequencies
+    valid_clusters: List[List[int]] = []
+    cluster_token_freqs: List[Counter] = []
+    doc_freq: Counter = Counter()
+
     for indices in groups.values():
         if len(indices) < min_cluster_size:
             continue
+        valid_clusters.append(indices)
+        cluster_tokens: Counter = Counter()
+        for idx in indices:
+            cluster_tokens.update(token_sets[idx])
+        cluster_token_freqs.append(cluster_tokens)
+        for token in cluster_tokens:
+            doc_freq[token] += 1
 
+    num_clusters = max(len(valid_clusters), 1)
+
+    # Build cluster dicts with TF-IDF domain labels
+    grade_map = {"copper": 0, "silver": 1, "gold": 2, "platinum": 3}
+    reverse_map = {0: "copper", 1: "silver", 2: "gold", 3: "platinum"}
+    clusters = []
+
+    for ci, indices in enumerate(valid_clusters):
         cluster_turns = [turns[i] for i in indices]
-        cluster_intents = [intents[i] for i in indices]
+        cluster_intents_list = [intents[i] for i in indices]
 
         # Tool frequency
         tool_counts: Counter = Counter()
@@ -207,25 +302,23 @@ def cluster_intents(
                 tool_counts[tool] += 1
 
         # Average quality
-        grade_map = {"copper": 0, "silver": 1, "gold": 2, "platinum": 3}
-        reverse_map = {0: "copper", 1: "silver", 2: "gold", 3: "platinum"}
         grades = [grade_map.get(t.get("quality_grade", "copper"), 0) for t in cluster_turns]
         avg_grade = sum(grades) / len(grades) if grades else 0
         avg_quality = reverse_map.get(round(avg_grade), "copper")
 
-        # Auto-label: TF-IDF-like keyword extraction
-        all_tokens: Counter = Counter()
-        for intent in cluster_intents:
-            all_tokens.update(_tokenize_intent(intent))
-        # Pick top keywords that aren't too generic
-        domain_label = "-".join(
-            word for word, _ in all_tokens.most_common(3)
-            if len(word) > 2
-        ) or "general"
+        # TF-IDF domain label with verb preference
+        tf = cluster_token_freqs[ci]
+        scored_tokens = {}
+        for token, freq in tf.items():
+            idf = math.log(num_clusters / max(doc_freq[token], 1)) if num_clusters > 1 else 1.0
+            verb_boost = 1.5 if token in _ABSTRACT_VERBS else 1.0
+            scored_tokens[token] = freq * max(idf, 0.1) * verb_boost
+        top_tokens = sorted(scored_tokens, key=scored_tokens.get, reverse=True)[:3]
+        domain_label = "-".join(top_tokens) or "general"
 
         clusters.append({
             "domain": domain_label,
-            "intents": cluster_intents,
+            "intents": cluster_intents_list,
             "turn_ids": [t.get("turn_id", "") for t in cluster_turns],
             "tools_used": dict(tool_counts),
             "turns": cluster_turns,
@@ -264,11 +357,14 @@ def score_skill_candidate(cluster: dict) -> dict:
     # Frequency
     frequency = min(size / 10.0, 1.0)
 
-    # Diversity
+    # Diversity — neutral 0.5 when no tool data (not penalized)
     tools = cluster.get("tools_used", {})
-    unique_tools = len(tools)
     total_tool_calls = sum(tools.values())
-    diversity = unique_tools / max(total_tool_calls, 1)
+    if total_tool_calls == 0:
+        diversity = 0.5  # unknowable, not zero
+    else:
+        unique_tools = len(tools)
+        diversity = unique_tools / total_tool_calls
 
     # Quality
     turns = cluster.get("turns", [])
@@ -317,10 +413,10 @@ def extract_skills(
         Zero dependencies. Union-find is O(n*alpha(n)) for merge operations.
         For 2550 turns, the pairwise comparison is the bottleneck, not clustering.
 
-    Why Jaccard > 0.35:
-        Testing with common intent patterns shows this captures "write tests
-        for X" / "add tests to Y" / "create unit tests" while separating
-        from "fix the auth bug". Threshold is configurable.
+    Why Jaccard > 0.45:
+        Testing with real data (2,553 turns) showed 0.35 was too permissive,
+        grouping dissimilar noise together. 0.45 captures "write tests
+        for X" / "add tests to Y" while separating from "fix the auth bug".
     """
     from .archive_pipeline import ArchivePipeline
 
@@ -330,6 +426,19 @@ def extract_skills(
     if not turns:
         logger.info("No conversation turns found — nothing to extract.")
         return []
+
+    # Dedup by content_hash (same turn ingested multiple times)
+    seen_hashes = set()
+    unique_turns = []
+    for t in turns:
+        h = t.get("content_hash", "")
+        if h and h in seen_hashes:
+            continue
+        if h:
+            seen_hashes.add(h)
+        unique_turns.append(t)
+    logger.info("Deduped %d -> %d unique turns", len(turns), len(unique_turns))
+    turns = unique_turns
 
     logger.info("Clustering %d turns...", len(turns))
     clusters = cluster_intents(
