@@ -100,6 +100,62 @@ def _heuristic_quality(turn: dict) -> str:
         return "silver"
     return "copper"
 
+# -- Noise filtering (guards against raw first-user-message[:100] garbage) --
+
+_NOISE_INTENTS = frozenset({
+    "yes", "ok", "no", "done", "hi", "hey", "hello", "sure", "yep", "nope",
+    "retry", "continue", "proceed", "wait", "chat", "thanks", "thank you",
+    "go ahead", "next", "stop", "quit", "exit", "help", "back",
+})
+_META_PATTERN = re.compile(r"<[a-z_-]+>|^\s*$")
+_MIN_INTENT_WORDS = 4
+
+
+def _is_noise_intent(intent: str) -> bool:
+    """Filter out noise intents that contaminate clustering.
+
+    Catches: single-word acknowledgments ("yes", "ok", "continue"),
+    HTML/tool-output markers (<session_context>, <task-notification>),
+    and intents too short to carry meaningful signal.
+    """
+    stripped = intent.strip().lower()
+    if not stripped:
+        return True
+    if stripped in _NOISE_INTENTS:
+        return True
+    if _META_PATTERN.search(stripped):
+        return True
+    if len(stripped.split()) < _MIN_INTENT_WORDS:
+        return True
+    return False
+
+
+# -- Heuristic quality grading (overrides copper default at extraction time) --
+
+def _heuristic_quality(turn: dict) -> str:
+    """Infer quality grade from turn signals when all turns are copper.
+
+    Signals: tool count, intent length, conversation depth, presence of
+    Edit/Write tools (indicates actual code changes, not just reading).
+    """
+    score = 0
+    tools = turn.get("tools_used", [])
+    if len(tools) >= 3:
+        score += 1
+    if len(turn.get("intent", "")) > 50:
+        score += 1
+    if len(turn.get("conversation", [])) >= 6:
+        score += 1
+    if any(t in tools for t in ("Edit", "Write")):
+        score += 1
+    if score >= 4:
+        return "platinum"
+    if score >= 3:
+        return "gold"
+    if score >= 2:
+        return "silver"
+    return "copper"
+
 # -- Embedding (optional, inlined from brain_rag.py) --
 
 OLLAMA_URL = "http://localhost:11434"
