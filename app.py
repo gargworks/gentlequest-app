@@ -92,6 +92,12 @@ background_executor = ThreadPoolExecutor(max_workers=5)
 import atexit
 atexit.register(lambda: background_executor.shutdown(wait=True))
 
+# Layer 2 safety supervisor — dedicated small pool so we don't head-of-line
+# block behind crisis watchdog / memory summarization tasks on background_executor.
+_safety_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="layer2-safety")
+atexit.register(lambda: _safety_executor.shutdown(wait=False))
+_SAFETY_TIMEOUT_SECONDS = float(os.environ.get("SAFETY_TIMEOUT_SECONDS", "5"))
+
 # Geography-specific crisis resources
 CRISIS_RESOURCES_BY_COUNTRY = {
     "in": {  # India
@@ -2890,6 +2896,55 @@ def _run_crisis_watchdog(flask_app, message: str, session_id: str, sync_risk: st
             flask_app.logger.error(f"❌ Crisis Watchdog error: {e}")
 
 
+def _apply_layer_2_safety(
+    user_message: str,
+    ai_response: str,
+    session_id: str,
+    risk_level: str,
+) -> Tuple[str, bool]:
+    """Run Layer 2 supervisor check with a tight timeout.
+
+    Returns (final_response, was_blocked).
+    - was_blocked=True means helper already wrote the BLOCKED_UNSAFE audit row;
+      caller MUST NOT call _log_conversation again for this turn.
+    - On timeout or any exception: fail open (return original, blocked=False),
+      matching providers/safety.py's own fail-open contract.
+    - Skipped for empty responses.
+    """
+    if not ai_response:
+        return ai_response, False
+
+    # Lazy import keeps the existing test patch path
+    # `@patch('providers.safety.check_safety_llm')` working unchanged.
+    from providers.safety import check_safety_llm
+    from concurrent.futures import TimeoutError as FuturesTimeoutError
+
+    future = _safety_executor.submit(check_safety_llm, user_message, ai_response)
+    try:
+        is_safe, safety_msg = future.result(timeout=_SAFETY_TIMEOUT_SECONDS)
+    except FuturesTimeoutError:
+        current_app.logger.warning(
+            f"Layer 2 safety timeout after {_SAFETY_TIMEOUT_SECONDS}s — "
+            f"fail open (session={session_id})"
+        )
+        return ai_response, False
+    except Exception as exc:
+        current_app.logger.warning(f"Layer 2 safety error — fail open: {exc}")
+        return ai_response, False
+
+    if not is_safe:
+        current_app.logger.warning(f"Guardrail Layer 2 Block: {safety_msg[:100]}")
+        _log_conversation(
+            session_id,
+            user_message,
+            f"BLOCKED_UNSAFE: {safety_msg}",
+            risk_level,
+        )
+        return safety_msg, True
+
+    return ai_response, False
+
+
 def _process_chat_message(message: str, session_id: str, is_first_message: bool = False) -> Tuple[str, str, List[Dict]]:
     """Process chat message with AI provider and crisis detection.
 
@@ -2924,6 +2979,7 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
 
 
         tool_calls = []
+        layer2_blocked = False
 
         if use_function_calling:
             # Use function calling enabled response
@@ -2933,32 +2989,18 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
                 message, session_id, risk_level, is_first_message=is_first_message,
             )
 
-            # Guardrail Layer 2: Output Safety Verification (async — don't block response)
-            # Crisis is already caught by Layer 1 above. Layer 2 runs in background
-            # and logs unsafe outputs for review without adding ~15s LLM latency.
-            if ai_response:
-                def _async_safety_check(app_ctx, sess_id, u_msg, a_resp, r_level):
-                    try:
-                        with app_ctx.app_context():
-                            from providers.safety import check_safety_llm
-                            is_safe, safety_msg = check_safety_llm(u_msg, a_resp)
-                            if not is_safe:
-                                app_ctx.logger.warning(f"Guardrail Layer 2 Block (async): {safety_msg}")
-                                _log_conversation(sess_id, u_msg, f"BLOCKED_UNSAFE: {safety_msg} (Sent: {a_resp[:50]}...)", r_level)
-                    except Exception:
-                        pass  # Safety check is non-critical for response latency
+            # Guardrail Layer 2: Output Safety Verification (sync, tight timeout).
+            # Sync is required so unsafe output never reaches the user; the
+            # outer SAFETY_TIMEOUT_SECONDS bound + fail-open keep latency capped.
+            ai_response, layer2_blocked = _apply_layer_2_safety(
+                message, ai_response, session_id, risk_level
+            )
 
-                threading.Thread(
-                    target=_async_safety_check,
-                    args=(current_app._get_current_object(), session_id, message, ai_response, risk_level)
-                ).start()
-
-
-
-            
             # KEYWORD FALLBACK: If Gemini didn't call function but should have
-            # This ensures wellness interventions ALWAYS trigger when needed
-            if not tool_calls:
+            # This ensures wellness interventions ALWAYS trigger when needed.
+            # Skip when Layer 2 blocked — injecting a wellness tool result on top
+            # of a safety block would surface ambiguous UI.
+            if not layer2_blocked and not tool_calls:
                 msg_lower = message.lower()
                 
                 # Detect wellness issues
@@ -3004,8 +3046,14 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
                 message, session_id, risk_level
             )
 
-        # Log conversation
-        _log_conversation(session_id, message, ai_response, risk_level)
+            # Guardrail Layer 2: Output Safety Verification (sync, tight timeout)
+            ai_response, layer2_blocked = _apply_layer_2_safety(
+                message, ai_response, session_id, risk_level
+            )
+
+        # Log conversation (helper already wrote a BLOCKED_UNSAFE audit row if it blocked)
+        if not layer2_blocked:
+            _log_conversation(session_id, message, ai_response, risk_level)
 
         # Log tool calls for audit (if any)
         if tool_calls:
