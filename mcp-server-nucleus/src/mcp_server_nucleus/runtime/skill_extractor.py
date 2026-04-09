@@ -396,20 +396,24 @@ _GRADE_WEIGHTS = {"copper": 0.2, "silver": 0.5, "gold": 0.8, "platinum": 1.0}
 _ABSTRACT_VERBS = frozenset({
     "write", "fix", "add", "test", "deploy", "configure", "refactor",
     "update", "create", "build", "debug", "implement", "remove", "setup",
-    "migrate", "optimize", "review", "integrate",
+    "migrate", "optimize", "review", "integrate", "summarize", "analyze",
+    "investigate", "wire", "extract", "generate", "install", "run",
 })
+_TASK_MARKERS = re.compile(r"^##\s*(task|investigation):", re.IGNORECASE)
 
 
 def score_skill_candidate(cluster: dict) -> dict:
-    """Score on 4 dimensions. Returns cluster with added score fields.
+    """Score on 5 dimensions. Returns cluster with added score fields.
 
     Dimensions:
-        frequency:   min(size / 10, 1.0) — more occurrences = more useful
-        diversity:   unique_tools / max(total_tool_calls, 1) — multi-tool = richer
-        quality:     weighted avg of turn quality grades
-        generality:  1.0 - (path_tokens + code_ids) / total_tokens; boost abstract verbs
+        frequency:     min(size / 10, 1.0) — more occurrences = more useful
+        diversity:     unique_tools / total_tool_calls — multi-tool = richer
+        quality:       weighted avg of turn quality grades
+        generality:    1.0 - specificity + abstract verb boost
+        actionability: fraction of intents with task verbs or ## Task markers
+                       separates "write tests for X" from "did we complete"
 
-    Composite: 0.3*freq + 0.2*div + 0.2*qual + 0.3*gen
+    Composite: 0.25*freq + 0.15*div + 0.15*qual + 0.20*gen + 0.25*act
     """
     size = cluster.get("size", 0)
 
@@ -446,7 +450,23 @@ def score_skill_candidate(cluster: dict) -> dict:
     else:
         generality = 0.5
 
-    composite = 0.3 * frequency + 0.2 * diversity + 0.2 * quality + 0.3 * generality
+    # Actionability — does this look like a task or a conversational habit?
+    intents = cluster.get("intents", [])
+    if intents:
+        actionable = 0
+        for intent in intents:
+            low = intent.lower()
+            words = low.split()
+            has_verb = any(w in _ABSTRACT_VERBS for w in words[:5])
+            has_marker = bool(_TASK_MARKERS.match(intent))
+            if has_verb or has_marker:
+                actionable += 1
+        actionability = actionable / len(intents)
+    else:
+        actionability = 0.0
+
+    composite = (0.25 * frequency + 0.15 * diversity + 0.15 * quality
+                 + 0.20 * generality + 0.25 * actionability)
 
     cluster["score"] = round(composite, 3)
     cluster["score_breakdown"] = {
@@ -454,6 +474,7 @@ def score_skill_candidate(cluster: dict) -> dict:
         "diversity": round(diversity, 3),
         "quality": round(quality, 3),
         "generality": round(generality, 3),
+        "actionability": round(actionability, 3),
     }
     return cluster
 
