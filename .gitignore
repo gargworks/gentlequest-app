@@ -287,3 +287,9 @@ nucleus-public-assets/
 
 # Backend duplicate
 backend/
+
+# Stale third-party clone path — @michaellatman/mcp-get is deprecated
+# (publisher recommends Smithery). The dir was once a nested clone; the
+# gitlink has been untracked. Keep this entry so any future re-clone into
+# the same path is silently ignored instead of becoming a new orphan.
+mcp-get/

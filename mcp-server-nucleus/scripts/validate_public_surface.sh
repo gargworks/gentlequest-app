@@ -41,6 +41,26 @@ echo "Archive: $FILE_COUNT files"
 echo ""
 
 # ── Step 2: Identity scan ──
+#
+# CANONICAL PERSONAL-IDENTITY FILTER
+# ----------------------------------
+# This is the single source of truth for personal-identity strings that
+# must never leak into a public archive. When adding a new identifier
+# (username, domain, handle, etc.), update the regex below.
+#
+# Pattern rules:
+#   - BRE alternation (`\|`), not ERE — this runs `grep`, not `grep -E`.
+#   - Lowercase only; the scan does not pass `-i`, so case matters.
+#   - No `\b` word boundaries — identity strings are often substrings of
+#     larger tokens (email-prefixes, path segments, filenames).
+#
+# This filter is independent from the runtime PII scrubbing in
+# src/mcp_server_nucleus/runtime/skill_extractor.py (`_PII_PATH`,
+# `_HOSTNAME`), which strips /Users/<name> paths and macbook-style
+# hostnames from intent strings at cluster-tokenization time. That is a
+# different layer with a different threat model. THIS gate is the
+# last-mile check on the full archive before private → public sync.
+#
 echo "── IDENTITY SCAN ──"
 IDENTITY_HITS=$( (grep -rln 'lokeshgarg\|lokesh\|gentlequest\.app' "$TMPDIR" 2>/dev/null || true) | wc -l | tr -d ' ')
 if [ "$IDENTITY_HITS" -gt 0 ]; then
