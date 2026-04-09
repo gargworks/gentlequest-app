@@ -13,20 +13,18 @@
     "2026-01-24": 31,
     "2026-01-25": 2
   },
-  "updated_at": "2026-02-23T18:28:02.207728Z",
+  "updated_at": "2026-04-09T11:25:59.910397Z",
   "last_event": {
-    "event_id": "evt-1771871282-1c0f8ecc",
-    "timestamp": "2026-02-23T18:28:02.207728Z",
-    "type": "end_of_day_captured",
-    "emitter": "compounding_loop",
+    "event_id": "evt-1775733959-e8bac754",
+    "timestamp": "2026-04-09T11:25:59.910397Z",
+    "type": "LLM_GENERATE",
+    "emitter": "DualEngineLLM",
     "data": {
-      "day": "Monday",
-      "week": 9,
-      "summary_length": 174,
-      "decisions_count": 4,
-      "blockers_count": 0
+      "model": "gemini-3-flash-preview",
+      "tier": "standard",
+      "prompt_preview": "\n# Librarian Agent\n\nYou are the **Librarian**, the guardian of the Nucleus Memory Bank.\nYour purpose..."
     },
-    "description": ""
+    "description": "Generating content using gemini-3-flash-preview"
   },
-  "event_count": 210
+  "event_count": 213
 }

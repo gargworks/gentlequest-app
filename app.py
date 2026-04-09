@@ -491,8 +491,12 @@ def create_app() -> Flask:
         # Non-fatal: continue without Sentry
         app.logger.warning(f"Sentry init failed: {e}")
 
-    # Set SQLAlchemy database URI with explicit psycopg driver and SSL if needed
-    if Config.DATABASE_URL:
+    # Set SQLAlchemy database URI with explicit psycopg driver and SSL if needed.
+    # Skip this block in test mode — the earlier test_mode branch at L450-454
+    # already pointed at sqlite:///:memory:. Overwriting it caused 134 CI
+    # errors (sqlite3.OperationalError: unable to open database file, because
+    # instance/ does not exist in the CI checkout).
+    if not app.config.get("TESTING") and Config.DATABASE_URL:
         db_url = Config.DATABASE_URL
         # Normalize legacy scheme if present
         if db_url.startswith("postgres://"):
@@ -527,7 +531,7 @@ def create_app() -> Flask:
             app.logger.warning(f"Failed to process DB URL SSL params: {e}")
 
         app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-    else:
+    elif not app.config.get("TESTING"):
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///instance/mental_health.db"
 
     # SQLAlchemy reliability options
