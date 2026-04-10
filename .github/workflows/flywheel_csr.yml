@@ -1,0 +1,68 @@
+name: Flywheel CSR
+
+# Frontier 4: bumps Claim Survival Rate on every successful push to main and
+# files a flywheel ticket on every red CI. Best-effort, never blocks the rest
+# of the pipeline.
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["PR Tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bump-csr:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install nucleus
+        run: pip install -e mcp-server-nucleus/
+      - name: Bump CSR (survived)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from mcp_server_nucleus.flywheel import Flywheel
+          fw = Flywheel(Path(".brain"))
+          fw.record_survived(phase="ci_main", step="${{ github.sha }}")
+          print(fw.csr())
+          PY
+      - name: Show CSR after bump
+        run: cat .brain/flywheel/csr.json || echo "no csr.json"
+
+  file-ticket:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install nucleus
+        run: pip install -e mcp-server-nucleus/
+      - name: File flywheel ticket for red CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from mcp_server_nucleus.flywheel import Flywheel
+          fw = Flywheel(Path(".brain"))
+          report = fw.file_ticket(
+              step="ci_pr_tests",
+              error="PR Tests workflow failed",
+              logs="See linked workflow run for details.",
+              phase="ci",
+          )
+          print(report)
+          PY

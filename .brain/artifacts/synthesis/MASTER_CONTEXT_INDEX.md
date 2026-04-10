@@ -37,15 +37,6 @@ This index connects all context capture documents for the 2026 sprint. Use this 
 | [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) | Test coverage map, verification | Running and adding tests |
 | [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md) | Security review and audit | Security verification |
 | [AI_PROVIDER_SPECS.md](./AI_PROVIDER_SPECS.md) | AI provider details and limits | AI integration work |
-| [GOLD_STANDARD_METHODOLOGY.md](./GOLD_STANDARD_METHODOLOGY.md) | Enterprise-grade doc methodology | Improving documentation |
-
-### Supporting Documents
-
-| Document | Purpose |
-|----------|---------|
-| [MEGA_CONTEXT_CAPTURE_2026.md](./MEGA_CONTEXT_CAPTURE_2026.md) | Original exploration log |
-| [TECHNICAL_APPENDIX_JAN2026.md](./TECHNICAL_APPENDIX_JAN2026.md) | Technical deep-dives |
-| [session_synthesis_20260116.md](./session_synthesis_20260116.md) | Session summaries |
 
 ---
 

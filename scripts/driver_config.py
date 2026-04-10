@@ -54,6 +54,9 @@ DEFAULT_CONFIG = {
     # Frontier 3: COMPOUND — calibration DPO from verification failures
     "calibration_dpo_enabled": True,
     "calibration_window_size": 50,
+    # Frontier 4: FLYWHEEL — every phase failure files a ticket, every success
+    # bumps Claim Survival Rate. Best-effort, never blocks the driver.
+    "flywheel_accountability_enabled": True,
     "trust_ladder": {
         "current_phase": 1,
         "thresholds": {

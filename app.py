@@ -3691,10 +3691,12 @@ def _analyze_mood_pattern(entries: List) -> Dict[str, Any]:
 
     mood_levels = [entry.mood_level for entry in entries]
 
-    # Calculate trend
-    if len(mood_levels) >= 2:
+    # Calculate trend. Requires both a "recent" window and an "older" window to
+    # compare; if the older window is empty we can't compute a trend.
+    older_slice = mood_levels[3:6]
+    if len(mood_levels) >= 2 and older_slice:
         recent_avg = sum(mood_levels[:3]) / min(3, len(mood_levels))
-        older_avg = sum(mood_levels[3:6]) / min(3, len(mood_levels[3:]))
+        older_avg = sum(older_slice) / len(older_slice)
 
         if recent_avg > older_avg + 0.5:
             trend = "improving"

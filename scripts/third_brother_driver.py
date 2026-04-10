@@ -64,6 +64,41 @@ def load_config() -> Dict:
 
 
 # ═══════════════════════════════════════════════════════════════
+# FLYWHEEL HOOKS — best-effort accountability for every phase
+# ═══════════════════════════════════════════════════════════════
+
+def _flywheel_enabled(config: Dict) -> bool:
+    """Check if flywheel accountability is on. Defaults to True."""
+    return bool(config.get("flywheel_accountability_enabled", True))
+
+
+def _fw_record_survived(phase: str, step: str, config: Dict) -> None:
+    """Phase succeeded — bump CSR. Never raises."""
+    if not _flywheel_enabled(config):
+        return
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        Flywheel(BRAIN_PATH).record_survived(phase=phase, step=step)
+    except Exception as e:
+        # Flywheel is best-effort. Log to stderr and move on; never block driver.
+        print(f"[FLYWHEEL] survived hook skipped ({phase}/{step}): {e}", file=sys.stderr)
+
+
+def _fw_file_ticket(phase: str, step: str, error: str, config: Dict,
+                    logs: str = "") -> None:
+    """Phase failed — file a ticket. Never raises."""
+    if not _flywheel_enabled(config):
+        return
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        Flywheel(BRAIN_PATH).file_ticket(
+            step=step, error=error, logs=logs, phase=phase)
+    except Exception as e:
+        # See mentor.md: never write the flywheel's own failures back to itself.
+        print(f"[FLYWHEEL] ticket hook skipped ({phase}/{step}): {e}", file=sys.stderr)
+
+
+# ═══════════════════════════════════════════════════════════════
 # STATE PERSISTENCE
 # ═══════════════════════════════════════════════════════════════
 
@@ -2536,10 +2571,15 @@ def generate_session_report(session_id: str, driver_start_time: datetime = None)
 
     # ── Collect runs for this session ──
     all_runs = _load_jsonl(RUNS_PATH, since=start_ts)
-    # Prefer session_id match; fall back to time window
+    # Prefer session_id match; fall back to today's v2 runs
     session_runs = [r for r in all_runs if r.get("session_id") == session_id] if session_id else []
     if not session_runs:
-        session_runs = [r for r in all_runs if r.get("driver_version") == "v2"]
+        today_prefix = now.strftime("%Y-%m-%d")
+        session_runs = [
+            r for r in all_runs
+            if r.get("driver_version") == "v2"
+            and r.get("ts", "").startswith(today_prefix)
+        ]
     if not session_runs:
         return
 
@@ -2590,7 +2630,7 @@ def generate_session_report(session_id: str, driver_start_time: datetime = None)
         f"- **Session ID:** {session_id or 'N/A'}",
         f"- **Tasks attempted:** {len(session_runs)}",
         f"- **Completion rate:** {completion_rate}% ({completed}/{len(session_runs)})",
-        f"- **Task duration:** {task_duration}s ({task_duration // 60}m {task_duration % 60}s)",
+        f"- **Total duration:** {task_duration}s ({task_duration // 60}m {task_duration % 60}s)",
         f"- **Wall clock:** {wall_clock}s ({wall_clock // 60}m {wall_clock % 60}s)",
         f"- **Avg duration:** {avg_duration}s ({avg_duration // 60}m {avg_duration % 60}s)",
         f"- **P95 duration:** {p95_duration}s ({p95_duration // 60}m {p95_duration % 60}s)",
@@ -2622,7 +2662,7 @@ def generate_session_report(session_id: str, driver_start_time: datetime = None)
         f"",
         f"## Training Data",
         f"",
-        f"- **shadow_log entries added:** {shadow_count}",
+        f"- **shadow_log entries added today:** {shadow_count}",
         f"- **Session transcripts archived:** {transcript_count}",
         f"",
     ]
@@ -2665,7 +2705,13 @@ def _build_task_context(task: Dict, config: Dict,
     Returns:
         (classification, raw_context, rag_results, enriched_context)
     """
-    classification = classify_task(task, config)
+    task_id = task.get("id", "?")
+    try:
+        classification = classify_task(task, config)
+        _fw_record_survived("phase_a_classify", task_id, config)
+    except Exception as e:
+        _fw_file_ticket("phase_a_classify", task_id, str(e), config)
+        raise
 
     print("[DRIVER] Building context (brain_rag)...")
     context = ""
@@ -2713,14 +2759,26 @@ def _build_task_prompt(task: Dict, enriched_context: str, config: Dict,
     """
     scout_findings = {}
     scout_on_main = bool(session_id and config.get("scout_on_main_session", True))
+    task_id = task.get("id", "?")
     if classification.get("needs_scout"):
-        scout_findings = run_scout_agent(
-            task, enriched_context, config,
-            scout_turns_override=classification.get("scout_turns"),
-            session_id=session_id,
-        )
+        try:
+            scout_findings = run_scout_agent(
+                task, enriched_context, config,
+                scout_turns_override=classification.get("scout_turns"),
+                session_id=session_id,
+            )
+            _fw_record_survived("phase_b_scout", task_id, config)
+        except Exception as e:
+            _fw_file_ticket("phase_b_scout", task_id, str(e), config)
+            scout_findings = {}
 
-    tb_prompt = tb_write_enriched_prompt(task, enriched_context, scout_findings, config)
+    try:
+        tb_prompt = tb_write_enriched_prompt(task, enriched_context, scout_findings, config)
+        # None is a legitimate fallback (template), not a failure — still a survived outcome.
+        _fw_record_survived("phase_c_prompt_writer", task_id, config)
+    except Exception as e:
+        _fw_file_ticket("phase_c_prompt_writer", task_id, str(e), config)
+        tb_prompt = None
 
     if tb_prompt:
         message = tb_prompt
@@ -3399,7 +3457,19 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 log_alert("scope_violation", task_id, "escalated",
                           f"Files outside scope: {violation_list}", "WARNING")
             else:
-                review = tb_review_output(task, response, git_diff_text, config)
+                try:
+                    review = tb_review_output(task, response, git_diff_text, config)
+                    # Reviewer answering is the survived event; downstream verdict
+                    # (ACCEPT/DEEPEN/ESCALATE) is captured separately in CSR via the
+                    # outcome path below.
+                    _fw_record_survived("phase_d_reviewer", task_id, config)
+                except Exception as e:
+                    _fw_file_ticket("phase_d_reviewer", task_id, str(e), config)
+                    review = {
+                        "verdict": "ESCALATE",
+                        "reason": f"reviewer crashed: {e}",
+                        "confidence": 0.0,
+                    }
 
             response["tb_review"] = review
             _review_action = None  # "deepen" or "escalate" or None
