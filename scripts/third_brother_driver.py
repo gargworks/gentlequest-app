@@ -652,6 +652,62 @@ Return your findings as a structured summary with:
 Be specific. File paths and line numbers matter more than explanations.
 """
 
+STRUCTURED_AUDIT_TEMPLATE = """## Plan Audit: {title}
+Source: {plan_filename}
+
+### Execution Phases (follow in order)
+
+#### Phase A: CLAIMS
+List every testable claim this plan makes.
+For each change: what file, what function, what it should do after.
+
+#### Phase B: VERIFY CURRENT STATE
+For each claim, check the current code with evidence.
+Use Grep/Read to confirm. Mark each:
+- DONE (file:line) — exists as planned
+- MISSING (searched, not found) — needs implementation
+- PARTIAL (explain gap) — partially implemented
+
+#### Phase C: PLAN
+For MISSING/PARTIAL claims, describe exact changes needed.
+File path, function name, what changes, dependencies.
+{complexity_expansion}
+
+#### Phase D: IMPLEMENT
+Make the changes from Phase C, in dependency order.
+Run tests if applicable.
+
+#### Phase E: SUMMARY
+Output a table: Claim | File | Status | Action Taken
+The driver will independently run verification after you complete (GT40).
+
+### The Plan
+
+{plan_text}
+
+### Constraints
+- Do NOT commit changes (the driver handles commits)
+- Do NOT modify files outside the plan's scope
+- If a planned change conflicts with current code, skip it and note why
+"""
+
+
+def _classify_plan_complexity(plan_text: str, scope: List[str]) -> Dict:
+    """Classify plan complexity → controls audit prompt template + turn budget."""
+    file_count = len(scope)
+    changes = re.findall(r"^\s*(?:\d+\.|-|\*)\s+.*`", plan_text, re.MULTILINE)
+    change_count = len(changes)
+    sections = re.findall(r"^##+ ", plan_text, re.MULTILINE)
+
+    if file_count <= 2 and change_count <= 3:
+        return {"level": "simple", "file_count": file_count,
+                "change_count": change_count, "recommended_turns": 15}
+    if file_count > 5 or change_count > 7 or len(sections) > 8:
+        return {"level": "complex", "file_count": file_count,
+                "change_count": change_count, "recommended_turns": 35}
+    return {"level": "medium", "file_count": file_count,
+            "change_count": change_count, "recommended_turns": 25}
+
 
 # ═══════════════════════════════════════════════════════════════
 # TASK CLASSIFICATION (v3 Phase A)
@@ -4776,8 +4832,14 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
                 print(f"[GT40-PREFLIGHT] {plan_path.name}: {len(failed)} FAIL "
                       f"— Claude will attempt fixes")
 
-        # Build the accountability prompt — Steps 1+2 for Claude, Step 3 is GT40's job
-        description = f"""## Plan Audit: {plan_title}
+        # Classify complexity → route to freeform or structured template
+        complexity = _classify_plan_complexity(plan_text, scope)
+        print(f"[AUDIT] {plan_path.name}: complexity={complexity['level']} "
+              f"(files={complexity['file_count']}, changes={complexity['change_count']})")
+
+        if complexity["level"] == "simple":
+            # Keep freeform Steps 1-3 for simple plans
+            description = f"""## Plan Audit: {plan_title}
 Source: {plan_path.name}
 
 ### Your job
@@ -4809,6 +4871,15 @@ run the plan's verification commands after you complete (GT40 verification).
 - If a planned change conflicts with current code, skip it and note why
 - If ALL steps in Step 1 are DONE, report "All changes verified"
 """
+        else:
+            expansion = ("Group changes by file. Write a sub-plan for each "
+                         "file group." if complexity["level"] == "complex" else "")
+            description = STRUCTURED_AUDIT_TEMPLATE.format(
+                title=plan_title,
+                plan_filename=plan_path.name,
+                plan_text=plan_text,
+                complexity_expansion=expansion,
+            )
 
         task = {
             "id": task_id,
@@ -4818,7 +4889,8 @@ run the plan's verification commands after you complete (GT40 verification).
             "priority": 1,
             "status": "committed",
             "source": "plan_audit",
-            "max_turns": 25,
+            "max_turns": complexity["recommended_turns"],
+            "_complexity": complexity,
             "_plan_path": str(plan_path),
             "_verify_text": verify_steps,
             "_plan_text": plan_text,

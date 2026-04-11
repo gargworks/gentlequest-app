@@ -19,6 +19,7 @@ from scripts.third_brother_driver import (
     _classify_verification_cmd,
     _compute_verification_quality,
     _auto_verification_commands,
+    _classify_plan_complexity,
 )
 
 
@@ -282,3 +283,37 @@ class TestAutoVerificationCommands:
         plan = "## Files Modified\n| File | Changes |\n|------|---------|"
         cmds = _auto_verification_commands(plan)
         assert len(cmds) == 0
+
+
+# ── Complexity classification tests ──────────────────────────
+
+
+class TestClassifyPlanComplexity:
+    """Test plan complexity classification."""
+
+    def test_simple_plan(self):
+        plan = "# Plan\n- `fix line 5`\n## Files Modified\n- foo.py"
+        result = _classify_plan_complexity(plan, ["foo.py"])
+        assert result["level"] == "simple"
+        assert result["recommended_turns"] == 15
+
+    def test_medium_plan(self):
+        plan = ("# Plan\n" + "\n".join(f"- change `item {i}`" for i in range(5))
+                + "\n## Files Modified\n- a.py\n- b.py\n- c.py")
+        result = _classify_plan_complexity(plan, ["a.py", "b.py", "c.py"])
+        assert result["level"] == "medium"
+        assert result["recommended_turns"] == 25
+
+    def test_complex_plan(self):
+        plan = ("# Plan\n" + "\n".join(f"- change `item {i}`" for i in range(10))
+                + "\n" + "\n".join(f"## Section {i}" for i in range(10)))
+        scope = [f"file{i}.py" for i in range(7)]
+        result = _classify_plan_complexity(plan, scope)
+        assert result["level"] == "complex"
+        assert result["recommended_turns"] == 35
+
+    def test_counts_tracked(self):
+        plan = "- `a`\n- `b`\n- `c`"
+        result = _classify_plan_complexity(plan, ["x.py", "y.py"])
+        assert result["file_count"] == 2
+        assert result["change_count"] == 3
