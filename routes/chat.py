@@ -25,11 +25,11 @@ def chat():
             _increment_conversation_count, _log_analytics_event,
             _log_chat_request, background_executor,
         )
-        from app import (
-            _process_chat_message,
+        from helpers.crisis_helpers import (
             get_country_from_request, get_crisis_response_and_resources,
             _run_crisis_watchdog,
         )
+        from app import _process_chat_message
 
         _t0 = time.monotonic()
         data = request.get_json()
@@ -228,10 +228,10 @@ def chat_stream():
         from helpers.session_helpers import (
             _get_or_create_session, background_executor,
         )
-        from app import (
-            _process_chat_message,
+        from helpers.crisis_helpers import (
             get_crisis_response_and_resources, _run_crisis_watchdog,
         )
+        from app import _process_chat_message
         from crisis_detection import detect_crisis_level
         from typing import List
 

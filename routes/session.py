@@ -340,10 +340,10 @@ def mood_pulse():
 def crisis_detection():
     """Enhanced crisis detection with immediate response"""
     try:
-        from app import (
+        from helpers.crisis_helpers import (
             _enhanced_crisis_detection, _get_crisis_response,
             _log_crisis_detection, _get_crisis_resources,
-        )  # crisis helpers remain in app.py for now
+        )
 
         data = request.get_json()
         if not data:
