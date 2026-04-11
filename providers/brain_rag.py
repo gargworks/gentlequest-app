@@ -146,6 +146,22 @@ PRIORITY_BOOST = {
     4: 1.00, 5: 0.95, 6: 0.90, 7: 0.85,
 }
 
+# Use-case multipliers — applied ON TOP of tier boost in _apply_metadata_boost()
+# Default (no scope) = 1.0 for all sources (current behavior preserved)
+USE_CASE_BOOST = {
+    "code": {
+        "corrections": 1.5, "memory": 1.3, "code": 1.4,
+        "vault": 1.2, "knowledge": 1.2, "distill": 1.1,
+        "perplexity": 0.6, "conversations": 0.5,
+        "archive": 0.7, "meta": 0.6,
+    },
+    "life": {
+        "perplexity": 1.4, "conversations": 1.3, "memory": 1.5,
+        "strategy": 1.3, "vault": 1.2, "missions": 1.2,
+        "code": 0.5, "corrections": 0.7,
+    },
+}
+
 # Recency boost: chunks from files modified within N days get a multiplier
 RECENCY_BOOST_DAYS = 7
 RECENCY_BOOST_FACTOR = 1.15
@@ -1143,8 +1159,9 @@ def _rrf_fuse(*rankings: List[Tuple[int, float]], k: int = RRF_K) -> List[Tuple[
 
 
 def _apply_metadata_boost(fused: List[Tuple[int, float]],
-                          conn: sqlite3.Connection) -> List[Tuple[int, float]]:
-    """Apply priority tier + recency + Perplexity quality boost to fused RRF scores."""
+                          conn: sqlite3.Connection,
+                          scope: str = None) -> List[Tuple[int, float]]:
+    """Apply priority tier + recency + Perplexity quality + use-case boost to fused RRF scores."""
     if not fused:
         return fused
 
@@ -1170,15 +1187,19 @@ def _apply_metadata_boost(fused: List[Tuple[int, float]],
         if file_path.startswith("perplexity/"):
             quality = _get_perplexity_quality(file_path)
             boost *= perplexity_quality_boost.get(quality, 1.0)
+        # Use-case boost (code vs life)
+        if scope and scope in USE_CASE_BOOST:
+            top_dir = file_path.split("/")[0] if "/" in file_path else file_path
+            boost *= USE_CASE_BOOST[scope].get(top_dir, 1.0)
         boosted.append((chunk_id, score * boost))
 
     boosted.sort(key=lambda x: x[1], reverse=True)
     return boosted
 
 
-def _cache_key(query: str, brain_path: Path, topk: int) -> str:
+def _cache_key(query: str, brain_path: Path, topk: int, scope: str = None) -> str:
     """Build a stable cache key from search parameters."""
-    return f"{query}|{brain_path}|{topk}"
+    return f"{query}|{brain_path}|{topk}|{scope}"
 
 
 def _cache_get(key: str) -> Optional[List[Dict]]:
@@ -1206,8 +1227,12 @@ def search_brain(
     query: str,
     brain_path: Path = BRAIN_PATH,
     topk: int = DEFAULT_TOP_K,
+    scope: str = None,
 ) -> List[Dict]:
-    """Full hybrid search: dense + BM25 → RRF fusion → metadata boost → top-K."""
+    """Full hybrid search: dense + BM25 → RRF fusion → metadata boost → top-K.
+
+    scope: 'code' or 'life' for use-case-specific source weighting. None = default.
+    """
     import numpy as np
 
     brain_path = Path(brain_path)
@@ -1216,7 +1241,7 @@ def search_brain(
         return []
 
     # Check cache before embedding
-    ck = _cache_key(query, brain_path, topk)
+    ck = _cache_key(query, brain_path, topk, scope)
     cached = _cache_get(ck)
     if cached is not None:
         return cached
@@ -1238,8 +1263,8 @@ def search_brain(
     else:
         fused = [(cid, score) for cid, score in dense_results]
 
-    # Metadata boost (priority tier + recency)
-    fused = _apply_metadata_boost(fused, conn)
+    # Metadata boost (priority tier + recency + use-case)
+    fused = _apply_metadata_boost(fused, conn, scope=scope)
 
     # Fetch full chunk data for top-K
     top_ids = [cid for cid, _ in fused[:topk]]
@@ -1597,7 +1622,8 @@ def get_commitments_context(max_words: int = BUDGET_HOT_COMMITMENTS) -> str:
 # ═══════════════════════════════════════════════════════════════
 
 def build_full_context(query: str, brain_path: Path = BRAIN_PATH,
-                       max_words: int = BUDGET_TOTAL) -> Tuple[str, List[Dict]]:
+                       max_words: int = BUDGET_TOTAL,
+                       scope: str = None) -> Tuple[str, List[Dict]]:
     """Assemble complete context: HOT (always) + COLD (query-dependent).
 
     Returns (context_string, search_results) so callers can access
@@ -1632,7 +1658,7 @@ def build_full_context(query: str, brain_path: Path = BRAIN_PATH,
     # 3. Cold knowledge (hybrid semantic + keyword search)
     remaining = max_words - used_words
     if remaining > 100:
-        search_results = search_brain(query, brain_path)
+        search_results = search_brain(query, brain_path, scope=scope)
         cold = format_rag_context(search_results, max_words=min(BUDGET_COLD, remaining))
         if cold:
             wc = len(cold.split())

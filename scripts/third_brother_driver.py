@@ -894,7 +894,12 @@ def _ollama_generate(prompt: str, model: str, timeout: int = 60,
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode())
             duration_ms = int((time.time() - t0) * 1000)
-            return data.get("response", "").strip(), duration_ms
+            text = data.get("response", "").strip()
+            # Strip qwen3 chain-of-thought tags — don't waste tokens on internal reasoning
+            think_end = text.find("</think>")
+            if think_end >= 0:
+                text = text[think_end + 8:].strip()
+            return text, duration_ms
     except Exception as e:
         duration_ms = int((time.time() - t0) * 1000)
         print(f"[OLLAMA] Error after {duration_ms}ms: {type(e).__name__}: {e}")
@@ -1017,7 +1022,7 @@ Write the instruction now:"""
     print(f"[TB] Generating enriched prompt via {tb_model}...")
 
     response_text, duration_ms = _ollama_generate(
-        ollama_prompt, tb_model, timeout=600, num_predict=300)
+        ollama_prompt, tb_model, timeout=600, num_predict=600)
 
     log_ollama_call("TB", tb_model, ollama_prompt, response_text or "",
                     0 if response_text else -1, duration_ms, "", task_id)
@@ -3098,8 +3103,9 @@ def _build_task_context(task: Dict, config: Dict,
     rag_results = []
     try:
         from providers.brain_rag import build_full_context
+        rag_scope = "code" if task.get("source") in ("plan_audit", "compound_audit") else None
         context, rag_results = build_full_context(
-            task["description"], brain_path=BRAIN_PATH
+            task["description"], brain_path=BRAIN_PATH, scope=rag_scope
         )
         print(f"[DRIVER] Context: {len(context.split())} words, {len(rag_results)} chunks")
     except Exception as e:
