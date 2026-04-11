@@ -3105,7 +3105,7 @@ def _build_task_context(task: Dict, config: Dict,
     rag_results = []
     try:
         from providers.brain_rag import build_full_context
-        rag_scope = "code" if task.get("source") in ("plan_audit", "compound_audit") else None
+        rag_scope = "code"  # driver only does code work; "life" scope for future personal assistant
         context, rag_results = build_full_context(
             task["description"], brain_path=BRAIN_PATH, scope=rag_scope
         )
