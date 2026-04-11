@@ -1608,13 +1608,18 @@ def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
         git_diff_text = _filter_diff_by_snapshot(git_diff_text, pre_snapshot)
 
     # Re-review the follow-up result
-    review = tb_review_output(task, response, git_diff_text, config)
+    review = tb_review_output(task, response, git_diff_text, config,
+                              plan_text=task.get("_plan_text", "")[:3000])
     return (response, review)
 
 
 def tb_review_output(task: Dict, executor_result: Dict,
-                     git_diff: str, config: Dict) -> Dict:
+                     git_diff: str, config: Dict,
+                     plan_text: str = "") -> Dict:
     """Call TB via Ollama to review executor output.
+
+    Args:
+        plan_text: If provided, TB checks diff alignment against the plan.
 
     Returns:
         {"verdict": "ACCEPT|DEEPEN|ESCALATE",
@@ -1664,6 +1669,15 @@ REASON: [one sentence]
 NOTES: [if DEEPEN, what additional work is needed]
 
 Respond now:"""
+
+    if plan_text:
+        review_prompt += f"""
+
+Original Plan (for alignment check):
+{plan_text[-1500:]}
+
+ADDITIONAL CHECK: Verify the diff implements what the plan describes.
+If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
 
     task_id = task.get("id", "")
     print(f"[REVIEW] Reviewing {task_id or '?'} via {tb_model}...")
@@ -3909,7 +3923,11 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                               f"Files outside scope: {violation_list}", "WARNING")
             else:
                 try:
-                    review = tb_review_output(task, response, git_diff_text, config)
+                    audit_plan_text = ""
+                    if task.get("source") == "plan_audit" and task.get("_plan_text"):
+                        audit_plan_text = task["_plan_text"][:3000]
+                    review = tb_review_output(task, response, git_diff_text, config,
+                                              plan_text=audit_plan_text)
                     # Reviewer answering is the survived event; downstream verdict
                     # (ACCEPT/DEEPEN/ESCALATE) is captured separately in CSR via the
                     # outcome path below.
