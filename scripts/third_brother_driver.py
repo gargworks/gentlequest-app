@@ -868,7 +868,7 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
 
 def _ollama_generate(prompt: str, model: str, timeout: int = 60,
-                     num_predict: int = 300, temperature: float = 0.7) -> tuple:
+                     num_predict: int = -1, temperature: float = 0.7) -> tuple:
     """Call Ollama via HTTP API (not CLI subprocess). Returns (response_text, duration_ms).
 
     Uses the same pattern proven in tb_sparring.py. HTTP API is faster than
