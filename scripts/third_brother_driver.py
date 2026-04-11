@@ -4770,16 +4770,28 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
 
     Usage: python3 scripts/third_brother_driver.py --audit-plans 3
     """
-    plans_dir = Path.home() / ".claude" / "plans"
-    if not plans_dir.exists():
-        print(f"[AUDIT] Plans directory not found: {plans_dir}")
+    # Scan both plan directories — Claude Code plans + .brain plans
+    plan_dirs = [
+        Path.home() / ".claude" / "plans",
+        BRAIN_PATH / "plans",
+    ]
+    seen_names = set()
+    all_plan_files = []
+    for pdir in plan_dirs:
+        if not pdir.exists():
+            continue
+        for p in pdir.glob("*.md"):
+            if p.name not in seen_names:
+                seen_names.add(p.name)
+                all_plan_files.append(p)
+    if not all_plan_files:
+        print("[AUDIT] No plan files found in any plan directory.")
         return
 
-    # Collect plan files sorted newest first
-    plan_files = sorted(plans_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
-    if not plan_files:
-        print("[AUDIT] No plan files found.")
-        return
+    # Sort newest first across all sources
+    plan_files = sorted(all_plan_files, key=lambda p: p.stat().st_mtime, reverse=True)
+    sources = {str(d): sum(1 for p in plan_files if str(p.parent) == str(d)) for d in plan_dirs if d.exists()}
+    print(f"[AUDIT] Plan sources: {', '.join(f'{k} ({v})' for k, v in sources.items())}")
 
     # Auto-skip plans already verified or abandoned (unless --audit-force)
     if not force:
