@@ -1364,7 +1364,7 @@ def _register_routes(app: Flask) -> None:
                     risk_level = "crisis"
                     risk_score = 1.0
                     should_alert = True
-                    trigger_reason += f" - Suicide Ideation Detected (Q9)"
+                    trigger_reason += " - Suicide Ideation Detected (Q9)"
                 elif severity in ["severe", "moderately_severe"]:
                     risk_level = "high"
                     risk_score = 0.8
@@ -1376,7 +1376,7 @@ def _register_routes(app: Flask) -> None:
                     risk_level = "high"  # GAD-7 Severe is significant but generally not immediate life threat like PHQ-9 Q9
                     risk_score = 0.7
                     should_alert = True
-                    trigger_reason += f" - Severe Anxiety"
+                    trigger_reason += " - Severe Anxiety"
 
             if should_alert:
                 try:
@@ -1577,6 +1577,24 @@ def _register_routes(app: Flask) -> None:
 
 
 
+    def _build_health_note(db_down: bool, ai_available: bool):
+        """Build health note with DB status and expiry warning."""
+        notes = []
+        if db_down and ai_available:
+            notes.append("Chat works without DB; history/analytics need DB")
+        db_expires = os.environ.get("DB_EXPIRES_AT", "2026-05-11T07:42:55Z")
+        if db_expires:
+            try:
+                expires_dt = datetime.fromisoformat(db_expires.replace("Z", "+00:00"))
+                days_left = (expires_dt - datetime.now(expires_dt.tzinfo)).days
+                if days_left <= 7:
+                    notes.append(f"DB expires in {days_left} days — create new Postgres before {db_expires[:10]}")
+                elif days_left <= 14:
+                    notes.append(f"DB expires in {days_left} days ({db_expires[:10]})")
+            except Exception:
+                pass
+        return "; ".join(notes) if notes else None
+
     @app.route("/api/health", methods=["GET"])
     @app.limiter.exempt
     def health():
@@ -1614,7 +1632,7 @@ def _register_routes(app: Flask) -> None:
             health_data = {
                 "status": overall,
                 "ai_chat_available": ai_available,
-                "note": "Chat works without DB; history/analytics need DB" if (db_down and ai_available) else None,
+                "note": _build_health_note(db_down, ai_available),
                 "timestamp": datetime.utcnow().isoformat(),
                 "environment": app.config.get("ENVIRONMENT"),
                 "port": app.config.get("PORT"),
@@ -1654,7 +1672,7 @@ def _register_routes(app: Flask) -> None:
                     "/api/intervention/outcome",
                     "/api/admin/analytics",
                     "/api/memory/status",
-                    "/api/metrics",
+                    "/api/enterprise/metrics",
                 ],
             }
             try:
@@ -2621,9 +2639,6 @@ def _register_routes(app: Flask) -> None:
             session_id = _get_or_create_session()
             req_id = getattr(g, "request_id", None)
 
-            # Store as compact JSON string in TEXT column to avoid dialect issues
-            meta_json = json.dumps(metadata, separators=(",", ":"), ensure_ascii=False)
-
             # Store metadata
             event = AnalyticsEvent(
                 session_id=session_id,
@@ -2655,8 +2670,6 @@ def _register_routes(app: Flask) -> None:
                 limit = 50
             limit = max(1, min(limit, 200))
 
-            params: Dict[str, Any] = {"limit": limit}
-            where_clause = ""
             query = AnalyticsEvent.query
             if prefix:
                 query = query.filter(AnalyticsEvent.event_type.like(f"{prefix}%"))
@@ -3287,7 +3300,7 @@ def _get_fallback_html(app: Flask) -> str:
             <p>The Flutter web app is not available. Here are the API endpoints:</p>
             <a href="/api/health" class="api-link">Health Check</a>
             <a href="/api/deploy-test" class="api-link">Deploy Test</a>
-            <a href="/api/metrics" class="api-link">Metrics</a>
+            <a href="/api/enterprise/metrics" class="api-link">Metrics</a>
         </div>
     </body>
     </html>
@@ -3780,12 +3793,14 @@ def _log_crisis_detection(
             keywords=keywords
         )
         if alert_id:
-            current_app.logger.info(f"Counselor Alert created: ID {alert_id}")
+            from flask import current_app as _app
+            _app.logger.info(f"Counselor Alert created: ID {alert_id}")
     except Exception as e:
-        # Use current_app for logging in request context
-        from flask import current_app
-
-        current_app.logger.error(f"Failed to log crisis detection: {e}")
+        try:
+            from flask import current_app as _app
+            _app.logger.error(f"Failed to log crisis detection: {e}")
+        except RuntimeError:
+            pass  # Outside request context — safe to skip logging
         db.session.rollback()
 
 

@@ -173,23 +173,35 @@ def update_intervention_outcome(
         True if updated successfully
     """
     try:
-        # Update the most recent matching intervention via ORM
+        # Update the most recent matching intervention via ORM, or create new
         outcome_entry = InterventionOutcome.query.filter_by(
             session_id=session_id, 
             intervention_id=intervention_id
         ).order_by(InterventionOutcome.timestamp.desc()).first()
 
         if not outcome_entry:
-            return False
-
-        outcome_entry.outcome = outcome
-        outcome_entry.completed = (outcome == "completed")
-        if exercise_type: outcome_entry.exercise_type = exercise_type
-        if time_spent_seconds: outcome_entry.time_spent_seconds = time_spent_seconds
-        if mood_before: outcome_entry.mood_before = mood_before
-        if mood_after: outcome_entry.mood_after = mood_after
-        if effectiveness_rating: outcome_entry.effectiveness_rating = effectiveness_rating
-        if feedback: outcome_entry.feedback = feedback
+            outcome_entry = InterventionOutcome(
+                session_id=session_id,
+                intervention_id=intervention_id,
+                outcome=outcome,
+                completed=(outcome == "completed"),
+                exercise_type=exercise_type,
+                time_spent_seconds=time_spent_seconds,
+                mood_before=mood_before,
+                mood_after=mood_after,
+                effectiveness_rating=effectiveness_rating,
+                feedback=feedback,
+            )
+            db.session.add(outcome_entry)
+        else:
+            outcome_entry.outcome = outcome
+            outcome_entry.completed = (outcome == "completed")
+            if exercise_type: outcome_entry.exercise_type = exercise_type
+            if time_spent_seconds: outcome_entry.time_spent_seconds = time_spent_seconds
+            if mood_before: outcome_entry.mood_before = mood_before
+            if mood_after: outcome_entry.mood_after = mood_after
+            if effectiveness_rating: outcome_entry.effectiveness_rating = effectiveness_rating
+            if feedback: outcome_entry.feedback = feedback
         
         db.session.commit()
         return True

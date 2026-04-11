@@ -45,7 +45,7 @@ def get_intervention_stats(days: int = 30) -> Dict[str, Any]:
                 else_=None
             )).label('avg_mood_improvement'),
             func.avg(InterventionOutcome.time_spent_seconds).label('avg_time_spent')
-        ).filter(InterventionOutcome.timestamp >= cutoff_date).fetchone()
+        ).filter(InterventionOutcome.timestamp >= cutoff_date).first()
         
         total = result.total or 0
         completed = result.completed or 0
@@ -197,7 +197,7 @@ def get_user_engagement_metrics(session_id: Optional[str] = None, days: int = 30
         if session_id:
             query = query.filter(InterventionOutcome.session_id == session_id)
         
-        result = query.fetchone()
+        result = query.first()
         
         # Get favorite intervention type
         fav_query = db.session.query(
