@@ -4638,15 +4638,23 @@ def _compute_verification_quality(result: Dict) -> str:
 
 
 def _auto_verification_commands(plan_text: str) -> List[Dict]:
-    """Derive deterministic checks from ## Files Modified. No LLM writes these."""
+    """Derive deterministic checks from ## Files Modified / ## Affected Files. No LLM writes these."""
     cmds = []
     files_match = re.search(
-        r"## Files Modified\s*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
+        r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
     if not files_match:
         return cmds
     for line in files_match.group(1).splitlines():
+        # Handle bullet lists (- `path`) first
         path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
+        # Fall back to extracting backtick-wrapped path from table rows (| `path` | ... |)
         if not path or not re.match(r"[\w./\-]+\.\w+", path):
+            tbl = re.search(r"`([\w./\-]+\.\w+)`", line)
+            if tbl:
+                path = tbl.group(1)
+            else:
+                continue
+        if not re.match(r"[\w./\-]+\.\w+", path):
             continue
         cmds.append({"command": f"test -f {path}", "skipped": False,
                      "kind": "assertion", "auto_generated": True})

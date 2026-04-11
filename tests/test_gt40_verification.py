@@ -284,6 +284,18 @@ class TestAutoVerificationCommands:
         cmds = _auto_verification_commands(plan)
         assert len(cmds) == 0
 
+    def test_affected_files_table_format(self):
+        """Plans using ## Affected Files with table rows should also work."""
+        plan = ("## Affected Files\n\n| File | Phase | Usage |\n|------|-------|-------|\n"
+                "| `providers/safety.py` | 1 | Safety check |\n"
+                "| `providers/gemini.py` | 3 | Chat |\n")
+        cmds = _auto_verification_commands(plan)
+        commands = [c["command"] for c in cmds]
+        assert any("test -f providers/safety.py" in c for c in commands)
+        assert any("test -f providers/gemini.py" in c for c in commands)
+        assert any("import" in c for c in commands)
+        assert len(cmds) >= 4  # 2 files × (exists + import)
+
 
 # ── Complexity classification tests ──────────────────────────
 
