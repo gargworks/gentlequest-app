@@ -1024,7 +1024,7 @@ Write the instruction now:"""
     print(f"[TB] Generating enriched prompt via {tb_model}...")
 
     response_text, duration_ms = _ollama_generate(
-        ollama_prompt, tb_model, timeout=600, num_predict=600)
+        ollama_prompt, tb_model, timeout=600, num_predict=-1)
 
     log_ollama_call("TB", tb_model, ollama_prompt, response_text or "",
                     0 if response_text else -1, duration_ms, "", task_id)
@@ -1614,7 +1614,7 @@ Respond now:"""
 
     try:
         output, duration_ms = _ollama_generate(
-            review_prompt, tb_model, timeout=600, num_predict=200)
+            review_prompt, tb_model, timeout=600, num_predict=-1)
 
         log_ollama_call("REVIEW", tb_model, review_prompt, output or "",
                         0 if output else -1, duration_ms, "", task_id)
