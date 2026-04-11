@@ -20,12 +20,15 @@ chat_bp = Blueprint("chat", __name__)
 def chat():
     """Enhanced chat endpoint with geography-specific crisis detection"""
     try:
-        from app import (
-            _get_or_create_session, _process_chat_message,
-            get_country_from_request, get_crisis_response_and_resources,
-            _run_crisis_watchdog, _get_conversation_count,
+        from helpers.session_helpers import (
+            _get_or_create_session, _get_conversation_count,
             _increment_conversation_count, _log_analytics_event,
             _log_chat_request, background_executor,
+        )
+        from app import (
+            _process_chat_message,
+            get_country_from_request, get_crisis_response_and_resources,
+            _run_crisis_watchdog,
         )
 
         _t0 = time.monotonic()
@@ -204,7 +207,7 @@ def chat():
         _err_latency = round((time.monotonic() - _t0) * 1000) if '_t0' in dir() else 0
         _data = data if 'data' in dir() else None
         try:
-            from app import _log_chat_request, background_executor
+            from helpers.session_helpers import _log_chat_request, background_executor
             background_executor.submit(
                 _log_chat_request, _data.get("session_id", "") if _data else "",
                 len(_data.get("message", "")) if _data else 0, 0, _err_latency, 500,
@@ -222,10 +225,12 @@ def chat_stream():
     Streams JSON objects with a 'type' field: 'meta', 'token', 'done', 'error'.
     """
     try:
+        from helpers.session_helpers import (
+            _get_or_create_session, background_executor,
+        )
         from app import (
-            _get_or_create_session, _process_chat_message,
+            _process_chat_message,
             get_crisis_response_and_resources, _run_crisis_watchdog,
-            background_executor,
         )
         from crisis_detection import detect_crisis_level
         from typing import List

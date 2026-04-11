@@ -15,7 +15,7 @@ compliance_bp = Blueprint("compliance", __name__)
 @limiter.limit("60 per minute")
 def log_compliance_event():
     """Log compliance check outcomes from Flutter for funnel analysis."""
-    from app import _get_or_create_session, _log_analytics_event, background_executor
+    from helpers.session_helpers import _get_or_create_session, _log_analytics_event, background_executor
 
     data = request.get_json() or {}
     event_type = data.get("event_type", "")
@@ -38,7 +38,7 @@ def log_compliance_event():
 @limiter.limit("10 per minute")
 def ip_region_check():
     """IP-based region fallback when GPS fails. Returns region + blocked status."""
-    from app import _get_or_create_session, _log_analytics_event, background_executor
+    from helpers.session_helpers import _get_or_create_session, _log_analytics_event, background_executor
 
     ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
     if not ip:

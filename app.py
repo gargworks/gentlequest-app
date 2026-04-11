@@ -85,12 +85,25 @@ try:
 except Exception:
     SENTRY_AVAILABLE = False
 
-# Initialize background executor for async tasks (Scaling Crisis Detection)
-background_executor = ThreadPoolExecutor(max_workers=5)
+# Background executor + session/analytics helpers live in helpers.session_helpers
+# to break circular 'from app import ...' in route blueprints.
+from helpers.session_helpers import (  # noqa: E402
+    background_executor,
+    _get_or_create_session,
+    _update_session_last_active,
+    _get_conversation_count,
+    _increment_conversation_count,
+    _log_analytics_event,
+    _log_chat_request,
+)
+from helpers.health_helpers import (  # noqa: E402
+    _check_database_health,
+    _check_redis_health,
+    _check_ollama_health,
+    _detect_platform,
+)
 
-# Graceful shutdown: wait for background tasks during deployment restarts
 import atexit
-atexit.register(lambda: background_executor.shutdown(wait=True))
 
 # Layer 2 safety supervisor — dedicated small pool so we don't head-of-line
 # block behind crisis watchdog / memory summarization tasks on background_executor.
@@ -1021,37 +1034,7 @@ def _setup_session(app: Flask) -> None:
     Session(app)
 
 
-_CHAT_LOG_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), ".brain", "ledger", "chat_requests.jsonl"
-)
-_chat_log_lock = threading.Lock()
-
-
-def _log_chat_request(
-    session_id: str,
-    prompt_len: int,
-    response_len: int,
-    latency_ms: int,
-    status: int,
-    model: str = "",
-):
-    """Append a single chat request/response record to chat_requests.jsonl."""
-    record = {
-        "ts": datetime.now(timezone.utc).isoformat(),
-        "session_id": session_id,
-        "prompt_len": prompt_len,
-        "response_len": response_len,
-        "latency_ms": latency_ms,
-        "status": status,
-        "model": model,
-    }
-    try:
-        with _chat_log_lock:
-            with open(_CHAT_LOG_PATH, "a") as f:
-                f.write(json.dumps(record) + "\n")
-    except Exception:
-        logging.getLogger(__name__).debug("chat request log write failed", exc_info=True)
-
+# _CHAT_LOG_PATH, _chat_log_lock, _log_chat_request -> helpers.session_helpers
 
 def _rate_limit_enabled() -> bool:
     """Return True if rate limiting should be applied for this request."""
@@ -1261,91 +1244,8 @@ def _register_routes(app: Flask) -> None:
 
     # All route handlers extracted to routes/ blueprints
 
-def _get_or_create_session() -> str:
-    """Get or create user session with proper error handling"""
-    session_id = request.headers.get("X-Session-ID")
 
-    if not session_id:
-        session_id = str(uuid.uuid4())
-    else:
-        # Validate UUID format to prevent garbage input
-        try:
-            uuid.UUID(session_id)
-        except ValueError:
-            session_id = str(uuid.uuid4())
-
-    try:
-        from models import UserSession
-        from flask import current_app
-
-        session = db.session.get(UserSession, session_id)
-
-        if not session:
-            # Create new session (must be sync — downstream needs the row)
-            new_session = UserSession(id=session_id)
-            db.session.add(new_session)
-            db.session.commit()
-        else:
-            # Defer last_active update to background (informational only)
-            _app = current_app._get_current_object()
-            background_executor.submit(_update_session_last_active, _app, session_id)
-
-    except Exception as e:
-        from flask import current_app
-        current_app.logger.error(f"Session management error: {e}")
-
-    return session_id
-
-
-def _update_session_last_active(app_ctx, session_id: str):
-    """Background: update session last_active timestamp."""
-    try:
-        with app_ctx.app_context():
-            from models import UserSession
-            session = db.session.get(UserSession, session_id)
-            if session:
-                session.last_active = datetime.utcnow()
-                db.session.commit()
-    except Exception:
-        pass  # Non-critical — stale timestamp is acceptable
-
-
-def _get_conversation_count(session_id: str) -> int:
-    """Get the conversation count for a session (lightweight query)."""
-    try:
-        session = db.session.get(UserSession, session_id)
-        return (session.conversation_count or 0) if session else 0
-    except Exception:
-        return 0
-
-
-def _increment_conversation_count(app_ctx, session_id: str):
-    """Background: increment conversation_count on UserSession."""
-    try:
-        with app_ctx.app_context():
-            session = db.session.get(UserSession, session_id)
-            if session:
-                session.conversation_count = (session.conversation_count or 0) + 1
-                db.session.commit()
-    except Exception:
-        pass  # Non-critical
-
-
-def _log_analytics_event(app_ctx, session_id: str, event_type: str, metadata: dict = None):
-    """Background: log a behavioral event to analytics_events table."""
-    try:
-        with app_ctx.app_context():
-            from models import AnalyticsEvent
-            event = AnalyticsEvent(
-                session_id=session_id,
-                event_type=event_type,
-                event_metadata=metadata or {},
-            )
-            db.session.add(event)
-            db.session.commit()
-    except Exception:
-        pass  # Non-critical — analytics should never block
-
+# _get_or_create_session .. _log_analytics_event -> helpers.session_helpers
 
 def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
     """
@@ -1719,84 +1619,8 @@ def _convert_risk_level_to_score(risk_level: str) -> float:
     return risk_mapping.get(risk_level.lower(), 0.0)
 
 
-def _check_database_health() -> str:
-    """Check database connection health"""
-    try:
-        engine = db.session.bind
-        dialect = engine.dialect.name if engine else None
-        if dialect == "postgresql":
-            # Run within a short transaction with a statement timeout
-            with engine.connect() as conn:
-                with conn.begin():
-                    conn.execute(sql_text("SET LOCAL statement_timeout = 2000"))
-                    conn.execute(sql_text("SELECT 1"))
-        else:
-            db.session.execute(sql_text("SELECT 1"))
-        return "healthy"
-    except Exception as e:
-        try:
-            from flask import current_app
 
-            current_app.logger.error(f"Database health check failed: {e}")
-        except Exception:
-            pass
-        return "unhealthy"
-
-
-def _check_redis_health() -> str:
-    """Check Redis connection health"""
-    try:
-        from flask import current_app
-
-        if current_app.config.get("SESSION_TYPE") == "redis":
-            redis_client = current_app.config.get("SESSION_REDIS")
-            if redis_client:
-                # ping uses the socket timeouts configured in _setup_session
-                redis_client.ping()
-                return "healthy"
-            else:
-                return "not configured"
-        else:
-            return "using filesystem"
-    except Exception as e:
-        try:
-            from flask import current_app
-            current_app.logger.error(f"Redis health check failed: {e}")
-        except Exception:
-            pass
-        return "unhealthy"
-
-
-def _check_ollama_health() -> dict:
-    """Check Ollama reachability and whether the third-brother model is loaded."""
-    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-    result = {"status": "unknown", "model_loaded": False}
-    try:
-        resp = requests.get(f"{base}/api/tags", timeout=2)
-        resp.raise_for_status()
-        models = [m.get("name", "") for m in resp.json().get("models", [])]
-        result["status"] = "healthy"
-        result["models"] = models
-        # Check if any third-brother variant is loaded
-        result["model_loaded"] = any("third-brother" in m for m in models)
-    except requests.ConnectionError:
-        result["status"] = "unreachable"
-    except requests.Timeout:
-        result["status"] = "timeout"
-    except Exception as e:
-        result["status"] = f"unhealthy: {str(e)}"
-    return result
-
-
-def _detect_platform() -> str:
-    """Detect deployment platform for single codebase usage"""
-    if os.environ.get("RENDER"):
-        return "render"
-    elif os.environ.get("DOCKER_ENV") or os.environ.get("DOCKER"):
-        return "docker"
-    else:
-        return "local"
-
+# _check_database_health .. _detect_platform -> helpers.health_helpers
 
 def _get_fallback_html(app: Flask) -> str:
     """Generate fallback HTML page with environment info"""

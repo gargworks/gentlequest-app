@@ -28,7 +28,7 @@ def _sanitize_note(note: str) -> str:
 @limiter.limit("60 per hour")
 def get_or_create_session_endpoint():
     """Get or create user session"""
-    from app import _get_or_create_session
+    from helpers.session_helpers import _get_or_create_session
     session_id = _get_or_create_session()
     return jsonify({"session_id": session_id})
 
@@ -106,7 +106,7 @@ def get_mood_history():
 def add_mood_entry():
     """Add a new mood entry"""
     try:
-        from app import _get_or_create_session
+        from helpers.session_helpers import _get_or_create_session
 
         session_id = _get_or_create_session()
         if not session_id:
@@ -185,7 +185,7 @@ def submit_self_assessment():
         return jsonify({"message": "Self-assessment endpoint ready"})
 
     try:
-        from app import _get_or_create_session
+        from helpers.session_helpers import _get_or_create_session
 
         data = request.get_json() or {}
 
@@ -343,7 +343,7 @@ def crisis_detection():
         from app import (
             _enhanced_crisis_detection, _get_crisis_response,
             _log_crisis_detection, _get_crisis_resources,
-        )
+        )  # crisis helpers remain in app.py for now
 
         data = request.get_json()
         if not data:

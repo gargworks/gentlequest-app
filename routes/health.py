@@ -37,7 +37,7 @@ def _build_health_note(db_down: bool, ai_available: bool):
 def health():
     """Enhanced health check endpoint with environment info"""
     try:
-        from app import _check_database_health, _check_redis_health, _check_ollama_health, _detect_platform
+        from helpers.health_helpers import _check_database_health, _check_redis_health, _check_ollama_health, _detect_platform
 
         # Check database and Redis with timing to detect hangs
         t0 = time.monotonic()

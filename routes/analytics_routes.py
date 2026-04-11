@@ -24,7 +24,7 @@ def log_analytics_event():
     - Associates events to a session and request_id for traceability.
     """
     try:
-        from app import _get_or_create_session
+        from helpers.session_helpers import _get_or_create_session
 
         if request.headers.get("X-Analytics-Consent") != "true":
             return jsonify({"ok": True}), 201
@@ -118,7 +118,7 @@ def admin_purge():
     if not expected or not secrets.compare_digest(token, expected):
         return jsonify({"error": "Unauthorized"}), 401
     try:
-        from app import _purge_old_data_inner
+        from app import _purge_old_data_inner  # stays in app.py (uses app.config)
         counts = _purge_old_data_inner()
         return jsonify({"success": True, "purged": counts}), 200
     except Exception as e:
