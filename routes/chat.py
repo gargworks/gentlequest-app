@@ -29,7 +29,7 @@ def chat():
             get_country_from_request, get_crisis_response_and_resources,
             _run_crisis_watchdog,
         )
-        from app import _process_chat_message
+        from helpers.chat_helpers import _process_chat_message
 
         _t0 = time.monotonic()
         data = request.get_json()
@@ -231,7 +231,7 @@ def chat_stream():
         from helpers.crisis_helpers import (
             get_crisis_response_and_resources, _run_crisis_watchdog,
         )
-        from app import _process_chat_message
+        from helpers.chat_helpers import _process_chat_message
         from crisis_detection import detect_crisis_level
         from typing import List
 
