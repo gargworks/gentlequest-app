@@ -162,6 +162,28 @@ USE_CASE_BOOST = {
     },
 }
 
+# Keywords for auto-detecting scope from query text (when caller doesn't specify)
+_CODE_SIGNALS = {"import", "function", "class", "bug", "test", "pytest", "error",
+                 "traceback", "api", "endpoint", "module", "script", "driver",
+                 "deploy", "commit", "git", "refactor", "fix", "implement",
+                 "verify", "audit", "migration", "database", "schema"}
+_LIFE_SIGNALS = {"mood", "energy", "family", "career", "sleep", "routine",
+                 "strategy", "growth", "coaching", "personal", "journal",
+                 "music", "emotion", "habit", "wellness", "thrive", "salary"}
+
+
+def _infer_scope(query: str) -> str:
+    """Auto-detect 'code' or 'life' scope from query keywords. Returns None if ambiguous."""
+    words = set(query.lower().split())
+    code_hits = len(words & _CODE_SIGNALS)
+    life_hits = len(words & _LIFE_SIGNALS)
+    if code_hits > 0 and life_hits == 0:
+        return "code"
+    if life_hits > 0 and code_hits == 0:
+        return "life"
+    return None  # ambiguous or no signals — use default behavior
+
+
 # Recency boost: chunks from files modified within N days get a multiplier
 RECENCY_BOOST_DAYS = 7
 RECENCY_BOOST_FACTOR = 1.15
@@ -1231,9 +1253,14 @@ def search_brain(
 ) -> List[Dict]:
     """Full hybrid search: dense + BM25 → RRF fusion → metadata boost → top-K.
 
-    scope: 'code' or 'life' for use-case-specific source weighting. None = default.
+    scope: 'code' or 'life' for use-case-specific source weighting.
+           None = auto-detect from query keywords, or default if ambiguous.
     """
     import numpy as np
+
+    # Auto-detect scope if caller didn't specify
+    if scope is None:
+        scope = _infer_scope(query)
 
     brain_path = Path(brain_path)
     db = _db_path(brain_path)
