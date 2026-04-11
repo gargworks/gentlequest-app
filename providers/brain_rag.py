@@ -181,7 +181,46 @@ def _infer_scope(query: str) -> str:
         return "code"
     if life_hits > 0 and code_hits == 0:
         return "life"
-    return None  # ambiguous or no signals — use default behavior
+    return None  # ambiguous — let semantic detection in search_brain() decide
+
+
+# Semantic scope detection — reference sentences for embedding similarity
+_SCOPE_REFS = {
+    "code": "fix bug import function test deploy refactor API endpoint script driver database migration",
+    "life": "mood energy sleep routine family career coaching wellness strategy personal growth journal",
+}
+_scope_ref_cache: Dict[str, list] = {}  # lazy-computed reference embeddings
+_SCOPE_THRESHOLD = 0.03  # minimum cosine gap to declare a winner
+
+
+def _infer_scope_semantic(query_emb: list) -> str:
+    """Classify scope via cosine similarity to reference embeddings. Returns None if too close."""
+    import numpy as np
+
+    # Lazy-compute reference embeddings on first call
+    for key, text in _SCOPE_REFS.items():
+        if key not in _scope_ref_cache:
+            emb = _embed(text)
+            if emb:
+                _scope_ref_cache[key] = emb
+
+    if "code" not in _scope_ref_cache or "life" not in _scope_ref_cache:
+        return None
+
+    q = np.array(query_emb)
+    q_norm = q / (np.linalg.norm(q) + 1e-10)
+
+    scores = {}
+    for key, ref_emb in _scope_ref_cache.items():
+        r = np.array(ref_emb)
+        r_norm = r / (np.linalg.norm(r) + 1e-10)
+        scores[key] = float(q_norm @ r_norm)
+
+    best = max(scores, key=scores.get)
+    gap = scores[best] - min(scores.values())
+    if gap >= _SCOPE_THRESHOLD:
+        return best
+    return None  # too close to call
 
 
 # Recency boost: chunks from files modified within N days get a multiplier
@@ -1258,22 +1297,27 @@ def search_brain(
     """
     import numpy as np
 
-    # Auto-detect scope if caller didn't specify
+    # Auto-detect scope: keywords first (instant), then semantic (reuses query embedding)
+    caller_scope = scope  # preserve caller's explicit choice
     if scope is None:
-        scope = _infer_scope(query)
+        scope = _infer_scope(query)  # keyword-based, instant
 
     brain_path = Path(brain_path)
     db = _db_path(brain_path)
     if not db.exists():
         return []
 
-    # Check cache before embedding
+    # Check cache before embedding (scope may refine after embedding, but keyword scope is stable)
     ck = _cache_key(query, brain_path, topk, scope)
     cached = _cache_get(ck)
     if cached is not None:
         return cached
 
     query_emb = _embed(query)
+
+    # Semantic scope detection — only if keywords were ambiguous and caller didn't specify
+    if caller_scope is None and scope is None and query_emb:
+        scope = _infer_scope_semantic(query_emb)
     if not query_emb:
         return []
 
