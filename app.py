@@ -1595,14 +1595,26 @@ def _register_routes(app: Flask) -> None:
             ollama_status = _check_ollama_health()
             ollama_ms = int((time.monotonic() - t2) * 1000)
 
-            overall = "healthy"
-            if ("unhealthy" in db_status.lower()) or (
-                "unhealthy" in str(redis_status).lower()
-            ):
+            # Core service: AI provider must be available for chat to work
+            ai_available = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS"))
+
+            # Status logic: core AI chat is what matters most
+            # DB/Redis down = degraded (chat still works, persistence doesn't)
+            # AI provider missing = unhealthy (app can't serve its purpose)
+            db_down = "unhealthy" in db_status.lower()
+            redis_down = "unhealthy" in str(redis_status).lower()
+
+            if not ai_available:
+                overall = "unhealthy"
+            elif db_down or redis_down:
                 overall = "degraded"
+            else:
+                overall = "healthy"
 
             health_data = {
                 "status": overall,
+                "ai_chat_available": ai_available,
+                "note": "Chat works without DB; history/analytics need DB" if (db_down and ai_available) else None,
                 "timestamp": datetime.utcnow().isoformat(),
                 "environment": app.config.get("ENVIRONMENT"),
                 "port": app.config.get("PORT"),
@@ -1772,9 +1784,13 @@ def _register_routes(app: Flask) -> None:
                 return jsonify({"error": "Message too long (max 5000 characters)"}), 400
 
             # Detect first-time vs returning user (lightweight query)
-            _is_first_message = Message.query.filter_by(
-                session_id=session_id, is_user=True
-            ).first() is None
+            # Graceful fallback: if DB is down, assume first message (safe default)
+            try:
+                _is_first_message = Message.query.filter_by(
+                    session_id=session_id, is_user=True
+                ).first() is None
+            except Exception:
+                _is_first_message = True
 
             # Get country from request
             country = get_country_from_request(request)
@@ -1955,9 +1971,13 @@ def _register_routes(app: Flask) -> None:
             session_id = request.args.get("session_id") or _get_or_create_session()
 
             # Detect first-time user for warm greeting
-            _is_first_msg = Message.query.filter_by(
-                session_id=session_id, is_user=True
-            ).first() is None
+            # Graceful fallback: if DB is down, assume first message (safe default)
+            try:
+                _is_first_msg = Message.query.filter_by(
+                    session_id=session_id, is_user=True
+                ).first() is None
+            except Exception:
+                _is_first_msg = True
 
             # Country for geo-specific crisis resources (sanitize to alpha, max 10 chars)
             _raw_country = request.args.get("country") or "generic"
@@ -4163,7 +4183,9 @@ def _register_additional_routes(app: Flask) -> None:
             brain_state_rows = 0
             if "brain_state" in table_list:
                 try:
-                    brain_state_rows = BrainState.query.count()
+                    brain_state_rows = db.session.execute(
+                        sql_text("SELECT COUNT(*) FROM brain_state")
+                    ).scalar() or 0
                 except Exception:
                     pass
 
