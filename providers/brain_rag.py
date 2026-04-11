@@ -1299,8 +1299,11 @@ def search_brain(
 
     # Auto-detect scope: keywords first (instant), then semantic (reuses query embedding)
     caller_scope = scope  # preserve caller's explicit choice
+    scope_method = "caller" if scope else None
     if scope is None:
         scope = _infer_scope(query)  # keyword-based, instant
+        if scope:
+            scope_method = "keyword"
 
     brain_path = Path(brain_path)
     db = _db_path(brain_path)
@@ -1318,6 +1321,14 @@ def search_brain(
     # Semantic scope detection — only if keywords were ambiguous and caller didn't specify
     if caller_scope is None and scope is None and query_emb:
         scope = _infer_scope_semantic(query_emb)
+        if scope:
+            scope_method = "semantic"
+
+    # Watermark: log which detection method was used
+    if scope and scope_method != "caller":
+        print(f"[RAG] scope={scope} ({scope_method})")
+    elif not scope and not caller_scope:
+        print(f"[RAG] scope=default (ambiguous)")
     if not query_emb:
         return []
 
