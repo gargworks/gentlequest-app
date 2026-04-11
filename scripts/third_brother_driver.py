@@ -895,10 +895,12 @@ def _ollama_generate(prompt: str, model: str, timeout: int = 60,
             data = json.loads(resp.read().decode())
             duration_ms = int((time.time() - t0) * 1000)
             text = data.get("response", "").strip()
-            # Strip qwen3 chain-of-thought tags — don't waste tokens on internal reasoning
+            # Strip qwen3 chain-of-thought — closed or unclosed
             think_end = text.find("</think>")
             if think_end >= 0:
                 text = text[think_end + 8:].strip()
+            elif text.startswith("<think>"):
+                text = text[7:].strip()
             return text, duration_ms
     except Exception as e:
         duration_ms = int((time.time() - t0) * 1000)
