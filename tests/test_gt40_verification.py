@@ -16,6 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp-server-nucl
 from scripts.third_brother_driver import (
     _parse_verification_commands,
     _run_verification_commands,
+    _classify_verification_cmd,
+    _compute_verification_quality,
+    _auto_verification_commands,
 )
 
 
@@ -173,3 +176,109 @@ class TestRunVerificationCommands:
         assert result["skipped_count"] == 2
         assert result["passed_count"] == 0
         assert result["failed_count"] == 0
+
+    def test_extra_commands_merged(self):
+        """Extra commands from auto-injection are merged and executed."""
+        extra = [{"command": 'python3 -c "print(99)"', "skipped": False,
+                  "kind": "assertion", "auto_generated": True}]
+        result = _run_verification_commands("", extra_commands=extra)
+        assert result["passed"] is True
+        assert result["passed_count"] == 1
+        assert "99" in result["results"][0]["stdout"]
+
+
+# ── Classification tests ─────────────────────────────────────
+
+
+class TestClassifyVerificationCmd:
+    """Test command classification into assertion vs observation."""
+
+    def test_pytest_is_assertion(self):
+        assert _classify_verification_cmd("python3 -m pytest tests/ -q") == "assertion"
+
+    def test_pytest_bare_is_assertion(self):
+        assert _classify_verification_cmd("pytest tests/test_foo.py") == "assertion"
+
+    def test_assert_in_python_is_assertion(self):
+        assert _classify_verification_cmd('python3 -c "assert True"') == "assertion"
+
+    def test_grep_is_assertion(self):
+        assert _classify_verification_cmd("grep -r 'def foo' src/") == "assertion"
+
+    def test_test_f_is_assertion(self):
+        assert _classify_verification_cmd("test -f scripts/driver.py") == "assertion"
+
+    def test_cat_is_observation(self):
+        assert _classify_verification_cmd("cat .brain/csr.json") == "observation"
+
+    def test_ls_is_observation(self):
+        assert _classify_verification_cmd("ls -la tests/") == "observation"
+
+    def test_echo_is_observation(self):
+        assert _classify_verification_cmd("echo hello") == "observation"
+
+    def test_unknown_defaults_assertion(self):
+        assert _classify_verification_cmd("some-custom-tool --check") == "assertion"
+
+
+class TestComputeVerificationQuality:
+    """Test verification quality rating."""
+
+    def test_all_assertions_is_strong(self):
+        result = {"results": [
+            {"passed": True, "kind": "assertion"},
+            {"passed": True, "kind": "assertion"},
+        ]}
+        assert _compute_verification_quality(result) == "strong"
+
+    def test_all_observations_is_weak(self):
+        result = {"results": [
+            {"passed": True, "kind": "observation"},
+            {"passed": True, "kind": "observation"},
+        ]}
+        assert _compute_verification_quality(result) == "weak"
+
+    def test_mixed_majority_assertions_is_strong(self):
+        result = {"results": [
+            {"passed": True, "kind": "assertion"},
+            {"passed": True, "kind": "assertion"},
+            {"passed": True, "kind": "observation"},
+        ]}
+        assert _compute_verification_quality(result) == "strong"
+
+    def test_no_commands_is_none(self):
+        result = {"results": []}
+        assert _compute_verification_quality(result) == "none"
+
+    def test_skipped_excluded(self):
+        result = {"results": [
+            {"passed": None, "skipped": True, "kind": "assertion"},
+        ]}
+        assert _compute_verification_quality(result) == "none"
+
+
+class TestAutoVerificationCommands:
+    """Test deterministic file check generation from plan text."""
+
+    def test_py_file_generates_exists_and_import(self):
+        plan = "## Files Modified\n- `providers/brain_rag.py` — changes"
+        cmds = _auto_verification_commands(plan)
+        commands = [c["command"] for c in cmds]
+        assert any("test -f" in c for c in commands)
+        assert any("import" in c for c in commands)
+        assert all(c.get("auto_generated") for c in cmds)
+
+    def test_test_file_generates_pytest(self):
+        plan = "## Files Modified\n- `tests/test_gt40_verification.py`"
+        cmds = _auto_verification_commands(plan)
+        commands = [c["command"] for c in cmds]
+        assert any("pytest" in c for c in commands)
+
+    def test_no_section_returns_empty(self):
+        plan = "# Plan\nSome content without Files Modified section"
+        assert _auto_verification_commands(plan) == []
+
+    def test_non_file_lines_skipped(self):
+        plan = "## Files Modified\n| File | Changes |\n|------|---------|"
+        cmds = _auto_verification_commands(plan)
+        assert len(cmds) == 0

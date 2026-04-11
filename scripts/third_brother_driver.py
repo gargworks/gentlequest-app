@@ -4074,11 +4074,16 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             verify_text = task.get("_verify_text", "")
             car_result = None
             car_passed = True  # no verification section = skip gate 2
+            quality = "none"
             if verify_text and claude_passed:
                 print(f"[GT40] Running independent verification for "
                       f"{Path(task['_plan_path']).name}...")
-                car_result = _run_verification_commands(verify_text)
+                auto_cmds = _auto_verification_commands(task.get("_plan_text", ""))
+                car_result = _run_verification_commands(
+                    verify_text, extra_commands=auto_cmds)
+                quality = _compute_verification_quality(car_result)
                 _print_verification_report(car_result)
+                print(f"[GT40] Verification quality: {quality}")
                 car_passed = car_result["passed"]
 
             # Both gates must pass for ACCEPT
@@ -4126,6 +4131,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 duration_s=duration,
                 session_id=session_id,
                 verification=car_result,
+                verification_quality=quality,
             )
 
         log_shadow_raft(
@@ -4375,7 +4381,7 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
 
 
 def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
-                         session_id, verification=None):
+                         session_id, verification=None, verification_quality=None):
     """Persist audit verdict so future runs auto-skip verified plans."""
     audit_dir = BRAIN_PATH / "audit"
     audit_dir.mkdir(parents=True, exist_ok=True)
@@ -4404,6 +4410,8 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
             "skipped_count": verification["skipped_count"],
             "duration_s": verification["duration_s"],
         }
+    if verification_quality:
+        entry["verification_quality"] = verification_quality
     results[plan_filename] = entry
     results_path.write_text(json.dumps(results, indent=2) + "\n")
     print(f"[AUDIT] Recorded: {plan_filename} → {verdict}")
@@ -4441,19 +4449,68 @@ def _parse_verification_commands(verify_text: str) -> List[Dict]:
             "python", "cat", "grep", "ls", "cd", "npm", "node",
             "pytest", "bash", "sh", "./", "make", "curl", "git")):
             continue
-        commands.append({"command": cmd, "skipped": False})
+        commands.append({"command": cmd, "skipped": False,
+                         "kind": _classify_verification_cmd(cmd)})
     return commands
+
+
+def _classify_verification_cmd(cmd: str) -> str:
+    """Tag command as 'assertion' (can meaningfully fail) or 'observation' (always exits 0)."""
+    if re.search(r'\bpytest\b|python3?\s+-m\s+pytest', cmd):
+        return "assertion"
+    if re.search(r'\bassert\b|\braise\b', cmd):
+        return "assertion"
+    if cmd.startswith(("grep ", "test ", "[ ")):
+        return "assertion"
+    if cmd.startswith(("cat ", "ls ", "echo ", "head ", "tail ", "wc ")):
+        return "observation"
+    return "assertion"  # conservative default
+
+
+def _compute_verification_quality(result: Dict) -> str:
+    """Rate: 'strong' (>=50% assertions), 'weak' (all observations), 'none' (no commands)."""
+    executed = [r for r in result.get("results", []) if not r.get("skipped")]
+    if not executed:
+        return "none"
+    assertions = [r for r in executed if r.get("kind") == "assertion"]
+    return "strong" if len(assertions) >= len(executed) / 2 else "weak"
+
+
+def _auto_verification_commands(plan_text: str) -> List[Dict]:
+    """Derive deterministic checks from ## Files Modified. No LLM writes these."""
+    cmds = []
+    files_match = re.search(
+        r"## Files Modified\s*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
+    if not files_match:
+        return cmds
+    for line in files_match.group(1).splitlines():
+        path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
+        if not path or not re.match(r"[\w./\-]+\.\w+", path):
+            continue
+        cmds.append({"command": f"test -f {path}", "skipped": False,
+                     "kind": "assertion", "auto_generated": True})
+        if path.endswith(".py") and not path.startswith("tests/"):
+            mod = path.replace("/", ".").replace(".py", "")
+            cmds.append({"command": f'python3 -c "import {mod}"', "skipped": False,
+                         "kind": "assertion", "auto_generated": True})
+        if re.match(r"tests?/test_.*\.py$", path):
+            cmds.append({"command": f"python3 -m pytest {path} -q --tb=no",
+                         "skipped": False, "kind": "assertion", "auto_generated": True})
+    return cmds
 
 
 def _run_verification_commands(verify_text: str, cwd: Path = None,
                                timeout_per_cmd: int = 120,
-                               timeout_total: int = 300) -> Dict:
+                               timeout_total: int = 300,
+                               extra_commands: List[Dict] = None) -> Dict:
     """Run plan verification commands independently via subprocess.
 
     The CAR verifies, not the DRIVER. Exit code 0 = PASS, nonzero = FAIL.
     Returns structured results for verdict gating and audit persistence.
     """
     commands = _parse_verification_commands(verify_text)
+    if extra_commands:
+        commands.extend(extra_commands)
     if not commands:
         return {"passed": True, "results": [], "total": 0,
                 "passed_count": 0, "failed_count": 0, "skipped_count": 0,
@@ -4677,6 +4734,7 @@ run the plan's verification commands after you complete (GT40 verification).
             "max_turns": 25,
             "_plan_path": str(plan_path),
             "_verify_text": verify_steps,
+            "_plan_text": plan_text,
         }
         existing_tasks.append(task)
 
