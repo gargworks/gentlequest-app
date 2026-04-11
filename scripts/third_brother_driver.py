@@ -4134,6 +4134,13 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 verification_quality=quality,
             )
 
+            _log_structured_outcome(
+                task, verdict, review,
+                verification_result=car_result,
+                verification_quality=quality,
+                duration_s=duration, turns=turns,
+            )
+
         log_shadow_raft(
             task=task,
             instruction=response.get("message", ""),
@@ -4415,6 +4422,86 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
     results[plan_filename] = entry
     results_path.write_text(json.dumps(results, indent=2) + "\n")
     print(f"[AUDIT] Recorded: {plan_filename} → {verdict}")
+
+
+STRUCTURED_OUTCOME_LOG = DRIVER_DIR / "structured_outcomes.jsonl"
+
+
+def _log_structured_outcome(task: Dict, verdict: str, review: Dict = None,
+                            verification_result: Dict = None,
+                            verification_quality: str = "none",
+                            duration_s: int = 0, turns: int = 0):
+    """Log structured audit outcome for process learning. Append-only JSONL."""
+    entry = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "task_id": task.get("id", ""),
+        "plan": Path(task.get("_plan_path", "")).name if task.get("_plan_path") else "",
+        "complexity_level": task.get("_complexity", {}).get("level", "unknown"),
+        "template_used": ("structured" if task.get("_complexity", {}).get("level")
+                          in ("medium", "complex") else "freeform"),
+        "file_count": task.get("_complexity", {}).get("file_count", 0),
+        "verdict": verdict,
+        "tb_verdict": review.get("verdict", "") if review else "",
+        "tb_confidence": review.get("confidence", 0) if review else 0,
+        "verification_quality": verification_quality,
+        "verification_passed": (verification_result["passed"]
+                                if verification_result else None),
+        "turns": turns,
+        "duration_s": round(duration_s),
+        "structure_version": "v2-phased",
+    }
+    STRUCTURED_OUTCOME_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(STRUCTURED_OUTCOME_LOG, "a") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
+def cmd_audit_stats():
+    """Print structured audit statistics from outcome log."""
+    if not STRUCTURED_OUTCOME_LOG.exists():
+        print("[AUDIT-STATS] No data yet. Run --audit-plans first.")
+        return
+    entries = []
+    for line in STRUCTURED_OUTCOME_LOG.read_text().splitlines():
+        if line.strip():
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    if not entries:
+        print("[AUDIT-STATS] No data yet.")
+        return
+
+    total = len(entries)
+    accepts = sum(1 for e in entries if e.get("verdict") == "ACCEPT")
+    print(f"\n{'=' * 50}")
+    print(f"  AUDIT STATISTICS ({total} audits)")
+    print(f"{'=' * 50}")
+    print(f"  ACCEPT rate: {accepts}/{total} ({100*accepts/total:.0f}%)")
+
+    # By complexity
+    print(f"\n  By complexity:")
+    for level in ("simple", "medium", "complex", "unknown"):
+        subset = [e for e in entries if e.get("complexity_level") == level]
+        if subset:
+            acc = sum(1 for e in subset if e.get("verdict") == "ACCEPT")
+            print(f"    {level:10s}: {acc}/{len(subset)} ACCEPT")
+
+    # By verification quality
+    print(f"\n  By verification quality:")
+    for q in ("strong", "weak", "none"):
+        subset = [e for e in entries if e.get("verification_quality") == q]
+        if subset:
+            acc = sum(1 for e in subset if e.get("verdict") == "ACCEPT")
+            print(f"    {q:10s}: {acc}/{len(subset)} ACCEPT")
+
+    # Averages
+    durations = [e.get("duration_s", 0) for e in entries if e.get("duration_s")]
+    turns_list = [e.get("turns", 0) for e in entries if e.get("turns")]
+    if durations:
+        print(f"\n  Avg duration: {sum(durations)/len(durations):.0f}s")
+    if turns_list:
+        print(f"  Avg turns: {sum(turns_list)/len(turns_list):.0f}")
+    print(f"{'=' * 50}\n")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -4937,6 +5024,8 @@ def main():
                         help="Re-audit all plans even if previously verified")
     parser.add_argument("--audit-abandon", nargs="+",
                         help="Mark plan file(s) as ABANDONED (auto-skipped in future audits)")
+    parser.add_argument("--audit-stats", action="store_true",
+                        help="Show structured audit statistics")
     parser.add_argument("--compound-audit", nargs="?", const=3, type=int,
                         help="Compound audit: measure -> close gaps -> verify (default: 3 tasks)")
     parser.add_argument("--verbose", action="store_true",
@@ -4960,6 +5049,8 @@ def main():
         print("Training export complete.")
     elif args.validate_shadow_log:
         cmd_validate_shadow_log()
+    elif getattr(args, 'audit_stats', False):
+        cmd_audit_stats()
     elif args.audit_abandon:
         for name in args.audit_abandon:
             # Accept both bare name and full path
