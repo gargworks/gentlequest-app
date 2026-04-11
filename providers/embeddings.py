@@ -42,8 +42,11 @@ def generate_embedding(text: str) -> Optional[List[float]]:
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
             llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(text, task_type="retrieval_document",
-                                       output_dimensionality=EMBEDDING_DIMENSION)
+            try:
+                result = llm.embed_content(text, task_type="retrieval_document",
+                                           output_dimensionality=EMBEDDING_DIMENSION)
+            except TypeError:
+                result = llm.embed_content(text, task_type="retrieval_document")
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
@@ -80,8 +83,11 @@ def generate_query_embedding(query: str) -> Optional[List[float]]:
         try:
             from mcp_server_nucleus.runtime.llm_client import DualEngineLLM
             llm = DualEngineLLM(EMBEDDING_MODEL, api_key=api_key)
-            result = llm.embed_content(query, task_type="retrieval_query",
-                                       output_dimensionality=EMBEDDING_DIMENSION)
+            try:
+                result = llm.embed_content(query, task_type="retrieval_query",
+                                           output_dimensionality=EMBEDDING_DIMENSION)
+            except TypeError:
+                result = llm.embed_content(query, task_type="retrieval_query")
             if result and 'embedding' in result:
                 return result['embedding']
         except ImportError:
