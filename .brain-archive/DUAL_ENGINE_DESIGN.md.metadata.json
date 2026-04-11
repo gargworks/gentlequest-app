@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Detailed plan for the 'Dual-Engine' LLM Client adapter, including error handling, fallback logic, and the interface that unifies both APIs.",
-  "updatedAt":  "2026-01-08T07:54:42.444301Z"
-}

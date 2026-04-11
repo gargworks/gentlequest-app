@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Investigation into why LLMs/Synthesizer avoid using MCP tools. Analyzes cognitive cost, prompt density, and alignment issues. Recommends 'Tool Thinning' and 'Directive Prompts' to fix tool avoidance.",
-  "updatedAt":  "2026-01-06T13:20:25.100496Z"
-}

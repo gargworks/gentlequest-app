@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Protocol for Phase 5.2.\nImplements `scripts/genesis_swarm.py` and `PlanWriterOps` to enable automated `IMPLEMENTATION_PLAN.md` generation.",
-  "updatedAt":  "2026-01-11T23:08:53.264988Z"
-}

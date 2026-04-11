@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Agent workflow protocol document that defines mandatory steps for starting and ending work sessions. Establishes Brain as the proactive controller rather than reactive database. Includes session start checklist, priority validation, and completion verification requirements.",
-  "updatedAt":  "2026-01-08T09:01:52.553861Z"
-}

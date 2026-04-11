@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Refined design document for Nucleus Satellite View feature. Covers unified 'nucleus status' command, performance optimization through tiered loading, sparkline activity visualization, integration with existing tools (depth, sessions, consolidation), and pragmatic 3-tier implementation roadmap.",
-  "updatedAt":  "2026-01-06T09:18:36.135205Z"
-}

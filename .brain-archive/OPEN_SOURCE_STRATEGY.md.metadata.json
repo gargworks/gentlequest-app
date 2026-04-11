@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Strategic decision on Open Source vs Proprietary. Recommends a hybrid model: NAR (Engine) is Open Source to encourage tool growth, but the User Context (Data) and Orchestration Logic (Workflows) remain private/proprietary. This protects the 'Moat' while leveraging community leverage.",
-  "updatedAt":  "2026-01-06T13:40:58.780809Z"
-}

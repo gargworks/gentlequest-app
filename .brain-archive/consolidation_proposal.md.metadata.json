@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Consolidation proposal to reduce cognitive load from 89 files in .brain/ to essential components. Categorizes files into Keep (core infrastructure), Archive (reference only), and Delete (unused). Proposes reducing Telegram commands from 6 to 3, freezing new agent definitions, and establishing a 7-day feature freeze.",
-  "updatedAt":  "2026-01-01T01:44:52.470769Z"
-}

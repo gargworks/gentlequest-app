@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Implementation plan for the Nucleus Agent Runtime (NAR). Focuses on the 'Context Factory' (Kernel), 'Ephemeral Agent' (Runtime), and 'Capability Registry' (Tools). Defines the goal of enabling 'Cognitive FaaS'.",
-  "updatedAt":  "2026-01-06T13:44:41.990286Z"
-}

@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_WALKTHROUGH",
-  "summary":  "Comprehensive operations guide for Nucleus v0.5.0 covering: GCP project setup, Native Sync (Phase 50 FileMonitor), GCloud Integration (Phase 49 GCloudOps), Cloud Build deployment workflow, Cloud Run service management, troubleshooting, and file references with links.",
-  "updatedAt":  "2026-01-08T20:53:39.208936Z"
-}

@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Cross-thread Brain sync protocol defining automatic event emission and state synchronization",
-  "updatedAt":  "2026-01-08T17:49:32.018411Z"
-}

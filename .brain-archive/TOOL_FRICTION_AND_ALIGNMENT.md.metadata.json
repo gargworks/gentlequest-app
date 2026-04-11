@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Analysis of why users prefer files (whiteboard) over tools (database tickets). detailed breakdown of friction in add_task, brain_add_loop, memory tools, and render tools. Conclusion: Tools should be invisible or read-only; files should be the interface.",
-  "updatedAt":  "2026-01-06T13:15:03.253154Z"
-}

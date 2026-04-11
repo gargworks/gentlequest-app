@@ -1,6 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Updated `workflow_health_assessment.md` with a new 'Industry Benchmarks (2025)' section. This section compares our stack (Antigravity+Nucleus+Nightly) against the standard 'Indie Hacker Stack' (Cursor+Windsurf+Perplexity). It validates our 'Nightly Agent' approach and highlights the opportunity to lean more into Windsurf for autonomous coding.",
-  "updatedAt":  "2025-12-30T02:32:33.692832Z",
-  "version":  "2"
-}

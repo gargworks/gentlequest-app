@@ -1,6 +1,0 @@
-{
-  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary": "Plan to resolve database authentication failure in `gentlequest-backend` and fix API proxy configuration in `nucleus-hud`.",
-  "updatedAt": "2026-01-14T23:08:22.694654Z",
-  "version": "46"
-}

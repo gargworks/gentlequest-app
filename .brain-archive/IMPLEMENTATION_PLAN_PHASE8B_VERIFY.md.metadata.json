@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Verification plan for Phase 8b (Outcome Dashboard).\nValidates `POST /api/self_assessment` and `GET /api/assessment/history` using a dedicated script.",
-  "updatedAt":  "2026-01-11T22:40:45.142686Z"
-}

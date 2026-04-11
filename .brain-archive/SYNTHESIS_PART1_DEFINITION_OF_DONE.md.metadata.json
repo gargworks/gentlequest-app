@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Synthesis of Part 1 interview responses. Defines the tiered 'Definition of Done' system: localhost validation for UI, backend tests, Render production validation, and App Store deployment. Identifies Render deploy latency (10-15 min) as key friction point.",
-  "updatedAt":  "2026-01-04T16:37:51.524992Z"
-}

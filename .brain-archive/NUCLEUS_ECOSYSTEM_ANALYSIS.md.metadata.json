@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "Analysis of the entire Nucleus MCP ecosystem (50+ tools) and how the Friction/Librarian model applies globally. Categorizes tools into 'Daily Driver' (Files) vs 'System' (Scanners) vs 'Power User' (Direct Calls). Recommends specialized agents for each tool category.",
-  "updatedAt":  "2026-01-06T13:23:51.063784Z"
-}

@@ -1,5 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_OTHER",
-  "summary":  "A persistent log of major architectural and strategic decisions (ADRs). Captures the Context, Decision, and Consequences of key choices ensuring the 'Why' survives thread deletion.",
-  "updatedAt":  "2026-01-04T15:08:22.725450Z"
-}

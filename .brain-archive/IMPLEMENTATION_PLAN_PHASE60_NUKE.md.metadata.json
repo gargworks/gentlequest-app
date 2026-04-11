@@ -1,6 +1,0 @@
-{
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Upgraded IMPLEMENTATION_PLAN_PHASE60_NUKE.md based on Simulation Results:\n1.  **Crypto Upgrade:** Explicitly mandate `Ed25519` via `cryptography` lib instead of UUID stubs.\n2.  **Safety Upgrade:** Explicitly mandate \"BudgetGuard\" wrapper in Loader to enforce Policy > Tool.\n3.  **Ethics Upgrade:** Add `state: tombstone` to Manifest Schema.",
-  "updatedAt":  "2026-01-12T21:39:05.256722Z",
-  "version":  "1"
-}
