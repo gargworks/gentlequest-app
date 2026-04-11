@@ -442,6 +442,12 @@ def _file_matches_scope(filepath: str, scope: List[str]) -> bool:
     return False
 
 
+# Nucleus infrastructure writes — ambient, not task output
+_INFRA_PREFIXES = (
+    ".brain/", "nucleus-mcp", "mcp-server-nucleus/scripts/sync_public_repo",
+)
+
+
 def check_scope_violations(git_diff: str, scope: List[str]) -> List[str]:
     """Parse git diff --stat output and return files outside scope."""
     if not git_diff or scope == ["**"]:
@@ -455,9 +461,42 @@ def check_scope_violations(git_diff: str, scope: List[str]) -> List[str]:
         filepath = line.split("|")[0].strip()
         if not filepath or filepath.startswith("("):
             continue
+        # Skip Nucleus infrastructure writes (ambient, not task output)
+        if any(filepath.startswith(p) for p in _INFRA_PREFIXES):
+            continue
         if not _file_matches_scope(filepath, scope):
             violations.append(filepath)
     return violations
+
+
+def _filter_diff_by_snapshot(git_diff_text: str, pre_snapshot: set) -> str:
+    """Remove git diff --stat lines for files already dirty before task execution."""
+    if not pre_snapshot or not git_diff_text:
+        return git_diff_text
+    # Parse porcelain status lines into filenames
+    pre_dirty = set()
+    for line in pre_snapshot:
+        parts = line.strip().split(None, 1)
+        if len(parts) >= 2:
+            # Handle renames: "R  old -> new"
+            pre_dirty.add(parts[1].split(" -> ")[-1].strip('"'))
+    if not pre_dirty:
+        return git_diff_text
+    filtered = []
+    for line in git_diff_text.strip().splitlines():
+        if "|" not in line:
+            # Summary line like " 5 files changed, ..."
+            continue
+        filepath = line.strip().split("|")[0].strip()
+        if filepath in pre_dirty:
+            continue
+        # git diff --stat truncates long paths with "..." prefix
+        if filepath.startswith("...") and any(
+            p.endswith(filepath[3:]) for p in pre_dirty
+        ):
+            continue
+        filtered.append(line)
+    return "\n".join(filtered)
 
 
 def auto_commit(task: Dict, pre_snapshot: set = None, pre_staged: set = None):
@@ -667,6 +706,17 @@ def classify_task(task: Dict, config: Dict) -> Dict:
             "confidence": 1.0,
         }
 
+    # Plan audit tasks: the plan IS the specification — no scout, tight turns
+    if task.get("source") == "plan_audit":
+        return {
+            "type": "investigate",
+            "needs_scout": False,
+            "max_turns": task.get("max_turns", 25),
+            "tools": v3.get("executor_tools_investigate", "Bash,Read,Glob,Grep,WebSearch"),
+            "confidence": 1.0,
+            "scout_turns": 0,
+        }
+
     text = f"{task.get('title', '')} {task.get('description', '')}".lower()
     words = set(text.split())
 
@@ -861,6 +911,64 @@ def _ollama_warmup(model: str):
 
 
 # ═══════════════════════════════════════════════════════════════
+# TB ENRICHMENT — situational awareness for prompt writer
+# ═══════════════════════════════════════════════════════════════
+
+def _gather_recent_history(task: Dict) -> str:
+    """Build situational awareness block for TB prompt writer.
+
+    Collects: previous attempts at this task, queue state, recent git log.
+    Returns a text block to inject into the TB prompt, or empty string.
+    """
+    sections = []
+    task_id = task.get("id", "")
+
+    # 1. Previous attempts at this task (from task description amendments)
+    desc = task.get("description", "")
+    prev_failures = [line for line in desc.split("\n") if "Previous failure:" in line]
+    if prev_failures:
+        sections.append(f"Previous attempts ({len(prev_failures)}):")
+        for pf in prev_failures[-3:]:  # last 3
+            sections.append(f"  {pf.strip()[:200]}")
+
+    # 2. Queue state
+    try:
+        tasks = load_tasks()
+        committed = sum(1 for t in tasks if t.get("status") == "committed")
+        completed = sum(1 for t in tasks if t.get("status") == "completed")
+        blocked = sum(1 for t in tasks if t.get("status") == "blocked")
+        sections.append(f"Queue: {committed} pending, {completed} done, {blocked} blocked")
+    except Exception:
+        pass
+
+    # 3. Recent git log (last 5 commits, one line each)
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-5"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(BRAIN_PATH.parent),
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            sections.append("Recent commits:")
+            for line in result.stdout.strip().splitlines():
+                sections.append(f"  {line[:120]}")
+    except Exception:
+        pass
+
+    # 4. CSR snapshot
+    try:
+        csr_path = BRAIN_PATH / "flywheel" / "csr.json"
+        if csr_path.exists():
+            csr = json.loads(csr_path.read_text())
+            ratio = csr.get("ratio", 1.0)
+            sections.append(f"CSR: {ratio:.1%} ({csr.get('claims_total', 0)} claims)")
+    except Exception:
+        pass
+
+    return "\n".join(sections) if sections else "(no history available)"
+
+
+# ═══════════════════════════════════════════════════════════════
 # TB PROMPT WRITER (v3 Phase C)
 # ═══════════════════════════════════════════════════════════════
 
@@ -879,6 +987,7 @@ def tb_write_enriched_prompt(task: Dict, context: str,
     timeout = v3.get("tb_prompt_timeout_seconds", 180)
 
     scout_text = scout_findings.get("raw", "") if scout_findings else ""
+    history_text = _gather_recent_history(task)
 
     ollama_prompt = f"""You are Third Brother, the project manager for the Nucleus codebase.
 Write a detailed instruction (300-500 words) for Claude Code to execute this task.
@@ -891,6 +1000,9 @@ Brain Context (from RAG):
 
 Scout Investigation Findings:
 {scout_text[:2000] if scout_text else '(no scout run)'}
+
+Situational Awareness:
+{history_text}
 
 Your instruction must include:
 - Specific file paths and line numbers from scout findings
@@ -1364,7 +1476,7 @@ REVIEW_LOG_PATH = DRIVER_DIR / "review_log.jsonl"
 
 
 def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
-                     config: Dict) -> tuple:
+                     config: Dict, pre_snapshot: set = None) -> tuple:
     """Inline follow-up on same session after DEEPEN verdict.
 
     Instead of re-queuing (losing context), immediately sends review feedback
@@ -1427,6 +1539,10 @@ def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
                 break
     except Exception:
         pass
+
+    # Filter out pre-existing dirty files (same as main execution path)
+    if pre_snapshot:
+        git_diff_text = _filter_diff_by_snapshot(git_diff_text, pre_snapshot)
 
     # Re-review the follow-up result
     review = tb_review_output(task, response, git_diff_text, config)
@@ -2052,6 +2168,23 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
     return current_phase, current_phase, "no phase change"
 
 
+def _clear_critical_alerts():
+    """Remove CRITICAL alerts from alerts.jsonl after demotion consumes them."""
+    if not ALERTS_PATH.exists():
+        return
+    lines = ALERTS_PATH.read_text().strip().split('\n')
+    kept = []
+    for line in lines:
+        try:
+            entry = json.loads(line)
+            if entry.get("severity") != "CRITICAL":
+                kept.append(line)
+        except json.JSONDecodeError:
+            kept.append(line)
+    ALERTS_PATH.write_text('\n'.join(kept) + '\n' if kept else '')
+    print(f"[TRUST] Cleared {len(lines) - len(kept)} consumed CRITICAL alerts")
+
+
 def apply_trust_ladder(config: Dict) -> int:
     """Evaluate and apply trust ladder changes. Returns new phase."""
     old_phase, new_phase, reason = evaluate_trust_ladder(config)
@@ -2071,7 +2204,212 @@ def apply_trust_ladder(config: Dict) -> int:
             reason,
         )
 
+        # Consume CRITICAL alerts after demotion — they triggered the response
+        if "CRITICAL trigger" in reason:
+            _clear_critical_alerts()
+
     return new_phase
+
+
+# ═══════════════════════════════════════════════════════════════
+# COMPOUND AUDIT — Scorecard + Degradation Guard
+# ═══════════════════════════════════════════════════════════════
+
+
+def _snapshot_scorecard() -> Dict:
+    """Capture running scores for degradation detection."""
+    # CSR via Flywheel class
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        csr_data = Flywheel(BRAIN_PATH).csr()
+    except Exception:
+        csr_data = {"ratio": 0, "claims_total": 0}
+
+    # Verification accuracy from verification_log.jsonl
+    vstats = load_verification_stats(50)
+
+    # Trust phase from config
+    config = load_config()
+    trust_phase = config.get("trust_ladder", {}).get("current_phase", 1)
+
+    # Task success rate from shadow log (last 20 entries)
+    task_total, task_success = 0, 0
+    if SHADOW_LOG_PATH.exists():
+        for line in SHADOW_LOG_PATH.read_text().strip().split('\n')[-20:]:
+            if line.strip():
+                try:
+                    e = json.loads(line)
+                    if e.get("outcome"):
+                        task_total += 1
+                        if e["outcome"] in ("completed", "success", "partial"):
+                            task_success += 1
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+    # Audit results
+    audit_path = BRAIN_PATH / "audit" / "results.json"
+    audit_results = {}
+    if audit_path.exists():
+        try:
+            audit_results = json.loads(audit_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    audit_accepts = sum(1 for r in audit_results.values() if r.get("verdict") == "ACCEPT")
+    audit_total = len(audit_results)
+
+    return {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "csr": csr_data.get("ratio", 0),
+        "csr_total": csr_data.get("claims_total", 0),
+        "trust_phase": trust_phase,
+        "verify_accuracy": vstats.get("accuracy", 0),
+        "verify_total": vstats.get("total", 0),
+        "task_success_rate": (task_success / task_total) if task_total else 0,
+        "task_total": task_total,
+        "audit_accept_rate": (audit_accepts / audit_total) if audit_total else 0,
+        "audit_total": audit_total,
+    }
+
+
+def _save_scorecard(label: str, scorecard: Dict):
+    """Persist scorecard snapshot to .brain/compound/scorecards.jsonl."""
+    compound_dir = BRAIN_PATH / "compound"
+    compound_dir.mkdir(parents=True, exist_ok=True)
+    path = compound_dir / "scorecards.jsonl"
+    entry = {"label": label, **scorecard}
+    with open(path, "a") as f:
+        f.write(json.dumps(entry) + "\n")
+    print(f"[COMPOUND-AUDIT] Scorecard '{label}': CSR={scorecard['csr']:.3f}, "
+          f"trust=P{scorecard['trust_phase']}, "
+          f"verify={scorecard['verify_accuracy']:.0%}, "
+          f"audit={scorecard['audit_accept_rate']:.0%} ({scorecard['audit_total']})")
+
+
+def _check_degradation(pre: Dict, post: Dict) -> List[str]:
+    """Compare pre/post scorecards. Return list of degraded metric descriptions."""
+    degraded = []
+    if post["csr"] < pre["csr"] - 0.05 and pre["csr_total"] > 10:
+        degraded.append(f"CSR: {pre['csr']:.3f} -> {post['csr']:.3f}")
+    if post["trust_phase"] < pre["trust_phase"]:
+        degraded.append(f"trust: P{pre['trust_phase']} -> P{post['trust_phase']}")
+    if post["verify_accuracy"] < pre["verify_accuracy"] - 0.10 and pre["verify_total"] > 5:
+        degraded.append(f"verify: {pre['verify_accuracy']:.0%} -> {post['verify_accuracy']:.0%}")
+    return degraded
+
+
+def _analyze_compound_signals() -> List[Dict]:
+    """Mine CSR failures, verification failures, hard negatives, and audit gaps for compound tasks."""
+    tasks = []
+
+    # Signal 1: Recurring CSR failure modes
+    failure_modes = {}
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        csr_data = Flywheel(BRAIN_PATH).csr()
+        for claim in csr_data.get("recent_claims", []):
+            if not claim.get("survived") and claim.get("reason"):
+                mode = claim["reason"].split(":")[0].strip()
+                failure_modes[mode] = failure_modes.get(mode, 0) + 1
+    except Exception:
+        pass
+
+    repeated = {m: c for m, c in failure_modes.items() if c >= 2}
+    if repeated:
+        top = sorted(repeated.items(), key=lambda x: -x[1])[:3]
+        modes_str = ", ".join(f"{m} ({c}x)" for m, c in top)
+        tasks.append({
+            "id": f"compound-csr-{top[0][0][:20]}",
+            "title": f"Fix recurring CSR failure: {top[0][0]}",
+            "description": f"Recurring failure modes in CSR: {modes_str}. "
+                           f"Investigate root cause and fix the underlying issue.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 1, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
+
+    # Signal 2: Verification failures (tiers that keep failing)
+    tier_failures = {}
+    if VERIFICATION_LOG_PATH.exists():
+        for line in VERIFICATION_LOG_PATH.read_text().strip().split('\n')[-50:]:
+            if line.strip():
+                try:
+                    e = json.loads(line)
+                    for tier in e.get("tiers_failed", []):
+                        tier_failures[tier] = tier_failures.get(tier, 0) + 1
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+    repeated_tiers = {t: c for t, c in tier_failures.items() if c >= 3}
+    if repeated_tiers:
+        top_tier = max(repeated_tiers, key=repeated_tiers.get)
+        tasks.append({
+            "id": f"compound-verify-tier{top_tier}",
+            "title": f"Fix verification gap: tier {top_tier} ({repeated_tiers[top_tier]}x failures)",
+            "description": f"Verification tier {top_tier} has failed {repeated_tiers[top_tier]} times "
+                           f"in the last 50 verifications. Investigate and fix.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 1, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
+
+    # Signal 3: Hard negatives in sparring bank
+    hard_neg_count = 0
+    if SPARRING_TASK_BANK_PATH.exists():
+        try:
+            with open(SPARRING_TASK_BANK_PATH) as f:
+                bank = json.load(f)
+            hard_neg_count = sum(1 for t in bank if t.get("source") == "hard_negative")
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    if hard_neg_count >= 3:
+        tasks.append({
+            "id": "compound-hard-negatives",
+            "title": f"Address {hard_neg_count} accumulated hard negatives",
+            "description": f"{hard_neg_count} hard negatives in sparring bank — "
+                           f"these represent systematic weaknesses. Review patterns and fix root causes.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 2, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
+
+    # Signal 4: Audit results — plans that failed verification
+    audit_path = BRAIN_PATH / "audit" / "results.json"
+    if audit_path.exists():
+        try:
+            audit_results = json.loads(audit_path.read_text())
+            incomplete = {k: v for k, v in audit_results.items() if v.get("verdict") != "ACCEPT"}
+            if incomplete:
+                names = ", ".join(list(incomplete.keys())[:3])
+                tasks.append({
+                    "id": "compound-audit-gaps",
+                    "title": f"Close {len(incomplete)} audit gap(s)",
+                    "description": f"Plans that failed audit verification: {names}. "
+                                   f"The system cannot do what was planned. "
+                                   f"Investigate: missing implementation, design flaw, or superseded plan?",
+                    "scope": ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"],
+                    "priority": 1, "status": "committed", "source": "compound_audit",
+                    "max_turns": 25,
+                })
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    return tasks
+
+
+def _print_compound_audit_summary(pre: Dict, post: Dict, compounded: List, rolled_back: List):
+    print("\n" + "=" * 60)
+    print("  COMPOUND AUDIT COMPLETE")
+    print(f"  CSR:       {pre['csr']:.3f} -> {post['csr']:.3f}")
+    print(f"  Trust:     P{pre['trust_phase']} -> P{post['trust_phase']}")
+    print(f"  Verify:    {pre['verify_accuracy']:.0%} -> {post['verify_accuracy']:.0%}")
+    print(f"  Tasks:     {pre['task_success_rate']:.0%} -> {post['task_success_rate']:.0%}")
+    print(f"  Audit:     {pre['audit_accept_rate']:.0%} -> {post['audit_accept_rate']:.0%} "
+          f"({post['audit_total']} plans)")
+    print(f"  Compounded: {len(compounded)} | Rolled back: {len(rolled_back)}")
+    if rolled_back:
+        print(f"  Rollbacks: {', '.join(rolled_back)}")
+    print("=" * 60)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2111,11 +2449,11 @@ def check_stale_session(session_id: str, config: Dict) -> bool:
 def ring_heartbeat_check():
     """RING 1: Check heartbeat triggers between tasks."""
     try:
-        from mcp_server_nucleus.runtime.heartbeat_ops import _evaluate_context_triggers
-        brain = {"path": str(BRAIN_PATH)}
-        triggers = _evaluate_context_triggers(brain)
+        from mcp_server_nucleus.runtime.heartbeat_ops import _heartbeat_check_impl
+        result = _heartbeat_check_impl(str(BRAIN_PATH))
+        triggers = result.get("triggers", [])
         if triggers:
-            names = [t.get("type", "?") for t in triggers] if isinstance(triggers, list) else [str(triggers)]
+            names = [t.get("type", "?") for t in triggers]
             print(f"[RING 1] Heartbeat triggers: {', '.join(names)}")
             return triggers
     except Exception as e:
@@ -2197,13 +2535,13 @@ def ring_knowledge_rules(task: Dict) -> str:
 def ring_emit_event(event_type: str, task: Dict, payload: Dict = None):
     """RING 3: Emit event to brain event stream."""
     try:
-        from mcp_server_nucleus.runtime.event_stream import emit_event
+        from mcp_server_nucleus.runtime.event_stream import emit_event, EventSeverity
         emit_event(
-            brain_path=str(BRAIN_PATH),
+            brain_path=BRAIN_PATH,
             event_type=event_type,
             emitter="third-brother-driver-v2",
             payload=payload or {"task_id": task["id"], "task_title": task["title"]},
-            severity="ROUTINE",
+            severity=EventSeverity.ROUTINE,
         )
     except Exception as e:
         print(f"[RING 3] Event emit: skip ({e.__class__.__name__})")
@@ -2282,8 +2620,10 @@ def ring_consolidation():
             _archive_resolved_files,
             _garbage_collect_tasks,
         )
-        archived = _archive_resolved_files()
-        gc_count = _garbage_collect_tasks(max_age_hours=72)
+        archive_result = _archive_resolved_files()
+        gc_result = _garbage_collect_tasks(max_age_hours=72)
+        archived = archive_result.get("files_moved", 0)
+        gc_count = gc_result.get("archived", 0)
         if archived or gc_count:
             print(f"[RING 6] Consolidation: {archived} archived, {gc_count} GC'd")
     except Exception as e:
@@ -2318,9 +2658,11 @@ def ring_archive_turn(task: Dict, outcome: str, response: Dict, duration: int):
             decisions=[f"task:{task['id']}"],
             actions=["claude-p-resume"],
             tools_used=["claude-code"],
+            signal_absorbed=list(task.get("scope", ["**"])),
+            signal_produced=[f"task:{task['id']}:{outcome}"],
             context=f"session-resume, {task.get('scope', ['**'])}",
             confidence=0.8 if outcome == "completed" else 0.3,
-            conversation=response.get("result", "")[:2000],
+            conversation=[{"role": "assistant", "content": response.get("result", "")[:2000]}],
         )
         print(f"[RING 8] Archive: turn recorded")
     except Exception as e:
@@ -2332,11 +2674,11 @@ def ring_selfheal_on_failure(task: Dict, error: str) -> str:
     try:
         from mcp_server_nucleus.selfhealer import (
             _get_intent_context,
-            _get_recent_changes,
+            _get_recent_history,
         )
-        intent = _get_intent_context(str(BRAIN_PATH))
-        changes = _get_recent_changes(str(PROJECT_ROOT))
-        diagnosis = f"Task {task['id']} failed: {error[:200]}\nIntent: {intent[:300]}\nRecent changes: {changes[:300]}"
+        intent = _get_intent_context(BRAIN_PATH)
+        changes = _get_recent_history()
+        diagnosis = f"Task {task['id']} failed: {error[:200]}\nIntent: {str(intent)[:300]}\nRecent changes: {str(changes)[:300]}"
         print(f"[RING 9] Self-heal: 4D context captured ({len(diagnosis)} chars)")
         return diagnosis
     except Exception as e:
@@ -2348,21 +2690,22 @@ def ring_engram_lookup(task: Dict) -> str:
     """RING 3+: Query engrams for task-relevant memory."""
     try:
         from mcp_server_nucleus.runtime.engram_ops import _brain_query_engrams_impl
-        results = _brain_query_engrams_impl(
+        raw = _brain_query_engrams_impl(
             context=task.get("title", ""),
-            min_intensity=0.5,
+            min_intensity=1,
             limit=5,
         )
-        if results and isinstance(results, dict):
-            engrams = results.get("engrams", [])
-            if engrams:
-                print(f"[RING 3+] Engrams: {len(engrams)} found")
-                lines = []
-                for e in engrams[:3]:
-                    key = e.get("key", "?")
-                    val = str(e.get("value", ""))[:150]
-                    lines.append(f"- {key}: {val}")
-                return "\n## Engram Memory\n" + "\n".join(lines) + "\n"
+        parsed = json.loads(raw) if isinstance(raw, str) else raw
+        data = parsed.get("data", {}) if isinstance(parsed, dict) else {}
+        engrams = data.get("engrams", [])
+        if engrams:
+            print(f"[RING 3+] Engrams: {len(engrams)} found")
+            lines = []
+            for e in engrams[:3]:
+                key = e.get("key", "?")
+                val = str(e.get("value", ""))[:150]
+                lines.append(f"- {key}: {val}")
+            return "\n## Engram Memory\n" + "\n".join(lines) + "\n"
     except Exception as e:
         print(f"[RING 3+] Engrams: skip ({e.__class__.__name__})")
     return ""
@@ -2518,7 +2861,7 @@ def ring_distill_replay(task: Dict) -> str:
     """RING 3+: Inject high-confidence DCAs from previous distillation."""
     try:
         from mcp_server_nucleus.replay import ReplayEngine
-        engine = ReplayEngine(str(BRAIN_PATH))
+        engine = ReplayEngine(BRAIN_PATH)
         atoms = engine.load_atoms()
         if atoms:
             filtered = engine.filter_atoms(atoms, min_confidence=0.8, max_atoms=3)
@@ -2526,12 +2869,49 @@ def ring_distill_replay(task: Dict) -> str:
                 print(f"[RING 3+] Replay: {len(filtered)} DCAs injected")
                 lines = []
                 for a in filtered:
-                    decision = getattr(a, 'decision', str(a))[:200]
+                    decision = (a.get("decision", "") if isinstance(a, dict) else str(a))[:200]
                     lines.append(f"- {decision}")
                 return "\n## Prior Decisions (high confidence)\n" + "\n".join(lines) + "\n"
     except Exception as e:
         print(f"[RING 3+] Replay: skip ({e.__class__.__name__})")
     return ""
+
+
+EXPERIMENTS_PATH = BRAIN_PATH / "experiments" / "experiments.json"
+
+
+def _append_experiment_result(task: Dict, review: Dict, verification: Dict, config: Dict):
+    """Record task outcome in the active experiment journal.
+
+    Tracks verification pass rate (CSR) and scope escalation rate
+    to measure whether the experiment's hypothesis holds.
+    """
+    exp_id = config.get("active_experiment", "")
+    if not exp_id or not EXPERIMENTS_PATH.exists():
+        return
+    try:
+        data = json.loads(EXPERIMENTS_PATH.read_text())
+        exp = next((e for e in data.get("experiments", []) if e["id"] == exp_id), None)
+        if not exp or exp.get("status") != "active":
+            return
+
+        exp["runs_in_experiment"] = exp.get("runs_in_experiment", 0) + 1
+        verified = verification.get("verified", True) if verification else True
+        escalated = review.get("verdict") == "ESCALATE"
+
+        # Track running CSR: verified_pass / total
+        total = exp["runs_in_experiment"]
+        # Use a simple running count stored in the experiment
+        prev_pass = exp.get("_verified_pass", 0)
+        if verified and not escalated:
+            prev_pass += 1
+        exp["_verified_pass"] = prev_pass
+        exp["csr_delta"] = round(prev_pass / total - exp.get("baseline_csr", 0), 4)
+
+        data["last_updated"] = datetime.now().isoformat()
+        EXPERIMENTS_PATH.write_text(json.dumps(data, indent=2))
+    except Exception as e:
+        print(f"[EXPERIMENT] Update failed (non-fatal): {e}")
 
 
 def generate_session_report(session_id: str, driver_start_time: datetime = None):
@@ -2772,13 +3152,17 @@ def _build_task_prompt(task: Dict, enriched_context: str, config: Dict,
             _fw_file_ticket("phase_b_scout", task_id, str(e), config)
             scout_findings = {}
 
-    try:
-        tb_prompt = tb_write_enriched_prompt(task, enriched_context, scout_findings, config)
-        # None is a legitimate fallback (template), not a failure — still a survived outcome.
-        _fw_record_survived("phase_c_prompt_writer", task_id, config)
-    except Exception as e:
-        _fw_file_ticket("phase_c_prompt_writer", task_id, str(e), config)
+    # Audit tasks: the task description IS the prompt — don't let TB rewrite it
+    if task.get("source") == "plan_audit":
         tb_prompt = None
+    else:
+        try:
+            tb_prompt = tb_write_enriched_prompt(task, enriched_context, scout_findings, config)
+            # None is a legitimate fallback (template), not a failure — still a survived outcome.
+            _fw_record_survived("phase_c_prompt_writer", task_id, config)
+        except Exception as e:
+            _fw_file_ticket("phase_c_prompt_writer", task_id, str(e), config)
+            tb_prompt = None
 
     if tb_prompt:
         message = tb_prompt
@@ -3443,6 +3827,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     print(f"[VERIFY] Error (non-fatal): {e}")
 
             # ── Programmatic scope check (hard gate — no LLM judgment) ──
+            # Filter out files that were already dirty before task execution
+            git_diff_text = _filter_diff_by_snapshot(git_diff_text, pre_snapshot)
             task_scope = task.get("scope", ["**"])
             scope_violations = check_scope_violations(git_diff_text, task_scope)
             if scope_violations:
@@ -3454,8 +3840,9 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     "reason": f"Scope violation: {violation_list} modified outside allowed scope {task_scope}",
                     "confidence": 1.0,
                 }
-                log_alert("scope_violation", task_id, "escalated",
-                          f"Files outside scope: {violation_list}", "WARNING")
+                if not task_id.startswith("sparring-"):
+                    log_alert("scope_violation", task_id, "escalated",
+                              f"Files outside scope: {violation_list}", "WARNING")
             else:
                 try:
                     review = tb_review_output(task, response, git_diff_text, config)
@@ -3486,7 +3873,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     print(f"[REVIEW] DEEPEN {deepen_count}/{max_chain}: inline follow-up")
                     pre_result = response.get("result", "")
                     response, review = deepen_follow_up(
-                        task, deepen_notes, session_id, config)
+                        task, deepen_notes, session_id, config, pre_snapshot)
                     response["tb_review"] = review
                     # Capture B: DEEPEN DPO pair
                     if config.get("training_capture_enabled", True):
@@ -3501,20 +3888,28 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     update_task_status(task_id, "committed")
                     print(f"[REVIEW] DEEPEN: exhausted {max_chain} inline retries, re-queuing")
                     _log_hard_negative(task, "deepen_exhausted", deepen_notes)
+                    _fw_file_ticket("task_outcome", task_id,
+                                    f"deepen_exhausted: {deepen_notes[:200]}", config)
                 elif review["verdict"] == "ESCALATE":
                     _review_action = "escalate"
-                    log_alert("tb_review_escalate", task_id, "escalated",
-                              review.get("reason", ""), "WARNING")
+                    if not task_id.startswith("sparring-"):
+                        log_alert("tb_review_escalate", task_id, "escalated",
+                                  review.get("reason", ""), "WARNING")
                     update_task_status(task_id, "blocked")
                     print(f"[REVIEW] ESCALATE after deepen: {task_id} blocked")
                     _log_hard_negative(task, "escalated_after_deepen", review.get("reason", ""))
+                    _fw_file_ticket("task_outcome", task_id,
+                                    f"escalate_after_deepen: {review.get('reason', '')[:200]}", config)
             elif review["verdict"] == "ESCALATE":
                 _review_action = "escalate"
-                log_alert("tb_review_escalate", task_id, "escalated",
-                          review.get("reason", ""), "WARNING")
+                if not task_id.startswith("sparring-"):
+                    log_alert("tb_review_escalate", task_id, "escalated",
+                              review.get("reason", ""), "WARNING")
                 update_task_status(task_id, "blocked")
                 print(f"[REVIEW] ESCALATE: {task_id} blocked for human review")
                 _log_hard_negative(task, "escalated", review.get("reason", ""))
+                _fw_file_ticket("task_outcome", task_id,
+                                f"escalate: {review.get('reason', '')[:200]}", config)
 
             # ── Sparring: score Phase C+D output for training data ──
             if config.get("training_capture_enabled", True):
@@ -3535,7 +3930,9 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             print(f"[DRIVER] CRASH during {task_id}: {failure_reason}")
             update_task_status(task_id, "failed", failure_reason=failure_reason)
             save_state("crash_recovered", task, session_id=session_id)
-            log_alert("session_crash", task_id, "failed", failure_reason, "ERROR")
+            if not task_id.startswith("sparring-"):
+                log_alert("session_crash", task_id, "failed", failure_reason, "ERROR")
+            _fw_file_ticket("task_outcome", task_id, failure_reason, config)
             ring_depth_pop()
             ring_emit_event("task_crashed", task, {
                 "task_id": task_id, "error": failure_reason,
@@ -3567,6 +3964,14 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             tasks_on_current_session = 0
             save_state("rotating", session_id=session_id)
 
+        # Every attempted task counts toward max_tasks limit
+        tasks_completed += 1
+
+        # Experiment journal: track every attempted task (including escalated/sparring)
+        _append_experiment_result(
+            task, response.get("tb_review", {}),
+            response.get("verification"), config)
+
         # Handle review actions outside the lock
         if _review_action:
             ring_depth_pop()
@@ -3592,15 +3997,19 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             continue
         elif response.get("outcome") == "timeout":
             outcome = "timeout"
+            _fw_file_ticket("task_outcome", task_id, "timeout", config)
         elif result_text and "prompt is too long" in result_text.lower():
             # Session context exhausted — rotate to fresh session
             outcome = "session_exhausted"
             update_task_status(task_id, "committed")
             session_exhaustion_count += 1
-            log_run(task, "session_exhausted", turns=turns, duration_seconds=duration,
-                    failure_reason="prompt too long",
-                    retry_count=response.get("retry_count", 0),
-                    session_id=session_id)
+            if not task_id.startswith("sparring-"):
+                log_run(task, "session_exhausted", turns=turns, duration_seconds=duration,
+                        failure_reason="prompt too long",
+                        retry_count=response.get("retry_count", 0),
+                        session_id=session_id)
+
+            _fw_file_ticket("task_outcome", task_id, "session_exhausted", config)
 
             if session_exhaustion_count >= MAX_SESSION_ROTATIONS:
                 print(f"[DRIVER] Session exhausted {session_exhaustion_count} times. Stopping.")
@@ -3626,7 +4035,6 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             ring_selfheal_on_failure(task, result_text[:500])
 
         update_task_status(task_id, outcome)
-        tasks_completed += 1
         ctx_metrics = response.get("context_metrics")
         save_state(outcome, task, session_id=session_id, context_metrics=ctx_metrics)
 
@@ -3634,6 +4042,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             write_session_state(session_id, branch,
                                 [t for t in load_tasks() if t.get("status") == "completed"],
                                 config)
+            _fw_record_survived("task_outcome", task_id, config)
 
         # ── RING 10: Quick eval every 5th completed task ──
         completed_count = sum(1 for t in load_tasks() if t.get("status") == "completed")
@@ -3643,9 +4052,73 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             if eval_score is not None:
                 check_eval_regression(eval_score)
 
-        log_run(task, outcome, turns=turns, duration_seconds=duration,
-                retry_count=response.get("retry_count", 0),
-                session_id=session_id, eval_score=eval_score)
+        if not task_id.startswith("sparring-"):
+            log_run(task, outcome, turns=turns, duration_seconds=duration,
+                    retry_count=response.get("retry_count", 0),
+                    session_id=session_id, eval_score=eval_score)
+
+        # ── GT40: Two-gate verdict for audit results ──
+        if task.get("source") == "plan_audit" and task.get("_plan_path"):
+            # Gate 1: Claude completed Steps 1+2
+            claude_passed = (outcome == "completed")
+
+            # Gate 2: Car's independent verification (GT40 onboard diagnostics)
+            verify_text = task.get("_verify_text", "")
+            car_result = None
+            car_passed = True  # no verification section = skip gate 2
+            if verify_text and claude_passed:
+                print(f"[GT40] Running independent verification for "
+                      f"{Path(task['_plan_path']).name}...")
+                car_result = _run_verification_commands(verify_text)
+                _print_verification_report(car_result)
+                car_passed = car_result["passed"]
+
+            # Both gates must pass for ACCEPT
+            if claude_passed and car_passed:
+                verdict = "ACCEPT"
+            elif claude_passed and not car_passed:
+                # GT40 retry: feed failure details back to Claude for one fix attempt
+                failed_cmds = [r for r in car_result["results"]
+                               if r.get("passed") is False]
+                failure_report = "\n".join(
+                    f"  FAIL: `{r['command']}`\n"
+                    f"    exit_code={r.get('exit_code')}\n"
+                    f"    stderr: {r.get('stderr', '')[:200]}"
+                    for r in failed_cmds)
+                retry_prompt = (
+                    f"GT40 independent verification found {len(failed_cmds)} "
+                    f"failure(s):\n{failure_report}\n\n"
+                    "Fix these failures so the verification commands pass. "
+                    "When done, summarize what you fixed."
+                )
+                print(f"[GT40] Verification FAILED — retrying with failure feedback...")
+                config = load_config()
+                retry_response, _ = deepen_follow_up(
+                    task, retry_prompt, session_id, config, None)
+
+                # Re-run GT40 after fix attempt
+                car_result_2 = _run_verification_commands(verify_text)
+                _print_verification_report(car_result_2)
+                if car_result_2["passed"]:
+                    verdict = "ACCEPT"
+                    car_result = car_result_2
+                    print("[GT40] Retry succeeded — ACCEPT")
+                else:
+                    verdict = "VERIFY_FAILED"
+                    car_result = car_result_2
+                    print("[GT40] Retry failed — VERIFY_FAILED")
+            else:
+                verdict = "INCOMPLETE"
+
+            _record_audit_result(
+                plan_filename=Path(task["_plan_path"]).name,
+                plan_mtime=os.path.getmtime(task["_plan_path"]),
+                verdict=verdict,
+                turns=turns,
+                duration_s=duration,
+                session_id=session_id,
+                verification=car_result,
+            )
 
         log_shadow_raft(
             task=task,
@@ -3696,7 +4169,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
         # ── Webhook: notify external systems ──
         fire_task_webhook(task, outcome, duration, turns, config)
 
-        apply_trust_ladder(config)
+        if not task_id.startswith("sparring-"):
+            apply_trust_ladder(config)
 
         print(f"[DRIVER] Task {task_id}: {outcome} ({duration}s, {turns} turns)")
         print(f"[DRIVER] ═══════════════════════════════════════════\n")
@@ -3892,6 +4366,408 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
         print(f"[SPARRING] Cleaned up {len(sparring_ids)} sparring tasks from tasks.json")
 
 
+def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
+                         session_id, verification=None):
+    """Persist audit verdict so future runs auto-skip verified plans."""
+    audit_dir = BRAIN_PATH / "audit"
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    results_path = audit_dir / "results.json"
+
+    results = {}
+    if results_path.exists():
+        try:
+            results = json.loads(results_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            results = {}
+
+    entry = {
+        "verdict": verdict,
+        "audited_at": datetime.now().isoformat(timespec="seconds"),
+        "plan_mtime": datetime.fromtimestamp(plan_mtime).isoformat(timespec="seconds"),
+        "turns": turns,
+        "duration_s": round(duration_s),
+        "session_id": session_id[:16] if session_id else "",
+    }
+    if verification:
+        entry["verification"] = {
+            "passed": verification["passed"],
+            "passed_count": verification["passed_count"],
+            "failed_count": verification["failed_count"],
+            "skipped_count": verification["skipped_count"],
+            "duration_s": verification["duration_s"],
+        }
+    results[plan_filename] = entry
+    results_path.write_text(json.dumps(results, indent=2) + "\n")
+    print(f"[AUDIT] Recorded: {plan_filename} → {verdict}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# GT40 — Script-level independent verification (the Car verifies)
+# ═══════════════════════════════════════════════════════════════
+
+_RECURSION_GUARDS = {"--audit-plans", "--compound-audit", "--sparring", "--compound"}
+
+def _parse_verification_commands(verify_text: str) -> List[Dict]:
+    """Extract runnable shell commands from plan verification markdown.
+
+    Parses numbered lists, bullets, and inline backtick commands.
+    Skips prose-only lines and recursive driver invocations.
+    """
+    commands = []
+    for line in verify_text.split('\n'):
+        line = line.strip().lstrip('0123456789.-) ')
+        # Extract backtick-wrapped commands
+        match = re.search(r'`([^`]+)`', line)
+        if not match:
+            continue
+        cmd = match.group(1).strip()
+        if not cmd or len(cmd) < 3:
+            continue
+        # Recursion guard — never invoke the driver from within its own verification
+        if any(guard in cmd for guard in _RECURSION_GUARDS):
+            commands.append({"command": cmd, "skipped": True,
+                           "skip_reason": "recursion guard"})
+            continue
+        # Skip non-shell commands (prose in backticks like `ratio < 1.0`)
+        if not any(cmd.startswith(p) for p in (
+            "python", "cat", "grep", "ls", "cd", "npm", "node",
+            "pytest", "bash", "sh", "./", "make", "curl", "git")):
+            continue
+        commands.append({"command": cmd, "skipped": False})
+    return commands
+
+
+def _run_verification_commands(verify_text: str, cwd: Path = None,
+                               timeout_per_cmd: int = 120,
+                               timeout_total: int = 300) -> Dict:
+    """Run plan verification commands independently via subprocess.
+
+    The CAR verifies, not the DRIVER. Exit code 0 = PASS, nonzero = FAIL.
+    Returns structured results for verdict gating and audit persistence.
+    """
+    commands = _parse_verification_commands(verify_text)
+    if not commands:
+        return {"passed": True, "results": [], "total": 0,
+                "passed_count": 0, "failed_count": 0, "skipped_count": 0,
+                "duration_s": 0, "note": "no parseable commands in verification section"}
+
+    results = []
+    start = time.time()
+    for cmd_info in commands:
+        if cmd_info.get("skipped"):
+            results.append({**cmd_info, "exit_code": None, "stdout": "", "stderr": "",
+                          "passed": None, "duration_s": 0})
+            continue
+        # Total timeout guard
+        elapsed = time.time() - start
+        if elapsed > timeout_total:
+            results.append({**cmd_info, "exit_code": None, "stdout": "",
+                          "stderr": "total timeout exceeded", "passed": None,
+                          "skipped": True, "skip_reason": "total timeout", "duration_s": 0})
+            continue
+        cmd_start = time.time()
+        try:
+            result = subprocess.run(
+                cmd_info["command"], shell=True, capture_output=True, text=True,
+                timeout=timeout_per_cmd, cwd=str(cwd or PROJECT_ROOT))
+            results.append({
+                "command": cmd_info["command"],
+                "exit_code": result.returncode,
+                "stdout": result.stdout[-500:] if result.stdout else "",
+                "stderr": result.stderr[-500:] if result.stderr else "",
+                "passed": result.returncode == 0,
+                "skipped": False,
+                "duration_s": round(time.time() - cmd_start, 1),
+            })
+        except subprocess.TimeoutExpired:
+            results.append({
+                "command": cmd_info["command"],
+                "exit_code": None, "stdout": "", "stderr": "command timed out",
+                "passed": False, "skipped": False,
+                "skip_reason": f"timeout ({timeout_per_cmd}s)",
+                "duration_s": timeout_per_cmd,
+            })
+
+    passed_results = [r for r in results if r.get("passed") is True]
+    failed_results = [r for r in results if r.get("passed") is False]
+    skipped_results = [r for r in results if r.get("passed") is None]
+
+    return {
+        "passed": len(failed_results) == 0,
+        "results": results,
+        "total": len(results),
+        "passed_count": len(passed_results),
+        "failed_count": len(failed_results),
+        "skipped_count": len(skipped_results),
+        "duration_s": round(time.time() - start, 1),
+    }
+
+
+def _print_verification_report(result: Dict):
+    """Print GT40 independent verification results."""
+    print(f"\n{'=' * 50}")
+    print(f"  GT40 INDEPENDENT VERIFICATION")
+    print(f"{'=' * 50}")
+    for r in result["results"]:
+        if r.get("skipped") or r.get("passed") is None:
+            status = f"SKIP ({r.get('skip_reason', '')})"
+        elif r.get("passed"):
+            status = "PASS"
+        else:
+            status = f"FAIL (exit {r.get('exit_code')})"
+        print(f"  [{status:20s}] {r['command'][:60]}")
+        if r.get("stderr") and r.get("passed") is False:
+            print(f"                       stderr: {r['stderr'][:100]}")
+    print(f"\n  Result: {'ALL PASSED' if result['passed'] else 'FAILURES DETECTED'}")
+    print(f"  {result['passed_count']} passed, {result['failed_count']} failed, "
+          f"{result['skipped_count']} skipped ({result['duration_s']}s)")
+    print(f"{'=' * 50}\n")
+
+
+def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int = 0, force: bool = False):
+    """Accountability loop: walk plans newest-to-oldest, verify + implement each.
+
+    For each plan:
+      1. Read the plan file
+      2. Verify each change against the codebase
+      3. Implement anything missing
+      4. Run tests / live-fire verification
+      5. Move to next (older) plan — less work each time
+
+    Usage: python3 scripts/third_brother_driver.py --audit-plans 3
+    """
+    plans_dir = Path.home() / ".claude" / "plans"
+    if not plans_dir.exists():
+        print(f"[AUDIT] Plans directory not found: {plans_dir}")
+        return
+
+    # Collect plan files sorted newest first
+    plan_files = sorted(plans_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not plan_files:
+        print("[AUDIT] No plan files found.")
+        return
+
+    # Auto-skip plans already verified or abandoned (unless --audit-force)
+    if not force:
+        audit_results_path = BRAIN_PATH / "audit" / "results.json"
+        prev_results = {}
+        if audit_results_path.exists():
+            try:
+                prev_results = json.loads(audit_results_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                prev_results = {}
+
+        unverified = []
+        skipped_names = []
+        for p in plan_files:
+            result = prev_results.get(p.name)
+            if result and result.get("verdict") in ("ACCEPT", "ABANDONED"):
+                plan_mtime = datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds")
+                if plan_mtime <= result.get("plan_mtime", ""):
+                    skipped_names.append(p.name)
+                    continue
+            unverified.append(p)
+
+        if skipped_names:
+            print(f"[AUDIT] Auto-skipped {len(skipped_names)} verified/abandoned plans: {', '.join(skipped_names[:5])}")
+    else:
+        unverified = list(plan_files)
+        print("[AUDIT] Force mode: re-auditing all plans")
+
+    plans_to_audit = unverified[skip:skip + max_plans]
+    print(f"[AUDIT] Found {len(plan_files)} plans, auditing {len(plans_to_audit)} (newest first)")
+    for i, p in enumerate(plans_to_audit):
+        print(f"  {i}: {p.name}")
+
+    # Read each plan and create audit tasks
+    existing_tasks = load_tasks()
+    audit_ids = []
+
+    for i, plan_path in enumerate(plans_to_audit):
+        task_id = f"audit-{i:03d}"
+        audit_ids.append(task_id)
+
+        plan_text = plan_path.read_text()
+
+        # Extract title from first markdown heading
+        title_match = re.search(r"^#\s+(?:Plan:\s*)?(.+)$", plan_text, re.MULTILINE)
+        plan_title = title_match.group(1).strip() if title_match else plan_path.stem
+
+        # Extract "Files Modified" section for scope
+        scope = ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"]
+        files_match = re.search(r"## Files Modified\s*\n((?:- .+\n?)+)", plan_text)
+        if files_match:
+            file_lines = files_match.group(1).strip().splitlines()
+            scope = []
+            for line in file_lines:
+                path = re.sub(r"^-\s*`?|`?\s*—.*$", "", line).strip()
+                if path:
+                    scope.append(path)
+
+        # Extract "Verification" section for live-fire step
+        verify_match = re.search(
+            r"## Verification[^\n]*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
+        verify_steps = verify_match.group(1).strip() if verify_match else ""
+
+        # GT40 pre-flight: check if verification already passes (informational)
+        # NOTE: Pre-flight passing does NOT auto-ACCEPT — verification passing
+        # doesn't mean the plan's code changes exist. Claude still does Step 1
+        # (reality check). Pre-flight just tells us what to expect post-audit.
+        if verify_steps:
+            preflight = _run_verification_commands(verify_steps)
+            runnable = [r for r in preflight["results"]
+                        if r.get("passed") is not None and not r.get("skipped")]
+            if runnable and preflight["passed"]:
+                print(f"[GT40-PREFLIGHT] {plan_path.name}: ALL PASS (Claude still audits)")
+            elif runnable:
+                failed = [r for r in preflight["results"] if r.get("passed") is False]
+                print(f"[GT40-PREFLIGHT] {plan_path.name}: {len(failed)} FAIL "
+                      f"— Claude will attempt fixes")
+
+        # Build the accountability prompt — Steps 1+2 for Claude, Step 3 is GT40's job
+        description = f"""## Plan Audit: {plan_title}
+Source: {plan_path.name}
+
+### Your job
+
+You are running the **accountability loop**. This plan was written but may not
+have been fully implemented. Walk through it systematically:
+
+**Step 1 — Verify against reality:**
+For EACH change listed in the plan, check if it exists in the codebase.
+Use Grep/Read to confirm functions, files, and wiring are present.
+Report a table: Change | Status (DONE / MISSING / PARTIAL).
+
+**Step 2 — Implement what's missing:**
+For any MISSING or PARTIAL changes, implement them exactly as specified
+in the plan. Follow the plan's code snippets and line references.
+
+**Step 3 — Document changes:**
+Summarize what you found (Step 1) and what you implemented (Step 2).
+List any changes you skipped and why. The driver will independently
+run the plan's verification commands after you complete (GT40 verification).
+
+### The Plan
+
+{plan_text}
+
+### Constraints
+- Do NOT commit changes (the driver handles commits)
+- Do NOT modify files outside the plan's scope
+- If a planned change conflicts with current code, skip it and note why
+- If ALL steps in Step 1 are DONE, report "All changes verified"
+"""
+
+        task = {
+            "id": task_id,
+            "title": f"Audit: {plan_title[:60]}",
+            "description": description,
+            "scope": scope,
+            "priority": 1,
+            "status": "committed",
+            "source": "plan_audit",
+            "max_turns": 25,
+            "_plan_path": str(plan_path),
+            "_verify_text": verify_steps,
+        }
+        existing_tasks.append(task)
+
+    save_tasks(existing_tasks)
+    print(f"[AUDIT] Injected {len(audit_ids)} audit tasks into queue")
+
+    # Clear stale session state — audit must start fresh, not resume old context
+    if STATE_PATH.exists():
+        prev = json.loads(STATE_PATH.read_text())
+        prev["session_id"] = ""
+        STATE_PATH.write_text(json.dumps(prev))
+        print("[AUDIT] Cleared stale session state — starting fresh")
+
+    try:
+        run_driver("", mode="autonomous", branch=branch, max_tasks=len(audit_ids))
+    finally:
+        # Clean up audit tasks from tasks.json
+        tasks = load_tasks()
+        tasks = [t for t in tasks if t.get("id") not in audit_ids]
+        save_tasks(tasks)
+        print(f"[AUDIT] Cleaned up {len(audit_ids)} audit tasks from tasks.json")
+
+
+def run_compound_audit_mode(max_tasks: int, branch: str):
+    """Automated compound step: measure -> identify gaps -> close gaps -> verify.
+
+    Safety: git tag before each step, scorecard before/after, rollback on degradation.
+    Usage: python3 scripts/third_brother_driver.py --compound-audit 3
+    """
+    print("=" * 60)
+    print("  COMPOUND AUDIT — Measure + Compound + Verify")
+    print("=" * 60)
+
+    # Phase 1: Pre-scorecard + checkpoint
+    pre_scorecard = _snapshot_scorecard()
+    _save_scorecard("compound-pre", pre_scorecard)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    git("tag", f"compound-pre-{ts}")
+    print(f"[COMPOUND-AUDIT] Checkpoint: compound-pre-{ts}")
+
+    # Phase 2: Analyze existing signals for compound opportunities
+    print("\n[COMPOUND-AUDIT] Analyzing signals (CSR, verification, hard negatives, audit)...")
+    compound_tasks = _analyze_compound_signals()
+
+    if not compound_tasks:
+        print("[COMPOUND-AUDIT] No compound opportunities — loop is clean")
+        post_scorecard = _snapshot_scorecard()
+        _save_scorecard("compound-post-noop", post_scorecard)
+        _print_compound_audit_summary(pre_scorecard, post_scorecard, [], [])
+        return
+
+    # Cap at max_tasks
+    compound_tasks = compound_tasks[:max_tasks]
+    print(f"[COMPOUND-AUDIT] Found {len(compound_tasks)} compound tasks")
+
+    # Phase 3: Execute with per-step checkpointing
+    compounded = []
+    rolled_back = []
+
+    for task in compound_tasks:
+        print(f"\n[COMPOUND-AUDIT] Executing: {task['title']}")
+        step_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        git("tag", f"compound-step-{step_ts}")
+        step_pre = _snapshot_scorecard()
+
+        # Inject task and run
+        existing = load_tasks()
+        existing.append(task)
+        save_tasks(existing)
+
+        try:
+            run_driver("", mode="autonomous", branch=branch, max_tasks=1)
+        finally:
+            tasks = load_tasks()
+            tasks = [t for t in tasks if t.get("id") != task["id"]]
+            save_tasks(tasks)
+
+        step_post = _snapshot_scorecard()
+        degraded = _check_degradation(step_pre, step_post)
+
+        if degraded:
+            print(f"[COMPOUND-AUDIT] DEGRADATION: {', '.join(degraded)}")
+            print(f"[COMPOUND-AUDIT] Rolling back to compound-step-{step_ts}")
+            git("checkout", f"compound-step-{step_ts}", "--", ".")
+            _log_hard_negative(task, "compound_degradation",
+                               f"Rolled back: {', '.join(degraded)}")
+            _fw_file_ticket("compound_audit", task["id"],
+                            f"compound_degradation: {', '.join(degraded)}", load_config())
+            rolled_back.append(task["id"])
+        else:
+            compounded.append(task["id"])
+            print(f"[COMPOUND-AUDIT] {task['id']}: OK")
+
+    # Final scorecard
+    final_scorecard = _snapshot_scorecard()
+    _save_scorecard(f"compound-post-{ts}", final_scorecard)
+    _print_compound_audit_summary(pre_scorecard, final_scorecard, compounded, rolled_back)
+
+
 def run_compound_mode(branch: str, sparring_rounds: int = 5):
     """The exponential loop: real tasks → sparring on hard negatives → export training.
 
@@ -3987,6 +4863,16 @@ def main():
                         help="Run N sparring rounds from task bank (default: 10)")
     parser.add_argument("--compound", nargs="?", const=5, type=int,
                         help="Exponential loop: real tasks → sparring (N rounds, default 5) → export training")
+    parser.add_argument("--audit-plans", nargs="?", const=3, type=int,
+                        help="Accountability loop: verify N plans newest-to-oldest (default: 3)")
+    parser.add_argument("--audit-skip", type=int, default=0,
+                        help="Skip N newest plans before auditing (use with --audit-plans)")
+    parser.add_argument("--audit-force", action="store_true",
+                        help="Re-audit all plans even if previously verified")
+    parser.add_argument("--audit-abandon", nargs="+",
+                        help="Mark plan file(s) as ABANDONED (auto-skipped in future audits)")
+    parser.add_argument("--compound-audit", nargs="?", const=3, type=int,
+                        help="Compound audit: measure -> close gaps -> verify (default: 3 tasks)")
     parser.add_argument("--verbose", action="store_true",
                         help="Log every Ollama call's input and output to stdout")
     args = parser.parse_args()
@@ -4008,9 +4894,34 @@ def main():
         print("Training export complete.")
     elif args.validate_shadow_log:
         cmd_validate_shadow_log()
+    elif args.audit_abandon:
+        for name in args.audit_abandon:
+            # Accept both bare name and full path
+            plan_name = Path(name).name if "/" in name else name
+            if not plan_name.endswith(".md"):
+                plan_name += ".md"
+            plan_path = Path.home() / ".claude" / "plans" / plan_name
+            if not plan_path.exists():
+                print(f"[AUDIT] Plan not found: {plan_name}")
+                continue
+            _record_audit_result(
+                plan_filename=plan_name,
+                plan_mtime=plan_path.stat().st_mtime,
+                verdict="ABANDONED",
+                turns=0, duration_s=0, session_id="",
+            )
+        print(f"[AUDIT] Marked {len(args.audit_abandon)} plan(s) as ABANDONED")
+    elif args.compound_audit is not None:
+        branch = args.branch or "tb/compound-audit"
+        run_compound_audit_mode(args.compound_audit, branch)
     elif args.compound is not None:
         branch = args.branch or "tb/nucleus-work"
         run_compound_mode(branch, sparring_rounds=args.compound)
+    elif args.audit_plans is not None:
+        run_plan_audit_mode(args.audit_plans, args.session or "",
+                            args.branch or "tb/plan-audit",
+                            skip=args.audit_skip,
+                            force=args.audit_force)
     elif args.sparring is not None:
         run_sparring_mode(args.sparring, args.session or "",
                           args.branch or "tb/sparring-test")
