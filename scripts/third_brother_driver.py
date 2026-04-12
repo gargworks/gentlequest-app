@@ -1104,6 +1104,54 @@ Write the instruction now:"""
 
 SPARRING_DPO_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_dpo.jsonl"
 SPARRING_SFT_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_sft.jsonl"
+LEVER_LEDGER_PATH = BRAIN_PATH / "ledger" / "events.jsonl"
+
+
+def _find_lever_findings_in_diff(git_diff: str,
+                                 ledger_path: Optional[Path] = None,
+                                 window: int = 100) -> List[Dict]:
+    """Scan recent ledger events for lever findings that touch files in the current diff.
+
+    Makes lever observations compound: a review that ACCEPTs changes to files
+    the ledger has already flagged is rubber-stamping — Phase D scoring uses
+    this to dock such reviews.
+
+    Returns a list of matching observation dicts (empty if none).
+    """
+    path = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+    if not git_diff or not path.exists():
+        return []
+
+    diff_files = set()
+    for line in git_diff.splitlines():
+        if line.startswith("+++ b/"):
+            diff_files.add(line[6:].strip())
+        elif line.startswith("diff --git a/") and " b/" in line:
+            diff_files.add(line.split(" b/", 1)[1].strip())
+    if not diff_files:
+        return []
+
+    try:
+        raw_lines = path.read_text().strip().splitlines()
+    except Exception:
+        return []
+
+    matches: List[Dict] = []
+    for line in raw_lines[-window:]:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        etype = event.get("type", "")
+        if not (etype.startswith("lever.") and etype.endswith(".observation")):
+            continue
+        if event.get("outcome") != "found":
+            continue
+        findings = event.get("detail", {}).get("findings", [])
+        finding_text = "\n".join(findings) if isinstance(findings, list) else str(findings)
+        if any(f in finding_text for f in diff_files):
+            matches.append(event)
+    return matches
 
 
 def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict):
@@ -1288,6 +1336,31 @@ Reply with ONLY this JSON:
                         better_review = rd.get("better_review", "")
                         verdict_correct = rd.get("verdict_correct")
 
+                        # ── Compounding: dock ACCEPT that rubber-stamps lever findings ──
+                        # If the ledger already flagged issues on files in this diff and
+                        # TB said ACCEPT anyway, that's the rubber-stamp failure mode.
+                        # Cap the review score so the DPO pair captures the miss.
+                        lever_dock_count = 0
+                        lever_dock_types: List[str] = []
+                        if (config.get("lever_dock_enabled", True)
+                                and review.get("verdict") == "ACCEPT"):
+                            lever_matches = _find_lever_findings_in_diff(
+                                git_diff,
+                                window=config.get("lever_lookback_window", 100),
+                            )
+                            if lever_matches:
+                                lever_dock_count = len(lever_matches)
+                                lever_dock_types = sorted({
+                                    m.get("lever", "?") for m in lever_matches
+                                })
+                                original_review_score = review_score
+                                review_score = min(review_score, 2)
+                                verdict_correct = False
+                                print(f"[SPARRING] Phase D dock — ACCEPT over "
+                                      f"{lever_dock_count} lever finding(s) "
+                                      f"({','.join(lever_dock_types)}): "
+                                      f"review_score {original_review_score} → {review_score}")
+
                         review_sys = ("You are Third Brother, reviewing work done by Claude Code. "
                                       "Respond with VERDICT, REASON, and NOTES.")
                         review_user = (f"Task: {task_desc[:300]}\n"
@@ -1309,6 +1382,8 @@ Reply with ONLY this JSON:
                                     "review_score": review_score,
                                     "verdict_correct": verdict_correct,
                                     "category": "review_quality",
+                                    "lever_dock_count": lever_dock_count,
+                                    "lever_dock_types": lever_dock_types,
                                     "ts": datetime.now().isoformat(),
                                 }
                             }
@@ -1329,6 +1404,8 @@ Reply with ONLY this JSON:
                                 "original_score": review_score,
                                 "category": "review_quality",
                                 "quality": "gold" if review_score >= 4 else "silver",
+                                "lever_dock_count": lever_dock_count,
+                                "lever_dock_types": lever_dock_types,
                                 "ts": datetime.now().isoformat(),
                             }
                         }
