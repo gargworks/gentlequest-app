@@ -29,7 +29,7 @@ import os
 import time
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List, Tuple
 
 # ── Global flags ─────────────────────────────────────────────
@@ -1107,20 +1107,27 @@ SPARRING_SFT_PATH = Path(__file__).resolve().parent.parent / ".brain" / "trainin
 LEVER_LEDGER_PATH = BRAIN_PATH / "ledger" / "events.jsonl"
 
 
-def _find_lever_findings_in_diff(git_diff: str,
-                                 ledger_path: Optional[Path] = None,
-                                 window: int = 100) -> List[Dict]:
-    """Scan recent ledger events for lever findings that touch files in the current diff.
+def _lever_gate_scan(git_diff: str,
+                     ledger_path: Optional[Path] = None,
+                     window: int = 100) -> Dict[str, Any]:
+    """Fail-closed scan of recent ledger events against a diff.
 
-    Makes lever observations compound: a review that ACCEPTs changes to files
-    the ledger has already flagged is rubber-stamping — Phase D scoring uses
-    this to dock such reviews.
+    Returns a dict ``{"matches": [...], "status": "clean"|"found"|"unknown"}``.
 
-    Returns a list of matching observation dicts (empty if none).
+    ``status`` is the key the gate trusts:
+      - ``clean``   — ledger readable, no findings touch diff files
+      - ``found``   — ledger readable, one or more findings touch diff files
+      - ``unknown`` — ledger unreadable/parse-error/missing. The gate MUST
+                     force DEEPEN on unknown, never silently ACCEPT
+                     (substrate posture: fail-closed on read errors).
+
+    ``matches`` is always a list; on ``unknown`` it is empty.
     """
     path = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
-    if not git_diff or not path.exists():
-        return []
+    if not git_diff:
+        return {"matches": [], "status": "clean"}
+    if not path.exists():
+        return {"matches": [], "status": "clean"}
 
     diff_files = set()
     for line in git_diff.splitlines():
@@ -1129,18 +1136,21 @@ def _find_lever_findings_in_diff(git_diff: str,
         elif line.startswith("diff --git a/") and " b/" in line:
             diff_files.add(line.split(" b/", 1)[1].strip())
     if not diff_files:
-        return []
+        return {"matches": [], "status": "clean"}
 
     try:
-        raw_lines = path.read_text().strip().splitlines()
-    except Exception:
-        return []
+        raw_lines = path.read_text(encoding="utf-8").strip().splitlines()
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"[LEVER_GATE] ledger unreadable — forcing DEEPEN: {e}")
+        return {"matches": [], "status": "unknown", "reason": f"read_error: {e}"}
 
     matches: List[Dict] = []
+    corrupt = 0
     for line in raw_lines[-window:]:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
+            corrupt += 1
             continue
         etype = event.get("type", "")
         if not (etype.startswith("lever.") and etype.endswith(".observation")):
@@ -1151,7 +1161,23 @@ def _find_lever_findings_in_diff(git_diff: str,
         finding_text = "\n".join(findings) if isinstance(findings, list) else str(findings)
         if any(f in finding_text for f in diff_files):
             matches.append(event)
-    return matches
+    status = "found" if matches else "clean"
+    result: Dict[str, Any] = {"matches": matches, "status": status}
+    if corrupt:
+        result["corrupt_lines"] = corrupt
+    return result
+
+
+def _find_lever_findings_in_diff(git_diff: str,
+                                 ledger_path: Optional[Path] = None,
+                                 window: int = 100) -> List[Dict]:
+    """Backward-compat wrapper — returns only the matches list.
+
+    Phase D scoring uses this to dock reviews that ACCEPT over flagged
+    files. For the fail-closed gate, use ``_lever_gate_scan`` instead so
+    ``unknown`` (ledger unreadable) can force DEEPEN.
+    """
+    return _lever_gate_scan(git_diff, ledger_path, window)["matches"]
 
 
 def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
@@ -1230,6 +1256,34 @@ def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
     except Exception as e:
         print(f"[LEVER_GATE] task spawn failed (non-fatal): {e}")
         return None
+
+
+def _publish_tb_review_decided(task: Dict, review_result: Dict,
+                               lever_gate_status: Optional[str] = None) -> None:
+    """Emit one ``tb.review.decided`` event to the substrate ledger.
+
+    TB becomes a peer on the shared substrate: its verdicts are visible to
+    every other lever and consumer (Brazen Bull replay, MCP resources,
+    future training curriculum). Never raises — publishing failure must
+    not break the review path.
+    """
+    try:
+        LEVER_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+        event = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "type": "tb.review.decided",
+            "task_id": task.get("id", ""),
+            "verdict": review_result.get("verdict"),
+            "original_verdict": review_result.get("original_verdict",
+                                                  review_result.get("verdict")),
+            "confidence": review_result.get("confidence"),
+            "lever_gate_fired": bool(review_result.get("lever_gate_fired")),
+            "lever_gate_status": lever_gate_status,
+        }
+        with open(LEVER_LEDGER_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event) + "\n")
+    except Exception as e:
+        print(f"[REVIEW] publish tb.review.decided failed (non-fatal): {e}")
 
 
 def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict):
@@ -1919,15 +1973,33 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         # If the ledger flags findings on files in this diff, ACCEPT is a
         # rubber-stamp. Force DEEPEN at runtime and spawn a fix task so the
         # system builds its own backlog. Works without a local model.
+        #
+        # Fail-closed: if the ledger is unreadable, DEEPEN anyway — a silent
+        # ACCEPT on unknown ledger state is the worst failure mode.
         original_verdict = verdict
-        lever_gate_enabled = v3.get("lever_gate_enabled", True)
+        # Top-level kill switches take precedence over v3 defaults.
+        lever_substrate_enabled = config.get("lever_substrate_enabled", True)
+        lever_gate_enabled = (
+            lever_substrate_enabled
+            and config.get("lever_gate_enabled", v3.get("lever_gate_enabled", True))
+        )
         lever_gate_matches: List[Dict] = []
         lever_gate_spawned_task_id: Optional[str] = None
+        lever_gate_status: Optional[str] = None
         if lever_gate_enabled and verdict == "ACCEPT":
-            lever_gate_matches = _find_lever_findings_in_diff(
+            gate_scan = _lever_gate_scan(
                 git_diff, window=v3.get("lever_gate_window", 100),
             )
-            if lever_gate_matches:
+            lever_gate_status = gate_scan.get("status")
+            lever_gate_matches = gate_scan.get("matches", [])
+            if lever_gate_status == "unknown":
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    "Lever gate: ledger unreadable (fail-closed). "
+                    f"Reason: {gate_scan.get('reason', 'unknown')}. "
+                    "ACCEPT downgraded to DEEPEN until substrate is inspectable."
+                )
+            elif lever_gate_matches:
                 lever_names = sorted({m.get("lever", "?") for m in lever_gate_matches})
                 verdict = "DEEPEN"
                 deepen_notes = (
@@ -1947,15 +2019,20 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         }
         if deepen_notes:
             review_result["deepen_notes"] = deepen_notes
-        if lever_gate_matches:
+        if lever_gate_status:
+            review_result["lever_gate_status"] = lever_gate_status
+        if lever_gate_matches or lever_gate_status == "unknown":
             review_result["lever_gate_fired"] = True
             review_result["original_verdict"] = original_verdict
             review_result["lever_gate_count"] = len(lever_gate_matches)
-            review_result["lever_gate_types"] = sorted({
-                m.get("lever", "?") for m in lever_gate_matches
-            })
+            if lever_gate_matches:
+                review_result["lever_gate_types"] = sorted({
+                    m.get("lever", "?") for m in lever_gate_matches
+                })
             if lever_gate_spawned_task_id:
                 review_result["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
+
+        _publish_tb_review_decided(task, review_result, lever_gate_status)
 
         print(f"[REVIEW] {task.get('id', '?')}: {verdict} (confidence: {confidence}, "
               f"parse: {parse_method}) — {reason[:80]}")
@@ -1975,10 +2052,12 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
             "reviewer_model": tb_model,
             "duration_ms": duration_ms,
         }
-        if lever_gate_matches:
+        if lever_gate_matches or lever_gate_status == "unknown":
             log_entry["lever_gate_fired"] = True
             log_entry["lever_gate_count"] = len(lever_gate_matches)
             log_entry["original_verdict"] = original_verdict
+            if lever_gate_status:
+                log_entry["lever_gate_status"] = lever_gate_status
             if lever_gate_spawned_task_id:
                 log_entry["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
         with open(REVIEW_LOG_PATH, "a") as f:

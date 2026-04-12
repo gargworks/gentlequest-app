@@ -20,6 +20,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.levers import run_lever
+from scripts.levers.base import (
+    OUTCOMES,
+    LedgerEvent,
+    LedgerSchemaError,
+    Lever,
+    SubprocessFailure,
+    iter_events,
+)
 from scripts.levers.ruff_chain import RuffChainLever
 from scripts.levers.todo_chain import TodoChainLever
 
@@ -259,3 +267,173 @@ class TestRunTrigger:
         assert run_lever.run_trigger(
             "post_executor", manifests_dir=manifests, ledger_path=ledger
         ) == []
+
+
+class TestLedgerEventSchema:
+    """LedgerEvent is the typed contract. Schema errors must surface loudly."""
+
+    def test_from_jsonl_accepts_valid_lever_observation(self):
+        line = (
+            '{"ts": "2026-04-12T00:00:00+00:00", "type": "lever.x.observation",'
+            ' "lever": "x", "outcome": "clean", "detail": {"n": 0}}'
+        )
+        event = LedgerEvent.from_jsonl(line)
+        assert event.type == "lever.x.observation"
+        assert event.outcome == "clean"
+        assert event.detail == {"n": 0}
+
+    def test_from_jsonl_rejects_missing_ts(self):
+        line = '{"type": "lever.x.observation", "outcome": "clean"}'
+        with pytest.raises(LedgerSchemaError, match="ts"):
+            LedgerEvent.from_jsonl(line)
+
+    def test_from_jsonl_rejects_missing_type(self):
+        line = '{"ts": "2026-04-12T00:00:00+00:00"}'
+        with pytest.raises(LedgerSchemaError, match="type"):
+            LedgerEvent.from_jsonl(line)
+
+    def test_from_jsonl_rejects_invalid_outcome(self):
+        line = (
+            '{"ts": "2026-04-12T00:00:00+00:00", "type": "lever.x.observation",'
+            ' "outcome": "whatever"}'
+        )
+        with pytest.raises(LedgerSchemaError, match="outcome"):
+            LedgerEvent.from_jsonl(line)
+
+    def test_from_jsonl_rejects_corrupt_json(self):
+        with pytest.raises(LedgerSchemaError, match="JSON"):
+            LedgerEvent.from_jsonl("{not json")
+
+    def test_to_jsonl_round_trip(self):
+        event = LedgerEvent(
+            ts="2026-04-12T00:00:00+00:00",
+            type="tb.review.decided",
+            extra={"task_id": "t-1", "verdict": "ACCEPT"},
+        )
+        line = event.to_jsonl()
+        parsed = LedgerEvent.from_jsonl(line)
+        assert parsed.type == "tb.review.decided"
+        assert parsed.extra["task_id"] == "t-1"
+
+    def test_outcomes_frozenset_contents(self):
+        assert OUTCOMES == frozenset({"clean", "found", "error", "skipped", "unknown"})
+
+    def test_for_lever_observation_strips_control_chars(self):
+        event = LedgerEvent.for_lever_observation(
+            "my_lever",
+            {"outcome": "found", "detail": {"msg": "bad\x00evil"}},
+        )
+        assert event.detail["msg"] == "badevil"
+
+
+class TestAppendObservationContract:
+    """append_observation validates + writes exactly one LedgerEvent line."""
+
+    def test_append_observation_rejects_invalid_outcome(self, tmp_path):
+        ledger = tmp_path / "events.jsonl"
+        with pytest.raises(LedgerSchemaError, match="outcome"):
+            run_lever.append_observation(
+                "my_lever",
+                {"outcome": "bogus", "detail": {}},
+                ledger_path=ledger,
+            )
+        # Schema violation itself is recorded so the substrate sees the bug.
+        assert ledger.exists()
+        lines = ledger.read_text().strip().splitlines()
+        assert any("lever.schema.violation" in line for line in lines)
+
+    def test_append_observation_writes_valid_event(self, tmp_path):
+        ledger = tmp_path / "events.jsonl"
+        entry = run_lever.append_observation(
+            "my_lever",
+            {"outcome": "found", "detail": {"findings": ["x"]}},
+            ledger_path=ledger,
+        )
+        assert entry["outcome"] == "found"
+        line = ledger.read_text().strip().splitlines()[0]
+        parsed = LedgerEvent.from_jsonl(line)
+        assert parsed.lever == "my_lever"
+        assert parsed.outcome == "found"
+
+
+class TestDispatcherFailureEvents:
+    """Dispatcher failures emit lever.dispatcher.failure — never silent swallow."""
+
+    def test_failing_lever_emits_dispatcher_failure_event(self, tmp_path):
+        manifests = tmp_path / "manifests"
+        manifests.mkdir()
+        (manifests / "explode.yaml").write_text(
+            "name: explode\nenabled: true\ntriggers:\n  - post_executor\n"
+        )
+        ledger = tmp_path / "events.jsonl"
+
+        def _loader(name):
+            raise RuntimeError("boom")
+
+        with patch("scripts.levers.run_lever.load_lever", side_effect=_loader):
+            run_lever.run_trigger(
+                "post_executor", manifests_dir=manifests, ledger_path=ledger
+            )
+
+        lines = ledger.read_text().strip().splitlines()
+        assert any("lever.dispatcher.failure" in line for line in lines)
+        # Failure event carries error_class for forensics.
+        failure_event = next(
+            json.loads(line) for line in lines
+            if "lever.dispatcher.failure" in line
+        )
+        assert failure_event["detail"]["lever"] == "explode"
+        assert failure_event["detail"]["error_class"] == "RuntimeError"
+
+    def test_manifest_parse_error_writes_manifest_error_event(self, tmp_path):
+        manifests = tmp_path / "manifests"
+        manifests.mkdir()
+        # Force a YAML parse error with an explicit syntax violation.
+        (manifests / "bad.yaml").write_text("name: bad\n  - : : : [\n")
+        ledger = tmp_path / "events.jsonl"
+
+        run_lever.run_trigger(
+            "post_executor", manifests_dir=manifests, ledger_path=ledger
+        )
+
+        lines = ledger.read_text().strip().splitlines() if ledger.exists() else []
+        assert any("lever.manifest.error" in line for line in lines)
+
+
+class TestIterEvents:
+    """iter_events is the canonical reader path."""
+
+    def test_iter_events_skips_corrupt_lines_by_default(self, tmp_path):
+        ledger = tmp_path / "events.jsonl"
+        ledger.write_text(
+            '{"ts": "2026-04-12T00:00:00+00:00", "type": "a"}\n'
+            '{not json\n'
+            '{"ts": "2026-04-12T00:00:01+00:00", "type": "b"}\n'
+        )
+        events = list(iter_events(ledger))
+        assert [e.type for e in events] == ["a", "b"]
+
+    def test_iter_events_raises_on_corrupt_when_strict(self, tmp_path):
+        ledger = tmp_path / "events.jsonl"
+        ledger.write_text('{not json\n')
+        with pytest.raises(LedgerSchemaError):
+            list(iter_events(ledger, skip_invalid=False))
+
+    def test_iter_events_returns_nothing_for_missing_ledger(self, tmp_path):
+        assert list(iter_events(tmp_path / "nope.jsonl")) == []
+
+
+class TestLeverBaseHelpers:
+    """_run_subprocess contract: argv-only, named exceptions."""
+
+    def test_run_subprocess_rejects_non_list_argv(self):
+        with pytest.raises(TypeError):
+            Lever._run_subprocess("git status", timeout=1, stage="test")
+
+    def test_run_subprocess_throws_named_exception_on_nonzero(self):
+        with pytest.raises(SubprocessFailure) as exc_info:
+            Lever._run_subprocess(
+                ["false"], timeout=2, stage="fail_test", check=True
+            )
+        assert exc_info.value.stage == "fail_test"
+        assert exc_info.value.returncode != 0
