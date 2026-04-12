@@ -30,7 +30,11 @@ from scripts.levers.base import (
 )
 import subprocess
 
+from scripts.levers.coverage_delta import CoverageDeltaLever
+from scripts.levers.dead_code_scan import DeadCodeScanLever
+from scripts.levers.dep_vulnerability_check import DepVulnerabilityCheckLever
 from scripts.levers.diff_size_check import DiffSizeCheckLever
+from scripts.levers.flaky_test_detector import FlakyTestDetectorLever
 from scripts.levers.golden_benchmark_check import GoldenBenchmarkCheckLever
 from scripts.levers.gt40_lint import Gt40LintLever
 from scripts.levers.import_cycle_check import ImportCycleCheckLever
@@ -41,6 +45,7 @@ from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
 from scripts.levers.ruff_chain import RuffChainLever
 from scripts.levers.scope_pre_enforce import ScopePreEnforceLever
 from scripts.levers.secret_scan import SecretScanLever
+from scripts.levers.runtime_regression import RuntimeRegressionLever
 from scripts.levers.todo_chain import TodoChainLever
 
 
@@ -1122,3 +1127,306 @@ class TestLeverBaseHelpers:
             )
         assert exc_info.value.stage == "fail_test"
         assert exc_info.value.returncode != 0
+
+
+class TestDeadCodeScanLever:
+    def _manifest(self, **kw):
+        inputs = {"diff_spec": "HEAD~1..HEAD", "ignore_patterns": [], "max_findings": 25}
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_py_files_in_diff(self, tmp_path):
+        lever = DeadCodeScanLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 0
+
+    def test_found_when_symbol_only_in_defining_file(self, tmp_path):
+        lever = DeadCodeScanLever()
+        (tmp_path / "mod.py").write_text("def orphan():\n    return 1\n")
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="mod.py\n")
+        grep_result = MagicMock(returncode=0, stdout="mod.py\n")
+        with patch("subprocess.run", side_effect=[diff_result, grep_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("orphan" in f for f in obs["detail"]["findings"])
+
+    def test_skips_underscore_and_test_names(self, tmp_path):
+        lever = DeadCodeScanLever()
+        (tmp_path / "mod.py").write_text(
+            "def _private():\n    pass\n"
+            "def test_something():\n    pass\n"
+        )
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="mod.py\n")
+        with patch("subprocess.run", return_value=diff_result):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = DeadCodeScanLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+    def test_respects_max_findings(self, tmp_path):
+        lever = DeadCodeScanLever()
+        src = "\n".join(f"def orphan_{i}():\n    pass" for i in range(10))
+        (tmp_path / "m.py").write_text(src + "\n")
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="m.py\n")
+        grep_result = MagicMock(returncode=0, stdout="m.py\n")
+        # 1 diff call + 10 grep calls possible, capped by max_findings=3
+        side_effects = [diff_result] + [grep_result] * 10
+        with patch("subprocess.run", side_effect=side_effects):
+            obs = lever.run(self._manifest(max_findings=3), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert len(obs["detail"]["findings"]) == 3
+
+
+class TestRuntimeRegressionLever:
+    def _manifest(self, path, **kw):
+        inputs = {
+            "runtimes_path": str(path),
+            "window_size": 5,
+            "regression_threshold_pct": 25.0,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_skipped_when_file_missing(self, tmp_path):
+        lever = RuntimeRegressionLever()
+        obs = lever.run(
+            self._manifest(tmp_path / "nope.jsonl"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_runtime_history"
+
+    def test_skipped_when_insufficient_history(self, tmp_path):
+        lever = RuntimeRegressionLever()
+        p = tmp_path / "rt.jsonl"
+        p.write_text('{"duration_seconds": 1.0}\n')
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "insufficient_history"
+
+    def test_clean_when_within_threshold(self, tmp_path):
+        lever = RuntimeRegressionLever()
+        p = tmp_path / "rt.jsonl"
+        p.write_text("\n".join(
+            json.dumps({"duration_seconds": d})
+            for d in [10.0, 10.5, 11.0, 10.0, 11.0, 12.0]
+        ) + "\n")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_regression_exceeds_threshold(self, tmp_path):
+        lever = RuntimeRegressionLever()
+        p = tmp_path / "rt.jsonl"
+        p.write_text("\n".join(
+            json.dumps({"duration_seconds": d})
+            for d in [10.0, 10.0, 10.0, 10.0, 10.0, 25.0]
+        ) + "\n")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["regression_pct"] > 25.0
+
+    def test_error_when_malformed_json(self, tmp_path):
+        lever = RuntimeRegressionLever()
+        p = tmp_path / "rt.jsonl"
+        p.write_text('{"duration_seconds": 1.0}\nnot-json\n')
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_runtime"
+
+
+class TestFlakyTestDetectorLever:
+    def _manifest(self, path, **kw):
+        inputs = {
+            "history_path": str(path),
+            "window_hours": 48,
+            "max_findings": 25,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _line(self, test_id, passed, hours_ago=0):
+        from datetime import datetime, timedelta, timezone
+        ts = (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).isoformat()
+        return json.dumps({"test_id": test_id, "passed": passed, "ts": ts})
+
+    def test_skipped_when_file_missing(self, tmp_path):
+        lever = FlakyTestDetectorLever()
+        obs = lever.run(
+            self._manifest(tmp_path / "nope.jsonl"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_test_history"
+
+    def test_clean_when_all_consistent(self, tmp_path):
+        lever = FlakyTestDetectorLever()
+        p = tmp_path / "hist.jsonl"
+        p.write_text(
+            self._line("t1", True) + "\n"
+            + self._line("t1", True, 1) + "\n"
+            + self._line("t2", False) + "\n"
+        )
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_test_has_mixed_outcomes(self, tmp_path):
+        lever = FlakyTestDetectorLever()
+        p = tmp_path / "hist.jsonl"
+        p.write_text(
+            self._line("t_flaky", True) + "\n"
+            + self._line("t_flaky", False, 1) + "\n"
+        )
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert "t_flaky" in obs["detail"]["findings"]
+
+    def test_respects_window_hours(self, tmp_path):
+        lever = FlakyTestDetectorLever()
+        p = tmp_path / "hist.jsonl"
+        # Flaky outcomes are 100h apart, window = 48h → only latest counts
+        p.write_text(
+            self._line("t_old", True, 100) + "\n"
+            + self._line("t_old", False, 1) + "\n"
+        )
+        obs = lever.run(self._manifest(p, window_hours=48), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_respects_max_findings(self, tmp_path):
+        lever = FlakyTestDetectorLever()
+        p = tmp_path / "hist.jsonl"
+        lines = []
+        for i in range(10):
+            lines.append(self._line(f"t{i}", True))
+            lines.append(self._line(f"t{i}", False, 1))
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p, max_findings=3), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert len(obs["detail"]["findings"]) == 3
+
+
+class TestCoverageDeltaLever:
+    def _manifest(self, cov, base, **kw):
+        inputs = {
+            "coverage_path": str(cov),
+            "baseline_path": str(base),
+            "drop_threshold_pct": 2.0,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _write_coverage(self, path, line_rate):
+        path.write_text(f'<?xml version="1.0"?><coverage line-rate="{line_rate}"/>')
+
+    def _write_baseline(self, path, line_rate):
+        path.write_text(json.dumps({"line_rate": line_rate}))
+
+    def test_skipped_when_coverage_missing(self, tmp_path):
+        lever = CoverageDeltaLever()
+        base = tmp_path / "base.json"
+        self._write_baseline(base, 0.85)
+        obs = lever.run(
+            self._manifest(tmp_path / "no.xml", base),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_coverage_report"
+
+    def test_skipped_when_baseline_missing(self, tmp_path):
+        lever = CoverageDeltaLever()
+        cov = tmp_path / "cov.xml"
+        self._write_coverage(cov, 0.85)
+        obs = lever.run(
+            self._manifest(cov, tmp_path / "no.json"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_baseline"
+
+    def test_clean_when_above_threshold(self, tmp_path):
+        lever = CoverageDeltaLever()
+        cov = tmp_path / "cov.xml"
+        base = tmp_path / "base.json"
+        self._write_coverage(cov, 0.84)
+        self._write_baseline(base, 0.85)
+        obs = lever.run(self._manifest(cov, base), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_drop_exceeds_threshold(self, tmp_path):
+        lever = CoverageDeltaLever()
+        cov = tmp_path / "cov.xml"
+        base = tmp_path / "base.json"
+        self._write_coverage(cov, 0.75)
+        self._write_baseline(base, 0.85)
+        obs = lever.run(self._manifest(cov, base), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["drop_pp"] > 2.0
+
+    def test_error_when_coverage_xml_malformed(self, tmp_path):
+        lever = CoverageDeltaLever()
+        cov = tmp_path / "cov.xml"
+        base = tmp_path / "base.json"
+        cov.write_text("<<not xml>>")
+        self._write_baseline(base, 0.85)
+        obs = lever.run(self._manifest(cov, base), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_coverage"
+
+
+class TestDepVulnerabilityCheckLever:
+    def _manifest(self, **kw):
+        inputs = {"audit_bin": "pip-audit", "timeout_seconds": 60, "max_findings": 25}
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_error_when_tool_missing(self, tmp_path):
+        lever = DepVulnerabilityCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "audit_missing"
+
+    def test_clean_on_exit_zero_empty_output(self, tmp_path):
+        lever = DepVulnerabilityCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_vulnerabilities_reported(self, tmp_path):
+        lever = DepVulnerabilityCheckLever()
+        payload = json.dumps({"dependencies": [
+            {"name": "cryptography", "version": "3.0", "vulns": [
+                {"id": "GHSA-xxxx", "fix_versions": ["41.0.4"]}
+            ]},
+        ]})
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stdout=payload, stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("cryptography" in f and "GHSA-xxxx" in f for f in obs["detail"]["findings"])
+
+    def test_error_on_timeout(self, tmp_path):
+        lever = DepVulnerabilityCheckLever()
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="pip-audit", timeout=60)):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "pip_audit"
+
+    def test_error_on_malformed_json(self, tmp_path):
+        lever = DepVulnerabilityCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="not-json", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_audit"
