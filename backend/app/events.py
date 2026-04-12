@@ -20,12 +20,17 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 try:
     from scripts.levers.run_lever import publish_event as _publish
-except Exception:
+except ImportError as _e:
+    logger.warning(
+        "chat event publisher unavailable — chat.* events will not land on "
+        "the shared ledger. Cause: %s",
+        _e,
+    )
     _publish = None  # type: ignore[assignment]
-
-logger = logging.getLogger(__name__)
 
 
 def publish_chat_request_received(request_id: str, session_id: Any) -> None:
