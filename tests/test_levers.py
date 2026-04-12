@@ -30,12 +30,16 @@ from scripts.levers.base import (
 )
 import subprocess
 
+from scripts.levers.a11y_smoke import A11ySmokeLever
 from scripts.levers.api_contract_check import ApiContractCheckLever
 from scripts.levers.bundle_size_check import BundleSizeCheckLever
+from scripts.levers.config_schema_check import ConfigSchemaCheckLever
 from scripts.levers.coverage_delta import CoverageDeltaLever
 from scripts.levers.dead_code_scan import DeadCodeScanLever
+from scripts.levers.dead_link_check import DeadLinkCheckLever
 from scripts.levers.dep_vulnerability_check import DepVulnerabilityCheckLever
 from scripts.levers.diff_size_check import DiffSizeCheckLever
+from scripts.levers.env_var_drift import EnvVarDriftLever
 from scripts.levers.flaky_test_detector import FlakyTestDetectorLever
 from scripts.levers.golden_benchmark_check import GoldenBenchmarkCheckLever
 from scripts.levers.gt40_lint import Gt40LintLever
@@ -46,6 +50,7 @@ from scripts.levers.gt40_test_smoke import Gt40TestSmokeLever
 from scripts.levers.gt40_typecheck import Gt40TypecheckLever
 from scripts.levers.migration_lint import MigrationLintLever
 from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
+from scripts.levers.perf_regression_spotter import PerfRegressionSpotterLever
 from scripts.levers.ruff_chain import RuffChainLever
 from scripts.levers.schema_drift_check import SchemaDriftCheckLever
 from scripts.levers.scope_pre_enforce import ScopePreEnforceLever
@@ -1763,3 +1768,340 @@ class TestBundleSizeCheckLever:
         obs = lever.run(self._manifest(stats, base), tmp_path / ".brain")
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "parse_stats"
+
+
+class TestPerfRegressionSpotterLever:
+    def _manifest(self, path, **kw):
+        inputs = {
+            "perf_log_path": str(path),
+            "window_size": 5,
+            "regression_threshold_pct": 20.0,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_skipped_when_file_missing(self, tmp_path):
+        lever = PerfRegressionSpotterLever()
+        obs = lever.run(
+            self._manifest(tmp_path / "nope.jsonl"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_perf_history"
+
+    def test_skipped_when_insufficient_history(self, tmp_path):
+        lever = PerfRegressionSpotterLever()
+        p = tmp_path / "perf.jsonl"
+        p.write_text(json.dumps({"metric_name": "api.p50", "duration_ms": 10.0}) + "\n")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "insufficient_history"
+
+    def test_clean_when_all_metrics_stable(self, tmp_path):
+        lever = PerfRegressionSpotterLever()
+        p = tmp_path / "perf.jsonl"
+        lines = []
+        for d in [100.0, 102.0, 98.0, 101.0, 99.0, 103.0]:
+            lines.append(json.dumps({"metric_name": "api.p50", "duration_ms": d}))
+        for d in [5.0, 5.5, 4.8, 5.2, 5.0, 5.3]:
+            lines.append(json.dumps({"metric_name": "db.write", "duration_ms": d}))
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["metrics_checked"] == 2
+
+    def test_found_when_one_metric_regresses(self, tmp_path):
+        lever = PerfRegressionSpotterLever()
+        p = tmp_path / "perf.jsonl"
+        lines = []
+        for d in [100.0, 102.0, 98.0, 101.0, 99.0, 150.0]:
+            lines.append(json.dumps({"metric_name": "api.p50", "duration_ms": d}))
+        for d in [5.0, 5.5, 4.8, 5.2, 5.0, 5.3]:
+            lines.append(json.dumps({"metric_name": "db.write", "duration_ms": d}))
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("api.p50" in f for f in obs["detail"]["findings"])
+        assert not any("db.write" in f for f in obs["detail"]["findings"])
+
+    def test_error_when_malformed_json(self, tmp_path):
+        lever = PerfRegressionSpotterLever()
+        p = tmp_path / "perf.jsonl"
+        p.write_text(
+            json.dumps({"metric_name": "a", "duration_ms": 1.0}) + "\nnot-json\n"
+        )
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_perf"
+
+
+class TestA11ySmokeLever:
+    def _manifest(self, url="https://example.com", **kw):
+        inputs = {
+            "scanner_bin": "pa11y",
+            "url": url,
+            "extra_args": ["--reporter", "json"],
+            "timeout_seconds": 10,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_skipped_when_no_url(self, tmp_path):
+        lever = A11ySmokeLever()
+        obs = lever.run(self._manifest(url=""), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_url_configured"
+
+    def test_error_when_scanner_missing(self, tmp_path):
+        lever = A11ySmokeLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "scanner_missing"
+
+    def test_clean_when_no_violations(self, tmp_path):
+        lever = A11ySmokeLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout=json.dumps({"violations": []}),
+                stderr="",
+            )
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["violations"] == 0
+
+    def test_found_parses_pa11y_list_shape(self, tmp_path):
+        lever = A11ySmokeLever()
+        payload = [
+            {"type": "error", "code": "WCAG2AA.Principle1", "message": "no alt"},
+            {"type": "error", "code": "WCAG2AA.Principle4", "message": "missing label"},
+        ]
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=2, stdout=json.dumps(payload), stderr=""
+            )
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["violations"] == 2
+        assert any("no alt" in f for f in obs["detail"]["findings"])
+
+    def test_error_on_malformed_json(self, tmp_path):
+        lever = A11ySmokeLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="not-json", stderr=""
+            )
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_a11y"
+
+
+class TestDeadLinkCheckLever:
+    def _manifest(self, **kw):
+        inputs = {"diff_spec": "HEAD~1..HEAD"}
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _diff_mock(self, paths):
+        return MagicMock(
+            returncode=0,
+            stdout="\n".join(paths) + ("\n" if paths else ""),
+            stderr="",
+        )
+
+    def test_clean_when_no_md_changed(self, tmp_path):
+        lever = DeadLinkCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock([])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["markdowns_checked"] == 0
+
+    def test_clean_when_all_links_resolve(self, tmp_path):
+        lever = DeadLinkCheckLever()
+        (tmp_path / "target.md").write_text("# target")
+        doc = tmp_path / "doc.md"
+        doc.write_text("See [target](target.md) and [ext](https://example.com)")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["doc.md"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["markdowns_checked"] == 1
+
+    def test_found_when_relative_link_missing(self, tmp_path):
+        lever = DeadLinkCheckLever()
+        doc = tmp_path / "doc.md"
+        doc.write_text("See [gone](missing.md#frag)")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["doc.md"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("missing.md" in f for f in obs["detail"]["findings"])
+
+    def test_ignores_external_and_anchor_only(self, tmp_path):
+        lever = DeadLinkCheckLever()
+        doc = tmp_path / "doc.md"
+        doc.write_text(
+            "[x](http://a.example) [y](mailto:a@b) [z](#section) "
+            "[t](tel:123) [d](data:image/png;base64,abc)"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["doc.md"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = DeadLinkCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestEnvVarDriftLever:
+    def _manifest(self, **kw):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "env_example_path": ".env.example",
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _diff_mock(self, paths):
+        return MagicMock(
+            returncode=0,
+            stdout="\n".join(paths) + ("\n" if paths else ""),
+            stderr="",
+        )
+
+    def test_skipped_when_env_example_missing(self, tmp_path):
+        lever = EnvVarDriftLever()
+        obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_env_example"
+
+    def test_clean_when_all_declared(self, tmp_path):
+        lever = EnvVarDriftLever()
+        (tmp_path / ".env.example").write_text("FOO=a\nBAR=b\n")
+        (tmp_path / "app.py").write_text(
+            "import os\nx = os.getenv('FOO')\ny = os.environ['BAR']\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["app.py"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["declared_vars"] == 2
+
+    def test_found_when_undeclared_var_referenced(self, tmp_path):
+        lever = EnvVarDriftLever()
+        (tmp_path / ".env.example").write_text("FOO=a\n# comment\n")
+        (tmp_path / "app.py").write_text(
+            "import os\nx = os.environ.get('NEW_KEY')\ny = os.getenv('FOO')\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["app.py"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("NEW_KEY" in f for f in obs["detail"]["findings"])
+        assert not any("FOO" in f for f in obs["detail"]["findings"])
+
+    def test_ignores_non_literal_names(self, tmp_path):
+        lever = EnvVarDriftLever()
+        (tmp_path / ".env.example").write_text("")
+        (tmp_path / "app.py").write_text(
+            "import os\nname = 'X'\nx = os.getenv(name)\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["app.py"])
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = EnvVarDriftLever()
+        (tmp_path / ".env.example").write_text("FOO=a\n")
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestConfigSchemaCheckLever:
+    def _manifest(self, schemas, **kw):
+        inputs = {"diff_spec": "HEAD~1..HEAD", "schemas": schemas}
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _diff_mock(self, paths):
+        return MagicMock(
+            returncode=0,
+            stdout="\n".join(paths) + ("\n" if paths else ""),
+            stderr="",
+        )
+
+    def test_skipped_when_no_schemas_configured(self, tmp_path):
+        lever = ConfigSchemaCheckLever()
+        obs = lever.run(self._manifest({}), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_schemas_configured"
+
+    def test_clean_when_config_not_in_diff(self, tmp_path):
+        lever = ConfigSchemaCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["other.py"])
+            obs = lever.run(
+                self._manifest({"config.json": {"k": "str"}}),
+                tmp_path / ".brain",
+            )
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["configs_checked"] == 0
+
+    def test_clean_when_all_keys_match(self, tmp_path):
+        lever = ConfigSchemaCheckLever()
+        (tmp_path / "config.json").write_text(
+            json.dumps({"name": "x", "port": 8080, "ratio": 1.5})
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["config.json"])
+            obs = lever.run(
+                self._manifest({
+                    "config.json": {
+                        "name": "str",
+                        "port": "int",
+                        "ratio": "int|float",
+                    }
+                }),
+                tmp_path / ".brain",
+            )
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["configs_checked"] == 1
+
+    def test_found_when_key_missing_or_wrong_type(self, tmp_path):
+        lever = ConfigSchemaCheckLever()
+        (tmp_path / "config.json").write_text(
+            json.dumps({"port": "8080"})
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["config.json"])
+            obs = lever.run(
+                self._manifest({
+                    "config.json": {"name": "str", "port": "int"}
+                }),
+                tmp_path / ".brain",
+            )
+        assert obs["outcome"] == "found"
+        findings = obs["detail"]["findings"]
+        assert any("missing 'name'" in f for f in findings)
+        assert any("'port' is str" in f for f in findings)
+
+    def test_error_when_config_malformed_json(self, tmp_path):
+        lever = ConfigSchemaCheckLever()
+        (tmp_path / "config.json").write_text("{{not-json")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = self._diff_mock(["config.json"])
+            obs = lever.run(
+                self._manifest({"config.json": {"k": "str"}}),
+                tmp_path / ".brain",
+            )
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_config"
