@@ -1,0 +1,14 @@
+name: narrow_task_filter
+description: Flag tasks whose scope/description/title is too broad for Claude Code's context — the #1 predictor of Phase-D ACCEPT failures. Reads the active task via NUCLEUS_TASK_ID.
+enabled: true
+triggers:
+  - manual
+  - session_start
+inputs:
+  tasks_path: .brain/driver/tasks.json
+  task_id_env: NUCLEUS_TASK_ID
+  max_scope_items: 5
+  max_description_chars: 500
+  max_title_chars: 120
+outputs:
+  ledger_event_type: lever.narrow_task_filter.observation

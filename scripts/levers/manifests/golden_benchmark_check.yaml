@@ -1,0 +1,12 @@
+name: golden_benchmark_check
+description: Detect CSR (Claim Survival Rate) regressions below baseline. Reads .brain/flywheel/csr.json and flags when the flywheel trust metric falls under threshold.
+enabled: true
+triggers:
+  - cron_hourly
+  - post_commit
+inputs:
+  csr_path: .brain/flywheel/csr.json
+  baseline_csr: 0.90
+  window_hours: 24
+outputs:
+  ledger_event_type: lever.golden_benchmark_check.observation

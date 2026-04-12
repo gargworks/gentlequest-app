@@ -28,6 +28,13 @@ from scripts.levers.base import (
     SubprocessFailure,
     iter_events,
 )
+import subprocess
+
+from scripts.levers.golden_benchmark_check import GoldenBenchmarkCheckLever
+from scripts.levers.gt40_lint import Gt40LintLever
+from scripts.levers.gt40_test_smoke import Gt40TestSmokeLever
+from scripts.levers.gt40_typecheck import Gt40TypecheckLever
+from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
 from scripts.levers.ruff_chain import RuffChainLever
 from scripts.levers.todo_chain import TodoChainLever
 
@@ -137,6 +144,317 @@ class TestTodoChainLever:
         with patch("subprocess.run", side_effect=FileNotFoundError("git missing")):
             obs = lever.run({"inputs": {}}, tmp_path)
         assert obs["outcome"] == "error"
+
+
+class TestNarrowTaskFilterLever:
+    """Broad task scope is the #1 predictor of Phase-D ACCEPT failures.
+
+    The lever reads the active task (via ``NUCLEUS_TASK_ID``) from a tasks
+    file and flags scope/description/title breaches against manifest
+    thresholds so session_start can catch over-broad tasks early.
+    """
+
+    def _manifest(self, tasks_path, **overrides):
+        inputs = {
+            "tasks_path": str(tasks_path),
+            "task_id_env": "NUCLEUS_TASK_ID",
+            "max_scope_items": 5,
+            "max_description_chars": 500,
+            "max_title_chars": 120,
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_skipped_when_task_id_env_missing(self, tmp_path):
+        lever = NarrowTaskFilterLever()
+        with patch.dict("os.environ", {}, clear=True):
+            obs = lever.run(self._manifest(tmp_path / "tasks.json"), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_task_id"
+        assert obs["detail"]["env_var"] == "NUCLEUS_TASK_ID"
+
+    def test_clean_when_all_within_threshold(self, tmp_path):
+        tasks_file = tmp_path / "tasks.json"
+        tasks_file.write_text(json.dumps({
+            "tasks": [{
+                "id": "t-1",
+                "title": "small title",
+                "description": "short description",
+                "scope": ["scripts/a.py", "scripts/b.py"],
+            }]
+        }))
+        lever = NarrowTaskFilterLever()
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["task_id"] == "t-1"
+        assert obs["detail"]["scope_items"] == 2
+
+    def test_found_when_scope_too_wide(self, tmp_path):
+        tasks_file = tmp_path / "tasks.json"
+        tasks_file.write_text(json.dumps({
+            "tasks": [{
+                "id": "t-1",
+                "title": "ok",
+                "description": "ok",
+                "scope": [f"scripts/f{i}.py" for i in range(8)],
+            }]
+        }))
+        lever = NarrowTaskFilterLever()
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "found"
+        assert any("scope=8" in f for f in obs["detail"]["findings"])
+        assert obs["detail"]["scope_items"] == 8
+
+    def test_found_when_description_too_long(self, tmp_path):
+        tasks_file = tmp_path / "tasks.json"
+        tasks_file.write_text(json.dumps({
+            "tasks": [{
+                "id": "t-1",
+                "title": "ok",
+                "description": "x" * 600,
+                "scope": ["scripts/a.py"],
+            }]
+        }))
+        lever = NarrowTaskFilterLever()
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "found"
+        assert any("description=600" in f for f in obs["detail"]["findings"])
+
+    def test_error_when_tasks_file_missing(self, tmp_path):
+        lever = NarrowTaskFilterLever()
+        missing = tmp_path / "does_not_exist.json"
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(missing), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "task_load"
+
+
+class TestGoldenBenchmarkCheckLever:
+    """CSR < baseline is the flywheel breaking claims faster than recovering."""
+
+    def _manifest(self, csr_path, **overrides):
+        inputs = {
+            "csr_path": str(csr_path),
+            "baseline_csr": 0.90,
+            "window_hours": 24,
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_skipped_when_csr_file_missing(self, tmp_path):
+        lever = GoldenBenchmarkCheckLever()
+        obs = lever.run(self._manifest(tmp_path / "missing.json"), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_csr_snapshot"
+
+    def test_clean_when_csr_at_baseline(self, tmp_path):
+        csr_file = tmp_path / "csr.json"
+        csr_file.write_text(json.dumps({"ratio": 0.90}))
+        lever = GoldenBenchmarkCheckLever()
+        obs = lever.run(self._manifest(csr_file), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["csr"] == 0.90
+
+    def test_clean_when_csr_above_baseline(self, tmp_path):
+        """Accepts legacy `csr` key as a fallback for forward-compat."""
+        csr_file = tmp_path / "csr.json"
+        csr_file.write_text(json.dumps({"csr": 0.97}))
+        lever = GoldenBenchmarkCheckLever()
+        obs = lever.run(self._manifest(csr_file), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["csr"] == 0.97
+
+    def test_found_when_csr_below_baseline_reports_delta(self, tmp_path):
+        csr_file = tmp_path / "csr.json"
+        csr_file.write_text(json.dumps({"ratio": 0.75}))
+        lever = GoldenBenchmarkCheckLever()
+        obs = lever.run(self._manifest(csr_file), tmp_path)
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["csr"] == 0.75
+        assert obs["detail"]["baseline_csr"] == 0.90
+        assert obs["detail"]["delta"] == pytest.approx(-0.15)
+        assert obs["detail"]["window_hours"] == 24
+
+    def test_error_when_csr_file_is_malformed_json(self, tmp_path):
+        csr_file = tmp_path / "csr.json"
+        csr_file.write_text("{not json")
+        lever = GoldenBenchmarkCheckLever()
+        obs = lever.run(self._manifest(csr_file), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_csr"
+
+
+class TestGt40LintLever:
+    """Wraps nucleus verify --tiers 1. Exit + tail land on the ledger."""
+
+    def _manifest(self, **overrides):
+        inputs = {"nucleus_bin": "nucleus", "timeout_seconds": 15, "tier": 1}
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_error_when_nucleus_not_installed(self, tmp_path):
+        lever = Gt40LintLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "nucleus_missing"
+
+    def test_clean_when_nucleus_exits_zero(self, tmp_path):
+        lever = Gt40LintLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["tier"] == 1
+
+    def test_found_when_nucleus_exits_nonzero_carries_findings(self, tmp_path):
+        lever = Gt40LintLever()
+        stderr = "\n".join(f"err line {i}" for i in range(30))
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=2, stdout="summary: 3 issues", stderr=stderr
+            )
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["returncode"] == 2
+        findings = obs["detail"]["findings"]
+        assert len(findings) == 20
+        assert findings[-1] == "err line 29"
+
+    def test_error_when_timeout_exceeded(self, tmp_path):
+        lever = Gt40LintLever()
+        with patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="nucleus", timeout=15),
+        ):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "timeout"
+
+    def test_respects_tier_input_in_argv(self, tmp_path):
+        lever = Gt40LintLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            lever.run(self._manifest(tier=7), tmp_path)
+        argv = mock_run.call_args[0][0]
+        assert "--tiers" in argv
+        assert argv[argv.index("--tiers") + 1] == "7"
+
+
+class TestGt40TypecheckLever:
+    """Same contract as gt40_lint but tier=2 (import resolution)."""
+
+    def _manifest(self, **overrides):
+        inputs = {"nucleus_bin": "nucleus", "timeout_seconds": 30, "tier": 2}
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_error_when_nucleus_not_installed(self, tmp_path):
+        lever = Gt40TypecheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "nucleus_missing"
+
+    def test_clean_when_nucleus_exits_zero(self, tmp_path):
+        lever = Gt40TypecheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["tier"] == 2
+
+    def test_found_when_nucleus_exits_nonzero_carries_findings(self, tmp_path):
+        lever = Gt40TypecheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=1, stdout="missing import: foo", stderr=""
+            )
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["returncode"] == 1
+        assert any("missing import" in f for f in obs["detail"]["findings"])
+
+    def test_error_when_timeout_exceeded(self, tmp_path):
+        lever = Gt40TypecheckLever()
+        with patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="nucleus", timeout=30),
+        ):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "timeout"
+
+    def test_respects_tier_input_in_argv(self, tmp_path):
+        lever = Gt40TypecheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            lever.run(self._manifest(), tmp_path)
+        argv = mock_run.call_args[0][0]
+        assert argv[argv.index("--tiers") + 1] == "2"
+
+
+class TestGt40TestSmokeLever:
+    """Smoke-tier wrapper. Exercises the --smoke flag path explicitly."""
+
+    def _manifest(self, **overrides):
+        inputs = {
+            "nucleus_bin": "nucleus",
+            "timeout_seconds": 60,
+            "tier": 3,
+            "smoke_flag": "--smoke",
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_error_when_nucleus_not_installed(self, tmp_path):
+        lever = Gt40TestSmokeLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "nucleus_missing"
+
+    def test_clean_on_exit_zero(self, tmp_path):
+        lever = Gt40TestSmokeLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["ran"] == "smoke"
+
+    def test_found_when_smoke_fails(self, tmp_path):
+        lever = Gt40TestSmokeLever()
+        stderr = "\n".join(f"fail {i}" for i in range(50))
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr=stderr)
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["ran"] == "smoke"
+        # last 30 non-empty lines
+        assert len(obs["detail"]["findings"]) == 30
+        assert obs["detail"]["findings"][-1] == "fail 49"
+
+    def test_argv_includes_smoke_flag(self, tmp_path):
+        lever = Gt40TestSmokeLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            lever.run(self._manifest(), tmp_path)
+        argv = mock_run.call_args[0][0]
+        assert "--smoke" in argv
+        assert argv[argv.index("--tiers") + 1] == "3"
+
+    def test_error_when_timeout_exceeded(self, tmp_path):
+        lever = Gt40TestSmokeLever()
+        with patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="nucleus", timeout=60),
+        ):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "timeout"
 
 
 class TestDispatcherAndLedgerContract:

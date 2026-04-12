@@ -1,0 +1,13 @@
+name: gt40_test_smoke
+description: Wrap `nucleus verify --tiers 3 --smoke` (GT40 smoke-test subset) as a lever so periodic smoke-failures land in the ledger without waiting for full verify.
+enabled: true
+triggers:
+  - cron_15m
+  - manual
+inputs:
+  nucleus_bin: nucleus
+  timeout_seconds: 60
+  tier: 3
+  smoke_flag: "--smoke"
+outputs:
+  ledger_event_type: lever.gt40_test_smoke.observation

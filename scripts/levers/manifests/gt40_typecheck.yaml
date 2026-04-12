@@ -1,0 +1,11 @@
+name: gt40_typecheck
+description: Wrap `nucleus verify --tiers 2` (import/type resolution) as a lever so GT40 typecheck exit status and tail output land in the ledger.
+enabled: true
+triggers:
+  - post_executor
+inputs:
+  nucleus_bin: nucleus
+  timeout_seconds: 30
+  tier: 2
+outputs:
+  ledger_event_type: lever.gt40_typecheck.observation
