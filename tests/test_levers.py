@@ -30,12 +30,17 @@ from scripts.levers.base import (
 )
 import subprocess
 
+from scripts.levers.diff_size_check import DiffSizeCheckLever
 from scripts.levers.golden_benchmark_check import GoldenBenchmarkCheckLever
 from scripts.levers.gt40_lint import Gt40LintLever
+from scripts.levers.import_cycle_check import ImportCycleCheckLever
+from scripts.levers.license_header_check import LicenseHeaderCheckLever
 from scripts.levers.gt40_test_smoke import Gt40TestSmokeLever
 from scripts.levers.gt40_typecheck import Gt40TypecheckLever
 from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
 from scripts.levers.ruff_chain import RuffChainLever
+from scripts.levers.scope_pre_enforce import ScopePreEnforceLever
+from scripts.levers.secret_scan import SecretScanLever
 from scripts.levers.todo_chain import TodoChainLever
 
 
@@ -455,6 +460,368 @@ class TestGt40TestSmokeLever:
             obs = lever.run(self._manifest(), tmp_path)
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "timeout"
+
+
+class TestSecretScanLever:
+    """Findings must never carry the matched secret body — anti-leak invariant.
+
+    Pattern prefixes (AIzaSy, ghp_, AKIA, ...) identify what kind of
+    secret was matched without publishing the secret itself into the
+    ledger.
+    """
+
+    PATTERNS = [
+        'AIzaSy[A-Za-z0-9_-]{33}',
+        'ghp_[A-Za-z0-9]{36}',
+        'AKIA[0-9A-Z]{16}',
+    ]
+
+    def _manifest(self, **overrides):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "max_findings": 25,
+            "patterns": list(self.PATTERNS),
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_patterns_match(self, tmp_path):
+        lever = SecretScanLever()
+        diff_output = (
+            "diff --git a/a.py b/a.py\n"
+            "--- a/a.py\n+++ b/a.py\n"
+            "@@ -1 +1 @@\n+def foo(): pass\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["patterns_checked"] == 3
+
+    def test_found_when_api_key_in_added_line(self, tmp_path):
+        lever = SecretScanLever()
+        fake_key = "AIzaSy" + "A" * 33
+        diff_output = (
+            "diff --git a/cfg.py b/cfg.py\n"
+            "--- a/cfg.py\n+++ b/cfg.py\n"
+            "@@ -1 +1 @@\n"
+            f'+GOOGLE_KEY = "{fake_key}"\n'
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert any("AIzaSy" in f for f in obs["detail"]["findings"])
+        assert any("cfg.py" in f for f in obs["detail"]["findings"])
+
+    def test_finding_never_contains_the_secret_body(self, tmp_path):
+        """ANTI-LEAK: the matched secret body must never appear in the finding."""
+        lever = SecretScanLever()
+        unique_body = "XY9zPQwertY12345678901234567890123456A"
+        fake_key = "AIzaSy" + unique_body
+        diff_output = (
+            "diff --git a/cfg.py b/cfg.py\n"
+            "--- a/cfg.py\n+++ b/cfg.py\n"
+            "@@ -1 +1 @@\n"
+            f'+GOOGLE_KEY = "{fake_key}"\n'
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        for finding in obs["detail"]["findings"]:
+            assert unique_body not in finding, f"secret body leaked: {finding}"
+            assert fake_key not in finding, f"full key leaked: {finding}"
+
+    def test_respects_max_findings_cap(self, tmp_path):
+        lever = SecretScanLever()
+        lines = ["diff --git a/k.py b/k.py", "--- a/k.py", "+++ b/k.py", "@@ -1 +1,10 @@"]
+        for i in range(10):
+            # 10 distinct AWS-key-shaped secrets
+            lines.append(f"+KEY_{i} = \"AKIA{i:016d}\"")
+        diff_output = "\n".join(lines) + "\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run(self._manifest(max_findings=3), tmp_path)
+        assert obs["outcome"] == "found"
+        assert len(obs["detail"]["findings"]) == 3
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = SecretScanLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestDiffSizeCheckLever:
+    """Large diffs get rubber-stamped — flag them before ACCEPT."""
+
+    def _manifest(self, **overrides):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "max_files": 20,
+            "max_added_lines": 500,
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_clean_when_within_both_thresholds(self, tmp_path):
+        lever = DiffSizeCheckLever()
+        numstat = "10\t0\ta.py\n20\t5\tb.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=numstat, stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files"] == 2
+        assert obs["detail"]["added_lines"] == 30
+
+    def test_found_when_file_count_exceeds(self, tmp_path):
+        lever = DiffSizeCheckLever()
+        numstat = "".join(f"1\t0\tf{i}.py\n" for i in range(25))
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=numstat, stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert any("files=25 > 20" in f for f in obs["detail"]["findings"])
+
+    def test_found_when_added_lines_exceed(self, tmp_path):
+        lever = DiffSizeCheckLever()
+        numstat = "600\t10\tbig.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=numstat, stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "found"
+        assert any("added=600 > 500" in f for f in obs["detail"]["findings"])
+
+    def test_handles_binary_entries_with_dash(self, tmp_path):
+        lever = DiffSizeCheckLever()
+        numstat = "-\t-\timg.png\n10\t0\ta.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=numstat, stderr="")
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "clean"
+        # Binary counts toward file count (2) but contributes 0 added lines.
+        assert obs["detail"]["files"] == 2
+        assert obs["detail"]["added_lines"] == 10
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = DiffSizeCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_numstat"
+
+
+class TestImportCycleCheckLever:
+    """Direct A<->B cycles. Long cycles out of scope (80% rule)."""
+
+    def _manifest(self, **overrides):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "roots": ["scripts"],
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def _mk_project(self, tmp_path: Path):
+        """Project layout: tmp_path/scripts/pkg/<files>."""
+        pkg = tmp_path / "scripts" / "pkg"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        return pkg
+
+    def test_clean_when_no_imports_added(self, tmp_path):
+        lever = ImportCycleCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 0
+
+    def test_clean_when_linear_imports(self, tmp_path):
+        pkg = self._mk_project(tmp_path)
+        (pkg / "a.py").write_text("from scripts.pkg import b\n")
+        (pkg / "b.py").write_text("x = 1\n")
+        lever = ImportCycleCheckLever()
+        stdout = "scripts/pkg/a.py\nscripts/pkg/b.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=stdout, stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 2
+
+    def test_found_direct_cycle(self, tmp_path):
+        pkg = self._mk_project(tmp_path)
+        (pkg / "a.py").write_text("from scripts.pkg import b\n")
+        (pkg / "b.py").write_text("from scripts.pkg import a\n")
+        lever = ImportCycleCheckLever()
+        stdout = "scripts/pkg/a.py\nscripts/pkg/b.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=stdout, stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        findings = obs["detail"]["findings"]
+        assert len(findings) == 1
+        assert "<->" in findings[0]
+        assert "scripts/pkg/a.py" in findings[0]
+        assert "scripts/pkg/b.py" in findings[0]
+
+    def test_ignores_non_project_imports(self, tmp_path):
+        pkg = self._mk_project(tmp_path)
+        # Both files import stdlib only — no cycle.
+        (pkg / "a.py").write_text("import os\nimport json\n")
+        (pkg / "b.py").write_text("import sys\nimport json\n")
+        lever = ImportCycleCheckLever()
+        stdout = "scripts/pkg/a.py\nscripts/pkg/b.py\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=stdout, stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = ImportCycleCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestLicenseHeaderCheckLever:
+    """New source files must declare Copyright / SPDX-License-Identifier."""
+
+    HEADER_PATTERNS = [
+        r'^#\s*Copyright',
+        r'^//\s*Copyright',
+        r'^#\s*SPDX-License-Identifier',
+        r'^//\s*SPDX-License-Identifier',
+    ]
+
+    def _manifest(self, **overrides):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "extensions": [".py", ".js", ".ts", ".tsx"],
+            "header_patterns": list(self.HEADER_PATTERNS),
+            "lines_to_check": 10,
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_new_files(self, tmp_path):
+        lever = LicenseHeaderCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 0
+
+    def test_clean_when_new_file_has_header(self, tmp_path):
+        src = tmp_path / "new.py"
+        src.write_text("# Copyright 2026 eidetic-works\n\ndef foo(): pass\n")
+        lever = LicenseHeaderCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="new.py\n", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 1
+
+    def test_found_when_new_file_missing_header(self, tmp_path):
+        src = tmp_path / "naked.py"
+        src.write_text("def foo(): pass\n")
+        lever = LicenseHeaderCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="naked.py\n", stderr="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert "naked.py" in obs["detail"]["findings"]
+
+    def test_ignores_non_source_extensions(self, tmp_path):
+        (tmp_path / "readme.md").write_text("no header here\n")
+        (tmp_path / "data.json").write_text("{}\n")
+        lever = LicenseHeaderCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="readme.md\ndata.json\n", stderr=""
+            )
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 0
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = LicenseHeaderCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestScopePreEnforceLever:
+    """Complements TB's post-review gate by catching scope drift early."""
+
+    def _manifest(self, tasks_path, **overrides):
+        inputs = {
+            "tasks_path": str(tasks_path),
+            "task_id_env": "NUCLEUS_TASK_ID",
+            "diff_spec": "HEAD~1..HEAD",
+        }
+        inputs.update(overrides)
+        return {"inputs": inputs}
+
+    def _tasks(self, tmp_path, task_id="t-1", scope=None):
+        tasks_file = tmp_path / "tasks.json"
+        tasks_file.write_text(json.dumps({
+            "tasks": [{"id": task_id, "scope": scope or []}]
+        }))
+        return tasks_file
+
+    def test_skipped_when_no_task_context(self, tmp_path):
+        lever = ScopePreEnforceLever()
+        with patch.dict("os.environ", {}, clear=True):
+            obs = lever.run(self._manifest(tmp_path / "tasks.json"), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_task_context"
+
+    def test_skipped_when_task_scope_empty(self, tmp_path):
+        tasks_file = self._tasks(tmp_path, scope=[])
+        lever = ScopePreEnforceLever()
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "empty_scope"
+
+    def test_clean_when_all_files_in_scope(self, tmp_path):
+        tasks_file = self._tasks(tmp_path, scope=["scripts/levers/*.py"])
+        lever = ScopePreEnforceLever()
+        stdout = "scripts/levers/a.py\nscripts/levers/b.py\n"
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout=stdout, stderr="")
+                obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["files_checked"] == 2
+
+    def test_found_when_file_outside_scope(self, tmp_path):
+        tasks_file = self._tasks(tmp_path, scope=["scripts/levers/*.py"])
+        lever = ScopePreEnforceLever()
+        stdout = "scripts/levers/a.py\nbackend/app/chat.py\n"
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout=stdout, stderr="")
+                obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "found"
+        findings = obs["detail"]["findings"]
+        assert any("OUT_OF_SCOPE: backend/app/chat.py" in f for f in findings)
+        # in-scope file must not appear as a finding
+        assert not any("scripts/levers/a.py" in f for f in findings)
+
+    def test_error_when_tasks_file_corrupt(self, tmp_path):
+        tasks_file = tmp_path / "tasks.json"
+        tasks_file.write_text("{not json")
+        lever = ScopePreEnforceLever()
+        with patch.dict("os.environ", {"NUCLEUS_TASK_ID": "t-1"}, clear=True):
+            obs = lever.run(self._manifest(tasks_file), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "task_load"
 
 
 class TestDispatcherAndLedgerContract:

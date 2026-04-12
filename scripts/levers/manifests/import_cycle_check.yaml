@@ -1,0 +1,13 @@
+name: import_cycle_check
+description: Detect direct circular imports (A<->B) in Python files in the diff. Only considers imports resolvable against project roots (scripts/backend/tests).
+enabled: true
+triggers:
+  - post_executor
+inputs:
+  diff_spec: HEAD~1..HEAD
+  roots:
+    - scripts
+    - backend
+    - tests
+outputs:
+  ledger_event_type: lever.import_cycle_check.observation

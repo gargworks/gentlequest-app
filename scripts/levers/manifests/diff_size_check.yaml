@@ -1,0 +1,12 @@
+name: diff_size_check
+description: Flag commits that add too many files or lines. Rubber-stamp risk spikes on large diffs. Binary entries count toward files but contribute zero added lines.
+enabled: true
+triggers:
+  - pre_commit
+  - post_executor
+inputs:
+  diff_spec: HEAD~1..HEAD
+  max_files: 20
+  max_added_lines: 500
+outputs:
+  ledger_event_type: lever.diff_size_check.observation
