@@ -1,0 +1,15 @@
+name: i18n_key_check
+description: Scan added JSX/TSX lines for visible text nodes lacking a t() or i18n.t() wrapper. Conservative — only flags text ≥ min_length chars; line with t( is treated as i18n-aware.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  source_extensions:
+    - .tsx
+    - .jsx
+  min_length: 3
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.i18n_key_check.observation

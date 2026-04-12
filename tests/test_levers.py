@@ -30,6 +30,8 @@ from scripts.levers.base import (
 )
 import subprocess
 
+from scripts.levers.api_contract_check import ApiContractCheckLever
+from scripts.levers.bundle_size_check import BundleSizeCheckLever
 from scripts.levers.coverage_delta import CoverageDeltaLever
 from scripts.levers.dead_code_scan import DeadCodeScanLever
 from scripts.levers.dep_vulnerability_check import DepVulnerabilityCheckLever
@@ -37,12 +39,15 @@ from scripts.levers.diff_size_check import DiffSizeCheckLever
 from scripts.levers.flaky_test_detector import FlakyTestDetectorLever
 from scripts.levers.golden_benchmark_check import GoldenBenchmarkCheckLever
 from scripts.levers.gt40_lint import Gt40LintLever
+from scripts.levers.i18n_key_check import I18nKeyCheckLever
 from scripts.levers.import_cycle_check import ImportCycleCheckLever
 from scripts.levers.license_header_check import LicenseHeaderCheckLever
 from scripts.levers.gt40_test_smoke import Gt40TestSmokeLever
 from scripts.levers.gt40_typecheck import Gt40TypecheckLever
+from scripts.levers.migration_lint import MigrationLintLever
 from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
 from scripts.levers.ruff_chain import RuffChainLever
+from scripts.levers.schema_drift_check import SchemaDriftCheckLever
 from scripts.levers.scope_pre_enforce import ScopePreEnforceLever
 from scripts.levers.secret_scan import SecretScanLever
 from scripts.levers.runtime_regression import RuntimeRegressionLever
@@ -1430,3 +1435,331 @@ class TestDepVulnerabilityCheckLever:
             obs = lever.run(self._manifest(), tmp_path / ".brain")
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "parse_audit"
+
+
+class TestSchemaDriftCheckLever:
+    def _manifest(self, **kw):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "schema_patterns": ["**/*.schema.json"],
+            "max_findings": 25,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_schema_in_diff(self, tmp_path):
+        lever = SchemaDriftCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="main.py\n")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["schemas_checked"] == 0
+
+    def test_clean_when_additive_only(self, tmp_path):
+        lever = SchemaDriftCheckLever()
+        (tmp_path / "user.schema.json").write_text(
+            json.dumps({"id": 1, "name": "x", "email": "y"})
+        )
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="user.schema.json\n")
+        show_result = MagicMock(returncode=0, stdout=json.dumps({"id": 1, "name": "x"}))
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_field_removed(self, tmp_path):
+        lever = SchemaDriftCheckLever()
+        (tmp_path / "user.schema.json").write_text(json.dumps({"id": 1}))
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="user.schema.json\n")
+        show_result = MagicMock(returncode=0, stdout=json.dumps({"id": 1, "name": "x"}))
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("removed 'name'" in f for f in obs["detail"]["findings"])
+
+    def test_found_when_type_changed(self, tmp_path):
+        lever = SchemaDriftCheckLever()
+        (tmp_path / "user.schema.json").write_text(json.dumps({"id": "abc"}))
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="user.schema.json\n")
+        show_result = MagicMock(returncode=0, stdout=json.dumps({"id": 1}))
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("type 'id'" in f and "int->str" in f for f in obs["detail"]["findings"])
+
+    def test_error_when_current_malformed(self, tmp_path):
+        lever = SchemaDriftCheckLever()
+        (tmp_path / "user.schema.json").write_text("{{not json")
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="user.schema.json\n")
+        with patch("subprocess.run", side_effect=[diff_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_schema"
+
+
+class TestApiContractCheckLever:
+    def _manifest(self, **kw):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "roots": ["backend"],
+            "decorator_names": ["app.get", "app.post", "app.route", "router.get"],
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_py_changed(self, tmp_path):
+        lever = ApiContractCheckLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_clean_when_additive_routes(self, tmp_path):
+        lever = ApiContractCheckLever()
+        current_src = (
+            "@app.get('/users')\ndef a(): pass\n"
+            "@app.get('/posts')\ndef b(): pass\n"
+        )
+        previous_src = "@app.get('/users')\ndef a(): pass\n"
+        (tmp_path / "backend").mkdir()
+        (tmp_path / "backend" / "routes.py").write_text(current_src)
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="backend/routes.py\n")
+        show_result = MagicMock(returncode=0, stdout=previous_src)
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_when_route_removed(self, tmp_path):
+        lever = ApiContractCheckLever()
+        current_src = "@app.get('/users')\ndef a(): pass\n"
+        previous_src = (
+            "@app.get('/users')\ndef a(): pass\n"
+            "@app.post('/posts')\ndef b(): pass\n"
+        )
+        (tmp_path / "backend").mkdir()
+        (tmp_path / "backend" / "routes.py").write_text(current_src)
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="backend/routes.py\n")
+        show_result = MagicMock(returncode=0, stdout=previous_src)
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("POST /posts" in f for f in obs["detail"]["findings"])
+
+    def test_ignores_non_decorator_calls(self, tmp_path):
+        lever = ApiContractCheckLever()
+        current_src = "print('hello')\nresult = app.get('/not-a-decorator')\n"
+        previous_src = current_src
+        (tmp_path / "backend").mkdir()
+        (tmp_path / "backend" / "m.py").write_text(current_src)
+        (tmp_path / ".brain").mkdir()
+        diff_result = MagicMock(returncode=0, stdout="backend/m.py\n")
+        show_result = MagicMock(returncode=0, stdout=previous_src)
+        with patch("subprocess.run", side_effect=[diff_result, show_result]):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = ApiContractCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestMigrationLintLever:
+    def _manifest(self, **kw):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "migration_globs": ["**/migrations/*.sql"],
+            "max_findings": 25,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_clean_when_no_migrations_added(self, tmp_path):
+        lever = MigrationLintLever()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="src/app.py\n")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_clean_when_migration_is_safe(self, tmp_path):
+        lever = MigrationLintLever()
+        (tmp_path / "migrations").mkdir()
+        (tmp_path / "migrations" / "001.sql").write_text(
+            "ALTER TABLE users ADD COLUMN email VARCHAR(255) NOT NULL DEFAULT '';\n"
+        )
+        (tmp_path / ".brain").mkdir()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="migrations/001.sql\n")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_not_null_without_default(self, tmp_path):
+        lever = MigrationLintLever()
+        (tmp_path / "migrations").mkdir()
+        (tmp_path / "migrations" / "002.sql").write_text(
+            "ALTER TABLE users ADD COLUMN email VARCHAR(255) NOT NULL;\n"
+        )
+        (tmp_path / ".brain").mkdir()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="migrations/002.sql\n")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("NOT NULL without DEFAULT" in f for f in obs["detail"]["findings"])
+
+    def test_found_drop_column(self, tmp_path):
+        lever = MigrationLintLever()
+        (tmp_path / "migrations").mkdir()
+        (tmp_path / "migrations" / "003.sql").write_text(
+            "ALTER TABLE users DROP COLUMN legacy_field;\n"
+        )
+        (tmp_path / ".brain").mkdir()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="migrations/003.sql\n")
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("DROP COLUMN" in f for f in obs["detail"]["findings"])
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = MigrationLintLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestI18nKeyCheckLever:
+    def _manifest(self, **kw):
+        inputs = {
+            "diff_spec": "HEAD~1..HEAD",
+            "source_extensions": [".tsx", ".jsx"],
+            "min_length": 3,
+            "max_findings": 25,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _diff(self, *files):
+        parts = []
+        for path, *lines in files:
+            parts.append(f"diff --git a/{path} b/{path}")
+            parts.append(f"--- a/{path}")
+            parts.append(f"+++ b/{path}")
+            parts.append("@@ -1 +1,%d @@" % len(lines))
+            for line in lines:
+                parts.append("+" + line)
+        return "\n".join(parts) + "\n"
+
+    def test_clean_when_no_frontend_in_diff(self, tmp_path):
+        lever = I18nKeyCheckLever()
+        diff = self._diff(("a.py", "print('hi')"))
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff)
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_clean_when_wrapped_in_t(self, tmp_path):
+        lever = I18nKeyCheckLever()
+        diff = self._diff(
+            ("src/Comp.tsx", "const x = <p>{t('welcome.message')}</p>;"),
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff)
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_hardcoded_jsx_text(self, tmp_path):
+        lever = I18nKeyCheckLever()
+        diff = self._diff(
+            ("src/Comp.tsx", "return <div>Sign in here</div>;"),
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff)
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("Sign in here" in f for f in obs["detail"]["findings"])
+
+    def test_respects_min_length(self, tmp_path):
+        lever = I18nKeyCheckLever()
+        diff = self._diff(
+            ("src/Comp.tsx", "return <span>Hi</span>;"),
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff)
+            obs = lever.run(self._manifest(min_length=10), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_error_when_git_missing(self, tmp_path):
+        lever = I18nKeyCheckLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError()):
+            obs = lever.run(self._manifest(), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "git_diff"
+
+
+class TestBundleSizeCheckLever:
+    def _manifest(self, stats, base, **kw):
+        inputs = {
+            "stats_path": str(stats),
+            "baseline_path": str(base),
+            "regression_threshold_pct": 5.0,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def test_skipped_when_stats_missing(self, tmp_path):
+        lever = BundleSizeCheckLever()
+        base = tmp_path / "baseline.json"
+        base.write_text(json.dumps({"total_size_bytes": 1000}))
+        obs = lever.run(
+            self._manifest(tmp_path / "no.json", base),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_bundle_stats"
+
+    def test_skipped_when_baseline_missing(self, tmp_path):
+        lever = BundleSizeCheckLever()
+        stats = tmp_path / "stats.json"
+        stats.write_text(json.dumps({"total_size_bytes": 1000}))
+        obs = lever.run(
+            self._manifest(stats, tmp_path / "no.json"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_baseline"
+
+    def test_clean_within_threshold(self, tmp_path):
+        lever = BundleSizeCheckLever()
+        stats = tmp_path / "stats.json"
+        base = tmp_path / "baseline.json"
+        stats.write_text(json.dumps({"total_size_bytes": 1020}))  # 2% up
+        base.write_text(json.dumps({"total_size_bytes": 1000}))
+        obs = lever.run(self._manifest(stats, base), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+
+    def test_found_regression_exceeds_threshold(self, tmp_path):
+        lever = BundleSizeCheckLever()
+        stats = tmp_path / "stats.json"
+        base = tmp_path / "baseline.json"
+        stats.write_text(json.dumps({"total_size_bytes": 1200}))  # 20% up
+        base.write_text(json.dumps({"total_size_bytes": 1000}))
+        obs = lever.run(self._manifest(stats, base), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["regression_pct"] > 5.0
+
+    def test_error_on_malformed_json(self, tmp_path):
+        lever = BundleSizeCheckLever()
+        stats = tmp_path / "stats.json"
+        base = tmp_path / "baseline.json"
+        stats.write_text("{{not-json")
+        base.write_text(json.dumps({"total_size_bytes": 1000}))
+        obs = lever.run(self._manifest(stats, base), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_stats"

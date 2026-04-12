@@ -1,0 +1,14 @@
+name: migration_lint
+description: Scan newly-added migration files for dangerous SQL patterns (DROP/RENAME, NOT NULL without DEFAULT). Only added files are inspected.
+enabled: true
+triggers:
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  migration_globs:
+    - "**/migrations/*.sql"
+    - "**/migrations/*.py"
+    - "**/alembic/versions/*.py"
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.migration_lint.observation

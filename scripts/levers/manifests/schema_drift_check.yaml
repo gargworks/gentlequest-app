@@ -1,0 +1,15 @@
+name: schema_drift_check
+description: Compare top-level keys + JSON types of changed schema files against previous commit. Flag removed keys or changed types; additive changes are clean.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  schema_patterns:
+    - "**/*.schema.json"
+    - "**/openapi.json"
+    - "**/openapi.yaml"
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.schema_drift_check.observation
