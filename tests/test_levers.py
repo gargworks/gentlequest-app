@@ -98,3 +98,96 @@ class TestDispatcherAndLedgerContract:
         manifests.mkdir()
         with pytest.raises(FileNotFoundError):
             run_lever.run("nonexistent", manifests_dir=manifests)
+
+
+class TestRunTrigger:
+    """The post-executor auto-fire is what actually makes the gate fire.
+
+    These tests cover manifest filtering by trigger, non-fatal lever
+    failures, and missing directory handling.
+    """
+
+    def test_returns_empty_when_manifests_dir_missing(self, tmp_path):
+        missing = tmp_path / "nope"
+        assert run_lever.run_trigger("post_executor", manifests_dir=missing) == []
+
+    def test_only_fires_levers_matching_trigger(self, tmp_path):
+        manifests = tmp_path / "manifests"
+        manifests.mkdir()
+        # Match: post_executor trigger, enabled
+        (manifests / "ruff_chain.yaml").write_text(
+            "name: ruff_chain\nenabled: true\n"
+            "triggers:\n  - post_executor\n  - manual\n"
+        )
+        # Mismatch: different trigger
+        (manifests / "cron_lever.yaml").write_text(
+            "name: cron_lever\nenabled: true\n"
+            "triggers:\n  - cron\n"
+        )
+        # Mismatch: disabled
+        (manifests / "off_lever.yaml").write_text(
+            "name: off_lever\nenabled: false\n"
+            "triggers:\n  - post_executor\n"
+        )
+        ledger = tmp_path / "events.jsonl"
+
+        # Patch load_lever to return a lever that succeeds cheaply.
+        class _FakeLever:
+            name = "ruff_chain"
+
+            def run(self, manifest, brain_path):
+                return {"outcome": "clean", "detail": {"files_checked": 0}}
+
+        with patch("scripts.levers.run_lever.load_lever", return_value=_FakeLever()):
+            results = run_lever.run_trigger(
+                "post_executor", manifests_dir=manifests, ledger_path=ledger
+            )
+
+        names = [r["lever"] for r in results]
+        assert names == ["ruff_chain"]
+
+    def test_lever_failure_is_non_fatal(self, tmp_path):
+        manifests = tmp_path / "manifests"
+        manifests.mkdir()
+        (manifests / "broken.yaml").write_text(
+            "name: broken\nenabled: true\n"
+            "triggers:\n  - post_executor\n"
+        )
+        (manifests / "ruff_chain.yaml").write_text(
+            "name: ruff_chain\nenabled: true\n"
+            "triggers:\n  - post_executor\n"
+        )
+        ledger = tmp_path / "events.jsonl"
+
+        class _FakeLever:
+            name = "ruff_chain"
+
+            def run(self, manifest, brain_path):
+                return {"outcome": "clean", "detail": {}}
+
+        def _loader(name):
+            if name == "broken":
+                raise RuntimeError("boom")
+            return _FakeLever()
+
+        with patch("scripts.levers.run_lever.load_lever", side_effect=_loader):
+            results = run_lever.run_trigger(
+                "post_executor", manifests_dir=manifests, ledger_path=ledger
+            )
+
+        # ruff_chain still ran, broken was caught.
+        names = [r["lever"] for r in results]
+        assert "ruff_chain" in names
+        assert "broken" not in names
+
+    def test_no_matching_trigger_returns_empty(self, tmp_path):
+        manifests = tmp_path / "manifests"
+        manifests.mkdir()
+        (manifests / "only_cron.yaml").write_text(
+            "name: only_cron\nenabled: true\n"
+            "triggers:\n  - cron\n"
+        )
+        ledger = tmp_path / "events.jsonl"
+        assert run_lever.run_trigger(
+            "post_executor", manifests_dir=manifests, ledger_path=ledger
+        ) == []

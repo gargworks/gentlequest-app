@@ -15,7 +15,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -73,6 +73,52 @@ def run(name: str, manifests_dir: Optional[Path] = None,
     observation = lever.run(manifest, BRAIN_PATH)
     append_observation(name, observation, effective_ledger)
     return observation
+
+
+def run_trigger(trigger: str, manifests_dir: Optional[Path] = None,
+                ledger_path: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Fire every enabled lever whose manifest lists the given trigger.
+
+    Lever failures are caught and printed — they must never break the caller
+    (the driver), because lever auto-fire is a supporting mechanism, not a
+    precondition.
+
+    Returns a list of {"lever": name, "observation": obs} entries, one per
+    lever that actually ran.
+    """
+    mdir = manifests_dir or MANIFESTS_DIR
+    if not mdir.exists():
+        return []
+
+    results: List[Dict[str, Any]] = []
+    for manifest_file in sorted(mdir.glob("*.yaml")):
+        name = manifest_file.stem
+        try:
+            manifest = load_manifest(name, mdir)
+        except Exception as e:
+            print(f"[LEVER] skipping {name} — manifest load failed: {e}")
+            continue
+        if not manifest.get("enabled", True):
+            continue
+        triggers = manifest.get("triggers", []) or []
+        trigger_names = set()
+        for t in triggers:
+            if isinstance(t, str):
+                trigger_names.add(t)
+            elif isinstance(t, dict):
+                # Legacy/alternate form — also accept {"trigger": "name"}.
+                # (Do NOT use {"on": "name"} — YAML parses `on` as boolean.)
+                val = t.get("trigger") or t.get("name")
+                if val:
+                    trigger_names.add(val)
+        if trigger not in trigger_names:
+            continue
+        try:
+            obs = run(name, mdir, ledger_path)
+            results.append({"lever": name, "observation": obs})
+        except Exception as e:
+            print(f"[LEVER] {name} failed (non-fatal): {e}")
+    return results
 
 
 def main() -> int:

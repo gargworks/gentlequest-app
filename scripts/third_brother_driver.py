@@ -4121,6 +4121,18 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     log_alert("scope_violation", task_id, "escalated",
                               f"Files outside scope: {violation_list}", "WARNING")
             else:
+                # ── Auto-fire post-executor levers before review ──
+                # Day-0 runtime compounding: levers observe the fresh diff
+                # and write findings to the ledger so tb_review_output's
+                # lever gate can see them. Failure of a lever must never
+                # block the driver.
+                if config.get("v3_features", {}).get("lever_auto_fire_enabled", True):
+                    try:
+                        from scripts.levers.run_lever import run_trigger as _lever_run_trigger
+                        _lever_run_trigger("post_executor")
+                    except Exception as _e:
+                        print(f"[LEVER] auto-fire failed (non-fatal): {_e}")
+
                 try:
                     audit_plan_text = ""
                     if task.get("source") == "plan_audit" and task.get("_plan_text"):
