@@ -140,6 +140,58 @@ def append_observation(
     return _append_event(event, ledger_path)
 
 
+def publish_event(
+    event_type: str,
+    *,
+    outcome: Optional[str] = None,
+    detail: Optional[Dict[str, Any]] = None,
+    ledger_path: Optional[Path] = None,
+    **extra: Any,
+) -> bool:
+    """Best-effort module-level event publisher.
+
+    For non-lever events that still belong on the shared substrate —
+    ``tb.review.decided``, ``chat.request.received``,
+    ``ground.tier0.passed``. Unlike ``append_observation`` this never
+    raises into the caller; publishing failure must not break the
+    request path it's observing.
+
+    ``outcome`` (if passed) is validated against OUTCOMES — an
+    adversarial caller slipping a bogus outcome through here would
+    break bull_audit's schema_valid invariant on the next read. Failed
+    validation emits a ``lever.schema.violation`` event and returns False.
+
+    ``ledger_path`` resolves at call time (not at def time) so tests
+    can patch ``LEDGER_PATH`` and have it apply to all downstream calls.
+    """
+    effective_ledger = ledger_path or LEDGER_PATH
+    try:
+        if outcome is not None:
+            from .base import OUTCOMES
+            if outcome not in OUTCOMES:
+                _append_meta_event(
+                    "lever.schema.violation",
+                    {
+                        "source": "publish_event",
+                        "event_type": event_type,
+                        "bad_outcome": outcome,
+                    },
+                    effective_ledger,
+                )
+                return False
+        event = LedgerEvent(
+            ts=_now_iso(),
+            type=event_type,
+            outcome=outcome,
+            detail=detail,
+            extra={k: v for k, v in extra.items() if v is not None},
+        )
+        _append_event(event, effective_ledger)
+        return True
+    except Exception:
+        return False
+
+
 def run(
     name: str,
     manifests_dir: Optional[Path] = None,
