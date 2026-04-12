@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.levers import run_lever
 from scripts.levers.ruff_chain import RuffChainLever
+from scripts.levers.todo_chain import TodoChainLever
 
 
 class TestRuffChainLever:
@@ -61,6 +62,73 @@ class TestRuffChainLever:
             obs = lever.run({"inputs": {"diff_spec": "HEAD~1..HEAD"}}, tmp_path)
         assert obs["outcome"] == "error"
         assert "ruff" in obs["detail"]["error"].lower()
+
+
+class TestTodoChainLever:
+    def test_reports_clean_when_no_markers_in_diff(self, tmp_path):
+        lever = TodoChainLever()
+        diff_output = (
+            "diff --git a/a.py b/a.py\n"
+            "--- a/a.py\n+++ b/a.py\n"
+            "@@ -1 +1 @@\n+def foo(): pass\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run({"inputs": {}}, tmp_path)
+        assert obs["outcome"] == "clean"
+
+    def test_detects_todo_and_fixme_in_added_lines(self, tmp_path):
+        lever = TodoChainLever()
+        diff_output = (
+            "diff --git a/a.py b/a.py\n"
+            "--- a/a.py\n+++ b/a.py\n"
+            "@@ -1 +1,3 @@\n"
+            "+def foo():\n"
+            "+    # TODO: implement\n"
+            "+    pass  # FIXME later\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run({"inputs": {}}, tmp_path)
+        assert obs["outcome"] == "found"
+        findings = obs["detail"]["findings"]
+        assert len(findings) == 2
+        assert any("TODO" in f for f in findings)
+        assert any("FIXME" in f for f in findings)
+        assert all(f.startswith("a.py:") for f in findings)
+
+    def test_ignores_markers_already_in_code_not_added(self, tmp_path):
+        """Only '+' lines count — existing markers in unchanged code are skipped."""
+        lever = TodoChainLever()
+        diff_output = (
+            "diff --git a/a.py b/a.py\n"
+            "--- a/a.py\n+++ b/a.py\n"
+            "@@ -1,3 +1,3 @@\n"
+            " # TODO: pre-existing\n"
+            "-def old(): pass\n"
+            "+def new(): pass\n"
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run({"inputs": {}}, tmp_path)
+        assert obs["outcome"] == "clean"
+
+    def test_respects_max_findings_cap(self, tmp_path):
+        lever = TodoChainLever()
+        lines = ["diff --git a/a.py b/a.py", "--- a/a.py", "+++ b/a.py", "@@ -1 +1,6 @@"]
+        lines.extend(f"+    # TODO: item {i}" for i in range(10))
+        diff_output = "\n".join(lines) + "\n"
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=diff_output)
+            obs = lever.run({"inputs": {"max_findings": 3}}, tmp_path)
+        assert obs["outcome"] == "found"
+        assert len(obs["detail"]["findings"]) == 3
+
+    def test_reports_error_when_git_fails(self, tmp_path):
+        lever = TodoChainLever()
+        with patch("subprocess.run", side_effect=FileNotFoundError("git missing")):
+            obs = lever.run({"inputs": {}}, tmp_path)
+        assert obs["outcome"] == "error"
 
 
 class TestDispatcherAndLedgerContract:
