@@ -1,0 +1,14 @@
+name: bull_audit
+description: "Brazen Bull skeleton: replay tail N events of the ledger and evaluate 5 frozen invariants (schema_valid, outcome_in_set, duration_bounded, csr_not_collapsed, no_repeated_lever_errors). Skipped on empty ledger."
+enabled: true
+triggers:
+  - cron_daily
+inputs:
+  ledger_path: .brain/ledger/events.jsonl
+  csr_path: .brain/flywheel/csr.json
+  window_events: 1000
+  duration_threshold_ms: 30000
+  csr_floor: 0.5
+  repeated_error_threshold: 3
+outputs:
+  ledger_event_type: lever.bull_audit.observation

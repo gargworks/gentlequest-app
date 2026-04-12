@@ -32,6 +32,7 @@ import subprocess
 
 from scripts.levers.a11y_smoke import A11ySmokeLever
 from scripts.levers.api_contract_check import ApiContractCheckLever
+from scripts.levers.bull_audit import BullAuditLever
 from scripts.levers.bundle_size_check import BundleSizeCheckLever
 from scripts.levers.config_schema_check import ConfigSchemaCheckLever
 from scripts.levers.coverage_delta import CoverageDeltaLever
@@ -2105,3 +2106,166 @@ class TestConfigSchemaCheckLever:
             )
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "parse_config"
+
+
+class TestBullAuditLever:
+    """Brazen Bull skeleton — 5 frozen invariants.
+
+    Invariant matrix:
+      schema_valid            unparseable JSONL in window → finding
+      outcome_in_set          outcome not in OUTCOMES → finding
+      duration_bounded        duration_ms > threshold → finding
+      csr_not_collapsed       ratio < floor OR CSR unavailable → finding
+      no_repeated_lever_errors  (lever, stage) error count > N → finding
+    """
+
+    def _manifest(self, ledger, csr=None, **kw):
+        inputs = {
+            "ledger_path": str(ledger),
+            "window_events": 100,
+            "duration_threshold_ms": 30_000,
+            "csr_floor": 0.5,
+            "repeated_error_threshold": 3,
+        }
+        if csr is not None:
+            inputs["csr_path"] = str(csr)
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _good_event(self, lever="foo", outcome="clean", duration_ms=10, stage=None):
+        detail = {"stage": stage} if stage else {}
+        line = {
+            "ts": "2026-04-12T10:00:00+00:00",
+            "type": f"lever.{lever}.observation",
+            "lever": lever,
+            "outcome": outcome,
+            "detail": detail,
+            "duration_ms": duration_ms,
+        }
+        return json.dumps(line)
+
+    def _write_csr(self, path, ratio):
+        path.write_text(json.dumps({"ratio": ratio, "claims_total": 10}))
+
+    def test_skipped_when_ledger_missing(self, tmp_path):
+        lever = BullAuditLever()
+        obs = lever.run(
+            self._manifest(tmp_path / "nope.jsonl"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_ledger"
+
+    def test_skipped_when_ledger_empty(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        p.write_text("")
+        obs = lever.run(self._manifest(p), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "empty_ledger"
+
+    def test_clean_when_all_invariants_hold(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        p.write_text("\n".join(self._good_event() for _ in range(10)) + "\n")
+        self._write_csr(csr, 0.95)
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["invariants_checked"] == 5
+
+    def test_found_schema_invalid_in_window(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        p.write_text(
+            self._good_event() + "\nnot-json\n" + self._good_event() + "\n"
+        )
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("schema_valid" in f for f in obs["detail"]["findings"])
+
+    def test_outcome_in_set_invariant_unit(self, tmp_path):
+        """outcome_in_set is defense-in-depth: LedgerEvent.from_jsonl already
+        rejects unknown outcomes at parse time, so to exercise the invariant
+        we build events directly and call the function.
+        """
+        from scripts.levers.bull_audit import _inv_outcome_in_set, _InvariantContext
+        bad_event = LedgerEvent(
+            ts="2026-04-12T10:00:00+00:00",
+            type="lever.foo.observation",
+            lever="foo",
+            outcome="clean",
+            detail={},
+        )
+        object.__setattr__(bad_event, "outcome", "bogus")
+        ctx = _InvariantContext(
+            events=[bad_event], schema_errors=0, csr=0.9,
+            duration_threshold_ms=30_000, csr_floor=0.5,
+            repeated_error_threshold=3,
+        )
+        finding = _inv_outcome_in_set(ctx)
+        assert finding is not None
+        assert "bogus" in finding
+
+    def test_found_duration_above_threshold(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        lines = [self._good_event(duration_ms=60_000)] + [self._good_event() for _ in range(3)]
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("duration_bounded" in f for f in obs["detail"]["findings"])
+
+    def test_found_csr_collapsed(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.30)
+        p.write_text(self._good_event() + "\n")
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("csr_not_collapsed" in f for f in obs["detail"]["findings"])
+
+    def test_found_csr_unavailable(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        p.write_text(self._good_event() + "\n")
+        obs = lever.run(
+            self._manifest(p, csr=tmp_path / "nope.json"),
+            tmp_path / ".brain",
+        )
+        assert obs["outcome"] == "found"
+        assert any("csr_not_collapsed" in f for f in obs["detail"]["findings"])
+
+    def test_found_repeated_lever_errors(self, tmp_path):
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        lines = [
+            self._good_event(outcome="error", stage="git_diff", lever="ruff_chain")
+            for _ in range(5)
+        ]
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert any("no_repeated_lever_errors" in f for f in obs["detail"]["findings"])
+
+    def test_window_limits_read(self, tmp_path):
+        """Events beyond the window must not influence invariants."""
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        old_bad = self._good_event(outcome="bogus")
+        recent_good = [self._good_event() for _ in range(5)]
+        p.write_text("\n".join([old_bad] * 10 + recent_good) + "\n")
+        manifest = self._manifest(p, csr=csr)
+        manifest["inputs"]["window_events"] = 5
+        obs = lever.run(manifest, tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["events_read"] == 5
