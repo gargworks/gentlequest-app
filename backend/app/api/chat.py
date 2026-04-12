@@ -1,11 +1,11 @@
 import logging
 import uuid
+from datetime import datetime
 
-logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 
 from app.database import get_session
 from app.events import (
@@ -16,6 +16,8 @@ from app.models.chat import InterviewSession, ChatMessage
 from app.models.interview import Interview
 from app.models.team import Team
 from app.services.ai_insights_service import AIInsightsService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 ai_service = AIInsightsService()
@@ -53,9 +55,6 @@ async def start_chat_session(
     
     return chat_session
 
-
-
-from pydantic import BaseModel
 
 class MessageRequest(BaseModel):
     content: str
