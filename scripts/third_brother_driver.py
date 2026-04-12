@@ -442,6 +442,73 @@ def _file_matches_scope(filepath: str, scope: List[str]) -> bool:
     return False
 
 
+def _build_verification_evidence(preflight: Optional[Dict],
+                                  ground_result: Optional[Dict] = None) -> str:
+    """Build verification evidence string from all available sources.
+
+    Combines GT40 preflight (plan-level ## Verification commands) and GROUND
+    execution verification (tier-based checks) into a single evidence block
+    for TB review. Returns "" if neither source has results.
+    """
+    sections = []
+
+    # Source 1: GT40 preflight (runs if plan has ## Verification section)
+    if preflight and preflight.get("results"):
+        ev_lines = ["GT40 Preflight:"]
+        for r in preflight["results"]:
+            if r.get("skipped") or r.get("passed") is None:
+                continue
+            status = "PASS" if r["passed"] else "FAIL"
+            ev_lines.append(f"  [{status}] {r['command'][:80]}")
+        overall = "ALL PASS" if preflight["passed"] else "FAILURES DETECTED"
+        ev_lines.append(f"  Result: {overall} "
+                        f"({preflight['passed_count']} passed, "
+                        f"{preflight['failed_count']} failed)")
+        sections.append("\n".join(ev_lines))
+
+    # Source 2: GROUND execution verification (runs for all tasks)
+    if ground_result and ground_result.get("signals"):
+        ev_lines = ["GROUND Execution Verification:"]
+        for sig in ground_result["signals"][:10]:
+            status = "PASS" if sig.get("passed") else "FAIL"
+            target = sig.get("file", sig.get("module", ""))
+            check = sig.get("check", "?")
+            err = f" — {sig['error']}" if sig.get("error") else ""
+            ev_lines.append(f"  [{status}] Tier {sig.get('tier', '?')}: {check} {target}{err}")
+        overall = "PASS" if ground_result.get("verified") else "FAIL"
+        ev_lines.append(f"  Result: {overall} "
+                        f"(tiers_passed={ground_result.get('tiers_passed', 0)}, "
+                        f"tiers_failed={ground_result.get('tiers_failed', 0)})")
+        sections.append("\n".join(ev_lines))
+
+    return "\n".join(sections)
+
+
+def _extract_plan_file_paths(plan_text: str) -> List[str]:
+    """Extract concrete file paths from plan text for scoped diffs.
+
+    Tries **File:**/**Files:** inline patterns first, then backtick-quoted
+    paths inside ## Changes sections. Returns only non-glob paths.
+    """
+    paths = []
+    # Primary: **File:** or **Files:** inline references
+    for p in re.findall(r'\*\*Files?:\*\*\s*`?([\w./\-]+\.\w+)`?', plan_text):
+        if p not in paths:
+            paths.append(p)
+    # Secondary: ## Changes section with backtick-quoted paths
+    if not paths:
+        changes_match = re.search(
+            r"## Changes[^\n]*\n((?:(?!^## ).*\n?)*)",
+            plan_text, re.MULTILINE)
+        if changes_match:
+            for line in changes_match.group(1).strip().splitlines():
+                tbl = re.search(r'`([\w./\-]+\.\w+)`', line)
+                if tbl and tbl.group(1) not in paths:
+                    paths.append(tbl.group(1))
+    # Filter out anything that still looks like a glob
+    return [p for p in paths if not any(c in p for c in "*?[")]
+
+
 # Nucleus infrastructure writes — ambient, not task output
 _INFRA_PREFIXES = (
     ".brain/", "nucleus-mcp", "mcp-server-nucleus/scripts/sync_public_repo",
@@ -773,6 +840,18 @@ def classify_task(task: Dict, config: Dict) -> Dict:
             "scout_turns": 0,
         }
 
+    # Compound audit tasks: always investigate with scout — need concrete findings
+    if task.get("source") == "compound_audit":
+        return {
+            "type": "investigate",
+            "needs_scout": True,
+            "max_turns": task.get("max_turns", 25),
+            "tools": v3.get("executor_tools_debug",
+                            "Bash,Read,Edit,Write,Glob,Grep,Agent"),
+            "confidence": 1.0,
+            "scout_turns": v3.get("scout_max_turns", 12),
+        }
+
     text = f"{task.get('title', '')} {task.get('description', '')}".lower()
     words = set(text.split())
 
@@ -924,11 +1003,13 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
 
 def _ollama_generate(prompt: str, model: str, timeout: int = 60,
-                     num_predict: int = -1, temperature: float = 0.7) -> tuple:
+                     num_predict: int = -1, temperature: float = 0.7,
+                     max_retries: int = 2, retry_backoff: float = 2.0) -> tuple:
     """Call Ollama via HTTP API (not CLI subprocess). Returns (response_text, duration_ms).
 
     Uses the same pattern proven in tb_sparring.py. HTTP API is faster than
     subprocess (no process fork) and doesn't include model loading in timeout.
+    Retries on failure with exponential backoff.
     """
     import urllib.request
 
@@ -939,38 +1020,51 @@ def _ollama_generate(prompt: str, model: str, timeout: int = 60,
         "options": {"num_predict": num_predict, "temperature": temperature},
     }).encode()
 
-    req = urllib.request.Request(
-        OLLAMA_API_URL,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-
     t0 = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode())
-            duration_ms = int((time.time() - t0) * 1000)
-            text = data.get("response", "").strip()
-            # Strip qwen3 chain-of-thought — closed or unclosed
-            think_end = text.find("</think>")
-            if think_end >= 0:
-                text = text[think_end + 8:].strip()
-            elif text.startswith("<think>"):
-                text = text[7:].strip()
-            return text, duration_ms
-    except Exception as e:
-        duration_ms = int((time.time() - t0) * 1000)
-        print(f"[OLLAMA] Error after {duration_ms}ms: {type(e).__name__}: {e}")
-        return None, duration_ms
+    for attempt in range(1, max_retries + 2):
+        req = urllib.request.Request(
+            OLLAMA_API_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode())
+                duration_ms = int((time.time() - t0) * 1000)
+                text = data.get("response", "").strip()
+                # Strip qwen3 chain-of-thought — closed or unclosed
+                think_end = text.find("</think>")
+                if think_end >= 0:
+                    text = text[think_end + 8:].strip()
+                elif text.startswith("<think>"):
+                    text = text[7:].strip()
+                return text, duration_ms
+        except Exception as e:
+            elapsed = int((time.time() - t0) * 1000)
+            if attempt <= max_retries:
+                backoff = retry_backoff ** (attempt - 1)
+                print(f"[OLLAMA] Attempt {attempt} failed ({type(e).__name__}), "
+                      f"retrying in {backoff:.0f}s...")
+                time.sleep(backoff)
+            else:
+                print(f"[OLLAMA] Error after {elapsed}ms ({max_retries} retries "
+                      f"exhausted): {type(e).__name__}: {e}")
+                return None, elapsed
+    return None, int((time.time() - t0) * 1000)
 
 
-def _ollama_warmup(model: str):
+def _ollama_warmup(model: str, max_attempts: int = 2):
     """Send a trivial prompt to force model loading before real work."""
-    text, ms = _ollama_generate("Reply OK", model, timeout=30, num_predict=5)
-    if text:
-        print(f"[OLLAMA] Model {model} warmed up ({ms}ms)")
-    else:
-        print(f"[OLLAMA] Warmup failed — cold starts may cause timeouts")
+    for attempt in range(1, max_attempts + 1):
+        text, ms = _ollama_generate("Reply OK", model, timeout=30, num_predict=5,
+                                     max_retries=1)
+        if text:
+            print(f"[OLLAMA] Model {model} warmed up ({ms}ms)")
+            return
+        if attempt < max_attempts:
+            print(f"[OLLAMA] Warmup attempt {attempt} failed, retrying in 3s...")
+            time.sleep(3)
+    print(f"[OLLAMA] Warmup failed after {max_attempts} attempts")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1080,7 +1174,7 @@ Write the instruction now:"""
     print(f"[TB] Generating enriched prompt via {tb_model}...")
 
     response_text, duration_ms = _ollama_generate(
-        ollama_prompt, tb_model, timeout=600, num_predict=-1)
+        ollama_prompt, tb_model, timeout=timeout, num_predict=-1)
 
     log_ollama_call("TB", tb_model, ollama_prompt, response_text or "",
                     0 if response_text else -1, duration_ms, "", task_id)
@@ -1539,7 +1633,8 @@ REVIEW_LOG_PATH = DRIVER_DIR / "review_log.jsonl"
 
 
 def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
-                     config: Dict, pre_snapshot: set = None) -> tuple:
+                     config: Dict, pre_snapshot: set = None,
+                     verification_evidence: str = "") -> tuple:
     """Inline follow-up on same session after DEEPEN verdict.
 
     Instead of re-queuing (losing context), immediately sends review feedback
@@ -1603,23 +1698,48 @@ def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
     except Exception:
         pass
 
+    # Scope the diff for audit tasks
+    if task.get("source") == "plan_audit":
+        scope_files = [p for p in task.get("scope", [])
+                       if not any(c in p for c in "*?[")]
+        # Fallback: extract concrete paths from plan text when scope is all globs
+        if not scope_files and task.get("_plan_text"):
+            scope_files = _extract_plan_file_paths(task["_plan_text"])
+        if scope_files:
+            try:
+                for diff_cmd in [
+                    ["git", "diff", "--"] + scope_files,
+                    ["git", "diff", "--cached", "--"] + scope_files,
+                ]:
+                    scoped = subprocess.run(
+                        diff_cmd, capture_output=True, text=True,
+                        timeout=10, cwd=str(PROJECT_ROOT))
+                    if scoped.stdout.strip():
+                        git_diff_text = scoped.stdout[:3000]
+                        break
+            except Exception:
+                pass
+
     # Filter out pre-existing dirty files (same as main execution path)
     if pre_snapshot:
         git_diff_text = _filter_diff_by_snapshot(git_diff_text, pre_snapshot)
 
     # Re-review the follow-up result
     review = tb_review_output(task, response, git_diff_text, config,
-                              plan_text=task.get("_plan_text", "")[:3000])
+                              plan_text=task.get("_plan_text", "")[:3000],
+                              verification_evidence=verification_evidence)
     return (response, review)
 
 
 def tb_review_output(task: Dict, executor_result: Dict,
                      git_diff: str, config: Dict,
-                     plan_text: str = "") -> Dict:
+                     plan_text: str = "",
+                     verification_evidence: str = "") -> Dict:
     """Call TB via Ollama to review executor output.
 
     Args:
         plan_text: If provided, TB checks diff alignment against the plan.
+        verification_evidence: GT40 preflight results for audit tasks.
 
     Returns:
         {"verdict": "ACCEPT|DEEPEN|ESCALATE",
@@ -1654,14 +1774,16 @@ Executor Output (last 1500 chars):
 
 Git Diff (last 2000 chars):
 {git_diff[-2000:] if git_diff else '(no changes detected)'}
-
+{"" if not verification_evidence else chr(10) + "Verification Evidence (GT40 independent checks):" + chr(10) + verification_evidence + chr(10)}
 Review the work and respond with EXACTLY one of:
 ACCEPT - The task is done correctly. Changes match the task requirements.
 DEEPEN - The task is partially done or needs more work. Explain what is missing.
 ESCALATE - Something is wrong or risky. Needs human review.
 
 IMPORTANT: If the git diff shows files modified OUTSIDE the allowed file scope, you MUST ESCALATE.
-If the executor claims work was "already done" but the diff shows no relevant code changes, DEEPEN.
+If the executor claims work was "already done" and the diff shows no relevant code changes:
+- If verification evidence shows ALL PASS, the work pre-existed. Evaluate based on verification results.
+- If there is NO verification evidence or verification FAILED, DEEPEN.
 
 Format your response as:
 VERDICT: [ACCEPT/DEEPEN/ESCALATE]
@@ -1684,14 +1806,15 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
 
     try:
         output, duration_ms = _ollama_generate(
-            review_prompt, tb_model, timeout=600, num_predict=-1)
+            review_prompt, tb_model, timeout=timeout, num_predict=-1)
 
         log_ollama_call("REVIEW", tb_model, review_prompt, output or "",
                         0 if output else -1, duration_ms, "", task_id)
 
         if not output:
-            print(f"[REVIEW] Ollama failed after {duration_ms}ms, defaulting to ACCEPT")
-            return {"verdict": "ACCEPT", "reason": "ollama error", "confidence": 0.5}
+            print(f"[REVIEW] Ollama failed after {duration_ms}ms, defaulting to DEEPEN")
+            return {"verdict": "DEEPEN", "reason": "ollama_unreachable", "confidence": 0.0,
+                    "deepen_notes": "TB could not reach Ollama — re-review required"}
 
         # Parse verdict from TB's response — structured parsing with fallbacks
         verdict = None
@@ -1788,8 +1911,9 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         return review_result
 
     except Exception as e:
-        print(f"[REVIEW] Error: {e}, defaulting to ACCEPT")
-        return {"verdict": "ACCEPT", "reason": f"error: {e}", "confidence": 0.5}
+        print(f"[REVIEW] Error: {e}, defaulting to DEEPEN")
+        return {"verdict": "DEEPEN", "reason": f"review_error: {e}", "confidence": 0.0,
+                "deepen_notes": f"TB review crashed: {e} — re-review required"}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2374,12 +2498,132 @@ def _check_degradation(pre: Dict, post: Dict) -> List[str]:
     return degraded
 
 
+def _reverify_stale_claims(config: Dict) -> Dict:
+    """Re-verify stale failed CSR claims where the underlying issue may be fixed.
+
+    Not retroactive rewriting — appends new survived claims for issues
+    that now pass verification. Returns summary of corrections.
+
+    Correlation: each claim's step (format "phase:task_id") is matched against
+    compound attempted_signals (success outcome) or audit results (ACCEPT for
+    the specific plan). Does NOT credit a survived claim just because any
+    unrelated plan passed.
+    """
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        fw = Flywheel(BRAIN_PATH)
+        csr_data = fw.csr()
+    except Exception as e:
+        return {"error": str(e), "corrections": 0}
+
+    corrections = 0
+    seen_steps = set()
+
+    # Load external evidence once (not per-claim)
+    audit_results = {}
+    audit_path = BRAIN_PATH / "audit" / "results.json"
+    if audit_path.exists():
+        try:
+            audit_results = json.loads(audit_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    compound_signals = {}
+    signals_path = BRAIN_PATH / "compound" / "attempted_signals.json"
+    if signals_path.exists():
+        try:
+            compound_signals = json.loads(signals_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    for claim in csr_data.get("recent_claims", []):
+        if claim.get("survived"):
+            continue
+        reason = claim.get("reason", "")
+        step = claim.get("step", "")
+
+        # Only re-verify claims with known fixable failure modes
+        if not any(mode in reason for mode in
+                   ("deepen_exhausted", "escalate_after_deepen")):
+            continue
+
+        # Deduplicate — only one correction per unique step
+        if step in seen_steps:
+            continue
+        seen_steps.add(step)
+
+        # Extract task identifier from step (format: "phase_name:task_id")
+        claim_task_id = step.split(":", 1)[-1] if ":" in step else step
+
+        # Evidence 1: Compound signal was attempted and succeeded
+        signal_entry = compound_signals.get(claim_task_id, {})
+        outcomes = signal_entry.get("outcomes", [])
+        has_success = any(o.get("outcome") == "success" for o in outcomes)
+
+        # Evidence 2: A *matching* plan in audit results now has ACCEPT
+        # (must correlate — claim_task_id substring of plan_name)
+        matched_plan = None
+        for plan_name, result in audit_results.items():
+            if result.get("verdict") == "ACCEPT" and claim_task_id in plan_name:
+                matched_plan = plan_name
+                break
+
+        if has_success or matched_plan:
+            fw.record_survived(
+                phase="csr_recalculation",
+                step=f"reverify:{step}"
+            )
+            corrections += 1
+            evidence = ("compound_success" if has_success
+                        else f"audit_accept:{matched_plan}")
+            print(f"[CSR-RECALC] Corrected: {step} (evidence: {evidence})")
+        else:
+            print(f"[CSR-RECALC] Skipped: {step} (no matching evidence)")
+
+    new_csr = fw.csr().get("ratio", 0)
+    return {"corrections": corrections, "new_csr": new_csr}
+
+
+def _record_compound_attempt(task_id: str, outcome: str):
+    """Track compound signal attempt to prevent infinite re-queueing."""
+    attempted_path = BRAIN_PATH / "compound" / "attempted_signals.json"
+    attempted = {}
+    if attempted_path.exists():
+        try:
+            attempted = json.loads(attempted_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    entry = attempted.get(task_id, {"attempts": 0, "outcomes": []})
+    entry["attempts"] += 1
+    entry["outcomes"].append({"outcome": outcome, "at": datetime.now().isoformat()})
+    attempted[task_id] = entry
+    attempted_path.parent.mkdir(parents=True, exist_ok=True)
+    attempted_path.write_text(json.dumps(attempted, indent=2))
+
+
 def _analyze_compound_signals() -> List[Dict]:
     """Mine CSR failures, verification failures, hard negatives, and audit gaps for compound tasks."""
     tasks = []
 
-    # Signal 1: Recurring CSR failure modes
+    # Load attempted signals to prevent infinite re-queueing
+    attempted_path = BRAIN_PATH / "compound" / "attempted_signals.json"
+    attempted = {}
+    if attempted_path.exists():
+        try:
+            attempted = json.loads(attempted_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    def _should_skip(task_id: str) -> bool:
+        entry = attempted.get(task_id, {})
+        if entry.get("attempts", 0) >= 2:
+            print(f"[COMPOUND] Skipping {task_id}: already attempted {entry['attempts']}x")
+            return True
+        return False
+
+    # Signal 1: Recurring CSR failure modes — with evidence
     failure_modes = {}
+    failure_reasons = {}  # mode -> [full reason strings]
     try:
         from mcp_server_nucleus.flywheel import Flywheel
         csr_data = Flywheel(BRAIN_PATH).csr()
@@ -2387,6 +2631,9 @@ def _analyze_compound_signals() -> List[Dict]:
             if not claim.get("survived") and claim.get("reason"):
                 mode = claim["reason"].split(":")[0].strip()
                 failure_modes[mode] = failure_modes.get(mode, 0) + 1
+                if mode not in failure_reasons:
+                    failure_reasons[mode] = []
+                failure_reasons[mode].append(claim["reason"][:200])
     except Exception:
         pass
 
@@ -2394,18 +2641,36 @@ def _analyze_compound_signals() -> List[Dict]:
     if repeated:
         top = sorted(repeated.items(), key=lambda x: -x[1])[:3]
         modes_str = ", ".join(f"{m} ({c}x)" for m, c in top)
-        tasks.append({
-            "id": f"compound-csr-{top[0][0][:20]}",
-            "title": f"Fix recurring CSR failure: {top[0][0]}",
-            "description": f"Recurring failure modes in CSR: {modes_str}. "
-                           f"Investigate root cause and fix the underlying issue.",
-            "scope": ["scripts/**", "mcp-server-nucleus/**"],
-            "priority": 1, "status": "committed", "source": "compound_audit",
-            "max_turns": 25,
-        })
+        task_id = f"compound-csr-{top[0][0][:20]}"
+        if not _should_skip(task_id):
+            # Collect sample reasons for evidence
+            sample_reasons = failure_reasons.get(top[0][0], [])[:3]
+            evidence = "\n".join(f"  - {r}" for r in sample_reasons)
+            tasks.append({
+                "id": task_id,
+                "title": f"Fix recurring CSR failure: {top[0][0]}",
+                "description": (
+                    f"Recurring failure modes in CSR: {modes_str}.\n\n"
+                    f"## Evidence (sample claim reasons):\n{evidence}\n\n"
+                    f"## Root cause analysis:\n"
+                    f"Trace the failure path in scripts/third_brother_driver.py. "
+                    f"The reason strings above indicate what TB saw. Find why the "
+                    f"executor produces output that triggers these verdicts.\n\n"
+                    f"## Steps:\n"
+                    f"1. Read the failure reasons above\n"
+                    f"2. Find the code path that produces these outcomes\n"
+                    f"3. Fix the root cause (not symptoms)\n"
+                    f"4. Verify the fixed path no longer triggers the failure mode"
+                ),
+                "scope": ["scripts/**", "mcp-server-nucleus/**"],
+                "priority": 1, "status": "committed", "source": "compound_audit",
+                "max_turns": 25,
+                "verification_criteria": f"CSR failure mode '{top[0][0]}' should not recur",
+            })
 
-    # Signal 2: Verification failures (tiers that keep failing)
+    # Signal 2: Verification failures — with sample log entries
     tier_failures = {}
+    tier_samples = {}  # tier -> [sample entries]
     if VERIFICATION_LOG_PATH.exists():
         for line in VERIFICATION_LOG_PATH.read_text().strip().split('\n')[-50:]:
             if line.strip():
@@ -2413,61 +2678,119 @@ def _analyze_compound_signals() -> List[Dict]:
                     e = json.loads(line)
                     for tier in e.get("tiers_failed", []):
                         tier_failures[tier] = tier_failures.get(tier, 0) + 1
+                        if tier not in tier_samples:
+                            tier_samples[tier] = []
+                        tier_samples[tier].append(e)
                 except (json.JSONDecodeError, KeyError):
                     pass
 
     repeated_tiers = {t: c for t, c in tier_failures.items() if c >= 3}
     if repeated_tiers:
         top_tier = max(repeated_tiers, key=repeated_tiers.get)
-        tasks.append({
-            "id": f"compound-verify-tier{top_tier}",
-            "title": f"Fix verification gap: tier {top_tier} ({repeated_tiers[top_tier]}x failures)",
-            "description": f"Verification tier {top_tier} has failed {repeated_tiers[top_tier]} times "
-                           f"in the last 50 verifications. Investigate and fix.",
-            "scope": ["scripts/**", "mcp-server-nucleus/**"],
-            "priority": 1, "status": "committed", "source": "compound_audit",
-            "max_turns": 25,
-        })
+        task_id = f"compound-verify-tier{top_tier}"
+        if not _should_skip(task_id):
+            # Build sample info from tier entries
+            sample_lines = []
+            for s in tier_samples.get(top_tier, [])[-3:]:
+                task_name = s.get("task_id", "?")
+                cmds = s.get("failed_commands", s.get("commands_run", []))
+                sample_lines.append(f"  - Task {task_name}: {str(cmds)[:150]}")
+            sample_info = "\n".join(sample_lines) if sample_lines else "  (no details)"
+            tasks.append({
+                "id": task_id,
+                "title": f"Fix verification gap: tier {top_tier} "
+                         f"({repeated_tiers[top_tier]}x failures)",
+                "description": (
+                    f"Verification tier {top_tier} has failed "
+                    f"{repeated_tiers[top_tier]} times in the last 50 verifications.\n\n"
+                    f"## Evidence (sample failures):\n{sample_info}\n\n"
+                    f"## Root cause analysis:\n"
+                    f"Check tier {top_tier} verification logic in "
+                    f"scripts/third_brother_driver.py. Determine whether the tier "
+                    f"checks are broken or the code under test is failing.\n\n"
+                    f"## Steps:\n"
+                    f"1. Read the sample failures above\n"
+                    f"2. Find the verification tier {top_tier} implementation\n"
+                    f"3. Determine if the checks need fixing or the code does\n"
+                    f"4. Fix and verify tier {top_tier} passes on next run"
+                ),
+                "scope": ["scripts/**", "mcp-server-nucleus/**"],
+                "priority": 1, "status": "committed", "source": "compound_audit",
+                "max_turns": 25,
+                "verification_criteria": f"Tier {top_tier} passes in next verification run",
+            })
 
-    # Signal 3: Hard negatives in sparring bank
+    # Signal 3: Hard negatives — with sample failure modes
+    hard_neg_samples = []
     hard_neg_count = 0
     if SPARRING_TASK_BANK_PATH.exists():
         try:
             with open(SPARRING_TASK_BANK_PATH) as f:
                 bank = json.load(f)
-            hard_neg_count = sum(1 for t in bank if t.get("source") == "hard_negative")
+            hard_negs = [t for t in bank if t.get("source") == "hard_negative"]
+            hard_neg_count = len(hard_negs)
+            hard_neg_samples = hard_negs[:5]
         except (json.JSONDecodeError, OSError):
             pass
 
     if hard_neg_count >= 3:
-        tasks.append({
-            "id": "compound-hard-negatives",
-            "title": f"Address {hard_neg_count} accumulated hard negatives",
-            "description": f"{hard_neg_count} hard negatives in sparring bank — "
-                           f"these represent systematic weaknesses. Review patterns and fix root causes.",
-            "scope": ["scripts/**", "mcp-server-nucleus/**"],
-            "priority": 2, "status": "committed", "source": "compound_audit",
-            "max_turns": 25,
-        })
+        task_id = "compound-hard-negatives"
+        if not _should_skip(task_id):
+            sample_info = "\n".join(
+                f"  - {t.get('failure_mode', '?')}: {t.get('task', '')[:100]}"
+                for t in hard_neg_samples
+            )
+            tasks.append({
+                "id": task_id,
+                "title": f"Address {hard_neg_count} accumulated hard negatives",
+                "description": (
+                    f"{hard_neg_count} hard negatives in sparring bank.\n\n"
+                    f"## Evidence (sample failures):\n{sample_info}\n\n"
+                    f"## Action:\n"
+                    f"Run curriculum_refresh to promote pending DPO pairs whose "
+                    f"step has since survived. Report count of pending→ready promotions."
+                ),
+                "scope": ["scripts/**", "mcp-server-nucleus/**"],
+                "priority": 2, "status": "committed", "source": "compound_audit",
+                "max_turns": 25,
+                "verification_criteria": "curriculum_refresh runs without error, "
+                                         "reports promotion count",
+            })
 
-    # Signal 4: Audit results — plans that failed verification
+    # Signal 4: Audit results — with plan names and verdict reasons
     audit_path = BRAIN_PATH / "audit" / "results.json"
     if audit_path.exists():
         try:
             audit_results = json.loads(audit_path.read_text())
-            incomplete = {k: v for k, v in audit_results.items() if v.get("verdict") != "ACCEPT"}
+            incomplete = {k: v for k, v in audit_results.items()
+                          if v.get("verdict") not in ("ACCEPT", "ABANDONED")}
             if incomplete:
-                names = ", ".join(list(incomplete.keys())[:3])
-                tasks.append({
-                    "id": "compound-audit-gaps",
-                    "title": f"Close {len(incomplete)} audit gap(s)",
-                    "description": f"Plans that failed audit verification: {names}. "
-                                   f"The system cannot do what was planned. "
-                                   f"Investigate: missing implementation, design flaw, or superseded plan?",
-                    "scope": ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"],
-                    "priority": 1, "status": "committed", "source": "compound_audit",
-                    "max_turns": 25,
-                })
+                task_id = "compound-audit-gaps"
+                if not _should_skip(task_id):
+                    gap_details = []
+                    for k, v in list(incomplete.items())[:3]:
+                        gap_details.append(
+                            f"  - {k}: verdict={v.get('verdict', '?')}, "
+                            f"session={v.get('session_id', '?')[:12]}")
+                    gap_evidence = "\n".join(gap_details)
+                    tasks.append({
+                        "id": task_id,
+                        "title": f"Close {len(incomplete)} audit gap(s)",
+                        "description": (
+                            f"Plans that failed audit verification:\n\n"
+                            f"## Evidence:\n{gap_evidence}\n\n"
+                            f"## Action:\n"
+                            f"For each plan: determine if the implementation is "
+                            f"missing, the design is flawed, or the plan is superseded. "
+                            f"Fix or mark as ABANDONED."
+                        ),
+                        "scope": ["scripts/**", "mcp-server-nucleus/**",
+                                  "backend/**", ".brain/**"],
+                        "priority": 1, "status": "committed",
+                        "source": "compound_audit", "max_turns": 25,
+                        "verification_criteria": "All listed plans have ACCEPT or "
+                                                 "ABANDONED verdict after re-audit",
+                    })
         except (json.JSONDecodeError, OSError):
             pass
 
@@ -3845,6 +4168,36 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             except Exception:
                 pass
 
+            # Scope the diff for audit tasks — give TB only plan-relevant changes
+            if task.get("source") == "plan_audit":
+                scope_files = [p for p in task.get("scope", [])
+                               if not any(c in p for c in "*?[")]
+                # Fallback: extract concrete paths from plan text when scope is all globs
+                if not scope_files and task.get("_plan_text"):
+                    scope_files = _extract_plan_file_paths(task["_plan_text"])
+                if scope_files:
+                    try:
+                        for diff_cmd in [
+                            ["git", "diff", "--"] + scope_files,
+                            ["git", "diff", "--cached", "--"] + scope_files,
+                        ]:
+                            scoped = subprocess.run(
+                                diff_cmd, capture_output=True, text=True,
+                                timeout=10, cwd=str(PROJECT_ROOT))
+                            if scoped.stdout.strip():
+                                git_diff_text = scoped.stdout[:3000]
+                                break
+                        # Also check committed changes
+                        if not git_diff_text.strip() and _pre_head:
+                            scoped = subprocess.run(
+                                ["git", "diff", f"{_pre_head}..HEAD", "--"] + scope_files,
+                                capture_output=True, text=True, timeout=10,
+                                cwd=str(PROJECT_ROOT))
+                            if scoped.stdout.strip():
+                                git_diff_text = scoped.stdout[:3000]
+                    except Exception:
+                        pass  # fall through to full-tree diff
+
             # ── Execution verification (Frontier 1: GROUND — deterministic, no LLM) ──
             verification_result = None
             if config.get("execution_verification_enabled", True):
@@ -3924,10 +4277,15 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             else:
                 try:
                     audit_plan_text = ""
-                    if task.get("source") == "plan_audit" and task.get("_plan_text"):
-                        audit_plan_text = task["_plan_text"][:3000]
+                    verification_evidence = ""
+                    if task.get("source") == "plan_audit":
+                        if task.get("_plan_text"):
+                            audit_plan_text = task["_plan_text"][:3000]
+                        verification_evidence = _build_verification_evidence(
+                            task.get("_gt40_preflight"), verification_result)
                     review = tb_review_output(task, response, git_diff_text, config,
-                                              plan_text=audit_plan_text)
+                                              plan_text=audit_plan_text,
+                                              verification_evidence=verification_evidence)
                     # Reviewer answering is the survived event; downstream verdict
                     # (ACCEPT/DEEPEN/ESCALATE) is captured separately in CSR via the
                     # outcome path below.
@@ -3955,7 +4313,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     print(f"[REVIEW] DEEPEN {deepen_count}/{max_chain}: inline follow-up")
                     pre_result = response.get("result", "")
                     response, review = deepen_follow_up(
-                        task, deepen_notes, session_id, config, pre_snapshot)
+                        task, deepen_notes, session_id, config, pre_snapshot,
+                        verification_evidence=verification_evidence)
                     response["tb_review"] = review
                     # Capture B: DEEPEN DPO pair
                     if config.get("training_capture_enabled", True):
@@ -3972,6 +4331,22 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     _log_hard_negative(task, "deepen_exhausted", deepen_notes)
                     _fw_file_ticket("task_outcome", task_id,
                                     f"deepen_exhausted: {deepen_notes[:200]}", config)
+                    # Audit tasks: record DEEPEN_EXHAUSTED so auto-skip works
+                    if task.get("source") == "plan_audit" and task.get("_plan_path"):
+                        _record_audit_result(
+                            plan_filename=Path(task["_plan_path"]).name,
+                            plan_mtime=os.path.getmtime(task["_plan_path"]),
+                            verdict="DEEPEN_EXHAUSTED",
+                            turns=response.get("num_turns", 0),
+                            duration_s=response.get("duration_seconds", 0),
+                            session_id=session_id,
+                            plan_source=task.get("_plan_source"),
+                        )
+                        _log_structured_outcome(
+                            task, "DEEPEN_EXHAUSTED", review,
+                            duration_s=response.get("duration_seconds", 0),
+                            turns=response.get("num_turns", 0),
+                        )
                 elif review["verdict"] == "ESCALATE":
                     _review_action = "escalate"
                     if not task_id.startswith("sparring-"):
@@ -4206,6 +4581,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 session_id=session_id,
                 verification=car_result,
                 verification_quality=quality,
+                plan_source=task.get("_plan_source"),
             )
 
             _log_structured_outcome(
@@ -4462,7 +4838,8 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
 
 
 def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
-                         session_id, verification=None, verification_quality=None):
+                         session_id, verification=None, verification_quality=None,
+                         plan_source=None):
     """Persist audit verdict so future runs auto-skip verified plans."""
     audit_dir = BRAIN_PATH / "audit"
     audit_dir.mkdir(parents=True, exist_ok=True)
@@ -4493,6 +4870,8 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
         }
     if verification_quality:
         entry["verification_quality"] = verification_quality
+    if plan_source:
+        entry["plan_source"] = plan_source
     results[plan_filename] = entry
     results_path.write_text(json.dumps(results, indent=2) + "\n")
     print(f"[AUDIT] Recorded: {plan_filename} → {verdict}")
@@ -4807,7 +5186,7 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
         skipped_names = []
         for p in plan_files:
             result = prev_results.get(p.name)
-            if result and result.get("verdict") in ("ACCEPT", "ABANDONED"):
+            if result and result.get("verdict") in ("ACCEPT", "ABANDONED", "DEEPEN_EXHAUSTED"):
                 plan_mtime = datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds")
                 if plan_mtime <= result.get("plan_mtime", ""):
                     skipped_names.append(p.name)
@@ -4815,7 +5194,7 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
             unverified.append(p)
 
         if skipped_names:
-            print(f"[AUDIT] Auto-skipped {len(skipped_names)} verified/abandoned plans: {', '.join(skipped_names[:5])}")
+            print(f"[AUDIT] Auto-skipped {len(skipped_names)} verified/abandoned/deepen-exhausted plans: {', '.join(skipped_names[:5])}")
     else:
         unverified = list(plan_files)
         print("[AUDIT] Force mode: re-auditing all plans")
@@ -4839,16 +5218,39 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
         title_match = re.search(r"^#\s+(?:Plan:\s*)?(.+)$", plan_text, re.MULTILINE)
         plan_title = title_match.group(1).strip() if title_match else plan_path.stem
 
-        # Extract "Files Modified" section for scope
-        scope = ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"]
-        files_match = re.search(r"## Files Modified\s*\n((?:- .+\n?)+)", plan_text)
+        # Extract file scope — handle both bullet lists and table formats
+        scope = []
+        files_match = re.search(
+            r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)",
+            plan_text, re.MULTILINE)
         if files_match:
-            file_lines = files_match.group(1).strip().splitlines()
-            scope = []
-            for line in file_lines:
-                path = re.sub(r"^-\s*`?|`?\s*—.*$", "", line).strip()
-                if path:
+            for line in files_match.group(1).strip().splitlines():
+                path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
+                if not path or not re.match(r"[\w./\-]+\.\w+", path):
+                    tbl = re.search(r"`([\w./\-]+\.\w+)`", line)
+                    if tbl:
+                        path = tbl.group(1)
+                    else:
+                        continue
+                if re.match(r"[\w./\-]+\.\w+", path):
                     scope.append(path)
+        # Secondary: look for **File:**/**Files:** patterns common in plan bodies
+        if not scope:
+            file_refs = re.findall(
+                r'\*\*Files?:\*\*\s*`?([\w./\-]+\.\w+)`?', plan_text)
+            scope.extend(f for f in file_refs if f not in scope)
+        # Tertiary: ## Changes section with backtick-quoted paths
+        if not scope:
+            changes_match = re.search(
+                r"## Changes[^\n]*\n((?:(?!^## ).*\n?)*)",
+                plan_text, re.MULTILINE)
+            if changes_match:
+                for line in changes_match.group(1).strip().splitlines():
+                    tbl = re.search(r'`([\w./\-]+\.\w+)`', line)
+                    if tbl and tbl.group(1) not in scope:
+                        scope.append(tbl.group(1))
+        if not scope:
+            scope = ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"]
 
         # Extract "Verification" section for live-fire step
         verify_match = re.search(
@@ -4869,6 +5271,8 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
                 failed = [r for r in preflight["results"] if r.get("passed") is False]
                 print(f"[GT40-PREFLIGHT] {plan_path.name}: {len(failed)} FAIL "
                       f"— Claude will attempt fixes")
+
+        preflight_result = preflight if verify_steps else None
 
         # Classify complexity → route to freeform or structured template
         complexity = _classify_plan_complexity(plan_text, scope)
@@ -4919,6 +5323,9 @@ run the plan's verification commands after you complete (GT40 verification).
                 complexity_expansion=expansion,
             )
 
+        # Track plan source for audit results
+        plan_source = "claude" if ".claude" in str(plan_path) else "brain"
+
         task = {
             "id": task_id,
             "title": f"Audit: {plan_title[:60]}",
@@ -4930,8 +5337,10 @@ run the plan's verification commands after you complete (GT40 verification).
             "max_turns": complexity["recommended_turns"],
             "_complexity": complexity,
             "_plan_path": str(plan_path),
+            "_plan_source": plan_source,
             "_verify_text": verify_steps,
             "_plan_text": plan_text,
+            "_gt40_preflight": preflight_result,
         }
         existing_tasks.append(task)
 
@@ -5021,9 +5430,18 @@ def run_compound_audit_mode(max_tasks: int, branch: str):
             _fw_file_ticket("compound_audit", task["id"],
                             f"compound_degradation: {', '.join(degraded)}", load_config())
             rolled_back.append(task["id"])
+            _record_compound_attempt(task["id"], "rolled_back")
         else:
             compounded.append(task["id"])
+            _record_compound_attempt(task["id"], "success")
             print(f"[COMPOUND-AUDIT] {task['id']}: OK")
+
+    # Phase 4: Re-verify stale CSR claims
+    print("\n[COMPOUND-AUDIT] Re-verifying stale CSR claims...")
+    recalc = _reverify_stale_claims(load_config())
+    if recalc.get("corrections", 0) > 0:
+        print(f"[COMPOUND-AUDIT] CSR recalculation: {recalc['corrections']} claims "
+              f"corrected, new CSR: {recalc['new_csr']:.3f}")
 
     # Final scorecard
     final_scorecard = _snapshot_scorecard()
