@@ -1154,6 +1154,84 @@ def _find_lever_findings_in_diff(git_diff: str,
     return matches
 
 
+def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
+                          tasks_path: Optional[Path] = None) -> Optional[str]:
+    """Spawn a fix task for lever findings. Day-0 compounding — no LLM.
+
+    Dedupes: if a pending lever-fix task with the same lever set + file set
+    already exists, returns None and does not create a new one.
+
+    Returns the new task id (or existing deduped id), or None on failure.
+    """
+    path = tasks_path if tasks_path is not None else TASKS_PATH
+    try:
+        lever_names = sorted({m.get("lever", "?") for m in lever_matches})
+        affected_files: set = set()
+        finding_samples: List[str] = []
+        file_exts = (".py", ".js", ".ts", ".tsx", ".yaml", ".yml",
+                     ".md", ".json", ".sh", ".toml")
+        for m in lever_matches:
+            findings = m.get("detail", {}).get("findings", [])
+            if isinstance(findings, list):
+                for f in findings[:3]:
+                    finding_samples.append(f)
+                    # Parse tokens and file:line:col forms; collect path-like bits.
+                    for token in str(f).split():
+                        token = token.rstrip(",.)")
+                        for candidate in [token] + token.split(":"):
+                            if "/" in candidate and candidate.endswith(file_exts):
+                                affected_files.add(candidate)
+                                break
+
+        dedup_key = f"{','.join(lever_names)}|{','.join(sorted(affected_files))}"
+
+        if path.exists():
+            data = json.loads(path.read_text())
+        else:
+            data = {"tasks": []}
+        tasks = data.get("tasks", [])
+
+        for t in tasks:
+            if (t.get("source") == "lever_gate"
+                    and t.get("status") in ("pending", "in_progress")
+                    and t.get("lever_gate_dedup_key") == dedup_key):
+                return t.get("id")
+
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        new_id = f"lever-fix-{'-'.join(lever_names)}-{ts}"
+        description_lines = [
+            f"Lever gate spawned this task from {len(lever_matches)} finding(s).",
+            f"Levers: {', '.join(lever_names)}",
+            f"Parent task: {parent_task.get('id', '?')}",
+            "",
+            "Sample findings:",
+        ] + [f"  - {f}" for f in finding_samples[:8]]
+        scope = sorted(affected_files) if affected_files else parent_task.get("scope", ["**"])
+
+        new_task = {
+            "id": new_id,
+            "title": f"Fix {','.join(lever_names)} findings in {parent_task.get('id', '?')}",
+            "description": "\n".join(description_lines),
+            "scope": scope,
+            "priority": "high",
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": datetime.now().isoformat(),
+            "source": "lever_gate",
+            "lever_gate_dedup_key": dedup_key,
+            "lever_gate_parent_task_id": parent_task.get("id", ""),
+        }
+        tasks.append(new_task)
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now().isoformat()
+        path.write_text(json.dumps(data, indent=2))
+        return new_id
+    except Exception as e:
+        print(f"[LEVER_GATE] task spawn failed (non-fatal): {e}")
+        return None
+
+
 def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict):
     """Score TB's Phase C prompt and Phase D review — produce DPO pairs from real work.
 
@@ -1837,6 +1915,31 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
                 reason = line.split(":", 1)[1].strip()
                 break
 
+        # ── Lever gate (day-0 runtime compounding, no LLM required) ──
+        # If the ledger flags findings on files in this diff, ACCEPT is a
+        # rubber-stamp. Force DEEPEN at runtime and spawn a fix task so the
+        # system builds its own backlog. Works without a local model.
+        original_verdict = verdict
+        lever_gate_enabled = v3.get("lever_gate_enabled", True)
+        lever_gate_matches: List[Dict] = []
+        lever_gate_spawned_task_id: Optional[str] = None
+        if lever_gate_enabled and verdict == "ACCEPT":
+            lever_gate_matches = _find_lever_findings_in_diff(
+                git_diff, window=v3.get("lever_gate_window", 100),
+            )
+            if lever_gate_matches:
+                lever_names = sorted({m.get("lever", "?") for m in lever_gate_matches})
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    f"Lever gate: {len(lever_gate_matches)} finding(s) on diff files "
+                    f"from {','.join(lever_names)}. Fix the findings or address them "
+                    "explicitly before accepting."
+                )
+                if v3.get("lever_gate_spawn_task", True):
+                    lever_gate_spawned_task_id = _spawn_lever_fix_task(
+                        task, lever_gate_matches
+                    )
+
         review_result = {
             "verdict": verdict,
             "reason": reason,
@@ -1844,9 +1947,22 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         }
         if deepen_notes:
             review_result["deepen_notes"] = deepen_notes
+        if lever_gate_matches:
+            review_result["lever_gate_fired"] = True
+            review_result["original_verdict"] = original_verdict
+            review_result["lever_gate_count"] = len(lever_gate_matches)
+            review_result["lever_gate_types"] = sorted({
+                m.get("lever", "?") for m in lever_gate_matches
+            })
+            if lever_gate_spawned_task_id:
+                review_result["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
 
         print(f"[REVIEW] {task.get('id', '?')}: {verdict} (confidence: {confidence}, "
               f"parse: {parse_method}) — {reason[:80]}")
+        if lever_gate_matches:
+            print(f"[REVIEW] Lever gate fired: {len(lever_gate_matches)} finding(s) "
+                  f"from {','.join(review_result['lever_gate_types'])}. "
+                  f"Spawned task: {lever_gate_spawned_task_id or 'none'}")
 
         # Log review
         log_entry = {
@@ -1859,6 +1975,12 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
             "reviewer_model": tb_model,
             "duration_ms": duration_ms,
         }
+        if lever_gate_matches:
+            log_entry["lever_gate_fired"] = True
+            log_entry["lever_gate_count"] = len(lever_gate_matches)
+            log_entry["original_verdict"] = original_verdict
+            if lever_gate_spawned_task_id:
+                log_entry["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
         with open(REVIEW_LOG_PATH, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
 

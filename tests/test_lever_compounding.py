@@ -15,7 +15,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.third_brother_driver import _find_lever_findings_in_diff
+from scripts.third_brother_driver import (
+    _find_lever_findings_in_diff,
+    _spawn_lever_fix_task,
+)
 
 
 DIFF_WITH_DRIVER = (
@@ -161,3 +164,92 @@ class TestFindLeverFindingsInDiff:
         assert len(matches) == 2
         levers = {m.get("lever") for m in matches}
         assert levers == {"ruff_chain", "mypy_chain"}
+
+
+class TestSpawnLeverFixTask:
+    def _match(self, lever="ruff_chain", finding="scripts/third_brother_driver.py:42:1: E402"):
+        return {
+            "type": f"lever.{lever}.observation",
+            "outcome": "found",
+            "lever": lever,
+            "detail": {"findings": [finding]},
+        }
+
+    def test_creates_task_with_lever_gate_source(self, tmp_path):
+        tasks_path = tmp_path / "tasks.json"
+        parent = {"id": "t-100", "scope": ["scripts/**"]}
+        new_id = _spawn_lever_fix_task(
+            parent, [self._match()], tasks_path=tasks_path
+        )
+        assert new_id is not None
+        assert new_id.startswith("lever-fix-ruff_chain-")
+        data = json.loads(tasks_path.read_text())
+        created = [t for t in data["tasks"] if t["id"] == new_id]
+        assert len(created) == 1
+        assert created[0]["source"] == "lever_gate"
+        assert created[0]["status"] == "pending"
+        assert created[0]["priority"] == "high"
+        assert created[0]["lever_gate_parent_task_id"] == "t-100"
+        assert created[0]["scope"] == ["scripts/third_brother_driver.py"]
+
+    def test_dedupes_same_finding_set(self, tmp_path):
+        tasks_path = tmp_path / "tasks.json"
+        parent = {"id": "t-200", "scope": ["scripts/**"]}
+        match = self._match()
+        first = _spawn_lever_fix_task(parent, [match], tasks_path=tasks_path)
+        second = _spawn_lever_fix_task(parent, [match], tasks_path=tasks_path)
+        assert first == second
+        data = json.loads(tasks_path.read_text())
+        lever_tasks = [t for t in data["tasks"] if t.get("source") == "lever_gate"]
+        assert len(lever_tasks) == 1
+
+    def test_new_task_when_finding_set_differs(self, tmp_path):
+        tasks_path = tmp_path / "tasks.json"
+        parent = {"id": "t-300", "scope": ["scripts/**"]}
+        first = _spawn_lever_fix_task(
+            parent,
+            [self._match(finding="scripts/third_brother_driver.py:42:1: E402")],
+            tasks_path=tasks_path,
+        )
+        second = _spawn_lever_fix_task(
+            parent,
+            [self._match(finding="scripts/other_file.py:10:1: F401")],
+            tasks_path=tasks_path,
+        )
+        assert first != second
+        data = json.loads(tasks_path.read_text())
+        lever_tasks = [t for t in data["tasks"] if t.get("source") == "lever_gate"]
+        assert len(lever_tasks) == 2
+
+    def test_creates_tasks_json_if_missing(self, tmp_path):
+        tasks_path = tmp_path / "nested" / "tasks.json"
+        tasks_path.parent.mkdir()
+        parent = {"id": "t-400"}
+        new_id = _spawn_lever_fix_task(
+            parent, [self._match()], tasks_path=tasks_path
+        )
+        assert new_id is not None
+        assert tasks_path.exists()
+        data = json.loads(tasks_path.read_text())
+        assert len(data["tasks"]) == 1
+
+    def test_completed_dedup_task_allows_new_spawn(self, tmp_path):
+        """If the prior lever-fix task is completed, a new one should spawn
+        because the finding re-surfaced despite being 'fixed'."""
+        tasks_path = tmp_path / "tasks.json"
+        parent = {"id": "t-500"}
+        first = _spawn_lever_fix_task(parent, [self._match()], tasks_path=tasks_path)
+        # Mark the first task as completed.
+        data = json.loads(tasks_path.read_text())
+        for t in data["tasks"]:
+            if t["id"] == first:
+                t["status"] = "completed"
+        tasks_path.write_text(json.dumps(data))
+        # Spawn again with same findings — should create a NEW task.
+        second = _spawn_lever_fix_task(parent, [self._match()], tasks_path=tasks_path)
+        assert second is not None
+        assert second != first
+        data = json.loads(tasks_path.read_text())
+        pending = [t for t in data["tasks"]
+                   if t.get("source") == "lever_gate" and t.get("status") == "pending"]
+        assert len(pending) == 1
