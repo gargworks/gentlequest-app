@@ -215,31 +215,41 @@ that bypasses `_record_audit_result`.
 
 ---
 
-## TODO 7 — shared ledger-tail reader helper
+## TODO 7 — shared ledger-tail reader helper — **DEFERRED (re-evaluated 2026-04-13)**
 
-**What:** Extract `scripts/levers/_ledger_reader.py::read_window(path,
-n, grandfather_legacy=True)` consumed by `bull_audit._read_window`,
-`_lever_gate_scan`, and the new `_spawn_plan_audit_fix_tasks`.
+**Original premise:** three callers copy "open, tail N, parse" — extract
+to `_ledger_reader.read_window`.
 
-**Why:** Three copies of "open, tail N, parse line-by-line, handle
-schema errors" today. Wave 8+ adds more callers (`plan_audit_trend`,
-MCP resources). Centralizing gives us one place to: (a) grandfather
-legacy event shapes, (b) add future rotation logic from TODO #1,
-(c) apply a shared lock-acquire policy.
+**Re-evaluation finding:** the three callers have meaningfully *different*
+semantics — extracting forces conformity that isn't actually shared.
 
-**Pros:** DRY — three readers become one. Future readers inherit all
-future semantics (rotation, locking) for free.
+| Caller | Parse strategy | Walk | Error policy |
+|---|---|---|---|
+| `bull_audit._read_window` | `LedgerEvent.from_jsonl` strict + grandfather legacy count | forward, last N | OSError → `(empty, 0)` |
+| `_lever_gate_scan` | raw `json.loads`, filter `lever.*.observation found` | forward, last N | OSError → status=`unknown` (fail-closed gate) |
+| `_spawn_plan_audit_fix_tasks` | raw `json.loads`, single newest match | reverse, all lines | OSError → emit `skipped` ledger event, return `[]` |
 
-**Cons:** Shared substrate helpers are a commitment — every future
-reader inherits the signature. Small risk of pinning a design choice
-prematurely (e.g., the `grandfather_legacy` flag) that later needs to
-grow.
+The genuinely shared code is just `path.read_text(encoding="utf-8")
+.splitlines()` + OSError handling. A helper that exposes only that is
+too thin to be worth the import. A helper that exposes parsing/walking
+bakes in policy choices that would force migrations to **change**
+behavior (e.g., `_lever_gate_scan` inheriting bull_audit's grandfather
+counting it doesn't want).
 
-**Depends on / blocked by:** Co-evolves with TODOS.md #1 (ledger
-rotation) since both touch the same read path. Build TODO #7 first
-(thin helper with today's semantics), then TODO #1 extends it.
+**Re-trigger criteria (when to revisit):**
 
-**Where to start:** Stub helper mirroring `bull_audit._read_window`'s
-behavior verbatim (returns `(events, schema_errors_in_window)`; honors
-the legacy-event grandfathering). Migrate the three callers in separate
-PRs so each migration is reviewable in isolation.
+1. A 4th caller appears AND its parse/walk semantics overlap with one
+   of the existing three. Three is coincidence; four with the same
+   shape is a pattern.
+2. Ledger rotation (TODO 1) lands. Once readers must enumerate
+   `events.YYYY-MM.jsonl` segments + follow `events.current.jsonl`
+   pointer, the seek-by-time logic IS genuinely shared and worth
+   centralizing — but it'd be a `tail_events_since(ts)` helper, not
+   the originally-proposed `read_window(path, n)`.
+3. A real lock-acquire policy gets defined (today there is none on the
+   read path; writers use flock, readers don't). If shared lock
+   semantics emerge, that's a true shared concern.
+
+Until any of those hit, the duplication is honest — three small reads
+with three different error stories — and consolidating now would be
+premature abstraction.
