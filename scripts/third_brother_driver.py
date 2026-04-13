@@ -1409,8 +1409,10 @@ def _spawn_plan_audit_fix_tasks(
             "description": (
                 f"plan_audit lever flagged {name} as bucket="
                 f"{plan.get('bucket', '?')} (age {plan.get('age_days', '?')}d). "
-                f"Run: python3 scripts/third_brother_driver.py "
-                f"--audit-plans 1 --plan-name {name}"
+                f"Verify plan claims against code + write verdict to "
+                f".brain/audit/results.json via: python3 "
+                f"scripts/third_brother_driver.py --audit-plans 1 "
+                f"(newest-first; use --audit-skip K to reach this plan)"
             ),
             "scope": [str(plan_on_disk)],
             "priority": 1,
