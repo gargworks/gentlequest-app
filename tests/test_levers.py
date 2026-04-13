@@ -2450,9 +2450,14 @@ class TestPlanAuditLever:
         inputs.update(kw)
         return {"inputs": inputs}
 
-    def _write_plan(self, path, name, mtime_iso):
+    def _write_plan(self, path, name, mtime_iso, content=None):
         plan = path / name
-        plan.write_text(f"# {name}\n")
+        if content is None:
+            # Default includes ## Verification so the plan is not
+            # classified as `unverifiable` (Wave 9). Tests that need
+            # other shapes pass content= explicitly.
+            content = f"# {name}\n\n## Verification\n- pytest -q\n"
+        plan.write_text(content)
         dt = datetime.fromisoformat(mtime_iso)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
@@ -2772,3 +2777,231 @@ class TestPlanAuditLever:
             "failed_audit",
             "verified_no_evidence",
         ]
+
+    # ── Wave 9: unverifiable / drift_detected / parse_error buckets ────
+
+    def test_unverifiable_when_plan_lacks_both_sections(self, tmp_path):
+        """No `## Files Modified` AND no `## Verification` section → the
+        lever can never auto-grade this plan. Highest-priority rot bucket."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(
+            pdir, "bare.md", "2026-04-10T10:00:00",
+            content="# Bare plan\n\nJust prose. No sections at all.\n",
+        )
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "bare.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",  # even strong cannot rescue
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"] == {"unverifiable": 1}
+        assert obs["detail"]["plans_rotting"] == 1
+
+    def test_empty_files_modified_section_is_unverifiable(self, tmp_path):
+        """R2 — `## Files Modified` header present but no parseable paths
+        under it, AND no `## Verification` section → unverifiable. The
+        parser returns [] for an empty section, same observable signal
+        as a missing header."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(
+            pdir, "empty.md", "2026-04-10T10:00:00",
+            content="# Plan\n\n## Files Modified\n\n(nothing listed)\n",
+        )
+        results = tmp_path / "results.json"
+        results.write_text("{}")
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"] == {"unverifiable": 1}
+
+    def test_unverifiable_takes_priority_over_never_audited(self, tmp_path):
+        """A plan with no sections AND no audit entry is classified as
+        `unverifiable`, NOT `never_audited`. Unverifiable is priority 1."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(
+            pdir, "bare.md", "2026-04-10T10:00:00",
+            content="# Bare plan\n",  # no sections
+        )
+        results = tmp_path / "results.json"
+        results.write_text("{}")  # no entry for bare.md
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert "unverifiable" in obs["detail"]["by_bucket"]
+        assert "never_audited" not in obs["detail"]["by_bucket"]
+
+    def test_drift_detected_when_referenced_file_newer_than_audit(self, tmp_path):
+        """Plan ACCEPT'd but a referenced file was edited after the audit.
+        Stronger signal than stale (which only compares plan mtimes)."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        code_file = tmp_path / "scripts" / "foo.py"
+        code_file.parent.mkdir(parents=True)
+        code_file.write_text("# foo\n")
+        os.utime(code_file, (
+            datetime.fromisoformat("2026-04-12T10:00:00+00:00").timestamp(),
+        ) * 2)
+        self._write_plan(
+            pdir, "drifty.md", "2026-04-10T10:00:00",
+            content=(
+                "# Drifty plan\n\n## Files Modified\n"
+                "- `scripts/foo.py`\n\n## Verification\n- pytest\n"
+            ),
+        )
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "drifty.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "audited_at": "2026-04-10T11:00:00+00:00",  # before file edit
+                "verification_quality": "strong",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"] == {"drift_detected": 1}
+
+    def test_stale_wins_over_drift_when_both_fire(self, tmp_path):
+        """Priority: stale is checked before drift. When the plan was
+        edited AFTER audit AND a referenced file was also edited AFTER
+        audit, bucket is `stale`, not `drift_detected`. Stale is the
+        coarser signal we reach first."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        code_file = tmp_path / "scripts" / "foo.py"
+        code_file.parent.mkdir(parents=True)
+        code_file.write_text("# foo\n")
+        os.utime(code_file, (
+            datetime.fromisoformat("2026-04-12T10:00:00+00:00").timestamp(),
+        ) * 2)
+        self._write_plan(
+            pdir, "both.md", "2026-04-13T10:00:00",  # plan mtime AFTER audit
+            content=(
+                "# Plan\n\n## Files Modified\n- `scripts/foo.py`\n"
+                "\n## Verification\n- pytest\n"
+            ),
+        )
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "both.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:00",  # much older than disk mtime
+                "audited_at": "2026-04-10T11:00:00+00:00",
+                "verification_quality": "strong",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"] == {"stale": 1}
+
+    def test_drift_skipped_when_referenced_file_missing(self, tmp_path):
+        """A plan referencing a file that no longer exists on disk does
+        NOT fire drift — the file is skipped (FileNotFoundError on stat).
+        Plan classifies as verified_with_evidence per its verdict+quality."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        # Note: scripts/ghost.py does NOT exist in tmp_path.
+        self._write_plan(
+            pdir, "ghostrefs.md", "2026-04-10T10:00:00",
+            content=(
+                "# Plan\n\n## Files Modified\n"
+                "- `scripts/ghost.py`\n\n## Verification\n- pytest\n"
+            ),
+        )
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "ghostrefs.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "audited_at": "2026-04-10T11:00:00+00:00",
+                "verification_quality": "strong",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"  # no rotting buckets fired
+        assert obs["detail"]["by_bucket"] == {"verified_with_evidence": 1}
+
+    def test_one_plan_parser_error_does_not_halt_scan(
+        self, tmp_path, monkeypatch,
+    ):
+        """R3 — per-plan error isolation. If _classify raises on one plan,
+        that plan's bucket is `parse_error` (non-rotting, observable via
+        skip_reasons) and the other plans are still classified."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "good.md", "2026-04-10T10:00:00")
+        self._write_plan(pdir, "bad.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "good.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",
+            },
+        }))
+
+        import scripts.levers.plan_audit as pa
+        real_classify = pa._classify
+
+        def flaky_classify(path, *args, **kwargs):
+            if path.name == "bad.md":
+                raise RuntimeError("simulated parse failure")
+            return real_classify(path, *args, **kwargs)
+
+        monkeypatch.setattr(pa, "_classify", flaky_classify)
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"  # skip_reasons forces non-clean path
+        assert obs["detail"]["by_bucket"]["parse_error"] == 1
+        assert obs["detail"]["by_bucket"].get("verified_with_evidence") == 1
+        assert "bad.md" in obs["detail"]["skip_reasons"]
+        assert "RuntimeError" in obs["detail"]["skip_reasons"]["bad.md"]
+
+    def test_drift_detected_with_mixed_timezone_formats(self, tmp_path):
+        """R4 — audited_at may be an ISO-8601 string (with tz) while
+        file mtime is POSIX float. Both must normalize to the same
+        epoch for correct comparison. Naive ISO is treated as UTC."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        code_file = tmp_path / "scripts" / "foo.py"
+        code_file.parent.mkdir(parents=True)
+        code_file.write_text("# foo\n")
+        # File edited at 2026-04-12T10:00:00 UTC (POSIX epoch)
+        edited_ts = datetime.fromisoformat(
+            "2026-04-12T10:00:00+00:00"
+        ).timestamp()
+        os.utime(code_file, (edited_ts, edited_ts))
+        self._write_plan(
+            pdir, "naive.md", "2026-04-10T10:00:00",
+            content=(
+                "# Plan\n\n## Files Modified\n- `scripts/foo.py`\n"
+                "\n## Verification\n- pytest\n"
+            ),
+        )
+        results = tmp_path / "results.json"
+        # audited_at is NAIVE ISO — must be interpreted as UTC to get a
+        # correct drift comparison (otherwise local-tz drift on CI would
+        # produce flaky results).
+        results.write_text(json.dumps({
+            "naive.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "audited_at": "2026-04-10T11:00:00",  # naive, pre-file-edit
+                "verification_quality": "strong",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"] == {"drift_detected": 1}

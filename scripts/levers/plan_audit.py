@@ -1,30 +1,41 @@
 """Lever — plan_audit (accountability lever).
 
 Walks both plan directories, joins against TB's `.brain/audit/results.json`,
-and classifies every plan into one of eight buckets so plan rot is visible
+and classifies every plan into one of 11 buckets so plan rot is visible
 on the ledger. The lever observes the accountability loop; it does not
 run it. TB's ``--audit-plans`` CLI remains the only place that actually
 verifies plans (see feedback_run_the_full_loop memory).
 
 Bucket evaluation order matters (sequential if/elif):
 
-    1. never_audited          — no results entry for this filename
-    2. stale                  — plan_mtime on disk > result.plan_mtime + threshold
-                                (stale BEATS verdict, including abandoned-but-
-                                 modified; touching an abandoned plan signals
-                                 reconsideration)
-    3. needs_deepen           — verdict=DEEPEN
-    4. deepen_exhausted       — verdict=DEEPEN_EXHAUSTED (audit gave up; plan
-                                remains unverified — rotting until --audit-force)
-    5. failed_audit           — verdict=REJECT
-    6. abandoned              — verdict=ABANDONED (NOT counted as rotting)
-    7. verified_with_evidence — verdict=ACCEPT, not stale, quality ∈ {strong, weak}
-    8. verified_no_evidence   — verdict=ACCEPT, not stale, quality ∈ {none,
-                                missing, unknown} — ROTTING: ACCEPT without
-                                executed verification commands is a rubber stamp
+    1. unverifiable           — plan has no parseable `## Files Modified`
+                                AND no `## Verification` section. Lever
+                                can never auto-grade this plan; structural
+                                fix is cheap (add sections). Highest
+                                priority — beats audit state.
+    2. never_audited          — no results entry for this filename
+    3. stale                  — plan_mtime on disk > result.plan_mtime +
+                                threshold (stale BEATS verdict)
+    4. drift_detected         — verdict ∈ {ACCEPT, DEEPEN, REJECT} AND
+                                max(referenced_file.mtime) > audited_at.
+                                Strictly stronger than stale: catches
+                                code drift independent of plan edits.
+    5. needs_deepen           — verdict=DEEPEN
+    6. deepen_exhausted       — verdict=DEEPEN_EXHAUSTED (audit gave up)
+    7. failed_audit           — verdict=REJECT
+    8. abandoned              — verdict=ABANDONED (NOT counted as rotting)
+    9. verified_with_evidence — verdict=ACCEPT, not stale/drift,
+                                quality ∈ {strong, weak}
+   10. verified_no_evidence   — verdict=ACCEPT, not stale/drift,
+                                quality ∈ {none, missing, unknown}
+                                — ROTTING: rubber-stamp accept
+   11. parse_error            — per-plan classification raised (R3
+                                isolation). NOT rotting; reported via
+                                skip_reasons for bull_audit to observe.
 
-Rotting = never_audited ∪ stale ∪ needs_deepen ∪ deepen_exhausted ∪
-          failed_audit ∪ verified_no_evidence.
+Rotting = unverifiable ∪ never_audited ∪ stale ∪ drift_detected ∪
+          needs_deepen ∪ deepen_exhausted ∪ failed_audit ∪
+          verified_no_evidence.
 """
 
 from __future__ import annotations
@@ -35,12 +46,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ._plan_parser import extract_modified_files, has_verification_section
 from .base import Lever, LeverObservation
 
 
 _ROTTING = frozenset({
+    "unverifiable",
     "never_audited",
     "stale",
+    "drift_detected",
     "needs_deepen",
     "deepen_exhausted",
     "failed_audit",
@@ -48,6 +62,8 @@ _ROTTING = frozenset({
 })
 
 _EVIDENCE_QUALITIES = frozenset({"strong", "weak"})
+
+_DRIFT_VERDICTS = frozenset({"ACCEPT", "DEEPEN", "REJECT"})
 
 
 class PlanAuditLever(Lever):
@@ -75,8 +91,14 @@ class PlanAuditLever(Lever):
 
         classified: List[Dict[str, Any]] = []
         by_bucket: Dict[str, int] = {}
+        skip_reasons: Dict[str, str] = {}
         for path in plan_paths:
-            info = _classify(path, results, stale_threshold_s)
+            try:
+                info = _classify(path, results, stale_threshold_s, project_root)
+            except Exception as e:  # R3 — per-plan error isolation
+                by_bucket["parse_error"] = by_bucket.get("parse_error", 0) + 1
+                skip_reasons[path.name] = f"{type(e).__name__}: {e}"
+                continue
             if info is None:
                 continue
             classified.append(info)
@@ -85,7 +107,7 @@ class PlanAuditLever(Lever):
         plans_total = len(classified)
         rotting = [p for p in classified if p["bucket"] in _ROTTING]
 
-        if not rotting:
+        if not rotting and not skip_reasons:
             return self.observation_clean({
                 "plans_total": plans_total,
                 "plans_audited": sum(
@@ -109,12 +131,15 @@ class PlanAuditLever(Lever):
             }
             for p in rotting_sorted[:max_report]
         ]
-        return self.observation_found({
+        detail: Dict[str, Any] = {
             "plans_total": plans_total,
             "plans_rotting": len(rotting),
             "by_bucket": by_bucket,
             "top_rot": top_rot,
-        })
+        }
+        if skip_reasons:
+            detail["skip_reasons"] = skip_reasons
+        return self.observation_found(detail)
 
 
 def _resolve(root: Path, rel: str) -> Path:
@@ -149,7 +174,10 @@ def _load_results_with_retry(results_path: Path) -> Dict[str, Any]:
 
 
 def _classify(
-    path: Path, results: Dict[str, Any], stale_threshold_s: int
+    path: Path,
+    results: Dict[str, Any],
+    stale_threshold_s: int,
+    project_root: Path,
 ) -> Optional[Dict[str, Any]]:
     try:
         st = path.stat()
@@ -158,8 +186,21 @@ def _classify(
     plan_mtime = datetime.fromtimestamp(st.st_mtime, tz=timezone.utc)
     plan_mtime_iso = plan_mtime.isoformat()
 
+    try:
+        plan_text = path.read_text(encoding="utf-8")
+    except OSError:
+        plan_text = ""
+    modified_files = extract_modified_files(plan_text)
+    has_verify = has_verification_section(plan_text)
+
     entry = results.get(path.name)
-    if not isinstance(entry, dict):
+    entry_valid = isinstance(entry, dict)
+
+    # Priority 1: unverifiable — lever can never auto-grade (R2: empty
+    # or missing section both qualify, since parser returns [] for both).
+    if not modified_files and not has_verify:
+        bucket = "unverifiable"
+    elif not entry_valid:
         bucket = "never_audited"
     else:
         verdict = entry.get("verdict")
@@ -170,6 +211,8 @@ def _classify(
         )
         if is_stale:
             bucket = "stale"
+        elif _has_drift(modified_files, entry, project_root):
+            bucket = "drift_detected"
         elif verdict == "DEEPEN":
             bucket = "needs_deepen"
         elif verdict == "DEEPEN_EXHAUSTED":
@@ -197,6 +240,31 @@ def _classify(
     }
 
 
+def _has_drift(
+    modified_files: List[str],
+    entry: Dict[str, Any],
+    project_root: Path,
+) -> bool:
+    """Return True iff a referenced file was modified after audit."""
+    if not modified_files:
+        return False
+    verdict = entry.get("verdict")
+    if verdict not in _DRIFT_VERDICTS:
+        return False
+    audited_epoch = _to_epoch(entry.get("audited_at"))
+    if audited_epoch is None:
+        return False
+    for rel in modified_files:
+        fp = _resolve(project_root, rel)
+        try:
+            mtime = fp.stat().st_mtime
+        except (FileNotFoundError, OSError):
+            continue
+        if mtime > audited_epoch:
+            return True
+    return False
+
+
 def _parse_mtime(value: Any) -> Optional[datetime]:
     if not isinstance(value, str) or not value:
         return None
@@ -207,3 +275,23 @@ def _parse_mtime(value: Any) -> Optional[datetime]:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+def _to_epoch(value: Any) -> Optional[float]:
+    """R4 — normalize ISO-8601 string or numeric epoch to UTC epoch seconds.
+
+    Writer behavior: results.json stores `audited_at` as ISO-8601.
+    st_mtime is POSIX float. Drift comparison must be in one unit.
+    Naive ISO timestamps are treated as UTC (matches writer default).
+    """
+    if isinstance(value, (int, float)):
+        return float(value)
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()

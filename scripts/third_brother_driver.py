@@ -1400,6 +1400,20 @@ BUCKET_SPAWN_POLICY: Dict[str, Dict[str, Any]] = {
         "task_type": "add-verification",
         "task_kwargs": {},
     },
+    # Wave 9 — lever can never auto-grade this plan; structural fix is
+    # to add `## Files Modified` / `## Verification`. Same shape as
+    # verified_no_evidence.
+    "unverifiable": {
+        "task_type": "add-verification",
+        "task_kwargs": {},
+    },
+    # Wave 9 — a referenced file was edited after the audit. Re-auditing
+    # is the right fix, but TB auto-skips ACCEPT verdicts; force=True so
+    # the dispatcher emits the `--audit-force` hint in the description.
+    "drift_detected": {
+        "task_type": "audit-plan",
+        "task_kwargs": {"force": True},
+    },
 }
 
 
@@ -1416,15 +1430,18 @@ def _spawn_plan_audit_fix_tasks(
     exists (dedupe). Plans that vanished from disk between the lever
     fire and this call are skipped (orphan guard).
 
-    Bucket → task-type map (Wave 8):
+    Bucket → task-type map (Waves 8+9):
 
-      verified_no_evidence → add-verification-<stem>  (plan-edit task,
-                              NOT re-audit: re-running --audit-plans on a
-                              quality=none plan produces another quality=none
-                              verdict; fix is to add '## Files Modified' /
-                              '## Verification' section).
+      verified_no_evidence, unverifiable → add-verification-<stem>
+        (plan-edit task, NOT re-audit: re-running --audit-plans on a
+        plan without parseable `## Files Modified` / `## Verification`
+        just produces another quality=none verdict; the structural
+        fix is to add those sections).
+      drift_detected → audit-plan-<stem>  (re-audit with force=True:
+        a referenced file changed after the audit; force the dispatcher
+        to emit --audit-force so TB doesn't auto-skip the ACCEPT verdict).
       never_audited, stale, needs_deepen, deepen_exhausted, failed_audit
-        → audit-plan-<stem>  (re-audit task).
+        → audit-plan-<stem>  (default re-audit task).
       deepen_exhausted also gets ' --audit-force REQUIRED' in the
         description (TB auto-skips otherwise).
 
@@ -5598,24 +5615,16 @@ def _compute_verification_quality(result: Dict) -> str:
 
 
 def _auto_verification_commands(plan_text: str) -> List[Dict]:
-    """Derive deterministic checks from ## Files Modified / ## Affected Files. No LLM writes these."""
-    cmds = []
-    files_match = re.search(
-        r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
-    if not files_match:
-        return cmds
-    for line in files_match.group(1).splitlines():
-        # Handle bullet lists (- `path`) first
-        path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
-        # Fall back to extracting backtick-wrapped path from table rows (| `path` | ... |)
-        if not path or not re.match(r"[\w./\-]+\.\w+", path):
-            tbl = re.search(r"`([\w./\-]+\.\w+)`", line)
-            if tbl:
-                path = tbl.group(1)
-            else:
-                continue
-        if not re.match(r"[\w./\-]+\.\w+", path):
-            continue
+    """Derive deterministic checks from ## Files Modified / ## Affected Files.
+
+    Path extraction delegates to scripts.levers._plan_parser
+    (Wave 9 — shared with the plan_audit drift/unverifiable buckets).
+    Command construction stays here: TB-specific shape, not the lever's
+    concern.
+    """
+    from scripts.levers._plan_parser import extract_modified_files
+    cmds: List[Dict] = []
+    for path in extract_modified_files(plan_text):
         cmds.append({"command": f"test -f {path}", "skipped": False,
                      "kind": "assertion", "auto_generated": True})
         if path.endswith(".py") and not path.startswith("tests/"):

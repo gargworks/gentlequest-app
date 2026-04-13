@@ -596,6 +596,62 @@ class TestSpawnPlanAuditFixTasks:
             "audit-plan-b",
         ]
 
+    # ── Wave 9 R6: unverifiable + drift_detected dispatch ──────────────
+
+    def test_spawner_creates_add_verification_task_for_unverifiable(
+        self, tmp_path, monkeypatch,
+    ):
+        """R6 — unverifiable bucket reuses add-verification task shape:
+        lever can never auto-grade, so re-audit is futile. The task asks
+        a human/Claude to add `## Files Modified` / `## Verification`."""
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+        claude_plans = tmp_path / ".claude" / "plans"
+        claude_plans.mkdir(parents=True)
+        (claude_plans / "bare.md").write_text("# bare")
+
+        ledger = tmp_path / "events.jsonl"
+        tasks = tmp_path / "tasks.json"
+        self._write_tasks(tasks)
+        self._write_plan_audit_found(ledger, [
+            {"name": "bare.md", "bucket": "unverifiable", "age_days": 5},
+        ])
+        got = _spawn_plan_audit_fix_tasks(tasks_path=tasks, ledger_path=ledger)
+        assert got == ["add-verification-bare"]
+
+        data = json.loads(tasks.read_text())
+        created = next(t for t in data["tasks"] if t["id"] == "add-verification-bare")
+        assert created["plan_bucket"] == "unverifiable"
+        # No audit-plan-bare task — spawner must NOT issue re-audit for
+        # a plan the lever cannot grade.
+        assert not any(t["id"] == "audit-plan-bare" for t in data["tasks"])
+
+    def test_spawner_creates_audit_force_task_for_drift_detected(
+        self, tmp_path, monkeypatch,
+    ):
+        """R6 — drift_detected spawns audit-plan-<stem> task with the
+        `--audit-force` hint in description. Without force, TB auto-skips
+        the existing ACCEPT verdict; drift signals the verdict is stale."""
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+        claude_plans = tmp_path / ".claude" / "plans"
+        claude_plans.mkdir(parents=True)
+        (claude_plans / "drifty.md").write_text("# drifty")
+
+        ledger = tmp_path / "events.jsonl"
+        tasks = tmp_path / "tasks.json"
+        self._write_tasks(tasks)
+        self._write_plan_audit_found(ledger, [
+            {"name": "drifty.md", "bucket": "drift_detected", "age_days": 2},
+        ])
+        got = _spawn_plan_audit_fix_tasks(tasks_path=tasks, ledger_path=ledger)
+        assert got == ["audit-plan-drifty"]
+
+        data = json.loads(tasks.read_text())
+        created = next(t for t in data["tasks"] if t["id"] == "audit-plan-drifty")
+        assert created["plan_bucket"] == "drift_detected"
+        # Force-hint must be emitted so whoever picks up the task adds
+        # --audit-force when they invoke --audit-plans.
+        assert "--audit-force" in created["description"]
+
 
 class TestRecordAuditResultAtomic:
     """TODO 6: _record_audit_result must use tmp+os.replace so concurrent

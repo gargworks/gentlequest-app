@@ -296,6 +296,34 @@ class TestAutoVerificationCommands:
         assert any("import" in c for c in commands)
         assert len(cmds) >= 4  # 2 files × (exists + import)
 
+    def test_output_unchanged_after_parser_delegation(self):
+        """R12 — golden regression: path extraction now delegates to
+        scripts.levers._plan_parser. Freeze the exact dict shape across
+        a fixture mixing bullets + em-dash + table row + non-py + test
+        file so any drift in the parser surfaces here.
+        """
+        plan = (
+            "# Plan\n\n"
+            "## Files Modified\n\n"
+            "- `scripts/foo.py` — new helper\n"
+            "- `scripts/bar.txt`\n"
+            "| `tests/test_foo.py` | added |\n"
+            "\n## Verification\n- pytest -q\n"
+        )
+        expected = [
+            {"command": "test -f scripts/foo.py", "skipped": False,
+             "kind": "assertion", "auto_generated": True},
+            {"command": 'python3 -c "import scripts.foo"', "skipped": False,
+             "kind": "assertion", "auto_generated": True},
+            {"command": "test -f scripts/bar.txt", "skipped": False,
+             "kind": "assertion", "auto_generated": True},
+            {"command": "test -f tests/test_foo.py", "skipped": False,
+             "kind": "assertion", "auto_generated": True},
+            {"command": "python3 -m pytest tests/test_foo.py -q --tb=no",
+             "skipped": False, "kind": "assertion", "auto_generated": True},
+        ]
+        assert _auto_verification_commands(plan) == expected
+
 
 # ── Complexity classification tests ──────────────────────────
 

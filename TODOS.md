@@ -225,3 +225,38 @@ counting it doesn't want).
 Until any of those hit, the duplication is honest — three small reads
 with three different error stories — and consolidating now would be
 premature abstraction.
+
+---
+
+## 8. Classifier dispatch-table refactor — trigger at bucket #11
+
+**What:** Refactor `scripts/levers/plan_audit.py::_classify` from if-elif
+cascade into an ordered list `[(predicate_fn, bucket_name), ...]`
+iterated in priority order (first match wins).
+
+**Why:** Wave 9 lands the classifier at 10 classifying buckets +
+`parse_error` (reached only via the run-level except). Adding an 11th
+classifying bucket (e.g. `reject_recurring`, `plan_family_drift`) would
+push the `_classify` cyclomatic complexity past the 10-branch threshold
+flagged in Wave 8/9 plan-ceo-review.
+
+**Pros:** Data-driven priority makes ordering testable in isolation;
+moving a bucket's priority becomes a list reorder rather than a diff
+across the if-elif chain. Keeps each predicate independently unit-
+testable.
+
+**Cons:** Premature until bucket #11 exists. Adds an indirection
+layer and slightly obscures the current linear reading order. Would
+also need a way to express the unverifiable → never_audited short
+circuit that currently lives in the early-return.
+
+**Re-trigger criteria:** Adding an 11th classifying bucket to
+`_classify`. At that point the refactor is ~30 LOC: extract predicates
+into module-level callables, flatten the cascade, and keep the
+per-plan try/except (R3) wrapping the iteration.
+
+**Where to start:** `scripts/levers/plan_audit.py::_classify` —
+extract into a module-level
+`_CLASSIFIER_CHAIN: list[tuple[Callable, str]]`; `_classify` becomes
+a 3-line loop returning the first matched bucket. Add a per-chain
+ordering test alongside the existing bucket tests.
