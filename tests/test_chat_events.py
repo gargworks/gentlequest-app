@@ -35,6 +35,25 @@ from scripts.levers.run_lever import publish_event
 from scripts.levers.base import LedgerEvent, LedgerSchemaError
 
 
+@pytest.fixture(autouse=True)
+def _backend_syspath_guard():
+    """Collection order gotcha: ``tests/test_levers.py`` inserts the
+    project root at ``sys.path[0]``, where an unrelated top-level
+    ``app/`` directory shadows ``backend/app/``. Force backend to the
+    front before each test so ``from app import events`` resolves to
+    the backend module regardless of which test file was collected
+    first."""
+    backend_str = str(_BACKEND_DIR)
+    try:
+        sys.path.remove(backend_str)
+    except ValueError:
+        pass
+    sys.path.insert(0, backend_str)
+    for mod in [m for m in sys.modules if m == "app" or m.startswith("app.")]:
+        del sys.modules[mod]
+    yield
+
+
 class TestPublishEvent:
     """Generic module-event publisher.
 
