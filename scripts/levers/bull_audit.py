@@ -128,6 +128,13 @@ def _read_window(ledger_path: Path, window: int) -> Tuple[List[LedgerEvent], int
 
     We read raw lines so we can count schema failures in the window itself.
     iter_events would silently skip them — for bull_audit, they ARE the signal.
+
+    Grandfathering: the plan declares pre-substrate one-token types (e.g.
+    ``session_saved``, ``engram_written``) with ``timestamp`` instead of
+    ``ts`` as legitimate legacy events. They fail strict ``from_jsonl``
+    but are not schema drift. We recognize the legacy shape and skip
+    them from the error count. Real schema drift (dotted types failing
+    parse, missing type, unparseable JSON) still counts.
     """
     try:
         lines = ledger_path.read_text(encoding="utf-8").splitlines()
@@ -140,8 +147,33 @@ def _read_window(ledger_path: Path, window: int) -> Tuple[List[LedgerEvent], int
         try:
             events.append(LedgerEvent.from_jsonl(ln))
         except LedgerSchemaError:
+            if _is_grandfathered_legacy(ln):
+                continue
             errors += 1
     return (events, errors)
+
+
+def _is_grandfathered_legacy(line: str) -> bool:
+    """True iff the line parses as JSON, uses ``timestamp`` instead of
+    ``ts``, and names a non-dotted event via either ``type`` or
+    ``event_type`` — the pre-substrate event shape the plan explicitly
+    grandfathers. Two legacy variants: brain-save-session style
+    (``type``) and orchestrator style (``event_type``)."""
+    try:
+        raw = json.loads(line)
+    except (json.JSONDecodeError, ValueError):
+        return False
+    if not isinstance(raw, dict):
+        return False
+    if "ts" in raw:
+        return False
+    if not isinstance(raw.get("timestamp"), str):
+        return False
+    for key in ("type", "event_type"):
+        etype = raw.get(key)
+        if isinstance(etype, str) and etype and "." not in etype:
+            return True
+    return False
 
 
 def _read_csr(csr_path: Path) -> Optional[float]:

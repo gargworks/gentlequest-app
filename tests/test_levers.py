@@ -1400,12 +1400,13 @@ class TestDepVulnerabilityCheckLever:
         inputs.update(kw)
         return {"inputs": inputs}
 
-    def test_error_when_tool_missing(self, tmp_path):
+    def test_skipped_when_tool_missing(self, tmp_path):
         lever = DepVulnerabilityCheckLever()
         with patch("subprocess.run", side_effect=FileNotFoundError()):
             obs = lever.run(self._manifest(), tmp_path / ".brain")
-        assert obs["outcome"] == "error"
+        assert obs["outcome"] == "skipped"
         assert obs["detail"]["stage"] == "audit_missing"
+        assert "pip install pip-audit" in obs["detail"]["reason"]
 
     def test_clean_on_exit_zero_empty_output(self, tmp_path):
         lever = DepVulnerabilityCheckLever()
@@ -2269,3 +2270,41 @@ class TestBullAuditLever:
         obs = lever.run(manifest, tmp_path / ".brain")
         assert obs["outcome"] == "clean"
         assert obs["detail"]["events_read"] == 5
+
+    def test_grandfathered_legacy_events_not_schema_errors(self, tmp_path):
+        """Pre-substrate events (one-token type + ``timestamp`` not ``ts``)
+        are explicitly grandfathered per the substrate plan. bull_audit
+        must not count them as schema drift, or the invariant is
+        permanently broken on any live ledger."""
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        legacy = json.dumps({
+            "event_id": "evt-1",
+            "timestamp": "2026-01-16T18:53:08+0530",
+            "type": "session_saved",
+            "emitter": "brain_save_session",
+            "data": {"session_id": "s1"},
+        })
+        real_drift = "not-json-at-all"
+        lines = [legacy] * 5 + [real_drift] + [self._good_event() for _ in range(3)]
+        p.write_text("\n".join(lines) + "\n")
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["detail"]["schema_errors"] == 1, obs["detail"]
+
+    def test_grandfathering_rejects_dotted_type_without_ts(self, tmp_path):
+        """Dotted types (new-substrate convention) missing ``ts`` are
+        real drift, not grandfathered. A dotted type that uses
+        ``timestamp`` is still a bug."""
+        lever = BullAuditLever()
+        p = tmp_path / "events.jsonl"
+        csr = tmp_path / "csr.json"
+        self._write_csr(csr, 0.9)
+        bad_new = json.dumps({
+            "timestamp": "2026-04-13T00:00:00+00:00",
+            "type": "lever.foo.observation",
+        })
+        p.write_text(bad_new + "\n" + self._good_event() + "\n")
+        obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
+        assert obs["detail"]["schema_errors"] == 1
