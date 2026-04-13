@@ -1497,16 +1497,23 @@ def _spawn_plan_audit_fix_tasks(
             continue
 
         now_iso = datetime.now(timezone.utc).isoformat()
+        bucket = plan.get("bucket", "?")
+        force_hint = (
+            " --audit-force is REQUIRED: TB auto-skips this verdict."
+            if bucket == "deepen_exhausted"
+            else ""
+        )
         new_task = {
             "id": task_id,
             "title": f"audit plan {name}"[:80],
             "description": (
                 f"plan_audit lever flagged {name} as bucket="
-                f"{plan.get('bucket', '?')} (age {plan.get('age_days', '?')}d). "
+                f"{bucket} (age {plan.get('age_days', '?')}d). "
                 f"Verify plan claims against code + write verdict to "
                 f".brain/audit/results.json via: python3 "
                 f"scripts/third_brother_driver.py --audit-plans 1 "
-                f"(newest-first; use --audit-skip K to reach this plan)"
+                f"(newest-first; use --audit-skip K to reach this plan)."
+                f"{force_hint}"
             ),
             "scope": [str(plan_on_disk)],
             "priority": 1,

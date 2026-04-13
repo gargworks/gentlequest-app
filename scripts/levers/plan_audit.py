@@ -8,16 +8,18 @@ verifies plans (see feedback_run_the_full_loop memory).
 
 Bucket evaluation order matters (sequential if/elif):
 
-    1. never_audited  — no results entry for this filename
-    2. stale          — plan_mtime on disk > result.plan_mtime + threshold
-                        (stale BEATS verdict, including abandoned-but-modified;
-                         touching an abandoned plan signals reconsideration)
-    3. needs_deepen   — verdict=DEEPEN
-    4. failed_audit   — verdict=REJECT
-    5. abandoned      — verdict=ABANDONED (NOT counted as rotting)
-    6. verified       — verdict=ACCEPT, not stale
+    1. never_audited    — no results entry for this filename
+    2. stale            — plan_mtime on disk > result.plan_mtime + threshold
+                          (stale BEATS verdict, including abandoned-but-modified;
+                           touching an abandoned plan signals reconsideration)
+    3. needs_deepen     — verdict=DEEPEN
+    4. deepen_exhausted — verdict=DEEPEN_EXHAUSTED (audit gave up; plan
+                          remains unverified — rotting until --audit-force)
+    5. failed_audit     — verdict=REJECT
+    6. abandoned        — verdict=ABANDONED (NOT counted as rotting)
+    7. verified         — verdict=ACCEPT, not stale
 
-Rotting = never_audited ∪ stale ∪ needs_deepen ∪ failed_audit.
+Rotting = never_audited ∪ stale ∪ needs_deepen ∪ deepen_exhausted ∪ failed_audit.
 """
 
 from __future__ import annotations
@@ -31,7 +33,13 @@ from typing import Any, Dict, List, Optional
 from .base import Lever, LeverObservation
 
 
-_ROTTING = frozenset({"never_audited", "stale", "needs_deepen", "failed_audit"})
+_ROTTING = frozenset({
+    "never_audited",
+    "stale",
+    "needs_deepen",
+    "deepen_exhausted",
+    "failed_audit",
+})
 
 
 class PlanAuditLever(Lever):
@@ -152,6 +160,8 @@ def _classify(
             bucket = "stale"
         elif verdict == "DEEPEN":
             bucket = "needs_deepen"
+        elif verdict == "DEEPEN_EXHAUSTED":
+            bucket = "deepen_exhausted"
         elif verdict == "REJECT":
             bucket = "failed_audit"
         elif verdict == "ABANDONED":

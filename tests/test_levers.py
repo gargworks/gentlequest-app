@@ -2421,6 +2421,24 @@ class TestPlanAuditLever:
         assert obs["detail"]["by_bucket"]["needs_deepen"] == 1
         assert obs["detail"]["by_bucket"]["failed_audit"] == 1
 
+    def test_found_when_verdict_is_deepen_exhausted(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "exh.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "exh.md": {
+                "verdict": "DEEPEN_EXHAUSTED",
+                "plan_mtime": "2026-04-10T10:00:30",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"]["deepen_exhausted"] == 1
+        assert obs["detail"]["plans_rotting"] == 1
+        assert obs["detail"]["top_rot"][0]["bucket"] == "deepen_exhausted"
+
     def test_verdict_abandoned_does_not_count_as_rot(self, tmp_path):
         lever = PlanAuditLever()
         pdir = tmp_path / "plans"
