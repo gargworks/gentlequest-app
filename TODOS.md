@@ -118,51 +118,23 @@ at target QPS, build the queue.
 
 ---
 
-## 4. gt40_typecheck + gt40_test_smoke — use `--json` receipt instead of stdout scraping
+## 4. gt40_typecheck + gt40_test_smoke — `--json` receipt — **DONE**
 
-**What:** Rewrite both levers to run `nucleus verify --tiers <chain>
---json` and parse the structured receipt instead of tailing stdout.
-Outcome map:
+Both levers rewritten to use `nucleus verify --tiers <chain> --json`
+and parse the structured receipt. Shared helper at
+`scripts/levers/_gt40.py` (`parse_receipt`, `classify_receipt`,
+`build_argv`).
 
-- `receipt.verified == True` → `clean`
-- `receipt.tiers_failed` non-empty → `found` with failed-check signals
-- exit != 0 but `tiers_failed == [] and tier_reached < target_tier` →
-  `skipped` with reason `"tier N not reached (preconditions/env)"`
+Live-fire confirms outcome routing works: both fire `clean` against
+the real env (tiers reached as expected); pre-rewrite ledger entries
+showed `found` with INSECURE-MODE / GROUND-FAIL noise.
 
-Also switch argv to `--tiers 0,...,N` (comma-separated chain) so
-preconditions fire, not just `--tiers N` alone.
+**Surprise discovery:** `nucleus verify` never accepted `--smoke` —
+argparse rejected it with exit 2, generating the bulk of the noise
+(usage-text-as-findings). Removed the input + bogus flag entirely.
 
-**Why:** Both levers currently emit noisy `found` observations on
-every fire. Root cause: `nucleus verify --tiers 2` (single int) silently
-skips tier 2 if preconditions 0,1 aren't listed, exits 1 with no
-failure signals, and the lever scrapes the generic "INSECURE MODE" /
-"NotOpenSSLWarning" stdout as findings. Result: `bull_audit.no_repeated_
-lever_errors` spikes from false positives, and the ledger accumulates
-findings that look like bugs but aren't.
-
-**Pros:** Structured receipt means findings = real failures. No more
-"GROUND PASS" lines in a `found` observation. `skipped` outcome cleanly
-distinguishes env gaps from bugs (same pattern as
-`dep_vulnerability_check` missing `pip-audit`).
-
-**Cons:** Test rewrites — existing tests mock stdout strings; new tests
-must mock JSON receipts. Need to keep `--smoke` flag working alongside
-`--json` (verify behavior untested at writing time).
-
-**Depends on / blocked by:** None. Self-contained per-lever change.
-
-**Current state:** Both levers disabled in their manifests with
-rationale comments pointing here. `gt40_lint` (tier 1) left enabled —
-tier 1 runs cleanly without the precondition issue. Live-fire evidence:
-20+ noisy findings in ledger tail-500 across both levers before
-disabling.
-
-**Where to start:** `scripts/levers/gt40_typecheck.py` and
-`scripts/levers/gt40_test_smoke.py`. Extract the receipt-parsing logic
-into a shared helper (e.g. `scripts/levers/_gt40.py`) if `gt40_lint`
-benefits from the same treatment — otherwise keep inline. Update
-`tests/test_levers.py::TestGt40TypecheckLever` and
-`TestGt40TestSmokeLever` to mock `--json` stdout payloads.
+`gt40_lint` (tier 1) NOT migrated — it works cleanly on the old
+contract and the helper is now available if a future need surfaces.
 
 ---
 

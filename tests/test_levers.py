@@ -368,8 +368,37 @@ class TestGt40LintLever:
         assert argv[argv.index("--tiers") + 1] == "7"
 
 
+def _receipt_json(verified, tier_reached, tiers_passed, tiers_failed=None,
+                  tiers_skipped=None, signals=None, duration_s=0.05):
+    """Build a nucleus verify --json receipt as a stdout string."""
+    receipt = {
+        "verified": verified,
+        "tier_reached": tier_reached,
+        "tiers_passed": tiers_passed,
+        "tiers_failed": tiers_failed or [],
+        "tiers_skipped": tiers_skipped or [],
+        "signals": signals or [],
+        "duration_s": duration_s,
+        "receipt_id": "test1234",
+        "commit_sha": "abc123",
+    }
+    return json.dumps(receipt, indent=2)
+
+
+def _polluted_stdout(receipt_json):
+    """Wrap a receipt in the noise nucleus actually emits."""
+    return (
+        "/path/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL\n"
+        "  warnings.warn(\n"
+        "[Nucleus] INSECURE MODE: Running unprivileged.\n"
+        f"{receipt_json}\n"
+    )
+
+
 class TestGt40TypecheckLever:
-    """Same contract as gt40_lint but tier=2 (import resolution)."""
+    """Tier 2 (import resolution). Uses --json receipt parsing — no
+    stdout scraping. Behavior matrix covers all 4 receipt outcomes
+    plus the 3 subprocess error paths."""
 
     def _manifest(self, **overrides):
         inputs = {"nucleus_bin": "nucleus", "timeout_seconds": 30, "tier": 2}
@@ -383,24 +412,58 @@ class TestGt40TypecheckLever:
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "nucleus_missing"
 
-    def test_clean_when_nucleus_exits_zero(self, tmp_path):
+    def test_clean_when_target_tier_reached(self, tmp_path):
         lever = Gt40TypecheckLever()
+        receipt = _receipt_json(
+            verified=True, tier_reached=2,
+            tiers_passed=[0, 1, 2], tiers_skipped=[3, 4, 5],
+        )
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=_polluted_stdout(receipt), stderr="",
+            )
             obs = lever.run(self._manifest(), tmp_path)
         assert obs["outcome"] == "clean"
         assert obs["detail"]["tier"] == 2
+        assert obs["detail"]["tier_reached"] == 2
 
-    def test_found_when_nucleus_exits_nonzero_carries_findings(self, tmp_path):
+    def test_found_when_tiers_failed_nonempty(self, tmp_path):
         lever = Gt40TypecheckLever()
+        receipt = _receipt_json(
+            verified=False, tier_reached=2,
+            tiers_passed=[0, 1], tiers_failed=[2],
+            signals=[
+                {"tier": 2, "check": "import_resolve", "passed": False,
+                 "file": "scripts/foo.py", "error": "no module named bar"},
+            ],
+        )
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                returncode=1, stdout="missing import: foo", stderr=""
+                returncode=1, stdout=_polluted_stdout(receipt), stderr="",
             )
             obs = lever.run(self._manifest(), tmp_path)
         assert obs["outcome"] == "found"
-        assert obs["detail"]["returncode"] == 1
-        assert any("missing import" in f for f in obs["detail"]["findings"])
+        assert obs["detail"]["tiers_failed"] == [2]
+        assert any("import_resolve" in f for f in obs["detail"]["findings"])
+        assert any("no module named bar" in f for f in obs["detail"]["findings"])
+
+    def test_skipped_when_target_tier_not_reached(self, tmp_path):
+        """Pre-fix bug: argparse error / silent-skip exited nonzero with no
+        failure signals, lever falsely reported `found`. Now it must be
+        `skipped` so bull_audit's no_repeated_lever_errors isn't tripped."""
+        lever = Gt40TypecheckLever()
+        receipt = _receipt_json(
+            verified=True, tier_reached=1,
+            tiers_passed=[0, 1], tiers_skipped=[2, 3, 4, 5],
+        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=_polluted_stdout(receipt), stderr="",
+            )
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert "tier 2 not reached" in obs["detail"]["reason"]
+        assert obs["detail"]["tier_reached"] == 1
 
     def test_error_when_timeout_exceeded(self, tmp_path):
         lever = Gt40TypecheckLever()
@@ -412,25 +475,39 @@ class TestGt40TypecheckLever:
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "timeout"
 
-    def test_respects_tier_input_in_argv(self, tmp_path):
+    def test_error_when_no_json_in_stdout(self, tmp_path):
+        """argparse error / nucleus crash → no JSON receipt → error
+        (not found, not skipped) so the gap is visible."""
         lever = Gt40TypecheckLever()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            mock_run.return_value = MagicMock(
+                returncode=2, stdout="usage: nucleus verify [-h]...\n",
+                stderr="error: unrecognized arguments\n",
+            )
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_receipt"
+
+    def test_argv_uses_chain_and_json(self, tmp_path):
+        """Default chain is 0..target_tier; --json is always passed."""
+        lever = Gt40TypecheckLever()
+        receipt = _receipt_json(verified=True, tier_reached=2, tiers_passed=[0, 1, 2])
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=receipt, stderr="",
+            )
             lever.run(self._manifest(), tmp_path)
         argv = mock_run.call_args[0][0]
-        assert argv[argv.index("--tiers") + 1] == "2"
+        assert argv[argv.index("--tiers") + 1] == "0,1,2"
+        assert "--json" in argv
 
 
 class TestGt40TestSmokeLever:
-    """Smoke-tier wrapper. Exercises the --smoke flag path explicitly."""
+    """Tier 3 wrapper. The bogus --smoke flag is gone (nucleus argparse
+    rejects it; pre-fix this caused exit 2 + usage-as-findings noise)."""
 
     def _manifest(self, **overrides):
-        inputs = {
-            "nucleus_bin": "nucleus",
-            "timeout_seconds": 60,
-            "tier": 3,
-            "smoke_flag": "--smoke",
-        }
+        inputs = {"nucleus_bin": "nucleus", "timeout_seconds": 60, "tier": 3}
         inputs.update(overrides)
         return {"inputs": inputs}
 
@@ -441,34 +518,65 @@ class TestGt40TestSmokeLever:
         assert obs["outcome"] == "error"
         assert obs["detail"]["stage"] == "nucleus_missing"
 
-    def test_clean_on_exit_zero(self, tmp_path):
+    def test_clean_when_target_tier_reached(self, tmp_path):
         lever = Gt40TestSmokeLever()
+        receipt = _receipt_json(
+            verified=True, tier_reached=3,
+            tiers_passed=[0, 1, 2, 3], tiers_skipped=[4, 5],
+        )
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=_polluted_stdout(receipt), stderr="",
+            )
             obs = lever.run(self._manifest(), tmp_path)
         assert obs["outcome"] == "clean"
-        assert obs["detail"]["ran"] == "smoke"
+        assert obs["detail"]["tier"] == 3
 
-    def test_found_when_smoke_fails(self, tmp_path):
+    def test_found_when_tests_fail(self, tmp_path):
         lever = Gt40TestSmokeLever()
-        stderr = "\n".join(f"fail {i}" for i in range(50))
+        signals = [
+            {"tier": 3, "check": "pytest", "passed": False,
+             "file": f"tests/test_x.py::test_y_{i}", "error": f"AssertionError: {i}"}
+            for i in range(40)
+        ]
+        receipt = _receipt_json(
+            verified=False, tier_reached=3,
+            tiers_passed=[0, 1, 2], tiers_failed=[3], signals=signals,
+        )
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr=stderr)
+            mock_run.return_value = MagicMock(
+                returncode=1, stdout=_polluted_stdout(receipt), stderr="",
+            )
             obs = lever.run(self._manifest(), tmp_path)
         assert obs["outcome"] == "found"
-        assert obs["detail"]["ran"] == "smoke"
-        # last 30 non-empty lines
-        assert len(obs["detail"]["findings"]) == 30
-        assert obs["detail"]["findings"][-1] == "fail 49"
+        assert obs["detail"]["tiers_failed"] == [3]
+        assert len(obs["detail"]["findings"]) == 30  # findings_limit=30
 
-    def test_argv_includes_smoke_flag(self, tmp_path):
+    def test_skipped_when_target_tier_not_reached(self, tmp_path):
         lever = Gt40TestSmokeLever()
+        receipt = _receipt_json(
+            verified=True, tier_reached=2,
+            tiers_passed=[0, 1, 2], tiers_skipped=[3, 4, 5],
+        )
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=_polluted_stdout(receipt), stderr="",
+            )
+            obs = lever.run(self._manifest(), tmp_path)
+        assert obs["outcome"] == "skipped"
+        assert "tier 3 not reached" in obs["detail"]["reason"]
+
+    def test_argv_uses_chain_and_json_no_smoke(self, tmp_path):
+        """The bogus --smoke flag is gone — nucleus never accepted it."""
+        lever = Gt40TestSmokeLever()
+        receipt = _receipt_json(verified=True, tier_reached=3, tiers_passed=[0, 1, 2, 3])
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout=receipt, stderr="")
             lever.run(self._manifest(), tmp_path)
         argv = mock_run.call_args[0][0]
-        assert "--smoke" in argv
-        assert argv[argv.index("--tiers") + 1] == "3"
+        assert "--smoke" not in argv
+        assert "--json" in argv
+        assert argv[argv.index("--tiers") + 1] == "0,1,2,3"
 
     def test_error_when_timeout_exceeded(self, tmp_path):
         lever = Gt40TestSmokeLever()

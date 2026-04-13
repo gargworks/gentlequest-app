@@ -1,9 +1,12 @@
 """Lever — gt40_test_smoke.
 
-Wraps ``nucleus verify --tiers 3 --smoke`` — GT40's smoke-subset of the
-test tier. Slimmer than a full test run so it can fire on cron_15m
-without burning CI; runs long enough that a regression caught here still
-beats the full verify at post_commit time.
+Wraps ``nucleus verify --tiers 0,1,2,3 --json`` (GT40 chain through the
+test tier) as a lever so periodic test failures land in the ledger
+without waiting for full verify. The historical ``--smoke`` flag was
+bogus — nucleus verify never accepted it; argparse rejected it with
+exit 2, polluting the ledger with usage findings. Removed entirely.
+The "smoke" naming is preserved for the lever identity (cron-friendly
+test wrapper) but the chain runs the full test tier.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .base import Lever, LeverObservation
+from ._gt40 import build_argv, classify_receipt, parse_receipt
 
 
 class Gt40TestSmokeLever(Lever):
@@ -22,18 +26,10 @@ class Gt40TestSmokeLever(Lever):
         inputs = manifest.get("inputs", {}) or {}
         nucleus_bin = inputs.get("nucleus_bin", "nucleus")
         timeout_seconds = int(inputs.get("timeout_seconds", 60))
-        tier = int(inputs.get("tier", 3))
-        smoke_flag = inputs.get("smoke_flag", "--smoke")
+        target_tier = int(inputs.get("tier", 3))
+        chain = inputs.get("tier_chain") or list(range(0, target_tier + 1))
 
-        argv = [
-            nucleus_bin,
-            "verify",
-            "--tiers",
-            str(tier),
-            smoke_flag,
-            "--timeout",
-            str(timeout_seconds),
-        ]
+        argv = build_argv(nucleus_bin, chain, timeout_seconds)
 
         try:
             result = self._run_subprocess(
@@ -41,27 +37,26 @@ class Gt40TestSmokeLever(Lever):
             )
         except FileNotFoundError:
             return self.observation_error(
-                "nucleus_missing", f"executable not found: {nucleus_bin}", tier=tier
+                "nucleus_missing", f"executable not found: {nucleus_bin}",
+                tier=target_tier,
             )
         except subprocess.TimeoutExpired:
             return self.observation_error(
-                "timeout", f"exceeded {timeout_seconds}s", tier=tier
+                "timeout", f"exceeded {timeout_seconds}s", tier=target_tier,
             )
 
-        if result.returncode == 0:
-            return self.observation_clean({"tier": tier, "ran": "smoke"})
+        receipt = parse_receipt(result.stdout or "", result.stderr or "")
+        if receipt is None:
+            return self.observation_error(
+                "parse_receipt",
+                f"no JSON receipt in nucleus stdout (returncode={result.returncode})",
+                tier=target_tier,
+            )
 
-        findings = _tail_nonempty(
-            (result.stdout or "") + "\n" + (result.stderr or ""), limit=30
-        )
-        return self.observation_found({
-            "tier": tier,
-            "ran": "smoke",
-            "returncode": result.returncode,
-            "findings": findings,
-        })
-
-
-def _tail_nonempty(blob: str, *, limit: int) -> list:
-    lines = [ln.rstrip() for ln in blob.splitlines() if ln.strip()]
-    return lines[-limit:]
+        outcome, detail = classify_receipt(receipt, target_tier, findings_limit=30)
+        if outcome == "found":
+            return self.observation_found(detail)
+        if outcome == "skipped":
+            reason = detail.pop("reason", "skipped")
+            return self.observation_skipped(reason, **detail)
+        return self.observation_clean(detail)
