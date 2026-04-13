@@ -1,17 +1,23 @@
 import logging
-from typing import List, Dict, Any
-
-logger = logging.getLogger(__name__)
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_session
+from app.events import (
+    publish_chat_request_received,
+    publish_chat_response_completed,
+)
 from app.models.chat import InterviewSession, ChatMessage
 from app.models.interview import Interview
 from app.models.team import Team
 from app.services.ai_insights_service import AIInsightsService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 ai_service = AIInsightsService()
@@ -50,15 +56,12 @@ async def start_chat_session(
     return chat_session
 
 
-
-from pydantic import BaseModel
-
 class MessageRequest(BaseModel):
     content: str
 
 @router.post("/chat/{session_id}/message", response_model=ChatMessage)
 async def send_chat_message(
-    session_id: int, 
+    session_id: int,
     request: MessageRequest,
     session: AsyncSession = Depends(get_session)
 ):
@@ -67,65 +70,62 @@ async def send_chat_message(
     Actually, frontend usually wants the AI response.
     We'll return the AI response message.
     """
-    chat_session = await session.get(InterviewSession, session_id)
-    if not chat_session:
-        raise HTTPException(status_code=404, detail="Session not found")
-        
-    # 1. Save User Message
-    user_msg = ChatMessage(
-        session_id=session_id,
-        role="user",
-        content=request.content
-    )
-    session.add(user_msg)
-    await session.commit()
-    
-    # 2. Fetch History
-    # We need to fetch messages ordered by timestamp
-    stmt = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.timestamp)
-    result = await session.execute(stmt)
-    messages = result.scalars().all()
-    
-    history = [{"role": m.role, "content": m.content} for m in messages]
-    
-    # 3. Get AI Response
-    ai_text = await ai_service.conduct_interview(history, "") # User message is already in history?
-    # Wait, conduct_interview takes (history, user_message).
-    # If I append user_msg to history, then I should pass empty string or modify method?
-    # My method implementation: conversation_text += f"Participant: {user_message}\n"
-    # If user_message is inside history, it will be duplicated.
-    # I should pass history EXCLUDING the last message, and pass the last message as user_message?
-    # Or just update method to take full history.
-    # My method expects user_message separated.
-    
-    # Let's clean up logic:
-    # History = all previous messages (excluding the one just added).
-    # content = current message.
-    
-    # Actually, simpler: Pass full history to AI Service and let it handle formatting.
-    # But I implemented `conduct_interview` to take `user_message` separately.
-    # So I will pass `history[:-1]` and `history[-1]['content']`.
-    
-    prev_history = history[:-1] if len(history) > 0 else []
-    current_msg = request.content
-    
+    request_id = uuid.uuid4().hex
+    publish_chat_request_received(request_id=request_id, session_id=session_id)
+    outcome = "error"
     try:
-        ai_text = await ai_service.conduct_interview(prev_history, current_msg)
-    except Exception as e:
-        logger.error("Chat AI response failed for session %d: %s", session_id, e)
-        raise HTTPException(status_code=500, detail="Failed to generate AI response. Please try again.")
+        chat_session = await session.get(InterviewSession, session_id)
+        if not chat_session:
+            raise HTTPException(status_code=404, detail="Session not found")
 
-    # 4. Save AI Response
-    ai_msg = ChatMessage(
-        session_id=session_id,
-        role="assistant",
-        content=ai_text
-    )
-    session.add(ai_msg)
-    await session.commit()
-    await session.refresh(ai_msg)
-    
-    return ai_msg
+        # 1. Save User Message
+        user_msg = ChatMessage(
+            session_id=session_id,
+            role="user",
+            content=request.content
+        )
+        session.add(user_msg)
+        await session.commit()
+
+        # 2. Fetch History
+        # We need to fetch messages ordered by timestamp
+        stmt = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.timestamp)
+        result = await session.execute(stmt)
+        messages = result.scalars().all()
+
+        history = [{"role": m.role, "content": m.content} for m in messages]
+
+        # 3. Get AI Response
+        # conduct_interview takes (history, user_message) separately.
+        # We pass history[:-1] (everything before the just-saved user message)
+        # and request.content as the current user message.
+        prev_history = history[:-1] if len(history) > 0 else []
+        current_msg = request.content
+
+        try:
+            ai_text = await ai_service.conduct_interview(prev_history, current_msg)
+        except Exception as e:
+            logger.error("Chat AI response failed for session %d: %s", session_id, e)
+            raise HTTPException(status_code=500, detail="Failed to generate AI response. Please try again.")
+
+        # 4. Save AI Response
+        ai_msg = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=ai_text
+        )
+        session.add(ai_msg)
+        await session.commit()
+        await session.refresh(ai_msg)
+
+        outcome = "clean"
+        return ai_msg
+    finally:
+        publish_chat_response_completed(
+            request_id=request_id,
+            session_id=session_id,
+            outcome=outcome,
+        )
 
 @router.post("/chat/{session_id}/finalize", response_model=Interview)
 async def finalize_chat_session(

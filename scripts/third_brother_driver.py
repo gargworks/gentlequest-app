@@ -29,7 +29,7 @@ import os
 import time
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List, Tuple
 
 # ── Global flags ─────────────────────────────────────────────
@@ -1198,6 +1198,384 @@ Write the instruction now:"""
 
 SPARRING_DPO_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_dpo.jsonl"
 SPARRING_SFT_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_sft.jsonl"
+LEVER_LEDGER_PATH = BRAIN_PATH / "ledger" / "events.jsonl"
+
+
+def _lever_gate_scan(git_diff: str,
+                     ledger_path: Optional[Path] = None,
+                     window: int = 100) -> Dict[str, Any]:
+    """Fail-closed scan of recent ledger events against a diff.
+
+    Returns a dict ``{"matches": [...], "status": "clean"|"found"|"unknown"}``.
+
+    ``status`` is the key the gate trusts:
+      - ``clean``   — ledger readable, no findings touch diff files
+      - ``found``   — ledger readable, one or more findings touch diff files
+      - ``unknown`` — ledger unreadable/parse-error/missing. The gate MUST
+                     force DEEPEN on unknown, never silently ACCEPT
+                     (substrate posture: fail-closed on read errors).
+
+    ``matches`` is always a list; on ``unknown`` it is empty.
+    """
+    path = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+    if not git_diff:
+        return {"matches": [], "status": "clean"}
+    if not path.exists():
+        return {"matches": [], "status": "clean"}
+
+    diff_files = set()
+    for line in git_diff.splitlines():
+        if line.startswith("+++ b/"):
+            diff_files.add(line[6:].strip())
+        elif line.startswith("diff --git a/") and " b/" in line:
+            diff_files.add(line.split(" b/", 1)[1].strip())
+    if not diff_files:
+        return {"matches": [], "status": "clean"}
+
+    try:
+        raw_lines = path.read_text(encoding="utf-8").strip().splitlines()
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"[LEVER_GATE] ledger unreadable — forcing DEEPEN: {e}")
+        return {"matches": [], "status": "unknown", "reason": f"read_error: {e}"}
+
+    matches: List[Dict] = []
+    corrupt = 0
+    for line in raw_lines[-window:]:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            corrupt += 1
+            continue
+        etype = event.get("type", "")
+        if not (etype.startswith("lever.") and etype.endswith(".observation")):
+            continue
+        if event.get("outcome") != "found":
+            continue
+        findings = event.get("detail", {}).get("findings", [])
+        finding_text = "\n".join(findings) if isinstance(findings, list) else str(findings)
+        if any(f in finding_text for f in diff_files):
+            matches.append(event)
+    status = "found" if matches else "clean"
+    result: Dict[str, Any] = {"matches": matches, "status": status}
+    if corrupt:
+        result["corrupt_lines"] = corrupt
+    return result
+
+
+def _find_lever_findings_in_diff(git_diff: str,
+                                 ledger_path: Optional[Path] = None,
+                                 window: int = 100) -> List[Dict]:
+    """Backward-compat wrapper — returns only the matches list.
+
+    Phase D scoring uses this to dock reviews that ACCEPT over flagged
+    files. For the fail-closed gate, use ``_lever_gate_scan`` instead so
+    ``unknown`` (ledger unreadable) can force DEEPEN.
+    """
+    return _lever_gate_scan(git_diff, ledger_path, window)["matches"]
+
+
+def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
+                          tasks_path: Optional[Path] = None) -> Optional[str]:
+    """Spawn a fix task for lever findings. Day-0 compounding — no LLM.
+
+    Dedupes: if a pending lever-fix task with the same lever set + file set
+    already exists, returns None and does not create a new one.
+
+    Returns the new task id (or existing deduped id), or None on failure.
+    """
+    path = tasks_path if tasks_path is not None else TASKS_PATH
+    try:
+        lever_names = sorted({m.get("lever", "?") for m in lever_matches})
+        affected_files: set = set()
+        finding_samples: List[str] = []
+        file_exts = (".py", ".js", ".ts", ".tsx", ".yaml", ".yml",
+                     ".md", ".json", ".sh", ".toml")
+        for m in lever_matches:
+            findings = m.get("detail", {}).get("findings", [])
+            if isinstance(findings, list):
+                for f in findings[:3]:
+                    finding_samples.append(f)
+                    # Parse tokens and file:line:col forms; collect path-like bits.
+                    for token in str(f).split():
+                        token = token.rstrip(",.)")
+                        for candidate in [token] + token.split(":"):
+                            if "/" in candidate and candidate.endswith(file_exts):
+                                affected_files.add(candidate)
+                                break
+
+        dedup_key = f"{','.join(lever_names)}|{','.join(sorted(affected_files))}"
+
+        if path.exists():
+            data = json.loads(path.read_text())
+        else:
+            data = {"tasks": []}
+        tasks = data.get("tasks", [])
+
+        for t in tasks:
+            if (t.get("source") == "lever_gate"
+                    and t.get("status") in ("pending", "in_progress")
+                    and t.get("lever_gate_dedup_key") == dedup_key):
+                return t.get("id")
+
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        new_id = f"lever-fix-{'-'.join(lever_names)}-{ts}"
+        description_lines = [
+            f"Lever gate spawned this task from {len(lever_matches)} finding(s).",
+            f"Levers: {', '.join(lever_names)}",
+            f"Parent task: {parent_task.get('id', '?')}",
+            "",
+            "Sample findings:",
+        ] + [f"  - {f}" for f in finding_samples[:8]]
+        scope = sorted(affected_files) if affected_files else parent_task.get("scope", ["**"])
+
+        new_task = {
+            "id": new_id,
+            "title": f"Fix {','.join(lever_names)} findings in {parent_task.get('id', '?')}",
+            "description": "\n".join(description_lines),
+            "scope": scope,
+            "priority": "high",
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": datetime.now().isoformat(),
+            "source": "lever_gate",
+            "lever_gate_dedup_key": dedup_key,
+            "lever_gate_parent_task_id": parent_task.get("id", ""),
+        }
+        tasks.append(new_task)
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now().isoformat()
+        path.write_text(json.dumps(data, indent=2))
+        return new_id
+    except Exception as e:
+        print(f"[LEVER_GATE] task spawn failed (non-fatal): {e}")
+        return None
+
+
+def _emit_plan_audit_spawner_event(ledger_path: Path, outcome: str,
+                                    detail: Dict) -> None:
+    """Emit one contract-conformant ``lever.plan_audit_spawner.observation``.
+
+    Uses ``LedgerEvent.for_lever_observation`` so the event type is always
+    ``lever.plan_audit_spawner.observation`` (the helper hardcodes the
+    ``.observation`` suffix). Never raises — ledger write failures are
+    absorbed so the spawner path never breaks session startup.
+    """
+    try:
+        from scripts.levers.base import LedgerEvent, LedgerSchemaError
+    except ImportError as e:
+        print(f"[PLAN_AUDIT_SPAWNER] LedgerEvent import failed: {e}")
+        return
+    try:
+        event = LedgerEvent.for_lever_observation(
+            lever_name="plan_audit_spawner",
+            observation={"outcome": outcome, "detail": detail},
+        )
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(ledger_path, "a", encoding="utf-8") as f:
+            f.write(event.to_jsonl() + "\n")
+    except (OSError, LedgerSchemaError) as e:
+        print(f"[PLAN_AUDIT_SPAWNER] ledger publish failed (non-fatal): {e}")
+
+
+def _spawn_plan_audit_fix_tasks(
+    tasks_path: Optional[Path] = None,
+    ledger_path: Optional[Path] = None,
+) -> List[str]:
+    """Wave 7 — convert plan_audit findings into TB task bank entries.
+
+    Reads the most recent ``lever.plan_audit.observation`` from the
+    ledger. For each plan in ``detail.top_rot``, creates one
+    ``audit-plan-<stem>`` task unless a pending/in_progress task with the
+    same id already exists (dedupe). Plans that vanished from disk
+    between the lever fire and this call are skipped (orphan guard).
+
+    Emission policy (silent-unless-action-or-degraded, to avoid ledger
+    flood on frequent session inits):
+
+      N > 0 tasks created  → outcome=found,  detail={created_count,
+                              deduped_count, plan_names, skipped_orphans}
+      tasks.json unreadable → outcome=skipped, detail={stage: tasks_json_read,
+                              error}, returns []
+      ledger unreadable     → outcome=skipped, detail={stage: ledger_read,
+                              error}, returns []
+      no observation / all  → SILENT (no event emitted)
+      deduped / no top_rot
+
+    Returns list of newly-created task ids (empty on no-op or failure).
+    """
+    tpath = tasks_path if tasks_path is not None else TASKS_PATH
+    lpath = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+
+    # 1. Read ledger tail for most-recent plan_audit observation
+    try:
+        lines = lpath.read_text(encoding="utf-8").splitlines() if lpath.exists() else []
+    except (OSError, UnicodeDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "ledger_read", "error": str(e)},
+        )
+        return []
+
+    obs_detail: Optional[Dict] = None
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        if (raw.get("type") == "lever.plan_audit.observation"
+                and raw.get("outcome") == "found"):
+            d = raw.get("detail")
+            if isinstance(d, dict):
+                obs_detail = d
+                break
+
+    if obs_detail is None:
+        return []
+    top_rot = obs_detail.get("top_rot") or []
+    if not isinstance(top_rot, list) or not top_rot:
+        return []
+
+    # 2. Read existing tasks for dedupe
+    try:
+        if tpath.exists():
+            data = json.loads(tpath.read_text(encoding="utf-8"))
+        else:
+            data = {"tasks": []}
+    except (OSError, json.JSONDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": str(e)},
+        )
+        return []
+
+    if not isinstance(data, dict):
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": "expected object"},
+        )
+        return []
+    tasks = data.get("tasks") or []
+    if not isinstance(tasks, list):
+        tasks = []
+    existing_open_ids = {
+        t.get("id") for t in tasks
+        if isinstance(t, dict) and t.get("status") in ("pending", "in_progress")
+    }
+
+    # 3. Build one task per rotting plan (skip deduped + orphan plans)
+    claude_plans = Path.home() / ".claude" / "plans"
+    brain_plans = PROJECT_ROOT / ".brain" / "plans"
+    created_ids: List[str] = []
+    deduped: List[str] = []
+    skipped_orphans: List[str] = []
+
+    for plan in top_rot:
+        if not isinstance(plan, dict):
+            continue
+        name = plan.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        stem = name[:-3] if name.endswith(".md") else name
+        task_id = f"audit-plan-{stem}"
+
+        if task_id in existing_open_ids:
+            deduped.append(name)
+            continue
+
+        plan_on_disk: Optional[Path] = None
+        for candidate in (claude_plans / name, brain_plans / name):
+            if candidate.exists():
+                plan_on_disk = candidate
+                break
+        if plan_on_disk is None:
+            skipped_orphans.append(name)
+            continue
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        new_task = {
+            "id": task_id,
+            "title": f"audit plan {name}"[:80],
+            "description": (
+                f"plan_audit lever flagged {name} as bucket="
+                f"{plan.get('bucket', '?')} (age {plan.get('age_days', '?')}d). "
+                f"Verify plan claims against code + write verdict to "
+                f".brain/audit/results.json via: python3 "
+                f"scripts/third_brother_driver.py --audit-plans 1 "
+                f"(newest-first; use --audit-skip K to reach this plan)"
+            ),
+            "scope": [str(plan_on_disk)],
+            "priority": 1,
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": now_iso,
+            "source": "plan_audit_spawner",
+            "plan_name": name,
+            "plan_bucket": plan.get("bucket"),
+        }
+        tasks.append(new_task)
+        created_ids.append(task_id)
+
+    # 4. Persist + emit only if we actually added tasks
+    if created_ids:
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        try:
+            tpath.write_text(json.dumps(data, indent=2))
+        except OSError as e:
+            _emit_plan_audit_spawner_event(
+                lpath, "skipped",
+                {"stage": "tasks_json_write", "error": str(e)},
+            )
+            return []
+        _emit_plan_audit_spawner_event(
+            lpath, "found",
+            {
+                "created_count": len(created_ids),
+                "deduped_count": len(deduped),
+                "plan_names": [
+                    tid.split("audit-plan-", 1)[1] + ".md"
+                    for tid in created_ids
+                ],
+                "skipped_orphans": skipped_orphans,
+            },
+        )
+    # else: silent no-op — no emission, avoids ledger flood on session inits
+
+    return created_ids
+
+
+def _publish_tb_review_decided(task: Dict, review_result: Dict,
+                               lever_gate_status: Optional[str] = None) -> None:
+    """Emit one ``tb.review.decided`` event to the substrate ledger.
+
+    TB becomes a peer on the shared substrate: its verdicts are visible to
+    every other lever and consumer (Brazen Bull replay, MCP resources,
+    future training curriculum). Never raises — publishing failure must
+    not break the review path.
+    """
+    try:
+        LEVER_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+        event = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "type": "tb.review.decided",
+            "task_id": task.get("id", ""),
+            "verdict": review_result.get("verdict"),
+            "original_verdict": review_result.get("original_verdict",
+                                                  review_result.get("verdict")),
+            "confidence": review_result.get("confidence"),
+            "lever_gate_fired": bool(review_result.get("lever_gate_fired")),
+            "lever_gate_status": lever_gate_status,
+        }
+        with open(LEVER_LEDGER_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event) + "\n")
+    except Exception as e:
+        print(f"[REVIEW] publish tb.review.decided failed (non-fatal): {e}")
 
 
 def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict):
@@ -1382,6 +1760,31 @@ Reply with ONLY this JSON:
                         better_review = rd.get("better_review", "")
                         verdict_correct = rd.get("verdict_correct")
 
+                        # ── Compounding: dock ACCEPT that rubber-stamps lever findings ──
+                        # If the ledger already flagged issues on files in this diff and
+                        # TB said ACCEPT anyway, that's the rubber-stamp failure mode.
+                        # Cap the review score so the DPO pair captures the miss.
+                        lever_dock_count = 0
+                        lever_dock_types: List[str] = []
+                        if (config.get("lever_dock_enabled", True)
+                                and review.get("verdict") == "ACCEPT"):
+                            lever_matches = _find_lever_findings_in_diff(
+                                git_diff,
+                                window=config.get("lever_lookback_window", 100),
+                            )
+                            if lever_matches:
+                                lever_dock_count = len(lever_matches)
+                                lever_dock_types = sorted({
+                                    m.get("lever", "?") for m in lever_matches
+                                })
+                                original_review_score = review_score
+                                review_score = min(review_score, 2)
+                                verdict_correct = False
+                                print(f"[SPARRING] Phase D dock — ACCEPT over "
+                                      f"{lever_dock_count} lever finding(s) "
+                                      f"({','.join(lever_dock_types)}): "
+                                      f"review_score {original_review_score} → {review_score}")
+
                         review_sys = ("You are Third Brother, reviewing work done by Claude Code. "
                                       "Respond with VERDICT, REASON, and NOTES.")
                         review_user = (f"Task: {task_desc[:300]}\n"
@@ -1403,6 +1806,8 @@ Reply with ONLY this JSON:
                                     "review_score": review_score,
                                     "verdict_correct": verdict_correct,
                                     "category": "review_quality",
+                                    "lever_dock_count": lever_dock_count,
+                                    "lever_dock_types": lever_dock_types,
                                     "ts": datetime.now().isoformat(),
                                 }
                             }
@@ -1423,6 +1828,8 @@ Reply with ONLY this JSON:
                                 "original_score": review_score,
                                 "category": "review_quality",
                                 "quality": "gold" if review_score >= 4 else "silver",
+                                "lever_dock_count": lever_dock_count,
+                                "lever_dock_types": lever_dock_types,
                                 "ts": datetime.now().isoformat(),
                             }
                         }
@@ -1883,6 +2290,49 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
                 reason = line.split(":", 1)[1].strip()
                 break
 
+        # ── Lever gate (day-0 runtime compounding, no LLM required) ──
+        # If the ledger flags findings on files in this diff, ACCEPT is a
+        # rubber-stamp. Force DEEPEN at runtime and spawn a fix task so the
+        # system builds its own backlog. Works without a local model.
+        #
+        # Fail-closed: if the ledger is unreadable, DEEPEN anyway — a silent
+        # ACCEPT on unknown ledger state is the worst failure mode.
+        original_verdict = verdict
+        # Top-level kill switches take precedence over v3 defaults.
+        lever_substrate_enabled = config.get("lever_substrate_enabled", True)
+        lever_gate_enabled = (
+            lever_substrate_enabled
+            and config.get("lever_gate_enabled", v3.get("lever_gate_enabled", True))
+        )
+        lever_gate_matches: List[Dict] = []
+        lever_gate_spawned_task_id: Optional[str] = None
+        lever_gate_status: Optional[str] = None
+        if lever_gate_enabled and verdict == "ACCEPT":
+            gate_scan = _lever_gate_scan(
+                git_diff, window=v3.get("lever_gate_window", 100),
+            )
+            lever_gate_status = gate_scan.get("status")
+            lever_gate_matches = gate_scan.get("matches", [])
+            if lever_gate_status == "unknown":
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    "Lever gate: ledger unreadable (fail-closed). "
+                    f"Reason: {gate_scan.get('reason', 'unknown')}. "
+                    "ACCEPT downgraded to DEEPEN until substrate is inspectable."
+                )
+            elif lever_gate_matches:
+                lever_names = sorted({m.get("lever", "?") for m in lever_gate_matches})
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    f"Lever gate: {len(lever_gate_matches)} finding(s) on diff files "
+                    f"from {','.join(lever_names)}. Fix the findings or address them "
+                    "explicitly before accepting."
+                )
+                if v3.get("lever_gate_spawn_task", True):
+                    lever_gate_spawned_task_id = _spawn_lever_fix_task(
+                        task, lever_gate_matches
+                    )
+
         review_result = {
             "verdict": verdict,
             "reason": reason,
@@ -1890,9 +2340,27 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         }
         if deepen_notes:
             review_result["deepen_notes"] = deepen_notes
+        if lever_gate_status:
+            review_result["lever_gate_status"] = lever_gate_status
+        if lever_gate_matches or lever_gate_status == "unknown":
+            review_result["lever_gate_fired"] = True
+            review_result["original_verdict"] = original_verdict
+            review_result["lever_gate_count"] = len(lever_gate_matches)
+            if lever_gate_matches:
+                review_result["lever_gate_types"] = sorted({
+                    m.get("lever", "?") for m in lever_gate_matches
+                })
+            if lever_gate_spawned_task_id:
+                review_result["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
+
+        _publish_tb_review_decided(task, review_result, lever_gate_status)
 
         print(f"[REVIEW] {task.get('id', '?')}: {verdict} (confidence: {confidence}, "
               f"parse: {parse_method}) — {reason[:80]}")
+        if lever_gate_matches:
+            print(f"[REVIEW] Lever gate fired: {len(lever_gate_matches)} finding(s) "
+                  f"from {','.join(review_result['lever_gate_types'])}. "
+                  f"Spawned task: {lever_gate_spawned_task_id or 'none'}")
 
         # Log review
         log_entry = {
@@ -1905,6 +2373,14 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
             "reviewer_model": tb_model,
             "duration_ms": duration_ms,
         }
+        if lever_gate_matches or lever_gate_status == "unknown":
+            log_entry["lever_gate_fired"] = True
+            log_entry["lever_gate_count"] = len(lever_gate_matches)
+            log_entry["original_verdict"] = original_verdict
+            if lever_gate_status:
+                log_entry["lever_gate_status"] = lever_gate_status
+            if lever_gate_spawned_task_id:
+                log_entry["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
         with open(REVIEW_LOG_PATH, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
 
@@ -4275,6 +4751,18 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     log_alert("scope_violation", task_id, "escalated",
                               f"Files outside scope: {violation_list}", "WARNING")
             else:
+                # ── Auto-fire post-executor levers before review ──
+                # Day-0 runtime compounding: levers observe the fresh diff
+                # and write findings to the ledger so tb_review_output's
+                # lever gate can see them. Failure of a lever must never
+                # block the driver.
+                if config.get("v3_features", {}).get("lever_auto_fire_enabled", True):
+                    try:
+                        from scripts.levers.run_lever import run_trigger as _lever_run_trigger
+                        _lever_run_trigger("post_executor")
+                    except Exception as _e:
+                        print(f"[LEVER] auto-fire failed (non-fatal): {_e}")
+
                 try:
                     audit_plan_text = ""
                     verification_evidence = ""
@@ -4782,6 +5270,15 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
     codebase — training data is execution-grounded, not synthetic evaluation.
     """
     import random
+
+    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
+    try:
+        _created = _spawn_plan_audit_fix_tasks()
+        if _created:
+            print(f"[SPARRING] plan_audit spawner created {len(_created)} task(s): "
+                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
+    except Exception as _e:
+        print(f"[SPARRING] plan_audit spawner non-fatal: {_e}")
 
     if not SPARRING_TASK_BANK_PATH.exists():
         print(f"[SPARRING] Task bank not found: {SPARRING_TASK_BANK_PATH}")
@@ -5464,6 +5961,16 @@ def run_compound_mode(branch: str, sparring_rounds: int = 5):
     print("  COMPOUND MODE — Work = Training")
     print("  real tasks → sparring → export")
     print("=" * 60)
+
+    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
+    # Silent no-op unless there are rotting plans with no pending task yet.
+    try:
+        _created = _spawn_plan_audit_fix_tasks()
+        if _created:
+            print(f"[COMPOUND] plan_audit spawner created {len(_created)} task(s): "
+                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
+    except Exception as _e:
+        print(f"[COMPOUND] plan_audit spawner non-fatal: {_e}")
 
     # Pre-flight: verify Ollama + TB model are running (needed for training captures)
     config = load_config()

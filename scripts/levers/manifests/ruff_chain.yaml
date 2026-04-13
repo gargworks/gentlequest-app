@@ -1,0 +1,11 @@
+name: ruff_chain
+description: Run ruff on files changed in a diff spec and report findings to the .brain ledger. Idea #15 from the 71-item blitz.
+enabled: true
+triggers:
+  - post_executor
+  - manual
+inputs:
+  diff_spec: HEAD~1..HEAD
+  check_level: warn  # warn | fix
+outputs:
+  ledger_event_type: lever.ruff_chain.observation

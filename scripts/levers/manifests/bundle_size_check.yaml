@@ -1,0 +1,11 @@
+name: bundle_size_check
+description: Compare current dist/stats.json total_size_bytes against baseline JSON; flag regressions beyond threshold percent. Skipped until both files exist.
+enabled: true
+triggers:
+  - post_commit
+inputs:
+  stats_path: dist/stats.json
+  baseline_path: .brain/metrics/bundle_baseline.json
+  regression_threshold_pct: 5.0
+outputs:
+  ledger_event_type: lever.bundle_size_check.observation

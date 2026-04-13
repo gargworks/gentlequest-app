@@ -1,0 +1,12 @@
+name: runtime_regression
+description: Flag when the latest pytest-run duration regresses beyond threshold vs the median of prior runs in window. Skipped until a baseline exists.
+enabled: true
+triggers:
+  - post_commit
+  - cron_hourly
+inputs:
+  runtimes_path: .brain/metrics/test_runtime.jsonl
+  window_size: 10
+  regression_threshold_pct: 25.0
+outputs:
+  ledger_event_type: lever.runtime_regression.observation

@@ -1,0 +1,12 @@
+name: env_var_drift
+description: AST-extract env var names referenced via os.getenv / os.environ in changed .py files; flag any not declared in .env.example. Skipped when .env.example is absent.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  env_example_path: .env.example
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.env_var_drift.observation

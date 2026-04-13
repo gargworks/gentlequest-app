@@ -1,0 +1,24 @@
+name: license_header_check
+description: Newly-added source files (.py/.js/.ts/.tsx) must declare a Copyright or SPDX-License-Identifier header within the first 10 lines.
+# Disabled — Nucleus has no established license-header convention. Zero
+# existing source files carry Copyright/SPDX lines, so every new file
+# would be flagged. Re-enable (flip to true) once the repo adopts an
+# explicit convention. Lever + tests retained so re-enabling is one-flag.
+enabled: false
+triggers:
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  extensions:
+    - .py
+    - .js
+    - .ts
+    - .tsx
+  header_patterns:
+    - '^#\s*Copyright'
+    - '^//\s*Copyright'
+    - '^#\s*SPDX-License-Identifier'
+    - '^//\s*SPDX-License-Identifier'
+  lines_to_check: 10
+outputs:
+  ledger_event_type: lever.license_header_check.observation

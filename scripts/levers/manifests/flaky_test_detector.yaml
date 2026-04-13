@@ -1,0 +1,12 @@
+name: flaky_test_detector
+description: Detect tests with mixed pass/fail outcomes in the observation window from the pytest history JSONL. A single test with both states is flaky by definition.
+enabled: true
+triggers:
+  - post_commit
+  - cron_hourly
+inputs:
+  history_path: .brain/metrics/pytest_history.jsonl
+  window_hours: 48
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.flaky_test_detector.observation

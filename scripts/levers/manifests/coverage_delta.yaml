@@ -1,0 +1,11 @@
+name: coverage_delta
+description: Compare current coverage.xml line-rate against baseline JSON; flag drops beyond threshold percentage points. Skipped until coverage.xml + baseline both exist.
+enabled: true
+triggers:
+  - post_commit
+inputs:
+  coverage_path: coverage.xml
+  baseline_path: .brain/metrics/coverage_baseline.json
+  drop_threshold_pct: 2.0
+outputs:
+  ledger_event_type: lever.coverage_delta.observation

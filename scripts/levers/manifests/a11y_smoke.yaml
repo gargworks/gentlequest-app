@@ -1,0 +1,16 @@
+name: a11y_smoke
+description: Run an a11y CLI (pa11y/axe) against one configured URL and flag violations from the emitted JSON. Skipped when no URL is configured.
+enabled: true
+triggers:
+  - post_commit
+  - cron_daily
+inputs:
+  scanner_bin: pa11y
+  url: ""
+  extra_args:
+    - "--reporter"
+    - "json"
+  timeout_seconds: 60
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.a11y_smoke.observation

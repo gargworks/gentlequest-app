@@ -1,0 +1,14 @@
+name: dead_code_scan
+description: Flag newly-added top-level Python defs/classes whose name appears nowhere else in the tree. Conservative — skips underscore, dunder, and test_* names. Inner defs are not inspected.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  ignore_patterns:
+    - "**/migrations/*"
+    - "**/__pycache__/*"
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.dead_code_scan.observation

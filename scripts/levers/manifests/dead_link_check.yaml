@@ -1,0 +1,11 @@
+name: dead_link_check
+description: Scan changed .md files for relative markdown links and flag those whose target file does not exist. External URLs are deferred (no network); anchor-only links and anchor suffixes are stripped before the existence check.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.dead_link_check.observation

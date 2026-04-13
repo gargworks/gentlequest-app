@@ -1,0 +1,12 @@
+name: gt40_lint
+description: Wrap `nucleus verify --tiers 1` as a lever so GT40 lint exit status and tail output land in the ledger as a typed observation.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  nucleus_bin: nucleus
+  timeout_seconds: 15
+  tier: 1
+outputs:
+  ledger_event_type: lever.gt40_lint.observation

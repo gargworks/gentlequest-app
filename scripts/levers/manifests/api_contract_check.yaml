@@ -1,0 +1,24 @@
+name: api_contract_check
+description: AST-walk changed .py files under roots; extract route (method, path) tuples at HEAD vs HEAD~1. Flag routes present previously but removed in HEAD.
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  roots:
+    - backend
+  decorator_names:
+    - app.get
+    - app.post
+    - app.put
+    - app.delete
+    - app.patch
+    - app.route
+    - router.get
+    - router.post
+    - router.put
+    - router.delete
+    - router.patch
+outputs:
+  ledger_event_type: lever.api_contract_check.observation

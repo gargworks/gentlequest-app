@@ -1,0 +1,13 @@
+name: perf_regression_spotter
+description: Per-metric latest vs window-median regression check over a labelled JSONL perf log. Each metric with >= 2 samples gets independently evaluated. Skipped until baseline exists.
+enabled: true
+triggers:
+  - post_commit
+  - cron_hourly
+inputs:
+  perf_log_path: .brain/metrics/perf.jsonl
+  window_size: 10
+  regression_threshold_pct: 20.0
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.perf_regression_spotter.observation

@@ -1,0 +1,11 @@
+name: scope_pre_enforce
+description: Enforce that the executor only touched files matching the active task's scope globs. Complements TB's post-review gate by catching scope drift at observation time.
+enabled: true
+triggers:
+  - post_executor
+inputs:
+  tasks_path: .brain/driver/tasks.json
+  task_id_env: NUCLEUS_TASK_ID
+  diff_spec: HEAD~1..HEAD
+outputs:
+  ledger_event_type: lever.scope_pre_enforce.observation

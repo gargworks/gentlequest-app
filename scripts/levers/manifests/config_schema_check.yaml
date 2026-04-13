@@ -1,0 +1,12 @@
+name: config_schema_check
+description: "For each configured JSON config (path -> {key: type}), when the config is in the current diff, verify required keys are present and their JSON types match. Only fires for configs touched in the diff."
+enabled: true
+triggers:
+  - post_executor
+  - pre_commit
+inputs:
+  diff_spec: HEAD~1..HEAD
+  schemas: {}
+  max_findings: 25
+outputs:
+  ledger_event_type: lever.config_schema_check.observation

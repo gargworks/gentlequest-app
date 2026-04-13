@@ -1,0 +1,11 @@
+name: todo_chain
+description: Scan the diff for newly-added TODO/FIXME/XXX/HACK markers. Commits that ship half-finished work should surface here so the review gate can catch them. Idea from the 71-item blitz, runtime-compounding class.
+enabled: true
+triggers:
+  - post_executor
+  - manual
+inputs:
+  diff_spec: HEAD~1..HEAD
+  max_findings: 50
+outputs:
+  ledger_event_type: lever.todo_chain.observation
