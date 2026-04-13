@@ -2422,18 +2422,22 @@ class TestBullAuditLever:
 
 
 class TestPlanAuditLever:
-    """Wave 7 accountability lever.
+    """Wave 7+8 accountability lever.
 
     Bucket matrix — evaluation ORDER matters:
-      1. never_audited — no results entry
-      2. stale         — disk mtime > results.plan_mtime + threshold (BEATS
-                         abandoned: touch = reconsideration)
-      3. needs_deepen  — verdict=DEEPEN
-      4. failed_audit  — verdict=REJECT
-      5. abandoned     — verdict=ABANDONED (NOT rotting)
-      6. verified      — verdict=ACCEPT, not stale
+      1. never_audited          — no results entry
+      2. stale                  — disk mtime > results.plan_mtime + threshold
+                                  (BEATS abandoned: touch = reconsideration)
+      3. needs_deepen           — verdict=DEEPEN
+      4. deepen_exhausted       — verdict=DEEPEN_EXHAUSTED (audit gave up)
+      5. failed_audit           — verdict=REJECT
+      6. abandoned              — verdict=ABANDONED (NOT rotting)
+      7. verified_with_evidence — verdict=ACCEPT, quality ∈ {strong, weak}
+      8. verified_no_evidence   — verdict=ACCEPT, quality ∈ {none, missing}
+                                  ← Wave 8: ROTTING (rubber-stamp ACCEPT)
 
-    rotting = never_audited ∪ stale ∪ needs_deepen ∪ failed_audit
+    rotting = never_audited ∪ stale ∪ needs_deepen ∪ deepen_exhausted
+              ∪ failed_audit ∪ verified_no_evidence
     """
 
     def _manifest(self, plan_dirs, results_path, **kw):
@@ -2474,13 +2478,21 @@ class TestPlanAuditLever:
         self._write_plan(pdir, "b.md", "2026-04-09T10:00:00")
         results = tmp_path / "results.json"
         results.write_text(json.dumps({
-            "a.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
-            "b.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-09T10:00:30"},
+            "a.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",
+            },
+            "b.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-09T10:00:30",
+                "verification_quality": "strong",
+            },
         }))
         obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
         assert obs["outcome"] == "clean"
         assert obs["detail"]["plans_total"] == 2
-        assert obs["detail"]["by_bucket"]["verified"] == 2
+        assert obs["detail"]["by_bucket"]["verified_with_evidence"] == 2
 
     def test_found_when_plan_never_audited(self, tmp_path):
         lever = PlanAuditLever()
@@ -2599,7 +2611,11 @@ class TestPlanAuditLever:
         self._write_plan(pdir, "x.md", "2026-04-10T10:00:00")
         results = tmp_path / "results.json"
         results.write_text(json.dumps({
-            "x.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
+            "x.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",
+            },
         }))
 
         real_read = Path.read_text
@@ -2626,7 +2642,11 @@ class TestPlanAuditLever:
         ghost = self._write_plan(pdir, "ghost.md", "2026-04-10T10:00:00")
         results = tmp_path / "results.json"
         results.write_text(json.dumps({
-            "keep.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
+            "keep.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",
+            },
         }))
 
         real_stat = Path.stat
@@ -2640,3 +2660,115 @@ class TestPlanAuditLever:
         obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
         assert obs["outcome"] == "clean"
         assert obs["detail"]["plans_total"] == 1
+
+    # --- Wave 8: verification_quality split --------------------------------
+
+    def test_verified_with_evidence_when_quality_strong(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "evidence.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "evidence.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "strong",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["by_bucket"]["verified_with_evidence"] == 1
+        assert "verified_no_evidence" not in obs["detail"]["by_bucket"]
+
+    def test_verified_with_evidence_when_quality_weak(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "weak.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "weak.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "weak",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["by_bucket"]["verified_with_evidence"] == 1
+
+    def test_verified_no_evidence_when_quality_none(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "rubber.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "rubber.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "none",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"]["verified_no_evidence"] == 1
+        assert obs["detail"]["plans_rotting"] == 1
+        assert obs["detail"]["top_rot"][0]["bucket"] == "verified_no_evidence"
+        assert obs["detail"]["top_rot"][0]["name"] == "rubber.md"
+
+    def test_verified_no_evidence_when_quality_field_missing(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "missing.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "missing.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"]["verified_no_evidence"] == 1
+
+    def test_top_rot_ordering_never_audited_beats_verified_no_evidence(
+        self, tmp_path,
+    ):
+        """Priority: never_audited > stale > deepen_exhausted > needs_deepen >
+        failed_audit > verified_no_evidence. Assert mtime-tie-broken ordering
+        places fresher verified_no_evidence BELOW older never_audited because
+        top_rot sorts by mtime, while bucket membership itself is correct."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        # Three plans, all rotting, each in a different bucket:
+        self._write_plan(pdir, "new.md", "2026-04-12T10:00:00")          # never_audited
+        self._write_plan(pdir, "rej.md", "2026-04-11T10:00:00")          # failed_audit
+        self._write_plan(pdir, "rubber.md", "2026-04-10T10:00:00")       # verified_no_evidence
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "rej.md": {"verdict": "REJECT", "plan_mtime": "2026-04-11T10:00:30"},
+            "rubber.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:30",
+                "verification_quality": "none",
+            },
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["plans_rotting"] == 3
+        assert obs["detail"]["by_bucket"] == {
+            "never_audited": 1,
+            "failed_audit": 1,
+            "verified_no_evidence": 1,
+        }
+        # mtime-based ordering within rotting: newer first.
+        buckets_in_order = [r["bucket"] for r in obs["detail"]["top_rot"]]
+        assert buckets_in_order == [
+            "never_audited",
+            "failed_audit",
+            "verified_no_evidence",
+        ]

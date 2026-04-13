@@ -30,7 +30,7 @@ import time
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, Dict, List, Tuple
+from typing import Any, Optional, Dict, List, Tuple
 
 # ── Global flags ─────────────────────────────────────────────
 VERBOSE = False  # Set by --verbose; logs every Ollama call's input/output
@@ -1378,17 +1378,55 @@ def _emit_plan_audit_spawner_event(ledger_path: Path, outcome: str,
         print(f"[PLAN_AUDIT_SPAWNER] ledger publish failed (non-fatal): {e}")
 
 
+# Wave 8 — dispatch policy for plan_audit spawner.
+#
+# Re-audit buckets fall through to the default ``audit-plan-<stem>`` task
+# (re-running TB's --audit-plans is the right fix).
+#
+# Non-re-audit buckets look up BUCKET_SPAWN_POLICY to decide the task
+# type. Wave 9 will append ``unverifiable`` and ``drift_detected`` entries
+# (the latter with ``task_kwargs={"force": True}`` so the dispatcher adds
+# --audit-force to the instruction).
+_REAUDIT_BUCKETS = frozenset({
+    "never_audited",
+    "stale",
+    "needs_deepen",
+    "deepen_exhausted",
+    "failed_audit",
+})
+
+BUCKET_SPAWN_POLICY: Dict[str, Dict[str, Any]] = {
+    "verified_no_evidence": {
+        "task_type": "add-verification",
+        "task_kwargs": {},
+    },
+}
+
+
 def _spawn_plan_audit_fix_tasks(
     tasks_path: Optional[Path] = None,
     ledger_path: Optional[Path] = None,
 ) -> List[str]:
-    """Wave 7 — convert plan_audit findings into TB task bank entries.
+    """Wave 7+8 — convert plan_audit findings into TB task bank entries.
 
     Reads the most recent ``lever.plan_audit.observation`` from the
-    ledger. For each plan in ``detail.top_rot``, creates one
-    ``audit-plan-<stem>`` task unless a pending/in_progress task with the
-    same id already exists (dedupe). Plans that vanished from disk
-    between the lever fire and this call are skipped (orphan guard).
+    ledger. For each plan in ``detail.top_rot``, dispatches through
+    ``BUCKET_SPAWN_POLICY`` and ``_REAUDIT_BUCKETS`` to decide the task
+    shape, unless a pending/in_progress task with the same id already
+    exists (dedupe). Plans that vanished from disk between the lever
+    fire and this call are skipped (orphan guard).
+
+    Bucket → task-type map (Wave 8):
+
+      verified_no_evidence → add-verification-<stem>  (plan-edit task,
+                              NOT re-audit: re-running --audit-plans on a
+                              quality=none plan produces another quality=none
+                              verdict; fix is to add '## Files Modified' /
+                              '## Verification' section).
+      never_audited, stale, needs_deepen, deepen_exhausted, failed_audit
+        → audit-plan-<stem>  (re-audit task).
+      deepen_exhausted also gets ' --audit-force REQUIRED' in the
+        description (TB auto-skips otherwise).
 
     Emission policy (silent-unless-action-or-degraded, to avoid ledger
     flood on frequent session inits):
@@ -1471,6 +1509,7 @@ def _spawn_plan_audit_fix_tasks(
     claude_plans = Path.home() / ".claude" / "plans"
     brain_plans = PROJECT_ROOT / ".brain" / "plans"
     created_ids: List[str] = []
+    created_plan_names: List[str] = []
     deduped: List[str] = []
     skipped_orphans: List[str] = []
 
@@ -1481,7 +1520,24 @@ def _spawn_plan_audit_fix_tasks(
         if not isinstance(name, str) or not name:
             continue
         stem = name[:-3] if name.endswith(".md") else name
-        task_id = f"audit-plan-{stem}"
+        bucket = plan.get("bucket", "?")
+
+        # R13: dispatch by bucket. BUCKET_SPAWN_POLICY wins if the bucket
+        # has custom task semantics; otherwise re-audit buckets fall
+        # through to the default audit-plan task. Unknown buckets are
+        # skipped silently (shouldn't reach here — lever only puts
+        # rotting buckets in top_rot).
+        policy = BUCKET_SPAWN_POLICY.get(bucket)
+        if policy is not None:
+            task_type = policy["task_type"]
+            task_kwargs = policy.get("task_kwargs", {}) or {}
+        elif bucket in _REAUDIT_BUCKETS:
+            task_type = "audit-plan"
+            task_kwargs = {}
+        else:
+            continue
+
+        task_id = f"{task_type}-{stem}"
 
         if task_id in existing_open_ids:
             deduped.append(name)
@@ -1497,16 +1553,18 @@ def _spawn_plan_audit_fix_tasks(
             continue
 
         now_iso = datetime.now(timezone.utc).isoformat()
-        bucket = plan.get("bucket", "?")
-        force_hint = (
-            " --audit-force is REQUIRED: TB auto-skips this verdict."
-            if bucket == "deepen_exhausted"
-            else ""
-        )
-        new_task = {
-            "id": task_id,
-            "title": f"audit plan {name}"[:80],
-            "description": (
+
+        if task_type == "audit-plan":
+            force_flag = (
+                task_kwargs.get("force", False) or bucket == "deepen_exhausted"
+            )
+            force_hint = (
+                " --audit-force is REQUIRED: TB auto-skips this verdict."
+                if force_flag
+                else ""
+            )
+            title = f"audit plan {name}"[:80]
+            description = (
                 f"plan_audit lever flagged {name} as bucket="
                 f"{bucket} (age {plan.get('age_days', '?')}d). "
                 f"Verify plan claims against code + write verdict to "
@@ -1514,7 +1572,26 @@ def _spawn_plan_audit_fix_tasks(
                 f"scripts/third_brother_driver.py --audit-plans 1 "
                 f"(newest-first; use --audit-skip K to reach this plan)."
                 f"{force_hint}"
-            ),
+            )
+        elif task_type == "add-verification":
+            title = f"add verification to {name}"[:80]
+            description = (
+                f"plan_audit lever flagged {name} as bucket={bucket} "
+                f"(age {plan.get('age_days', '?')}d). Plan was ACCEPTed "
+                f"without executed verification commands (quality=none "
+                f"or missing). Edit the plan to add a `## Files Modified` "
+                f"or `## Verification` section listing concrete "
+                f"assertions (ran pytest X, checked Y) so a future "
+                f"--audit-plans fire can grade evidence. Plan-edit only; "
+                f"no code changes expected."
+            )
+        else:
+            continue
+
+        new_task = {
+            "id": task_id,
+            "title": title,
+            "description": description,
             "scope": [str(plan_on_disk)],
             "priority": 1,
             "status": "pending",
@@ -1522,10 +1599,11 @@ def _spawn_plan_audit_fix_tasks(
             "created_at": now_iso,
             "source": "plan_audit_spawner",
             "plan_name": name,
-            "plan_bucket": plan.get("bucket"),
+            "plan_bucket": bucket,
         }
         tasks.append(new_task)
         created_ids.append(task_id)
+        created_plan_names.append(name)
 
     # 4. Persist + emit only if we actually added tasks
     if created_ids:
@@ -1545,10 +1623,7 @@ def _spawn_plan_audit_fix_tasks(
             {
                 "created_count": len(created_ids),
                 "deduped_count": len(deduped),
-                "plan_names": [
-                    tid.split("audit-plan-", 1)[1] + ".md"
-                    for tid in created_ids
-                ],
+                "plan_names": created_plan_names,
                 "skipped_orphans": skipped_orphans,
             },
         )

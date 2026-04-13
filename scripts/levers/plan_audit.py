@@ -1,25 +1,30 @@
 """Lever — plan_audit (accountability lever).
 
 Walks both plan directories, joins against TB's `.brain/audit/results.json`,
-and classifies every plan into one of six buckets so plan rot is visible
+and classifies every plan into one of eight buckets so plan rot is visible
 on the ledger. The lever observes the accountability loop; it does not
 run it. TB's ``--audit-plans`` CLI remains the only place that actually
 verifies plans (see feedback_run_the_full_loop memory).
 
 Bucket evaluation order matters (sequential if/elif):
 
-    1. never_audited    — no results entry for this filename
-    2. stale            — plan_mtime on disk > result.plan_mtime + threshold
-                          (stale BEATS verdict, including abandoned-but-modified;
-                           touching an abandoned plan signals reconsideration)
-    3. needs_deepen     — verdict=DEEPEN
-    4. deepen_exhausted — verdict=DEEPEN_EXHAUSTED (audit gave up; plan
-                          remains unverified — rotting until --audit-force)
-    5. failed_audit     — verdict=REJECT
-    6. abandoned        — verdict=ABANDONED (NOT counted as rotting)
-    7. verified         — verdict=ACCEPT, not stale
+    1. never_audited          — no results entry for this filename
+    2. stale                  — plan_mtime on disk > result.plan_mtime + threshold
+                                (stale BEATS verdict, including abandoned-but-
+                                 modified; touching an abandoned plan signals
+                                 reconsideration)
+    3. needs_deepen           — verdict=DEEPEN
+    4. deepen_exhausted       — verdict=DEEPEN_EXHAUSTED (audit gave up; plan
+                                remains unverified — rotting until --audit-force)
+    5. failed_audit           — verdict=REJECT
+    6. abandoned              — verdict=ABANDONED (NOT counted as rotting)
+    7. verified_with_evidence — verdict=ACCEPT, not stale, quality ∈ {strong, weak}
+    8. verified_no_evidence   — verdict=ACCEPT, not stale, quality ∈ {none,
+                                missing, unknown} — ROTTING: ACCEPT without
+                                executed verification commands is a rubber stamp
 
-Rotting = never_audited ∪ stale ∪ needs_deepen ∪ deepen_exhausted ∪ failed_audit.
+Rotting = never_audited ∪ stale ∪ needs_deepen ∪ deepen_exhausted ∪
+          failed_audit ∪ verified_no_evidence.
 """
 
 from __future__ import annotations
@@ -39,7 +44,10 @@ _ROTTING = frozenset({
     "needs_deepen",
     "deepen_exhausted",
     "failed_audit",
+    "verified_no_evidence",
 })
+
+_EVIDENCE_QUALITIES = frozenset({"strong", "weak"})
 
 
 class PlanAuditLever(Lever):
@@ -82,7 +90,11 @@ class PlanAuditLever(Lever):
                 "plans_total": plans_total,
                 "plans_audited": sum(
                     n for b, n in by_bucket.items()
-                    if b in ("verified", "abandoned")
+                    if b in (
+                        "verified_with_evidence",
+                        "verified_no_evidence",
+                        "abandoned",
+                    )
                 ),
                 "by_bucket": by_bucket,
             })
@@ -167,7 +179,11 @@ def _classify(
         elif verdict == "ABANDONED":
             bucket = "abandoned"
         elif verdict == "ACCEPT":
-            bucket = "verified"
+            quality = entry.get("verification_quality")
+            if quality in _EVIDENCE_QUALITIES:
+                bucket = "verified_with_evidence"
+            else:
+                bucket = "verified_no_evidence"
         else:
             bucket = "never_audited"
 

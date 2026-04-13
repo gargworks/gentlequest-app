@@ -491,6 +491,111 @@ class TestSpawnPlanAuditFixTasks:
         assert events[0]["lever"] == "plan_audit_spawner"
         assert events[0]["outcome"] in OUTCOMES
 
+    # --- Wave 8: BUCKET_SPAWN_POLICY dispatch ---------------------------
+
+    def test_spawner_skips_audit_task_for_verified_no_evidence(
+        self, tmp_path, monkeypatch,
+    ):
+        """verified_no_evidence → no audit-plan-X task (re-running --audit-plans
+        on a quality=none verdict reproduces quality=none; fix must be plan-edit,
+        not re-audit)."""
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+        claude_plans = tmp_path / ".claude" / "plans"
+        claude_plans.mkdir(parents=True)
+        (claude_plans / "rubber.md").write_text("# rubber")
+
+        ledger = tmp_path / "events.jsonl"
+        tasks = tmp_path / "tasks.json"
+        self._write_tasks(tasks)
+        self._write_plan_audit_found(ledger, [
+            {"name": "rubber.md", "bucket": "verified_no_evidence", "age_days": 2},
+        ])
+        got = _spawn_plan_audit_fix_tasks(tasks_path=tasks, ledger_path=ledger)
+
+        audit_ids = [tid for tid in got if tid.startswith("audit-plan-")]
+        assert audit_ids == []
+
+        data = json.loads(tasks.read_text())
+        assert not any(t["id"].startswith("audit-plan-") for t in data["tasks"])
+
+    def test_spawner_creates_add_verification_task_for_verified_no_evidence(
+        self, tmp_path, monkeypatch,
+    ):
+        """verified_no_evidence → emits add-verification-<stem> task via
+        BUCKET_SPAWN_POLICY. Task description should point the executor at
+        adding '## Files Modified' / '## Verification' sections."""
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+        claude_plans = tmp_path / ".claude" / "plans"
+        claude_plans.mkdir(parents=True)
+        (claude_plans / "rubber.md").write_text("# rubber")
+
+        ledger = tmp_path / "events.jsonl"
+        tasks = tmp_path / "tasks.json"
+        self._write_tasks(tasks)
+        self._write_plan_audit_found(ledger, [
+            {"name": "rubber.md", "bucket": "verified_no_evidence", "age_days": 2},
+        ])
+        got = _spawn_plan_audit_fix_tasks(tasks_path=tasks, ledger_path=ledger)
+        assert got == ["add-verification-rubber"]
+
+        data = json.loads(tasks.read_text())
+        added = [t for t in data["tasks"] if t["id"] == "add-verification-rubber"]
+        assert len(added) == 1
+        assert added[0]["plan_name"] == "rubber.md"
+        assert added[0]["plan_bucket"] == "verified_no_evidence"
+        assert "Files Modified" in added[0]["description"]
+
+        events = self._read_spawner_events(ledger)
+        assert len(events) == 1
+        assert events[0]["outcome"] == "found"
+        assert events[0]["detail"]["plan_names"] == ["rubber.md"]
+
+    def test_bucket_spawn_policy_dispatches_verified_no_evidence_correctly(
+        self, tmp_path, monkeypatch,
+    ):
+        """R15 regression: BUCKET_SPAWN_POLICY must map verified_no_evidence
+        to add-verification task_type. Guards against accidental bucket
+        policy drift if a future wave edits the dict."""
+        from scripts.third_brother_driver import (
+            BUCKET_SPAWN_POLICY,
+            _REAUDIT_BUCKETS,
+        )
+
+        assert "verified_no_evidence" in BUCKET_SPAWN_POLICY
+        assert (
+            BUCKET_SPAWN_POLICY["verified_no_evidence"]["task_type"]
+            == "add-verification"
+        )
+        # And it MUST NOT also be in _REAUDIT_BUCKETS — re-auditing
+        # quality=none just re-produces quality=none.
+        assert "verified_no_evidence" not in _REAUDIT_BUCKETS
+
+    def test_spawner_dispatches_mixed_bucket_mix_correctly(
+        self, tmp_path, monkeypatch,
+    ):
+        """Three plans, three different buckets: re-audit buckets spawn
+        audit-plan-X; verified_no_evidence spawns add-verification-X."""
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+        claude_plans = tmp_path / ".claude" / "plans"
+        claude_plans.mkdir(parents=True)
+        for name in ("a.md", "b.md", "c.md"):
+            (claude_plans / name).write_text(f"# {name}")
+
+        ledger = tmp_path / "events.jsonl"
+        tasks = tmp_path / "tasks.json"
+        self._write_tasks(tasks)
+        self._write_plan_audit_found(ledger, [
+            {"name": "a.md", "bucket": "never_audited", "age_days": 1},
+            {"name": "b.md", "bucket": "stale", "age_days": 2},
+            {"name": "c.md", "bucket": "verified_no_evidence", "age_days": 3},
+        ])
+        got = _spawn_plan_audit_fix_tasks(tasks_path=tasks, ledger_path=ledger)
+        assert sorted(got) == [
+            "add-verification-c",
+            "audit-plan-a",
+            "audit-plan-b",
+        ]
+
 
 class TestRecordAuditResultAtomic:
     """TODO 6: _record_audit_result must use tmp+os.replace so concurrent
