@@ -32,6 +32,7 @@ _VERIFICATION_HEADER_RE = re.compile(
 _PATH_SHAPE_RE = re.compile(r"[\w./\-]+\.\w+")
 _TABLE_BACKTICK_RE = re.compile(r"`([\w./\-]+\.\w+)`")
 _LINE_STRIP_RE = re.compile(r"^[-*]\s*`?|`?\s*[—|].*$|`")
+_BOLD_SUBSECTION_RE = re.compile(r"^\*\*[^*]+\*\*\s*$")
 
 
 def extract_modified_files(plan_text: str) -> List[str]:
@@ -43,6 +44,10 @@ def extract_modified_files(plan_text: str) -> List[str]:
       2. If that produces a non-path-shaped string, look for a backtick-
          wrapped path inside the line (table-row case).
       3. Drop lines that don't end with a `.ext` shape.
+      4. Stop scanning on a bold-only sub-section marker (e.g.
+         `**Explicitly NOT touching:**`). Prevents exclusion lists that
+         live under the same `## Files Modified` header from leaking
+         paths into drift_detected downstream.
 
     Returns an empty list when the section is missing or contains no
     parseable paths (R2: empty section is the same observable signal as
@@ -53,6 +58,8 @@ def extract_modified_files(plan_text: str) -> List[str]:
         return []
     paths: List[str] = []
     for line in files_match.group(1).splitlines():
+        if _BOLD_SUBSECTION_RE.match(line.strip()):
+            break
         path = _LINE_STRIP_RE.sub("", line).strip()
         if not path or not _PATH_SHAPE_RE.match(path):
             tbl = _TABLE_BACKTICK_RE.search(line)

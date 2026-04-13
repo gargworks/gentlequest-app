@@ -152,5 +152,41 @@ class TestNumberedAndSynonymHeaders:
         assert has_verification_section(text) is True
 
 
+class TestBoldSubsectionStop:
+    """Parser stops at bold-only sub-section markers inside Files
+    Modified — exclusion lists under `**Explicitly NOT touching:**`
+    must NOT leak paths into drift_detected downstream.
+    """
+
+    def test_bold_subsection_marker_stops_extraction(self):
+        text = (
+            "## Files Modified\n"
+            "- `scripts/included.py`\n\n"
+            "**Explicitly NOT touching:**\n\n"
+            "- `scripts/excluded.py` — leave it alone.\n"
+        )
+        assert extract_modified_files(text) == ["scripts/included.py"]
+
+    def test_bold_subsection_marker_without_colon(self):
+        text = (
+            "## Files Modified\n"
+            "- `scripts/a.py`\n"
+            "**Notes**\n"
+            "- `scripts/b.py`\n"
+        )
+        assert extract_modified_files(text) == ["scripts/a.py"]
+
+    def test_inline_bold_in_list_item_is_not_a_stop_marker(self):
+        """Bold inside a list item (not a standalone line) keeps scanning."""
+        text = (
+            "## Files Modified\n"
+            "- **first**: `scripts/a.py`\n"
+            "- `scripts/b.py`\n"
+        )
+        paths = extract_modified_files(text)
+        assert "scripts/a.py" in paths
+        assert "scripts/b.py" in paths
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q"])
