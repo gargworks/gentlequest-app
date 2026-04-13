@@ -260,3 +260,56 @@ extract into a module-level
 `_CLASSIFIER_CHAIN: list[tuple[Callable, str]]`; `_classify` becomes
 a 3-line loop returning the first matched bucket. Add a per-chain
 ordering test alongside the existing bucket tests.
+
+---
+
+## 9. audit_dpo training consumer — trigger at ≥20 pairs OR TB needs plan-reasoning examples
+
+**What:** Design and wire a consumer that reads `kind=audit_dpo` pairs
+from `.brain/training/exports/unified_dpo_pending.jsonl` and promotes
+them into TB training curriculum (SFT completion or DPO preference).
+
+**Why:** Wave 10 (shipping 2026-04-13) extracts `{plan, reality,
+verdict, reasoning}` quads from past audit-plans subagent runs into
+the pending pipeline. There is no consumer that routes these pairs
+anywhere. `nucleus_flywheel(action="curriculum_refresh")` today
+promotes pending→ready based on step-survival semantics (failed step
+later passed) — that contract does NOT match audit pairs (a successful
+plan-judgment is not a "survival" of a prior failure). Without a
+dedicated consumer, pairs accumulate inert.
+
+**Pros:** Closes the compounding loop from audit-plans runs into TB
+training — the most expensive token-burner in the substrate starts
+producing permanent training value. Each audit session = one high-
+fidelity reasoning trace.
+
+**Cons:** Designing the promotion gate for audit pairs is a real
+open question — no bug to "survive," so the existing `quality=pending
+→ ready` transition needs rethinking. Likely routes to SFT (reasoning
+completion) not DPO (no contrastive rejected side exists by
+construction). Training weighting vs correction-kind pairs needs
+experimentation.
+
+**Depends on / blocked by:** Wave 10 shipping (DONE as of this commit).
+Sample size — today there are 5 extractable sessions; decision is
+premature until ~20 accumulate.
+
+**Re-trigger criteria:**
+
+1. `audit_dpo` pair count in `unified_dpo_pending.jsonl` crosses 20.
+2. OR a TB training run is hungry for plan-reasoning examples
+   (e.g. `feedback_training_data_hierarchy` signals a gap).
+3. OR `ambiguous_verdict` / `no_reasoning` skip counts from audit
+   extraction climb above 10% of attempts (signals the extraction
+   contract itself needs work before consumption).
+
+**Where to start:**
+
+1. `scripts/flywheel_capture_extractor.py` — audit-mode output is
+   pair dicts with `kind="audit_dpo"` in the unified jsonl.
+2. `scripts/flywheel_curriculum.py` (if it exists) or
+   `nucleus_flywheel(action="curriculum_refresh")` — decide whether to
+   branch on `kind=="audit_dpo"` or route through a new promotion
+   policy.
+3. Design decision: SFT-only (no rejected side) vs synthesize a
+   `rejected` from a weaker model's attempt at the same audit prompt.
