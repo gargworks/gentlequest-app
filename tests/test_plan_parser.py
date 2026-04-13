@@ -118,5 +118,39 @@ class TestHasSectionHelpers:
         assert has_verification_section(text) is False
 
 
+class TestNumberedAndSynonymHeaders:
+    """Revised R1 — parser accepts numbered prefixes and the
+    ``Files Changed`` synonym after the ci_test_triage_pr1_db_init
+    live-fire surfaced the gap."""
+
+    def test_numbered_prefix_files_modified(self):
+        text = "## 4. Files Modified\n- `scripts/x.py`\n"
+        assert extract_modified_files(text) == ["scripts/x.py"]
+        assert has_files_modified_section(text) is True
+
+    def test_files_changed_synonym_plain(self):
+        text = "## Files Changed\n- `scripts/y.py`\n"
+        assert extract_modified_files(text) == ["scripts/y.py"]
+        assert has_files_modified_section(text) is True
+
+    def test_numbered_prefix_files_changed_combo(self):
+        """The exact form used by ci_test_triage_pr1_db_init.md."""
+        text = (
+            "## 4. Files Changed\n\n"
+            "| File | Change |\n"
+            "|------|--------|\n"
+            "| `app.py` | two keyword adds |\n"
+            "| `.github/workflows/test_on_pr.yml` | env lines |\n"
+        )
+        paths = extract_modified_files(text)
+        assert "app.py" in paths
+        assert ".github/workflows/test_on_pr.yml" in paths
+
+    def test_numbered_prefix_verification_sequence(self):
+        """The exact form used by ci_test_triage_pr1_db_init.md."""
+        text = "## 6. Verification Sequence\n```bash\npytest -q\n```\n"
+        assert has_verification_section(text) is True
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q"])

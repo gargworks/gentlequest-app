@@ -4,10 +4,15 @@ Extracts file paths and section presence from plan text. The parsing
 contract here MUST match TB's `_auto_verification_commands` byte-for-byte
 so the Wave 9 delegation is a behavior-preserving refactor.
 
-R1 (HOLD-scope review): only `## Files Modified` and `## Affected Files`
-headers are scanned. Prose `**Files:**` patterns and the `## Changes`
-fallback used by TB's task-spawn path are NOT mirrored here — those are
-TB's concern, not the lever's.
+R1 (HOLD-scope review, revised 2026-04-13): headers scanned are
+`## Files Modified`, `## Files Changed`, and `## Affected Files`, each
+with an optional numbered prefix (`## 4. Files Modified`). The
+numbered+Changed variants were added after the plan_audit lever's live-
+fire surfaced ultraplan-style plans using `## 4. Files Changed` /
+`## 6. Verification Sequence` — the prior contract classified them as
+`unverifiable` despite carrying the actual sections. Prose `**Files:**`
+patterns and the `## Changes` fallback used by TB's task-spawn path are
+NOT mirrored here — those are TB's concern, not the lever's.
 """
 
 from __future__ import annotations
@@ -17,11 +22,12 @@ from typing import List
 
 
 _FILES_HEADER_RE = re.compile(
-    r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)",
+    r"## (?:\d+\.\s+)?(?:Files Modified|Files Changed|Affected Files)\s*\n"
+    r"((?:(?!^## ).*\n?)*)",
     re.MULTILINE,
 )
 _VERIFICATION_HEADER_RE = re.compile(
-    r"## Verification[^\n]*\n", re.MULTILINE
+    r"## (?:\d+\.\s+)?Verification[^\n]*\n", re.MULTILINE
 )
 _PATH_SHAPE_RE = re.compile(r"[\w./\-]+\.\w+")
 _TABLE_BACKTICK_RE = re.compile(r"`([\w./\-]+\.\w+)`")
