@@ -1,6 +1,9 @@
 name: gt40_test_smoke
 description: Wrap `nucleus verify --tiers 3 --smoke` (GT40 smoke-test subset) as a lever so periodic smoke-failures land in the ledger without waiting for full verify.
-enabled: true
+# Disabled — same reason as gt40_typecheck: `nucleus verify --tiers 3`
+# silently skips and exits 1, producing noisy false-positive findings.
+# TODO: rewrite with --json receipt parsing. Tracked in TODOS.md.
+enabled: false
 triggers:
   - cron_15m
   - manual

@@ -118,6 +118,82 @@ at target QPS, build the queue.
 
 ---
 
+## 4. gt40_typecheck + gt40_test_smoke — use `--json` receipt instead of stdout scraping
+
+**What:** Rewrite both levers to run `nucleus verify --tiers <chain>
+--json` and parse the structured receipt instead of tailing stdout.
+Outcome map:
+
+- `receipt.verified == True` → `clean`
+- `receipt.tiers_failed` non-empty → `found` with failed-check signals
+- exit != 0 but `tiers_failed == [] and tier_reached < target_tier` →
+  `skipped` with reason `"tier N not reached (preconditions/env)"`
+
+Also switch argv to `--tiers 0,...,N` (comma-separated chain) so
+preconditions fire, not just `--tiers N` alone.
+
+**Why:** Both levers currently emit noisy `found` observations on
+every fire. Root cause: `nucleus verify --tiers 2` (single int) silently
+skips tier 2 if preconditions 0,1 aren't listed, exits 1 with no
+failure signals, and the lever scrapes the generic "INSECURE MODE" /
+"NotOpenSSLWarning" stdout as findings. Result: `bull_audit.no_repeated_
+lever_errors` spikes from false positives, and the ledger accumulates
+findings that look like bugs but aren't.
+
+**Pros:** Structured receipt means findings = real failures. No more
+"GROUND PASS" lines in a `found` observation. `skipped` outcome cleanly
+distinguishes env gaps from bugs (same pattern as
+`dep_vulnerability_check` missing `pip-audit`).
+
+**Cons:** Test rewrites — existing tests mock stdout strings; new tests
+must mock JSON receipts. Need to keep `--smoke` flag working alongside
+`--json` (verify behavior untested at writing time).
+
+**Depends on / blocked by:** None. Self-contained per-lever change.
+
+**Current state:** Both levers disabled in their manifests with
+rationale comments pointing here. `gt40_lint` (tier 1) left enabled —
+tier 1 runs cleanly without the precondition issue. Live-fire evidence:
+20+ noisy findings in ledger tail-500 across both levers before
+disabling.
+
+**Where to start:** `scripts/levers/gt40_typecheck.py` and
+`scripts/levers/gt40_test_smoke.py`. Extract the receipt-parsing logic
+into a shared helper (e.g. `scripts/levers/_gt40.py`) if `gt40_lint`
+benefits from the same treatment — otherwise keep inline. Update
+`tests/test_levers.py::TestGt40TypecheckLever` and
+`TestGt40TestSmokeLever` to mock `--json` stdout payloads.
+
+---
+
+## 5. license_header_check — re-enable when repo adopts a header convention
+
+**What:** Flip `scripts/levers/manifests/license_header_check.yaml`
+`enabled: false` → `true` once the project commits to a license-header
+convention (SPDX identifier, copyright notice, or similar).
+
+**Why:** Nucleus has no established convention — zero existing source
+files carry any kind of license/copyright header. With the lever
+enabled, every new file is flagged, generating pure noise. Disabled
+until the repo decides it wants headers.
+
+**Pros:** Cheap to re-enable (one YAML flag). Lever + tests retained.
+
+**Cons:** None while disabled — if the decision is "no headers," the
+lever can be deleted entirely. Keeping it is a bet on eventual adoption.
+
+**Depends on / blocked by:** Explicit decision on whether Nucleus code
+carries headers (likely tied to open-source distribution strategy).
+
+**Current state:** Lever disabled, rationale in manifest. Live-fire
+evidence: 20 findings in ledger tail-500 before disabling, all against
+legitimately new files with no actual policy violation.
+
+**Where to start:** Decide convention. Example header for Python:
+`# SPDX-License-Identifier: <id>` on line 1. Then flip manifest flag.
+
+---
+
 ## Unresolved decisions from Wave 6 plan-eng-review
 
 None. All 4 review issues and all 3 TODOs had a clear user response.

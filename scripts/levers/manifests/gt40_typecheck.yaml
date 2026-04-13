@@ -1,6 +1,12 @@
 name: gt40_typecheck
 description: Wrap `nucleus verify --tiers 2` (import/type resolution) as a lever so GT40 typecheck exit status and tail output land in the ledger.
-enabled: true
+# Disabled — `nucleus verify --tiers 2` silently skips tier 2 without
+# the precondition chain `0,1,2` AND even the chain shows tier 2 as
+# "skipped" not "run" on this env. Exit code 1 + no failure signals =
+# the lever emits noisy `found` observations that aren't real bugs.
+# TODO: rewrite lever to use `--json` receipt; treat all-skipped as
+# `skipped` outcome. Tracked in TODOS.md.
+enabled: false
 triggers:
   - post_executor
 inputs:
