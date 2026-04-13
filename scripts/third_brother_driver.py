@@ -5377,7 +5377,9 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
     if plan_source:
         entry["plan_source"] = plan_source
     results[plan_filename] = entry
-    results_path.write_text(json.dumps(results, indent=2) + "\n")
+    tmp_path = results_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(results, indent=2) + "\n")
+    os.replace(tmp_path, results_path)
     print(f"[AUDIT] Recorded: {plan_filename} → {verdict}")
 
 

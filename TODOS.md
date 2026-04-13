@@ -200,39 +200,18 @@ None. All 4 review issues and all 3 TODOs had a clear user response.
 
 ---
 
-## TODO 6 — `.brain/audit/results.json` atomic write
+## TODO 6 — `.brain/audit/results.json` atomic write — **DONE**
 
-**What:** Migrate `scripts/third_brother_driver.py::_record_audit_result`
-(line ~4754) from non-atomic `results_path.write_text(...)` to the
-`tmp+os.replace` atomic pattern.
+Shipped during Wave 7 live-fire follow-up. `_record_audit_result` now
+writes to `.json.tmp` then `os.replace` swaps atomically.
 
-**Why:** plan_audit reads `results.json` on every `cron_daily` fire AND
-again on every TB session init (via `_spawn_plan_audit_fix_tasks`). The
-TOCTOU window is now exercised ~1×/day + N×/session. The lever's
-retry-once (`_load_results_with_retry`) is a workaround that every
-future reader — MCP `brain://plans/rot`, `plan_audit_trend`, dashboards —
-would otherwise need to replicate. Fixing the writer once lets every
-reader drop the retry.
+Test: `tests/test_lever_compounding.py::TestRecordAuditResultAtomic::
+test_concurrent_readers_never_see_partial_write` hammers 4 reader
+threads against 10 sequential writes — zero `JSONDecodeError`.
 
-**Pros:** Eliminates a class of sporadic parse errors. Unblocks
-zero-retry readers. Trivial diff.
-
-**Cons:** None material. `os.replace` is atomic on the same filesystem
-which is the only case that matters here (both paths under `.brain/`).
-
-**Depends on / blocked by:** Nothing. Independent of Wave 7.
-
-**Where to start:** In `_record_audit_result`:
-
-```python
-tmp = results_path.with_suffix(".json.tmp")
-tmp.write_text(json.dumps(data, indent=2))
-os.replace(tmp, results_path)
-```
-
-Existing callers unchanged. Add one test that concurrent read-during-
-write never yields a `JSONDecodeError` (spawn thread that hammers reads
-while writer replaces 10× in a loop).
+The lever's `_load_results_with_retry` retry-once is now defensive
+overkill at the source but kept for safety against any future writer
+that bypasses `_record_audit_result`.
 
 ---
 

@@ -15,8 +15,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import scripts.third_brother_driver as tb_driver
 from scripts.third_brother_driver import (
     _find_lever_findings_in_diff,
+    _record_audit_result,
     _spawn_lever_fix_task,
     _spawn_plan_audit_fix_tasks,
 )
@@ -488,3 +490,76 @@ class TestSpawnPlanAuditFixTasks:
         assert events[0]["type"] == "lever.plan_audit_spawner.observation"
         assert events[0]["lever"] == "plan_audit_spawner"
         assert events[0]["outcome"] in OUTCOMES
+
+
+class TestRecordAuditResultAtomic:
+    """TODO 6: _record_audit_result must use tmp+os.replace so concurrent
+    readers (plan_audit lever, spawner, future MCP resources) never see
+    a half-written file → JSONDecodeError."""
+
+    def _write_plan(self, tmp_path: Path) -> float:
+        p = tmp_path / "fake_plan.md"
+        p.write_text("# Fake plan\n")
+        return p.stat().st_mtime
+
+    def test_writer_creates_valid_json(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(tb_driver, "BRAIN_PATH", tmp_path)
+        plan_mtime = self._write_plan(tmp_path)
+        _record_audit_result(
+            "fake_plan.md", plan_mtime, "ACCEPT",
+            turns=3, duration_s=12, session_id="abc1234567890def",
+        )
+        results_path = tmp_path / "audit" / "results.json"
+        data = json.loads(results_path.read_text())
+        assert data["fake_plan.md"]["verdict"] == "ACCEPT"
+        assert not (tmp_path / "audit" / "results.json.tmp").exists(), \
+            "tmp file must be renamed away, not left behind"
+
+    def test_concurrent_readers_never_see_partial_write(self, tmp_path, monkeypatch):
+        """Hammer 4 readers in parallel while writer replaces 10 times.
+        Pre-fix: readers occasionally hit JSONDecodeError on partial
+        write_text. Post-fix: os.replace is atomic, readers always see
+        a valid JSON file (or FileNotFoundError on the very first
+        iteration before the file exists)."""
+        import threading
+
+        monkeypatch.setattr(tb_driver, "BRAIN_PATH", tmp_path)
+        plan_mtime = self._write_plan(tmp_path)
+        results_path = tmp_path / "audit" / "results.json"
+
+        # Seed once so readers don't race the initial create.
+        _record_audit_result(
+            "fake_plan.md", plan_mtime, "ACCEPT",
+            turns=1, duration_s=1, session_id="seed1234567890ab",
+        )
+
+        decode_errors: list = []
+        stop = threading.Event()
+
+        def reader():
+            while not stop.is_set():
+                try:
+                    json.loads(results_path.read_text())
+                except json.JSONDecodeError as e:
+                    decode_errors.append(str(e))
+                except FileNotFoundError:
+                    pass
+
+        readers = [threading.Thread(target=reader, daemon=True) for _ in range(4)]
+        for t in readers:
+            t.start()
+
+        for i in range(10):
+            _record_audit_result(
+                f"plan_{i}.md", plan_mtime, "ACCEPT",
+                turns=i, duration_s=i, session_id=f"sess{i:012d}xx",
+            )
+
+        stop.set()
+        for t in readers:
+            t.join(timeout=2)
+
+        assert not decode_errors, (
+            f"Atomic write contract violated — readers saw partial JSON "
+            f"{len(decode_errors)} times: {decode_errors[:3]}"
+        )
