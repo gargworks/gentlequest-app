@@ -11,7 +11,9 @@ the 71-item blitz — if this contract is right, they all slot in the same way.
 """
 
 import json
+import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -52,6 +54,7 @@ from scripts.levers.gt40_typecheck import Gt40TypecheckLever
 from scripts.levers.migration_lint import MigrationLintLever
 from scripts.levers.narrow_task_filter import NarrowTaskFilterLever
 from scripts.levers.perf_regression_spotter import PerfRegressionSpotterLever
+from scripts.levers.plan_audit import PlanAuditLever
 from scripts.levers.ruff_chain import RuffChainLever
 from scripts.levers.schema_drift_check import SchemaDriftCheckLever
 from scripts.levers.scope_pre_enforce import ScopePreEnforceLever
@@ -2308,3 +2311,206 @@ class TestBullAuditLever:
         p.write_text(bad_new + "\n" + self._good_event() + "\n")
         obs = lever.run(self._manifest(p, csr=csr), tmp_path / ".brain")
         assert obs["detail"]["schema_errors"] == 1
+
+
+class TestPlanAuditLever:
+    """Wave 7 accountability lever.
+
+    Bucket matrix — evaluation ORDER matters:
+      1. never_audited — no results entry
+      2. stale         — disk mtime > results.plan_mtime + threshold (BEATS
+                         abandoned: touch = reconsideration)
+      3. needs_deepen  — verdict=DEEPEN
+      4. failed_audit  — verdict=REJECT
+      5. abandoned     — verdict=ABANDONED (NOT rotting)
+      6. verified      — verdict=ACCEPT, not stale
+
+    rotting = never_audited ∪ stale ∪ needs_deepen ∪ failed_audit
+    """
+
+    def _manifest(self, plan_dirs, results_path, **kw):
+        inputs = {
+            "plan_dirs": [str(p) for p in plan_dirs],
+            "audit_results_path": str(results_path),
+            "max_report": 10,
+            "stale_threshold_seconds": 60,
+        }
+        inputs.update(kw)
+        return {"inputs": inputs}
+
+    def _write_plan(self, path, name, mtime_iso):
+        plan = path / name
+        plan.write_text(f"# {name}\n")
+        dt = datetime.fromisoformat(mtime_iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        ts = dt.timestamp()
+        os.utime(plan, (ts, ts))
+        return plan
+
+    def test_skipped_when_plan_dirs_missing(self, tmp_path):
+        lever = PlanAuditLever()
+        ghost_a = tmp_path / "no-such-a"
+        ghost_b = tmp_path / "no-such-b"
+        results = tmp_path / "results.json"
+        results.write_text("{}")
+        obs = lever.run(self._manifest([ghost_a, ghost_b], results), tmp_path / ".brain")
+        assert obs["outcome"] == "skipped"
+        assert obs["detail"]["reason"] == "no_plans_found"
+
+    def test_clean_when_all_plans_verified(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "a.md", "2026-04-10T10:00:00")
+        self._write_plan(pdir, "b.md", "2026-04-09T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "a.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
+            "b.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-09T10:00:30"},
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["plans_total"] == 2
+        assert obs["detail"]["by_bucket"]["verified"] == 2
+
+    def test_found_when_plan_never_audited(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "fresh.md", "2026-04-12T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text("{}")
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["plans_rotting"] == 1
+        assert obs["detail"]["by_bucket"]["never_audited"] == 1
+        assert obs["detail"]["top_rot"][0]["name"] == "fresh.md"
+        assert obs["detail"]["top_rot"][0]["bucket"] == "never_audited"
+
+    def test_found_when_plan_stale(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "drifted.md", "2026-04-12T12:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "drifted.md": {
+                "verdict": "ACCEPT",
+                "plan_mtime": "2026-04-10T10:00:00",
+            }
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"]["stale"] == 1
+        assert obs["detail"]["top_rot"][0]["bucket"] == "stale"
+
+    def test_found_when_verdict_is_deepen_or_reject(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "deep.md", "2026-04-10T10:00:00")
+        self._write_plan(pdir, "rej.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "deep.md": {"verdict": "DEEPEN", "plan_mtime": "2026-04-10T10:00:30"},
+            "rej.md": {"verdict": "REJECT", "plan_mtime": "2026-04-10T10:00:30"},
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["by_bucket"]["needs_deepen"] == 1
+        assert obs["detail"]["by_bucket"]["failed_audit"] == 1
+
+    def test_verdict_abandoned_does_not_count_as_rot(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "dead.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "dead.md": {"verdict": "ABANDONED", "plan_mtime": "2026-04-10T10:00:30"},
+        }))
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["by_bucket"]["abandoned"] == 1
+        assert "plans_rotting" not in obs["detail"]
+
+    def test_top_rot_ordered_newest_first_and_capped_at_max_report(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        # 12 rotting plans, mtimes April 1..12
+        for day in range(1, 13):
+            self._write_plan(pdir, f"p{day:02d}.md", f"2026-04-{day:02d}T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text("{}")
+        m = self._manifest([pdir], results)
+        m["inputs"]["max_report"] = 5
+        obs = lever.run(m, tmp_path / ".brain")
+        assert obs["outcome"] == "found"
+        assert obs["detail"]["plans_rotting"] == 12
+        assert len(obs["detail"]["top_rot"]) == 5
+        names = [r["name"] for r in obs["detail"]["top_rot"]]
+        assert names == ["p12.md", "p11.md", "p10.md", "p09.md", "p08.md"]
+
+    def test_error_when_results_json_malformed(self, tmp_path):
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "x.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text("{not valid json")
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "error"
+        assert obs["detail"]["stage"] == "parse_results"
+
+    def test_results_json_retry_success(self, tmp_path, monkeypatch):
+        """Simulate TB mid-write TOCTOU: first read fails, second succeeds.
+        Lever must retry once and classify normally."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "x.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "x.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
+        }))
+
+        real_read = Path.read_text
+        call_count = {"n": 0}
+
+        def flaky_read(self, *a, **kw):
+            if self == results and call_count["n"] == 0:
+                call_count["n"] += 1
+                return "{ broken first read"
+            return real_read(self, *a, **kw)
+
+        monkeypatch.setattr(Path, "read_text", flaky_read)
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert call_count["n"] == 1
+
+    def test_plan_deleted_during_walk(self, tmp_path, monkeypatch):
+        """Plan file deleted between enumerate and stat — FileNotFoundError
+        must NOT error the lever; skip the plan and classify the rest."""
+        lever = PlanAuditLever()
+        pdir = tmp_path / "plans"
+        pdir.mkdir()
+        self._write_plan(pdir, "keep.md", "2026-04-10T10:00:00")
+        ghost = self._write_plan(pdir, "ghost.md", "2026-04-10T10:00:00")
+        results = tmp_path / "results.json"
+        results.write_text(json.dumps({
+            "keep.md": {"verdict": "ACCEPT", "plan_mtime": "2026-04-10T10:00:30"},
+        }))
+
+        real_stat = Path.stat
+
+        def flaky_stat(self, *a, **kw):
+            if self == ghost:
+                raise FileNotFoundError(str(self))
+            return real_stat(self, *a, **kw)
+
+        monkeypatch.setattr(Path, "stat", flaky_stat)
+        obs = lever.run(self._manifest([pdir], results), tmp_path / ".brain")
+        assert obs["outcome"] == "clean"
+        assert obs["detail"]["plans_total"] == 1

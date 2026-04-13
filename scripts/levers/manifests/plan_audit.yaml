@@ -1,0 +1,15 @@
+name: plan_audit
+description: "Accountability lever: walk both plan dirs, join against .brain/audit/results.json, classify into 6 buckets, emit per-fire observation with top_rot newest-first. Read-only; TB driver owns the audit engine."
+enabled: true
+triggers:
+  - cron_daily
+  - manual
+inputs:
+  plan_dirs:
+    - ~/.claude/plans
+    - .brain/plans
+  audit_results_path: .brain/audit/results.json
+  max_report: 10
+  stale_threshold_seconds: 60
+outputs:
+  ledger_event_type: lever.plan_audit.observation

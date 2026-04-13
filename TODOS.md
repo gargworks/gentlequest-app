@@ -197,3 +197,70 @@ legitimately new files with no actual policy violation.
 ## Unresolved decisions from Wave 6 plan-eng-review
 
 None. All 4 review issues and all 3 TODOs had a clear user response.
+
+---
+
+## TODO 6 — `.brain/audit/results.json` atomic write
+
+**What:** Migrate `scripts/third_brother_driver.py::_record_audit_result`
+(line ~4754) from non-atomic `results_path.write_text(...)` to the
+`tmp+os.replace` atomic pattern.
+
+**Why:** plan_audit reads `results.json` on every `cron_daily` fire AND
+again on every TB session init (via `_spawn_plan_audit_fix_tasks`). The
+TOCTOU window is now exercised ~1×/day + N×/session. The lever's
+retry-once (`_load_results_with_retry`) is a workaround that every
+future reader — MCP `brain://plans/rot`, `plan_audit_trend`, dashboards —
+would otherwise need to replicate. Fixing the writer once lets every
+reader drop the retry.
+
+**Pros:** Eliminates a class of sporadic parse errors. Unblocks
+zero-retry readers. Trivial diff.
+
+**Cons:** None material. `os.replace` is atomic on the same filesystem
+which is the only case that matters here (both paths under `.brain/`).
+
+**Depends on / blocked by:** Nothing. Independent of Wave 7.
+
+**Where to start:** In `_record_audit_result`:
+
+```python
+tmp = results_path.with_suffix(".json.tmp")
+tmp.write_text(json.dumps(data, indent=2))
+os.replace(tmp, results_path)
+```
+
+Existing callers unchanged. Add one test that concurrent read-during-
+write never yields a `JSONDecodeError` (spawn thread that hammers reads
+while writer replaces 10× in a loop).
+
+---
+
+## TODO 7 — shared ledger-tail reader helper
+
+**What:** Extract `scripts/levers/_ledger_reader.py::read_window(path,
+n, grandfather_legacy=True)` consumed by `bull_audit._read_window`,
+`_lever_gate_scan`, and the new `_spawn_plan_audit_fix_tasks`.
+
+**Why:** Three copies of "open, tail N, parse line-by-line, handle
+schema errors" today. Wave 8+ adds more callers (`plan_audit_trend`,
+MCP resources). Centralizing gives us one place to: (a) grandfather
+legacy event shapes, (b) add future rotation logic from TODO #1,
+(c) apply a shared lock-acquire policy.
+
+**Pros:** DRY — three readers become one. Future readers inherit all
+future semantics (rotation, locking) for free.
+
+**Cons:** Shared substrate helpers are a commitment — every future
+reader inherits the signature. Small risk of pinning a design choice
+prematurely (e.g., the `grandfather_legacy` flag) that later needs to
+grow.
+
+**Depends on / blocked by:** Co-evolves with TODOS.md #1 (ledger
+rotation) since both touch the same read path. Build TODO #7 first
+(thin helper with today's semantics), then TODO #1 extends it.
+
+**Where to start:** Stub helper mirroring `bull_audit._read_window`'s
+behavior verbatim (returns `(events, schema_errors_in_window)`; honors
+the legacy-event grandfathering). Migrate the three callers in separate
+PRs so each migration is reviewable in isolation.

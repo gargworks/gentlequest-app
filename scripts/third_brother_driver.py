@@ -1258,6 +1258,202 @@ def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
         return None
 
 
+def _emit_plan_audit_spawner_event(ledger_path: Path, outcome: str,
+                                    detail: Dict) -> None:
+    """Emit one contract-conformant ``lever.plan_audit_spawner.observation``.
+
+    Uses ``LedgerEvent.for_lever_observation`` so the event type is always
+    ``lever.plan_audit_spawner.observation`` (the helper hardcodes the
+    ``.observation`` suffix). Never raises — ledger write failures are
+    absorbed so the spawner path never breaks session startup.
+    """
+    try:
+        from scripts.levers.base import LedgerEvent, LedgerSchemaError
+    except ImportError as e:
+        print(f"[PLAN_AUDIT_SPAWNER] LedgerEvent import failed: {e}")
+        return
+    try:
+        event = LedgerEvent.for_lever_observation(
+            lever_name="plan_audit_spawner",
+            observation={"outcome": outcome, "detail": detail},
+        )
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(ledger_path, "a", encoding="utf-8") as f:
+            f.write(event.to_jsonl() + "\n")
+    except (OSError, LedgerSchemaError) as e:
+        print(f"[PLAN_AUDIT_SPAWNER] ledger publish failed (non-fatal): {e}")
+
+
+def _spawn_plan_audit_fix_tasks(
+    tasks_path: Optional[Path] = None,
+    ledger_path: Optional[Path] = None,
+) -> List[str]:
+    """Wave 7 — convert plan_audit findings into TB task bank entries.
+
+    Reads the most recent ``lever.plan_audit.observation`` from the
+    ledger. For each plan in ``detail.top_rot``, creates one
+    ``audit-plan-<stem>`` task unless a pending/in_progress task with the
+    same id already exists (dedupe). Plans that vanished from disk
+    between the lever fire and this call are skipped (orphan guard).
+
+    Emission policy (silent-unless-action-or-degraded, to avoid ledger
+    flood on frequent session inits):
+
+      N > 0 tasks created  → outcome=found,  detail={created_count,
+                              deduped_count, plan_names, skipped_orphans}
+      tasks.json unreadable → outcome=skipped, detail={stage: tasks_json_read,
+                              error}, returns []
+      ledger unreadable     → outcome=skipped, detail={stage: ledger_read,
+                              error}, returns []
+      no observation / all  → SILENT (no event emitted)
+      deduped / no top_rot
+
+    Returns list of newly-created task ids (empty on no-op or failure).
+    """
+    tpath = tasks_path if tasks_path is not None else TASKS_PATH
+    lpath = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+
+    # 1. Read ledger tail for most-recent plan_audit observation
+    try:
+        lines = lpath.read_text(encoding="utf-8").splitlines() if lpath.exists() else []
+    except (OSError, UnicodeDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "ledger_read", "error": str(e)},
+        )
+        return []
+
+    obs_detail: Optional[Dict] = None
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        if (raw.get("type") == "lever.plan_audit.observation"
+                and raw.get("outcome") == "found"):
+            d = raw.get("detail")
+            if isinstance(d, dict):
+                obs_detail = d
+                break
+
+    if obs_detail is None:
+        return []
+    top_rot = obs_detail.get("top_rot") or []
+    if not isinstance(top_rot, list) or not top_rot:
+        return []
+
+    # 2. Read existing tasks for dedupe
+    try:
+        if tpath.exists():
+            data = json.loads(tpath.read_text(encoding="utf-8"))
+        else:
+            data = {"tasks": []}
+    except (OSError, json.JSONDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": str(e)},
+        )
+        return []
+
+    if not isinstance(data, dict):
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": "expected object"},
+        )
+        return []
+    tasks = data.get("tasks") or []
+    if not isinstance(tasks, list):
+        tasks = []
+    existing_open_ids = {
+        t.get("id") for t in tasks
+        if isinstance(t, dict) and t.get("status") in ("pending", "in_progress")
+    }
+
+    # 3. Build one task per rotting plan (skip deduped + orphan plans)
+    claude_plans = Path.home() / ".claude" / "plans"
+    brain_plans = PROJECT_ROOT / ".brain" / "plans"
+    created_ids: List[str] = []
+    deduped: List[str] = []
+    skipped_orphans: List[str] = []
+
+    for plan in top_rot:
+        if not isinstance(plan, dict):
+            continue
+        name = plan.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        stem = name[:-3] if name.endswith(".md") else name
+        task_id = f"audit-plan-{stem}"
+
+        if task_id in existing_open_ids:
+            deduped.append(name)
+            continue
+
+        plan_on_disk: Optional[Path] = None
+        for candidate in (claude_plans / name, brain_plans / name):
+            if candidate.exists():
+                plan_on_disk = candidate
+                break
+        if plan_on_disk is None:
+            skipped_orphans.append(name)
+            continue
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        new_task = {
+            "id": task_id,
+            "title": f"audit plan {name}"[:80],
+            "description": (
+                f"plan_audit lever flagged {name} as bucket="
+                f"{plan.get('bucket', '?')} (age {plan.get('age_days', '?')}d). "
+                f"Run: python3 scripts/third_brother_driver.py "
+                f"--audit-plans 1 --plan-name {name}"
+            ),
+            "scope": [str(plan_on_disk)],
+            "priority": 1,
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": now_iso,
+            "source": "plan_audit_spawner",
+            "plan_name": name,
+            "plan_bucket": plan.get("bucket"),
+        }
+        tasks.append(new_task)
+        created_ids.append(task_id)
+
+    # 4. Persist + emit only if we actually added tasks
+    if created_ids:
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        try:
+            tpath.write_text(json.dumps(data, indent=2))
+        except OSError as e:
+            _emit_plan_audit_spawner_event(
+                lpath, "skipped",
+                {"stage": "tasks_json_write", "error": str(e)},
+            )
+            return []
+        _emit_plan_audit_spawner_event(
+            lpath, "found",
+            {
+                "created_count": len(created_ids),
+                "deduped_count": len(deduped),
+                "plan_names": [
+                    tid.split("audit-plan-", 1)[1] + ".md"
+                    for tid in created_ids
+                ],
+                "skipped_orphans": skipped_orphans,
+            },
+        )
+    # else: silent no-op — no emission, avoids ledger flood on session inits
+
+    return created_ids
+
+
 def _publish_tb_review_decided(task: Dict, review_result: Dict,
                                lever_gate_status: Optional[str] = None) -> None:
     """Emit one ``tb.review.decided`` event to the substrate ledger.
@@ -4697,6 +4893,15 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
     """
     import random
 
+    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
+    try:
+        _created = _spawn_plan_audit_fix_tasks()
+        if _created:
+            print(f"[SPARRING] plan_audit spawner created {len(_created)} task(s): "
+                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
+    except Exception as _e:
+        print(f"[SPARRING] plan_audit spawner non-fatal: {_e}")
+
     if not SPARRING_TASK_BANK_PATH.exists():
         print(f"[SPARRING] Task bank not found: {SPARRING_TASK_BANK_PATH}")
         return
@@ -5336,6 +5541,16 @@ def run_compound_mode(branch: str, sparring_rounds: int = 5):
     print("  COMPOUND MODE — Work = Training")
     print("  real tasks → sparring → export")
     print("=" * 60)
+
+    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
+    # Silent no-op unless there are rotting plans with no pending task yet.
+    try:
+        _created = _spawn_plan_audit_fix_tasks()
+        if _created:
+            print(f"[COMPOUND] plan_audit spawner created {len(_created)} task(s): "
+                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
+    except Exception as _e:
+        print(f"[COMPOUND] plan_audit spawner non-fatal: {_e}")
 
     # Pre-flight: verify Ollama + TB model are running (needed for training captures)
     config = load_config()
