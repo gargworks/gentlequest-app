@@ -1,0 +1,26 @@
+name: Post-Deploy Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_url:
+        description: 'URL to smoke-test (e.g. https://gentlequest.onrender.com)'
+        required: true
+        default: 'https://gentlequest.onrender.com'
+  # Triggered by Render deploy webhook via repository_dispatch
+  repository_dispatch:
+    types: [deploy_complete]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests==2.32.3
+      - name: Run smoke test
+        run: |
+          URL="${{ github.event.inputs.deploy_url || github.event.client_payload.deploy_url || 'https://gentlequest.onrender.com' }}"
+          python scripts/smoke_test.py "$URL" --timeout=15

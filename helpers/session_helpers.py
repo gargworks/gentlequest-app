@@ -12,7 +12,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-from flask import request, current_app
+from flask import current_app, request
 
 from models import db
 

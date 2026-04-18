@@ -6,17 +6,35 @@ on:
 
 jobs:
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check app.py config/ setup/ helpers/ routes/ tests/test_helpers_*.py tests/test_config_*.py tests/test_setup_*.py
+
+      - name: Type-check (mypy, config/ + setup/)
+        run: mypy config/ setup/
+
       - name: GROUND verification
         run: |
           pip install -e mcp-server-nucleus/
           nucleus verify --json --tiers 0,1,2 --timeout 15
-      - run: pytest tests/ --tb=short
+
+      - name: Test + coverage gate (70% floor)
+        run: |
+          pytest tests/test_helpers_*.py tests/test_config_*.py tests/test_setup_*.py \
+                 tests/test_routes_*.py tests/test_twilio_client.py \
+            --cov --cov-config=.coveragerc \
+            --cov-fail-under=70 \
+            --tb=short
         env:
           TEST_DATABASE_URL: "sqlite:///:memory:"

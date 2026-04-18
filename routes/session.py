@@ -5,9 +5,10 @@ Extracted from app.py monolith.
 
 from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, current_app, jsonify, request
+
 from extensions import limiter
-from models import db, Message, MoodEntry, SelfAssessmentEntry
+from models import Message, MoodEntry, SelfAssessmentEntry, db
 
 session_bp = Blueprint("session", __name__)
 
@@ -341,8 +342,10 @@ def crisis_detection():
     """Enhanced crisis detection with immediate response"""
     try:
         from helpers.crisis_helpers import (
-            _enhanced_crisis_detection, _get_crisis_response,
-            _log_crisis_detection, _get_crisis_resources,
+            _enhanced_crisis_detection,
+            _get_crisis_resources,
+            _get_crisis_response,
+            _log_crisis_detection,
         )
 
         data = request.get_json()

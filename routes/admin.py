@@ -5,10 +5,11 @@ Extracted from app.py monolith.
 
 import os
 
-from flask import Blueprint, jsonify, request, render_template, current_app
+from flask import Blueprint, current_app, jsonify, render_template, request
+from sqlalchemy import text as sql_text
+
 from extensions import limiter
 from models import db
-from sqlalchemy import text as sql_text
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -22,7 +23,7 @@ def clear_memory():
         if not session_id:
             return jsonify({"error": "Session ID required"}), 400
 
-        from providers.memory import clear_user_memory, MEMORY_ENABLED
+        from providers.memory import MEMORY_ENABLED, clear_user_memory
 
         if not MEMORY_ENABLED:
             return jsonify({"message": "Memory system not enabled"}), 200

@@ -1,0 +1,36 @@
+line-length = 120
+target-version = "py39"
+extend-exclude = [
+    "mcp-server-nucleus",
+    "nucleus-mcp",
+    "nucleus-nar",
+    "mcp-get",
+    "gentlequest-blog",
+    "ai_buddy_web",
+    ".brain",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[lint]
+select = ["E", "F", "I", "W"]
+ignore = [
+    "E501",   # line too long (long f-strings in HTML / log msgs)
+    "E402",   # module import not at top (legacy load_dotenv pattern in app.py)
+    "W291",   # trailing whitespace (legacy)
+    "W293",   # blank line contains whitespace (legacy)
+    "E741",   # ambiguous variable name (legacy)
+    "E722",   # bare except (legacy)
+]
+
+[lint.per-file-ignores]
+# app.py re-exports from helpers/ for backward compat — F401 unused-import is intentional
+"app.py" = ["F401", "E402"]
+"helpers/__init__.py" = ["F401"]
+"routes/__init__.py" = ["F401"]
+# Tests may import create_app with side effects
+"tests/**/*.py" = ["E402", "F401"]
+
+[format]
+quote-style = "double"

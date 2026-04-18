@@ -3,7 +3,8 @@ Clinical assessment endpoints (PHQ-9, GAD-7).
 Extracted from app.py monolith.
 """
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, current_app, jsonify, request
+
 from extensions import limiter  # noqa: F401 — available for future rate limits
 
 assessment_bp = Blueprint("assessment", __name__)
@@ -38,7 +39,7 @@ def submit_assessment(assessment_type):
             return jsonify({"error": "Responses array required"}), 400
 
         # 1. Validate
-        from providers.clinical_assessments import validate_responses, score_phq9, score_gad7
+        from providers.clinical_assessments import score_gad7, score_phq9, validate_responses
         is_valid, error = validate_responses(assessment_type, responses)
         if not is_valid:
             return jsonify({"error": error}), 400

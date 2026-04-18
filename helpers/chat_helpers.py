@@ -12,13 +12,12 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-from flask import current_app, Flask
+from flask import Flask, current_app
 
-from models import db, Message
-from providers.alert_manager import AlertManager
 from crisis_detection import detect_crisis_level
 from helpers.health_helpers import _detect_platform
-
+from models import Message, db
+from providers.alert_manager import AlertManager
 
 # ── Layer 2 safety executor ─────────────────────────────────────────
 # Dedicated small pool so we don't head-of-line block behind crisis
@@ -38,8 +37,9 @@ def _call_llm_json(prompt: str, system_prompt: str = None) -> str:
     """
     import warnings as _w
     _w.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
-    import google.generativeai as genai
     import os
+
+    import google.generativeai as genai
 
     api_keys = (os.getenv("GEMINI_API_KEY") or "").split(",")
     if not api_keys[0]:
@@ -107,8 +107,9 @@ def _apply_layer_2_safety(
 
     # Lazy import keeps the existing test patch path
     # `@patch('providers.safety.check_safety_llm')` working unchanged.
-    from providers.safety import check_safety_llm
     from concurrent.futures import TimeoutError as FuturesTimeoutError
+
+    from providers.safety import check_safety_llm
 
     future = _safety_executor.submit(check_safety_llm, user_message, ai_response)
     try:
@@ -148,7 +149,7 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
         Tuple of (ai_response, risk_level, tool_calls)
     """
     try:
-        from flask import current_app # Force local scope to fix UnboundLocalError
+        from flask import current_app  # Force local scope to fix UnboundLocalError
         # Detect crisis level FIRST
         risk_level = detect_crisis_level(message)
         
@@ -257,8 +258,8 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
         # Store memory for long-term context (non-blocking)
         try:
             from providers.memory import (
-                summarize_interaction_llm,
                 MEMORY_ENABLED,
+                summarize_interaction_llm,
             )
 
             if MEMORY_ENABLED:
@@ -480,10 +481,11 @@ def _call_provider(
     provider: str, message: str, session_id: str, risk_level: str
 ) -> str:
     """Call providers with correct signatures and minimal side effects."""
+    import os as _os
+
     from providers.gemini import get_gemini_response
     from providers.openai import get_openai_response
     from providers.perplexity import get_perplexity_response
-    import os as _os
 
     if provider == "gemini":
         return get_gemini_response(

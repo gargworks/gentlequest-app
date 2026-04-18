@@ -7,9 +7,14 @@ import os
 from datetime import datetime
 
 from flask import (
-    Blueprint, jsonify, request, render_template,
-    send_from_directory, current_app,
+    Blueprint,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+    send_from_directory,
 )
+
 from extensions import limiter
 
 static_bp = Blueprint("static", __name__)
@@ -75,6 +80,14 @@ def assetlinks():
         )
     except FileNotFoundError:
         return jsonify({"error": "Asset links file not found"}), 404
+
+
+@static_bp.route("/insights")
+@static_bp.route("/insights/")
+@limiter.exempt
+def insights_page():
+    """Mood Insights Dashboard (Phase F)."""
+    return render_template("insights.html")
 
 
 @static_bp.route("/privacy")

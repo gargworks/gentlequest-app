@@ -341,6 +341,8 @@ class CounselorAlert(db.Model):
     acknowledged_by = db.Column(db.String(255))
     email_sent = db.Column(db.Boolean, server_default=text('false'), default=False)
     sms_sent = db.Column(db.Boolean, server_default=text('false'), default=False)
+    # Phase H: triage state machine (new -> acknowledged -> resolved | escalated)
+    triage_state = db.Column(db.String(20), default="new", server_default=text("'new'"))
 
     def __repr__(self):
         return f"<CounselorAlert id={self.id} severity={self.severity} session={self.session_id}>"
@@ -361,6 +363,24 @@ class AlertAcknowledgment(db.Model):
 
     def __repr__(self):
         return f"<AlertAcknowledgment alert_id={self.alert_id} by={self.counselor_id}>"
+
+
+class CrisisEscalation(db.Model):
+    """Phase I: escalation events triggered by the 'I need help now' button."""
+    __tablename__ = "crisis_escalations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False, index=True)
+    country_code = db.Column(db.String(5))
+    channel = db.Column(db.String(20), nullable=False)   # sms, call, banner_only
+    status = db.Column(db.String(20), default="initiated")  # initiated, sent, failed, checked_in
+    details = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    check_in_at = db.Column(db.DateTime)
+    check_in_sent = db.Column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"<CrisisEscalation id={self.id} session={self.session_id} channel={self.channel}>"
 
 
 class BrainState(db.Model):

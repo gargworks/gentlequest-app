@@ -4,8 +4,8 @@ Extracted from app.py monolith.
 """
 
 import requests as http_requests
+from flask import Blueprint, current_app, jsonify, request
 
-from flask import Blueprint, jsonify, request, current_app
 from extensions import limiter
 
 compliance_bp = Blueprint("compliance", __name__)

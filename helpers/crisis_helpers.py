@@ -9,11 +9,9 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import requests
-from flask import current_app
 
-from models import db, CrisisEvent
+from models import CrisisEvent, db
 from providers.alert_manager import AlertManager
-
 
 # ── Geography-specific crisis resources ─────────────────────────────
 

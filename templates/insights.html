@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Mood Insights · GentleQuest</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; color: #1a202c;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .header { color: white; text-align: center; margin-bottom: 32px; }
+    .header h1 { font-size: 2rem; margin: 0 0 8px; }
+    .header p { opacity: 0.9; margin: 0; }
+    .card {
+      background: white; border-radius: 16px;
+      padding: 24px; margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .card h2 { margin: 0 0 16px; font-size: 1.25rem; color: #2d3748; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+    .stat { text-align: center; padding: 12px; background: #f7fafc; border-radius: 8px; }
+    .stat-value { font-size: 1.5rem; font-weight: 600; color: #4a5568; }
+    .stat-label { font-size: 0.85rem; color: #718096; margin-top: 4px; }
+    .cta-list { list-style: none; padding: 0; margin: 0; }
+    .cta-item {
+      padding: 16px; border-left: 4px solid #667eea;
+      background: #f7fafc; border-radius: 0 8px 8px 0; margin-bottom: 12px;
+    }
+    .cta-item.crisis { border-left-color: #e53e3e; background: #fff5f5; }
+    .cta-title { font-weight: 600; margin-bottom: 4px; }
+    .cta-desc { color: #4a5568; font-size: 0.9rem; }
+    .error { color: #e53e3e; padding: 16px; background: #fff5f5; border-radius: 8px; }
+    .empty { color: #718096; font-style: italic; text-align: center; padding: 24px; }
+    canvas { max-height: 280px !important; }
+    @media (max-width: 600px) {
+      .container { padding: 12px; }
+      .header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Your Mood Insights</h1>
+      <p>Anonymized patterns from your last 30 days</p>
+    </div>
+
+    <div class="card">
+      <h2>Weekly Trend</h2>
+      <div id="weekly-stats" class="stats"></div>
+      <canvas id="weekly-chart"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Quest Effectiveness</h2>
+      <div id="quest-correlation"></div>
+    </div>
+
+    <div class="card">
+      <h2>Personalized Next Steps</h2>
+      <ul id="next-steps" class="cta-list"></ul>
+    </div>
+  </div>
+
+<script>
+const SESSION_ID = localStorage.getItem("session_id") || "";
+const HEADERS = { "X-Session-ID": SESSION_ID };
+
+async function fetchJson(path) {
+  const r = await fetch(path, { headers: HEADERS });
+  if (!r.ok) throw new Error(`${path} -> ${r.status}`);
+  return r.json();
+}
+
+function renderStats(data) {
+  const el = document.getElementById("weekly-stats");
+  if (!data.count) {
+    el.innerHTML = '<div class="empty">No mood entries yet this week.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="stat"><div class="stat-value">${data.mean ?? "—"}</div><div class="stat-label">Avg mood</div></div>
+    <div class="stat"><div class="stat-value">${data.count}</div><div class="stat-label">Entries</div></div>
+    <div class="stat"><div class="stat-value">${data.stdev ?? "—"}</div><div class="stat-label">Variability</div></div>
+    <div class="stat"><div class="stat-value">${data.min ?? "—"}—${data.max ?? "—"}</div><div class="stat-label">Range</div></div>
+  `;
+}
+
+function renderChart(data) {
+  const ctx = document.getElementById("weekly-chart").getContext("2d");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.daily.map(d => d.date),
+      datasets: [{
+        label: "Daily average",
+        data: data.daily.map(d => d.avg),
+        borderColor: "#667eea",
+        backgroundColor: "rgba(102, 126, 234, 0.15)",
+        tension: 0.3, fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { min: 0, max: 5, ticks: { stepSize: 1 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderQuest(data) {
+  const el = document.getElementById("quest-correlation");
+  if (!data.n) {
+    el.innerHTML = '<div class="empty">Complete a quest to see effectiveness data.</div>';
+    return;
+  }
+  const rows = data.per_type.map(t => `
+    <div class="stat">
+      <div class="stat-value">${t.avg_delta > 0 ? "+" : ""}${t.avg_delta}</div>
+      <div class="stat-label">${t.type} (n=${t.n})</div>
+    </div>
+  `).join("");
+  el.innerHTML = `<div class="stats">${rows}</div>`;
+}
+
+function renderNextSteps(data) {
+  const el = document.getElementById("next-steps");
+  const items = data.next_steps || [];
+  el.innerHTML = items.map(c => `
+    <li class="cta-item ${c.type === "crisis_resource" ? "crisis" : ""}">
+      <div class="cta-title">${c.title}</div>
+      <div class="cta-desc">${c.description}</div>
+    </li>
+  `).join("");
+}
+
+async function load() {
+  if (!SESSION_ID) {
+    document.body.innerHTML = '<div class="container"><div class="card error">No session found. Please open the app first.</div></div>';
+    return;
+  }
+  try {
+    const [weekly, quest, steps] = await Promise.all([
+      fetchJson("/api/insights/weekly?window=7"),
+      fetchJson("/api/insights/quest-correlation"),
+      fetchJson("/api/insights/next-steps"),
+    ]);
+    renderStats(weekly);
+    if (weekly.count) renderChart(weekly);
+    renderQuest(quest);
+    renderNextSteps(steps);
+  } catch (e) {
+    document.querySelector(".container").insertAdjacentHTML(
+      "afterbegin",
+      `<div class="card error">Failed to load insights: ${e.message}</div>`
+    );
+  }
+}
+load();
+</script>
+</body>
+</html>

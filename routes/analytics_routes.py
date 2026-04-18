@@ -5,11 +5,12 @@ Extracted from app.py monolith.
 
 import secrets
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
-from flask import Blueprint, jsonify, request, g, current_app
+from flask import Blueprint, current_app, g, jsonify, request
+
 from extensions import limiter
-from models import db, AnalyticsEvent
+from models import AnalyticsEvent, db
 
 analytics_bp = Blueprint("analytics", __name__)
 
@@ -118,7 +119,7 @@ def admin_purge():
     if not expected or not secrets.compare_digest(token, expected):
         return jsonify({"error": "Unauthorized"}), 401
     try:
-        from app import _purge_old_data_inner  # stays in app.py (uses app.config)
+        from helpers.mood_helpers import _purge_old_data_inner
         counts = _purge_old_data_inner()
         return jsonify({"success": True, "purged": counts}), 200
     except Exception as e:
@@ -208,7 +209,7 @@ def log_intervention_outcome():
 def analytics_overview():
     """Get high-level analytics overview."""
     try:
-        from providers.analytics import get_intervention_stats, get_completion_rates_by_type
+        from providers.analytics import get_completion_rates_by_type, get_intervention_stats
 
         days = int(request.args.get('days', 30))
 
@@ -233,8 +234,8 @@ def intervention_analytics():
     try:
         from providers.analytics import (
             get_completion_rates_by_type,
+            get_intervention_recommendations,
             get_mood_improvement_by_type,
-            get_intervention_recommendations
         )
 
         days = int(request.args.get('days', 30))
@@ -260,7 +261,7 @@ def intervention_analytics():
 def user_analytics(session_id):
     """Get analytics for a specific user session."""
     try:
-        from providers.analytics import get_user_engagement_metrics, get_best_intervention_for_user
+        from providers.analytics import get_best_intervention_for_user, get_user_engagement_metrics
 
         days = int(request.args.get('days', 30))
 

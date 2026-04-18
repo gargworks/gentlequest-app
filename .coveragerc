@@ -1,0 +1,27 @@
+[run]
+branch = True
+source =
+    helpers
+    config
+    setup
+omit =
+    */__pycache__/*
+    */.venv/*
+    */mcp-server-nucleus/*
+    */nucleus-mcp/*
+    */nucleus-nar/*
+    */mcp-get/*
+    */tests/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+show_missing = True
+skip_covered = False
+precision = 1
+
+[html]
+directory = htmlcov

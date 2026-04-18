@@ -7,7 +7,8 @@ import os
 import time
 from datetime import datetime
 
-from flask import Blueprint, jsonify, g, current_app
+from flask import Blueprint, current_app, g, jsonify
+
 from extensions import limiter
 
 health_bp = Blueprint("health", __name__)
@@ -37,7 +38,12 @@ def _build_health_note(db_down: bool, ai_available: bool):
 def health():
     """Enhanced health check endpoint with environment info"""
     try:
-        from helpers.health_helpers import _check_database_health, _check_redis_health, _check_ollama_health, _detect_platform
+        from helpers.health_helpers import (
+            _check_database_health,
+            _check_ollama_health,
+            _check_redis_health,
+            _detect_platform,
+        )
 
         # Check database and Redis with timing to detect hangs
         t0 = time.monotonic()
@@ -154,5 +160,83 @@ def deploy_test():
                 "environment": current_app.config.get("ENVIRONMENT"),
             }
         ),
+        200,
+    )
+
+
+@health_bp.route("/api/health/deep", methods=["GET"])
+@limiter.exempt
+def health_deep():
+    """Deep health probe for staff debugging (admin-token gated).
+
+    Returns:
+        - db_latency_ms: Database round-trip time
+        - redis_latency_ms: Redis PING round-trip
+        - ollama_reachable: bool
+        - disk_free_gb: Available disk on the app volume
+        - memory_percent: Process + system memory %
+    """
+    import secrets
+
+    from flask import request
+
+    # Admin-token gate
+    token = request.headers.get("X-Admin-Token") or ""
+    expected = current_app.config.get("ADMIN_API_TOKEN") or ""
+    if not expected or not secrets.compare_digest(token, expected):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    from helpers.health_helpers import (
+        _check_database_health,
+        _check_ollama_health,
+        _check_redis_health,
+    )
+
+    # Measure DB latency
+    t0 = time.monotonic()
+    db_status = _check_database_health()
+    db_ms = int((time.monotonic() - t0) * 1000)
+
+    # Measure Redis latency
+    t1 = time.monotonic()
+    redis_status = _check_redis_health()
+    redis_ms = int((time.monotonic() - t1) * 1000)
+
+    # Ollama reachability
+    ollama_status = _check_ollama_health()
+
+    # Disk + memory
+    disk_free_gb = None
+    memory_percent = None
+    try:
+        import psutil
+        disk = psutil.disk_usage("/")
+        disk_free_gb = round(disk.free / (1024 ** 3), 2)
+        memory_percent = psutil.virtual_memory().percent
+    except Exception as e:
+        current_app.logger.warning(f"psutil probe failed: {e}")
+
+    return (
+        jsonify({
+            "status": "ok",
+            "timestamp": datetime.utcnow().isoformat(),
+            "db": {
+                "status": db_status,
+                "latency_ms": db_ms,
+            },
+            "redis": {
+                "status": redis_status,
+                "latency_ms": redis_ms,
+            },
+            "ollama": {
+                "status": ollama_status,
+            },
+            "system": {
+                "disk_free_gb": disk_free_gb,
+                "memory_percent": memory_percent,
+            },
+            "environment": current_app.config.get("ENVIRONMENT"),
+            "version": current_app.config.get("VERSION"),
+        }),
         200,
     )

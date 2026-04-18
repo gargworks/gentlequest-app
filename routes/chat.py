@@ -3,12 +3,13 @@ Chat and chat_stream endpoints.
 Extracted from app.py monolith.
 """
 
-import os
 import json
-import time
+import os
 import re as _re
+import time
 
-from flask import Blueprint, jsonify, request, g, Response, current_app
+from flask import Blueprint, Response, current_app, g, jsonify, request
+
 from extensions import limiter
 from models import Message
 
@@ -20,16 +21,20 @@ chat_bp = Blueprint("chat", __name__)
 def chat():
     """Enhanced chat endpoint with geography-specific crisis detection"""
     try:
-        from helpers.session_helpers import (
-            _get_or_create_session, _get_conversation_count,
-            _increment_conversation_count, _log_analytics_event,
-            _log_chat_request, background_executor,
-        )
-        from helpers.crisis_helpers import (
-            get_country_from_request, get_crisis_response_and_resources,
-            _run_crisis_watchdog,
-        )
         from helpers.chat_helpers import _process_chat_message
+        from helpers.crisis_helpers import (
+            _run_crisis_watchdog,
+            get_country_from_request,
+            get_crisis_response_and_resources,
+        )
+        from helpers.session_helpers import (
+            _get_conversation_count,
+            _get_or_create_session,
+            _increment_conversation_count,
+            _log_analytics_event,
+            _log_chat_request,
+            background_executor,
+        )
 
         _t0 = time.monotonic()
         data = request.get_json()
@@ -225,15 +230,18 @@ def chat_stream():
     Streams JSON objects with a 'type' field: 'meta', 'token', 'done', 'error'.
     """
     try:
-        from helpers.session_helpers import (
-            _get_or_create_session, background_executor,
-        )
-        from helpers.crisis_helpers import (
-            get_crisis_response_and_resources, _run_crisis_watchdog,
-        )
-        from helpers.chat_helpers import _process_chat_message
-        from crisis_detection import detect_crisis_level
         from typing import List
+
+        from crisis_detection import detect_crisis_level
+        from helpers.chat_helpers import _process_chat_message
+        from helpers.crisis_helpers import (
+            _run_crisis_watchdog,
+            get_crisis_response_and_resources,
+        )
+        from helpers.session_helpers import (
+            _get_or_create_session,
+            background_executor,
+        )
 
         message = (request.args.get("message") or "").strip()
         if not message:

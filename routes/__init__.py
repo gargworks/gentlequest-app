@@ -10,14 +10,18 @@ from flask import Flask
 
 def register_blueprints(app: Flask) -> None:
     """Register all route blueprints with the Flask application."""
-    from routes.health import health_bp
-    from routes.chat import chat_bp
-    from routes.session import session_bp
-    from routes.analytics_routes import analytics_bp
     from routes.admin import admin_bp
-    from routes.static import static_bp
-    from routes.compliance import compliance_bp
+    from routes.alerts import alerts_bp
+    from routes.analytics_routes import analytics_bp
     from routes.assessment import assessment_bp
+    from routes.chat import chat_bp
+    from routes.compliance import compliance_bp
+    from routes.crisis import crisis_bp
+    from routes.health import health_bp
+    from routes.insights import insights_bp
+    from routes.quests import quests_bp
+    from routes.session import session_bp
+    from routes.static import static_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(chat_bp)
@@ -27,7 +31,13 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(static_bp)
     app.register_blueprint(compliance_bp)
     app.register_blueprint(assessment_bp)
+    app.register_blueprint(insights_bp)
+    app.register_blueprint(quests_bp)
+    app.register_blueprint(alerts_bp)
+    app.register_blueprint(crisis_bp)
 
     app.logger.info(
-        f"Registered {8} route blueprints: health, chat, session, analytics, admin, static, compliance, assessment"
+        "Registered 12 route blueprints: health, chat, session, analytics, "
+        "admin, static, compliance, assessment, insights, quests_v2, "
+        "alerts_v2, crisis_v2"
     )
