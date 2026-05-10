@@ -40,10 +40,8 @@ class _QuestScreenState extends State<QuestScreen> {
   Future<void> _completeQuest(Quest quest) async {
     final provider = Provider.of<QuestProvider>(context, listen: false);
 
-    // Play confetti if leveled up or just for fun on big quests
-    if (quest.xpReward >= 30) {
-      _confettiController.play();
-    }
+    // Confetti on every completion (celebration, not XP gate — principle #14)
+    _confettiController.play();
 
     // Complete it!
     await provider.updateQuestProgress(quest.id, quest.target);
@@ -51,7 +49,7 @@ class _QuestScreenState extends State<QuestScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Quest Complete! +${quest.xpReward} XP"),
+        content: Text("${quest.title} complete!"),
         backgroundColor: Colors.green,
       ),
     );

@@ -18,7 +18,6 @@ import '../widgets/keyboard_dismissible_scaffold.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
 import '../models/interactive_exercise.dart';
-import '../providers/quest_provider.dart';
 import '../services/firebase_service.dart';
 import '../widgets/exercises/breathing_exercise_widget.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
@@ -463,46 +462,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           },
                         ),
                         Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                ProfileConfig.aiName,
-                                style: TextStyleHelper.instance.headline24Bold,
-                              ),
-                              // Streak badge (visible when streak > 0)
-                              Consumer<QuestProvider>(
-                                builder: (_, qp, __) {
-                                  if (qp.streak <= 0) return const SizedBox.shrink();
-                                  return Padding(
-                                    padding: EdgeInsets.only(left: 8.h),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 8.h, vertical: 3.h),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF3E0),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text('🔥', style: TextStyle(fontSize: 12)),
-                                          SizedBox(width: 3.h),
-                                          Text(
-                                            '${qp.streak}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFFE65100),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                          child: Text(
+                            ProfileConfig.aiName,
+                            textAlign: TextAlign.center,
+                            style: TextStyleHelper.instance.headline24Bold,
                           ),
                         ),
                         // Overflow menu for Safety & Legal access

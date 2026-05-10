@@ -83,9 +83,8 @@ USER INPUT TARGET:
   String generateSuccessStory(LeopardQuest quest) {
     // systemPrompt removed as it was unused and causing lint issues.
     return '''
-Just defeated "${quest.bossName}" using GentleQuest // LEOPARD. 
-PROTOCOL: ${quest.title} complete. 
-Resilience XP: +${quest.xpReward}. 
+Just defeated "${quest.bossName}" using GentleQuest // LEOPARD.
+PROTOCOL: ${quest.title} complete.
 
 No more waitlist silence. 🛡️
 Join the protocol: https://gentlequest.app

@@ -94,86 +94,18 @@ class NewQuestScreen extends StatelessWidget {
     );
   }
 
+  // provider param retained for call-site compat; Level/XP bar removed — principle #14.
   Widget _buildSliverAppBar(BuildContext context, QuestProvider provider) {
     final theme = Theme.of(context);
-    final progress = (provider.totalXP % 100) /
-        100.0; // Assume 100 XP per level for simple UI
 
     return SliverAppBar(
-      expandedHeight: 180.0,
+      expandedHeight: 80.0,
       floating: false,
       pinned: true,
       elevation: 0,
       backgroundColor: theme.colorScheme.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withValues(alpha: 0.8),
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    'Level ${provider.level}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.3),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white),
-                            minHeight: 10,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '${provider.totalXP} XP',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${(100 - (provider.totalXP % 100)).toInt()} XP to next level',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        title: const Text('Your Quests',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+      flexibleSpace: const FlexibleSpaceBar(
+        title: Text('Your Quests', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: false,
       ),
     );

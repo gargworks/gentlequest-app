@@ -196,22 +196,7 @@ class _QuestCardState extends State<QuestCard>
             tooltip: "Share Protocol Result",
           ),
 
-          const SizedBox(width: 8),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "+${widget.quest.xpReward} XP",
-              style: const TextStyle(
-                  color: Colors.amber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12),
-            ),
-          ),
+          // XP chip removed — principle #14
         ],
       ),
     );

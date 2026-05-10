@@ -56,7 +56,6 @@ class _LeopardShellState extends State<LeopardShell> {
 
       _firebase.logEvent('leopard_quest_generated', {
         'boss_name': quest.bossName,
-        'xp_reward': quest.xpReward,
       });
     }
   }
@@ -66,7 +65,7 @@ class _LeopardShellState extends State<LeopardShell> {
     _confettiController.play();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("QUEST COMPLETE! +${_currentQuest?.xpReward ?? 0} XP"),
+        content: Text("QUEST COMPLETE! ${_currentQuest?.title ?? ''}"),
         backgroundColor: Colors.amber[700],
         behavior: SnackBarBehavior.floating,
       ),
@@ -206,7 +205,6 @@ class _LeopardShellState extends State<LeopardShell> {
   void _onShareQuest(LeopardQuest quest) {
     _firebase.logEvent('leopard_quest_shared', {
       'quest_title': quest.title,
-      'xp_reward': quest.xpReward,
     });
 
     final story = _mapper.aiService.generateSuccessStory(quest);

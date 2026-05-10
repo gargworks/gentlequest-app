@@ -113,10 +113,6 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Level and XP Indicator
-                _buildLevelIndicator(),
-                const SizedBox(height: 24),
-
                 // In Progress Quests
                 const Text(
                   'In Progress',
@@ -138,42 +134,6 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildLevelIndicator() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Level 5',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '350 / 1000 XP',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: 0.35,
-              backgroundColor: Colors.grey[200],
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -233,14 +193,6 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${quest.xpReward} XP',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -330,14 +282,6 @@ class _QuestsHomeScreenState extends State<QuestsHomeScreen> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${quest.xpReward} XP',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],

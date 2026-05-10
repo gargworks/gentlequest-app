@@ -43,40 +43,14 @@ class QuestProvider with ChangeNotifier {
         _quests = questsJson.map((q) => Quest.fromJson(q)).toList();
 
         if (response['profile'] != null) {
-          final oldLevel = _level;
           _totalXP = response['profile']['xp'] ?? 0;
           _level = response['profile']['level'] ?? 1;
-          final newStreak = response['profile']['streak_days'] ??
+          // streak_days read into _streak for data compat; not displayed
+          _streak = response['profile']['streak_days'] ??
               response['profile']['streak'] ??
               0;
-
-          // Streak milestone notifications
-          if (newStreak > _streak && const {3, 7, 14, 30}.contains(newStreak)) {
-            final msgs = {
-              3: "3 days strong! You're building momentum.",
-              7: "1 week streak! Consistency is a superpower.",
-              14: "2 weeks — you're building a real habit.",
-              30: "30 days! That's incredible dedication.",
-            };
-            try {
-              NotificationService.scheduleOneShot(
-                target: DateTime.now().add(const Duration(seconds: 5)),
-                title: 'Milestone reached',
-                body: msgs[newStreak] ?? 'Keep it up!',
-                payload: 'open_quest',
-                debugTag: 'streak_milestone_$newStreak',
-              );
-            } catch (_) {}
-          }
-          _streak = newStreak;
-
-          // Level up analytics
-          if (_level > oldLevel) {
-            FirebaseService().logEvent('level_up', {
-              'new_level': _level,
-              'total_xp': _totalXP,
-            });
-          }
+          // Streak milestone notifications removed — principle #14 (no-streak-shame).
+          // Level-up analytics removed — principle #14.
         }
       } else {
         _quests = _generateMockQuests();
@@ -229,17 +203,16 @@ class QuestProvider with ChangeNotifier {
         _totalXP = result['new_total_xp'] ?? _totalXP;
         _level = result['new_level'] ?? _level;
 
-        // Quest completion analytics + notification
+        // Quest completion analytics (XP value removed from notification body — principle #14)
         if (isCompleted) {
           FirebaseService().logEvent('quest_completed', {
             'quest_id': questId,
-            'xp_reward': quest.xpReward,
           });
           try {
             NotificationService.scheduleOneShot(
               target: DateTime.now().add(const Duration(seconds: 3)),
               title: 'Quest complete!',
-              body: '${quest.title} done — +${quest.xpReward} XP',
+              body: '${quest.title} done',
               payload: 'open_quest',
               debugTag: 'quest_complete_$questId',
             );

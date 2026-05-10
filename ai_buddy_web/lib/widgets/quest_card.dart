@@ -120,7 +120,7 @@ class QuestCard extends StatelessWidget {
                 ),
               ),
 
-              // Right: Rewards or Loading
+              // Right: Loading indicator only (no XP badge — principle #14)
               if (isLoading)
                 const Padding(
                   padding: EdgeInsets.only(left: 8.0),
@@ -128,30 +128,6 @@ class QuestCard extends StatelessWidget {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              else if (!isCompleted)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.purple.shade100),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.bolt, size: 14, color: Colors.purple),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${quest.xpReward} XP",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple.shade700,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
             ],

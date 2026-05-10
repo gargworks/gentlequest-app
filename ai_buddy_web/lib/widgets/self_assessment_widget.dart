@@ -112,18 +112,16 @@ class _SelfAssessmentWidgetState extends State<SelfAssessmentWidget> {
         await prefs.setBool('daily_checkin_done_$dateKey', true);
       } catch (_) {}
 
-      // Apply XP to progress provider
+      // Apply XP to progress provider (data tracking, not displayed — principle #14)
       if (xpAwarded > 0 && mounted) {
         Provider.of<ProgressProvider>(context, listen: false).addXp(xpAwarded);
       }
 
       if (mounted) {
-        // Contextual feedback
+        // Contextual feedback — no XP figure shown to user (principle #14)
         final snackText = alreadyCompletedToday
-            ? 'You\'ve already completed today\'s check-in. No extra XP awarded.'
-            : (xpAwarded > 0
-                ? 'Assessment submitted! +$xpAwarded XP'
-                : 'Assessment submitted successfully.');
+            ? 'You\'ve already completed today\'s check-in.'
+            : 'Assessment submitted successfully.';
         final color = alreadyCompletedToday ? Colors.orange : Colors.green;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

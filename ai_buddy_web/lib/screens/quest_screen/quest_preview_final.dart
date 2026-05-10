@@ -55,10 +55,6 @@ class QuestsHomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Level and XP Indicator
-                _buildLevelIndicator(),
-                const SizedBox(height: 24),
-
                 // In Progress Quests
                 const Text(
                   'In Progress',
@@ -80,42 +76,6 @@ class QuestsHomeScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildLevelIndicator() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Level 5',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '350 / 1000 XP',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: 0.35,
-              backgroundColor: Colors.grey,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -182,13 +142,6 @@ class QuestsHomeScreen extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
-            trailing: Text(
-              '${quest.xpReward} XP',
-              style: const TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
-              ),
             ),
             onTap: () => _showQuestDetails(context, quest, questProvider),
           ),
@@ -258,14 +211,6 @@ class QuestsHomeScreen extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${quest.xpReward} XP',
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
