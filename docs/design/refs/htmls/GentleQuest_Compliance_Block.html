@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Compliance block (Illinois)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: #EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+
+  .gq-fade-in { animation: gqFadeIn 600ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up { animation: gqFadeInUp 700ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up.d1 { animation-delay: 80ms; }
+  .gq-fade-in-up.d2 { animation-delay: 160ms; }
+  .gq-fade-in-up.d3 { animation-delay: 240ms; }
+  .gq-fade-in-up.d4 { animation-delay: 320ms; }
+  .gq-fade-in-up.d5 { animation-delay: 400ms; }
+  .gq-fade-in-up.d6 { animation-delay: 480ms; }
+  @keyframes gqFadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes gqFadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* slow sunrise drift on header */
+  .gq-rise { animation: gqRise 6s ease-in-out infinite; transform-origin: center bottom; }
+  @keyframes gqRise {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px;
+    background: var(--gq-bg);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730,
+      0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35),
+      0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-phone .gq-island {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 124px; height: 36px; border-radius: 20px; background: #000; z-index: 50;
+  }
+  .gq-phone .gq-status {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px 0; font-weight: 600; font-size: 15px; color: var(--gq-ink);
+  }
+  .gq-phone .gq-home {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 100px; background: rgba(31,27,58,0.28);
+    z-index: 60; pointer-events: none;
+  }
+  .gq-phone .gq-screen { position: absolute; inset: 0; overflow-y: auto; }
+  .gq-screen-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--gq-ink-3); text-transform: uppercase;
+  }
+  .gq-btn { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-btn:active { transform: scale(0.98); }
+
+  /* hide scrollbar inside phone */
+  .gq-screen::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Compliance block Â· dignity recovery
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">Illinois variant</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Replaces the sterile "Region Unavailable" dead-end. The framing is local-first care, not rejection.
+      Region name is a single template variable â drop in <code class="text-xs">{state}</code> + a regional card per IL / UT / WA.
+    </p>
+  </header>
+
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center">
+
+    <!-- ========================================================== -->
+    <!-- COMPLIANCE BLOCK -->
+    <!-- ========================================================== -->
+    <div class="flex flex-col items-center gap-5" data-screen-label="Compliance block â Illinois">
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen">
+
+          <!-- ZONE 1 Â· soft header (~30% viewport â 254px) -->
+          <header class="relative" style="height:280px;">
+            <!-- sunrise gradient + ambient blobs -->
+            <div class="absolute inset-0" style="background: linear-gradient(180deg, #EFEEFE 0%, #FFEFEC 70%, #F8F7FF 100%);"></div>
+            <div class="absolute" style="top:-50px; left:-60px; width:220px; height:220px; border-radius:110px; background:#D9DEFC; filter:blur(48px); opacity:0.7;"></div>
+            <div class="absolute" style="top:60px; right:-90px; width:240px; height:240px; border-radius:120px; background:#FFD9D9; filter:blur(52px); opacity:0.7;"></div>
+
+            <!-- "Sunrise over a path" â abstract, warm, never a stop sign -->
+            <div class="absolute inset-x-0 flex justify-center gq-fade-in" style="top:80px;">
+              <div class="relative gq-rise" style="width:140px; height:120px;">
+                <!-- horizon arc -->
+                <svg width="140" height="120" viewBox="0 0 140 120" fill="none">
+                  <!-- sun -->
+                  <defs>
+                    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#FF6B6B"/>
+                      <stop offset="100%" stop-color="#FFB59B"/>
+                    </linearGradient>
+                    <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#FFB59B" stop-opacity="0.5"/>
+                      <stop offset="100%" stop-color="#FFB59B" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- rays -->
+                  <path d="M70 88 L36 24" stroke="url(#ray)" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M70 88 L70 12" stroke="url(#ray)" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M70 88 L104 24" stroke="url(#ray)" stroke-width="6" stroke-linecap="round"/>
+                  <!-- sun semicircle -->
+                  <path d="M30 88 a40 40 0 0 1 80 0" fill="url(#sun)"/>
+                  <!-- horizon -->
+                  <path d="M8 90 L132 90" stroke="#667EEA" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+                  <!-- path winding to horizon -->
+                  <path d="M40 116 Q70 102 70 90" stroke="#667EEA" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 4" opacity="0.55" fill="none"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Eyebrow -->
+            <div class="absolute inset-x-0 text-center gq-fade-in-up d1" style="top:218px;">
+              <div class="gq-screen-label" style="color:var(--gq-primary);">GentleQuest</div>
+            </div>
+          </header>
+
+          <!-- Headline + sub (still visually inside zone 1, but flow content) -->
+          <div class="px-7 mt-5 gq-fade-in-up d2">
+            <h2 style="font-size:28px; font-weight:800; line-height:1.18; letter-spacing:-0.4px; color:var(--gq-ink);">
+              Some support is<br/>local-first.
+            </h2>
+            <p class="mt-3" style="font-size:15px; line-height:1.6; color:var(--gq-ink-2); font-weight:500;">
+              GentleQuest isn't available in <span style="color:var(--gq-ink); font-weight:700;">Illinois</span> yet â
+              but you have great options right where you are.
+            </p>
+          </div>
+
+          <!-- ZONE 2 Â· regional resource cards -->
+          <section class="px-5 mt-6 space-y-2.5" aria-label="Local support">
+
+            <div class="px-2 mb-1 flex items-center justify-between">
+              <div class="gq-screen-label">Right now in Illinois</div>
+              <div class="flex items-center gap-1" style="font-size:11px; font-weight:700; color:var(--gq-ink-3);">
+                <span style="width:6px; height:6px; border-radius:3px; background:#34C77B; display:inline-block;"></span>
+                ALL FREE Â· 24/7
+              </div>
+            </div>
+
+            <!-- Card 1 â Crisis Text Line -->
+            <a class="gq-btn block gq-fade-in-up d3"
+               style="padding:16px; background:white; border-radius:20px; border:1px solid var(--gq-hair);
+                      box-shadow:0 1px 2px rgba(31,27,58,0.04); text-decoration:none;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:48px; height:48px; background:#EEF0FE;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 5h14a2 2 0 012 2v9a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span style="font-size:15px; font-weight:800; color:var(--gq-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Crisis Text Line</span>
+                    <span style="flex-shrink:0; font-size:10px; font-weight:800; letter-spacing:0.4px; padding:3px 8px; border-radius:100px; background:var(--gq-primary-soft); color:var(--gq-primary);">TEXT</span>
+                  </div>
+                  <div class="mt-1" style="font-size:14px; font-weight:700; color:var(--gq-ink-2);">
+                    Text <span style="color:var(--gq-ink); font-weight:800;">HOME to 741741</span>
+                  </div>
+                  <div class="mt-0.5" style="font-size:12px; color:var(--gq-ink-3); font-weight:600;">
+                    Trained counselors Â· always available Â· free
+                  </div>
+                </div>
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:36px; height:36px; background:var(--gq-primary); color:white;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 4h6v6M20 4l-9 9M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </a>
+
+            <!-- Card 2 â 988 -->
+            <a class="gq-btn block gq-fade-in-up d4"
+               style="padding:16px; background:white; border-radius:20px; border:1px solid var(--gq-hair);
+                      box-shadow:0 1px 2px rgba(31,27,58,0.04); text-decoration:none;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:48px; height:48px; background:#FFE8E8;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 4h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z" stroke="#FF6B6B" stroke-width="1.8" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span style="font-size:15px; font-weight:800; color:var(--gq-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">988 Lifeline</span>
+                    <span style="flex-shrink:0; font-size:10px; font-weight:800; letter-spacing:0.4px; padding:3px 8px; border-radius:100px; background:var(--gq-accent-soft); color:var(--gq-accent);">CALL Â· TEXT</span>
+                  </div>
+                  <div class="mt-1" style="font-size:14px; font-weight:700; color:var(--gq-ink-2);">
+                    Call or text <span style="color:var(--gq-ink); font-weight:800;">988</span>
+                  </div>
+                  <div class="mt-0.5" style="font-size:12px; color:var(--gq-ink-3); font-weight:600;">
+                    Suicide & crisis support Â· confidential Â· nationwide
+                  </div>
+                </div>
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:36px; height:36px; background:var(--gq-accent); color:white;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </a>
+
+            <!-- Card 3 â regional (NAMI Illinois) -->
+            <a class="gq-btn block gq-fade-in-up d5"
+               style="padding:16px; background:white; border-radius:20px; border:1px solid var(--gq-hair);
+                      box-shadow:0 1px 2px rgba(31,27,58,0.04); text-decoration:none;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:48px; height:48px; background:#EEF0FE;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 21s-7-4.5-7-11a7 7 0 0114 0c0 6.5-7 11-7 11z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="12" cy="10" r="2.5" stroke="#667EEA" stroke-width="1.8"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span style="font-size:15px; font-weight:800; color:var(--gq-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">NAMI Illinois</span>
+                    <span style="flex-shrink:0; font-size:10px; font-weight:800; letter-spacing:0.4px; padding:3px 8px; border-radius:100px; background:var(--gq-primary-soft); color:var(--gq-primary);">LOCAL</span>
+                  </div>
+                  <div class="mt-1" style="font-size:14px; font-weight:700; color:var(--gq-ink-2);">
+                    Call <span style="color:var(--gq-ink); font-weight:800;">800-346-4572</span>
+                  </div>
+                  <div class="mt-0.5" style="font-size:12px; color:var(--gq-ink-3); font-weight:600;">
+                    Free peer support, navigation & local referrals
+                  </div>
+                </div>
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:36px; height:36px; background:var(--gq-primary); color:white;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </a>
+          </section>
+
+          <!-- ZONE 3 Â· stay-in-touch -->
+          <section class="px-5 mt-7 gq-fade-in-up d6" aria-label="Notify when available">
+            <div style="padding:18px 18px 16px; border-radius:24px;
+                        background: linear-gradient(135deg, #EEF0FE 0%, #FFE8E8 100%);
+                        border:1px solid var(--gq-hair);">
+              <div class="flex items-start gap-2">
+                <span style="font-size:18px; line-height:1;">ð</span>
+                <div class="flex-1">
+                  <div style="font-size:14.5px; font-weight:800; color:var(--gq-ink); line-height:1.3;">
+                    Want to know when GentleQuest reaches Illinois?
+                  </div>
+                  <div class="mt-1" style="font-size:12px; line-height:1.5; color:var(--gq-ink-2); font-weight:600;">
+                    We'll email you once. No spam, no marketing.
+                  </div>
+                </div>
+              </div>
+
+              <form class="mt-4 flex items-center gap-2 bg-white"
+                    style="padding:6px 6px 6px 16px; border-radius:9999px; border:1px solid var(--gq-hair);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; color:var(--gq-ink-3);">
+                  <path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                  <path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input type="email" placeholder="you@email.com" aria-label="Email"
+                  style="flex:1; min-width:0; border:none; outline:none; background:transparent; padding:10px 0;
+                         font-size:14px; font-weight:600; color:var(--gq-ink);"/>
+                <button type="submit" class="gq-btn"
+                  style="padding:10px 18px; border-radius:9999px; background:var(--gq-primary); color:white;
+                         border:none; font-size:13px; font-weight:800; letter-spacing:0.2px;
+                         box-shadow:0 8px 18px -8px rgba(102,126,234,0.55);">
+                  Notify me
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <!-- ZONE 4 Â· footer with respect -->
+          <footer class="px-7 mt-6 mb-10">
+            <div style="height:1px; background:var(--gq-hair);"></div>
+            <div class="mt-5 flex items-start gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:1px; color:var(--gq-ink-3);">
+                <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+              <div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--gq-ink-2); line-height:1.5;">
+                  Your privacy matters.
+                </div>
+                <div class="mt-1" style="font-size:12px; line-height:1.55; color:var(--gq-ink-3); font-weight:500;">
+                  Want a copy of any data we collected before this point?
+                  <a href="mailto:privacy@gentlequest.app"
+                     style="color:var(--gq-primary); font-weight:700; text-decoration:underline; text-decoration-thickness:1.3px; text-underline-offset:3px;">
+                    Request data export â
+                  </a>
+                </div>
+              </div>
+            </div>
+          </footer>
+
+          <div class="h-8"></div>
+        </div>
+
+        <div class="gq-home"></div>
+      </div>
+      <div class="gq-screen-label">Compliance Â· Illinois variant</div>
+      <div class="text-xs max-w-[340px] text-center" style="color:var(--gq-ink-2); line-height:1.5;">
+        Same screen for IL Â· UT Â· WA â only the headline state name and Card 3 swap. No red, no "stop". Sunrise + path = the metaphor.
+      </div>
+    </div>
+
+    <!-- Right rail: state variants & token notes -->
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Per-state swap</div>
+        <ul class="text-[13px] space-y-3 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">Illinois</div>
+            <div>Card 3 â NAMI Illinois Helpline Â· 800-346-4572</div>
+          </li>
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">Utah</div>
+            <div>Card 3 â SafeUT Crisis Line (chat & call, free state app)</div>
+          </li>
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">Washington</div>
+            <div>Card 3 â WA Recovery Help Line Â· 866-789-1511</div>
+          </li>
+        </ul>
+        <div class="mt-4 pt-4" style="border-top:1px solid var(--gq-hair); font-size:11px; color:var(--gq-ink-3); line-height:1.5;">
+          Verify each helpline against the latest state listing before ship â numbers are template-ready, not legal-cleared.
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Tokens used</div>
+        <ul class="text-[13px] space-y-1.5" style="color:var(--gq-ink-2);">
+          <li>Header height â 280px (33% of 844)</li>
+          <li>Card padding 16 Â· radius 20</li>
+          <li>Action chip 36px circle Â· primary/accent tinted</li>
+          <li>Notify card uses primaryâaccent linear-gradient</li>
+          <li>Footer hairline = <code class="text-[11px]">var(--gq-hair)</code></li>
+          <li>Type ramp shared with screen 01â03</li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Why this works</div>
+        <p class="text-[13px] leading-relaxed" style="color:var(--gq-ink-2);">
+          The visual metaphor (sunrise over a winding path) reframes the moment from "you're blocked"
+          to "your path is just different." Three free, immediate actions sit above the fold-equivalent.
+          The notify-form is opt-in but quiet, never the headline. Privacy/data link is present but secondary â
+          it's a right, not a consolation prize.
+        </p>
+      </div>
+    </aside>
+
+  </section>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Dashboard states</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --gq-mood-heavy: #6B7CC4;
+    --gq-mood-low:   #8E96D6;
+    --gq-mood-okay:  #C2BFE8;
+    --gq-mood-good:  #FFB89E;
+    --gq-mood-great: #FF8E7A;
+  }
+  html, body {
+    margin:0; padding:0; background:#EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink); -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+  .gq-fade-in    { animation: gqFadeIn 600ms cubic-bezier(.22,.94,.32,1) both; }
+  @keyframes gqFadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px; background: var(--gq-bg);
+    overflow: hidden; position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island { position: absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home   { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; pointer-events:none; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+
+  .dash-bg { position:absolute; inset:0; background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 60%, #FBF6F6 100%); }
+  .eyebrow { font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.6px; text-transform:uppercase; }
+  .card { background:white; border:1px solid var(--gq-hair); border-radius:18px; padding:14px; box-shadow:0 1px 2px rgba(31,27,58,0.04); }
+  .lane-tile { padding:10px 6px 8px; border-radius:14px; background:white; border:1px solid var(--gq-hair); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
+  .lane-icon { width:28px; height:28px; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+  .lane-cap { font-size:10.5px; font-weight:800; color:var(--gq-ink-2); letter-spacing:0.1px; white-space:nowrap; }
+  .tabbar { position:absolute; left:0; right:0; bottom:24px; z-index:5; }
+  .tabbar-inner { margin: 0 18px; padding: 7px; background:white; border:1px solid var(--gq-hair); border-radius:9999px; display:flex; align-items:center; justify-content:space-around; box-shadow:0 8px 20px -10px rgba(31,27,58,0.10); }
+  .tabbar-inner > div { padding: 8px 12px; }
+  .tabbar-inner .active { background: var(--gq-primary-soft); border-radius:9999px; }
+  .week-bar { flex:1; border-radius:6px; }
+  .week-day { font-size:9.5px; font-weight:700; color:var(--gq-ink-3); text-align:center; }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Dashboard â state matrix
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· B Â· C Â· D Â· 4 variants</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      .notLogged Â· .feelingGreat Â· .longAbsence Â· .weekend. The "one thing" card adapts;
+      everything else stays in lockstep so the user's mental model is consistent.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· NOT LOGGED -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Not logged">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">.notLogged â quick check-in</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Today's slot is dashed Â· the ask IS the simple thing.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="WellnessDashboard(state: .notLogged)">
+          <div class="dash-bg"></div>
+
+          <!-- greeting strip -->
+          <div class="absolute inset-x-0 px-5" style="top:64px;" data-widget="GreetingStrip(.notLogged)">
+            <div class="eyebrow">TUESDAY EVENING Â· MAY 8</div>
+            <div class="flex items-baseline justify-between">
+              <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Good evening, friend.</div>
+            </div>
+            <p class="mt-0.5" style="font-size:13px; color:var(--gq-ink-2); font-weight:600;">Quick check-in?</p>
+          </div>
+
+          <!-- hero card -->
+          <div class="absolute inset-x-4" style="top:142px;" data-widget="TodaysOneThing(.checkInPrompt)">
+            <div class="card" style="background: linear-gradient(160deg, #EEF0FE 0%, #FBF1F4 70%, #FFE8E8 100%); border:1px solid rgba(102,126,234,0.18);">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">TODAY, JUST ONE THING</div>
+              <div class="mt-1" style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.3px;">Log how you're feeling â 15 seconds.</div>
+
+              <!-- mood teaser strip -->
+              <div class="mt-3 flex items-center justify-center gap-2.5" data-widget="MoodTeaserRow()">
+                <span style="font-size:22px; line-height:1; opacity:0.55;">ð</span>
+                <span style="font-size:22px; line-height:1; opacity:0.55;">ð</span>
+                <span style="font-size:22px; line-height:1; opacity:0.55;">ð</span>
+                <span style="font-size:22px; line-height:1; opacity:0.55;">ð</span>
+                <span style="font-size:22px; line-height:1; opacity:0.55;">ð</span>
+              </div>
+
+              <button class="gq-tap mt-3 w-full" data-widget="QuickCheckInCTA()"
+                      style="padding:13px; border-radius:9999px; background:var(--gq-primary); color:white; border:none; font-size:14px; font-weight:800; box-shadow:0 12px 26px -10px rgba(102,126,234,0.55);">
+                Quick check-in
+              </button>
+            </div>
+          </div>
+
+          <!-- this week chart -->
+          <div class="absolute inset-x-4" style="top:368px;">
+            <div class="card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="eyebrow">THIS WEEK</div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); margin-top:1px;">6 days logged Â· today open</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:800; padding:3px 7px; border-radius:9999px; background:var(--gq-primary-soft); color:var(--gq-primary-dk);">PENDING</span>
+              </div>
+              <div class="flex items-end gap-2 mt-3" style="height:42px;" data-widget="WeekShape(.todayPending)">
+                <div class="week-bar" style="background:var(--gq-mood-low);   height:55%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:65%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:60%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:78%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:62%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-low);   height:50%;"></div>
+                <!-- today: dashed outline placeholder -->
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(102,126,234,0.45); border-radius:6px;"></div>
+              </div>
+              <div class="flex gap-2 mt-1.5">
+                <span class="week-day" style="flex:1;">W</span><span class="week-day" style="flex:1;">T</span><span class="week-day" style="flex:1;">F</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">M</span><span class="week-day" style="flex:1; color:var(--gq-primary-dk); font-weight:800;">T</span>
+              </div>
+              <div class="mt-2.5" style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4;">
+                6 days logged this week. <span style="color:var(--gq-ink); font-weight:800;">Your call on today.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- quick lanes -->
+          <div class="absolute inset-x-4" style="top:560px;">
+            <div class="eyebrow mb-2">QUICK LANES</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="lane-tile">
+                <div class="lane-icon" style="background:var(--gq-primary-soft);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+                <span class="lane-cap">Talk to Alex</span>
+              </div>
+              <div class="lane-tile">
+                <div class="lane-icon" style="background:var(--gq-accent-soft);"><span style="font-size:14px; line-height:1;">ð</span></div>
+                <span class="lane-cap">Log mood</span>
+              </div>
+              <div class="lane-tile">
+                <div class="lane-icon" style="background:#FFF1E5;"><span style="font-size:14px; line-height:1;">ð¬ï¸</span></div>
+                <span class="lane-cap">Exercises</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- nudge -->
+          <div class="absolute inset-x-4" style="top:680px;">
+            <div class="card" style="padding:11px 14px; display:flex; align-items:center; gap:10px; background:rgba(102,126,234,0.06); border:1px dashed rgba(102,126,234,0.25);">
+              <span style="font-size:14px;">ð­</span>
+              <span style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4; flex:1;">A 15-second log is the smallest brick in a long wall.</span>
+            </div>
+          </div>
+
+          <div class="tabbar"><div class="tabbar-inner">
+            <div class="active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-8z" stroke="#4F63C9" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8B86AB" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="#8B86AB" stroke-width="1.8"/></svg></div>
+          </div></div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">DashboardState.notLogged</code></li>
+          <li><code class="text-[11px]">TodaysOneThing(.checkInPrompt)</code><br/><span style="color:var(--gq-ink-3);">no "Not now" â logging IS the small ask</span></li>
+          <li><code class="text-[11px]">MoodTeaserRow()</code><br/><span style="color:var(--gq-ink-3);">5 emojis Â· opacity 0.55 Â· tap = open MoodSheet</span></li>
+          <li><code class="text-[11px]">WeekShape(.todayPending)</code><br/><span style="color:var(--gq-ink-3);">today bar = dashed primary outline</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· FEELING GREAT -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Feeling great">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">.feelingGreat â capture wisdom</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Today coral Â· nudge zone hidden Â· factual celebration.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="WellnessDashboard(state: .feelingGreat)">
+          <div class="dash-bg"></div>
+
+          <div class="absolute inset-x-0 px-5" style="top:64px;">
+            <div class="eyebrow">TUESDAY EVENING Â· MAY 8</div>
+            <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Evening, friend.</div>
+            <p class="mt-0.5" style="font-size:13px; color:var(--gq-ink-2); font-weight:600;">Glowing today ð±</p>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:142px;" data-widget="TodaysOneThing(.captureWisdom)">
+            <div class="card" style="background: linear-gradient(160deg, #FFF1E5 0%, #FFE8E8 100%); border:1px solid rgba(255,138,110,0.25);">
+              <div class="eyebrow" style="color:#B5562F;">TODAY, JUST ONE THING</div>
+              <div class="mt-1 flex items-start gap-2.5">
+                <div style="font-size:24px; line-height:1; margin-top:2px;">â¨</div>
+                <div style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.3px;">Nice. Want to capture what's working?</div>
+              </div>
+              <button class="gq-tap mt-3 w-full" data-widget="JournalNoteCTA()"
+                      style="padding:13px; border-radius:9999px; background:var(--gq-accent); color:white; border:none; font-size:14px; font-weight:800; box-shadow:0 12px 26px -10px rgba(255,107,107,0.5);">
+                Add a journal note
+              </button>
+              <div class="mt-2 text-center">
+                <button class="gq-tap" style="background:none; border:none; padding:6px 4px; font-size:11.5px; color:#9A6049; font-weight:700;">Tomorrow's me will thank you â</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:362px;">
+            <div class="card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="eyebrow">THIS WEEK</div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); margin-top:1px;">7 logs Â· trending up</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:800; padding:3px 7px; border-radius:9999px; background:#FFF1E5; color:#B5562F;">BEST DAY</span>
+              </div>
+              <div class="flex items-end gap-2 mt-3" style="height:42px;" data-widget="WeekShape(.bestToday)">
+                <div class="week-bar" style="background:var(--gq-mood-low);   height:55%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:65%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:72%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:78%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:80%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:82%;"></div>
+                <!-- today: great + halo -->
+                <div class="week-bar" style="height:95%; background:var(--gq-mood-great); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--gq-mood-great);"></div>
+              </div>
+              <div class="flex gap-2 mt-1.5">
+                <span class="week-day" style="flex:1;">W</span><span class="week-day" style="flex:1;">T</span><span class="week-day" style="flex:1;">F</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">M</span><span class="week-day" style="flex:1; color:#B5562F; font-weight:800;">T</span>
+              </div>
+              <div class="mt-2.5" style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4;">
+                <span style="color:var(--gq-ink); font-weight:800;">Best day this week.</span> Three good days in a row.
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:560px;">
+            <div class="eyebrow mb-2">QUICK LANES</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-primary-soft);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/></svg></div><span class="lane-cap">Talk to Alex</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-accent-soft);"><span style="font-size:14px; line-height:1;">ð</span></div><span class="lane-cap">Log mood</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:#FFF1E5;"><span style="font-size:14px; line-height:1;">ð¬ï¸</span></div><span class="lane-cap">Exercises</span></div>
+            </div>
+          </div>
+
+          <!-- nudge zone hidden in this state -->
+
+          <div class="tabbar"><div class="tabbar-inner">
+            <div class="active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-8z" stroke="#4F63C9" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8B86AB" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="#8B86AB" stroke-width="1.8"/></svg></div>
+          </div></div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">DashboardState.feelingGreat</code></li>
+          <li><code class="text-[11px]">TodaysOneThing(.captureWisdom)</code></li>
+          <li><code class="text-[11px]">JournalNoteCTA()</code><br/><span style="color:var(--gq-ink-3);">accent fill â coral matches today's mood</span></li>
+          <li><code class="text-[11px]">WeekShape(.bestToday)</code><br/><span style="color:var(--gq-ink-3);">today coral + halo</span></li>
+          <li><code class="text-[11px]">NudgeZone.hidden</code><br/><span style="color:var(--gq-ink-3);">user already engaged â silence is correct</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· LONG ABSENCE -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Long absence">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">.longAbsence â 14 days</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Streak paused, not lost Â· standard one-thing demoted.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="WellnessDashboard(state: .longAbsence, daysAway: 14)">
+          <div class="dash-bg"></div>
+
+          <div class="absolute inset-x-0 px-5" style="top:64px;">
+            <div class="eyebrow">TUESDAY EVENING Â· MAY 8</div>
+            <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Welcome back, friend.</div>
+            <p class="mt-0.5" style="font-size:13px; color:var(--gq-ink-2); font-weight:600;">It's been a bit.</p>
+          </div>
+
+          <!-- recovery hero -->
+          <div class="absolute inset-x-4" style="top:142px;" data-widget="ReturningRecoveryCard(daysAway:14, streak:12)">
+            <div class="card" style="background: linear-gradient(160deg, #EEF0FE 0%, #F8F7FF 60%, #FFE8E8 100%); border:1px solid rgba(102,126,234,0.18);">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">PICK UP, OR START FRESH</div>
+              <div class="mt-1" style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.3px;">Your data is right where you left it.</div>
+
+              <div class="mt-3 flex items-center gap-2"
+                   style="padding:9px 12px; border-radius:9999px; background:white; border:1px solid var(--gq-hair);">
+                <span style="font-size:13px; line-height:1;">ð¥</span>
+                <span style="font-size:11.5px; font-weight:700; color:var(--gq-ink-2); line-height:1.4;">
+                  Your <span style="color:var(--gq-ink); font-weight:800;">12-day streak</span> is paused â pick it up if you want, or start fresh.
+                </span>
+              </div>
+
+              <div class="mt-3 flex gap-2">
+                <button class="gq-tap flex-1" data-widget="StartFreshBtn()"
+                        style="padding:12px; border-radius:9999px; background:var(--gq-primary); color:white; border:none; font-size:13px; font-weight:800; box-shadow:0 10px 22px -10px rgba(102,126,234,0.55);">
+                  Start fresh
+                </button>
+                <button class="gq-tap flex-1" data-widget="ContinueStreakBtn()"
+                        style="padding:12px; border-radius:9999px; background:white; color:var(--gq-ink); border:1px solid var(--gq-hair); font-size:13px; font-weight:800;">
+                  Continue 12-day streak
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- compact one-thing prompt -->
+          <div class="absolute inset-x-4" style="top:332px;">
+            <div class="card" style="padding:11px 14px; display:flex; align-items:center; gap:10px;">
+              <div class="rounded-xl flex items-center justify-center" style="width:36px; height:36px; background:var(--gq-primary-soft); flex-shrink:0;"><span style="font-size:16px; line-height:1;">ð</span></div>
+              <div class="flex-1 min-w-0">
+                <div style="font-size:12.5px; font-weight:800; color:var(--gq-ink);">Today, just one thing</div>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600; margin-top:1px;">A 15-second mood log to start.</div>
+              </div>
+              <button style="padding:7px 12px; border-radius:9999px; background:var(--gq-primary); color:white; border:none; font-size:11.5px; font-weight:800; flex-shrink:0;">Log</button>
+            </div>
+          </div>
+
+          <!-- empty week chart -->
+          <div class="absolute inset-x-4" style="top:412px;">
+            <div class="card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="eyebrow">THIS WEEK</div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); margin-top:1px;">No logs yet</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:800; padding:3px 7px; border-radius:9999px; background:#F2F1FE; color:var(--gq-ink-3);">CATCHING UP</span>
+              </div>
+              <div class="flex items-end gap-2 mt-3" style="height:42px;" data-widget="WeekShape(.allEmpty)">
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(139,134,171,0.4); border-radius:6px;"></div>
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(102,126,234,0.45); border-radius:6px;"></div>
+              </div>
+              <div class="flex gap-2 mt-1.5">
+                <span class="week-day" style="flex:1;">W</span><span class="week-day" style="flex:1;">T</span><span class="week-day" style="flex:1;">F</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">S</span><span class="week-day" style="flex:1;">M</span><span class="week-day" style="flex:1; color:var(--gq-primary-dk); font-weight:800;">T</span>
+              </div>
+              <div class="mt-2.5" style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4;">
+                Catch up when you're ready. <span style="color:var(--gq-ink); font-weight:800;">No pressure.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:610px;">
+            <div class="grid grid-cols-3 gap-2">
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-primary-soft);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/></svg></div><span class="lane-cap">Talk to Alex</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-accent-soft);"><span style="font-size:14px; line-height:1;">ð</span></div><span class="lane-cap">Log mood</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:#FFF1E5;"><span style="font-size:14px; line-height:1;">ð¬ï¸</span></div><span class="lane-cap">Exercises</span></div>
+            </div>
+          </div>
+
+          <div class="tabbar"><div class="tabbar-inner">
+            <div class="active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-8z" stroke="#4F63C9" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8B86AB" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="#8B86AB" stroke-width="1.8"/></svg></div>
+          </div></div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">DashboardState.longAbsence(daysAway)</code><br/><span style="color:var(--gq-ink-3);">triggers when daysAway â¥ 7</span></li>
+          <li><code class="text-[11px]">ReturningRecoveryCard(daysAway, streak)</code><br/><span style="color:var(--gq-ink-3);">demotes the standard one-thing card to compact row</span></li>
+          <li><code class="text-[11px]">WeekShape(.allEmpty)</code><br/><span style="color:var(--gq-ink-3);">all bars dashed gray Â· today dashed primary</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- D Â· WEEKEND -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="D Â· Weekend">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup D</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">.weekend â slower Saturday</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Lanes reorder Â· weekend bars subtly emphasized.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="WellnessDashboard(state: .weekend)">
+          <div class="dash-bg"></div>
+
+          <div class="absolute inset-x-0 px-5" style="top:64px;">
+            <div class="eyebrow">SATURDAY Â· MAY 11</div>
+            <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Good morning, friend.</div>
+            <p class="mt-0.5" style="font-size:13px; color:var(--gq-ink-2); font-weight:600;">Saturday â slower today.</p>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:142px;" data-widget="TodaysOneThing(.weekendLight)">
+            <div class="card" style="background: linear-gradient(160deg, #EEF0FE 0%, #F8F7FF 100%); border:1px solid rgba(102,126,234,0.18);">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">LIGHT DAY PLAN</div>
+              <div class="mt-1 flex items-start gap-2.5">
+                <div style="font-size:24px; line-height:1; margin-top:2px;">ð¤ï¸</div>
+                <div style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.3px;">Log mood, breathe, that's it.</div>
+              </div>
+              <button class="gq-tap mt-3 w-full" data-widget="EasyCheckInCTA()"
+                      style="padding:13px; border-radius:9999px; background:var(--gq-primary); color:white; border:none; font-size:14px; font-weight:800; box-shadow:0 12px 26px -10px rgba(102,126,234,0.55);">
+                Easy check-in
+              </button>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:340px;">
+            <div class="card">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="eyebrow">THIS WEEK</div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); margin-top:1px;">5 days logged</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:800; padding:3px 7px; border-radius:9999px; background:var(--gq-primary-soft); color:var(--gq-primary-dk);">WEEKEND</span>
+              </div>
+              <div class="flex items-end gap-2 mt-3" style="height:42px; position:relative;" data-widget="WeekShape(.weekendEmphasis)">
+                <!-- weekday -->
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:62%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-low);   height:55%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:65%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good);  height:75%;"></div>
+                <div class="week-bar" style="background:var(--gq-mood-okay);  height:60%;"></div>
+                <!-- weekend, subtly emphasized via slightly taller + ring -->
+                <div class="week-bar" style="height:55%; background:transparent; border:1.5px dashed rgba(102,126,234,0.45); border-radius:6px; box-shadow:0 0 0 3px rgba(102,126,234,0.06);"></div>
+                <div class="week-bar" style="background:var(--gq-mood-good); height:50%; opacity:0.45;"></div>
+              </div>
+              <div class="flex gap-2 mt-1.5">
+                <span class="week-day" style="flex:1;">M</span><span class="week-day" style="flex:1;">T</span><span class="week-day" style="flex:1;">W</span><span class="week-day" style="flex:1;">T</span><span class="week-day" style="flex:1;">F</span><span class="week-day" style="flex:1; color:var(--gq-primary-dk); font-weight:800;">S</span><span class="week-day" style="flex:1;">S</span>
+              </div>
+              <div class="mt-2.5" style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4;">
+                Weekends count too â same softness.
+              </div>
+            </div>
+          </div>
+
+          <!-- lanes reordered: exercises first -->
+          <div class="absolute inset-x-4" style="top:540px;">
+            <div class="eyebrow mb-2">QUICK LANES Â· WEEKEND</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="lane-tile"><div class="lane-icon" style="background:#FFF1E5;"><span style="font-size:14px; line-height:1;">ð¬ï¸</span></div><span class="lane-cap">Browse exercises</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-accent-soft);"><span style="font-size:14px; line-height:1;">ð</span></div><span class="lane-cap">Log mood</span></div>
+              <div class="lane-tile"><div class="lane-icon" style="background:var(--gq-primary-soft);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/></svg></div><span class="lane-cap">Talk to Alex</span></div>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-4" style="top:660px;">
+            <div class="card" style="padding:11px 14px; display:flex; align-items:center; gap:10px; background:rgba(102,126,234,0.06); border:1px dashed rgba(102,126,234,0.25);">
+              <span style="font-size:14px;">ð¿</span>
+              <span style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4; flex:1;">Slower pace, same care. There's no homework here.</span>
+            </div>
+          </div>
+
+          <div class="tabbar"><div class="tabbar-inner">
+            <div class="active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-8z" stroke="#4F63C9" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8B86AB" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+            <div><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="#8B86AB" stroke-width="1.8"/></svg></div>
+          </div></div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· D</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">DashboardState.weekend</code><br/><span style="color:var(--gq-ink-3);">composes with mood states Â· day-aware</span></li>
+          <li><code class="text-[11px]">TodaysOneThing(.weekendLight)</code></li>
+          <li><code class="text-[11px]">QuickLanes(.weekendOrder)</code><br/><span style="color:var(--gq-ink-3);">[exercises, mood, talk]</span></li>
+          <li><code class="text-[11px]">WeekShape(.weekendEmphasis)</code><br/><span style="color:var(--gq-ink-3);">starts on Monday Â· Sat halo'd</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">State priority Â· all four</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>1. <code>longAbsence</code> wins (â¥7 days)</li>
+          <li>2. mood state of today (.notLogged / .lowMood / .feelingGreat)</li>
+          <li>3. <code>weekend</code> is a modifier â composes with mood</li>
+          <li>One state at a time on the hero â never stacked</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">All four Â· ship principles</div>
+        <ul class="text-[13px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Greeting strip and hero card adapt â chart, lanes, tab bar stay constant</li>
+          <li>"Today, just one thing" survives every state â only the prompt changes</li>
+          <li>Streaks pause, never break</li>
+          <li>Weekends get softer copy, not less function</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+
+</body>
+</html>

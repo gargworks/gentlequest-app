@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Weekly Review</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --mood-1: #C97E7E; /* low */
+    --mood-2: #D9A678;
+    --mood-3: #E5C76B;
+    --mood-4: #9CC487;
+    --mood-5: #6FA3E0; /* high */
+  }
+  html, body {
+    margin:0; padding:0; background:#EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: var(--gq-ink); -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px; background: var(--gq-bg);
+    overflow: hidden; position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island { position: absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home   { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; pointer-events:none; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+  .eyebrow { font-size:10.5px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.7px; text-transform:uppercase; }
+
+  .nav-bar {
+    position:absolute; top:54px; left:0; right:0;
+    padding:8px 18px; display:flex; align-items:center; justify-content:space-between;
+    height:50px; z-index:5;
+  }
+  .scroll {
+    position:absolute; left:0; right:0; top:104px; bottom:0;
+    padding:14px 16px 30px; overflow-y:auto; overflow-x:hidden;
+    scrollbar-width: thin;
+  }
+  .scroll::-webkit-scrollbar { width: 4px; }
+  .scroll::-webkit-scrollbar-thumb { background: rgba(31,27,58,0.15); border-radius: 4px; }
+
+  /* sky greeting */
+  .sky-A {
+    background: linear-gradient(165deg, #EEF0FE 0%, #F8F1FA 55%, #FAF1E6 100%);
+  }
+  .sky-B {
+    background: linear-gradient(165deg, #F4F2FA 0%, #F8F7FF 100%);
+  }
+  .sky-C {
+    background: linear-gradient(165deg, #F4ECEC 0%, #F8F4F0 60%, #EEF0FE 100%);
+  }
+
+  .greet-card {
+    border-radius:22px; padding:18px 18px 20px;
+    border:1px solid var(--gq-hair);
+    position:relative; overflow:hidden;
+  }
+
+  .observation-card {
+    background:white; border:1px solid var(--gq-hair);
+    border-radius:18px; padding:14px;
+  }
+  .standout-card {
+    background: linear-gradient(135deg, #FFFDF6, #F6FBF4);
+    border:1px solid rgba(156,196,135,0.35); border-radius:18px; padding:14px 16px;
+  }
+  .prompt-card {
+    background:white; border:1px solid var(--gq-hair); border-radius:18px; padding:14px 14px 16px;
+  }
+  .crisis-soft {
+    background: linear-gradient(135deg, #F4ECEC, #FFE8E8);
+    border:1px solid rgba(196,74,74,0.18); border-radius:18px; padding:14px;
+  }
+
+  .chip {
+    padding:9px 13px; border-radius:9999px; font-size:12px; font-weight:700;
+    background:var(--gq-primary-soft); color:var(--gq-primary-dk);
+    border:1px solid rgba(102,126,234,0.18);
+  }
+  .chip-on { background: var(--gq-primary); color:white; border-color: var(--gq-primary); }
+  .chip-quiet { background: rgba(248,247,255,0.8); color: var(--gq-ink-3); border:1px solid var(--gq-hair); }
+
+  .crisis-link {
+    display:inline-flex; align-items:center; gap:6px;
+    color:#B33636; font-weight:800; font-size:12px;
+  }
+
+  /* mood bars */
+  .mood-bar-row { display:flex; align-items:flex-end; justify-content:space-between; gap:6px; height:118px; padding:0 2px; }
+  .mood-bar { flex:1; border-radius:7px 7px 6px 6px; position:relative; }
+  .mood-bar.dashed {
+    background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(31,27,58,0.1) 4px 5px);
+    border:1px dashed rgba(31,27,58,0.18); height:18%;
+  }
+  .mood-bar.today { box-shadow: 0 0 0 2px white, 0 0 0 4px var(--gq-primary); }
+
+  .day-labels { display:flex; justify-content:space-between; margin-top:6px; padding:0 2px; gap:6px; }
+  .day-labels > div { flex:1; text-align:center; font-size:10.5px; font-weight:700; color:var(--gq-ink-3); }
+  .day-labels > div.today { color: var(--gq-primary-dk); }
+
+  .obs-quote {
+    font-size:13px; color:var(--gq-ink-2); font-weight:500; line-height:1.55;
+    border-left: 3px solid var(--gq-primary); padding-left:11px;
+  }
+
+  .pill { padding:5px 10px; border-radius:9999px; font-size:10.5px; font-weight:800; letter-spacing:0.4px; }
+
+  /* check-in faces */
+  .face-row { display:flex; gap:8px; }
+  .face-pill {
+    flex:1; aspect-ratio: 1/1.05;
+    border-radius:18px; background:white; border:1px solid var(--gq-hair);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  }
+  .face-pill .lbl { font-size:9.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.4px; text-transform:uppercase; }
+  .face-pill .glyph { font-size:28px; line-height:1; }
+  .face-pill.sel { border:2px solid var(--gq-primary); background: var(--gq-primary-soft); box-shadow: 0 6px 16px -8px rgba(102,126,234,0.45); }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Sunday weekly review
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· Full week &nbsp;Â·&nbsp; B Â· Light week &nbsp;Â·&nbsp; C Â· Heavy week aftermath</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Same scaffold, three voices. Celebrate without comparing. Show pattern without diagnosing. One suggestion, never prescribed.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· FULL WEEK -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Full week">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Full engagement Â· 5 logs</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">"Quiet wins count." No exclamations, no medals.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen sky-A" data-widget="WeeklyReviewScreen(state: .full)">
+          <div class="nav-bar">
+            <div class="eyebrow">Week of Mar 18 â 24</div>
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:32px; height:32px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll">
+            <!-- GREETING -->
+            <div class="greet-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.55)); backdrop-filter: blur(6px);"
+                 data-widget="GreetingCard(time: .sundayEvening, state: .full)">
+              <!-- soft sun moon glyph -->
+              <div class="absolute" style="top:-26px; right:-18px; width:130px; height:130px; border-radius:50%; background: radial-gradient(circle at 30% 30%, rgba(217,166,120,0.35), rgba(217,166,120,0) 65%);"></div>
+              <div class="eyebrow" style="position:relative;">SUNDAY EVENING, FRIEND</div>
+              <h1 style="font-size:24px; font-weight:800; color:var(--gq-ink); line-height:1.2; letter-spacing:-0.6px; margin-top:6px; position:relative;">
+                You showed up <span style="color:var(--gq-primary-dk);">5 times</span> this week.
+              </h1>
+              <p style="font-size:13px; color:var(--gq-ink-2); font-weight:600; margin-top:6px; position:relative;">
+                Quiet wins count.
+              </p>
+            </div>
+
+            <!-- MOOD CHART -->
+            <div class="observation-card" style="margin-top:14px;" data-widget="MoodShapeChart(week, today: .Sun)">
+              <div class="flex items-baseline justify-between">
+                <div class="eyebrow">THIS WEEK'S MOOD-SHAPE</div>
+                <div class="pill" style="background: var(--gq-primary-soft); color: var(--gq-primary-dk);">5 / 7 LOGGED</div>
+              </div>
+              <div class="mood-bar-row" style="margin-top:12px;">
+                <div class="mood-bar" style="height:40%;  background:var(--mood-2);"></div>
+                <div class="mood-bar" style="height:62%;  background:var(--mood-3);"></div>
+                <div class="mood-bar" style="height:88%;  background:var(--mood-5); position:relative;">
+                  <div class="absolute" style="top:-22px; left:50%; transform:translateX(-50%); width:max-content; padding:3px 7px; background:var(--gq-ink); color:white; border-radius:6px; font-size:9.5px; font-weight:800; letter-spacing:0.5px;">LIFTED</div>
+                </div>
+                <div class="mood-bar" style="height:55%;  background:var(--mood-3);"></div>
+                <div class="mood-bar" style="height:25%;  background:var(--mood-1);"></div>
+                <div class="mood-bar dashed"></div>
+                <div class="mood-bar today" style="height:50%; background:var(--mood-4);"></div>
+              </div>
+              <div class="day-labels">
+                <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div class="today">Sun</div>
+              </div>
+              <div class="obs-quote" style="margin-top:14px;">
+                Wednesday lifted you up. Friday felt heavy. The arc was real, and you stayed with it.
+              </div>
+              <div style="margin-top:10px; font-size:11.5px; color:var(--gq-primary-dk); font-weight:700; display:flex; align-items:center; gap:6px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3" stroke="#4F63C9" stroke-width="2" stroke-linecap="round"/></svg>
+                A pattern Â· you felt better after journaling on 3 days
+              </div>
+            </div>
+
+            <!-- STANDOUT MOMENT -->
+            <div class="standout-card" style="margin-top:14px;" data-widget="StandoutMomentCard(source: .journal)">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8 8 4 8 4 14a8 8 0 0016 0c0-6-4-6-8-12z" fill="#9CC487"/></svg>
+                <div class="eyebrow" style="color:#5C7A48;">ONE THING WORTH REMEMBERING</div>
+              </div>
+              <p style="font-size:13.5px; color:var(--gq-ink); font-weight:600; line-height:1.5; margin-top:6px; font-style:italic;">
+                "walked for 20 mins, said no to a meeting, slept by 10."
+              </p>
+              <div style="font-size:11px; color:var(--gq-ink-3); font-weight:700; margin-top:6px; letter-spacing:0.4px;">
+                â YOU, TUESDAY
+              </div>
+            </div>
+
+            <!-- NEXT WEEK PROMPT -->
+            <div class="prompt-card" style="margin-top:14px;" data-widget="NextWeekPromptCard(state: .full)">
+              <div class="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="#4F63C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Try one tiny thing this week?</div>
+              </div>
+              <div class="flex flex-wrap gap-1.5" style="margin-top:10px;">
+                <span class="chip">Log mood at lunch</span>
+                <span class="chip chip-on">Try 1 minute of breathing</span>
+                <span class="chip">Write 3 words on Sunday</span>
+              </div>
+              <div style="text-align:center; margin-top:10px;">
+                <button class="gq-tap" style="font-size:11.5px; font-weight:700; color:var(--gq-ink-3); text-decoration:underline; text-underline-offset:3px;">
+                  Skip this â I'll figure it out
+                </button>
+              </div>
+            </div>
+
+            <!-- THERAPIST -->
+            <div style="margin-top:12px;">
+              <button class="gq-tap w-full flex items-center justify-center gap-1.5"
+                      data-widget="ShareWithTherapistBtn()"
+                      style="padding:11px; border-radius:9999px; background:white; border:1px solid var(--gq-hair); color:var(--gq-ink-2); font-size:12px; font-weight:800;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 8l9 6 9-6M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="#4A4670" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                Share with my therapist
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">WeeklyReviewScreen(state: WeekState)</code></li>
+          <li><code class="text-[11px]">GreetingCard(time, state, count)</code><br/><span style="color:var(--gq-ink-3);">copy + sky gradient swap by state</span></li>
+          <li><code class="text-[11px]">MoodShapeChart(days, today, annotations)</code><br/><span style="color:var(--gq-ink-3);">accepts inline labels at any day Â· "LIFTED"</span></li>
+          <li><code class="text-[11px]">PatternHint(confidence: â¥0.7)</code><br/><span style="color:var(--gq-ink-3);">renders only when detector confident</span></li>
+          <li><code class="text-[11px]">StandoutMomentCard(source: .journal | .moodOnly)</code></li>
+          <li><code class="text-[11px]">NextWeekPromptCard(chips, multi)</code></li>
+          <li><code class="text-[11px]">ShareWithTherapistBtn()</code><br/><span style="color:var(--gq-ink-3);">opens mailto with chart PNG attached</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Voice rules</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>No "great job!" Â· no exclamations</li>
+          <li>Numbers as recognition, not score</li>
+          <li>Quote from <em>their</em> own words when possible</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· LIGHT WEEK -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Light week">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Light week Â· 2 logs</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">"Light weeks are part of the rhythm." Rest is the headline option.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen sky-B" data-widget="WeeklyReviewScreen(state: .light)">
+          <div class="nav-bar">
+            <div class="eyebrow">Week of Mar 11 â 17</div>
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:32px; height:32px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll">
+            <!-- GREETING -->
+            <div class="greet-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.55));"
+                 data-widget="GreetingCard(state: .light)">
+              <div class="absolute" style="top:-26px; right:-18px; width:130px; height:130px; border-radius:50%; background: radial-gradient(circle at 30% 30%, rgba(102,126,234,0.18), rgba(102,126,234,0) 65%);"></div>
+              <div class="eyebrow" style="position:relative;">SUNDAY EVENING, FRIEND</div>
+              <h1 style="font-size:23px; font-weight:800; color:var(--gq-ink); line-height:1.2; letter-spacing:-0.5px; margin-top:6px; position:relative;">
+                You logged twice. <span style="color:var(--gq-primary-dk);">That's something.</span>
+              </h1>
+              <p style="font-size:13px; color:var(--gq-ink-2); font-weight:600; margin-top:6px; position:relative;">
+                Light weeks are part of the rhythm.
+              </p>
+            </div>
+
+            <!-- MOOD CHART -->
+            <div class="observation-card" style="margin-top:14px;" data-widget="MoodShapeChart(week, today: .Sun)">
+              <div class="flex items-baseline justify-between">
+                <div class="eyebrow">THIS WEEK'S MOOD-SHAPE</div>
+                <div class="pill" style="background: rgba(139,134,171,0.14); color: var(--gq-ink-3);">2 / 7 LOGGED</div>
+              </div>
+              <div class="mood-bar-row" style="margin-top:12px;">
+                <div class="mood-bar" style="height:55%;  background:var(--mood-3);"></div>
+                <div class="mood-bar dashed"></div>
+                <div class="mood-bar dashed"></div>
+                <div class="mood-bar" style="height:35%;  background:var(--mood-2);"></div>
+                <div class="mood-bar dashed"></div>
+                <div class="mood-bar dashed"></div>
+                <div class="mood-bar dashed today" style="border-color: var(--gq-primary);"></div>
+              </div>
+              <div class="day-labels">
+                <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div class="today">Sun</div>
+              </div>
+              <div class="obs-quote" style="margin-top:14px;">
+                Two data points isn't much. Want to use this week to log a few more, or just rest?
+              </div>
+            </div>
+
+            <!-- HEADS UP CARD -->
+            <div style="margin-top:14px; background: rgba(217,166,120,0.10); border:1px solid rgba(217,166,120,0.30); border-radius:18px; padding:14px;"
+                 data-widget="StandoutMomentCard(source: .chatKeyword)">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#A37340" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#A37340" stroke-width="2" stroke-linecap="round"/></svg>
+                <div class="eyebrow" style="color:#A37340;">HEADS UP</div>
+              </div>
+              <p style="font-size:13.5px; color:var(--gq-ink); font-weight:600; line-height:1.5; margin-top:6px;">
+                Tuesday's chat mentioned <span style="background:rgba(255,107,107,0.12); padding:1px 6px; border-radius:5px; color:#9C3D3D; font-weight:800;">"can't keep up"</span>. Worth chewing on.
+              </p>
+            </div>
+
+            <!-- NEXT WEEK PROMPT -->
+            <div class="prompt-card" style="margin-top:14px;" data-widget="NextWeekPromptCard(state: .light, emphasizeRest: true)">
+              <div class="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="#4F63C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Try one tiny thing this week?</div>
+              </div>
+              <div class="flex flex-wrap gap-1.5" style="margin-top:10px;">
+                <span class="chip chip-quiet">Log mood at lunch</span>
+                <span class="chip chip-quiet">1 minute of breathing</span>
+                <span class="chip chip-quiet">Write 3 words on Sunday</span>
+              </div>
+              <div style="text-align:center; margin-top:14px;">
+                <button class="gq-tap" style="padding:11px 18px; border-radius:9999px; background:var(--gq-primary); color:white; font-size:13px; font-weight:800; box-shadow: 0 10px 22px -10px rgba(102,126,234,0.55);">
+                  Just rest
+                </button>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600; margin-top:6px;">
+                  Rest is a valid plan.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">GreetingCard(state: .light)</code><br/><span style="color:var(--gq-ink-3);">no count badge in headline; copy reframes</span></li>
+          <li><code class="text-[11px]">MoodShapeChart</code> renders dashed bars for missing days</li>
+          <li><code class="text-[11px]">StandoutMomentCard(source: .chatKeyword)</code><br/><span style="color:var(--gq-ink-3);">surfaces a flagged phrase from chat NLP</span></li>
+          <li><code class="text-[11px]">NextWeekPromptCard.emphasizeRest</code><br/><span style="color:var(--gq-ink-3);">chips dim, "Just rest" promoted to primary</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">State decision Â· WeekState</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">.heavy</code> if any crisisFlag this week â C</li>
+          <li><code class="text-[11px]">.light</code> if logCount â¤ 2 â B</li>
+          <li><code class="text-[11px]">.full</code> otherwise â A</li>
+          <li>Decided server-side, sent with weekly digest payload</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· HEAVY WEEK AFTERMATH -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Heavy week">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Heavy week Â· post-crisis</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">No charts, no chips. One question: how are you now?</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen sky-C" data-widget="WeeklyReviewScreen(state: .heavy)">
+          <div class="nav-bar">
+            <div class="eyebrow">Week of Mar 4 â 10</div>
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:32px; height:32px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll">
+            <!-- GREETING -->
+            <div class="greet-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));"
+                 data-widget="GreetingCard(state: .heavy)">
+              <div class="absolute" style="top:-30px; right:-20px; width:140px; height:140px; border-radius:50%; background: radial-gradient(circle at 30% 30%, rgba(255,107,107,0.18), rgba(255,107,107,0) 65%);"></div>
+              <div class="eyebrow" style="position:relative;">SUNDAY, FRIEND. GLAD YOU'RE HERE.</div>
+              <h1 style="font-size:22px; font-weight:800; color:var(--gq-ink); line-height:1.25; letter-spacing:-0.5px; margin-top:6px; position:relative;">
+                We had a heavy moment <span style="color:#9C3D3D;">Wednesday</span>.
+              </h1>
+              <p style="font-size:14px; color:var(--gq-ink-2); font-weight:600; margin-top:6px; position:relative;">
+                How are you now?
+              </p>
+            </div>
+
+            <!-- CHECK-IN ROW -->
+            <div style="margin-top:14px;" data-widget="CalmCheckInRow(scale: 4)">
+              <div class="eyebrow" style="margin-bottom:8px;">A QUIET CHECK-IN</div>
+              <div class="face-row">
+                <button class="face-pill gq-tap"><span class="glyph">ð</span><span class="lbl">low</span></button>
+                <button class="face-pill gq-tap"><span class="glyph">ð</span><span class="lbl">flat</span></button>
+                <button class="face-pill gq-tap sel"><span class="glyph">ð</span><span class="lbl">okay</span></button>
+                <button class="face-pill gq-tap"><span class="glyph">ð±</span><span class="lbl">growing</span></button>
+              </div>
+            </div>
+
+            <!-- ALWAYS VISIBLE 988 -->
+            <div class="crisis-soft" style="margin-top:14px; display:flex; align-items:center; gap:10px;"
+                 data-widget="CrisisLineRow(alwaysVisible: true)">
+              <div class="rounded-full flex items-center justify-center flex-shrink-0" style="width:34px; height:34px; background:white; border:1px solid rgba(196,74,74,0.18);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="#B33636" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div style="font-size:13px; font-weight:800; color:var(--gq-ink); line-height:1.3;">Talk to someone now</div>
+                <div style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4; margin-top:1px;">988 Â· always free, always available</div>
+              </div>
+              <button class="gq-tap" style="padding:8px 12px; border-radius:9999px; background:#B33636; color:white; font-size:11.5px; font-weight:800;">Call 988</button>
+            </div>
+
+            <!-- WHAT'S BEEN HELPING -->
+            <div class="observation-card" style="margin-top:14px;" data-widget="WhatHelpedField()">
+              <div class="eyebrow">WHAT'S BEEN HELPING?</div>
+              <div style="margin-top:8px; padding:11px 13px; border-radius:12px; background: var(--gq-bg); border:1px solid var(--gq-hair); display:flex; align-items:center;">
+                <span style="flex:1; font-size:13px; color:var(--gq-ink-3); font-weight:500;">walking, the bench by the windowâ¦</span>
+                <span style="font-size:10px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.4px;">OPTIONAL</span>
+              </div>
+            </div>
+
+            <!-- PRIMARY CTA -->
+            <div style="margin-top:16px;">
+              <button class="gq-tap w-full flex items-center justify-center gap-2"
+                      data-widget="OpenChatPrimaryBtn()"
+                      style="padding:14px; border-radius:9999px; background:var(--gq-primary); color:white; font-size:14px; font-weight:800; box-shadow: 0 12px 28px -10px rgba(102,126,234,0.55);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>
+                Open chat with Alex
+              </button>
+              <div class="text-center" style="font-size:11px; color:var(--gq-ink-3); font-weight:600; margin-top:6px;">
+                No agenda. Just there if you want.
+              </div>
+            </div>
+
+            <!-- SAVE FOR THERAPIST -->
+            <div style="margin-top:14px; text-align:center;">
+              <button class="gq-tap" style="font-size:12px; font-weight:800; color:var(--gq-primary-dk); text-decoration:underline; text-underline-offset:3px;">
+                Save this week to share with my therapist
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">GreetingCard(state: .heavy, lastEventDay)</code></li>
+          <li><code class="text-[11px]">CalmCheckInRow(scale: 4, faces)</code><br/><span style="color:var(--gq-ink-3);">larger hit targets Â· 4 faces, not 5/7</span></li>
+          <li><code class="text-[11px]">CrisisLineRow(alwaysVisible)</code><br/><span style="color:var(--gq-ink-3);">988 tap deep-links to <code>tel:</code> Â· platform-conditional</span></li>
+          <li><code class="text-[11px]">WhatHelpedField(optional: true)</code></li>
+          <li><code class="text-[11px]">OpenChatPrimaryBtn()</code><br/><span style="color:var(--gq-ink-3);">single CTA Â· replaces all chips/prompts</span></li>
+          <li><code class="text-[11px]">SaveWeekToTherapistLink()</code></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Things deliberately removed</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>No mood-shape chart â visualizing a heavy week as bars feels diagnostic</li>
+          <li>No "next week" chips â no homework after a hard week</li>
+          <li>No standout-moment quote â risk of resurfacing the wrong thing</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Shared scaffold</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Sky gradient header swaps by state (warm / cool / dusk-rose)</li>
+          <li>Greeting â Body slot â Single CTA â Optional therapist link</li>
+          <li>Body slot is the only state-divergent region</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Quests</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --gq-good:       #FFB59B;
+    --gq-great:      #9CC487;
+    --gq-okay:       #C9B7F0;
+  }
+  html, body { margin:0; padding:0; background:#EAE6F5;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    color:var(--gq-ink); -webkit-font-smoothing:antialiased; }
+  * { box-sizing:border-box; }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone { width:390px; height:844px; border-radius:56px; background:var(--gq-bg);
+    overflow:hidden; position:relative;
+    box-shadow: 0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05); }
+  .gq-island { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+  .eyebrow { font-size:10.5px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.7px; text-transform:uppercase; }
+  .nav-bar {
+    position:absolute; top:54px; left:0; right:0; padding:8px 16px;
+    display:flex; align-items:center; gap:10px; height:50px; z-index:5;
+    background:rgba(248,247,255,0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--gq-hair);
+  }
+  .nav-icon-btn { width:32px; height:32px; border-radius:50%; background:white; border:1px solid var(--gq-hair); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .scroll {
+    position:absolute; left:0; right:0; top:104px; bottom:0;
+    padding:14px 16px 30px; overflow-y:auto; overflow-x:hidden;
+  }
+  .scroll::-webkit-scrollbar { width:4px; }
+  .scroll::-webkit-scrollbar-thumb { background: rgba(31,27,58,0.15); border-radius:4px; }
+
+  /* A Â· in-progress card */
+  .ip-card {
+    background: linear-gradient(135deg, #EEF0FE 0%, #FFF1EC 100%);
+    border:1px solid rgba(102,126,234,0.20); border-radius:18px;
+    padding:14px; display:flex; align-items:center; gap:12px;
+  }
+  .progress-ring-sm { width:48px; height:48px; flex-shrink:0; }
+  .progress-ring-sm .center {
+    font-size:11px; font-weight:800; color:var(--gq-primary-dk);
+    text-anchor:middle; dominant-baseline:central;
+  }
+
+  /* A Â· browse cards */
+  .filter-chip {
+    padding:7px 12px; border-radius:9999px; background:white; border:1px solid var(--gq-hair);
+    font-size:11.5px; font-weight:700; color:var(--gq-ink-2); white-space:nowrap;
+  }
+  .filter-chip.on { background:var(--gq-primary); border-color:var(--gq-primary); color:white; }
+
+  .quest-card {
+    background:white; border:1px solid var(--gq-hair); border-radius:16px;
+    padding:13px; display:flex; flex-direction:column; gap:6px; min-height:128px;
+    transition: transform 200ms cubic-bezier(.22,.94,.32,1);
+  }
+  .quest-card .ic {
+    width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .quest-card:active { transform: scale(0.99); }
+  .star-row { display:flex; gap:1px; }
+  .star-row .s { font-size:9px; color:var(--gq-primary-dk); }
+  .star-row .s.off { color: rgba(102,126,234,0.18); }
+
+  .cat-chip {
+    display:inline-flex; padding:3px 7px; background:rgba(102,126,234,0.10);
+    border-radius:9999px; font-size:9.5px; font-weight:800; color:var(--gq-primary-dk); letter-spacing:0.3px; text-transform:uppercase;
+  }
+
+  /* B Â· timeline */
+  .day-row {
+    display:flex; align-items:center; gap:10px; padding:9px 4px; position:relative;
+  }
+  .day-num {
+    width:28px; height:28px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:800; color:var(--gq-primary-dk);
+    background: var(--gq-primary-soft); border: 1px solid rgba(102,126,234,0.25);
+  }
+  .day-line {
+    position:absolute; left:13px; top:30px; bottom:-12px; width:2px;
+    background: rgba(102,126,234,0.18);
+  }
+  .day-row:last-child .day-line { display:none; }
+  .day-text {
+    font-size:12.5px; font-weight:700; color:var(--gq-ink-2); line-height:1.4;
+  }
+  .day-text strong { color:var(--gq-ink); font-weight:800; }
+
+  /* C Â· big ring */
+  .ring-wrap { width:160px; height:160px; margin: 4px auto 0; position:relative; }
+  .ring-wrap .center-d {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+
+  /* C Â· numbered fields */
+  .numbered-field {
+    display:flex; align-items:center; gap:10px;
+    background:white; border:1.5px solid var(--gq-hair); border-radius:14px;
+    padding:11px 12px; min-height:54px;
+  }
+  .numbered-field .num {
+    width:24px; height:24px; border-radius:7px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800; color:var(--gq-primary-dk);
+    background: var(--gq-primary-soft);
+  }
+  .numbered-field .input {
+    flex:1; min-width:0; font-size:13px; color:var(--gq-ink); font-family: 'Fraunces', serif; font-weight:400;
+  }
+  .numbered-field .input.placeholder { color:var(--gq-ink-3); font-style: italic; }
+
+  /* C Â· day dots row */
+  .day-dots { display:flex; gap:5px; justify-content:center; }
+  .day-dots .dot { width:7px; height:7px; border-radius:50%; }
+  .day-dots .dot.done { background: var(--gq-primary); }
+  .day-dots .dot.now {
+    background: var(--gq-primary); position:relative;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .day-dots .dot.future { background: rgba(102,126,234,0.20); border:1px solid rgba(102,126,234,0.30); }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(102,126,234,0.55); }
+    50% { box-shadow: 0 0 0 6px rgba(102,126,234,0); }
+  }
+
+  .quote-card {
+    background: linear-gradient(135deg, rgba(102,126,234,0.10), rgba(196,154,217,0.08));
+    border:1px solid rgba(102,126,234,0.18); border-radius:16px;
+    padding:14px;
+  }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Quests
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· List &nbsp;Â·&nbsp; B Â· Preview &nbsp;Â·&nbsp; C Â· In-progress</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Gentle structure for harder days. Multi-day micro-interventions, framed as invitations â never commitments. Skipping is graceful.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· QUEST LIST -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Quests Â· list">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Quest list Â· Quests tab destination</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">In-progress at top, browse grid below, "Tell Alex" escape hatch.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="QuestListScreen()">
+          <div class="nav-bar">
+            <button class="gq-tap nav-icon-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h1 style="font-size:18px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">Quests</h1>
+            <button class="gq-tap nav-icon-btn ml-auto" data-widget="WhatAreQuestsInfoButton()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#4A4670" stroke-width="2"/><path d="M12 7v.5M12 11v6" stroke="#4A4670" stroke-width="2.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll">
+            <!-- HEADER STRIP -->
+            <div style="padding: 0 4px;">
+              <div class="eyebrow">YOUR CALL Â· SKIP ANYTIME</div>
+              <h2 style="font-family:'Fraunces', serif; font-size:21px; font-weight:600; color:var(--gq-ink); letter-spacing:-0.4px; line-height:1.2; margin-top:4px;">
+                Gentle structure for harder days.
+              </h2>
+            </div>
+
+            <!-- IN PROGRESS -->
+            <div style="margin-top:18px;">
+              <div class="eyebrow" style="padding-left:4px;">CONTINUE WHAT YOU STARTED</div>
+              <div class="space-y-2 mt-2" data-widget="InProgressQuestList()">
+                <button class="ip-card gq-tap w-full text-left" data-widget="ActiveQuestCard(id, day:4, total:7)">
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:14.5px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">7-day morning anchor</div>
+                    <div style="font-size:11.5px; color:var(--gq-ink-2); font-weight:700; margin-top:3px;">Day 4 of 7 Â· breakfast + 5 min outside</div>
+                  </div>
+                  <svg class="progress-ring-sm" viewBox="0 0 48 48" data-widget="QuestProgressRing(small, 4/7)">
+                    <circle cx="24" cy="24" r="18" stroke="rgba(102,126,234,0.18)" stroke-width="4" fill="none"/>
+                    <circle cx="24" cy="24" r="18" stroke="#667EEA" stroke-width="4" fill="none"
+                            stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="48.4"
+                            transform="rotate(-90 24 24)"/>
+                    <text x="24" y="24" class="center">4/7</text>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- BROWSE -->
+            <div style="margin-top:20px;">
+              <div class="eyebrow" style="padding-left:4px;">QUESTS FORâ¦</div>
+              <!-- filter chips -->
+              <div style="margin: 8px -16px 0; padding: 0 16px; overflow-x:auto; scrollbar-width:none;" data-widget="QuestCategoryFilter()">
+                <div class="flex gap-1.5" style="width:max-content;">
+                  <button class="filter-chip gq-tap on">Mornings</button>
+                  <button class="filter-chip gq-tap">Sleep</button>
+                  <button class="filter-chip gq-tap">Anxious days</button>
+                  <button class="filter-chip gq-tap">Heavy stretches</button>
+                  <button class="filter-chip gq-tap">Connection</button>
+                  <button class="filter-chip gq-tap">Body</button>
+                </div>
+              </div>
+
+              <!-- 2-col grid -->
+              <div class="grid grid-cols-2 gap-2 mt-3" data-widget="QuestBrowseGrid(items)">
+                <button class="quest-card gq-tap text-left" data-widget="QuestCard(id: 3goodthings)">
+                  <div class="flex items-start justify-between">
+                    <div class="ic" style="background:rgba(156,196,135,0.18);">ð±</div>
+                    <div class="star-row"><span class="s">â­</span><span class="s off">â­</span><span class="s off">â­</span></div>
+                  </div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.2px; line-height:1.25; margin-top:4px;">3 Good Things</div>
+                  <div style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; margin-top:2px;">7 days Â· gentle</div>
+                  <div class="mt-auto pt-1.5"><span class="cat-chip">GRATITUDE</span></div>
+                </button>
+
+                <button class="quest-card gq-tap text-left" data-widget="QuestCard(id: phonedown)">
+                  <div class="flex items-start justify-between">
+                    <div class="ic" style="background:rgba(102,126,234,0.14);">ðµ</div>
+                    <div class="star-row"><span class="s">â­</span><span class="s">â­</span><span class="s off">â­</span></div>
+                  </div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.2px; line-height:1.25; margin-top:4px;">Phone-down hour</div>
+                  <div style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; margin-top:2px;">5 days Â· moderate</div>
+                  <div class="mt-auto pt-1.5"><span class="cat-chip">ATTENTION</span></div>
+                </button>
+
+                <button class="quest-card gq-tap text-left" data-widget="QuestCard(id: walkmeeting)">
+                  <div class="flex items-start justify-between">
+                    <div class="ic" style="background:rgba(255,181,155,0.22);">ð¶</div>
+                    <div class="star-row"><span class="s">â­</span><span class="s off">â­</span><span class="s off">â­</span></div>
+                  </div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.2px; line-height:1.25; margin-top:4px;">Walking meeting (1 a day)</div>
+                  <div style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; margin-top:2px;">3 days Â· gentle</div>
+                  <div class="mt-auto pt-1.5"><span class="cat-chip">BODY</span></div>
+                </button>
+
+                <button class="quest-card gq-tap text-left" data-widget="QuestCard(id: sleepwinddown)">
+                  <div class="flex items-start justify-between">
+                    <div class="ic" style="background:rgba(196,154,217,0.20);">ð</div>
+                    <div class="star-row"><span class="s">â­</span><span class="s">â­</span><span class="s off">â­</span></div>
+                  </div>
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.2px; line-height:1.25; margin-top:4px;">Sleep wind-down</div>
+                  <div style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; margin-top:2px;">14 days Â· moderate</div>
+                  <div class="mt-auto pt-1.5"><span class="cat-chip">SLEEP</span></div>
+                </button>
+              </div>
+            </div>
+
+            <!-- TELL ALEX -->
+            <div style="margin-top:18px; text-align:center;">
+              <a href="#" class="gq-tap inline-flex items-center gap-1" data-widget="AskAlexForQuestLink()" style="font-size:12.5px; font-weight:800; color:var(--gq-primary-dk); padding:8px 14px; background:rgba(102,126,234,0.08); border-radius:9999px;">
+                Don't see what you need? Tell Alex
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="#4F63C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+
+            <div style="height:24px;"></div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">QuestListScreen()</code></li>
+          <li><code class="text-[11px]">InProgressQuestList()</code> Â· reads <code class="text-[11px]">QuestsEngine.activeQuests</code></li>
+          <li><code class="text-[11px]">ActiveQuestCard(id, day, total)</code> Â· tap â <code class="text-[11px]">QuestActiveScreen</code></li>
+          <li><code class="text-[11px]">QuestCategoryFilter()</code> Â· horizontal chips, single-select; categories aid discovery, never gate</li>
+          <li><code class="text-[11px]">QuestBrowseGrid(items)</code> + <code class="text-[11px]">QuestCard(id)</code></li>
+          <li><code class="text-[11px]">QuestProgressRing(size, value/total)</code> Â· shared with C</li>
+          <li><code class="text-[11px]">AskAlexForQuestLink()</code> Â· opens chat with prefill <code class="text-[11px]">"I need a quest forâ¦"</code></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Difficulty rubric</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>â­ <strong>Gentle</strong> â &lt;3 min/day, no behaviour change required</li>
+          <li>â­â­ <strong>Moderate</strong> â 5â15 min/day, mild behaviour change</li>
+          <li>â­â­â­ <strong>Stretching</strong> â sustained, multi-aspect; only surfaced after 2+ completed quests</li>
+          <li>Stars are descriptive, not unlockable. Every quest is always tappable.</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· QUEST PREVIEW -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Quest preview Â· 3 Good Things">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Preview Â· 3 Good Things Â· 7 days</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Why-it-works, day-by-day shape, "Just save for later" escape.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="QuestPreviewScreen(id: 3goodthings)">
+          <div class="nav-bar">
+            <h1 style="font-size:14px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.4px; text-transform:uppercase;">QUEST PREVIEW</h1>
+            <button class="gq-tap nav-icon-btn ml-auto">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll">
+            <!-- HERO -->
+            <div data-widget="QuestPreviewHero(quest)">
+              <div class="flex items-center gap-2.5">
+                <div class="ic" style="width:42px; height:42px; border-radius:13px; background:rgba(156,196,135,0.20); display:flex; align-items:center; justify-content:center; font-size:22px;">ð±</div>
+                <div>
+                  <h1 style="font-size:24px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.5px; line-height:1;">3 Good Things</h1>
+                  <div style="font-size:11.5px; color:var(--gq-ink-2); font-weight:700; margin-top:3px;">7 days Â· â­ gentle Â· gratitude</div>
+                </div>
+              </div>
+
+              <!-- pull quote -->
+              <div class="quote-card mt-3">
+                <div style="font-family:'Fraunces', serif; font-size:15.5px; font-weight:500; color:var(--gq-ink); line-height:1.4; letter-spacing:-0.3px;">
+                  "The simplest gratitude practice â three things, before bed."
+                </div>
+              </div>
+            </div>
+
+            <!-- WHY THIS WORKS -->
+            <article style="margin-top:14px; padding:14px; background:rgba(102,126,234,0.07); border:1px solid rgba(102,126,234,0.18); border-radius:14px;" data-widget="QuestRationaleCard()">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">WHY THIS WORKS</div>
+              <p style="font-size:13px; color:var(--gq-ink); font-weight:600; line-height:1.5; margin-top:5px;">
+                When you write three good things, your brain practices noticing. Over 7 days, that practice compounds â even small moments stick.
+              </p>
+              <button class="gq-tap mt-2 inline-flex items-center gap-1" style="font-size:11px; font-weight:800; color:var(--gq-primary-dk);">
+                From research
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#4F63C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </article>
+
+            <!-- THE SHAPE -->
+            <div style="margin-top:16px;" data-widget="QuestDayByDayTimeline(steps: 7)">
+              <div class="eyebrow" style="padding-left:4px;">WHAT YOU'LL DO, DAY BY DAY</div>
+              <div style="margin-top:6px; padding: 4px 0;">
+                <div class="day-row"><div class="day-num">1</div><div class="day-text"><strong>Write any 3 good things</strong> Â· warm-up</div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">2</div><div class="day-text"><strong>3 things + a tiny note</strong> about each</div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">3</div><div class="day-text">Same â small notes still count</div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">4</div><div class="day-text"><strong>3 things you noticed in others</strong></div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">5</div><div class="day-text">Same â notice quietly</div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">6</div><div class="day-text"><strong>3 things about yourself</strong></div><div class="day-line"></div></div>
+                <div class="day-row"><div class="day-num">7</div><div class="day-text"><strong>Free-form</strong> â what stuck?</div></div>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <button class="gq-tap w-full" data-widget="StartQuestCTA()" style="margin-top:18px; padding:15px; border-radius:9999px; background:var(--gq-primary); color:white; font-size:14.5px; font-weight:800; letter-spacing:-0.2px; box-shadow: 0 16px 32px -12px rgba(102,126,234,0.55);">
+              Start quest
+            </button>
+            <div style="text-align:center; margin-top:8px;">
+              <button class="gq-tap" data-widget="SaveForLaterLink()" style="font-size:12px; font-weight:800; color:var(--gq-ink-2); text-decoration:underline; text-underline-offset:3px;">
+                Just save for later
+              </button>
+            </div>
+            <p style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; line-height:1.5; text-align:center; margin-top:10px;">
+              Skipping a day won't end the quest â life happens.
+            </p>
+
+            <div style="height:24px;"></div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">QuestPreviewScreen(id)</code> Â· existing 146-LOC stub</li>
+          <li><code class="text-[11px]">QuestPreviewHero(quest)</code></li>
+          <li><code class="text-[11px]">QuestRationaleCard()</code> Â· "Why this works" + collapsed citation</li>
+          <li><code class="text-[11px]">QuestDayByDayTimeline(steps)</code><br/><span style="color:var(--gq-ink-3);">Reads from <code>quests_engine.dart</code> step shape â design renders whatever shape engine emits, no assumed schema</span></li>
+          <li><code class="text-[11px]">StartQuestCTA()</code> Â· fires <code>QuestsEngine.start(id)</code></li>
+          <li><code class="text-[11px]">SaveForLaterLink()</code> Â· pins to "Saved" in Settings, no list noise</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Engine contract</div>
+        <pre class="text-[10.5px] leading-relaxed" style="color:var(--gq-ink-2); white-space:pre-wrap; font-family: 'SF Mono', monospace;">QuestStep {
+  int day;
+  String title;     // bold portion
+  String? body;     // remaining
+  String? helper;   // optional sub
+  StepFieldShape fields;
+    // .none | .singleLine
+    // .numberedN(n: 3) â 3 Good Things
+    // .checklist(items)
+    // .mediaUpload
+}</pre>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· IN-PROGRESS Â· TODAY -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Quest in-progress Â· Day 3">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">In-progress Â· Day 3 of 7</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">3 numbered fields, "Mark today done" enables on first line, skip is 1-tap.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="QuestActiveScreen(id, day:3)">
+          <div class="nav-bar">
+            <button class="gq-tap nav-icon-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+            <h1 style="font-size:15px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">3 Good Things</h1>
+            <button class="gq-tap ml-auto" data-widget="PauseQuestLink()" style="padding:6px 11px; font-size:11px; font-weight:800; color:var(--gq-ink-2); background:rgba(31,27,58,0.06); border-radius:9999px;">
+              Pause quest
+            </button>
+          </div>
+
+          <div class="scroll" style="padding-top:12px; padding-bottom:14px;">
+            <!-- BIG RING -->
+            <div class="ring-wrap" data-widget="QuestProgressRing(large, 3/7)">
+              <svg viewBox="0 0 160 160" width="160" height="160">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#7C92F0"/>
+                    <stop offset="100%" stop-color="#4F63C9"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="80" cy="80" r="68" stroke="rgba(102,126,234,0.16)" stroke-width="10" fill="none"/>
+                <circle cx="80" cy="80" r="68" stroke="url(#ringGrad)" stroke-width="10" fill="none"
+                        stroke-linecap="round" stroke-dasharray="427.3" stroke-dashoffset="244.2"
+                        transform="rotate(-90 80 80)"/>
+              </svg>
+              <div class="center-d">
+                <div class="eyebrow" style="color:var(--gq-primary-dk);">DAY</div>
+                <div style="font-size:36px; font-weight:800; color:var(--gq-ink); letter-spacing:-1px; line-height:1;">3<span style="font-size:18px; color:var(--gq-ink-3); font-weight:700;"> of 7</span></div>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:700; margin-top:4px;">4 days to go</div>
+              </div>
+            </div>
+
+            <!-- TODAY'S PROMPT -->
+            <div style="padding: 18px 4px 0;" data-widget="QuestStepView(step.day=3)">
+              <div class="eyebrow">TODAY Â· DAY 3</div>
+              <h2 style="font-family:'Fraunces', serif; font-size:21px; font-weight:600; color:var(--gq-ink); letter-spacing:-0.4px; line-height:1.25; margin-top:5px;">
+                3 things you're grateful for, plus a tiny note about each.
+              </h2>
+              <p style="font-size:12.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.45; margin-top:6px;">
+                1 minute. No need to be poetic.
+              </p>
+            </div>
+
+            <!-- 3 FIELDS -->
+            <div class="space-y-2 mt-3" data-widget="NumberedFieldStack(n: 3)">
+              <div class="numbered-field" data-widget="NumberedField(idx: 1, filled: true)">
+                <div class="num">1</div>
+                <div class="input">Hot coffee, before anyone else was up.</div>
+              </div>
+              <div class="numbered-field" data-widget="NumberedField(idx: 2, filled: false)">
+                <div class="num">2</div>
+                <div class="input placeholder">_____ becauseâ¦</div>
+              </div>
+              <div class="numbered-field" data-widget="NumberedField(idx: 3, filled: false)">
+                <div class="num">3</div>
+                <div class="input placeholder">_____ becauseâ¦</div>
+              </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <button class="gq-tap w-full" data-widget="MarkTodayDoneCTA(enabled: filledCount >= 1)" style="margin-top:16px; padding:14px; border-radius:9999px; background:var(--gq-primary); color:white; font-size:14px; font-weight:800; letter-spacing:-0.2px; box-shadow: 0 14px 28px -12px rgba(102,126,234,0.55);">
+              Mark today done
+            </button>
+            <div style="text-align:center; margin-top:8px;">
+              <button class="gq-tap" data-widget="SkipTodayLink()" style="font-size:12px; font-weight:800; color:var(--gq-ink-2); text-decoration:underline; text-underline-offset:3px;">
+                Skip today (no judgment)
+              </button>
+            </div>
+            <p style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; line-height:1.5; text-align:center; margin-top:8px;">
+              Done streaks don't shame â quest continues either way.
+            </p>
+
+            <!-- DAY DOTS -->
+            <div style="margin-top:14px;" data-widget="QuestDayDotsRow(days: 7, today: 3)">
+              <div class="day-dots">
+                <span class="dot done"></span>
+                <span class="dot done"></span>
+                <span class="dot now"></span>
+                <span class="dot future"></span>
+                <span class="dot future"></span>
+                <span class="dot future"></span>
+                <span class="dot future"></span>
+              </div>
+            </div>
+
+            <div style="height:14px;"></div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">QuestActiveScreen(id, day)</code> Â· existing <code class="text-[11px]">quest_screen.dart</code></li>
+          <li><code class="text-[11px]">QuestProgressRing(size, value/total)</code> Â· shared with A</li>
+          <li><code class="text-[11px]">QuestStepView(step)</code> Â· renders title + helper</li>
+          <li><code class="text-[11px]">NumberedFieldStack(n)</code> Â· driven by <code class="text-[11px]">step.fields == .numberedN</code></li>
+          <li><code class="text-[11px]">MarkTodayDoneCTA(enabled)</code> Â· enabled when filledCount â¥ 1; never gates on N=N</li>
+          <li><code class="text-[11px]">SkipTodayLink()</code> Â· 1-tap, no confirm dialog, fires <code class="text-[11px]">QuestsEngine.skipDay()</code></li>
+          <li><code class="text-[11px]">PauseQuestLink()</code> Â· pauses without ending; resumable from list</li>
+          <li><code class="text-[11px]">QuestDayDotsRow(days, today)</code> Â· pulses today, never reds out skipped days</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">State machine</div>
+        <pre class="text-[10.5px] leading-relaxed" style="color:var(--gq-ink-2); white-space:pre-wrap; font-family: 'SF Mono', monospace;">list
+  â tap browse card
+preview
+  â Start quest
+inProgress (day = 1)
+  â Mark today done  â day++
+  â Skip today       â day++ (logged, not shamed)
+  â Pause quest      â paused; list shows resume
+inProgress (day = total)
+  â Mark/Skip
+completed
+  â optional
+journalHandoff (Mockup D, side-rail spec)</pre>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Completion screen Â· spec</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Headline: <em>"Day 7 done. Want to journal what you noticed?"</em></li>
+          <li>Single CTA â opens <code class="text-[11px]">JournalEditorSheet</code> with prefilled body: "Quest: 3 Good Things Â· what stuck for meâ¦"</li>
+          <li>Secondary: "Just close" â no badge, no animation, no fanfare. Factual celebration.</li>
+          <li>Skipped-day count is NEVER shown on completion screen, even on hover/tap. Engine logs it for retention metrics only.</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Anti-shame guardrails</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>No streak counter visible anywhere Â· skipped days fill same color as done days in dots row (subtle distinction via stroke only)</li>
+          <li>No leaderboards Â· no friend graph Â· no shareable streak cards</li>
+          <li>Push reminders for active quests are opt-in per-quest, default OFF on quest start</li>
+          <li>Pause is reversible forever; engine retains paused-quest state for 90 days</li>
+          <li>Difficulty stars never lock content; â­â­â­ quests are surfaced after 2 completions but reachable from search/Tell-Alex always</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+</body>
+</html>

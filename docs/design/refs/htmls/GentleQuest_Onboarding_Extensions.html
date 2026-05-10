@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Onboarding extensions</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+  }
+  html, body {
+    margin: 0; padding: 0; background: #EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink); -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  .gq-fade-in    { animation: gqFadeIn 600ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up { animation: gqFadeInUp 700ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-sheet-up   { animation: gqSheetUp 520ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up.d1 { animation-delay: 80ms; }
+  .gq-fade-in-up.d2 { animation-delay: 160ms; }
+  .gq-fade-in-up.d3 { animation-delay: 240ms; }
+  .gq-fade-in-up.d4 { animation-delay: 320ms; }
+  @keyframes gqFadeIn   { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes gqFadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes gqSheetUp  { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  @keyframes gqBellPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(102,126,234,0.40); }
+    70%  { box-shadow: 0 0 0 18px rgba(102,126,234,0); }
+    100% { box-shadow: 0 0 0 0 rgba(102,126,234,0); }
+  }
+  .gq-bell-pulse { animation: gqBellPulse 1800ms ease-out infinite; }
+
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px; background: var(--gq-bg);
+    overflow: hidden; position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730,
+      0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35),
+      0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 124px; height: 36px; border-radius: 20px; background: #000; z-index: 50;
+  }
+  .gq-status {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px 0; font-weight: 600; font-size: 15px; color: var(--gq-ink);
+  }
+  .gq-home {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 100px; background: rgba(31,27,58,0.28);
+    z-index: 60; pointer-events: none;
+  }
+  .gq-screen { position: absolute; inset: 0; overflow: hidden; }
+  .gq-screen-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--gq-ink-3); text-transform: uppercase;
+  }
+  .stack-divider {
+    height: 1px; max-width: 600px; margin: 64px auto;
+    background: linear-gradient(90deg, transparent 0%, rgba(31,27,58,0.18) 50%, transparent 100%);
+  }
+  .toggle-base {
+    width: 44px; height: 26px; border-radius: 9999px; padding: 3px;
+    border: none; flex-shrink: 0; position: relative; cursor: pointer;
+  }
+  .toggle-knob {
+    display: block; width: 20px; height: 20px; border-radius: 9999px;
+    background: white; box-shadow: 0 2px 4px rgba(31,27,58,0.18);
+  }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Onboarding extensions
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· B Â· C Â· D Â· 4 mobile states</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Notification opt-in Â· Returning user welcome Â· Permission denied recovery Â· First-launch tutorial overlay.
+      Same warm system as Round 1 â no shame, no dead-ends, every screen offers a graceful exit.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· NOTIFICATION OPT-IN SHEET -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Notification opt-in">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Notification permission moment</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Sheet over dim'd home preview Â· post-age, pre-home.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen">
+          <!-- dim home preview -->
+          <div class="absolute inset-0" style="background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 60%, #FBF6F6 100%);"></div>
+          <div class="absolute inset-x-0 top-14 px-5 opacity-50">
+            <div style="font-size:11px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.3px;">TUESDAY Â· MAY 7</div>
+            <div style="font-size:24px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Good morning</div>
+            <div class="mt-3 rounded-2xl bg-white" style="height:120px; border:1px solid var(--gq-hair);"></div>
+            <div class="mt-3 rounded-2xl bg-white" style="height:140px; border:1px solid var(--gq-hair);"></div>
+          </div>
+          <div class="absolute inset-0 gq-fade-in" style="background:rgba(31,27,58,0.42); backdrop-filter:blur(3px);"></div>
+
+          <!-- sheet -->
+          <article class="absolute inset-x-0 bottom-0 gq-sheet-up"
+                   style="background:white; border-radius:24px 24px 0 0;
+                          box-shadow:0 -20px 60px -20px rgba(31,27,58,0.35);
+                          padding:14px 0 28px;"
+                   data-widget="NotificationOptInSheet()">
+            <div class="px-6">
+              <div class="flex justify-center mb-5">
+                <div style="width:44px; height:5px; border-radius:100px; background:#E5E2EE;"></div>
+              </div>
+
+              <!-- bell -->
+              <div class="flex justify-center mb-5">
+                <div class="gq-bell-pulse rounded-full flex items-center justify-center"
+                     style="width:64px; height:64px; background: linear-gradient(135deg, #EEF0FE 0%, #FFE8E8 100%);">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 16V11a6 6 0 0112 0v5l1.5 2H4.5L6 16z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M10 21a2 2 0 004 0" stroke="#667EEA" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <h2 style="font-size:24px; font-weight:800; line-height:1.2; letter-spacing:-0.3px; color:var(--gq-ink); text-align:center;">
+                One nudge a day,<br/>only if it helps.
+              </h2>
+              <p class="mt-2.5" style="font-size:13.5px; line-height:1.55; color:var(--gq-ink-2); font-weight:500; text-align:center;">
+                Here's what we'd send. Toggle anything off, anytime.
+              </p>
+            </div>
+
+            <!-- preview rows -->
+            <div class="mt-5 px-4 space-y-2" data-widget="NotifPreviewRowList()">
+              <!-- 1 ON -->
+              <div class="flex items-center gap-3 gq-fade-in-up d1"
+                   style="padding:14px; border-radius:16px; background:var(--gq-bg); border:1px solid var(--gq-hair);"
+                   data-widget="NotifPreviewRow(.dailyCheckIn, default: true)">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:40px; height:40px; background:var(--gq-primary-soft);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#667EEA" stroke-width="1.8"/><path d="M12 8v4l2.5 2" stroke="#667EEA" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Daily check-in reminder</div>
+                  <div class="mt-0.5" style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; line-height:1.4;">Around 9 am Â· skippable</div>
+                </div>
+                <button class="toggle-base gq-tap" style="background:var(--gq-primary);" aria-pressed="true">
+                  <span class="toggle-knob" style="transform:translateX(18px);"></span>
+                </button>
+              </div>
+
+              <!-- 2 OFF -->
+              <div class="flex items-center gap-3 gq-fade-in-up d2"
+                   style="padding:14px; border-radius:16px; background:var(--gq-bg); border:1px solid var(--gq-hair);"
+                   data-widget="NotifPreviewRow(.streakNudge, default: false)">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:40px; height:40px; background:#FFF1E5;">
+                  <span style="font-size:18px; line-height:1;">ð¥</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Streak gentle nudge</span>
+                    <span style="flex-shrink:0; font-size:9.5px; font-weight:800; letter-spacing:0.3px; padding:2px 7px; border-radius:100px; background:white; color:var(--gq-ink-3); border:1px solid var(--gq-hair);">OPT-IN</span>
+                  </div>
+                  <div class="mt-0.5" style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; line-height:1.4;">Off by default â no streak shame</div>
+                </div>
+                <button class="toggle-base gq-tap" style="background:#E5E2EE;" aria-pressed="false">
+                  <span class="toggle-knob" style="transform:translateX(0);"></span>
+                </button>
+              </div>
+
+              <!-- 3 ON, care-framed -->
+              <div class="flex items-center gap-3 gq-fade-in-up d3"
+                   style="padding:14px; border-radius:16px; background:var(--gq-bg); border:1px solid var(--gq-hair);"
+                   data-widget="NotifPreviewRow(.wellnessCheck, default: true)">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:40px; height:40px; background:var(--gq-accent-soft);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" stroke="#FF6B6B" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">If I'm worried about you</div>
+                  <div class="mt-0.5" style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; line-height:1.4;">Only after several heavy days Â· just one</div>
+                </div>
+                <button class="toggle-base gq-tap" style="background:var(--gq-primary);" aria-pressed="true">
+                  <span class="toggle-knob" style="transform:translateX(18px);"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- CTAs -->
+            <div class="mt-5 px-6 flex gap-2 gq-fade-in-up d4">
+              <button class="gq-tap flex-1"
+                      data-widget="NotifAllowCTA()"
+                      style="padding:16px; border-radius:9999px; background:white; border:1.5px solid var(--gq-hair); color:var(--gq-ink); font-size:14.5px; font-weight:800;">
+                Maybe later
+              </button>
+              <button class="gq-tap flex-1"
+                      data-widget="NotifAllowCTA()"
+                      style="padding:16px; border-radius:9999px; background:var(--gq-primary); border:none; color:white;
+                             font-size:14.5px; font-weight:800; box-shadow:0 12px 26px -10px rgba(102,126,234,0.55);">
+                Allow notifications
+              </button>
+            </div>
+
+            <!-- microcopy -->
+            <p class="mt-3.5 px-6 text-center" style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; line-height:1.5;">
+              You can change these anytime in Settings.
+            </p>
+          </article>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">NotificationOptInSheet()</code><br/><span style="color:var(--gq-ink-3);">DraggableScrollableSheet over Hero preview</span></li>
+          <li><code class="text-[11px]">NotifPreviewRow(kind, default)</code><br/><span style="color:var(--gq-ink-3);">.dailyCheckIn Â· .streakNudge Â· .wellnessCheck</span></li>
+          <li><code class="text-[11px]">NotifAllowCTA() / NotifMaybeLaterCTA()</code><br/><span style="color:var(--gq-ink-3);">primary triggers system permission; "later" persists for 7 days</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· RETURNING USER WELCOME -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Returning user">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Returning user warm welcome</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Re-open after 3+ days Â· no shame, fresh-start escape hatch.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="ReturningUserWelcome(daysAway: 6, streak: 7)">
+          <div class="absolute inset-0" style="background: linear-gradient(180deg, #F8F7FF 0%, #EFEFFE 60%, #FFEEEE 100%);"></div>
+          <div class="absolute" style="top:-50px; left:-60px; width:240px; height:240px; border-radius:120px; background:#D9DEFC; filter:blur(48px); opacity:0.7;"></div>
+          <div class="absolute" style="top:200px; right:-90px; width:240px; height:240px; border-radius:120px; background:#FFD9D9; filter:blur(52px); opacity:0.7;"></div>
+
+          <!-- breathing orb -->
+          <div class="absolute inset-x-0 flex justify-center gq-fade-in" style="top:140px;">
+            <div class="relative" style="width:160px; height:160px;">
+              <div class="absolute inset-0 rounded-full" style="background: radial-gradient(circle at 35% 30%, rgba(102,126,234,0.32) 0%, rgba(102,126,234,0.05) 70%);"></div>
+              <div class="absolute rounded-full" style="inset: 24px; background: radial-gradient(circle at 60% 30%, rgba(255,107,107,0.28) 0%, rgba(255,107,107,0.05) 70%);"></div>
+              <div class="absolute rounded-full flex items-center justify-center"
+                   style="inset: 50px; background: linear-gradient(135deg, #667EEA 0%, #FF6B6B 100%); box-shadow: 0 16px 40px -10px rgba(102,126,234,0.45);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" fill="white"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-0 px-8 text-center gq-fade-in-up d1" style="top:332px;">
+            <div class="gq-screen-label" style="color:var(--gq-primary);">GentleQuest</div>
+          </div>
+
+          <div class="absolute inset-x-0 px-7 text-center gq-fade-in-up d2" style="top:368px;">
+            <h2 style="font-size:30px; font-weight:800; line-height:1.15; letter-spacing:-0.5px; color:var(--gq-ink);">
+              Welcome back, friend.
+            </h2>
+            <p class="mt-3" style="font-size:15px; line-height:1.6; color:var(--gq-ink-2); font-weight:500;">
+              It's been <span style="color:var(--gq-ink); font-weight:700;">6 days</span>. No judgment â let's just say hi.
+            </p>
+          </div>
+
+          <!-- streak preserved badge -->
+          <div class="absolute inset-x-0 flex justify-center gq-fade-in-up d3" style="top:494px;">
+            <div class="flex items-center gap-2"
+                 data-widget="StreakPreservedBadge(days: 7)"
+                 style="padding:10px 16px; border-radius:9999px; background:white; border:1px solid var(--gq-hair); box-shadow:0 4px 14px -6px rgba(31,27,58,0.10);">
+              <span style="font-size:14px; line-height:1;">ð¥</span>
+              <span style="font-size:12.5px; font-weight:700; color:var(--gq-ink-2); white-space:nowrap;">
+                Your <span style="color:var(--gq-ink); font-weight:800;">7-day streak</span> is safe â we paused it.
+              </span>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div class="absolute inset-x-6 gq-fade-in-up d4" style="bottom:96px;">
+            <button class="gq-tap w-full flex items-center justify-center gap-2"
+                    data-widget="ResumeCTA()"
+                    style="padding:18px; background:var(--gq-primary); color:white; border:none; border-radius:9999px;
+                           font-size:16px; font-weight:800; letter-spacing:0.2px;
+                           box-shadow:0 12px 28px -10px rgba(102,126,234,0.6);">
+              Pick up where we left off
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="gq-tap mt-3 w-full text-center"
+                    data-widget="StartFreshLink()"
+                    style="background:transparent; border:none; padding:8px; font-size:13px; color:var(--gq-ink-3); font-weight:700;">
+              Start fresh instead
+            </button>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">ReturningUserWelcome(daysAway, streak)</code><br/><span style="color:var(--gq-ink-3);">renders only when daysAway â¥ 3</span></li>
+          <li><code class="text-[11px]">StreakPreservedBadge(days)</code><br/><span style="color:var(--gq-ink-3);">visible only if streak &gt; 0 at pause time</span></li>
+          <li><code class="text-[11px]">ResumeCTA() / StartFreshLink()</code><br/><span style="color:var(--gq-ink-3);">"start fresh" clears in-progress drafts only â never wipes history</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· PERMISSION DENIED RECOVERY -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Permission denied">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Permission denied recovery</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">"Don't allow" â calm continue, never a wall.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="PermissionDeniedRecovery()">
+          <div class="absolute inset-0" style="background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 100%);"></div>
+          <div class="absolute" style="top:160px; left:-50px; width:200px; height:200px; border-radius:100px; background:#D9DEFC; filter:blur(48px); opacity:0.55;"></div>
+
+          <!-- bell, softened/static -->
+          <div class="absolute inset-x-0 flex justify-center gq-fade-in" style="top:200px;">
+            <div class="rounded-full flex items-center justify-center"
+                 style="width:84px; height:84px; background: linear-gradient(135deg, #F0F1FE 0%, #FBF1F1 100%); border:1.5px solid var(--gq-hair);">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" style="opacity:0.85;">
+                <path d="M6 16V11a6 6 0 0112 0v5l1.5 2H4.5L6 16z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M10 21a2 2 0 004 0" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M4 5l16 16" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="absolute inset-x-0 px-8 text-center gq-fade-in-up d1" style="top:316px;">
+            <h2 style="font-size:26px; font-weight:800; line-height:1.18; letter-spacing:-0.4px; color:var(--gq-ink);">
+              All good. We'll work without notifications.
+            </h2>
+            <p class="mt-3" style="font-size:14.5px; line-height:1.6; color:var(--gq-ink-2); font-weight:500;">
+              You can turn them on later if you'd like â nothing changes between us.
+            </p>
+          </div>
+
+          <div class="absolute inset-x-6 gq-fade-in-up d2" style="bottom:120px;">
+            <button class="gq-tap w-full flex items-center justify-center gap-2"
+                    data-widget="ContinueCTA()"
+                    style="padding:18px; background:var(--gq-primary); color:white; border:none; border-radius:9999px;
+                           font-size:16px; font-weight:800; letter-spacing:0.2px;
+                           box-shadow:0 12px 28px -10px rgba(102,126,234,0.6);">
+              Continue
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <div class="absolute inset-x-0 text-center gq-fade-in-up d3" style="bottom:60px;">
+            <a class="inline-flex items-center gap-1"
+               data-widget="ManageInSettingsLink()"
+               style="font-size:12.5px; color:var(--gq-ink-3); font-weight:700; text-decoration:none;">
+              Manage in Settings
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">PermissionDeniedRecovery()</code><br/><span style="color:var(--gq-ink-3);">shown only if system perm == .denied</span></li>
+          <li><code class="text-[11px]">ContinueCTA()</code><br/><span style="color:var(--gq-ink-3);">routes straight to Dashboard</span></li>
+          <li><code class="text-[11px]">ManageInSettingsLink()</code><br/><span style="color:var(--gq-ink-3);">opens app-settings deeplink</span></li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- D Â· FIRST-LAUNCH TUTORIAL OVERLAY -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="D Â· Tutorial overlay">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup D</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">First-launch tutorial overlay</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">3 spotlights over chat Â· skippable Â· one-time.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="FirstLaunchTutorialOverlay()">
+          <!-- chat behind -->
+          <div class="absolute inset-0" style="background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 50%, #FBF6F6 100%);"></div>
+
+          <!-- chat header -->
+          <header class="relative pt-14 px-5 pb-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="rounded-full" style="width:34px; height:34px; background: linear-gradient(135deg, #667EEA 0%, #FF6B6B 100%);"></div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.4px;">YOU'RE WITH</div>
+                  <div style="font-size:16px; font-weight:800; color:var(--gq-ink);">Hi, Alex's here for you</div>
+                </div>
+              </div>
+              <div style="width:34px; height:34px; border-radius:9999px; background:white; border:1px solid var(--gq-hair);"></div>
+            </div>
+          </header>
+
+          <!-- mood emoji top-right (real button) -->
+          <div class="absolute" style="top:108px; right:18px; z-index:8;" data-widget="MoodEmojiQuickButton()">
+            <button class="rounded-full flex items-center justify-center"
+                    style="width:44px; height:44px; background:white; border:1px solid var(--gq-hair); font-size:20px; line-height:1;">
+              ð
+            </button>
+          </div>
+
+          <!-- empty warmth (faded) -->
+          <div class="absolute inset-x-0 flex flex-col items-center" style="top:200px;">
+            <div class="rounded-full" style="width:80px; height:80px; background: linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(255,107,107,0.25) 100%);"></div>
+            <div class="mt-4 text-center px-7">
+              <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">What's on your mind?</div>
+            </div>
+          </div>
+
+          <!-- chip row -->
+          <div class="absolute inset-x-0 px-5 flex gap-2 flex-wrap" style="top:432px;">
+            <span style="padding:9px 13px; border-radius:9999px; background:var(--gq-primary-soft); font-size:12.5px; font-weight:700; color:var(--gq-primary-dk);">Today's been heavy</span>
+            <span style="padding:9px 13px; border-radius:9999px; background:var(--gq-primary-soft); font-size:12.5px; font-weight:700; color:var(--gq-primary-dk);">I want to vent</span>
+            <span style="padding:9px 13px; border-radius:9999px; background:var(--gq-accent-soft); font-size:12.5px; font-weight:700; color:#B73E3E;">Need someone to listen</span>
+          </div>
+
+          <!-- input -->
+          <div class="absolute inset-x-4" style="bottom:80px;">
+            <div class="flex items-center gap-2 bg-white"
+                 style="padding:6px 6px 6px 14px; border-radius:9999px; border:1px solid var(--gq-hair);">
+              <div style="width:32px; height:32px; border-radius:9999px; background:var(--gq-primary-soft);"></div>
+              <span style="flex:1; font-size:13.5px; color:var(--gq-ink-3); font-weight:500;">Type, or pick a starterâ¦</span>
+              <div style="width:36px; height:36px; border-radius:9999px; border:1.5px solid var(--gq-hair);"></div>
+            </div>
+          </div>
+
+          <!-- DARK SCRIM with cutouts simulated by lighter highlights -->
+          <div class="absolute inset-0" style="background:rgba(31,27,58,0.62); backdrop-filter:blur(2px);"></div>
+
+          <!-- highlight halos for spotlit zones -->
+          <!-- 1: chip row halo -->
+          <div class="absolute pointer-events-none gq-fade-in"
+               style="top:418px; left:14px; right:14px; height:54px; border-radius:18px;
+                      box-shadow: 0 0 0 9999px rgba(31,27,58,0); border:2px solid rgba(255,255,255,0.85);
+                      background: rgba(255,255,255,0.10);"></div>
+          <!-- 2: input halo -->
+          <div class="absolute pointer-events-none gq-fade-in"
+               style="bottom:74px; left:12px; right:12px; height:54px; border-radius:9999px;
+                      border:2px solid rgba(255,255,255,0.85); background: rgba(255,255,255,0.10);"></div>
+          <!-- 3: mood halo top right -->
+          <div class="absolute pointer-events-none gq-fade-in"
+               style="top:104px; right:14px; width:52px; height:52px; border-radius:9999px;
+                      border:2px solid rgba(255,255,255,0.85); background: rgba(255,255,255,0.10);"></div>
+
+          <!-- skip link top-right -->
+          <button class="absolute gq-tap"
+                  data-widget="TutorialSkipLink()"
+                  style="top:74px; left:18px; padding:7px 12px; border-radius:9999px;
+                         background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.25);
+                         color:white; font-size:11.5px; font-weight:700; letter-spacing:0.2px;">
+            I'll explore on my own
+          </button>
+
+          <!-- Tooltip 1 â points down to chips -->
+          <div class="absolute gq-fade-in-up d1"
+               data-widget="TutorialTooltip(1)"
+               style="top:330px; left:18px; right:18px;">
+            <div class="rounded-2xl" style="background:white; padding:14px 16px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.35); position:relative;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:26px; height:26px; background:var(--gq-primary); color:white; font-size:12.5px; font-weight:800;">1</div>
+                <div class="flex-1">
+                  <div style="font-size:14px; font-weight:800; color:var(--gq-ink); line-height:1.35;">
+                    These chips are starting points
+                  </div>
+                  <div class="mt-1" style="font-size:12.5px; color:var(--gq-ink-2); line-height:1.5; font-weight:500;">
+                    Tap one if you don't know where to begin.
+                  </div>
+                </div>
+              </div>
+              <!-- pointer -->
+              <div style="position:absolute; left:34px; bottom:-6px; width:12px; height:12px; background:white; transform:rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <!-- Tooltip 2 â points up to mood (top right) -->
+          <div class="absolute gq-fade-in-up d2"
+               data-widget="TutorialTooltip(2)"
+               style="top:172px; left:18px; right:80px;">
+            <div class="rounded-2xl" style="background:white; padding:14px 16px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.35); position:relative;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:26px; height:26px; background:var(--gq-primary); color:white; font-size:12.5px; font-weight:800;">2</div>
+                <div class="flex-1">
+                  <div style="font-size:14px; font-weight:800; color:var(--gq-ink); line-height:1.35;">
+                    Tap your mood any time
+                  </div>
+                  <div class="mt-1" style="font-size:12.5px; color:var(--gq-ink-2); line-height:1.5; font-weight:500;">
+                    Even mid-chat. We'll fold it into the conversation.
+                  </div>
+                </div>
+              </div>
+              <div style="position:absolute; right:30px; top:-6px; width:12px; height:12px; background:white; transform:rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <!-- Tooltip 3 â points up from input -->
+          <div class="absolute gq-fade-in-up d3"
+               data-widget="TutorialTooltip(3)"
+               style="bottom:154px; left:18px; right:18px;">
+            <div class="rounded-2xl" style="background:white; padding:14px 16px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.35); position:relative;">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center"
+                     style="width:26px; height:26px; background:var(--gq-primary); color:white; font-size:12.5px; font-weight:800;">3</div>
+                <div class="flex-1">
+                  <div style="font-size:14px; font-weight:800; color:var(--gq-ink); line-height:1.35;">
+                    Send anything
+                  </div>
+                  <div class="mt-1" style="font-size:12.5px; color:var(--gq-ink-2); line-height:1.5; font-weight:500;">
+                    Nothing here goes anywhere else. History stays on your phone.
+                  </div>
+                </div>
+              </div>
+              <div style="position:absolute; left:50%; bottom:-6px; width:12px; height:12px; background:white; transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <!-- got it CTA -->
+          <div class="absolute inset-x-6 gq-fade-in-up d4" style="bottom:24px;">
+            <button class="gq-tap w-full"
+                    data-widget="TutorialGotItCTA()"
+                    style="padding:14px; background:var(--gq-primary); color:white; border:none; border-radius:9999px;
+                           font-size:14.5px; font-weight:800; letter-spacing:0.2px;
+                           box-shadow:0 12px 28px -10px rgba(102,126,234,0.6);">
+              Got it
+            </button>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· D</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">FirstLaunchTutorialOverlay()</code><br/><span style="color:var(--gq-ink-3);">renders once on first chat open Â· localStorage flag <code>tutorial_seen</code></span></li>
+          <li><code class="text-[11px]">TutorialTooltip(step, target)</code><br/><span style="color:var(--gq-ink-3);">positioned via target's GlobalKey rect</span></li>
+          <li><code class="text-[11px]">TutorialSkipLink() / TutorialGotItCTA()</code><br/><span style="color:var(--gq-ink-3);">both set tutorial_seen = true</span></li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">All four Â· ship principles</div>
+        <ul class="text-[13px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Every screen has a graceful exit</li>
+          <li>No streak shame, no "you missed N days"</li>
+          <li>"If I'm worried about you" framed as care, never surveillance</li>
+          <li>Tutorial is one-time, dismissible, and doesn't gate the chat</li>
+          <li>Returning users keep their streak â it's paused, not lost</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+
+</body>
+</html>

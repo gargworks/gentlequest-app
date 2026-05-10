@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Offline + Error States</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-amber:      #C8923D;
+    --gq-amber-soft: #FBF1DC;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+  }
+  html, body { margin:0; padding:0; background:#EAE6F5;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    color:var(--gq-ink); -webkit-font-smoothing:antialiased; }
+  * { box-sizing:border-box; }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone { width:390px; height:844px; border-radius:56px; background:var(--gq-bg);
+    overflow:hidden; position:relative;
+    box-shadow: 0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05); }
+  .gq-island { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+  .eyebrow { font-size:10.5px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.7px; text-transform:uppercase; }
+
+  .nav-bar { position:absolute; top:54px; left:0; right:0; padding:8px 18px; display:flex; align-items:center; gap:10px; height:50px; z-index:5; background:rgba(248,247,255,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--gq-hair); }
+
+  /* chat */
+  .chat-shell { position:absolute; left:0; right:0; top:104px; bottom:74px; padding:14px 14px 12px; display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .bubble { max-width:80%; padding:10px 13px; border-radius:18px; font-size:13.5px; line-height:1.4; font-weight:500; }
+  .bubble.alex { background:white; border:1px solid var(--gq-hair); border-top-left-radius:6px; color:var(--gq-ink); align-self:flex-start; }
+  .bubble.me   { background: var(--gq-primary); color:white; border-top-right-radius:6px; align-self:flex-end; }
+  .bubble.me.pending { opacity:0.85; }
+  .bubble.me.error   { background: white; color: var(--gq-ink); border:1.5px solid rgba(200,146,61,0.55); }
+  .bubble.me.server-error { background: white; color: var(--gq-ink); border:1.5px solid rgba(255,107,107,0.55); }
+
+  .meta-row { font-size:10.5px; font-weight:700; color:var(--gq-ink-3); display:flex; align-items:center; gap:5px; margin-top:-4px; align-self:flex-end; }
+  .meta-row.error { color: var(--gq-amber); align-self:flex-end; }
+  .meta-row.server { color: #C44A4A; }
+
+  .composer { position:absolute; left:0; right:0; bottom:0; height:74px; padding:10px 14px 14px; background:rgba(248,247,255,0.9); backdrop-filter: blur(10px); border-top:1px solid var(--gq-hair); display:flex; align-items:center; gap:8px; }
+  .composer .input { flex:1; padding:11px 14px; border-radius:9999px; background:white; border:1px solid var(--gq-hair); font-size:13px; color:var(--gq-ink-3); font-weight:500; }
+  .composer .send { width:38px; height:38px; border-radius:50%; background:var(--gq-primary); color:white; display:flex; align-items:center; justify-content:center; }
+
+  /* banners */
+  .banner { display:flex; gap:10px; align-items:flex-start; padding:11px 14px; border-radius:14px; }
+  .banner.amber { background: var(--gq-amber-soft); border:1px solid rgba(200,146,61,0.28); }
+  .banner.coral { background: #FFE8E8; border:1px solid rgba(255,107,107,0.32); }
+
+  .pulse { width:6px; height:6px; border-radius:50%; background: currentColor; animation: pulse 1.4s ease-in-out infinite; }
+  .pulse.d2 { animation-delay: 0.2s; } .pulse.d3 { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,100% { opacity:0.3; transform: scale(0.85); } 50% { opacity:1; transform: scale(1.1); } }
+
+  /* offline cold start */
+  .cloud-art { position:relative; width:160px; height:160px; margin:0 auto; }
+  .cloud-art .ring { position:absolute; inset:0; border-radius:50%; border:1px dashed rgba(102,126,234,0.30); animation: rot 18s linear infinite; }
+  .cloud-art .ring.r2 { inset:14px; border:1px dashed rgba(102,126,234,0.18); animation: rot 12s linear infinite reverse; }
+  @keyframes rot { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .cloud-art svg { position:absolute; inset:0; margin:auto; }
+
+  .of-card { background:white; border:1px solid var(--gq-hair); border-radius:18px; padding:14px; display:flex; align-items:center; gap:12px; }
+  .of-card .ic { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Network + offline states
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· Offline mid-chat &nbsp;Â·&nbsp; B Â· Cold-start offline &nbsp;Â·&nbsp; C Â· Server 5xx</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Calm, never alarming. Amber not red for offline. Queue locally, retry quietly, surface 988 always.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· OFFLINE MID-CHAT -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Offline mid-chat">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Connection lost mid-chat</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Soft amber inline banner Â· message stays Â· auto-resends on reconnect.</div>
+      </figcaption>
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center" style="color: var(--gq-amber);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M2 8.5C5 5.5 9 4 12 4s7 1.5 10 4.5M5 12c2-2 4-3 7-3s5 1 7 3M8 15.5c1.2-1 2.4-1.5 4-1.5s2.8.5 4 1.5M12 19h.01M3 3l18 18" stroke="#C8923D" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="#1F1B3A" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="#1F1B3A"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="#1F1B3A" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+        <div class="gq-screen" data-widget="ChatScreen(networkState: .offline)">
+          <div class="nav-bar">
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:34px; height:34px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#9DB4FF,#6F62D6);"></div>
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--gq-ink); line-height:1;">Alex</div>
+                <div style="font-size:10.5px; color:var(--gq-amber); font-weight:700; line-height:1; margin-top:2px;">offline Â· waiting</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-shell">
+            <!-- BANNER -->
+            <div class="banner amber" data-widget="OfflineBanner(state: .offline)">
+              <div class="rounded-full flex items-center justify-center flex-shrink-0" style="width:24px; height:24px; background:white;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M2 8.5C5 5.5 9 4 12 4s7 1.5 10 4.5M3 3l18 18" stroke="#C8923D" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div style="font-size:12.5px; font-weight:800; color:#7A5A20;">You're offline right now.</div>
+                <div style="font-size:11.5px; color:var(--gq-amber); font-weight:600; margin-top:1px;">I'll resend the moment we reconnect.</div>
+              </div>
+            </div>
+
+            <div class="bubble alex">Hey Sam. How's today landing?</div>
+            <div class="bubble me">Honestly? Heavy. Couldn't get out of bed til noon.</div>
+            <div class="bubble alex">That counts as showing up too. Want to sit with it or talk about why?</div>
+
+            <div class="bubble me error" data-widget="MessageRetryState(state: .failedNetwork)">
+              I thinkâ¦ both? It feels like everything piles up at once.
+            </div>
+            <div class="meta-row error">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M2 8.5C5 5.5 9 4 12 4s7 1.5 10 4.5M3 3l18 18" stroke="#C8923D" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>Couldn't reach Alex.</span>
+              <button class="gq-tap" style="text-decoration:underline; text-underline-offset:2px; color:var(--gq-amber); font-weight:800;">Tap to retry</button>
+            </div>
+
+            <!-- queued -->
+            <div class="bubble me pending" data-widget="MessageRetryState(state: .queued)">
+              Likeâ¦ everyone is fine and I'm not.
+            </div>
+            <div class="meta-row" style="color:var(--gq-ink-3);">
+              <span class="pulse"></span>
+              <span>Queued Â· will send when you're back</span>
+            </div>
+          </div>
+
+          <div class="composer">
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:34px; height:34px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#4A4670" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="input">Keep typing â I'll save itâ¦</div>
+            <button class="gq-tap send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l14-7-7 14-2-5-5-2z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">OfflineBanner(state: .offline)</code><br/><span style="color:var(--gq-ink-3);">amber tint, never red. Hides on reconnect with 240ms fade.</span></li>
+          <li><code class="text-[11px]">MessageRetryState(state)</code><br/><span style="color:var(--gq-ink-3);">{sending, queued, failedNetwork, failedServer, sent} Â· drives bubble border + meta-row</span></li>
+          <li><code class="text-[11px]">MessageQueue.append(text)</code><br/><span style="color:var(--gq-ink-3);">backed by Hive box Â· survives app kill</span></li>
+          <li>Composer stays enabled offline â typing into queue feels like progress.</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Voice rules Â· offline</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>"Couldn't reach Alex" â never "Failed to send"</li>
+          <li>"Queued Â· will send when you're back" â passive, factual</li>
+          <li>No exclamations Â· no red Â· no "Error"</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· COLD START OFFLINE -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Cold-start offline">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Cold start Â· no network</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Three things that work offline Â· 988 always visible.</div>
+      </figcaption>
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center" style="color: var(--gq-amber);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M2 8.5C5 5.5 9 4 12 4s7 1.5 10 4.5" stroke="#C8923D" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="#1F1B3A" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="#1F1B3A"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="#1F1B3A" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+        <div class="gq-screen" data-widget="OfflineHomeScreen()">
+          <div class="nav-bar">
+            <h1 style="font-size:18px; font-weight:800; color:var(--gq-ink);">GentleQuest</h1>
+            <div class="ml-auto" style="padding:4px 9px; border-radius:9999px; background: var(--gq-amber-soft); color:#7A5A20; font-size:10px; font-weight:800; letter-spacing:0.4px; border:1px solid rgba(200,146,61,0.28);">
+              OFFLINE
+            </div>
+          </div>
+
+          <div style="position:absolute; left:0; right:0; top:104px; bottom:0; padding:24px 18px; overflow-y:auto;">
+            <div class="cloud-art">
+              <div class="ring"></div>
+              <div class="ring r2"></div>
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <path d="M22 50c-7 0-12-5-12-12 0-6 5-11 11-11 1-7 7-12 14-12 6 0 11 4 13 9 1-1 3-1 4-1 5 0 9 4 9 9 0 1 0 2-1 3 5 1 8 5 8 10 0 6-5 11-11 11H22z" fill="#EEF0FE" stroke="#9DB4FF" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M14 14l52 52" stroke="#C8923D" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <h1 style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px; line-height:1.25; text-align:center; margin-top:14px;">
+              We can chat once you're back online.
+            </h1>
+            <p style="font-size:13px; color:var(--gq-ink-2); font-weight:500; line-height:1.5; text-align:center; margin-top:8px; padding: 0 12px;">
+              In the meantime, here's what works offline:
+            </p>
+
+            <div class="space-y-2.5" style="margin-top:18px;" data-widget="OfflineCapabilitiesList()">
+              <article class="of-card gq-tap" data-widget="OfflineCard(.logMood)">
+                <div class="ic" style="background:#EEF0FE;">ð</div>
+                <div class="flex-1">
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Log my mood</div>
+                  <div style="font-size:11.5px; font-weight:600; color:var(--gq-ink-3); margin-top:2px;">Saves locally Â· syncs the moment we reconnect</div>
+                </div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#8B86AB" stroke-width="2.2" stroke-linecap="round"/></svg>
+              </article>
+              <article class="of-card gq-tap" data-widget="OfflineCard(.breathing)">
+                <div class="ic" style="background:#FFF1E5;">ð¬ï¸</div>
+                <div class="flex-1">
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Try a breathing exercise</div>
+                  <div style="font-size:11.5px; font-weight:600; color:var(--gq-ink-3); margin-top:2px;">All exercises run on your phone</div>
+                </div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#8B86AB" stroke-width="2.2" stroke-linecap="round"/></svg>
+              </article>
+              <article class="of-card gq-tap" data-widget="OfflineCard(.safetyPlan)">
+                <div class="ic" style="background:#F0F5EC;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" stroke="#5C7A48" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">Open my safety plan</div>
+                  <div style="font-size:11.5px; font-weight:600; color:var(--gq-ink-3); margin-top:2px;">Always available Â· encrypted on device</div>
+                </div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#8B86AB" stroke-width="2.2" stroke-linecap="round"/></svg>
+              </article>
+            </div>
+
+            <div style="margin-top:18px; text-align:center;">
+              <button class="gq-tap" style="padding:9px 16px; border-radius:9999px; background:white; border:1px solid var(--gq-hair); font-size:12px; font-weight:800; color:var(--gq-ink-2); display:inline-flex; align-items:center; gap:6px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5" stroke="#4A4670" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Check connection
+              </button>
+            </div>
+
+            <div style="margin-top:18px; padding:12px 14px; border-radius:14px; background: #FFE8E8; border:1px solid rgba(255,107,107,0.28); display:flex; align-items:center; gap:10px;"
+                 data-widget="CrisisLineRow(alwaysVisible)">
+              <div class="rounded-full flex items-center justify-center flex-shrink-0" style="width:28px; height:28px; background:white;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="#B33636" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="flex-1" style="font-size:11.5px; font-weight:700; color:#7A2424; line-height:1.4;">
+                If you're in crisis, please call <span style="font-weight:900;">988</span> â it works without internet.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">OfflineHomeScreen()</code><br/><span style="color:var(--gq-ink-3);">replaces ChatScreen at root when <code>connectivity_plus</code> reports none</span></li>
+          <li><code class="text-[11px]">OfflineCapabilitiesList()</code><br/><span style="color:var(--gq-ink-3);">3 routes that genuinely run client-side</span></li>
+          <li><code class="text-[11px]">CheckConnectionBtn()</code><br/><span style="color:var(--gq-ink-3);">forces a connectivity poll Â· auto-routes back to ChatScreen on success</span></li>
+          <li><code class="text-[11px]">CrisisLineRow(alwaysVisible)</code><br/><span style="color:var(--gq-ink-3);">988 visible on every offline surface</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Cold-start guard</div>
+        <p class="text-[12.5px] leading-relaxed" style="color:var(--gq-ink-2);">
+          App boots into <code class="text-[11px]">OfflineHomeScreen</code> only when the splash ping fails twice (1s + 3s). Single transient failures don't surface the screen â they fall through to ChatScreen which carries the inline banner instead.
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· SERVER 5xx -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Server error">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Server 5xx Â· auto-retry, 3rd attempt</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">"Something on our end" Â· countdown Â· graceful escalation.</div>
+      </figcaption>
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="#1F1B3A" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="#1F1B3A"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="#1F1B3A" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+        <div class="gq-screen" data-widget="ChatScreen(networkState: .server5xx, retryCount: 1)">
+          <div class="nav-bar">
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:34px; height:34px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#9DB4FF,#6F62D6);"></div>
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--gq-ink); line-height:1;">Alex</div>
+                <div style="font-size:10.5px; color:#C44A4A; font-weight:700; line-height:1; margin-top:2px;">we're having a moment</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-shell">
+            <!-- BANNER Â· current state: auto-retry countdown -->
+            <div class="banner coral" data-widget="ServerErrorBanner(state: .autoRetry, countdown: 8)">
+              <div class="rounded-full flex items-center justify-center flex-shrink-0" style="width:24px; height:24px; background:white;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#C44A4A" stroke-width="2"/><path d="M12 8v4l2.5 1.5" stroke="#C44A4A" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div style="font-size:12.5px; font-weight:800; color:#7A2424;">We're having a moment.</div>
+                <div style="font-size:11.5px; color:#9C3D3D; font-weight:600; margin-top:1px;">
+                  Hang tight â auto-retry in <span tabular-nums style="font-weight:900;">8</span>s.
+                </div>
+              </div>
+              <button class="gq-tap" style="padding:6px 11px; border-radius:9999px; background:white; color:#9C3D3D; font-size:11px; font-weight:800; border:1px solid rgba(255,107,107,0.4); flex-shrink:0;">
+                Try now
+              </button>
+            </div>
+
+            <div class="bubble alex">Tell me what's going on with the meeting tomorrow.</div>
+            <div class="bubble me server-error" data-widget="MessageRetryState(state: .failedServer)">
+              I keep rehearsing what to say and it never sounds right.
+            </div>
+            <div class="meta-row server" style="display:flex; align-items:center; gap:6px; color:#9C3D3D;">
+              <span style="display:inline-flex; gap:3px; align-items:center;">
+                <span class="pulse"></span><span class="pulse d2"></span><span class="pulse d3"></span>
+              </span>
+              <span>Something on our end. Already retrying â attempt 2 of 3.</span>
+            </div>
+
+            <!-- GHOST: what comes after 3 failures -->
+            <div style="margin-top:8px; padding:11px 13px; border-radius:14px; background:rgba(31,27,58,0.04); border:1px dashed rgba(31,27,58,0.18);">
+              <div class="eyebrow" style="color:var(--gq-ink-3);">AFTER 3 RETRIES Â· BANNER UPGRADES TO</div>
+              <div style="font-size:12px; color:var(--gq-ink-2); font-weight:600; line-height:1.45; margin-top:5px;">
+                "Still struggling. You can keep typing â we'll send when we're back." <br/>
+                <button style="font-size:11px; font-weight:800; color:var(--gq-primary-dk); text-decoration:underline; text-underline-offset:2px; margin-top:3px;">Report this to us â</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <button class="gq-tap rounded-full flex items-center justify-center" style="width:34px; height:34px; background:white; border:1px solid var(--gq-hair);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#4A4670" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="input">Message Alexâ¦</div>
+            <button class="gq-tap send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l14-7-7 14-2-5-5-2z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">ServerErrorBanner(state, countdown, retryCount)</code><br/><span style="color:var(--gq-ink-3);">state â {autoRetry, exhausted}</span></li>
+          <li><code class="text-[11px]">MessageRetryState(state: .failedServer)</code><br/><span style="color:var(--gq-ink-3);">coral border Â· 3-dot pulse Â· "attempt N of 3"</span></li>
+          <li><code class="text-[11px]">ReportThisLink()</code><br/><span style="color:var(--gq-ink-3);">opens mailto with: device Â· build Â· last 5 request IDs Â· timestamp</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Retry lifecycle Â· queue â reconnect</div>
+        <pre class="text-[10.5px] leading-relaxed" style="color:var(--gq-ink-2); white-space:pre-wrap; font-family:'SF Mono',monospace;">send()
+  â
+.sending  â optimistic bubble
+  â network OK         â no network          â 5xx
+.sent                  .queued               .failedServer
+  â                      â on connect          â retry Ã 3 (10s, 20s, 30s)
+  âââââââââââââ flush âââââ                    â
+                                              .exhausted
+                                                â banner upgrade
+                                              keep typing â re-enqueues</pre>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Color discipline</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Offline (your fault, fixable) â <strong style="color:#C8923D;">amber</strong></li>
+          <li>Server (our fault) â <strong style="color:#C44A4A;">soft coral</strong>, never red-red</li>
+          <li>Crisis line (988) â coral, but always white-on-coral pill â visually distinct from error</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+</body>
+</html>

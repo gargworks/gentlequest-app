@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Exercise cards</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --gq-mood-low:   #8E96D6;
+    --gq-mood-okay:  #C2BFE8;
+    --gq-mood-good:  #FFB89E;
+    --gq-mood-great: #FF8E7A;
+  }
+  html, body {
+    margin:0; padding:0; background:#EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink); -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px; background: var(--gq-bg);
+    overflow: hidden; position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island { position: absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home   { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; pointer-events:none; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+  .eyebrow { font-size:10.5px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.7px; text-transform:uppercase; }
+
+  /* ==================== Breathing ==================== */
+  /* one cycle: 4 in (~21%) + 7 hold (~37%) + 8 out (~42%) of 19s */
+  @keyframes breathe-in   { 0% { transform: scale(0.85); } 100% { transform: scale(1.15); } }
+  @keyframes breathe-hold { 0% { transform: scale(1.15); } 100% { transform: scale(1.15); } }
+  @keyframes breathe-out  { 0% { transform: scale(1.15); } 100% { transform: scale(0.85); } }
+  @keyframes breathe-loop {
+    0%   { transform: scale(0.85); }
+    21%  { transform: scale(1.15); }
+    58%  { transform: scale(1.15); }
+    100% { transform: scale(0.85); }
+  }
+  .breath-orb { animation: breathe-loop 19s cubic-bezier(.5,0,.5,1) infinite; transform-origin: center; }
+
+  @keyframes ring-progress {
+    from { stroke-dashoffset: 502; }
+    to   { stroke-dashoffset: 0; }
+  }
+  .ring-anim { animation: ring-progress 19s linear infinite; }
+
+  /* ==================== Body scan glow ==================== */
+  @keyframes glow-travel {
+    0%   { top: 13%; opacity: 0.7; }
+    16%  { top: 22%; opacity: 1; }
+    33%  { top: 33%; opacity: 1; }
+    50%  { top: 46%; opacity: 1; }
+    66%  { top: 62%; opacity: 1; }
+    83%  { top: 80%; opacity: 1; }
+    100% { top: 13%; opacity: 0.7; }
+  }
+  .scan-glow { animation: glow-travel 18s ease-in-out infinite; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.4); }
+    50%      { transform: scaleY(1); }
+  }
+  .wave-bar { animation: wave 800ms ease-in-out infinite; transform-origin: center; }
+
+  /* ==================== Chat bubble (inline ctx) ==================== */
+  .chat-frame { position:absolute; inset:0; background: var(--gq-bg); }
+  .chat-bubble-ai   { background:white; border:1px solid var(--gq-hair); padding:10px 13px; border-radius:18px 18px 18px 6px; max-width:78%; font-size:13.5px; color:var(--gq-ink); font-weight:500; line-height:1.45; }
+  .chat-bubble-user { background:#C9E8D6; padding:10px 13px; border-radius:18px 18px 6px 18px; max-width:78%; font-size:13.5px; color:var(--gq-ink); font-weight:500; line-height:1.45; align-self:flex-end; }
+  .chat-input-bar {
+    position:absolute; left:14px; right:14px; bottom:18px;
+    display:flex; align-items:center; gap:8px; padding:8px 8px 8px 16px;
+    background:white; border:1px solid var(--gq-hair); border-radius:9999px;
+    box-shadow:0 6px 14px -8px rgba(31,27,58,0.10);
+    font-size:13px; color:var(--gq-ink-3); font-weight:600;
+  }
+  .chat-header {
+    position:absolute; left:0; right:0; top:54px; padding:8px 16px;
+    background: rgba(248,247,255,0.8); backdrop-filter: blur(10px);
+    display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid var(--gq-hair);
+  }
+  .alex-dot {
+    width:32px; height:32px; border-radius:9999px;
+    background: linear-gradient(135deg, var(--gq-primary), #B6A8FA);
+    display:flex; align-items:center; justify-content:center; color:white; font-size:13px; font-weight:800;
+  }
+
+  /* ==================== Anatomical silhouette ==================== */
+  .silhouette { fill: rgba(102,126,234,0.18); }
+
+  .ctrl-pill { padding:11px 14px; border-radius:9999px; font-size:13px; font-weight:800; border:none; cursor:pointer; line-height:1; }
+  .ctrl-primary { background: var(--gq-primary); color:white; box-shadow:0 10px 22px -10px rgba(102,126,234,0.55); }
+  .ctrl-ghost   { background: white; color: var(--gq-ink-2); border:1px solid var(--gq-hair); }
+  .ctrl-link    { background: transparent; color: var(--gq-ink-3); border:none; padding:11px 8px; }
+
+  .frame-card { background: white; border-radius:24px; box-shadow: 0 20px 50px -20px rgba(31,27,58,0.18); border:1px solid var(--gq-hair); }
+
+  .step-dot { width:6px; height:6px; border-radius:9999px; background: rgba(102,126,234,0.25); }
+  .step-dot.active { background: var(--gq-primary); width:22px; }
+
+  .ground-bullet {
+    width:36px; height:36px; border-radius:9999px;
+    background:white; border:1.5px solid var(--gq-hair);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; color:var(--gq-ink-3);
+  }
+  .ground-bullet.done { background: var(--gq-primary-soft); border-color: var(--gq-primary); color: var(--gq-primary-dk); }
+
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-7xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Exercise cards â interactive
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· 4-7-8 Breathing &nbsp;Â·&nbsp; B Â· 5-4-3-2-1 Grounding &nbsp;Â·&nbsp; C Â· Body scan</div>
+    </div>
+    <p class="mt-3 max-w-3xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Each exercise renders in two contexts: inline in chat (compact, 60% height, single CTA) and standalone fullscreen. Both share <code>ExerciseCardScaffold</code>.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· 4-7-8 BREATHING -->
+  <!-- ============================================================ -->
+  <section class="max-w-7xl mx-auto" data-screen-label="A Â· 4-7-8 Breathing">
+    <div class="mb-5 max-w-3xl">
+      <div class="gq-screen-label">Mockup A</div>
+      <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">4-7-8 Breathing Â· in-progress, mid-cycle</div>
+      <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Standalone (left) and inline-in-chat (right). Same scaffold, different chrome.</div>
+    </div>
+
+    <div class="flex flex-wrap gap-10 items-start justify-center">
+
+      <!-- ----- A1 standalone ----- -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Standalone fullscreen</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="BreathingExerciseCard(mode: .standalone)">
+            <!-- soft gradient bg -->
+            <div style="position:absolute; inset:0; background: radial-gradient(ellipse at 50% 35%, #EEF0FE 0%, #F8F7FF 60%, #FBF1F4 100%);"></div>
+
+            <!-- header -->
+            <div class="absolute inset-x-0 flex items-center justify-between" style="top:64px; padding:10px 18px;">
+              <div>
+                <div class="eyebrow">EXERCISE</div>
+                <div style="font-size:17px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">4-7-8 Breathing</div>
+              </div>
+              <button class="gq-tap rounded-full flex items-center justify-center" style="width:36px; height:36px; background:white; border:1px solid var(--gq-hair);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+
+            <!-- HERO orb -->
+            <div class="absolute inset-x-0 flex items-center justify-center" style="top:140px; height:300px;" data-widget="BreathingOrb()">
+              <svg width="280" height="280" viewBox="0 0 280 280" style="position:absolute;">
+                <defs>
+                  <linearGradient id="ringGradA" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#667EEA"/>
+                    <stop offset="50%" stop-color="#B6A8FA"/>
+                    <stop offset="100%" stop-color="#FF8E7A"/>
+                  </linearGradient>
+                </defs>
+                <!-- track -->
+                <circle cx="140" cy="140" r="120" fill="none" stroke="rgba(102,126,234,0.12)" stroke-width="6"/>
+                <!-- progress -->
+                <circle cx="140" cy="140" r="120" fill="none" stroke="url(#ringGradA)" stroke-width="6" stroke-linecap="round"
+                        stroke-dasharray="754" stroke-dashoffset="220"
+                        transform="rotate(-90 140 140)"/>
+              </svg>
+
+              <!-- breathing orb -->
+              <div class="breath-orb" style="position:relative; width:200px; height:200px; border-radius:9999px;
+                          background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(238,240,254,0.95) 50%, rgba(182,168,250,0.7) 100%);
+                          box-shadow: 0 30px 60px -20px rgba(102,126,234,0.45), inset 0 -10px 30px rgba(102,126,234,0.18);
+                          display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div class="eyebrow" style="color:var(--gq-primary-dk);">PHASE 2 OF 3</div>
+                <div style="font-size:22px; font-weight:800; color:var(--gq-ink); margin-top:4px; letter-spacing:-0.4px;">Hold</div>
+                <div style="font-size:13px; font-weight:700; color:var(--gq-ink-2); margin-top:6px;">5 / 7</div>
+              </div>
+            </div>
+
+            <!-- round counter -->
+            <div class="absolute inset-x-0 text-center" style="top:478px;" data-widget="RoundCounter(round: 1, total: 3)">
+              <div class="eyebrow">ROUND 1 OF 3</div>
+              <div class="flex justify-center items-center gap-1.5 mt-2">
+                <span class="step-dot active"></span>
+                <span class="step-dot"></span>
+                <span class="step-dot"></span>
+              </div>
+            </div>
+
+            <!-- bottom controls -->
+            <div class="absolute inset-x-0" style="bottom:118px; padding:0 18px;" data-widget="BreathingControls()">
+              <div class="flex gap-2">
+                <button class="ctrl-pill ctrl-primary gq-tap flex-1 flex items-center justify-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="white"><rect x="3" y="2" width="2" height="8" rx="0.5"/><rect x="7" y="2" width="2" height="8" rx="0.5"/></svg>
+                  Pause
+                </button>
+                <button class="ctrl-pill ctrl-ghost gq-tap flex-1">Skip phase</button>
+                <button class="ctrl-pill ctrl-link gq-tap">I'm done</button>
+              </div>
+
+              <!-- voice toggle -->
+              <div class="mt-3 flex items-center justify-center gap-2.5" data-widget="VoiceGuideToggle(off)">
+                <div style="width:34px; height:20px; border-radius:9999px; background:rgba(102,126,234,0.2); position:relative;">
+                  <div style="position:absolute; left:2px; top:2px; width:16px; height:16px; border-radius:9999px; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+                </div>
+                <span style="font-size:11.5px; color:var(--gq-ink-2); font-weight:700;">Calm voice guide</span>
+              </div>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <!-- ----- A2 inline-in-chat ----- -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Inline in chat Â· ~60% height</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="BreathingExerciseCard(mode: .inline)">
+            <div class="chat-frame"></div>
+            <div class="chat-header">
+              <div class="alex-dot">A</div>
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--gq-ink);">Alex</div>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600;">always here</div>
+              </div>
+            </div>
+
+            <!-- chat scroll -->
+            <div class="absolute inset-x-0 px-4 flex flex-col gap-2" style="top:115px; bottom:80px; overflow:hidden;">
+              <div class="chat-bubble-ai">Want to try a 4-7-8 breath together? Just one round.</div>
+              <div class="chat-bubble-user">ok</div>
+
+              <!-- inline exercise card -->
+              <div class="frame-card mt-1" data-widget="ExerciseCardScaffold(inline: true)" style="padding:14px;">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="rounded-full flex items-center justify-center" style="width:28px; height:28px; background: var(--gq-primary-soft);">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v3M12 17v3M4 12h3M17 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2" stroke="#667EEA" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    </div>
+                    <span style="font-size:13.5px; font-weight:800; color:var(--gq-ink);">4-7-8 Â· Round 1 of 3</span>
+                  </div>
+                  <button class="rounded-full flex items-center justify-center" style="width:24px; height:24px; background:transparent;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#8B86AB" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <!-- compact orb -->
+                <div class="flex items-center justify-center" style="height:180px; position:relative;">
+                  <svg width="170" height="170" viewBox="0 0 170 170" style="position:absolute;">
+                    <circle cx="85" cy="85" r="70" fill="none" stroke="rgba(102,126,234,0.12)" stroke-width="5"/>
+                    <circle cx="85" cy="85" r="70" fill="none" stroke="url(#ringGradA)" stroke-width="5" stroke-linecap="round"
+                            stroke-dasharray="440" stroke-dashoffset="120"
+                            transform="rotate(-90 85 85)"/>
+                  </svg>
+                  <div class="breath-orb" style="width:120px; height:120px; border-radius:9999px;
+                              background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), rgba(238,240,254,0.95) 50%, rgba(182,168,250,0.7) 100%);
+                              box-shadow: inset 0 -6px 18px rgba(102,126,234,0.18), 0 16px 30px -14px rgba(102,126,234,0.4);
+                              display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    <div style="font-size:14px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.2px;">Hold</div>
+                    <div style="font-size:11px; font-weight:700; color:var(--gq-ink-2); margin-top:2px;">5 / 7</div>
+                  </div>
+                </div>
+
+                <!-- single CTA -->
+                <button class="ctrl-pill ctrl-primary gq-tap w-full flex items-center justify-center gap-1.5 mt-1">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="white"><rect x="3" y="2" width="2" height="8" rx="0.5"/><rect x="7" y="2" width="2" height="8" rx="0.5"/></svg>
+                  Pause
+                </button>
+                <button class="ctrl-link gq-tap w-full text-center" style="font-size:11.5px; padding:8px 0 0;">Open fullscreen Â· Skip phase Â· I'm done</button>
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <span style="flex:1;">Message Alexâ¦</span>
+              <button class="rounded-full flex items-center justify-center" style="width:34px; height:34px; background:var(--gq-primary);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <!-- side rail A -->
+      <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+          <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li><code class="text-[11px]">BreathingExerciseCard(mode: .standalone | .inline)</code></li>
+            <li><code class="text-[11px]">BreathingOrb()</code><br/><span style="color:var(--gq-ink-3);">drives scale + ring + phase text from a single state machine</span></li>
+            <li><code class="text-[11px]">RoundCounter / BreathingControls / VoiceGuideToggle</code></li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Motion Â· A</div>
+          <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li>Cycle: 4s in Â· 7s hold Â· 8s out (19s total)</li>
+            <li>Orb scale: 0.85 â 1.15, ease-in-out</li>
+            <li>Ring progress: same 19s, linear</li>
+            <li>Phase label cross-fade: <code>200ms</code></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· 5-4-3-2-1 GROUNDING -->
+  <!-- ============================================================ -->
+  <section class="max-w-7xl mx-auto" data-screen-label="B Â· 5-4-3-2-1 Grounding">
+    <div class="mb-5 max-w-3xl">
+      <div class="gq-screen-label">Mockup B</div>
+      <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">5-4-3-2-1 Grounding Â· multi-step</div>
+      <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Standalone (left) â step 1 of 5. Inline (right) â collapsed with single advance CTA.</div>
+    </div>
+
+    <div class="flex flex-wrap gap-10 items-start justify-center">
+
+      <!-- B1 standalone -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Standalone fullscreen</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="GroundingStepFlow(mode: .standalone, step: 1)">
+            <div style="position:absolute; inset:0; background: linear-gradient(180deg, #F8F7FF 0%, #EEF0FE 100%);"></div>
+
+            <!-- header -->
+            <div class="absolute inset-x-0" style="top:64px; padding:10px 18px;">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="eyebrow">EXERCISE</div>
+                  <div style="font-size:17px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">Grounding â 5-4-3-2-1</div>
+                </div>
+                <button class="gq-tap rounded-full flex items-center justify-center" style="width:36px; height:36px; background:white; border:1px solid var(--gq-hair);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <!-- 5-segment progress -->
+              <div class="flex gap-1.5 mt-3" data-widget="StepProgressBar(current: 1, total: 5)">
+                <div style="flex:1; height:6px; border-radius:9999px; background:var(--gq-primary);"></div>
+                <div style="flex:1; height:6px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                <div style="flex:1; height:6px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                <div style="flex:1; height:6px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                <div style="flex:1; height:6px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+              </div>
+              <div class="flex items-center justify-between mt-1.5">
+                <span style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700;">STEP 1 OF 5</span>
+                <span style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700;">SEE â HEAR â FEEL â SMELL â TASTE</span>
+              </div>
+            </div>
+
+            <!-- HERO prompt -->
+            <div class="absolute inset-x-0" style="top:200px; padding:0 18px;" data-widget="GroundingPromptCard(sense: .see)">
+              <div class="frame-card" style="padding:24px 20px;">
+                <!-- icon -->
+                <div class="rounded-2xl flex items-center justify-center mx-auto"
+                     style="width:64px; height:64px; background: linear-gradient(135deg, var(--gq-primary-soft), #FFE8E8);">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="#4F63C9" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="#4F63C9" stroke-width="1.8"/></svg>
+                </div>
+
+                <div class="text-center mt-4" style="font-size:64px; font-weight:800; color:var(--gq-primary); line-height:1; letter-spacing:-2px;">5</div>
+                <div class="text-center mt-1" style="font-size:18px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">things you can see</div>
+                <div class="text-center mt-2" style="font-size:13px; color:var(--gq-ink-2); font-weight:500; line-height:1.5;">
+                  Name them out loud, or just notice.
+                </div>
+
+                <!-- 5 bullets, 3 done -->
+                <div class="flex justify-center items-center gap-2 mt-5" data-widget="OptionalSenseBullets()">
+                  <div class="ground-bullet done">â</div>
+                  <div class="ground-bullet done">â</div>
+                  <div class="ground-bullet done">â</div>
+                  <div class="ground-bullet">4</div>
+                  <div class="ground-bullet">5</div>
+                </div>
+                <div class="text-center mt-2" style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700; letter-spacing:0.5px;">TAP AS YOU FIND THEM Â· OPTIONAL</div>
+              </div>
+            </div>
+
+            <!-- bottom controls -->
+            <div class="absolute inset-x-0" style="bottom:88px; padding:0 18px;">
+              <button class="ctrl-pill ctrl-primary gq-tap w-full" data-widget="AdvanceStepBtn()" style="padding:14px;">
+                Got 5 â next sense
+              </button>
+              <div class="text-center mt-2">
+                <button class="ctrl-link gq-tap" style="font-size:11.5px;">Skip to chat</button>
+              </div>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <!-- B2 inline -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Inline in chat Â· single prompt</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="GroundingStepFlow(mode: .inline, step: 2)">
+            <div class="chat-frame"></div>
+            <div class="chat-header">
+              <div class="alex-dot">A</div>
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--gq-ink);">Alex</div>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600;">grounding with you</div>
+              </div>
+            </div>
+
+            <div class="absolute inset-x-0 px-4 flex flex-col gap-2" style="top:115px; bottom:80px; overflow:hidden;">
+              <div class="chat-bubble-ai">Let's slow your nervous system. I'll walk you through 5-4-3-2-1.</div>
+              <div class="chat-bubble-user">go</div>
+
+              <!-- compact card -->
+              <div class="frame-card mt-1" data-widget="ExerciseCardScaffold(inline: true)" style="padding:14px;">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <div class="rounded-full flex items-center justify-center" style="width:24px; height:24px; background:var(--gq-primary-soft);">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="#4F63C9" stroke-width="2"/></svg>
+                    </div>
+                    <span style="font-size:13px; font-weight:800; color:var(--gq-ink);">Grounding Â· 2 of 5</span>
+                  </div>
+                  <button class="rounded-full" style="width:22px; height:22px; background:transparent;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#8B86AB" stroke-width="2.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <div class="flex gap-1 mb-3">
+                  <div style="flex:1; height:4px; border-radius:9999px; background:var(--gq-primary);"></div>
+                  <div style="flex:1; height:4px; border-radius:9999px; background:var(--gq-primary);"></div>
+                  <div style="flex:1; height:4px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                  <div style="flex:1; height:4px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                  <div style="flex:1; height:4px; border-radius:9999px; background:rgba(102,126,234,0.2);"></div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <div class="rounded-2xl flex items-center justify-center flex-shrink-0"
+                       style="width:54px; height:54px; background: linear-gradient(135deg, var(--gq-primary-soft), #FFE8E8);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0118 0M7 12a5 5 0 0110 0M11 12a1 1 0 012 0M9 16h6M12 16v3" stroke="#4F63C9" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:30px; font-weight:800; color:var(--gq-primary); line-height:1; letter-spacing:-1px;">4</div>
+                    <div style="font-size:13.5px; font-weight:800; color:var(--gq-ink); margin-top:1px;">things you can hear</div>
+                    <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600; margin-top:2px;">just notice</div>
+                  </div>
+                </div>
+
+                <button class="ctrl-pill ctrl-primary gq-tap w-full mt-3">Got 4 â next</button>
+                <button class="ctrl-link gq-tap w-full text-center mt-1" style="font-size:11.5px; padding:6px 0;">Open fullscreen Â· Skip to chat</button>
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <span style="flex:1;">Message Alexâ¦</span>
+              <button class="rounded-full flex items-center justify-center" style="width:34px; height:34px; background:var(--gq-primary);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+          <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li><code class="text-[11px]">GroundingStepFlow(mode, step)</code></li>
+            <li><code class="text-[11px]">StepProgressBar(current, total)</code></li>
+            <li><code class="text-[11px]">GroundingPromptCard(sense)</code><br/><span style="color:var(--gq-ink-3);">sense â .see .hear .feel .smell .taste</span></li>
+            <li><code class="text-[11px]">OptionalSenseBullets()</code><br/><span style="color:var(--gq-ink-3);">no required input â purely optional progress</span></li>
+            <li><code class="text-[11px]">CompletionCard()</code><br/><span style="color:var(--gq-ink-3);">final step: "You're here. You're now." + 3 emoji response chips</span></li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Motion Â· B</div>
+          <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li>Step transition: <code>250ms</code> slide-left + cross-fade</li>
+            <li>Big number entry: 350ms spring (0.85â1)</li>
+            <li>Bullet check: 180ms scale bounce</li>
+            <li>Final card: confetti 1000ms ease-out</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· BODY SCAN -->
+  <!-- ============================================================ -->
+  <section class="max-w-7xl mx-auto" data-screen-label="C Â· Body scan">
+    <div class="mb-5 max-w-3xl">
+      <div class="gq-screen-label">Mockup C</div>
+      <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Body scan Â· 3-minute, audio-led</div>
+      <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Standalone with traveling glow on silhouette Â· inline collapses to a play row.</div>
+    </div>
+
+    <div class="flex flex-wrap gap-10 items-start justify-center">
+
+      <!-- C1 standalone -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Standalone fullscreen</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="BodyScanCard(mode: .standalone)">
+            <div style="position:absolute; inset:0; background: radial-gradient(ellipse at 50% 60%, #F4EEF8 0%, #F8F7FF 60%, #EEF0FE 100%);"></div>
+
+            <!-- header -->
+            <div class="absolute inset-x-0 flex items-center justify-between" style="top:64px; padding:10px 18px;">
+              <div>
+                <div class="eyebrow">EXERCISE</div>
+                <div style="font-size:17px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">3-minute body scan</div>
+              </div>
+              <button class="gq-tap rounded-full flex items-center justify-center" style="width:36px; height:36px; background:white; border:1px solid var(--gq-hair);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#1F1B3A" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+
+            <!-- silhouette -->
+            <div class="absolute inset-x-0 flex items-center justify-center" style="top:130px; height:380px;" data-widget="BodySilhouette(focus: .shoulders)">
+              <div style="position:relative; width:200px; height:380px;">
+                <!-- traveling glow -->
+                <div class="scan-glow" style="position:absolute; left:50%; transform:translateX(-50%); width:170px; height:80px; border-radius:9999px;
+                            background: radial-gradient(ellipse, rgba(255,138,110,0.55) 0%, rgba(255,138,110,0.18) 50%, transparent 80%);
+                            filter: blur(8px); pointer-events:none; z-index:1;"></div>
+                <!-- silhouette -->
+                <svg width="200" height="380" viewBox="0 0 200 380" style="position:absolute; inset:0; z-index:2;">
+                  <!-- head -->
+                  <circle cx="100" cy="42" r="28" class="silhouette" stroke="rgba(102,126,234,0.4)" stroke-width="1.2"/>
+                  <!-- neck + shoulders + torso -->
+                  <path d="M88 70 L88 80 Q60 85 50 110 Q42 145 50 200 Q55 240 60 270 Q66 310 70 340 Q72 360 80 370 L100 370 L120 370 Q128 360 130 340 Q134 310 140 270 Q145 240 150 200 Q158 145 150 110 Q140 85 112 80 L112 70 Z"
+                        class="silhouette" stroke="rgba(102,126,234,0.4)" stroke-width="1.2"/>
+                  <!-- arms -->
+                  <path d="M50 110 Q34 130 28 170 Q26 215 32 250 Q36 270 42 280" class="silhouette" stroke="rgba(102,126,234,0.4)" stroke-width="20" fill="none" stroke-linecap="round"/>
+                  <path d="M150 110 Q166 130 172 170 Q174 215 168 250 Q164 270 158 280" class="silhouette" stroke="rgba(102,126,234,0.4)" stroke-width="20" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- caption -->
+            <div class="absolute inset-x-0 text-center" style="top:528px; padding: 0 30px;">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">FOCUS Â· SHOULDERS</div>
+              <p class="mt-2" style="font-size:15px; font-weight:600; color:var(--gq-ink); line-height:1.5;">
+                Notice your shoulders. <span style="color:var(--gq-ink-2);">No need to relax them â just notice.</span>
+              </p>
+            </div>
+
+            <!-- progress bar -->
+            <div class="absolute inset-x-0" style="bottom:140px; padding: 0 24px;" data-widget="ScanProgressBar()">
+              <div class="flex items-center justify-between mb-1.5">
+                <span style="font-size:11px; color:var(--gq-ink-3); font-weight:800;">1:12</span>
+                <span style="font-size:11px; color:var(--gq-ink-3); font-weight:800;">3:00</span>
+              </div>
+              <div style="height:5px; border-radius:9999px; background: rgba(102,126,234,0.15); overflow:hidden;">
+                <div style="width:40%; height:100%; background: linear-gradient(90deg, var(--gq-primary), var(--gq-mood-great)); border-radius:9999px;"></div>
+              </div>
+            </div>
+
+            <!-- bottom controls -->
+            <div class="absolute inset-x-0 flex items-center justify-between" style="bottom:74px; padding: 0 24px;">
+              <button class="ctrl-link gq-tap" style="font-size:12px;">I'm done</button>
+
+              <button class="gq-tap rounded-full flex items-center justify-center"
+                      style="width:64px; height:64px; background: var(--gq-primary); color:white; border:none; box-shadow:0 14px 28px -10px rgba(102,126,234,0.55);">
+                <svg width="20" height="20" viewBox="0 0 12 12" fill="white"><rect x="3" y="2" width="2" height="8" rx="0.5"/><rect x="7" y="2" width="2" height="8" rx="0.5"/></svg>
+              </button>
+
+              <button class="ctrl-pill ctrl-ghost gq-tap flex items-center gap-1" style="padding:9px 12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5l7 7-7 7M5 12h14" stroke="#4A4670" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                +30s
+              </button>
+            </div>
+
+            <!-- waveform + mute toggle -->
+            <div class="absolute inset-x-0 flex items-center justify-center gap-2" style="bottom:34px;">
+              <div class="flex items-end gap-0.5" style="height:14px;">
+                <div class="wave-bar" style="width:2px; height:60%; background:var(--gq-primary); border-radius:1px; animation-delay:0ms;"></div>
+                <div class="wave-bar" style="width:2px; height:90%; background:var(--gq-primary); border-radius:1px; animation-delay:120ms;"></div>
+                <div class="wave-bar" style="width:2px; height:70%; background:var(--gq-primary); border-radius:1px; animation-delay:240ms;"></div>
+                <div class="wave-bar" style="width:2px; height:100%; background:var(--gq-primary); border-radius:1px; animation-delay:80ms;"></div>
+                <div class="wave-bar" style="width:2px; height:50%; background:var(--gq-primary); border-radius:1px; animation-delay:200ms;"></div>
+              </div>
+              <span style="font-size:11px; color:var(--gq-ink-3); font-weight:700;">Mute audio, just visual</span>
+              <div style="width:30px; height:18px; border-radius:9999px; background:rgba(102,126,234,0.2); position:relative;" data-widget="MuteAudioToggle(off)">
+                <div style="position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:9999px; background:white;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <!-- C2 inline -->
+      <div class="flex flex-col items-center gap-4">
+        <span class="eyebrow">Inline in chat Â· play row</span>
+        <div class="gq-phone">
+          <div class="gq-island"></div>
+          <div class="gq-status">
+            <span>9:41</span>
+            <span class="flex gap-1.5 items-center">
+              <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+            </span>
+          </div>
+
+          <div class="gq-screen" data-widget="BodyScanCard(mode: .inline)">
+            <div class="chat-frame"></div>
+            <div class="chat-header">
+              <div class="alex-dot">A</div>
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--gq-ink);">Alex</div>
+                <div style="font-size:11px; color:var(--gq-ink-3); font-weight:600;">3-min scan playing</div>
+              </div>
+            </div>
+
+            <div class="absolute inset-x-0 px-4 flex flex-col gap-2" style="top:115px; bottom:80px; overflow:hidden;">
+              <div class="chat-bubble-ai">Want a 3-minute body scan? You can keep typing â I'll lower it when you do.</div>
+              <div class="chat-bubble-user">yes please</div>
+
+              <div class="frame-card mt-1" data-widget="ExerciseCardScaffold(inline: true)" style="padding:12px;">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <div class="rounded-full flex items-center justify-center" style="width:24px; height:24px; background:var(--gq-primary-soft);">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="6" r="3" stroke="#4F63C9" stroke-width="2"/><path d="M8 12h8M9 18h6" stroke="#4F63C9" stroke-width="2" stroke-linecap="round"/></svg>
+                    </div>
+                    <span style="font-size:13px; font-weight:800; color:var(--gq-ink);">Body scan</span>
+                    <span style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700;">SHOULDERS Â· 1:12</span>
+                  </div>
+                  <button class="rounded-full" style="width:22px; height:22px; background:transparent;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#8B86AB" stroke-width="2.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <!-- compact silhouette + waveform row -->
+                <div class="flex items-center gap-3">
+                  <div style="position:relative; width:44px; height:80px; flex-shrink:0;">
+                    <div class="scan-glow" style="position:absolute; left:50%; transform:translateX(-50%); width:48px; height:22px; border-radius:9999px;
+                                background: radial-gradient(ellipse, rgba(255,138,110,0.6), transparent 70%); filter:blur(4px);"></div>
+                    <svg width="44" height="80" viewBox="0 0 200 380" style="position:absolute; inset:0;">
+                      <circle cx="100" cy="42" r="28" class="silhouette"/>
+                      <path d="M88 70 L88 80 Q60 85 50 110 Q42 145 50 200 Q55 240 60 270 Q66 310 70 340 Q72 360 80 370 L100 370 L120 370 Q128 360 130 340 Q134 310 140 270 Q145 240 150 200 Q158 145 150 110 Q140 85 112 80 L112 70 Z" class="silhouette"/>
+                      <path d="M50 110 Q34 130 28 170 Q26 215 32 250" class="silhouette" stroke="rgba(102,126,234,0.18)" stroke-width="20" fill="none" stroke-linecap="round"/>
+                      <path d="M150 110 Q166 130 172 170 Q174 215 168 250" class="silhouette" stroke="rgba(102,126,234,0.18)" stroke-width="20" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:13px; font-weight:800; color:var(--gq-ink); line-height:1.4;">Notice your shoulders.</div>
+                    <div style="font-size:11px; color:var(--gq-ink-2); font-weight:600; line-height:1.4;">No need to relax â just notice.</div>
+                    <div class="mt-2" style="height:4px; border-radius:9999px; background: rgba(102,126,234,0.15); overflow:hidden;">
+                      <div style="width:40%; height:100%; background: linear-gradient(90deg, var(--gq-primary), var(--gq-mood-great));"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="ctrl-pill ctrl-primary gq-tap w-full mt-3 flex items-center justify-center gap-1.5">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="white"><rect x="3" y="2" width="2" height="8" rx="0.5"/><rect x="7" y="2" width="2" height="8" rx="0.5"/></svg>
+                  Pause
+                </button>
+                <button class="ctrl-link gq-tap w-full text-center mt-1" style="font-size:11.5px; padding:6px 0;">Open fullscreen Â· +30s Â· I'm done</button>
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <span style="flex:1;">Message Alexâ¦</span>
+              <button class="rounded-full flex items-center justify-center" style="width:34px; height:34px; background:var(--gq-primary);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="gq-home"></div>
+        </div>
+      </div>
+
+      <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+          <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li><code class="text-[11px]">BodyScanCard(mode)</code></li>
+            <li><code class="text-[11px]">BodySilhouette(focus)</code><br/><span style="color:var(--gq-ink-3);">focus â .head .shoulders .chest .abdomen .legs .feet .whole</span></li>
+            <li><code class="text-[11px]">ScanProgressBar()</code> Â· 0:00 â 3:00</li>
+            <li><code class="text-[11px]">MuteAudioToggle(off)</code></li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Motion Â· C</div>
+          <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li>Glow travel: 18s ease-in-out, loops</li>
+            <li>Caption cross-fade on focus change: <code>300ms</code></li>
+            <li>Waveform bars: 800ms ease-in-out, 80ms stagger (5 bars)</li>
+            <li>Inline-collapse on user typing: <code>240ms</code> spring</li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+          <div class="gq-screen-label mb-3">Shared scaffold</div>
+          <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+            <li><code class="text-[11px]">ExerciseCardScaffold</code> (base)</li>
+            <li>Â· header (icon + title + step + close)</li>
+            <li>Â· progress slot</li>
+            <li>Â· hero slot (orb / prompt / silhouette)</li>
+            <li>Â· primary CTA + ghost row</li>
+            <li>inline = padding 14, hero ~180px, single CTA</li>
+            <li>standalone = padding 18, hero ~50% vh, full controls</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

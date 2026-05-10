@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Wellness dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    /* Mood palette: heavy â great */
+    --mood-heavy:  #C9CCEB;
+    --mood-low:    #B6A3D9;
+    --mood-okay:   #A9B5F4;
+    --mood-good:   #FFB59B;
+    --mood-great:  #FF8E7A;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: #EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  .gq-fade-in    { animation: gqFadeIn 600ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up { animation: gqFadeInUp 700ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up.d1 { animation-delay: 80ms; }
+  .gq-fade-in-up.d2 { animation-delay: 160ms; }
+  .gq-fade-in-up.d3 { animation-delay: 240ms; }
+  .gq-fade-in-up.d4 { animation-delay: 320ms; }
+  .gq-fade-in-up.d5 { animation-delay: 400ms; }
+  @keyframes gqFadeIn   { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes gqFadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1), box-shadow 200ms; }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px;
+    background: var(--gq-bg);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730,
+      0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35),
+      0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 124px; height: 36px; border-radius: 20px; background: #000; z-index: 50;
+  }
+  .gq-status {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px 0; font-weight: 600; font-size: 15px; color: var(--gq-ink);
+  }
+  .gq-home {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 100px; background: rgba(31,27,58,0.28);
+    z-index: 60; pointer-events: none;
+  }
+  .gq-screen { position: absolute; inset: 0; overflow-y: auto; }
+  .gq-screen::-webkit-scrollbar { display: none; }
+  .gq-screen-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--gq-ink-3); text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Wellness dashboard
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">Returning user Â· mid-week Â· low-mood variant</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      The home surface. One clear next action, a gentle week-shape, three explicit lanes. Never a feed, never a streak ladder.
+    </p>
+  </header>
+
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center">
+
+    <!-- ========================================================== -->
+    <!-- DASHBOARD -->
+    <!-- ========================================================== -->
+    <div class="flex flex-col items-center gap-5" data-screen-label="Dashboard home">
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen">
+          <!-- ambient -->
+          <div class="absolute inset-0" style="background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 60%, #FBF6F6 100%);"></div>
+          <div class="absolute" style="top:120px; left:-60px; width:200px; height:200px; border-radius:100px; background:#D9DEFC; filter:blur(48px); opacity:0.55;"></div>
+          <div class="absolute" style="top:380px; right:-80px; width:200px; height:200px; border-radius:100px; background:#FFD9D9; filter:blur(52px); opacity:0.55;"></div>
+
+          <!-- ZONE 1 Â· greeting (~12% = 100px) -->
+          <header class="relative pt-14 px-6 pb-4 gq-fade-in" data-widget="GreetingStrip(time: .morning, streak: 5)">
+            <div class="flex items-center justify-between">
+              <div>
+                <div style="font-size:11px; font-weight:700; letter-spacing:0.4px; color:var(--gq-ink-3);">TUESDAY Â· MAY 7</div>
+                <div class="mt-0.5" style="font-size:24px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px; line-height:1.15;">
+                  Good morning, friend
+                </div>
+                <div class="mt-1" style="font-size:13px; color:var(--gq-ink-2); font-weight:600;">
+                  Day 5 of your check-in
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <div class="flex items-center gap-1.5"
+                     style="padding:6px 11px; border-radius:9999px; background:#FFF1E5; border:1px solid rgba(255,107,107,0.18); white-space:nowrap;">
+                  <span style="font-size:13px; line-height:1;">ð¥</span>
+                  <span style="font-size:13px; font-weight:800; color:#C2522F;">5</span>
+                </div>
+                <button class="gq-tap flex items-center justify-center"
+                        data-widget="ProfileButton()"
+                        aria-label="Profile"
+                        style="width:36px; height:36px; border-radius:9999px; background: linear-gradient(135deg, #667EEA 0%, #FF6B6B 100%); border:none; box-shadow:0 6px 14px -6px rgba(102,126,234,0.5);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" fill="white"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="white"/></svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- ZONE 2 Â· today's one thing (~25% = 210px) -->
+          <section class="relative px-5 mt-1 gq-fade-in-up d1" data-widget="TodaysOneThing(state: .lowMood)">
+            <div class="rounded-[20px] p-5"
+                 style="background: linear-gradient(135deg, #EEF0FE 0%, #FFE8E8 100%);
+                        border:1px solid var(--gq-hair); position:relative; overflow:hidden;">
+              <!-- inner shape -->
+              <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:9999px; background:rgba(255,255,255,0.45); filter:blur(8px);"></div>
+
+              <div class="relative flex items-start gap-3">
+                <div class="flex-shrink-0 rounded-2xl flex items-center justify-center"
+                     style="width:48px; height:48px; background:white; box-shadow:0 6px 14px -6px rgba(102,126,234,0.25);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3a6 6 0 016 6c0 3-2 5-2 7 0 1.5-1.5 3-4 3s-4-1.5-4-3c0-2-2-4-2-7a6 6 0 016-6z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M9 19h6" stroke="#667EEA" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div style="font-size:11px; font-weight:800; letter-spacing:0.4px; color:var(--gq-primary); text-transform:uppercase;">Today, just one thing</div>
+                  <div class="mt-1.5" style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.2px;">
+                    Maybe 3 minutes of breathing?
+                  </div>
+                  <div class="mt-1" style="font-size:13.5px; line-height:1.5; color:var(--gq-ink-2); font-weight:500;">
+                    You logged <span style="font-weight:800; color:var(--gq-ink);">low</span> this morning. I'll guide you â no pressure to talk.
+                  </div>
+                </div>
+              </div>
+
+              <div class="relative mt-4 flex items-center gap-2">
+                <button class="gq-tap flex-1 flex items-center justify-center gap-1.5"
+                        data-widget="OneThingPrimaryCTA(action: .breathing3min)"
+                        style="padding:14px; border-radius:9999px; background:var(--gq-primary); color:white; border:none;
+                               font-size:14.5px; font-weight:800; letter-spacing:0.2px;
+                               box-shadow:0 10px 22px -10px rgba(102,126,234,0.55);">
+                  Try together
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 5l8 7-8 7" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button class="gq-tap flex items-center justify-center"
+                        data-widget="OneThingDismiss()"
+                        aria-label="Not now"
+                        style="padding:14px 16px; border-radius:9999px; background:rgba(255,255,255,0.7); border:1px solid var(--gq-hair); color:var(--gq-ink-2); font-size:13px; font-weight:700; white-space:nowrap;">
+                  Not now
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ZONE 3 Â· this week (~25% = 210px) -->
+          <section class="relative px-5 mt-3 gq-fade-in-up d2" data-widget="WeekShapeChart(week)">
+            <div class="rounded-[20px] bg-white p-5"
+                 style="border:1px solid var(--gq-hair); box-shadow:0 1px 2px rgba(31,27,58,0.03);">
+              <div class="flex items-baseline justify-between">
+                <div class="gq-screen-label">This week</div>
+                <button class="gq-tap flex items-center gap-1"
+                        data-widget="WeekChartExpandLink()"
+                        style="font-size:11px; font-weight:800; letter-spacing:0.3px; color:var(--gq-primary); background:transparent; border:none; padding:0;">
+                  TIMELINE
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+
+              <!-- bars -->
+              <div class="mt-4 flex items-end justify-between gap-2" style="height:90px;">
+                <!-- M: okay -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:42px; background:var(--mood-okay);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">M</div>
+                </div>
+                <!-- T: good -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:58px; background:var(--mood-good);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">T</div>
+                </div>
+                <!-- W: great -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:74px; background:var(--mood-great);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">W</div>
+                </div>
+                <!-- T: okay -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:46px; background:var(--mood-okay);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">T</div>
+                </div>
+                <!-- F: heavy -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:24px; background:var(--mood-heavy);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">F</div>
+                </div>
+                <!-- S: low -->
+                <div class="flex flex-col items-center gap-1.5 flex-1">
+                  <div class="rounded-md w-full" style="height:34px; background:var(--mood-low);"></div>
+                  <div style="font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.2px;">S</div>
+                </div>
+                <!-- S: today, low (hero â slightly larger) -->
+                <div class="flex flex-col items-center gap-1.5 flex-1" style="position:relative;">
+                  <div class="rounded-md w-full" style="height:36px; background:var(--mood-low); box-shadow:0 0 0 2.5px white, 0 0 0 4px var(--gq-primary);"></div>
+                  <div style="font-size:10.5px; font-weight:800; color:var(--gq-primary); letter-spacing:0.2px;">TODAY</div>
+                </div>
+              </div>
+
+              <!-- gentle read -->
+              <div class="mt-4 flex items-start gap-2"
+                   style="padding-top:12px; border-top:1px dashed var(--gq-hair);">
+                <span style="font-size:14px; line-height:1; margin-top:2px;">â¨</span>
+                <p style="font-size:13px; line-height:1.5; color:var(--gq-ink-2); font-weight:500;">
+                  <span style="color:var(--gq-ink); font-weight:800;">Wednesday lifted you up.</span> Friday felt heavy.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ZONE 4 Â· quick lanes (~20% = 170px) -->
+          <section class="relative px-5 mt-3 gq-fade-in-up d3" data-widget="QuickLanesRow()">
+            <div class="grid grid-cols-3 gap-2">
+              <!-- Talk to Alex -->
+              <button class="gq-tap flex flex-col items-center justify-center gap-2"
+                      data-widget="QuickLane(.chat)"
+                      style="padding:16px 8px; border-radius:18px; background:white; border:1px solid var(--gq-hair); box-shadow:0 1px 2px rgba(31,27,58,0.03);">
+                <div class="rounded-2xl flex items-center justify-center"
+                     style="width:44px; height:44px; background:var(--gq-primary-soft);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 5h14a2 2 0 012 2v9a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="font-size:12px; font-weight:800; color:var(--gq-ink); letter-spacing:0.1px; white-space:nowrap;">Talk to Alex</div>
+              </button>
+              <!-- Log mood -->
+              <button class="gq-tap flex flex-col items-center justify-center gap-2"
+                      data-widget="QuickLane(.mood)"
+                      style="padding:16px 8px; border-radius:18px; background:white; border:1px solid var(--gq-hair); box-shadow:0 1px 2px rgba(31,27,58,0.03);">
+                <div class="rounded-2xl flex items-center justify-center"
+                     style="width:44px; height:44px; background:var(--gq-accent-soft); font-size:22px; line-height:1;">
+                  ð
+                </div>
+                <div style="font-size:12px; font-weight:800; color:var(--gq-ink); letter-spacing:0.1px; white-space:nowrap;">Log mood</div>
+              </button>
+              <!-- Browse exercises -->
+              <button class="gq-tap flex flex-col items-center justify-center gap-2"
+                      data-widget="QuickLane(.exercises)"
+                      style="padding:16px 8px; border-radius:18px; background:white; border:1px solid var(--gq-hair); box-shadow:0 1px 2px rgba(31,27,58,0.03);">
+                <div class="rounded-2xl flex items-center justify-center"
+                     style="width:44px; height:44px; background:var(--gq-primary-soft);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" stroke="#667EEA" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 17a3 3 0 003-3h11" stroke="#667EEA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="font-size:12px; font-weight:800; color:var(--gq-ink); letter-spacing:0.1px; white-space:nowrap;">Exercises</div>
+              </button>
+            </div>
+          </section>
+
+          <!-- ZONE 5 Â· gentle nudge (~10% = 84px) -->
+          <section class="relative px-5 mt-3 mb-8 gq-fade-in-up d4" data-widget="DailyNudgeOptIn()">
+            <div class="flex items-center gap-3"
+                 style="padding:14px 16px; border-radius:18px; background:rgba(255,255,255,0.6); border:1px dashed var(--gq-hair);">
+              <span style="font-size:18px; line-height:1;">ð</span>
+              <div class="flex-1 min-w-0">
+                <div style="font-size:13px; font-weight:800; color:var(--gq-ink); line-height:1.3;">A gentle daily nudge?</div>
+                <div class="mt-0.5" style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; line-height:1.4;">
+                  One soft reminder. Off whenever you want.
+                </div>
+              </div>
+              <!-- toggle -->
+              <button class="gq-tap flex-shrink-0"
+                      data-widget="NudgeToggle(value: false)"
+                      aria-pressed="false"
+                      aria-label="Enable daily nudge"
+                      style="width:46px; height:28px; border-radius:9999px; background:#E5E2EE; border:none; padding:3px; position:relative;">
+                <span style="display:block; width:22px; height:22px; border-radius:9999px; background:white; box-shadow:0 2px 4px rgba(31,27,58,0.18); transform:translateX(0);"></span>
+              </button>
+            </div>
+          </section>
+
+          <div class="h-4"></div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+
+      <div class="gq-screen-label">Dashboard Â· low-mood variant</div>
+      <div class="text-xs max-w-[340px] text-center" style="color:var(--gq-ink-2); line-height:1.5;">
+        "Today, just one thing" reads the user's most recent mood and offers a fitting next move. Bars use the mood palette so the chart reads emotionally before numerically.
+      </div>
+    </div>
+
+    <!-- Right rail Â· annotations -->
+    <aside class="flex flex-col gap-4 max-w-[340px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Zone budget (844 px)</div>
+        <ul class="text-[13px] space-y-1.5" style="color:var(--gq-ink-2);">
+          <li><b>1 Â· Greeting</b> â 100 px (12%)</li>
+          <li><b>2 Â· One thing</b> â 210 px (25%)</li>
+          <li><b>3 Â· Week shape</b> â 210 px (25%)</li>
+          <li><b>4 Â· Quick lanes</b> â 110 px (13%)</li>
+          <li><b>5 Â· Nudge</b> â 80 px (10%) Â· gracefully cut if disabled</li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">DashboardScreen()</code><br/><span style="color:var(--gq-ink-3);">root scaffold, ScrollView root</span></li>
+          <li><code class="text-[11px]">GreetingStrip(time, streak, dayCount)</code><br/><span style="color:var(--gq-ink-3);">time-aware copy + StreakPill + ProfileButton</span></li>
+          <li><code class="text-[11px]">TodaysOneThing(state)</code><br/><span style="color:var(--gq-ink-3);">.notLogged Â· .lowMood Â· .feelingGreat â chooses card body, icon, CTA</span></li>
+          <li><code class="text-[11px]">OneThingPrimaryCTA(action)</code><br/><span style="color:var(--gq-ink-3);">primary fill, routes to .quickCheckIn / .breathing3min / .journalNote</span></li>
+          <li><code class="text-[11px]">OneThingDismiss()</code><br/><span style="color:var(--gq-ink-3);">"Not now" â dismissed for the day, never permanent</span></li>
+          <li><code class="text-[11px]">WeekShapeChart(week)</code><br/><span style="color:var(--gq-ink-3);">7 bars, mood palette, today is haloed primary</span></li>
+          <li><code class="text-[11px]">WeekShapeRead(week)</code><br/><span style="color:var(--gq-ink-3);">1-line gentle summary; never diagnostic</span></li>
+          <li><code class="text-[11px]">QuickLanesRow()</code><br/><span style="color:var(--gq-ink-3);">3 equal QuickLane buttons; tile padding 16/8</span></li>
+          <li><code class="text-[11px]">QuickLane(.chat / .mood / .exercises)</code><br/><span style="color:var(--gq-ink-3);">44 px tinted icon Â· 12 px caption</span></li>
+          <li><code class="text-[11px]">DailyNudgeOptIn()</code><br/><span style="color:var(--gq-ink-3);">renders only if !notificationsEnabled Â· soft toggle</span></li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">"One thing" copy by state</div>
+        <ul class="text-[12.5px] space-y-3 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">.notLogged</div>
+            <div>"Log how you're feeling â 15 seconds." Â· CTA <code class="text-[11px]">Quick check-in</code></div>
+          </li>
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">.lowMood (shown)</div>
+            <div>"Maybe 3 minutes of breathing?" Â· CTA <code class="text-[11px]">Try together</code></div>
+          </li>
+          <li>
+            <div style="font-weight:800; color:var(--gq-ink);">.feelingGreat</div>
+            <div>"Nice. Want to capture what's working?" Â· CTA <code class="text-[11px]">Add a journal note</code></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Mood palette â bar fill</div>
+        <ul class="text-[12.5px] space-y-1.5" style="color:var(--gq-ink-2);">
+          <li><span style="display:inline-block; width:14px; height:14px; vertical-align:-2px; border-radius:3px; background:var(--mood-heavy);"></span> Heavy <code class="text-[11px]">#C9CCEB</code></li>
+          <li><span style="display:inline-block; width:14px; height:14px; vertical-align:-2px; border-radius:3px; background:var(--mood-low);"></span> Low <code class="text-[11px]">#B6A3D9</code></li>
+          <li><span style="display:inline-block; width:14px; height:14px; vertical-align:-2px; border-radius:3px; background:var(--mood-okay);"></span> Okay <code class="text-[11px]">#A9B5F4</code></li>
+          <li><span style="display:inline-block; width:14px; height:14px; vertical-align:-2px; border-radius:3px; background:var(--mood-good);"></span> Good <code class="text-[11px]">#FFB59B</code></li>
+          <li><span style="display:inline-block; width:14px; height:14px; vertical-align:-2px; border-radius:3px; background:var(--mood-great);"></span> Great <code class="text-[11px]">#FF8E7A</code></li>
+        </ul>
+      </div>
+    </aside>
+
+  </section>
+</main>
+
+</body>
+</html>

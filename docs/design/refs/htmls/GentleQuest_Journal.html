@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Journal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --gq-good:       #FFB59B;
+    --gq-okay:       #C9B7F0;
+    --gq-great:      #9CC487;
+    --gq-meh:        #B8B5CC;
+    --gq-rough:      #C49AD9;
+  }
+  html, body { margin:0; padding:0; background:#EAE6F5;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    color:var(--gq-ink); -webkit-font-smoothing:antialiased; }
+  * { box-sizing:border-box; }
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone { width:390px; height:844px; border-radius:56px; background:var(--gq-bg);
+    overflow:hidden; position:relative;
+    box-shadow: 0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05); }
+  .gq-island { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+  .eyebrow { font-size:10.5px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.7px; text-transform:uppercase; }
+
+  .nav-bar {
+    position:absolute; top:54px; left:0; right:0; padding:8px 16px;
+    display:flex; align-items:center; gap:10px; height:50px; z-index:5;
+    background:rgba(248,247,255,0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--gq-hair);
+  }
+  .nav-icon-btn { width:32px; height:32px; border-radius:50%; background:white; border:1px solid var(--gq-hair); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .scroll {
+    position:absolute; left:0; right:0; top:104px; bottom:0;
+    padding:14px 16px 30px; overflow-y:auto; overflow-x:hidden;
+  }
+  .scroll::-webkit-scrollbar { width:4px; }
+  .scroll::-webkit-scrollbar-thumb { background: rgba(31,27,58,0.15); border-radius:4px; }
+
+  /* A Â· empty state */
+  .notebook {
+    width:200px; height:160px; margin: 12px auto 0; position:relative;
+  }
+  .notebook .page {
+    position:absolute; inset:0; background:white; border-radius:6px 16px 16px 6px;
+    border:1px solid rgba(31,27,58,0.10);
+    box-shadow: 0 16px 40px -12px rgba(102,126,234,0.30), 0 4px 8px rgba(31,27,58,0.04);
+    transform: rotate(-3deg);
+  }
+  .notebook .page::before {
+    content:""; position:absolute; left:18px; top:0; bottom:0; width:1px; background: rgba(255,107,107,0.30);
+  }
+  .notebook .page::after {
+    content:""; position:absolute; left:0; top:14px; bottom:14px; width:6px;
+    background: repeating-linear-gradient(180deg, transparent 0 8px, rgba(31,27,58,0.10) 8px 9px);
+    border-radius: 0 4px 4px 0;
+  }
+  .notebook .lines {
+    position:absolute; left:34px; right:14px; top:24px; bottom:18px;
+    background: repeating-linear-gradient(180deg, transparent 0 17px, rgba(31,27,58,0.06) 17px 18px);
+    transform: rotate(-3deg);
+  }
+  .notebook .scribble {
+    position:absolute; left:48px; top:34px; transform: rotate(-3deg);
+    font-family: 'Caveat', cursive; color: rgba(102,126,234,0.55); font-size:18px; line-height:18px;
+  }
+  .notebook .leaf {
+    position:absolute; right:-10px; top:18px; transform: rotate(28deg);
+    color: var(--gq-great);
+  }
+
+  .chip-starter {
+    width:100%; text-align:left; display:flex; align-items:center; gap:10px;
+    padding:13px 14px; background:white; border:1px solid var(--gq-hair); border-radius:14px;
+    transition: transform 200ms cubic-bezier(.22,.94,.32,1), background 180ms;
+  }
+  .chip-starter .ic {
+    width:28px; height:28px; border-radius:9px; background: var(--gq-primary-soft);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    color: var(--gq-primary-dk); font-family: 'Caveat', cursive; font-size:18px; font-weight:700;
+  }
+  .chip-starter .t {
+    font-family: 'Caveat', cursive; font-size:18px; font-weight:500; color: var(--gq-ink);
+    line-height:1; letter-spacing:0.2px;
+  }
+  .chip-starter:active { transform: scale(0.99); background:#FCFBFE; }
+
+  /* B Â· entry view */
+  .entry-halo {
+    height:6px; width:100%;
+    background: linear-gradient(90deg, rgba(255,181,155,0.0) 0%, rgba(255,181,155,0.85) 30%, rgba(255,181,155,0.85) 70%, rgba(255,181,155,0.0) 100%);
+  }
+  .mood-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px; border-radius:9999px;
+    background: rgba(255,181,155,0.18); border:1px solid rgba(255,181,155,0.35);
+    font-size:11px; font-weight:800; color:#A0563E; letter-spacing:0.2px;
+  }
+  .mood-pill .dot { width:7px; height:7px; border-radius:50%; background: var(--gq-good); }
+
+  .entry-body {
+    font-family: 'Fraunces', serif;
+    font-size:17px; line-height:1.7; color: var(--gq-ink);
+    font-weight:400; letter-spacing: -0.1px;
+  }
+  .entry-body p + p { margin-top:14px; }
+
+  .tag-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 10px; background:white; border:1px solid var(--gq-hair); border-radius:9999px;
+    font-size:11px; font-weight:700; color: var(--gq-ink-2);
+  }
+  .tag-chip .hash { color: var(--gq-primary-dk); font-weight:800; }
+
+  .linked-checkin {
+    background: linear-gradient(135deg, rgba(255,181,155,0.10), rgba(255,181,155,0.04));
+    border:1px solid rgba(255,181,155,0.32); border-radius:14px;
+    padding:11px 12px;
+  }
+
+  /* C Â· timeline */
+  .seg-control {
+    display:inline-flex; padding:3px; background:rgba(102,126,234,0.10); border-radius:9999px;
+  }
+  .seg-control button {
+    padding:6px 12px; font-size:11.5px; font-weight:800; color:var(--gq-ink-2);
+    border-radius:9999px; transition: background 180ms;
+  }
+  .seg-control button.on { background:white; color:var(--gq-ink); box-shadow: 0 2px 6px rgba(31,27,58,0.06); }
+
+  .timeline-card {
+    display:flex; gap:11px; align-items:flex-start; padding:12px;
+    background:white; border:1px solid var(--gq-hair); border-radius:14px;
+  }
+  .timeline-card .mood-dot { width:11px; height:11px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .timeline-card .day {
+    font-size:11px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.4px; text-transform:uppercase;
+  }
+  .timeline-card .preview {
+    font-family: 'Fraunces', serif; font-size:13.5px; color:var(--gq-ink); line-height:1.4; font-weight:400;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .timeline-card .meta {
+    margin-top:6px; display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--gq-ink-3); font-weight:700;
+  }
+
+  .week-header {
+    display:flex; align-items:baseline; gap:8px;
+    padding: 14px 6px 8px;
+  }
+  .week-header .lbl {
+    font-size:11px; font-weight:800; color:var(--gq-ink-3); letter-spacing:0.6px; text-transform:uppercase;
+  }
+  .week-header .range {
+    font-size:11px; color:var(--gq-ink-3); font-weight:600;
+  }
+
+  .fab {
+    position:absolute; right:18px; bottom:30px; z-index:10;
+    width:56px; height:56px; border-radius:50%;
+    background: var(--gq-primary); color:white;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 18px 36px -10px rgba(102,126,234,0.65), 0 4px 8px rgba(31,27,58,0.10);
+  }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Journal
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· Empty state &nbsp;Â·&nbsp; B Â· Entry view &nbsp;Â·&nbsp; C Â· Timeline</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Capture-and-revisit. One line is a journal. Encrypted on device, never synced, never a feed.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· EMPTY STATE -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Journal Â· empty state">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">First-time empty state</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Notebook + leaf, three handwritten chip starters, single CTA.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="JournalEmptyState()">
+          <div class="nav-bar">
+            <button class="gq-tap nav-icon-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h1 style="font-size:18px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">Journal</h1>
+            <button class="gq-tap nav-icon-btn ml-auto" style="background: var(--gq-primary-soft); border-color: rgba(102,126,234,0.20);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14m-7-7h14" stroke="#4F63C9" stroke-width="2.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="scroll" style="padding-top:6px;">
+            <!-- ILLUSTRATION -->
+            <div class="notebook" data-widget="EmptyStateIllustration()">
+              <div class="page"></div>
+              <div class="lines"></div>
+              <div class="scribble">walking helped<br/>boundaries felt good<br/>bed by 10</div>
+              <div class="leaf">
+                <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                  <path d="M48 8c-22 0-36 14-36 32 0 4 1 8 2 10 2-1 6-2 10-2 18 0 32-14 32-36 0-2-1-4-2-4-2 0-4 1-6 0z" fill="rgba(156,196,135,0.85)" stroke="#5C7A48" stroke-width="1.5" stroke-linejoin="round"/>
+                  <path d="M14 50c8-12 18-22 30-30" stroke="#5C7A48" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div style="text-align:center; margin-top:18px; padding: 0 8px;">
+              <h2 style="font-family: 'Fraunces', serif; font-size:26px; font-weight:600; letter-spacing:-0.6px; color:var(--gq-ink); line-height:1.2;">
+                What's worth remembering?
+              </h2>
+              <p style="font-size:13.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.5; margin-top:8px; padding: 0 12px;">
+                Even one line is a journal. We'll keep it for you.
+              </p>
+            </div>
+
+            <!-- CHIP STARTERS -->
+            <div class="space-y-2 mt-5" data-widget="StarterChips(items: 3)">
+              <button class="chip-starter gq-tap" data-widget="StarterChip(.whatWorked)">
+                <div class="ic">a</div>
+                <div class="t">Today, what worked wasâ¦</div>
+              </button>
+              <button class="chip-starter gq-tap" data-widget="StarterChip(.iNoticed)">
+                <div class="ic">b</div>
+                <div class="t">I noticed myselfâ¦</div>
+              </button>
+              <button class="chip-starter gq-tap" data-widget="StarterChip(.remember)">
+                <div class="ic">c</div>
+                <div class="t">I want to rememberâ¦</div>
+              </button>
+            </div>
+
+            <!-- CTA -->
+            <button class="gq-tap w-full" data-widget="StartEntryCTA()" style="margin-top:18px; padding:15px; border-radius:9999px; background:var(--gq-primary); color:white; font-size:14.5px; font-weight:800; letter-spacing:-0.2px; box-shadow: 0 16px 32px -12px rgba(102,126,234,0.55);">
+              Start an entry
+            </button>
+
+            <!-- PRIVACY FOOTER -->
+            <div style="text-align:center; margin-top:14px;">
+              <div style="display:inline-flex; align-items:center; gap:5px; padding:6px 11px; background:rgba(102,126,234,0.06); border-radius:9999px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#4A4670" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" stroke="#4A4670" stroke-width="2" stroke-linecap="round"/></svg>
+                <span style="font-size:10.5px; font-weight:700; color:var(--gq-ink-2); letter-spacing:0.2px;">
+                  Stays on your device. Never synced. Never shared.
+                </span>
+              </div>
+            </div>
+
+            <div style="height:24px;"></div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">JournalScreen â JournalEmptyState()</code><br/><span style="color:var(--gq-ink-3);">Routes here when <code>entries.isEmpty</code></span></li>
+          <li><code class="text-[11px]">EmptyStateIllustration()</code> Â· static SVG, no anim</li>
+          <li><code class="text-[11px]">StarterChips(items)</code> + <code class="text-[11px]">StarterChip(prompt)</code><br/><span style="color:var(--gq-ink-3);">Tap â opens <code>JournalEditorSheet</code> with body pre-filled</span></li>
+          <li><code class="text-[11px]">StartEntryCTA()</code> Â· opens blank editor</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Editor open â¤ 300ms</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Editor sheet pre-mounted as hidden <code class="text-[11px]">Offstage</code> on screen entry</li>
+          <li>Tap â reveal + animate (220ms slide-up + 80ms fade)</li>
+          <li>Keyboard requested in same frame as reveal</li>
+          <li>No network call on open Â· no analytics blocking the show</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Cross-design hooks</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Wellness Dashboard <code class="text-[11px]">.feelingGreat</code> "Add a journal note" â opens editor with prompt <code class="text-[11px]">.whatWorked</code></li>
+          <li>Mood Reflection <code class="text-[11px]">.great</code> post-submit "What worked today?" â 1-line capture writes through <code class="text-[11px]">JournalRepository.quickAdd()</code></li>
+          <li>Weekly Review reads <code class="text-[11px]">JournalRepository.standoutMoments(window)</code> Â· standout = entries on mood â¥ 3 with body length â¥ 40 chars</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· ENTRY VIEW -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Journal Â· entry view">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Reading Â· Tuesday May 6 Â· Good day</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Mood halo, serif body, auto-tags, link back to that day's check-in.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="JournalEntryView(entryId)">
+          <div class="nav-bar">
+            <button class="gq-tap nav-icon-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h1 style="font-size:15px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">Tuesday, May 6</h1>
+            <div class="ml-auto flex gap-2">
+              <button class="gq-tap nav-icon-btn" data-widget="ShareEntryButton()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13" stroke="#4A4670" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="gq-tap nav-icon-btn" data-widget="EntryOverflow(.edit, .delete)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.6" fill="#4A4670"/><circle cx="12" cy="12" r="1.6" fill="#4A4670"/><circle cx="19" cy="12" r="1.6" fill="#4A4670"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="scroll" style="padding:0 0 30px;">
+            <!-- HEADER CARD -->
+            <div data-widget="EntryHeaderCard(mood: .good, time: '8:42 PM')">
+              <div class="entry-halo"></div>
+              <div style="padding:14px 18px 8px;">
+                <div class="flex items-center gap-2">
+                  <span class="mood-pill">
+                    <span class="dot"></span>
+                    Mood Â· Good
+                  </span>
+                  <span style="font-size:11.5px; color:var(--gq-ink-3); font-weight:700;">8:42 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- BODY -->
+            <article class="entry-body" style="padding: 8px 22px 4px;" data-widget="EntryBody(text)">
+              <p>Walked at lunch even though I didn't want to. Said no to one meeting that I would've said yes to two weeks ago. Got to bed by 10.</p>
+              <p>The day didn't fix anything but it felt softer. I think that's what I want to remember â that softness was possible without anything actually changing.</p>
+            </article>
+
+            <!-- TAGS -->
+            <div style="padding: 12px 18px 6px;" data-widget="EntryAutoTags(detected: 3)">
+              <div class="eyebrow" style="margin-bottom:6px;">DETECTED Â· ON-DEVICE</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span class="tag-chip"><span class="hash">#</span>walking</span>
+                <span class="tag-chip"><span class="hash">#</span>sleep</span>
+                <span class="tag-chip"><span class="hash">#</span>boundaries</span>
+              </div>
+            </div>
+
+            <!-- LINKED CONTEXT -->
+            <div style="padding: 10px 18px;">
+              <div class="linked-checkin" data-widget="LinkedCheckinChip(date)">
+                <div class="flex items-center gap-2">
+                  <div style="width:30px; height:30px; border-radius:9px; background:rgba(255,181,155,0.30); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#A0563E" stroke-width="2"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="#A0563E" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="10" r="1" fill="#A0563E"/><circle cx="15" cy="10" r="1" fill="#A0563E"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:11px; font-weight:800; color:#A0563E; letter-spacing:0.4px; text-transform:uppercase;">FROM YOUR CHECK-IN THAT DAY</div>
+                    <div style="font-size:12.5px; color:var(--gq-ink-2); font-weight:600; line-height:1.4; margin-top:1px;">Good Â· "Walked at lunch, the air was cold but bright."</div>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M9 6l6 6-6 6" stroke="#A0563E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- READ ANOTHER -->
+            <div style="padding: 18px 18px 10px; text-align:center;" data-widget="ReadNextLink(direction: .chronoNext)">
+              <a href="#" class="gq-tap inline-flex items-center gap-1" style="font-size:12.5px; font-weight:800; color:var(--gq-primary-dk);">
+                Read another Â· Wed May 7
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="#4F63C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">JournalEntryView(entryId)</code></li>
+          <li><code class="text-[11px]">EntryHeaderCard(mood, time)</code><br/><span style="color:var(--gq-ink-3);">Halo color is the mood color (Good=#FFB59B, Great=#9CC487, Okay=#C9B7F0, Meh=#B8B5CC, Rough=#C49AD9)</span></li>
+          <li><code class="text-[11px]">EntryBody(text)</code> Â· Fraunces serif, 17px, 1.7 lh</li>
+          <li><code class="text-[11px]">EntryAutoTags(text)</code><br/><span style="color:var(--gq-ink-3);">NLP-light Â· keyword + lemma matching, ALL on-device, never round-trips</span></li>
+          <li><code class="text-[11px]">LinkedCheckinChip(date)</code> Â· expandable, navigates inline to mood reflection without leaving page</li>
+          <li><code class="text-[11px]">ShareEntryButton()</code> Â· opens system share-sheet Â· explicit, never auto</li>
+          <li><code class="text-[11px]">EntryOverflow(.edit, .delete)</code> Â· delete requires confirmation</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Auto-tag rules</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Lexicon: ~120 tag stems shipped with the app, weighted by category (movement, sleep, social, work, food, mood-words)</li>
+          <li>Match threshold: 1 stem hit = chip. Max 4 chips per entry to avoid noise.</li>
+          <li>User can tap-to-remove a chip; removal pins to that entry only, not global block</li>
+          <li>Lexicon updates ship via app update only â never a remote config call</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Storage</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">sqflite_sqlcipher</code> Â· DB key in Keychain / Keystore</li>
+          <li>No iCloud / Google Drive backup of journal DB by default; opt-in setting if user requests</li>
+          <li>Export ("Save for therapist") generates a one-shot signed PDF in temp dir, deleted after share-sheet dismiss</li>
+          <li>Body text never sent to <code class="text-[11px]">FirebaseAnalytics</code>; only <code class="text-[11px]">{entryCount, hasEntryToday: bool}</code> aggregates</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· TIMELINE -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Journal Â· timeline">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Timeline Â· grouped by week Â· 12 entries</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Mood-dot left, serif preview, FAB for quick capture.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="JournalTimelineView(filter: .all)">
+          <div class="nav-bar">
+            <button class="gq-tap nav-icon-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h1 style="font-size:18px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.3px;">Journal</h1>
+            <div class="seg-control ml-auto" data-widget="TimelineFilter(value: .all)">
+              <button class="on">All</button>
+              <button>Week</button>
+              <button>Tag</button>
+            </div>
+          </div>
+
+          <div class="scroll" style="padding-top:8px;">
+            <!-- STAT STRIP -->
+            <div style="padding: 4px 6px 0;" data-widget="TimelineStatStrip(count: 12, window: '30d')">
+              <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:rgba(102,126,234,0.08); border-radius:9999px;">
+                <span style="font-size:11px; font-weight:800; color:var(--gq-primary-dk); letter-spacing:0.3px;">12 ENTRIES</span>
+                <span style="font-size:10px; color:var(--gq-ink-3); font-weight:700;">Â·</span>
+                <span style="font-size:11px; font-weight:700; color:var(--gq-ink-2);">last 30 days</span>
+              </div>
+            </div>
+
+            <!-- WEEK 1 -->
+            <div class="week-header">
+              <span class="lbl">THIS WEEK</span>
+              <span class="range">Mon May 5 â Sun May 11</span>
+            </div>
+            <div class="space-y-2">
+              <button class="timeline-card gq-tap w-full text-left" data-widget="JournalEntryCard(id, mood: .good)">
+                <div class="mood-dot" style="background:var(--gq-good);"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="day">Tue Â· May 6 Â· 8:42 PM</div>
+                  <div class="preview">Walked at lunch even though I didn't want to. Said no to one meetingâ¦</div>
+                  <div class="meta"><span>Â· 3 tags</span><span>Â· 96 words</span></div>
+                </div>
+              </button>
+              <button class="timeline-card gq-tap w-full text-left" data-widget="JournalEntryCard(id, mood: .okay)">
+                <div class="mood-dot" style="background:var(--gq-okay);"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="day">Wed Â· May 7 Â· 7:15 AM</div>
+                  <div class="preview">Slept badly but the morning was quiet. Made tea instead of doom-scrollingâ¦</div>
+                  <div class="meta"><span>Â· 2 tags</span><span>Â· 41 words</span></div>
+                </div>
+              </button>
+              <button class="timeline-card gq-tap w-full text-left" data-widget="JournalEntryCard(id, mood: .great)">
+                <div class="mood-dot" style="background:var(--gq-great);"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="day">Thu Â· May 8 Â· 9:08 PM</div>
+                  <div class="preview">Long call with mom that wasn't tense for the first time in months.</div>
+                  <div class="meta"><span>Â· 1 tag</span><span>Â· 22 words</span></div>
+                </div>
+              </button>
+            </div>
+
+            <!-- WEEK 2 -->
+            <div class="week-header">
+              <span class="lbl">LAST WEEK</span>
+              <span class="range">Apr 28 â May 4</span>
+            </div>
+            <div class="space-y-2">
+              <button class="timeline-card gq-tap w-full text-left" data-widget="JournalEntryCard(id, mood: .meh)">
+                <div class="mood-dot" style="background:var(--gq-meh);"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="day">Fri Â· May 2 Â· 11:48 PM</div>
+                  <div class="preview">Nothing big. Just wanted to remember that I made it through Friday without crashing.</div>
+                  <div class="meta"><span>Â· 1 tag</span><span>Â· 17 words</span></div>
+                </div>
+              </button>
+              <button class="timeline-card gq-tap w-full text-left" data-widget="JournalEntryCard(id, mood: .rough)">
+                <div class="mood-dot" style="background:var(--gq-rough);"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="day">Tue Â· Apr 29 Â· 6:30 AM</div>
+                  <div class="preview">Woke up heavy. The kind where you don't want to lie about it. Writing this anyway.</div>
+                  <div class="meta"><span>Â· 2 tags</span><span>Â· 28 words</span></div>
+                </div>
+              </button>
+            </div>
+
+            <!-- EMPTY-STATE-WITHIN-FILTER preview -->
+            <div style="margin-top:18px; padding: 18px 16px; background: rgba(102,126,234,0.05); border:1px dashed rgba(102,126,234,0.20); border-radius:14px; text-align:center;" data-widget="EmptyFilterState(filter: .tagNoMatch)">
+              <div class="eyebrow" style="color:var(--gq-primary-dk);">FILTER VARIANT Â· BY TAG Â· NO MATCH</div>
+              <div style="font-family:'Fraunces', serif; font-size:15px; font-weight:500; color:var(--gq-ink); margin-top:4px; letter-spacing:-0.2px;">
+                No entries with that tag yet.
+              </div>
+              <div style="font-size:11.5px; color:var(--gq-ink-2); font-weight:600; margin-top:2px;">
+                Try writing one.
+              </div>
+            </div>
+
+            <div style="height:90px;"></div>
+          </div>
+
+          <!-- FAB -->
+          <button class="fab gq-tap" data-widget="QuickCaptureFAB()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14m-7-7h14" stroke="white" stroke-width="2.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[300px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">JournalTimelineView(filter)</code><br/><span style="color:var(--gq-ink-3);">filter â {all, thisWeek, byTag(String)}</span></li>
+          <li><code class="text-[11px]">TimelineFilter(value)</code> Â· segmented control</li>
+          <li><code class="text-[11px]">TimelineStatStrip(count, window)</code> Â· "12 entries Â· last 30 days" â neutral language, no trend judgment</li>
+          <li><code class="text-[11px]">JournalEntryCard(id, mood)</code><br/><span style="color:var(--gq-ink-3);">Tap â <code>JournalEntryView(id)</code> Â· long-press â context menu (share / delete)</span></li>
+          <li><code class="text-[11px]">QuickCaptureFAB()</code> Â· opens editor sheet directly</li>
+          <li><code class="text-[11px]">EmptyFilterState(filter)</code> Â· soft suggestion, never streak-shaming</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">State machine</div>
+        <pre class="text-[10.5px] leading-relaxed" style="color:var(--gq-ink-2); white-space:pre-wrap; font-family: 'SF Mono', monospace;">empty
+  â Start an entry / chip / FAB
+creating  (JournalEditorSheet)
+  â on Save
+reading  (JournalEntryView)
+  â â¯ â Edit
+editing  (JournalEditorSheet, prefilled)
+  â on Save
+reading
+
+reading â timeline
+empty â timeline
+(timeline shown only when entries.isNotEmpty)</pre>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Anti-shame guardrails</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>No streak count. No "you missed 3 days." No fire emoji.</li>
+          <li>Empty filter copy is soft suggestion, never "you have no entries this week"</li>
+          <li>Stat strip shows count + window only â no comparison to previous period</li>
+          <li>Weekly Review pulls "standout moments" by mood-+-length, never by frequency</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Performance</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>List virtualization: <code class="text-[11px]">SliverList</code> with week headers as <code class="text-[11px]">SliverPersistentHeader</code></li>
+          <li>Initial paint: only this-week + last-week rendered; older weeks paged in on scroll</li>
+          <li>Auto-tag detection runs in <code class="text-[11px]">compute()</code> off main isolate during entry save, not on read</li>
+          <li>Editor open p95 target: 280ms cold, 120ms warm</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+</body>
+</html>

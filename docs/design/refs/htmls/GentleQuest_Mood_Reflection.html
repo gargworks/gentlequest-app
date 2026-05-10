@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var j=[];var x=false;var S=30000;var f=3000;document.addEventListener("DOMContentLoaded",()=>{const H=window.Babel;const G="om-src-id";if(H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[G])){H.registerPlugin(G,({types:Y})=>({visitor:{JSXOpeningElement(U,Q){const J=U.node;if(J.name&&J.name.type==="JSXMemberExpression")return;for(let V=0;V<J.attributes.length;V++){const L=J.attributes[V];if(L.type==="JSXAttribute"&&L.name&&L.name.name==="data-om-id")return}const W=Q.file&&Q.file.opts&&Q.file.opts.filename||"?";const Z=J.loc&&J.loc.start;const z=`jsx:${W}:${J.start??0}:${Z?Z.line:0}:${Z?Z.column+1:0}`;J.attributes.push(Y.jsxAttribute(Y.jsxIdentifier("data-om-id"),Y.stringLiteral(z)))}}}))}const k="om-text-extract";let A=false;if(x&&H&&H.registerPlugin&&!(H.availablePlugins&&H.availablePlugins[k])){const Y=window.React;if(Y&&Y.useSyncExternalStore&&Y.createElement){A=true;const U={};const Q=new Set;let J=0;window.__omTextO=U;window.__omTextSet=(z)=>{for(const V in z){const L=z[V];if(L==null)delete U[V];else U[V]=L}J++;Q.forEach((V)=>V())};const W=(z)=>{Q.add(z);return()=>Q.delete(z)};const Z=()=>J;window.__OmT=function z(V){Y.useSyncExternalStore(W,Z,Z);return Y.createElement("span",{"data-om-text":V.i,className:"__om-t"},V.i in U?U[V.i]:V.children)};H.registerPlugin(k,({types:z})=>{const V={style:1,script:1,noscript:1,textarea:1,title:1,option:1,text:1,tspan:1,textPath:1};const L={placeholder:1,alt:1,title:1,label:1,"aria-label":1,"aria-description":1,"aria-placeholder":1};const _=($,C)=>z.logicalExpression("??",z.memberExpression(z.logicalExpression("||",z.memberExpression(z.identifier("window"),z.identifier("__omTextO")),z.objectExpression([])),z.stringLiteral($),true),C);const E=($)=>$.file&&$.file.opts&&$.file.opts.filename||"?";const B=($)=>$.file&&$.file.code||"";const b=($,C)=>{const X=(F)=>F&&F.start!=null&&F.end!=null&&(F.type==="StringLiteral"||F.type==="TemplateLiteral"&&F.expressions.length===0)?[F.start,F.end]:null;const N=X(C);if(N)return N;if(C&&C.type==="Identifier"){const F=$.scope.getBinding(C.name);if(F&&F.constant&&F.path.node.type==="VariableDeclarator"){return X(F.path.node.init)}}return null};const M=($,C,X)=>{const N=$.node;let F=false;const w=(K,q)=>{F=true;return z.jsxElement(z.jsxOpeningElement(z.jsxIdentifier("__OmT"),[z.jsxAttribute(z.jsxIdentifier("i"),z.stringLiteral(K))],false),z.jsxClosingElement(z.jsxIdentifier("__OmT")),[q],false)};const D=N.children.map((K)=>{if(K.type==="JSXText"){if(K.start==null||K.end==null)return K;const q=X.slice(K.start,K.end);const R=q.length-q.trimStart().length;const m=q.length-q.trimEnd().length;if(R+m>=q.length)return K;return w(`txt:${C}:${K.start+R}:${K.end-m}`,K)}if(K.type==="JSXExpressionContainer"){const q=b($,K.expression);if(q)return w(`str:${C}:${q[0]}:${q[1]}`,K)}return K});if(F)N.children=D};return{visitor:{JSXOpeningElement($,C){const X=$.node;const N=E(C);const F={};for(let w=0;w<X.attributes.length;w++){const D=X.attributes[w];if(D.type!=="JSXAttribute"||!D.name)continue;const K=D.name.name;if(!L[K])continue;if(!D.value||D.value.type!=="StringLiteral")continue;if(D.value.start==null||D.value.end==null)continue;const q=`txt:${N}:${D.value.start}:${D.value.end}`;F[K]=q;D.value=z.jsxExpressionContainer(_(q,z.stringLiteral(D.value.value)))}if(Object.keys(F).length){X.attributes.push(z.jsxAttribute(z.jsxIdentifier("data-om-text-attrs"),z.stringLiteral(JSON.stringify(F))))}},JSXElement($,C){const X=$.node.openingElement;const N=X&&X.name&&X.name.name;if(N==="__OmT")return;if(typeof N==="string"&&V[N])return;M($,E(C),B(C))},JSXFragment($,C){M($,E(C),B(C))}}}})}}const u=A?["transform-react-jsx-source",G,k]:["transform-react-jsx-source",G];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Y,U)=>{const Q=Y.getAttribute("data-plugins")||"";const J=u.filter((W)=>Q.indexOf(W)<0);if(J.length){Y.setAttribute("data-plugins",Q?`${Q},${J.join(",")}`:J.join(","))}if(!Y.hasAttribute("data-filename")){Y.setAttribute("data-filename",Y.getAttribute("src")||`inline-${U}`)}})});var y=window.parent;if(y&&y!==window){const H=(Q,J)=>{try{y.postMessage({__omelette_log:true,type:Q,data:J},"*")}catch{}};["log","warn","error"].forEach((Q)=>{const J=console[Q];console[Q]=(...W)=>{const Z=W.map((z)=>{try{return typeof z==="object"?JSON.stringify(z):String(z)}catch{try{return String(z)}catch{return"[unstringifiable]"}}}).join(" ");H(Q,Z);J.apply(console,W)}});window.addEventListener("error",(Q)=>{const J=Q.target;if(J&&J!==window&&J.tagName){const W=J.src||J.href||"";H("resource_error",`${J.tagName} failed to load: ${W}`)}else{H("error",`${Q.message||"Unknown error"} at ${Q.filename||"?"}:${Q.lineno||0}:${Q.colno||0}`)}},true);window.addEventListener("unhandledrejection",(Q)=>{const J=Q.reason;const W=J instanceof Error?`${J.message} ${J.stack}`:String(J);H("error",`Unhandled rejection: ${W}`)});const G=()=>{try{y.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")G();else window.addEventListener("load",G);if(window.ResizeObserver)new ResizeObserver(G).observe(document.documentElement);const k={};let A=0;window.claude={complete(Q){return new Promise((J,W)=>{if(!j.length){W(new Error("claude.complete: no parent origin"));return}const Z=`c${++A}`;const z=()=>setTimeout(()=>{delete k[Z];W(new Error(`claude.complete: no data for ${S/1000}s`))},S);const V=z();k[Z]={resolve:J,reject:W,text:"",t:V,arm:z};try{for(const L of j){y.postMessage({__om_api:true,id:Z,body:Q},L)}}catch(L){clearTimeout(V);delete k[Z];W(L)}})}};const u={};let Y=0;window.omelette={writeFile:(Q,J)=>new Promise((W,Z)=>{if(!j.length){W();return}const z=`f${++Y}`;const V=setTimeout(()=>{delete u[z];W()},f);u[z]={resolve:W,reject:Z,t:V};try{for(const L of j){y.postMessage({__om_file:true,id:z,op:"write",path:Q,content:J},L)}}catch{clearTimeout(V);delete u[z];W()}})};const U=(Q)=>{try{return JSON.stringify(Q)}catch{return JSON.stringify(String(Q))}};window.addEventListener("message",(Q)=>{if(j.indexOf(Q.origin)<0)return;if(Q.source!==y)return;const J=Q.data;if(!J)return;if(J.type==="omelette-preview-refresh"){if(typeof J.token!=="string"||!/^[0-9a-f.-]+$/.test(J.token))return;const z=Math.max(1,Math.floor((J.expiresAt||0)-Date.now()/1000));document.cookie="__Host-omelette-preview="+J.token+"; Path=/; Secure; SameSite=None; Partitioned; Max-Age="+z;return}if(J.__om_file_r){const z=u[J.id];if(!z)return;clearTimeout(z.t);delete u[J.id];if(J.ok)z.resolve();else z.reject(new Error(J.error||"write failed"));return}if(J.__om_api_r){const z=k[J.id];if(!z)return;if(J.error!=null){clearTimeout(z.t);delete k[J.id];z.reject(new Error(J.error));return}if(J.chunk!=null){clearTimeout(z.t);z.t=z.arm();z.text+=J.chunk;return}if(J.done){clearTimeout(z.t);delete k[J.id];z.resolve(J.text!=null?J.text:z.text);return}return}if(!J.__om_eval)return;const W=J;const Z=(z)=>{Q.source.postMessage({...z,__om_eval_r:1,id:W.id},Q.origin)};try{const z=(0,eval)(W.code);if(z&&typeof z.then==="function"){z.then((V)=>Z({ok:1,v:U(V)}),(V)=>Z({ok:0,e:String(V)}))}else{Z({ok:1,v:U(z)})}}catch(z){Z({ok:0,e:String(z)})}})}})();
+</script>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest â Mood reflection</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:    #667EEA;
+    --gq-primary-dk: #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:     #FF6B6B;
+    --gq-accent-soft:#FFE8E8;
+    --gq-bg:         #F8F7FF;
+    --gq-ink:        #1F1B3A;
+    --gq-ink-2:      #4A4670;
+    --gq-ink-3:      #8B86AB;
+    --gq-hair:       rgba(31,27,58,0.08);
+    --gq-mood-heavy: #6B7CC4;
+    --gq-mood-low:   #8E96D6;
+    --gq-mood-okay:  #C2BFE8;
+    --gq-mood-good:  #FFB89E;
+    --gq-mood-great: #FF8A6E;
+  }
+  html, body {
+    margin:0; padding:0; background:#EAE6F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', system-ui, sans-serif;
+    color: var(--gq-ink); -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  .gq-fade-in    { animation: gqFadeIn 600ms cubic-bezier(.22,.94,.32,1) both; }
+  .gq-fade-in-up { animation: gqFadeInUp 700ms cubic-bezier(.22,.94,.32,1) both; }
+  .d1 { animation-delay: 80ms; } .d2 { animation-delay: 160ms; }
+  .d3 { animation-delay: 240ms; } .d4 { animation-delay: 320ms; }
+  @keyframes gqFadeIn   { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes gqFadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes gqBounceIn {
+    0%   { transform: scale(0.5); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  .gq-bounce-in { animation: gqBounceIn 420ms cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes gqConfettiFloat {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateY(-26px) rotate(70deg); opacity: 0; }
+  }
+  .gq-confetti { animation: gqConfettiFloat 1000ms ease-out 1 both; }
+  @keyframes gqToastIn {
+    0%   { transform: translateY(-12px); opacity: 0; }
+    20%  { transform: translateY(0); opacity: 1; }
+    80%  { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-6px); opacity: 0; }
+  }
+  .gq-toast { animation: gqToastIn 2000ms cubic-bezier(.22,.94,.32,1) both; }
+  @keyframes gqSheetSlideDown {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(78%); }
+  }
+  .gq-sheet-dismissing { animation: gqSheetSlideDown 600ms cubic-bezier(.55,.05,.65,.2) both; animation-delay: 800ms; }
+
+  .gq-tap { transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .gq-tap:active { transform: scale(0.98); }
+
+  .gq-phone {
+    width: 390px; height: 844px;
+    border-radius: 56px; background: var(--gq-bg);
+    overflow: hidden; position: relative;
+    box-shadow:
+      0 0 0 10px #1A1730, 0 0 0 11px rgba(255,255,255,0.05),
+      0 40px 80px -20px rgba(31,27,58,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .gq-island { position: absolute; top:14px; left:50%; transform:translateX(-50%); width:124px; height:36px; border-radius:20px; background:#000; z-index:50; }
+  .gq-status { position:absolute; top:0; left:0; right:0; height:54px; z-index:40; display:flex; align-items:center; justify-content:space-between; padding:18px 32px 0; font-weight:600; font-size:15px; color:var(--gq-ink); }
+  .gq-home   { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:100px; background:rgba(31,27,58,0.28); z-index:60; pointer-events:none; }
+  .gq-screen { position:absolute; inset:0; overflow:hidden; }
+  .gq-screen-label { font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--gq-ink-3); text-transform:uppercase; }
+  .stack-divider { height:1px; max-width:600px; margin:64px auto; background: linear-gradient(90deg, transparent, rgba(31,27,58,0.18), transparent); }
+
+  /* dashboard skeleton (behind sheets) */
+  .dash-bg { position:absolute; inset:0; background: linear-gradient(180deg, #F8F7FF 0%, #F2F1FE 60%, #FBF6F6 100%); }
+  .dash-eyebrow { font-size:10.5px; font-weight:700; color:var(--gq-ink-3); letter-spacing:0.6px; text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<main class="min-h-screen w-full px-8 py-16">
+
+  <header class="max-w-6xl mx-auto mb-10">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.5px; color:var(--gq-ink); line-height:1;">
+        Mood entry â reflection
+      </h1>
+      <div class="text-sm font-semibold" style="color:var(--gq-ink-2);">A Â· B Â· C Â· 3 post-submit states</div>
+    </div>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed" style="color:var(--gq-ink-2);">
+      Heavy â invitation, never pressure. Great â harvest the wisdom. Okay â log and go.
+      The reflection is where retention compounds.
+    </p>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- A Â· LOW-MOOD POST-SUBMIT -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="A Â· Low mood reflection">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup A</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Post-submit Â· feeling low</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Invitation, not pressure Â· pattern note as quiet footer.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="MoodReflection(state: .low)">
+          <!-- dim'd dashboard behind -->
+          <div class="dash-bg"></div>
+          <div class="absolute inset-x-0 px-5" style="top:64px; opacity:0.45;">
+            <div class="dash-eyebrow">TUESDAY Â· MAY 8</div>
+            <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Hi Sam.</div>
+            <div class="mt-3 rounded-2xl bg-white" style="height:90px; border:1px solid var(--gq-hair);"></div>
+          </div>
+          <div class="absolute inset-0" style="background:rgba(31,27,58,0.32); backdrop-filter:blur(2px);"></div>
+
+          <!-- bottom sheet -->
+          <article class="absolute inset-x-0 bottom-0 gq-fade-in-up"
+                   style="background:white; border-radius:28px 28px 0 0;
+                          box-shadow:0 -20px 60px -20px rgba(31,27,58,0.35);
+                          padding:14px 0 32px;"
+                   data-widget="PostSubmitLowMood()">
+            <div class="px-5">
+              <div class="flex justify-center mb-4">
+                <div style="width:44px; height:5px; border-radius:100px; background:#E5E2EE;"></div>
+              </div>
+
+              <!-- mood chip + confetti pulse around it -->
+              <div class="flex justify-center mb-4 relative gq-bounce-in" style="height:72px;">
+                <div style="position:relative; width:72px; height:72px;">
+                  <!-- confetti dots, fading 1s -->
+                  <span class="gq-confetti" style="position:absolute; top:8px; left:-2px; width:6px; height:6px; border-radius:9999px; background:var(--gq-primary); animation-delay:50ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:0; right:-4px; width:5px; height:5px; border-radius:9999px; background:var(--gq-accent); animation-delay:120ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:14px; right:-10px; width:4px; height:4px; border-radius:9999px; background:var(--gq-mood-good); animation-delay:200ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:6px; left:-12px; width:5px; height:5px; border-radius:9999px; background:var(--gq-mood-low); animation-delay:160ms;"></span>
+                  <div class="rounded-full flex items-center justify-center"
+                       style="width:72px; height:72px; background: linear-gradient(135deg, var(--gq-mood-low) 0%, var(--gq-mood-heavy) 100%);
+                              box-shadow:0 14px 30px -10px rgba(107,124,196,0.55);">
+                    <span style="font-size:34px; line-height:1;">ð</span>
+                  </div>
+                </div>
+              </div>
+
+              <h2 class="text-center" style="font-size:24px; font-weight:800; line-height:1.18; letter-spacing:-0.4px; color:var(--gq-ink);">
+                Logged. Heavy day, hm?
+              </h2>
+              <p class="mt-2 text-center" style="font-size:13.5px; line-height:1.55; color:var(--gq-ink-2); font-weight:500;">
+                Want to do one tiny thing together?
+              </p>
+
+              <!-- options -->
+              <div class="mt-5 space-y-2.5" data-widget="LowMoodOptionList()">
+                <button class="gq-tap w-full flex items-center gap-3"
+                        data-widget="LowMoodOption(.chatWithAlex)"
+                        style="padding:14px; border-radius:18px; background:var(--gq-primary); border:none;
+                               color:white; text-align:left;
+                               box-shadow:0 12px 28px -12px rgba(102,126,234,0.55);">
+                  <div class="flex-shrink-0 rounded-full flex items-center justify-center" style="width:40px; height:40px; background:rgba(255,255,255,0.18);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:14.5px; font-weight:800; line-height:1.2;">Talk to Alex for 5 minutes</div>
+                    <div style="font-size:11.5px; opacity:0.85; font-weight:600; margin-top:2px;">Just say what's on your mind</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; opacity:0.85;"><path d="M9 6l6 6-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <button class="gq-tap w-full flex items-center gap-3"
+                        data-widget="LowMoodOption(.breathing)"
+                        style="padding:14px; border-radius:18px; background:var(--gq-bg); border:1px solid var(--gq-hair);
+                               text-align:left;">
+                  <div class="flex-shrink-0 rounded-full flex items-center justify-center" style="width:40px; height:40px; background:white; border:1px solid var(--gq-hair);">
+                    <span style="font-size:18px; line-height:1;">ð¬ï¸</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:14.5px; font-weight:800; line-height:1.2; color:var(--gq-ink);">Try 1 minute of breathing</div>
+                    <div style="font-size:11.5px; color:var(--gq-ink-3); font-weight:600; margin-top:2px;">4-7-8 Â· slows things down</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M9 6l6 6-6 6" stroke="#8B86AB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+
+              <button class="gq-tap mt-3 w-full text-center"
+                      data-widget="LowMoodCloseLink()"
+                      style="background:transparent; border:none; padding:10px; font-size:12.5px; color:var(--gq-ink-3); font-weight:700;">
+                Just close this â I'll come back
+              </button>
+
+              <!-- pattern detection footer -->
+              <div class="mt-4 flex items-center gap-2.5 gq-tap"
+                   data-widget="PatternDetectionRow(matchKey: 'sameDayLastWeek')"
+                   style="padding:12px 14px; border-radius:14px; background:rgba(102,126,234,0.06); border:1px dashed rgba(102,126,234,0.22);">
+                <div class="flex-shrink-0 rounded-full flex items-center justify-center" style="width:24px; height:24px; background:white; border:1px solid var(--gq-hair);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 12c2-3 5-3 7 0s5 3 7 0 5-3 7 0" stroke="#667EEA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span style="flex:1; font-size:11.5px; line-height:1.45; color:var(--gq-ink-2); font-weight:600;">
+                  You felt the same way last <span style="color:var(--gq-ink); font-weight:800;">Tuesday</span>.
+                </span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M9 6l6 6-6 6" stroke="#8B86AB" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· A</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">PostSubmitLowMood()</code><br/><span style="color:var(--gq-ink-3);">renders for .heavy or .low only</span></li>
+          <li><code class="text-[11px]">LowMoodOption(.chatWithAlex | .breathing)</code><br/><span style="color:var(--gq-ink-3);">tap â sheet slides down, target screen fades in (300ms)</span></li>
+          <li><code class="text-[11px]">PatternDetectionRow(matchKey)</code><br/><span style="color:var(--gq-ink-3);">renders only if mood-history match found Â· taps open Timeline</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Motion Â· A</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Confetti fade: <code>1000ms</code> ease-out, 1 cycle</li>
+          <li>Mood chip bounce: <code>420ms</code> spring</li>
+          <li>Content stagger: 80 / 160 / 240 / 320ms</li>
+          <li>Sheet slide-down on option tap: <code>320ms</code> cubic-bezier(.55,.05,.65,.2)</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Copy rules Â· A</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>"Want to" not "you should"</li>
+          <li>"One tiny thing" â scope is small</li>
+          <li>Pattern note is factual, never diagnostic</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- B Â· GREAT-MOOD POST-SUBMIT -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="B Â· Great mood reflection">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup B</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Post-submit Â· feeling great</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Harvest what worked Â· streak bounce.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="MoodReflection(state: .great)">
+          <div class="dash-bg"></div>
+          <div class="absolute inset-x-0 px-5" style="top:64px; opacity:0.45;">
+            <div class="dash-eyebrow">TUESDAY Â· MAY 8</div>
+            <div style="font-size:22px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Hi Sam.</div>
+            <div class="mt-3 rounded-2xl bg-white" style="height:90px; border:1px solid var(--gq-hair);"></div>
+          </div>
+          <div class="absolute inset-0" style="background:rgba(31,27,58,0.32); backdrop-filter:blur(2px);"></div>
+
+          <article class="absolute inset-x-0 bottom-0 gq-fade-in-up"
+                   style="background:white; border-radius:28px 28px 0 0;
+                          box-shadow:0 -20px 60px -20px rgba(31,27,58,0.35);
+                          padding:14px 0 32px;"
+                   data-widget="PostSubmitGreatMood()">
+            <div class="px-5">
+              <div class="flex justify-center mb-4">
+                <div style="width:44px; height:5px; border-radius:100px; background:#E5E2EE;"></div>
+              </div>
+
+              <div class="flex justify-center mb-4 relative gq-bounce-in" style="height:72px;">
+                <div style="position:relative; width:72px; height:72px;">
+                  <span class="gq-confetti" style="position:absolute; top:8px; left:-2px; width:6px; height:6px; border-radius:9999px; background:var(--gq-mood-great); animation-delay:50ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:0; right:-4px; width:5px; height:5px; border-radius:9999px; background:var(--gq-primary); animation-delay:120ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:14px; right:-10px; width:4px; height:4px; border-radius:9999px; background:var(--gq-mood-good); animation-delay:200ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:6px; left:-12px; width:5px; height:5px; border-radius:9999px; background:var(--gq-accent); animation-delay:160ms;"></span>
+                  <span class="gq-confetti" style="position:absolute; top:-6px; left:32px; width:4px; height:4px; border-radius:9999px; background:var(--gq-mood-okay); animation-delay:240ms;"></span>
+                  <div class="rounded-full flex items-center justify-center"
+                       style="width:72px; height:72px; background: linear-gradient(135deg, var(--gq-mood-good) 0%, var(--gq-mood-great) 100%);
+                              box-shadow:0 14px 30px -10px rgba(255,138,110,0.55);">
+                    <span style="font-size:34px; line-height:1;">ð</span>
+                  </div>
+                </div>
+              </div>
+
+              <h2 class="text-center" style="font-size:24px; font-weight:800; line-height:1.18; letter-spacing:-0.4px; color:var(--gq-ink);">
+                Love that. What worked today?
+              </h2>
+              <p class="mt-2 text-center" style="font-size:13.5px; line-height:1.55; color:var(--gq-ink-2); font-weight:500;">
+                30 seconds â I'll remember it for next time.
+              </p>
+
+              <!-- single text field -->
+              <div class="mt-5" data-widget="WhatWorkedField()">
+                <div class="flex items-center gap-2 bg-white"
+                     style="padding:14px 16px; border-radius:16px; border:1.5px solid var(--gq-primary); box-shadow:0 0 0 4px rgba(102,126,234,0.12);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M12 5v14M5 12h14" stroke="#667EEA" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  <input type="text" placeholder="good food, walked, slept well, said noâ¦"
+                         style="flex:1; border:none; outline:none; background:transparent; font-size:13.5px; font-weight:600; color:var(--gq-ink); font-family:inherit;" />
+                </div>
+                <div class="flex justify-end mt-1.5">
+                  <span style="font-size:10.5px; color:var(--gq-ink-3); font-weight:700;">private to you</span>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="mt-3 flex gap-2">
+                <button class="gq-tap flex-1"
+                        data-widget="GreatMoodCloseBtn()"
+                        style="padding:14px; border-radius:9999px; background:var(--gq-bg); border:1px solid var(--gq-hair); font-size:13.5px; font-weight:800; color:var(--gq-ink-2);">
+                  Just close
+                </button>
+                <button class="gq-tap flex-1"
+                        data-widget="SaveThoughtBtn()"
+                        style="padding:14px; border-radius:9999px; background:var(--gq-primary); border:none; color:white; font-size:13.5px; font-weight:800;
+                               box-shadow:0 12px 26px -10px rgba(102,126,234,0.55);">
+                  Save thought
+                </button>
+              </div>
+
+              <!-- streak badge with bounce -->
+              <div class="mt-4 flex justify-center">
+                <div class="flex items-center gap-2 gq-bounce-in"
+                     data-widget="StreakBadge(days: 7)"
+                     style="padding:9px 14px; border-radius:9999px;
+                            background: linear-gradient(135deg, #FFF1E5 0%, #FFE8E8 100%);
+                            border:1px solid rgba(255,138,110,0.3); animation-delay:300ms;">
+                  <span style="font-size:13px; line-height:1;">ð¥</span>
+                  <span style="font-size:12px; font-weight:800; color:#B5562F; white-space:nowrap;">
+                    Streak: <span style="color:var(--gq-ink);">7 days</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· B</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">PostSubmitGreatMood()</code><br/><span style="color:var(--gq-ink-3);">renders for .good or .great only</span></li>
+          <li><code class="text-[11px]">WhatWorkedField()</code><br/><span style="color:var(--gq-ink-3);">single line Â· stored as moodEntry.note + tags[]</span></li>
+          <li><code class="text-[11px]">SaveThoughtBtn() / GreatMoodCloseBtn()</code><br/><span style="color:var(--gq-ink-3);">both close sheet + reveal toast (B â C path)</span></li>
+          <li><code class="text-[11px]">StreakBadge(days)</code><br/><span style="color:var(--gq-ink-3);">renders only if days &gt; 0</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Motion Â· B</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Mood chip + streak bounce: <code>420ms</code> spring</li>
+          <li>Streak entry delayed: <code>300ms</code></li>
+          <li>Confetti: 5 dots, fade 1000ms ease-out</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <div class="stack-divider"></div>
+
+  <!-- ============================================================ -->
+  <!-- C Â· NEUTRAL AUTO-DISMISS -->
+  <!-- ============================================================ -->
+  <section class="max-w-6xl mx-auto flex flex-wrap gap-12 items-start justify-center" data-screen-label="C Â· Neutral auto-dismiss">
+    <div class="flex flex-col items-center gap-5">
+      <figcaption class="self-stretch max-w-[390px]">
+        <div class="gq-screen-label">Mockup C</div>
+        <div class="text-lg font-extrabold mt-1" style="color:var(--gq-ink);">Post-submit Â· feeling okay</div>
+        <div class="text-sm mt-1" style="color:var(--gq-ink-2);">Sheet sliding down Â· toast lives 2s Â· log and go.</div>
+      </figcaption>
+
+      <div class="gq-phone">
+        <div class="gq-island"></div>
+        <div class="gq-status">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center">
+            <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="gq-screen" data-widget="MoodReflection(state: .okay)">
+          <!-- dashboard fully visible -->
+          <div class="dash-bg"></div>
+
+          <!-- toast at top -->
+          <div class="absolute inset-x-0 flex justify-center gq-toast" style="top:74px; z-index:30;" data-widget="MoodLoggedToast()">
+            <div class="flex items-center gap-2.5"
+                 style="padding:11px 16px; border-radius:9999px; background:white;
+                        box-shadow: 0 14px 30px -10px rgba(31,27,58,0.18), 0 0 0 1px var(--gq-hair);">
+              <span style="font-size:14px; line-height:1;">ð±</span>
+              <span style="font-size:13px; font-weight:800; color:var(--gq-ink); white-space:nowrap;">Logged.</span>
+              <span style="font-size:13px; font-weight:600; color:var(--gq-ink-3); white-space:nowrap;">Talk soon.</span>
+            </div>
+          </div>
+
+          <!-- dashboard content, becoming visible -->
+          <div class="absolute inset-x-0 px-5" style="top:120px;">
+            <div class="dash-eyebrow">TUESDAY Â· MAY 8</div>
+            <div style="font-size:24px; font-weight:800; color:var(--gq-ink); letter-spacing:-0.4px;">Hi Sam.</div>
+            <p class="mt-1" style="font-size:13.5px; color:var(--gq-ink-2); font-weight:500;">Today, just one thing.</p>
+
+            <!-- one thing card -->
+            <div class="mt-4 rounded-2xl"
+                 style="padding:16px; background: linear-gradient(160deg, #EEF0FE 0%, #FBF1F4 70%, #FFE8E8 100%); border:1px solid rgba(102,126,234,0.18);">
+              <div class="dash-eyebrow" style="color:var(--gq-primary-dk);">YOUR MOMENT</div>
+              <div class="mt-1" style="font-size:18px; font-weight:800; color:var(--gq-ink); line-height:1.3; letter-spacing:-0.3px;">A 5-minute walk, even just to the window.</div>
+              <div class="mt-3 flex items-center gap-2">
+                <button style="padding:10px 16px; border-radius:9999px; background:var(--gq-primary); color:white; border:none; font-size:13px; font-weight:800;">Start now</button>
+                <button style="padding:10px 14px; border-radius:9999px; background:transparent; color:var(--gq-ink-3); border:none; font-size:12.5px; font-weight:700;">Not now</button>
+              </div>
+            </div>
+
+            <!-- mood week strip preview -->
+            <div class="mt-4 rounded-2xl bg-white" style="padding:14px; border:1px solid var(--gq-hair);">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="dash-eyebrow">THIS WEEK</div>
+                  <div style="font-size:14.5px; font-weight:800; color:var(--gq-ink); margin-top:2px;">7 logs Â· steady</div>
+                </div>
+                <span style="font-size:10px; font-weight:800; padding:3px 8px; border-radius:9999px; background:var(--gq-primary-soft); color:var(--gq-primary-dk);">+1 today</span>
+              </div>
+              <div class="flex items-end gap-2 mt-3" style="height:48px;">
+                <div style="flex:1; background:var(--gq-mood-low); border-radius:6px; height:55%;"></div>
+                <div style="flex:1; background:var(--gq-mood-okay); border-radius:6px; height:65%;"></div>
+                <div style="flex:1; background:var(--gq-mood-okay); border-radius:6px; height:60%;"></div>
+                <div style="flex:1; background:var(--gq-mood-good); border-radius:6px; height:78%;"></div>
+                <div style="flex:1; background:var(--gq-mood-okay); border-radius:6px; height:62%;"></div>
+                <div style="flex:1; background:var(--gq-mood-low); border-radius:6px; height:50%;"></div>
+                <!-- today: highlighted -->
+                <div style="flex:1; background:var(--gq-mood-okay); border-radius:6px; height:65%; box-shadow: 0 0 0 2px white, 0 0 0 4px var(--gq-primary);"></div>
+              </div>
+              <div class="flex gap-2 mt-1.5" style="font-size:9.5px; color:var(--gq-ink-3); font-weight:700; text-align:center;">
+                <span style="flex:1;">W</span><span style="flex:1;">T</span><span style="flex:1;">F</span><span style="flex:1;">S</span><span style="flex:1;">S</span><span style="flex:1;">M</span><span style="flex:1; color:var(--gq-primary-dk);">T</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- sheet 70% offscreen sliding down -->
+          <div class="absolute inset-x-0" style="bottom:-560px; transform: translateY(0);">
+            <div class="gq-sheet-dismissing"
+                 style="background:white; border-radius:28px 28px 0 0; padding:14px 20px 32px;
+                        box-shadow:0 -20px 60px -20px rgba(31,27,58,0.20);
+                        height:680px;">
+              <div class="flex justify-center mb-4">
+                <div style="width:44px; height:5px; border-radius:100px; background:#E5E2EE;"></div>
+              </div>
+              <div class="flex justify-center" style="opacity:0.7;">
+                <div style="position:relative; width:64px; height:64px;">
+                  <div class="rounded-full flex items-center justify-center"
+                       style="width:64px; height:64px; background: linear-gradient(135deg, var(--gq-mood-okay) 0%, var(--gq-mood-low) 100%);">
+                    <span style="font-size:30px; line-height:1;">ð</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-center mt-3" style="opacity:0.6;">
+                <div style="font-size:18px; font-weight:800; color:var(--gq-ink);">Logged.</div>
+                <div style="font-size:12px; color:var(--gq-ink-3); font-weight:600; margin-top:2px;">Auto-dismissingâ¦</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- bottom tab bar of dashboard, faintly -->
+          <div class="absolute inset-x-0" style="bottom:24px;">
+            <div class="mx-5 flex items-center justify-around" style="padding:8px; border-radius:9999px; background:white; border:1px solid var(--gq-hair); box-shadow:0 8px 20px -10px rgba(31,27,58,0.10);">
+              <div style="padding:8px 14px; border-radius:9999px; background:var(--gq-primary-soft);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-8z" stroke="#4F63C9" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </div>
+              <div style="padding:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4V6z" stroke="#8B86AB" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </div>
+              <div style="padding:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8B86AB" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="#8B86AB" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </div>
+              <div style="padding:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="#8B86AB" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#8B86AB" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gq-home"></div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4 max-w-[320px]" style="padding-top:34px;">
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Flutter widget map Â· C</div>
+        <ul class="text-[12.5px] space-y-2 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code class="text-[11px]">NeutralAutoDismissToast()</code><br/><span style="color:var(--gq-ink-3);">renders for .okay only Â· also fires after B's "Just close"</span></li>
+          <li><code class="text-[11px]">MoodLoggedToast()</code><br/><span style="color:var(--gq-ink-3);">2s lifetime Â· top-anchored Â· dismissible on tap</span></li>
+          <li><code class="text-[11px]">SheetDismissAnimation()</code><br/><span style="color:var(--gq-ink-3);">slide-down 600ms Â· starts at t=800ms after submit</span></li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">State machine Â· all three</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li><code>submit(mood)</code> â</li>
+          <li>Â· .heavy / .low â A (PostSubmitLowMood)</li>
+          <li>Â· .good / .great â B (PostSubmitGreatMood)</li>
+          <li>Â· .okay â C auto-dismiss + toast</li>
+          <li>B's close â also routes to C toast</li>
+          <li>A's "Just close" â routes to C toast (no streak bounce)</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">Motion Â· C</div>
+        <ul class="text-[12.5px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Sheet auto-dismiss timeout: <code>1500ms</code></li>
+          <li>Toast in-out: <code>2000ms</code> total Â· ease-in / ease-out</li>
+          <li>Today bar halo: 2px primary ring Â· persistent</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-2xl p-5" style="border:1px solid var(--gq-hair);">
+        <div class="gq-screen-label mb-3">All three Â· ship principles</div>
+        <ul class="text-[13px] space-y-1.5 leading-relaxed" style="color:var(--gq-ink-2);">
+          <li>Heavy gets invitation, never prescription</li>
+          <li>Great gets harvested â capture what works</li>
+          <li>Okay gets out of the way â log and go</li>
+          <li>Streak shown only when it can celebrate, never to shame</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+</main>
+
+</body>
+</html>
