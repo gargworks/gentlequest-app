@@ -449,6 +449,11 @@ class ChatProvider extends ChangeNotifier {
     await _loadChatHistory();
   }
 
+  void removeMessage(String id) {
+    _messages.removeWhere((m) => m.id == id);
+    notifyListeners();
+  }
+
   void clearChat() {
     _messages.clear();
     _hasShownGreeting = false; // Reset greeting flag

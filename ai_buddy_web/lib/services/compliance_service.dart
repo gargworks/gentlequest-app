@@ -84,8 +84,8 @@ class ComplianceService {
   // ============================================
   // ONE-TIME VERIFICATION CONFIG
   // ============================================
-  // v3.1 Hardening: Reduced from 365 days to 24 HOURS
-  static const int _reVerificationHours = 24;
+  // Phase 1+2 Redesign: Extended from 24h to 168h (7 days) to reduce GPS bounce rate
+  static const int _reVerificationHours = 168;
 
   // GPS retry counter — after 2 failures, offer IP-based fallback
   int _gpsAttempts = 0;
@@ -107,7 +107,17 @@ class ComplianceService {
     await prefs.setBool(_kAgeVerifiedKey, verified);
   }
 
+  // Debug-only bypass for dogfood/sim testing. kDebugMode-gated; cannot ship to prod.
+  // Activate with: flutter run --dart-define=DEV_BYPASS_COMPLIANCE=true
+  static const bool _kDevBypassCompliance =
+      bool.fromEnvironment('DEV_BYPASS_COMPLIANCE', defaultValue: false);
+
   Future<ComplianceStatus> checkCompliance() async {
+    if (kDebugMode && _kDevBypassCompliance) {
+      debugPrint('Compliance: DEV_BYPASS_COMPLIANCE active — returning allowed.');
+      return ComplianceStatus.allowed;
+    }
+
     await FirebaseService().logEvent('compliance_check_started');
 
     // 1. Age Check (must be 18+)
@@ -131,8 +141,34 @@ class ComplianceService {
       return await _checkStoredRegion();
     }
 
-    // 4. First-time location verification required
+    // 4. Server-IP region check (PRIMARY — Phase 1 hardening)
+    final ipResult = await _verifyViaIpRegion();
+    if (ipResult != null) return ipResult;
+
+    // 5. GPS fallback (only if IP unreachable)
     return await _verifyAndStoreLocation();
+  }
+
+  Future<ComplianceStatus?> _verifyViaIpRegion() async {
+    try {
+      final result = await ApiService().get('/api/compliance/ip-region-check');
+      if (result == null || result is! Map) return null;
+      final blocked = result['blocked'] == true;
+      final region = (result['region'] ?? 'ip_verified').toString();
+      await _storeLocationVerification(region);
+      if (blocked) {
+        await _logBlockEvent('blocked_region_ip', region);
+        return ComplianceStatus.blockedRegion;
+      }
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'allowed',
+        'region': region,
+        'method': 'ip_primary',
+      });
+      return ComplianceStatus.allowed;
+    } catch (_) {
+      return null; // signal "fall through to GPS"
+    }
   }
 
   Future<void> _logBlockEvent(String reason, String? region) async {
@@ -238,7 +274,7 @@ class ComplianceService {
 
       // v3.1 Hardening: Reject Mock Locations (Android anti-spoofing)
       // On iOS, this property is always false (jailbreak detection is Phase 2)
-      if (position.isMocked) {
+      if (position.isMocked && !kDebugMode) {
         debugPrint('Security: Mock location detected and rejected.');
         await _logBlockEvent('mock_location', null);
         return ComplianceStatus.error;

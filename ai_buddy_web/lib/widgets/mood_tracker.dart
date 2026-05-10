@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../providers/mood_provider.dart';
 import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
+import 'mood_low_reflection_sheet.dart';
 
 enum ViewMode { daily, all }
 
@@ -670,6 +671,11 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 note: noteController.text.trim(),
               );
               Navigator.of(context).pop();
+              if (moodLevel <= 2) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  showMoodLowReflectionSheet(context);
+                });
+              }
             },
             child: const Text('Save'),
           ),

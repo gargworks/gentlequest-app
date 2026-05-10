@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import '../navigation/home_tab_deeplink.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import '../theme/theme_helper.dart';
@@ -15,7 +14,6 @@ import '../widgets/status_avatar.dart';
 import '../config/profile_config.dart';
 import '../core/utils/size_utils.dart';
 import '../widgets/app_bottom_nav.dart';
-import '../widgets/assessment_splash.dart';
 import '../widgets/keyboard_dismissible_scaffold.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
@@ -25,6 +23,8 @@ import '../services/firebase_service.dart';
 import '../widgets/exercises/breathing_exercise_widget.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
+import '../widgets/message_bubble.dart';
+import '../theme/gq_tokens.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -43,10 +43,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   double _lastBottomInset = 0.0;
   final GlobalKey _inputBarKey = GlobalKey();
   double _inputBarHeight = 0.0;
-
-  bool _todayCheckinDone = false;
-  bool _todayMoodLogged = false;
-  bool _todayFlagsLoaded = false;
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -76,40 +72,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     } catch (e) {
       if (kDebugMode) debugPrint('Safety & Legal ack check failed: $e');
     }
-  }
-
-  String _todayDateKey() {
-    final now = DateTime.now();
-    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _loadTodayFlags() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final dateKey = _todayDateKey();
-      final checkin = prefs.getBool('daily_checkin_done_$dateKey') ?? false;
-      final mood = prefs.getBool('daily_mood_logged_$dateKey') ?? false;
-      if (!mounted) return;
-      setState(() {
-        _todayCheckinDone = checkin;
-        _todayMoodLogged = mood;
-        _todayFlagsLoaded = true;
-      });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Today flags read failed: $e');
-      if (!mounted) return;
-      setState(() => _todayFlagsLoaded = true);
-    }
-  }
-
-  Future<void> _openQuickCheckin() async {
-    _inputFocus.unfocus();
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const AssessmentSplash(),
-    );
-    await _loadTodayFlags();
   }
 
   Future<void> _loadDisclaimerPrefs() async {
@@ -145,7 +107,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _onReselect() {
     // On re-tap, bring the latest messages into view
     _scrollToBottom();
-    _loadTodayFlags();
   }
 
   Future<void> _showAllCrisisResourcesSheet(
@@ -379,7 +340,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _ensureLegalAck();
       // Load disclaimer cadence and decide whether to show top notice
       _loadDisclaimerPrefs();
-      _loadTodayFlags();
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
@@ -419,10 +379,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     // Scroll now to reveal the just-added message, and handle errors non-blockingly.
     _scrollToBottom();
     chatProvider.sendMessage(messageText).catchError((e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hmm, couldn\'t send that. Let\'s try again.')),
-      );
+      debugPrint('sendMessage error: $e');
     });
   }
 
@@ -662,9 +619,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ScrollViewKeyboardDismissBehavior.manual,
                         itemCount: count,
                         itemBuilder: (context, index) {
-                          // Suggestion chips row (after greeting, before typing)
+                          // First-turn warmth block (R1D3: greeting + sub-line + time-of-day chips)
                           if (showSuggestions && index == msgCount) {
-                            return _buildSuggestionChips();
+                            return _buildFirstTurnWarmth();
                           }
                           // Typing indicator row
                           final typingIndex =
@@ -782,7 +739,40 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     );
   }
 
+  Widget _buildErrorBubble(Message message) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.h),
+      child: MessageBubble(
+        message: message,
+        isError: true,
+        onRetry: _retryLastFailedMessage,
+      ),
+    );
+  }
+
+  void _retryLastFailedMessage() {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final msgs = chatProvider.messages;
+    // Walk backwards: find the last error bubble, then the user message before it
+    String? errorId;
+    String? retryText;
+    for (int i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].type == MessageType.error && errorId == null) {
+        errorId = msgs[i].id;
+      } else if (errorId != null && msgs[i].isUser) {
+        retryText = msgs[i].content;
+        break;
+      }
+    }
+    if (errorId != null) chatProvider.removeMessage(errorId);
+    if (retryText != null) chatProvider.sendMessage(retryText);
+  }
+
   Widget _buildMessageBubble(Message message, {bool isLast = false}) {
+    // Error bubble — inline alert with retry
+    if (message.type == MessageType.error) {
+      return _buildErrorBubble(message);
+    }
     // Guard: Do not render empty assistant messages (prevents blank bubble on web)
     if (!message.isUser && message.content.trim().isEmpty) {
       if (kDebugMode) {
@@ -808,8 +798,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 name: ProfileConfig.aiName,
                 imageAsset: ProfileConfig.aiAvatarAsset,
                 size: 52.h,
-                status: PresenceStatus.online,
-                showStatus: true,
+                status: PresenceStatus.none,
+                showStatus: false,
               ),
               SizedBox(width: 12.h),
             ],
@@ -989,49 +979,106 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     }
   }
 
-  Widget _buildSuggestionChips() {
-    final List<Widget> chips = [];
+  // R1D3 — Chat first-turn warmth block.
+  // Renders time-aware greeting, sub-line, and 3 contextual chips.
+  // Disappears after the first user message (controlled by showSuggestions gate in ListView).
+  Widget _buildFirstTurnWarmth() {
+    final hour = DateTime.now().hour;
 
-    // Priority 1: Functional shortcuts (Check-in / Mood) — only after flags loaded
-    if (_todayFlagsLoaded && !_todayCheckinDone) {
-      chips.add(_buildChip('Quick check-in', _openQuickCheckin));
-    } else if (_todayFlagsLoaded && !_todayMoodLogged) {
-      chips.add(_buildChip('Log mood', () {
-        _inputFocus.unfocus();
-        homeTabDeepLink.value = AppTab.mood;
-      }));
+    // Time-of-day greeting prefix
+    final String timeGreeting;
+    if (hour >= 5 && hour < 12) {
+      timeGreeting = 'Good morning';
+    } else if (hour >= 12 && hour < 17) {
+      timeGreeting = 'Good afternoon';
+    } else {
+      timeGreeting = 'Good evening';
     }
 
-    // Priority 2: Conversation Starters (Always show if space permits or if functional ones are done)
-    // We'll show a random subset or fixed set to help the user get started.
-    final starters = [
-      'I\'m feeling anxious',
-      'Help me relax',
-      'I need to vent',
-      'Just chatting',
-    ];
+    // Name personalisation: ProfileConfig.userName defaults to 'You' when unset.
+    // Treat 'You' as the unset sentinel — drop it from greeting to avoid "Good morning, You."
+    final rawName = ProfileConfig.userName.trim();
+    final knownName = rawName.isNotEmpty && rawName != 'You';
+    final greeting = knownName ? '$timeGreeting, $rawName.' : '$timeGreeting.';
 
-    for (final prompt in starters) {
-      chips.add(_buildChip(prompt, () {
-        _messageController.text = prompt;
-        _sendMessage();
-      }));
+    // Time-of-day chip sets (3 chips each)
+    final List<String> starters;
+    if (hour >= 5 && hour < 12) {
+      starters = [
+        'I slept badly',
+        "I'm anxious about today",
+        "I'm okay, just checking in",
+      ];
+    } else if (hour >= 12 && hour < 17) {
+      starters = [
+        'Rough day so far',
+        'Need a vent',
+        'Just want to talk',
+      ];
+    } else {
+      starters = [
+        "Can't switch off",
+        'Feeling lonely tonight',
+        'Wind-down chat',
+      ];
     }
-
-    if (chips.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: EdgeInsets.only(top: 6.h, bottom: 16.h),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.only(left: 64.h, right: 16.h),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: chips
-              .expand((widget) => [widget, SizedBox(width: 8.h)])
-              .take(chips.length * 2 - 1) // Remove trailing spacer
-              .toList(),
-        ),
+      padding: EdgeInsets.only(top: 8.h, bottom: 20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Warmth zone background card
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 14.h),
+            decoration: BoxDecoration(
+              color: GQColors.softBg,
+              borderRadius: BorderRadius.circular(GQRadii.card),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  style: const TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.w600,
+                    color: GQColors.coral,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'How are you arriving today?',
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10.h),
+          // 3 time-of-day conversation chips (reuse existing _buildChip — same stadium shape)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.only(left: 8.h, right: 16.h),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: starters
+                  .expand((prompt) => [
+                        _buildChip(prompt, () {
+                          _messageController.text = prompt;
+                          _sendMessage();
+                        }),
+                        SizedBox(width: 8.h),
+                      ])
+                  .take(starters.length * 2 - 1)
+                  .toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1079,8 +1126,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               name: ProfileConfig.aiName,
               imageAsset: ProfileConfig.aiAvatarAsset,
               size: 52.h,
-              status: PresenceStatus.online,
-              showStatus: true,
+              status: PresenceStatus.none,
+              showStatus: false,
             ),
             SizedBox(width: 12.h),
             Flexible(

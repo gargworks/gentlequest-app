@@ -213,6 +213,9 @@ class MyApp extends StatelessWidget {
                     code: 'en',
                   ),
                 ),
+                barrierDismissible: true,
+                showIgnore: true,
+                showLater: true,
                 child: const SplashScreen(),
               ),
         routes: {
