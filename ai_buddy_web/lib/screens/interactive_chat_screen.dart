@@ -24,6 +24,7 @@ import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
 import '../widgets/message_bubble.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/profile_nav_sheet.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -466,6 +467,23 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ProfileConfig.aiName,
                             textAlign: TextAlign.center,
                             style: TextStyleHelper.instance.headline24Bold,
+                          ),
+                        ),
+                        // Profile / nav sheet entry point (Tier 2.1)
+                        Semantics(
+                          label: 'Open navigation menu',
+                          button: true,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(22),
+                            onTap: () => showProfileNavSheet(context),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.account_circle_outlined,
+                                color: GQColors.primary,
+                                size: 28,
+                              ),
+                            ),
                           ),
                         ),
                         // Overflow menu for Safety & Legal access
