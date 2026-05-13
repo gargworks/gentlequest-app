@@ -73,6 +73,13 @@ class GQColors {
   static const moodPeach         = Color(0xFFFFB59B); // index 3
   static const moodCoralPeach    = Color(0xFFFF8E7A); // index 4 — warm/high
 
+  // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
+  // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
+  /// Warm peach tint — start of crisis gradient / icon halos.
+  static const warm1 = Color(0xFFFFD8C4); // --gq-warm-1
+  /// Warm salmon — mid-stop of crisis icon gradient.
+  static const warm2 = Color(0xFFFFB89E); // --gq-warm-2
+
   /// Ordered list for programmatic mood-scale rendering (e.g. sliders, charts).
   static const moodPalette = [
     moodSlateLavender,
@@ -126,6 +133,14 @@ class GQDurations {
   /// Welcome hero illustration breathing loop.
   /// Source: GentleQuest_Onboarding.html (R1D1).
   static const breathe = Duration(milliseconds: 5600);
+
+  /// Heart-pulse animation in crisis surfaces — slow, calming rhythm.
+  /// Source: GentleQuest_Crisis_Intervention.html (R1D9) @keyframes gqHeartPulse 2400ms.
+  static const heartPulse = Duration(milliseconds: 2400);
+
+  /// Slide-up sheet animation for crisis State A.
+  /// Source: GentleQuest_Crisis_Intervention.html (R1D9) 300ms cubic-bezier.
+  static const crisisSheetSlide = Duration(milliseconds: 300);
 
   /// Stagger delay increment for sequenced fade-in-up children.
   /// Source: GentleQuest_Onboarding.html — 80ms between each child.

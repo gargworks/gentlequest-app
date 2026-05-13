@@ -18,7 +18,7 @@ Per-design HTML: docs/design/refs/htmls/
 | R1D6  | Chat First Turn         | R1    | GentleQuest_Chat_First_Turn.html            | ai_buddy_web/lib/screens/chat_screen.dart                                                   | 1    | Partial     |
 | R1D7  | Chat Active States      | R2    | GentleQuest_Chat_Active_States.html         | ai_buddy_web/lib/screens/chat_screen.dart                                                   | 2    | Not started |
 | R1D8  | Clinical Assessment     | R2    | GentleQuest_Clinical_Assessment.html        | ai_buddy_web/lib/screens/clinical_assessment_screen.dart                                    | 2    | Not started |
-| R1D9  | Crisis Intervention     | R1    | GentleQuest_Crisis_Intervention.html        | ai_buddy_web/lib/widgets/crisis_resources.dart                                              | 0    | Partial     |
+| R1D9  | Crisis Intervention     | R1    | GentleQuest_Crisis_Intervention.html        | ai_buddy_web/lib/widgets/crisis_resources.dart                                              | 0    | in-flight https://github.com/eidetic-works/ai-mental-health-assistant/pull/21 |
 | R1D10 | Compliance Block        | R1    | GentleQuest_Compliance_Block.html           | ai_buddy_web/lib/screens/compliance_guard_screen.dart                                       | 0    | Partial     |
 | R1D11 | Compliance Extensions   | R2    | GentleQuest_Compliance_Extensions.html      | ai_buddy_web/lib/screens/compliance_guard_screen.dart                                       | 2    | Not started |
 | R1D12 | Offline States          | R3    | GentleQuest_Offline_States.html             | ai_buddy_web/lib/screens/chat_screen.dart (inline banner)                                   | 3    | Not started |

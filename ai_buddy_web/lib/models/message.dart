@@ -3,7 +3,9 @@ import 'interactive_exercise.dart';
 
 enum MessageType { text, error, system }
 
-enum RiskLevel { none, low, medium, high }
+// crisis = imminent/acute — triggers AcuteCrisisTakeover (State B).
+// Added in R1D9 to match server-side _enhanced_crisis_detection risk_level values.
+enum RiskLevel { none, low, medium, high, crisis }
 
 class Message {
   final String id;
