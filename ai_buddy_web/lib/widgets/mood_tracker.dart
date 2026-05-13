@@ -687,7 +687,11 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       builder: (sheetCtx) => _MoodEntrySheet(
         onSave: (int moodLevel, List<_MoodContext> contexts, String? note) {
           HapticFeedback.mediumImpact();
-          moodProvider.addMoodEntry(moodLevel, note: note?.trim());
+          moodProvider.addMoodEntry(
+            moodLevel,
+            note: note?.trim(),
+            contextChips: contexts.map((context) => context.label).toList(),
+          );
           Navigator.of(sheetCtx, rootNavigator: true).pop();
           if (moodLevel <= 2) {
             WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -3,11 +3,13 @@ class MoodEntry {
   final DateTime timestamp;
   final int moodLevel; // 1-5: 1=very bad, 5=very good
   final String? note;
+  final List<String> contextChips;
 
   MoodEntry({
     String? id,
     required this.moodLevel,
     this.note,
+    this.contextChips = const [],
     DateTime? timestamp,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         timestamp = timestamp ?? DateTime.now(),
@@ -19,6 +21,7 @@ class MoodEntry {
       id: json['id'] as String?,
       moodLevel: json['mood_level'] as int,
       note: json['note'] as String?,
+      contextChips: List<String>.from(json['contextChips'] ?? []),
       timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'] as String)
           : null,
@@ -30,6 +33,7 @@ class MoodEntry {
       'id': id,
       'mood_level': moodLevel,
       'note': note,
+      'contextChips': contextChips,
       'timestamp': timestamp.toIso8601String(),
     };
   }

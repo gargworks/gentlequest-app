@@ -177,7 +177,11 @@ class MoodProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addMoodEntry(int moodLevel, {String? note}) async {
+  Future<void> addMoodEntry(
+    int moodLevel, {
+    String? note,
+    List<String> contextChips = const [],
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -185,6 +189,7 @@ class MoodProvider extends ChangeNotifier {
     final optimistic = MoodEntry(
       moodLevel: moodLevel,
       note: note,
+      contextChips: contextChips,
       timestamp: DateTime.now().toUtc(),
     );
 
@@ -201,6 +206,7 @@ class MoodProvider extends ChangeNotifier {
       final payload = {
         'mood_level': moodLevel,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        'contextChips': contextChips,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       };
       await _apiService.addMoodEntry(payload);
@@ -224,6 +230,7 @@ class MoodProvider extends ChangeNotifier {
       final payload = {
         'mood_level': moodLevel,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        'contextChips': contextChips,
         'timestamp': optimistic.timestamp.toIso8601String(),
       };
       _enqueuePending(payload);
