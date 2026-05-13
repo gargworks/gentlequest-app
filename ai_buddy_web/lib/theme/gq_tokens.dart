@@ -18,6 +18,7 @@ class GQColors {
   static const primary = Color(0xFF667EEA);
 
   /// Pressed/hover state of primary.
+  /// Source: R1D4 Mood_Entry + R1D1 Onboarding.
   static const primaryDk = Color(0xFF4F63C9);
 
   /// Primary tint — chip backgrounds, card backgrounds.
@@ -27,27 +28,27 @@ class GQColors {
   /// Coral accent — warmth layer; replaces "red" everywhere (principle #1).
   static const coral = Color(0xFFFF6B6B);
 
-  /// Coral tint — light mood chips, Heavy/Low mood background.
-  /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-accent-soft
+  /// Coral tint — light mood chips, Heavy/Low mood background, under-18 dignity path accents.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-accent-soft + R1D1 Onboarding.
   static const accentSoft = Color(0xFFFFE8E8);
 
   /// Soft lavender-tinted off-white — default screen/scaffold background.
   static const softBg = Color(0xFFF8F7FF);
 
   /// Near-black primary text — --gq-ink.
-  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  /// Source: R1D4 GentleQuest_Mood_Entry.html + R1D1 Onboarding.
   static const ink = Color(0xFF1F1B3A);
 
   /// Mid purple-ink — secondary text — --gq-ink-2.
-  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  /// Source: R1D4 GentleQuest_Mood_Entry.html + R1D1 Onboarding.
   static const ink2 = Color(0xFF4A4670);
 
   /// Light ink — metadata, labels — --gq-ink-3.
-  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  /// Source: R1D4 GentleQuest_Mood_Entry.html + R1D1 Onboarding.
   static const ink3 = Color(0xFF8B86AB);
 
   /// Divider lines, subtle borders — --gq-hair (rgba(31,27,58,0.08)).
-  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  /// Source: R1D4 GentleQuest_Mood_Entry.html + R1D1 Onboarding.
   static const hair = Color(0x141F1B3A);
 
   // ── Semantic mood colours (R1D4 — emoji pill row) ──────────────────────────
@@ -90,8 +91,16 @@ class GQRadii {
   /// Standard card corner radius.
   static const card = 16.0;
 
+  /// Onboarding resource card radius.
+  /// Source: GentleQuest_Onboarding.html (R1D1).
+  static const cardLg = 20.0;
+
   /// Bottom / modal sheet top-corner radius.
   static const sheet = 24.0;
+
+  /// Bottom sheet top-corner radius (onboarding age modal).
+  /// Source: GentleQuest_Onboarding.html (R1D1).
+  static const sheetLg = 32.0;
 
   /// Stadium (fully-rounded) buttons — use with StadiumBorder or BorderRadius.circular(button).
   static const button = 999.0;
@@ -113,6 +122,14 @@ class GQDurations {
 
   /// Celebration / confetti animation total duration.
   static const celebrate = Duration(milliseconds: 1000);
+
+  /// Welcome hero illustration breathing loop.
+  /// Source: GentleQuest_Onboarding.html (R1D1).
+  static const breathe = Duration(milliseconds: 5600);
+
+  /// Stagger delay increment for sequenced fade-in-up children.
+  /// Source: GentleQuest_Onboarding.html — 80ms between each child.
+  static const staggerStep = Duration(milliseconds: 80);
 }
 
 // ─── Typography ──────────────────────────────────────────────────────────────

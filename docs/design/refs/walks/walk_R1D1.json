@@ -1,0 +1,28 @@
+{
+  "tier": "R1D1",
+  "design_id": "GentleQuest_Onboarding",
+  "description": "Onboarding 3-screen walk: welcome → age modal → under-18 dignity path",
+  "steps": [
+    {
+      "action": "screenshot",
+      "screen_name": "01_welcome_launch",
+      "note": "Launch screen — welcome hero, headline, trust chips, Continue CTA visible"
+    },
+    {
+      "action": "tap",
+      "x": 195,
+      "y": 760,
+      "screen_name": "02_age_modal",
+      "note": "Tap 'Continue' at bottom — triggers age modal bottom sheet"
+    },
+    {
+      "action": "tap",
+      "x": 116,
+      "y": 650,
+      "screen_name": "03_under18_dignity",
+      "note": "Tap 'Not yet' — reveals under-18 dignity path with resource cards"
+    }
+  ],
+  "idb_blocked": true,
+  "note": "Walk steps defined; idb_companion not yet installed. Rig will capture launch-only screenshot until idb is available."
+}
