@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../providers/mood_provider.dart';
 import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
+import '../theme/gq_tokens.dart';
 import 'mood_low_reflection_sheet.dart';
 
 enum ViewMode { daily, all }
@@ -226,37 +229,87 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     );
   }
 
+  // ── R1D4 — GentleQuest Mood Entry sheet trigger ────────────────────────────
+  // Design: docs/design/refs/htmls/GentleQuest_Mood_Entry.html
+  // Principles: P1 (warmth), P2 (skip anything), P7 (no auto-advance without cancel)
   Widget _buildMoodInput(BuildContext context, MoodProvider moodProvider) {
-    return Card(
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'How are you feeling today?',
-              style: Theme.of(context).textTheme.titleLarge,
+    final now = DateTime.now();
+    final dayLabel =
+        '${DateFormat('EEEE').format(now).toUpperCase()} · ${DateFormat('MMM d').format(now).toUpperCase()}';
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _showMoodEntrySheet(context, moodProvider);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(GQRadii.card),
+          border: Border.all(color: GQColors.hair),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A1F1B3A),
+              blurRadius: 12,
+              offset: Offset(0, 4),
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(5, (index) {
-                final moodLevel = index + 1;
-                final entry = MoodEntry(moodLevel: moodLevel);
-                return IconButton(
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    _showMoodDialog(context, moodProvider, moodLevel);
-                  },
-                  icon: Text(
-                    entry.moodEmoji,
-                    style: const TextStyle(fontSize: 32),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dayLabel,
+                    style: const TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: GQColors.ink3,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                  tooltip: entry.moodDescription,
-                );
-              }),
+                  const SizedBox(height: 4),
+                  // Verbatim copy from R1D4 spec
+                  const Text(
+                    'How are you, right now?',
+                    style: TextStyle(
+                      fontFamily: GQTypography.displayFamily,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: GQColors.ink,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Verbatim sub from R1D4 spec
+                  const Text(
+                    'Takes 5 seconds. Skip anything you want.',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: GQColors.ink3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: GQColors.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: GQColors.primary,
+                size: 22,
+              ),
             ),
           ],
         ),
@@ -621,65 +674,27 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
     );
   }
 
-  Future<void> _showMoodDialog(
+  // ── R1D4 — opens the GentleQuest Mood Entry bottom sheet ───────────────────
+  Future<void> _showMoodEntrySheet(
     BuildContext context,
     MoodProvider moodProvider,
-    int moodLevel,
   ) async {
-    final noteController = TextEditingController();
-
-    return showDialog(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-        title: Row(
-          children: [
-            Text(
-              MoodEntry(moodLevel: moodLevel).moodEmoji,
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Feeling ${MoodEntry(moodLevel: moodLevel).moodDescription}',
-              style: TextStyle(
-                fontFamily: 'Inter', // Match chat screen font family
-                fontSize: 18.0, // Keep existing size
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        content: TextField(
-          controller: noteController,
-          decoration: const InputDecoration(
-            labelText: 'Add a note (optional)',
-            hintText: 'What made you feel this way?',
-          ),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              moodProvider.addMoodEntry(
-                moodLevel,
-                note: noteController.text.trim(),
-              );
-              Navigator.of(context).pop();
-              if (moodLevel <= 2) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  showMoodLowReflectionSheet(context);
-                });
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      builder: (sheetCtx) => _MoodEntrySheet(
+        onSave: (int moodLevel, List<_MoodContext> contexts, String? note) {
+          HapticFeedback.mediumImpact();
+          moodProvider.addMoodEntry(moodLevel, note: note?.trim());
+          Navigator.of(sheetCtx, rootNavigator: true).pop();
+          if (moodLevel <= 2) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showMoodLowReflectionSheet(context);
+            });
+          }
+        },
       ),
     );
   }
@@ -887,6 +902,702 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// R1D4 — GentleQuest Mood Entry Sheet
+// Design: docs/design/refs/htmls/GentleQuest_Mood_Entry.html
+// Principles: P1 (warmth), P2 (skip anything), P7 (no auto-advance without cancel)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Context factors the user can optionally tag their mood with.
+/// Shown as multi-select chips in Zone 3 of the mood entry sheet.
+enum _MoodContext {
+  work,
+  sleep,
+  people,
+  body,
+  money,
+  other;
+
+  String get label {
+    switch (this) {
+      case _MoodContext.work:
+        return 'Work';
+      case _MoodContext.sleep:
+        return 'Sleep';
+      case _MoodContext.people:
+        return 'People';
+      case _MoodContext.body:
+        return 'Body';
+      case _MoodContext.money:
+        return 'Money';
+      case _MoodContext.other:
+        return 'Other';
+    }
+  }
+}
+
+/// Mood-level → label mapping for the 5-pill row.
+/// Labels are verbatim from R1D4 spec:
+///   "Heavy" · "Low" · "Okay" · "Good" · "Great"
+const _kMoodLabels = ['Heavy', 'Low', 'Okay', 'Good', 'Great'];
+
+/// Emojis paired with each mood label (low → high energy).
+const _kMoodEmojis = ['😔', '😕', '😐', '🙂', '😊'];
+
+/// Semantic background colour for each selected mood pill.
+/// Heavy/Low use accentSoft; Okay uses primarySoft gradient; Good/Great use
+/// their semantic colours at 0.20 opacity.
+Color _moodSelectedBg(int moodLevel) {
+  // moodLevel is 1-based (1=Heavy … 5=Great)
+  switch (moodLevel) {
+    case 1: // Heavy — accentSoft (per REVIEW.md token note)
+      return GQColors.accentSoft;
+    case 2: // Low — accentSoft (per REVIEW.md token note)
+      return GQColors.accentSoft;
+    case 3: // Okay — lavender
+      return GQColors.moodOkay.withValues(alpha: 0.35);
+    case 4: // Good — peach
+      return GQColors.moodGood.withValues(alpha: 0.35);
+    case 5: // Great — green
+      return GQColors.moodGreat.withValues(alpha: 0.35);
+    default:
+      return GQColors.primarySoft;
+  }
+}
+
+/// Bottom sheet implementing the R1D4 Mood Entry design.
+/// Six zones (handle · header+skip · emoji row · context chips · note · CTA).
+class _MoodEntrySheet extends StatefulWidget {
+  const _MoodEntrySheet({required this.onSave});
+
+  /// Called when the user taps "Log mood".
+  /// [moodLevel] is 1-based (1=Heavy … 5=Great).
+  final void Function(int moodLevel, List<_MoodContext> contexts, String? note)
+      onSave;
+
+  @override
+  State<_MoodEntrySheet> createState() => _MoodEntrySheetState();
+}
+
+class _MoodEntrySheetState extends State<_MoodEntrySheet> {
+  // Default preselected: "Okay" = level 3 (index 2, 1-based = 3)
+  int _selectedLevel = 3;
+  final Set<_MoodContext> _contexts = {};
+  bool _noteExpanded = false;
+  final _noteController = TextEditingController();
+
+  // Auto-advance timer — 800ms hold then submit (P7: cancellable)
+  Timer? _autoAdvanceTimer;
+  bool _autoAdvancePending = false;
+
+  @override
+  void dispose() {
+    _autoAdvanceTimer?.cancel();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _selectMood(int level) {
+    if (_selectedLevel == level && _autoAdvancePending) {
+      // Second tap on already-selected = confirm immediately (cancel auto-advance)
+      _cancelAutoAdvance();
+      _submit();
+      return;
+    }
+    _cancelAutoAdvance();
+    setState(() {
+      _selectedLevel = level;
+      _autoAdvancePending = true;
+    });
+    HapticFeedback.selectionClick();
+    // P7: 800ms auto-advance using GQDurations.autoAdvance (cancellable)
+    _autoAdvanceTimer = Timer(GQDurations.autoAdvance, () {
+      if (mounted && _autoAdvancePending) {
+        _submit();
+      }
+    });
+  }
+
+  void _cancelAutoAdvance() {
+    _autoAdvanceTimer?.cancel();
+    _autoAdvanceTimer = null;
+    if (mounted) {
+      setState(() => _autoAdvancePending = false);
+    }
+  }
+
+  void _submit() {
+    widget.onSave(
+      _selectedLevel,
+      _contexts.toList(),
+      _noteExpanded ? _noteController.text : null,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    // Date header: "TUESDAY · MAY 7" pattern — verbatim from R1D4 spec
+    final dateHeader =
+        '${DateFormat('EEEE').format(now).toUpperCase()} · ${DateFormat('MMM d').format(now).toUpperCase()}';
+
+    return GestureDetector(
+      // Cancel auto-advance when user taps chip or note zone (P7)
+      onTap: () {},
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(GQRadii.sheet),
+            topRight: Radius.circular(GQRadii.sheet),
+          ),
+        ),
+        // Ensure sheet grows with keyboard
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 28,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Zone 0 · drag handle ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E2EE),
+                    borderRadius: BorderRadius.circular(GQRadii.button),
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Zone 1 · header + skip CTA (P2: skip always visible) ─────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 10, 16, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateHeader,
+                          style: const TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: GQColors.ink3,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Verbatim headline — R1D4 spec
+                        const Text(
+                          'How are you, right now?',
+                          style: TextStyle(
+                            fontFamily: GQTypography.displayFamily,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: GQColors.ink,
+                            letterSpacing: -0.3,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Verbatim sub — R1D4 spec
+                        const Text(
+                          'Takes 5 seconds. Skip anything you want.',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: GQColors.ink3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // P2: Skip is visible at top-right throughout
+                  GestureDetector(
+                    onTap: () {
+                      _cancelAutoAdvance();
+                      Navigator.of(context, rootNavigator: true).pop();
+                    },
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: GQColors.softBg,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: GQColors.hair),
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: GQColors.ink3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Zone 2 · emoji-pill row ───────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(5, (index) {
+                  final level = index + 1; // 1-based
+                  final isSelected = _selectedLevel == level;
+                  return _MoodEmojiButton(
+                    emoji: _kMoodEmojis[index],
+                    label: _kMoodLabels[index], // verbatim labels from spec
+                    isSelected: isSelected,
+                    selectedBg: _moodSelectedBg(level),
+                    onTap: () => _selectMood(level),
+                  );
+                }),
+              ),
+            ),
+
+            // Auto-advance affordance (shown when timer is running)
+            AnimatedOpacity(
+              opacity: _autoAdvancePending ? 1.0 : 0.0,
+              duration: GQDurations.fade,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 13,
+                      color: GQColors.primary,
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'Submitting in 800ms · tap again to confirm now',
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: GQColors.primary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Cancel affordance (P7: always cancellable)
+                    GestureDetector(
+                      onTap: _cancelAutoAdvance,
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: GQColors.ink3,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Zone 3 · context chips (optional, multi-select) ───────────
+            GestureDetector(
+              // Tapping chips cancels auto-advance (P7)
+              onTap: _cancelAutoAdvance,
+              behavior: HitTestBehavior.translucent,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'What shaped this?',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: GQColors.ink2,
+                          ),
+                        ),
+                        const Text(
+                          'OPTIONAL',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: GQColors.ink3,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _MoodContext.values.map((ctx) {
+                        final selected = _contexts.contains(ctx);
+                        return _ContextChip(
+                          label: ctx.label,
+                          isSelected: selected,
+                          onTap: () {
+                            _cancelAutoAdvance();
+                            setState(() {
+                              if (selected) {
+                                _contexts.remove(ctx);
+                              } else {
+                                _contexts.add(ctx);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Zone 4 · optional note (collapsed by default) ────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: AnimatedCrossFade(
+                duration: GQDurations.fade,
+                crossFadeState: _noteExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstChild: GestureDetector(
+                  onTap: () {
+                    _cancelAutoAdvance();
+                    setState(() => _noteExpanded = true);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: GQColors.softBg,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: GQColors.hair,
+                        // [assumed] dashed border not directly available in Flutter;
+                        // using solid hairline as closest token-compliant approximation
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.edit_note_rounded,
+                          size: 16,
+                          color: GQColors.ink2,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Add a thought ',
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: GQColors.ink2,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: '(optional)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: GQColors.ink3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 16,
+                          color: GQColors.ink3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                secondChild: TextField(
+                  controller: _noteController,
+                  autofocus: _noteExpanded,
+                  // [assumed] 80 char maxLength from HTML annotation (NoteField(maxLength: 80))
+                  maxLength: 80,
+                  maxLines: 3,
+                  style: const TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 13,
+                    color: GQColors.ink,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'anything you want me to remember…',
+                    hintStyle: const TextStyle(
+                      color: GQColors.ink3,
+                      fontFamily: GQTypography.bodyFamily,
+                    ),
+                    filled: true,
+                    fillColor: GQColors.softBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: GQColors.hair),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: GQColors.hair),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: GQColors.primary, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Zone 5 · submit CTA ────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: GestureDetector(
+                onTap: () {
+                  _cancelAutoAdvance();
+                  _submit();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: GQColors.primary,
+                    borderRadius: BorderRadius.circular(GQRadii.button),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A667EEA),
+                        blurRadius: 26,
+                        offset: Offset(0, 12),
+                        spreadRadius: -10,
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Log mood',
+                        style: TextStyle(
+                          fontFamily: GQTypography.displayFamily,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── R1D4 supporting widgets ─────────────────────────────────────────────────
+
+/// Single emoji pill in the mood selection row.
+/// Selected state: larger, primary-ring + pulse animation (P7).
+class _MoodEmojiButton extends StatefulWidget {
+  const _MoodEmojiButton({
+    required this.emoji,
+    required this.label,
+    required this.isSelected,
+    required this.selectedBg,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String label; // verbatim from R1D4 spec
+  final bool isSelected;
+  final Color selectedBg;
+  final VoidCallback onTap;
+
+  @override
+  State<_MoodEmojiButton> createState() => _MoodEmojiButtonState();
+}
+
+class _MoodEmojiButtonState extends State<_MoodEmojiButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _pulse = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    if (widget.isSelected) _pulseController.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_MoodEmojiButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) {
+      _pulseController.repeat(reverse: true);
+    } else if (!widget.isSelected && oldWidget.isSelected) {
+      _pulseController.stop();
+      _pulseController.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double size = widget.isSelected ? 64.0 : 56.0;
+    final double emojiSize = widget.isSelected ? 32.0 : 28.0;
+    final translateY = widget.isSelected ? -4.0 : 0.0;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _pulse,
+            builder: (_, child) => Transform.translate(
+              offset: Offset(0, translateY),
+              child: Transform.scale(
+                scale: widget.isSelected ? _pulse.value : 1.0,
+                child: child,
+              ),
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.isSelected ? widget.selectedBg : GQColors.softBg,
+                border: Border.all(
+                  color: widget.isSelected
+                      ? GQColors.primary
+                      : GQColors.hair,
+                  width: widget.isSelected ? 2.5 : 1.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  widget.emoji,
+                  style: TextStyle(fontSize: emojiSize, height: 1.0),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style: TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontSize: widget.isSelected ? 12.0 : 11.0,
+              fontWeight:
+                  widget.isSelected ? FontWeight.w800 : FontWeight.w700,
+              color: widget.isSelected ? GQColors.primary : GQColors.ink3,
+              letterSpacing: 0.2,
+            ),
+            child: Text(widget.label),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Context chip: filled (primary) when selected, ghost when unselected.
+class _ContextChip extends StatelessWidget {
+  const _ContextChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? GQColors.primary : GQColors.softBg,
+          borderRadius: BorderRadius.circular(GQRadii.button),
+          border: Border.all(
+            color: isSelected ? GQColors.primary : GQColors.hair,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+            color: isSelected ? Colors.white : GQColors.ink,
+          ),
+        ),
       ),
     );
   }

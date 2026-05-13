@@ -17,11 +17,53 @@ class GQColors {
   /// Primary accent — used for CTAs, active states, and interactive highlights.
   static const primary = Color(0xFF667EEA);
 
+  /// Pressed/hover state of primary.
+  static const primaryDk = Color(0xFF4F63C9);
+
+  /// Primary tint — chip backgrounds, card backgrounds.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-primary-soft
+  static const primarySoft = Color(0xFFEEF0FE);
+
   /// Coral accent — warmth layer; replaces "red" everywhere (principle #1).
   static const coral = Color(0xFFFF6B6B);
 
+  /// Coral tint — light mood chips, Heavy/Low mood background.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-accent-soft
+  static const accentSoft = Color(0xFFFFE8E8);
+
   /// Soft lavender-tinted off-white — default screen/scaffold background.
   static const softBg = Color(0xFFF8F7FF);
+
+  /// Near-black primary text — --gq-ink.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  static const ink = Color(0xFF1F1B3A);
+
+  /// Mid purple-ink — secondary text — --gq-ink-2.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  static const ink2 = Color(0xFF4A4670);
+
+  /// Light ink — metadata, labels — --gq-ink-3.
+  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  static const ink3 = Color(0xFF8B86AB);
+
+  /// Divider lines, subtle borders — --gq-hair (rgba(31,27,58,0.08)).
+  /// Source: R1D4 GentleQuest_Mood_Entry.html
+  static const hair = Color(0x141F1B3A);
+
+  // ── Semantic mood colours (R1D4 — emoji pill row) ──────────────────────────
+  // These match the token table in REVIEW.md § Cross-cutting design tokens.
+
+  /// Semantic "Great" mood — green. --gq-great.
+  /// Source: REVIEW.md cross-cutting tokens + R1D4 HTML
+  static const moodGreat = Color(0xFF9CC487);
+
+  /// Semantic "Good" mood — peach. --gq-good.
+  /// Source: REVIEW.md cross-cutting tokens + R1D4 HTML
+  static const moodGood = Color(0xFFFFB59B);
+
+  /// Semantic "Okay" mood — lavender. --gq-okay.
+  /// Source: REVIEW.md cross-cutting tokens + R1D4 HTML
+  static const moodOkay = Color(0xFFC9B7F0);
 
   // Mood palette — ordered low-energy (index 0) → high-energy (index 4).
   static const moodSlateLavender = Color(0xFFC9CCEB); // index 0 — calm/low

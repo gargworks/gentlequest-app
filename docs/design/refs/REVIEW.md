@@ -13,7 +13,7 @@ Per-design HTML: docs/design/refs/htmls/
 | R1D1  | Onboarding              | R1    | GentleQuest_Onboarding.html                 | ai_buddy_web/lib/screens/welcome_screen.dart                                                | 0    | Partial     |
 | R1D2  | Wellness Dashboard      | R1    | GentleQuest_Wellness_Dashboard.html         | ai_buddy_web/lib/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart | 0 | Partial  |
 | R1D3  | Dashboard States        | R2    | GentleQuest_Dashboard_States.html           | ai_buddy_web/lib/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart | 2  | Not started |
-| R1D4  | Mood Entry              | R1    | GentleQuest_Mood_Entry.html                 | ai_buddy_web/lib/screens/mood_tracker_screen.dart                                           | 1    | Not started |
+| R1D4  | Mood Entry              | R1    | GentleQuest_Mood_Entry.html                 | ai_buddy_web/lib/screens/mood_tracker_screen.dart                                           | 1    | in-flight — https://github.com/eidetic-works/ai-mental-health-assistant/pull/15 |
 | R1D5  | Mood Reflection         | R1    | GentleQuest_Mood_Reflection.html            | ai_buddy_web/lib/screens/mood_tracker_screen.dart                                           | 1    | Partial     |
 | R1D6  | Chat First Turn         | R1    | GentleQuest_Chat_First_Turn.html            | ai_buddy_web/lib/screens/chat_screen.dart                                                   | 1    | Partial     |
 | R1D7  | Chat Active States      | R2    | GentleQuest_Chat_Active_States.html         | ai_buddy_web/lib/screens/chat_screen.dart                                                   | 2    | Not started |
