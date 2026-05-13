@@ -133,6 +133,11 @@ class MoodEntry(db.Model):
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), index=True)
     mood_level = db.Column(db.Integer, nullable=False)  # 1-5 scale
     note = db.Column(db.Text)
+    context_chips = db.Column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=False,
+        server_default='[]',
+    )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

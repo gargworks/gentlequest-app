@@ -3,6 +3,7 @@ Session management, chat history, mood, assessment, and crisis detection endpoin
 Extracted from app.py monolith.
 """
 
+import json
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify, request
@@ -91,6 +92,7 @@ def get_mood_history():
                 {
                     "mood_level": entry.mood_level,
                     "note": _sanitize_note(entry.note),
+                    "contextChips": entry.context_chips if entry.context_chips is not None else [],
                     "timestamp": ts,
                 }
             )
@@ -125,6 +127,7 @@ def add_mood_entry():
              return jsonify({"error": "Invalid mood level format"}), 400
 
         note_raw = data.get("note", "")
+        context_chips_raw = data.get("contextChips", [])
         timestamp = data.get("timestamp")
 
         if (
@@ -134,6 +137,18 @@ def add_mood_entry():
             or mood_level > 5
         ):
             return jsonify({"error": "Invalid mood level (1-5 required)"}), 400
+
+        if not isinstance(context_chips_raw, list):
+            return jsonify({"error": "contextChips must be a list"}), 400
+        if len(context_chips_raw) > 10:
+            return jsonify({"error": "contextChips may contain at most 10 items"}), 400
+        for chip in context_chips_raw:
+            if not isinstance(chip, str):
+                return jsonify({"error": "Each contextChip must be a string"}), 400
+            if len(chip) > 40:
+                return jsonify({"error": "Each contextChip must be at most 40 characters"}), 400
+        if len(json.dumps(context_chips_raw)) > 1024:
+            return jsonify({"error": "contextChips payload too large"}), 400
 
         if timestamp:
             try:
@@ -151,6 +166,7 @@ def add_mood_entry():
             session_id=session_id,
             mood_level=mood_level,
             note=note,
+            context_chips=context_chips_raw,
             timestamp=entry_timestamp
         )
         db.session.add(entry)
@@ -164,6 +180,7 @@ def add_mood_entry():
                 "message": "Mood entry added successfully",
                 "mood_level": mood_level,
                 "note": note,
+                "contextChips": context_chips_raw,
                 "timestamp": entry_timestamp.isoformat(),
                 "show_feedback_prompt": show_feedback_prompt,
             }
