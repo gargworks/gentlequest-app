@@ -183,18 +183,48 @@ These apply once pre-flight passes.
    Do not open a PR with analyzer warnings.  Fix them or, if a suppression is
    genuinely required, add `// ignore: rule_name` with a comment explaining why.
 
-5. **No drive-by refactors.**  Touch only the files named in the tier spec plus
+5. **`flutter build ios --debug --simulator --no-codesign` must succeed.**  `flutter analyze` scoped to touched files misses cross-file syntax errors AND analyzer-clean code that fails at compile time (typos in imports, missing required params from edits to call sites in untouched files, etc.).  Build is the cheapest gate that catches these.  Run from `ai_buddy_web/`:
+
+   ```bash
+   cd ai_buddy_web
+   export PATH="/Volumes/Samsung SSD 990 PRO 2TB Media/Dev/flutter/bin:$PATH"
+   flutter build ios --debug --simulator --no-codesign 2>&1 | tail -10
+   ```
+
+   - Exit code MUST be 0
+   - Last line should contain `✓ Built build/ios/iphonesimulator/Runner.app`
+   - If build fails: fix the build, do NOT push the PR
+   - Build time: typically 30–90 s incremental, 3–5 min cold.  Plan for it.
+
+6. **No drive-by refactors.**  Touch only the files named in the tier spec plus
    `gq_tokens.dart` if new tokens are needed.  Incidental cleanups go in a
    separate PR (or a TODO comment in the code, not in this PR).
 
-6. **Copy verbatim.**  If REVIEW.md records a "Copy Verbatim" paragraph for
+7. **Copy verbatim.**  If REVIEW.md records a "Copy Verbatim" paragraph for
    this tier, that exact string must appear in the widget — not a paraphrase.
 
 ---
 
 ## 6. Post-flight
 
-### 6.1 Update REVIEW.md
+### 6.a — Build verification (hard gate)
+
+Run `flutter build ios --debug --simulator --no-codesign` from `ai_buddy_web/`:
+
+```bash
+cd ai_buddy_web
+export PATH="/Volumes/Samsung SSD 990 PRO 2TB Media/Dev/flutter/bin:$PATH"
+flutter build ios --debug --simulator --no-codesign 2>&1 | tail -10
+```
+
+If it fails:
+- Diagnose + fix the build error in your branch
+- Re-run build to confirm green
+- Only then proceed to §6.b
+
+This is the gate that catches typos analyze missed.  Do NOT proceed to screenshot, commit, or PR while build is red.
+
+### 6.b — Update REVIEW.md
 
 Before committing, update the tier's status row in REVIEW.md:
 
@@ -204,7 +234,7 @@ Before committing, update the tier's status row in REVIEW.md:
 
 Include this REVIEW.md change in the same commit as the implementation.
 
-### 6.2 Screenshot rig
+### 6.c — Screenshot rig
 
 Run the screenshot rig from the tier branch:
 
@@ -214,7 +244,7 @@ bash scripts/gq_screenshot_diff.sh tier-{TIER_ID}
 
 The rig captures a launch screenshot.  Walk-mode (interaction sequences) is
 **idb-blocked** and not currently functional; the rig captures only the launch
-frame until idb_companion is available (see §8, Future Extensions).
+frame until idb_companion is available (see §10, Future Extension Hooks).
 
 - If the rig succeeds: attach the screenshot path in the PR body under
   "## Visual diff".
@@ -222,7 +252,7 @@ frame until idb_companion is available (see §8, Future Extensions).
   that says exactly what failed.  Do NOT hold the PR for screenshot issues.
   Document it as a review item for Lokesh.
 
-### 6.3 PR body shape
+### 6.d — PR body shape
 
 The PR description must contain these sections in order:
 
@@ -252,6 +282,7 @@ The PR description must contain these sections in order:
 - [ ] Target Flutter file existence verified
 - [ ] Dependency tier statuses confirmed `merged`
 - [ ] `flutter analyze` passed on all touched files
+- [ ] `flutter build ios --debug --simulator --no-codesign` succeeded (exit 0, ✓ Built line present)
 - [ ] `gq_tokens.dart` used for all colours/typography (no hardcoded hex)
 - [ ] REVIEW.md status updated to `in-flight` with PR URL
 
@@ -260,7 +291,7 @@ The PR description must contain these sections in order:
  items requiring Lokesh's explicit sign-off before merge}
 ```
 
-### 6.4 Open PR
+### 6.e — Open PR
 
 ```bash
 git add docs/design/refs/REVIEW.md {all changed files}
@@ -273,12 +304,12 @@ gh pr create \
   --head feat/gq-rollout-tier{TIER_ID}-{slug} \
   --title "feat(gq-rollout): Tier {TIER_ID} — {slug}" \
   --body "$(cat <<'PREOF'
-  {PR body from §6.3}
+  {PR body from §6.d}
   PREOF
   )"
 ```
 
-### 6.5 Exit
+### 6.f — Exit
 
 After pushing and opening the PR, the foreman **exits**.  It does NOT poll for
 merge.  It does NOT open the next tier.  Lokesh reviews, merges if satisfied,
@@ -330,16 +361,18 @@ STEP 4 — Implement
   - All colours/typography from gq_tokens.dart only. No hardcoded hex.
   - Copy verbatim string(s) must appear word-for-word in the widget.
   - flutter analyze must pass on every touched file.
+  - Also: `flutter build ios --debug --simulator --no-codesign` must succeed (exit 0, ✓ Built line). Build catches what analyze misses. If build fails, fix and re-build before continuing.
   - No drive-by refactors.
   - If a design detail is missing from both REVIEW.md and the HTML, mark it [assumed] and flag it.
 
 STEP 5 — Post-flight (§6 of playbook)
-  a. Update REVIEW.md: set tier {TIER_ID} status to `in-flight`.
-  b. Run: bash scripts/gq_screenshot_diff.sh tier-{TIER_ID}
+  a. Build gate (§6.a): run `flutter build ios --debug --simulator --no-codesign` from `ai_buddy_web/`. Must be green before any further step.
+  b. Update REVIEW.md: set tier {TIER_ID} status to `in-flight`.
+  c. Run: bash scripts/gq_screenshot_diff.sh tier-{TIER_ID}
      — if rig fails, note failure; still proceed to PR.
-  c. Commit (verify branch first with `git branch --show-current`).
-  d. Push and open PR using the body shape in §6.3 of the playbook.
-  e. Report back in <200 words: files changed, branch, commit SHA, PR URL,
+  d. Commit (verify branch first with `git branch --show-current`).
+  e. Push and open PR using the body shape in §6.d of the playbook.
+  f. Report back in <200 words: files changed, branch, commit SHA, PR URL,
      screenshot path or failure note, any assumed values or blockers.
 ```
 
@@ -350,7 +383,8 @@ STEP 5 — Post-flight (§6 of playbook)
 | Failure | Recovery |
 |---|---|
 | Pre-commit hook flags "bulk file" or rejects commit | DO NOT use `--no-verify`. Surface the hook output to Lokesh verbatim and await explicit ack before proceeding. |
-| `flutter analyze` reports errors | Fix the build first. Do not push a broken PR. Surface what failed and the file/line. |
+| `flutter analyze` reports errors | Fix the analyzer errors first. Do not push a broken PR. Surface what failed and the file/line. |
+| `flutter analyze` passed but `flutter build` failed | Common cause: typo in a modified file outside analyze's narrow scope (e.g. `;;`, missing import, stale super-call). Open the build error, fix the file, re-build. Never push without green build. |
 | Concurrent CC session activity detected | Run `git branch --show-current` immediately before every `git commit`. If branch doesn't match, stop — do not commit to the wrong branch. Cherry-pick to the correct branch after diagnosis. |
 | Screenshot rig (`gq_screenshot_diff.sh`) fails | Still ship the PR. Add a "Screenshot status" section to the PR body explaining the failure. Note it as a review item. Do not hold the PR for screenshot issues. |
 | REVIEW.md tier spec is ambiguous or contradicts the HTML | Do not invent values. Document the ambiguity in the PR body under "Reviewer notes". Implement the conservative interpretation and flag it `[assumed]`. |
@@ -362,7 +396,13 @@ STEP 5 — Post-flight (§6 of playbook)
 
 ---
 
-## 9. Future extension hooks
+## 9. Lessons / known footguns
+
+**2026-05-13 — PR #18 build-gate retrofit.** Foreman initially only required `flutter analyze`. A Sonnet agent's run reported "analyze 0 errors" while a `;;` syntax error sat in `wellness_dashboard_screen.dart:29`. Build caught it immediately. Lesson: analyze is necessary but not sufficient. Build is the gate.
+
+---
+
+## 10. Future extension hooks
 
 These are **not live today**.  Do not implement or reference them as if they
 are.  Each item has a one-line activation trigger once the prerequisite
@@ -391,7 +431,7 @@ exists.
 
 ---
 
-## 10. Glossary
+## 11. Glossary
 
 | Term | Definition |
 |---|---|
