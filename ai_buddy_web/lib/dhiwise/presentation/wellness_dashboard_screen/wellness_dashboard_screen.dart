@@ -5,8 +5,6 @@ import 'package:confetti/confetti.dart';
 
 import '../../core/app_export.dart';
 import '../../../providers/mood_provider.dart';
-import '../../widgets/custom_button.dart';
-import './widgets/progress_card_widget.dart';
 import './widgets/recommendation_card_widget.dart';
 import '../../../theme/text_style_helper.dart' as CoreTextStyles;
 import '../../../widgets/assessment_splash.dart';
@@ -25,6 +23,13 @@ import '../../../screens/quest_screen/widgets/quest_card_widget.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../widgets/feedback_dialog.dart';
+import '../../../widgets/profile_nav_sheet.dart';
+import '../../../theme/gq_tokens.dart';
+
+// ── R1D2+R1D3: Dashboard state machine ───────────────────────────────────────
+/// Enum for GentleQuest dashboard hero variants.
+/// Priority (highest wins): longAbsence > notLogged/feelingGreat > weekend modifier.
+enum DashboardState { notLogged, feelingGreat, longAbsence, weekend }
 
 // DEBUG ONLY: toggle to reset quest state on each app launch
 const bool _debugResetQuestsOnLaunch = false;
@@ -223,6 +228,94 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Quick check-in daily flag (separate from mood logging)
   bool _hasCompletedQuickCheckinToday = false;
+
+  // ── R1D2+R1D3: dashboard state ─────────────────────────────────────────────
+  static const _prefsLastSeenDate = 'gq.last_seen_date_v1';
+  DateTime? _lastSeenDate; // null = first open or data unavailable
+
+  Future<void> _loadLastSeenDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_prefsLastSeenDate);
+      if (s != null) {
+        _lastSeenDate = DateTime.tryParse(s);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveLastSeenDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          _prefsLastSeenDate, DateTime.now().toUtc().toIso8601String());
+    } catch (_) {}
+  }
+
+  /// Compute the hero state to display.
+  /// Priority: longAbsence (≥7 days) > feelingGreat/notLogged > weekend modifier.
+  DashboardState _computeDashboardState(MoodProvider moodProvider) {
+    final now = DateTime.now();
+
+    // 1. Long absence check — highest priority
+    if (_lastSeenDate != null) {
+      final daysAway = now.toUtc().difference(_lastSeenDate!.toUtc()).inDays;
+      if (daysAway >= 7) return DashboardState.longAbsence;
+    } else if (moodProvider.moodEntries.isNotEmpty) {
+      // Use last mood entry as proxy for last seen
+      final sorted = [...moodProvider.moodEntries]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final daysAway =
+          now.toUtc().difference(sorted.first.timestamp.toUtc()).inDays;
+      if (daysAway >= 7) return DashboardState.longAbsence;
+    }
+
+    // 2. Mood-based state (notLogged or feelingGreat)
+    final loggedToday = _hasLoggedMoodToday(moodProvider);
+    if (loggedToday) {
+      // "Feeling great" = mood level 4 or 5 today
+      final todayEntries = moodProvider.moodEntries.where((e) {
+        final t = e.timestamp.toUtc();
+        final n = now.toUtc();
+        return t.year == n.year && t.month == n.month && t.day == n.day;
+      });
+      if (todayEntries.isNotEmpty &&
+          todayEntries.any((e) => e.moodLevel >= 4)) {
+        // Weekend modifier composes with feelingGreat — but feelingGreat wins hero
+        return DashboardState.feelingGreat;
+      }
+      // Logged but not great: use weekend modifier if applicable
+      final dayOfWeek = now.weekday; // 6=Sat, 7=Sun
+      if (dayOfWeek == DateTime.saturday || dayOfWeek == DateTime.sunday) {
+        return DashboardState.weekend;
+      }
+      // Logged + not great + weekday → notLogged (show checkin prompt is already done)
+      // Re-use feelingGreat as "already logged" default
+      return DashboardState.feelingGreat;
+    }
+
+    // 3. Weekend modifier (not logged + weekend)
+    final dayOfWeek = now.weekday;
+    if (dayOfWeek == DateTime.saturday || dayOfWeek == DateTime.sunday) {
+      return DashboardState.weekend;
+    }
+
+    // 4. Default: not logged
+    return DashboardState.notLogged;
+  }
+
+  /// Descriptive days-away count for State C copy (NOT punitive).
+  int _daysAwayCount(MoodProvider moodProvider) {
+    final now = DateTime.now().toUtc();
+    if (_lastSeenDate != null) {
+      return now.difference(_lastSeenDate!.toUtc()).inDays;
+    }
+    if (moodProvider.moodEntries.isNotEmpty) {
+      final sorted = [...moodProvider.moodEntries]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return now.difference(sorted.first.timestamp.toUtc()).inDays;
+    }
+    return 0;
+  }
 
   // Telemetry helpers
   String _slug(String s) => s
@@ -947,10 +1040,12 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     // Initialize asynchronously: reminder prefs, quests data, and midnight refresh
     Future.microtask(() async {
       await _loadReminderPrefs();
+      await _loadLastSeenDate(); // R1D3: for longAbsence detection
       _rescheduleReminder('init');
       // DEBUG ONLY: reset quests state on each launch to test persistence/awards
       // NOTE: Quests state is now managed via QuestProvider
       await _initQuests();
+      await _saveLastSeenDate(); // R1D3: record today as last-seen
       _scheduleMidnightRefresh();
       // DEBUG ONLY: run reminder microinteraction self-test once per day,
       // after first frame so keys are mounted
@@ -1643,7 +1738,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final questProvider = context.watch<QuestProvider>();
     // Build
     return Sizer(builder: (context, orientation, deviceType) {
       return KeyboardDismissibleScaffold(
@@ -1679,8 +1773,11 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                             _buildTabsSection(),
                             // Sections (conditional by tab)
                             if (_tabIndex == 0) ...[
-                              _buildMoodCheckInSection(),
-                              _buildProgressSection(),
+                              // R1D2+R1D3: state-branched hero replaces gamification cards
+                              _buildHeroSection(),
+                              _buildWeekShapeSection(),
+                              _buildQuickLanesSection(),
+                              _buildNudgeZoneSection(),
                               _buildRecommendationsSection(),
                             ] else ...[
                               _buildExploreSection(),
@@ -1795,7 +1892,36 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     ),
                   ),
                 ),
-                SizedBox(width: 44.h),
+                // R1D2: Profile avatar button — opens profile nav sheet (Tier 2.1)
+                GestureDetector(
+                  onTap: () => showProfileNavSheet(context),
+                  child: Container(
+                    width: 44.h,
+                    height: 44.h,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 36.h,
+                      height: 36.h,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [GQColors.primary, GQColors.coral],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x26667EEA),
+                            blurRadius: 14,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.person,
+                          color: Colors.white, size: 16),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1808,143 +1934,875 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     );
   }
 
-  // Large Quick check-in prompt section (title, subtitle, and Start button)
-  Widget _buildMoodCheckInSection() {
-    // Calculate active days this week
-    int activeDaysThisWeek = 0;
-    try {
-      final now = DateTime.now().toUtc();
-      final startOfWeek =
-          now.subtract(Duration(days: now.weekday - 1)); // Monday
-      final endOfWeek = startOfWeek.add(const Duration(days: 6)); // Sunday
+  // ── R1D2+R1D3: Hero section — state-branched dashboard hero card ─────────────
 
-      // Count mood entries in current week
-      final moodProvider = context.watch<MoodProvider>();
-      for (final entry in moodProvider.moodEntries) {
-        final entryDate = entry.timestamp.toUtc();
-        if (entryDate.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-            entryDate.isBefore(endOfWeek.add(const Duration(days: 1)))) {
-          activeDaysThisWeek++;
-        }
-      }
-    } catch (_) {}
+  /// Greeting text for State A/B/D per HTML spec.
+  String _greetingLine1(DashboardState state, String dayName) {
+    switch (state) {
+      case DashboardState.longAbsence:
+        return 'Welcome back, friend.';
+      case DashboardState.weekend:
+        return 'Good morning, friend.';
+      case DashboardState.feelingGreat:
+        return 'Evening, friend.';
+      case DashboardState.notLogged:
+        return 'Good evening, friend.';
+    }
+  }
 
+  String _greetingLine2(DashboardState state, String dayName) {
+    switch (state) {
+      case DashboardState.longAbsence:
+        return "It's been a bit.";
+      case DashboardState.weekend:
+        return '$dayName — slower today.';
+      case DashboardState.feelingGreat:
+        return 'Glowing today 🌱';
+      case DashboardState.notLogged:
+        return 'Quick check-in?';
+    }
+  }
+
+  Widget _buildHeroSection() {
+    final moodProvider = context.watch<MoodProvider>();
+    final now = DateTime.now();
+    final dayNames = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday'
+    ];
+    final dayName = dayNames[now.weekday - 1];
+    final state = _computeDashboardState(moodProvider);
+    final daysAway = _daysAwayCount(moodProvider);
+
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.fromLTRB(16.h, 20.h, 16.h, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Greeting strip ─────────────────────────────────────────────
+            Text(
+              _greetingLine1(state, dayName),
+              style: TextStyleHelper.instance.headline28BoldInter.copyWith(
+                fontFamily: CoreTextStyles
+                    .TextStyleHelper.instance.headline24Bold.fontFamily,
+                color: GQColors.ink,
+                letterSpacing: -0.4,
+                height: 1.15,
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              _greetingLine2(state, dayName),
+              style: TextStyleHelper.instance.titleMediumInter.copyWith(
+                fontFamily: CoreTextStyles
+                    .TextStyleHelper.instance.headline24Bold.fontFamily,
+                color: GQColors.ink2,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            // ── Hero card (state-branched) ──────────────────────────────────
+            _buildHeroCard(state, daysAway),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(DashboardState state, int daysAway) {
+    switch (state) {
+      case DashboardState.notLogged:
+        return _buildNotLoggedCard();
+      case DashboardState.feelingGreat:
+        return _buildFeelingGreatCard();
+      case DashboardState.longAbsence:
+        return _buildLongAbsenceCard(daysAway);
+      case DashboardState.weekend:
+        return _buildWeekendCard();
+    }
+  }
+
+  // State A — notLogged: mood check-in prompt (existing pattern, modernised)
+  Widget _buildNotLoggedCard() {
     return Container(
-      width: double.infinity,
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 24.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Active days counter
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: appTheme.whiteCustom,
-                  borderRadius: BorderRadius.circular(12.h),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4.h,
-                      offset: Offset(0, 2.h),
-                    ),
-                  ],
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEEF0FE), Color(0xFFFBF1F4), Color(0xFFFFE8E8)],
+        ),
+        borderRadius: BorderRadius.circular(GQRadii.cardLg),
+        border: Border.all(color: const Color(0x2D667EEA)),
+      ),
+      padding: EdgeInsets.all(20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TODAY, JUST ONE THING',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: GQColors.primaryDk,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            "Log how you're feeling — 15 seconds.",
+            style: TextStyleHelper.instance.headline21Inter.copyWith(
+              fontFamily: CoreTextStyles
+                  .TextStyleHelper.instance.headline24Bold.fontFamily,
+              color: GQColors.ink,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              height: 1.3,
+              letterSpacing: -0.3,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          // Mood teaser strip
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text('😔', style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
+              Text('😐', style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
+              Text('🙂', style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
+              Text('😊', style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
+              Text('😄', style: TextStyle(fontSize: 22)),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          Builder(builder: (context) {
+            final isDone = _hasCompletedQuickCheckinToday ||
+                (context.watch<QuestProvider>().quests.any(
+                    (q) => q.type == 'check_in' && q.isCompleted));
+            return SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                key: _startBtnKey,
+                onPressed: isDone
+                    ? null
+                    : () async {
+                        HapticFeedback.selectionClick();
+                        await Future<void>.delayed(
+                            const Duration(milliseconds: 220));
+                        if (!mounted) return;
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (ctx) => AssessmentSplash(
+                            onSubmitted: _onQuickCheckinSubmitted,
+                          ),
+                        );
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      isDone ? const Color(0xFFE6EAF0) : GQColors.primary,
+                  foregroundColor: isDone ? GQColors.ink3 : Colors.white,
+                  shape: const StadiumBorder(),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 24.h, vertical: 14.h),
+                  elevation: isDone ? 0 : 4,
+                  shadowColor: GQColors.primary.withValues(alpha: 0.35),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Active this week: $activeDaysThisWeek/7 days',
-                      style: TextStyle(
-                        fontSize: 14.h,
-                        fontWeight: FontWeight.w500,
-                        color: appTheme.colorFF1F29,
+                child: Text(
+                  isDone ? 'Logged today ✓' : 'Quick check-in',
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w800),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // State B — feelingGreat: capture wisdom card
+  Widget _buildFeelingGreatCard() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF1E5), Color(0xFFFFE8E8)],
+        ),
+        borderRadius: BorderRadius.circular(GQRadii.cardLg),
+        border: Border.all(color: const Color(0x40FF8A6E)),
+      ),
+      padding: EdgeInsets.all(20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TODAY, JUST ONE THING',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFFB5562F),
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('✨', style: TextStyle(fontSize: 24)),
+              SizedBox(width: 10.h),
+              Expanded(
+                child: Text(
+                  "Nice. Want to capture what's working?",
+                  style: TextStyleHelper.instance.headline21Inter.copyWith(
+                    fontFamily: CoreTextStyles
+                        .TextStyleHelper.instance.headline24Bold.fontFamily,
+                    color: GQColors.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    height: 1.3,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                Navigator.pushNamed(context, '/journal');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GQColors.coral,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 24.h, vertical: 14.h),
+                elevation: 4,
+                shadowColor: GQColors.coral.withValues(alpha: 0.5),
+              ),
+              child: const Text(
+                'Add a journal note',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                Navigator.pushNamed(context, '/journal');
+              },
+              child: const Text(
+                "Tomorrow's me will thank you →",
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF9A6049),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // State C — longAbsence: ReturningRecoveryCard — gentle, not punitive
+  Widget _buildLongAbsenceCard(int daysAway) {
+    final streakDays = context.read<QuestProvider>().streak;
+    return Column(
+      children: [
+        // Main recovery card
+        Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFEEF0FE),
+                Color(0xFFF8F7FF),
+                Color(0xFFFFE8E8)
+              ],
+            ),
+            borderRadius: BorderRadius.circular(GQRadii.cardLg),
+            border: Border.all(color: const Color(0x2D667EEA)),
+          ),
+          padding: EdgeInsets.all(20.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'PICK UP, OR START FRESH',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: GQColors.primaryDk,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'Your data is right where you left it.',
+                style: TextStyleHelper.instance.headline21Inter.copyWith(
+                  fontFamily: CoreTextStyles
+                      .TextStyleHelper.instance.headline24Bold.fontFamily,
+                  color: GQColors.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  height: 1.3,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              // Streak pause pill — descriptive, not punitive
+              if (streakDays > 0) ...[
+                SizedBox(height: 12.h),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 12.h, vertical: 9.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: GQColors.hair),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 13)),
+                      SizedBox(width: 6.h),
+                      Flexible(
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: GQColors.ink2,
+                            ),
+                            children: [
+                              const TextSpan(text: 'Your '),
+                              TextSpan(
+                                text: '$streakDays-day streak',
+                                style: const TextStyle(
+                                    color: GQColors.ink,
+                                    fontWeight: FontWeight.w800),
+                              ),
+                              const TextSpan(
+                                  text:
+                                      ' is paused — pick it up if you want, or start fresh.'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              SizedBox(height: 14.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (ctx) => AssessmentSplash(
+                            onSubmitted: _onQuickCheckinSubmitted,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GQColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        elevation: 3,
+                        shadowColor:
+                            GQColors.primary.withValues(alpha: 0.4),
+                      ),
+                      child: const Text(
+                        'Start fresh',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w800),
                       ),
                     ),
-                    SizedBox(width: 6.h),
-                    Text('🌟', style: TextStyle(fontSize: 16.h)),
+                  ),
+                  SizedBox(width: 8.h),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (ctx) => AssessmentSplash(
+                            onSubmitted: _onQuickCheckinSubmitted,
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GQColors.ink,
+                        side: const BorderSide(color: GQColors.hair),
+                        shape: const StadiumBorder(),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text(
+                        streakDays > 0
+                            ? 'Continue $streakDays-day streak'
+                            : 'Continue',
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w800),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Compact one-thing prompt below recovery card
+        SizedBox(height: 10.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.h, vertical: 11.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(GQRadii.card),
+            border: Border.all(color: GQColors.hair),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36.h,
+                height: 36.h,
+                decoration: BoxDecoration(
+                  color: GQColors.primarySoft,
+                  borderRadius: BorderRadius.circular(12.h),
+                ),
+                child:
+                    const Center(child: Text('📋', style: TextStyle(fontSize: 16))),
+              ),
+              SizedBox(width: 10.h),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Today, just one thing',
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: GQColors.ink),
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      'A 15-second mood log to start.',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: GQColors.ink3),
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: 24.h),
-              // Large prompt card title
-              Text('Quick check-in',
-                  textAlign: TextAlign.center,
-                  style: TextStyleHelper.instance.headline28Inter.copyWith(
-                      fontFamily: CoreTextStyles
-                          .TextStyleHelper.instance.headline24Bold.fontFamily,
-                      color: const Color(0xFF555F6D))),
-              SizedBox(height: 8.h),
-              // Prompt subtitle
-              Text('Takes 2 minutes',
-                  textAlign: TextAlign.center,
-                  style: TextStyleHelper.instance.headline21Inter.copyWith(
-                      fontFamily: CoreTextStyles
-                          .TextStyleHelper.instance.headline24Bold.fontFamily,
-                      color: Color(0xFF8C9CAA))),
-              SizedBox(height: 32.h),
-              Builder(builder: (context) {
-                final questProvider = context.watch<QuestProvider>();
-
-                // Determine today's Quick Check-in quest from Provider
-                model.Quest? checkinQuest;
-                try {
-                  checkinQuest = questProvider.quests.firstWhere(
-                    (q) => q.type == 'check_in',
-                    orElse: () => questProvider.quests.firstWhere(
-                      (q) => q.type == 'progress',
-                      orElse: () => questProvider.quests.first,
+              ElevatedButton(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (ctx) => AssessmentSplash(
+                      onSubmitted: _onQuickCheckinSubmitted,
                     ),
                   );
-                } catch (_) {}
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GQColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 14.h, vertical: 7.h),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  elevation: 2,
+                ),
+                child: const Text('Log',
+                    style:
+                        TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-                final bool isDone = checkinQuest?.isCompleted ?? false;
-                // Gate on quick check-in completion flag (separate from mood logging)
-                final bool gatedDone = isDone || _hasCompletedQuickCheckinToday;
+  // State D — weekend: LIGHT DAY PLAN card
+  Widget _buildWeekendCard() {
+    final now = DateTime.now();
+    final isDone = _hasCompletedQuickCheckinToday ||
+        context.read<QuestProvider>().quests.any(
+            (q) => q.type == 'check_in' && q.isCompleted);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEEF0FE), Color(0xFFF8F7FF)],
+        ),
+        borderRadius: BorderRadius.circular(GQRadii.cardLg),
+        border: Border.all(color: const Color(0x2D667EEA)),
+      ),
+      padding: EdgeInsets.all(20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'LIGHT DAY PLAN',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: GQColors.primaryDk,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('🌤️', style: TextStyle(fontSize: 24)),
+              SizedBox(width: 10.h),
+              Expanded(
+                child: Text(
+                  'Log mood, breathe, that\'s it.',
+                  style: TextStyleHelper.instance.headline21Inter.copyWith(
+                    fontFamily: CoreTextStyles
+                        .TextStyleHelper.instance.headline24Bold.fontFamily,
+                    color: GQColors.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    height: 1.3,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              key: _startBtnKey,
+              onPressed: isDone
+                  ? null
+                  : () async {
+                      HapticFeedback.selectionClick();
+                      await Future<void>.delayed(
+                          const Duration(milliseconds: 220));
+                      if (!mounted) return;
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (ctx) => AssessmentSplash(
+                          onSubmitted: _onQuickCheckinSubmitted,
+                        ),
+                      );
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isDone ? const Color(0xFFE6EAF0) : GQColors.primary,
+                foregroundColor: isDone ? GQColors.ink3 : Colors.white,
+                shape: const StadiumBorder(),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 24.h, vertical: 14.h),
+                elevation: isDone ? 0 : 4,
+                shadowColor: GQColors.primary.withValues(alpha: 0.35),
+              ),
+              child: Text(
+                isDone ? 'Logged today ✓' : 'Easy check-in',
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                final Color bg = gatedDone
-                    ? const Color(0xFFE6EAF0)
-                    : Theme.of(context).colorScheme.primary;
-                final Color fg =
-                    gatedDone ? const Color(0xFF8C9CAA) : Colors.white;
+  // ── R1D2+R1D3: WeekShape — 7-bar mood chart ──────────────────────────────
+  Widget _buildWeekShapeSection() {
+    final moodProvider = context.watch<MoodProvider>();
+    final now = DateTime.now();
+    final state = _computeDashboardState(moodProvider);
+    final isWeekend = now.weekday == DateTime.saturday ||
+        now.weekday == DateTime.sunday;
+    // Build 7-bar data: Mon → Sun (or Mon → Sat/Sun for weekend state)
+    // For .allEmpty (longAbsence): all bars dashed gray, today dashed primary
+    final bool allEmpty = state == DashboardState.longAbsence;
 
-                return CustomButton(
-                    key: _startBtnKey,
-                    text: gatedDone ? 'Logged today' : 'Start',
-                    backgroundColor: bg,
-                    textColor: fg,
-                    borderColor: Colors.transparent,
-                    showBorder: false,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 48.h, vertical: 24.h),
-                    borderRadius: 37.h,
-                    textStyle: TextStyleHelper.instance.headline25BoldInter
-                        .copyWith(
-                            fontFamily: CoreTextStyles.TextStyleHelper.instance
-                                .headline24Bold.fontFamily),
-                    onPressed: gatedDone
-                        ? null
-                        : () async {
-                            HapticFeedback.selectionClick();
-                            await Future<void>.delayed(
-                                const Duration(milliseconds: 220));
-                            if (!mounted) return;
-                            showDialog(
-                              context: context,
-                              barrierDismissible:
-                                  false, // keep user on quest screen; use X to close
-                              builder: (ctx) => AssessmentSplash(
-                                onSubmitted: () {
-                                  // Fire-and-forget on explicit submission only.
-                                  _onQuickCheckinSubmitted();
-                                },
-                              ),
-                            );
-                          });
-              }),
+    // Determine bar colors from mood entries per day
+    final moodByDay = <int, int?>{}; // weekday (1-7) → moodLevel or null
+    for (final e in moodProvider.moodEntries) {
+      final dayDiff = now.toUtc().difference(e.timestamp.toUtc()).inDays;
+      if (dayDiff >= 0 && dayDiff < 7) {
+        final wd = e.timestamp.weekday;
+        if (moodByDay[wd] == null ||
+            (moodByDay[wd]! < e.moodLevel)) {
+          moodByDay[wd] = e.moodLevel;
+        }
+      }
+    }
+
+    Color moodColor(int? level) {
+      if (level == null) return Colors.transparent;
+      return GQColors.moodPalette[
+          (level - 1).clamp(0, GQColors.moodPalette.length - 1)];
+    }
+
+    // Bar height proportions
+    double barHeightFrac(int? level) {
+      if (level == null) return 0.55;
+      return 0.4 + (level / 5.0) * 0.55;
+    }
+
+    final weekDayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+    // Weekend variant: starts Mon, Sat halo'd
+    Widget buildBar(int weekdayIndex) {
+      final wd = weekdayIndex + 1; // 1=Mon ... 7=Sun
+      final isToday = wd == now.weekday;
+      final level = moodByDay[wd];
+      final hasData = level != null;
+      final hFrac = barHeightFrac(level);
+
+      if (allEmpty) {
+        // State C: all dashed gray; today dashed primary
+        return Expanded(
+          child: FractionallySizedBox(
+            heightFactor: 0.55,
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isToday
+                      ? GQColors.primary.withValues(alpha: 0.45)
+                      : GQColors.ink3.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (!hasData) {
+        // No data: dashed outline
+        final highlight = isToday && state == DashboardState.weekend;
+        return Expanded(
+          child: FractionallySizedBox(
+            heightFactor: 0.55,
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: GQColors.primary.withValues(
+                      alpha: highlight ? 0.6 : 0.45),
+                  width: highlight ? 2.0 : 1.5,
+                ),
+                boxShadow: highlight
+                    ? [
+                        BoxShadow(
+                          color: GQColors.primary.withValues(alpha: 0.06),
+                          spreadRadius: 3,
+                        )
+                      ]
+                    : null,
+              ),
+            ),
+          ),
+        );
+      }
+
+      // Has data: solid bar
+      final isBestToday = state == DashboardState.feelingGreat && isToday;
+      return Expanded(
+        child: FractionallySizedBox(
+          heightFactor: hFrac,
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            decoration: BoxDecoration(
+              color: moodColor(level),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: isBestToday
+                  ? [
+                      BoxShadow(
+                          color: Colors.white,
+                          spreadRadius: 2,
+                          blurRadius: 0),
+                      BoxShadow(
+                          color: moodColor(level).withValues(alpha: 0.8),
+                          spreadRadius: 4,
+                          blurRadius: 0),
+                    ]
+                  : null,
+            ),
+          ),
+        ),
+      );
+    }
+
+    String weekStatusText() {
+      if (allEmpty) return 'No logs yet';
+      final count = moodByDay.length;
+      if (state == DashboardState.feelingGreat) return '$count logs · trending up';
+      return '$count day${count == 1 ? '' : 's'} logged this week';
+    }
+
+    String weekSubText() {
+      if (allEmpty) return 'Catch up when you\'re ready. No pressure.';
+      if (state == DashboardState.feelingGreat) return 'Best day this week. Three good days in a row.';
+      if (isWeekend) return 'Weekends count too — same softness.';
+      final loggedToday = moodByDay[now.weekday] != null;
+      return loggedToday
+          ? '${moodByDay.length} days logged this week. Great momentum.'
+          : '${moodByDay.length} days logged this week. Your call on today.';
+    }
+
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.fromLTRB(16.h, 16.h, 16.h, 0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(GQRadii.card),
+            border: Border.all(color: GQColors.hair),
+          ),
+          padding: EdgeInsets.all(16.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'THIS WEEK',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: GQColors.ink3,
+                        ),
+                      ),
+                      SizedBox(height: 1.h),
+                      Text(
+                        weekStatusText(),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: GQColors.ink,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 7.h, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: allEmpty
+                          ? GQColors.primarySoft
+                          : (state == DashboardState.feelingGreat
+                              ? const Color(0xFFFFF1E5)
+                              : (isWeekend
+                                  ? GQColors.primarySoft
+                                  : GQColors.primarySoft)),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      allEmpty
+                          ? 'CATCHING UP'
+                          : (state == DashboardState.feelingGreat
+                              ? 'BEST DAY'
+                              : (isWeekend ? 'WEEKEND' : 'PENDING')),
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: allEmpty
+                            ? GQColors.ink3
+                            : (state == DashboardState.feelingGreat
+                                ? const Color(0xFFB5562F)
+                                : GQColors.primaryDk),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              SizedBox(
+                height: 42.h,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (int i = 0; i < 7; i++) ...[
+                      buildBar(i),
+                      if (i < 6) SizedBox(width: 4.h),
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Row(
+                children: [
+                  for (int i = 0; i < 7; i++) ...[
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          weekDayLabels[i],
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: (i + 1 == now.weekday)
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: (i + 1 == now.weekday)
+                                ? (state == DashboardState.feelingGreat
+                                    ? const Color(0xFFB5562F)
+                                    : GQColors.primaryDk)
+                                : GQColors.ink3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                weekSubText(),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: GQColors.ink2,
+                  height: 1.4,
+                ),
+              ),
             ],
           ),
         ),
@@ -1952,263 +2810,210 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     );
   }
 
-  Widget _buildProgressSection() {
-    final questProvider = context.watch<QuestProvider>();
-    final int streak = questProvider.streak;
-    final int lifetimeXp = questProvider.totalXP;
-    final int level = questProvider.level;
-    final int xpEarned = questProvider.quests
-        .where((q) => q.isCompleted)
-        .fold(0, (sum, q) => sum + q.xpReward); // Derive from completed quests
+  // ── R1D2+R1D3: QuickLanes — 3-button navigation row ──────────────────────
+  Widget _buildQuickLanesSection() {
+    final moodProvider = context.read<MoodProvider>();
+    final state = _computeDashboardState(moodProvider);
+    final isWeekend = state == DashboardState.weekend;
 
-    // Level progress based on 100 XP per level (standard)
-    const int _xpPerLevel = 100;
-    final double levelProgress =
-        ((lifetimeXp % _xpPerLevel) / _xpPerLevel).clamp(0.0, 1.0);
-    // Hide Total XP pill when 0 (baseline)
-    final bool showTotalPill = lifetimeXp > 0;
-    // Persist previous progress for smooth animation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _prevLevelProgress = levelProgress;
-      _prevLifetimeXpForAnim = lifetimeXp;
-    });
-    // Level Up toast (only when level increases, not on first render)
-    if (_lastLevelShown < 0) {
-      _lastLevelShown = level;
-    } else if (level > _lastLevelShown) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        try {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Level Up! Level $level'),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
+    // Weekend order: [Exercises, Log mood, Talk to Alex]
+    // Default order: [Talk to Alex, Log mood, Exercises]
+    final lanes = isWeekend
+        ? [
+            _QuickLane(
+              icon: Icons.self_improvement_outlined,
+              iconBg: const Color(0xFFFFF1E5),
+              iconColor: const Color(0xFFC2522F),
+              label: 'Browse exercises',
+              onTap: () => Navigator.pushNamed(context, '/exercises'),
             ),
-          );
-        } catch (_) {}
-        // Trigger a brief flash glow on the knob
-        setState(() {
-          _levelUpFlash = true;
-        });
-        try {
-          _levelUpTimer?.cancel();
-        } catch (_) {}
-        _levelUpTimer = Timer(const Duration(milliseconds: 800), () {
-          if (!mounted) return;
-          setState(() {
-            _levelUpFlash = false;
-          });
-        });
-      });
-      _lastLevelShown = level;
-    }
+            _QuickLane(
+              icon: Icons.favorite_border,
+              iconBg: GQColors.accentSoft,
+              iconColor: GQColors.coral,
+              label: 'Log mood',
+              onTap: () => Navigator.pushNamed(context, '/home'),
+            ),
+            _QuickLane(
+              icon: Icons.chat_bubble_outline,
+              iconBg: GQColors.primarySoft,
+              iconColor: GQColors.primary,
+              label: 'Talk to Alex',
+              onTap: () => Navigator.pushNamed(context, '/chat'),
+            ),
+          ]
+        : [
+            _QuickLane(
+              icon: Icons.chat_bubble_outline,
+              iconBg: GQColors.primarySoft,
+              iconColor: GQColors.primary,
+              label: 'Talk to Alex',
+              onTap: () => Navigator.pushNamed(context, '/chat'),
+            ),
+            _QuickLane(
+              icon: Icons.favorite_border,
+              iconBg: GQColors.accentSoft,
+              iconColor: GQColors.coral,
+              label: 'Log mood',
+              onTap: () => Navigator.pushNamed(context, '/home'),
+            ),
+            _QuickLane(
+              icon: Icons.self_improvement_outlined,
+              iconBg: const Color(0xFFFFF1E5),
+              iconColor: const Color(0xFFC2522F),
+              label: 'Exercises',
+              onTap: () => Navigator.pushNamed(context, '/exercises'),
+            ),
+          ];
+
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600),
-        padding: EdgeInsets.symmetric(horizontal: 16.h).copyWith(bottom: 32.h),
+        padding: EdgeInsets.fromLTRB(16.h, 16.h, 16.h, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Your Progress',
-                style: TextStyleHelper.instance.display31BoldInter.copyWith(
-                    fontFamily: CoreTextStyles
-                        .TextStyleHelper.instance.headline24Bold.fontFamily,
-                    color: Color(0xFF444D5C))),
-            SizedBox(height: 28.h),
-            Row(children: [
-              Expanded(
-                  child: ProgressCardWidget(
-                      imagePath: ImageConstant.imgImage65x52,
-                      value: '$streak days total',
-                      label: '',
-                      backgroundColor: const Color(0xFFE0F2E9),
-                      valueWidget: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        transitionBuilder: (child, anim) =>
-                            ScaleTransition(scale: anim, child: child),
-                        child: Column(
-                          key: ValueKey<int>(streak),
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                '$streak days total',
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyleHelper
-                                    .instance.headline28BoldInter
-                                    .copyWith(
-                                  fontFamily: CoreTextStyles.TextStyleHelper
-                                      .instance.headline24Bold.fontFamily,
-                                  color: const Color(0xFF4E5965),
-                                ),
-                              ),
+            Text(
+              isWeekend ? 'QUICK LANES · WEEKEND' : 'QUICK LANES',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: GQColors.ink3,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              children: lanes
+                  .map((lane) => Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            lane.onTap();
+                          },
+                          child: Container(
+                            margin: EdgeInsets.symmetric(horizontal: 4.h),
+                            padding: EdgeInsets.symmetric(vertical: 12.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius:
+                                  BorderRadius.circular(GQRadii.card),
+                              border: Border.all(color: GQColors.hair),
                             ),
-                            SizedBox(height: 18.h),
-                          ],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 44.h,
+                                  height: 44.h,
+                                  decoration: BoxDecoration(
+                                    color: lane.iconBg,
+                                    borderRadius:
+                                        BorderRadius.circular(12.h),
+                                  ),
+                                  child: Icon(lane.icon,
+                                      color: lane.iconColor, size: 20),
+                                ),
+                                SizedBox(height: 6.h),
+                                Text(
+                                  lane.label,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: GQColors.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ))),
-              SizedBox(width: 24.h),
-              Expanded(
-                  child: Container(
-                key: _xpCardKey,
-                child: ProgressCardWidget(
-                    imagePath: ImageConstant.imgImage63x65,
-                    value: 'Level $level',
-                    label: '',
-                    backgroundColor: const Color(0xFFE8E7F8),
-                    valueWidget: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, anim) =>
-                          ScaleTransition(scale: anim, child: child),
-                      child: Column(
-                        key: ValueKey<int>(lifetimeXp),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Level $level',
-                            style: TextStyleHelper.instance.headline28BoldInter
-                                .copyWith(
-                              fontFamily: CoreTextStyles.TextStyleHelper
-                                  .instance.headline24Bold.fontFamily,
-                              color: const Color(0xFF4E5965),
-                            ),
-                          ),
-                          SizedBox(height: 6.h),
-                          if (showTotalPill)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 8.h, vertical: 4.h),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(12.h),
-                                ),
-                                child: Text(
-                                  'Total ${lifetimeXp} XP',
-                                  style: TextStyleHelper
-                                      .instance.titleSmallInter
-                                      .copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF4E5965),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          SizedBox(height: 8.h),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6.h),
-                            child: SizedBox(
-                              height: 18.h,
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withValues(alpha: 0.18),
-                                  ),
-                                  // Animated fill + knob
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween<double>(
-                                        begin: _prevLevelProgress,
-                                        end: levelProgress),
-                                    duration: const Duration(milliseconds: 450),
-                                    curve: Curves.easeOut,
-                                    builder: (context, value, _) {
-                                      final primary =
-                                          Theme.of(context).colorScheme.primary;
-                                      final bool nearLevelUp = value >= 0.92;
-                                      final bool flash = _levelUpFlash;
-                                      return Stack(children: [
-                                        FractionallySizedBox(
-                                          widthFactor: value,
-                                          child: Container(
-                                            height: double.infinity,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  primary,
-                                                  primary.withValues(
-                                                      alpha: 0.85),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment:
-                                              Alignment((value * 2) - 1.0, 0),
-                                          child: Container(
-                                            width: 14.h,
-                                            height: 14.h,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                const BoxShadow(
-                                                    color: Color(0x1A000000),
-                                                    blurRadius: 4,
-                                                    offset: Offset(0, 2)),
-                                                if (nearLevelUp)
-                                                  BoxShadow(
-                                                    color: primary.withValues(
-                                                        alpha: 0.30),
-                                                    blurRadius: 14,
-                                                    spreadRadius: 1.0,
-                                                  ),
-                                                if (flash)
-                                                  BoxShadow(
-                                                    color: primary.withValues(
-                                                        alpha: 0.55),
-                                                    blurRadius: 22,
-                                                    spreadRadius: 2.0,
-                                                  ),
-                                              ],
-                                            ),
-                                            child: Center(
-                                              child: Container(
-                                                width: 8.h,
-                                                height: 8.h,
-                                                decoration: BoxDecoration(
-                                                  color: primary,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ]);
-                                    },
-                                  ),
-                                  // Center overlay removed for cleaner look
-                                  const SizedBox.shrink(),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-              )),
-            ]),
-            // Estimated time moved below "Today's Recommendations" header
+                      ))
+                  .toList(),
+            ),
           ],
         ),
       ),
     );
   }
 
+  // ── R1D2+R1D3: NudgeZone — contextual soft nudge ─────────────────────────
+  Widget _buildNudgeZoneSection() {
+    final moodProvider = context.read<MoodProvider>();
+    final state = _computeDashboardState(moodProvider);
+
+    // State B (feelingGreat): nudge is hidden — user already engaged
+    if (state == DashboardState.feelingGreat) return SizedBox(height: 16.h);
+
+    String nudgeText() {
+      switch (state) {
+        case DashboardState.longAbsence:
+          return 'No rush. One small log is enough for today.';
+        case DashboardState.weekend:
+          return 'Slower pace, same care. There\'s no homework here.';
+        case DashboardState.notLogged:
+        default:
+          return 'A 15-second log is the smallest brick in a long wall.';
+      }
+    }
+
+    String nudgeEmoji() {
+      switch (state) {
+        case DashboardState.longAbsence:
+          return '🌿';
+        case DashboardState.weekend:
+          return '🌿';
+        default:
+          return '💭';
+      }
+    }
+
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: EdgeInsets.fromLTRB(16.h, 16.h, 16.h, 0),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.h, vertical: 11.h),
+          decoration: BoxDecoration(
+            color: GQColors.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(GQRadii.card),
+            border: Border.all(
+                color: GQColors.primary.withValues(alpha: 0.25),
+                width: 1,
+                style: BorderStyle.solid),
+          ),
+          child: Row(
+            children: [
+              Text(nudgeEmoji(), style: const TextStyle(fontSize: 14)),
+              SizedBox(width: 10.h),
+              Expanded(
+                child: Text(
+                  nudgeText(),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: GQColors.ink2,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Legacy _buildMoodCheckInSection — REPLACED by _buildHeroSection ───────
+  // Kept as dead stub to avoid merge conflicts; body removed per R1D2 Tier 4.1.
+  // ignore: unused_element
+  Widget _buildMoodCheckInSection_legacy_removed() => const SizedBox.shrink();
+
+  // ── REMOVED: _buildProgressSection (gamification — Tier 4.1 no streak/level) ─
+
+  // Large Quick check-in prompt section (title, subtitle, and Start button)
+  // R1D2+R1D3: _buildMoodCheckInSection superseded by _buildHeroSection.
+  // _buildProgressSection removed — gamification (streak/level) per Tier 4.1.
   Widget _buildRecommendationsSection() {
     final questProvider = context.read<QuestProvider>();
     final bool task1Done = _qTask1Id != null &&
@@ -3358,4 +4163,24 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       ]),
     );
   }
+}
+
+
+// ── R1D2+R1D3 helpers ────────────────────────────────────────────────────────
+
+/// Data class for a single Quick Lane tile.
+class _QuickLane {
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickLane({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+  });
 }
