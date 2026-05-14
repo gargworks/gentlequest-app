@@ -10,6 +10,7 @@ import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
 import '../theme/gq_tokens.dart';
 import 'mood_low_reflection_sheet.dart';
+import 'mood_reflection_sheet.dart';
 
 enum ViewMode { daily, all }
 
@@ -693,11 +694,23 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             contextChips: contexts.map((context) => context.label).toList(),
           );
           Navigator.of(sheetCtx, rootNavigator: true).pop();
-          if (moodLevel <= 2) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+          // R1D5 — Post-submit reflection: branch by mood level.
+          //   moodLevel 1–2 → Low mood sheet (State A)
+          //   moodLevel 5   → Great mood sheet (State B, celebrates + harvests insight)
+          //   moodLevel 3–4 → Neutral auto-dismiss toast (State C)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (moodLevel <= 2) {
               showMoodLowReflectionSheet(context);
-            });
-          }
+            } else if (moodLevel == 5) {
+              // Pass current streak for badge bounce; QuestsEngine reads from
+              // SharedPreferences so we can safely instantiate it here.
+              final streakDays = QuestsEngine().computeTotalActiveDays();
+              showMoodGreatReflectionSheet(context, streakDays: streakDays);
+            } else {
+              // Neutral (3–4): lightweight logged toast, auto-dismisses ~3s.
+              showMoodNeutralToast(context);
+            }
+          });
         },
       ),
     );
