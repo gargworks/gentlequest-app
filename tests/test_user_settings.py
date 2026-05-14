@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app
-from models import AnalyticsEvent, Message, MoodEntry, User, UserSession, db
+from models import AnalyticsEvent, Message, MoodEntry, User, UserResourcePref, UserSession, db
 
 
 @pytest.fixture
@@ -77,6 +77,7 @@ def test_delete_cascade_removes_session_data_and_soft_deletes_user(client):
     with client.application.app_context():
         db.session.add(Message(session_id=sid, content="chat", is_user=True))
         db.session.add(AnalyticsEvent(session_id=sid, event_type="test", event_metadata={"ip_masked": "1.2.3***"}))
+        db.session.add(UserResourcePref(session_id=sid, resource_id="box-breathing", is_favorite=True))
         db.session.commit()
 
     response = client.delete("/api/user", headers=_headers(sid))
@@ -87,6 +88,7 @@ def test_delete_cascade_removes_session_data_and_soft_deletes_user(client):
         assert MoodEntry.query.filter_by(session_id=sid).count() == 0
         assert Message.query.filter_by(session_id=sid).count() == 0
         assert AnalyticsEvent.query.filter_by(session_id=sid).count() == 0
+        assert UserResourcePref.query.filter_by(session_id=sid).count() == 0
         assert db.session.get(UserSession, sid) is None
         user = User.query.filter_by(session_id=None).one()
         assert user.deleted_at is not None
