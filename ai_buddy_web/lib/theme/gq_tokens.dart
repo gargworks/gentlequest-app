@@ -66,6 +66,14 @@ class GQColors {
   /// Source: REVIEW.md cross-cutting tokens + R1D4 HTML
   static const moodOkay = Color(0xFFC9B7F0);
 
+  /// Semantic "Meh" mood — slate grey. --gq-meh.
+  /// Source: GentleQuest_Journal.html (R1D14) + timeline widget map.
+  static const moodMeh = Color(0xFFB8B5CC);
+
+  /// Semantic "Rough" mood — muted purple. --gq-rough.
+  /// Source: GentleQuest_Journal.html (R1D14) + timeline widget map.
+  static const moodRough = Color(0xFFC49AD9);
+
   // Mood palette — ordered low-energy (index 0) → high-energy (index 4).
   static const moodSlateLavender = Color(0xFFC9CCEB); // index 0 — calm/low
   static const moodMutedPlum     = Color(0xFFB6A3D9); // index 1

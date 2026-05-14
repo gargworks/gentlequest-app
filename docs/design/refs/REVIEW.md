@@ -23,7 +23,7 @@ Per-design HTML: docs/design/refs/htmls/
 | R1D11 | Compliance Extensions   | R2    | GentleQuest_Compliance_Extensions.html      | ai_buddy_web/lib/screens/compliance_guard_screen.dart                                       | 2    | Not started |
 | R1D12 | Offline States          | R3    | GentleQuest_Offline_States.html             | ai_buddy_web/lib/screens/chat_screen.dart (inline banner)                                   | 3    | Not started |
 | R1D13 | Quests                  | R1    | GentleQuest_Quests.html                     | ai_buddy_web/lib/screens/quest_screen.dart                                                  | 4    | Partial     |
-| R1D14 | Journal                 | R2    | GentleQuest_Journal.html                    | ai_buddy_web/lib/screens/journal_screen.dart                                                | 2    | Not started |
+| R1D14 | Journal                 | R2    | GentleQuest_Journal.html                    | ai_buddy_web/lib/screens/journal_screen.dart                                                | 2    | in-flight — https://github.com/eidetic-works/ai-mental-health-assistant/pull/TBD |
 | R1D15 | Weekly Review           | R3    | GentleQuest_Weekly_Review.html              | TBD (new screen)                                                                            | 3    | Not started |
 | R1D16 | Exercise Cards          | R2    | GentleQuest_Exercise_Cards.html             | TBD (inline chat widget + standalone)                                                       | 2    | Not started |
 | R1D17 | Library                 | R2    | GentleQuest_Library.html                    | ai_buddy_web/lib/screens/resource_library_screen.dart                                       | 2    | Partial     |
