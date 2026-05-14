@@ -38,6 +38,9 @@ def _session_id_from_request(create: bool = True):
 
 
 def _get_or_create_user(session_id: str) -> User:
+    if not db.session.get(UserSession, session_id):
+        db.session.add(UserSession(id=session_id))
+        db.session.flush()
     user = User.query.filter_by(session_id=session_id, deleted_at=None).first()
     if user:
         return user
