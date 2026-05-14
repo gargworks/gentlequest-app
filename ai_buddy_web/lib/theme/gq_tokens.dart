@@ -172,6 +172,24 @@ class GQDurations {
   /// Stagger delay increment for sequenced fade-in-up children.
   /// Source: GentleQuest_Onboarding.html — 80ms between each child.
   static const staggerStep = Duration(milliseconds: 80);
+
+  // ── R1D11 — Compliance Extensions ─────────────────────────────────────────
+
+  /// Crossfade from standard compliance block to crisis-keyword override (State A).
+  /// Source: GentleQuest_Compliance_Extensions.html — "200ms swap".
+  static const complianceCrisisSwap = Duration(milliseconds: 200);
+
+  /// Urgency ring pulse period for the 988 surface (State A).
+  /// Source: GentleQuest_Compliance_Extensions.html — gqUrgentPulse 2200ms.
+  static const urgencyRingPulse = Duration(milliseconds: 2200);
+
+  /// Envelope single-pulse for notify-me confirmation (State C).
+  /// Source: GentleQuest_Compliance_Extensions.html — gqEnvelopePulse 900ms.
+  static const envelopePulse = Duration(milliseconds: 900);
+
+  /// Crossfade from notify-me form to confirmation state (State C).
+  /// Source: GentleQuest_Compliance_Extensions.html — "300ms ease-in crossfade".
+  static const notifyConfirmCrossfade = Duration(milliseconds: 300);
 }
 
 // ─── Typography ──────────────────────────────────────────────────────────────

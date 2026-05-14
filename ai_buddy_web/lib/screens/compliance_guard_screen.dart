@@ -1,7 +1,32 @@
+// compliance_guard_screen.dart — R1D10 base + R1D11 Compliance Extensions
+// Design sources:
+//   • docs/design/refs/htmls/GentleQuest_Compliance_Block.html       (R1D10)
+//   • docs/design/refs/htmls/GentleQuest_Compliance_Extensions.html  (R1D11)
+// Principles: P6 (crisis never blocks), P14 (compliance is local-first), P4 (amber not red)
+//
+// R1D11 adds three critical state variants layered on top of the base screen:
+//   A — Crisis-keyword override: 200ms swap to 988 surface if crisis keywords
+//       detected in the "Notify me" email field. Reuses R1D9 crisis surfaces.
+//   B — Managed-device block: MDM-detected surface (UI only; backend stubbed).
+//   C — Notify-me confirmation: post-submit animated confirmation state.
+
 import 'package:flutter/material.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
 // For Permission Enums
 import 'package:url_launcher/url_launcher.dart'; // Added for Data Export & App Store links
+import 'package:ai_buddy_web/services/crisis_keyword_detector.dart';
+import 'package:ai_buddy_web/services/mdm_detection_service.dart';
+import 'package:ai_buddy_web/theme/gq_tokens.dart';
+
+// ─── R1D11 overlay state ──────────────────────────────────────────────────────
+// Tracks which R1D11 extension state (if any) is active on top of the base
+// compliance flow.
+enum _ExtensionState {
+  none,     // standard compliance flow
+  crisis,   // State A — crisis-keyword override
+  mdm,      // State B — managed-device block
+  notifyOk, // State C — notify-me confirmation
+}
 
 class ComplianceGuardScreen extends StatefulWidget {
   const ComplianceGuardScreen({super.key});
@@ -10,14 +35,94 @@ class ComplianceGuardScreen extends StatefulWidget {
   State<ComplianceGuardScreen> createState() => _ComplianceGuardScreenState();
 }
 
-class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
+class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
+    with TickerProviderStateMixin {
   final ComplianceService _complianceService = ComplianceService();
   ComplianceStatus _status = ComplianceStatus.loading;
   bool _isLoadingAction = false;
 
+  // ── R1D11 extension state ──────────────────────────────────────────────────
+  _ExtensionState _ext = _ExtensionState.none;
+
+  // ── State A: crisis crossfade controller ──────────────────────────────────
+  late final AnimationController _crisisSwapCtrl;
+  late final Animation<double> _crisisSwapAnim;
+
+  // ── State A: urgency ring pulse controller ────────────────────────────────
+  late final AnimationController _urgencyPulseCtrl;
+
+  // ── State C: envelope pulse controller ───────────────────────────────────
+  late final AnimationController _envelopePulseCtrl;
+  late final Animation<double> _envelopePulseAnim;
+
+  // ── State C: notify-me form controller ───────────────────────────────────
+  late final AnimationController _notifyConfirmCtrl;
+  late final Animation<double> _notifyConfirmAnim;
+
+  // ── Notify-me email field ─────────────────────────────────────────────────
+  final TextEditingController _emailCtrl = TextEditingController();
+  bool _isSubmittingEmail = false;
+
   @override
   void initState() {
     super.initState();
+
+    // State A — 200ms crossfade (GentleQuest_Compliance_Extensions.html)
+    _crisisSwapCtrl = AnimationController(
+      vsync: this,
+      duration: GQDurations.complianceCrisisSwap,
+    );
+    _crisisSwapAnim = CurvedAnimation(
+      parent: _crisisSwapCtrl,
+      curve: Curves.easeOut,
+    );
+
+    // State A — urgency ring pulse (2200ms, infinite)
+    _urgencyPulseCtrl = AnimationController(
+      vsync: this,
+      duration: GQDurations.urgencyRingPulse,
+    );
+
+    // State C — envelope single-pulse (900ms × 1)
+    _envelopePulseCtrl = AnimationController(
+      vsync: this,
+      duration: GQDurations.envelopePulse,
+    );
+    _envelopePulseAnim = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _envelopePulseCtrl, curve: Curves.easeOut),
+    );
+
+    // State C — 300ms crossfade from form → confirmation
+    _notifyConfirmCtrl = AnimationController(
+      vsync: this,
+      duration: GQDurations.notifyConfirmCrossfade,
+    );
+    _notifyConfirmAnim = CurvedAnimation(
+      parent: _notifyConfirmCtrl,
+      curve: Curves.easeIn,
+    );
+
+    _checkMdmThenStatus();
+  }
+
+  @override
+  void dispose() {
+    _crisisSwapCtrl.dispose();
+    _urgencyPulseCtrl.dispose();
+    _envelopePulseCtrl.dispose();
+    _notifyConfirmCtrl.dispose();
+    _emailCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── MDM check runs before standard compliance check (B overrides region) ──
+  Future<void> _checkMdmThenStatus() async {
+    final isMdm = await MdmDetectionService.isManagedDevice();
+    if (!mounted) return;
+    if (isMdm) {
+      setState(() => _ext = _ExtensionState.mdm);
+      return;
+    }
     _checkStatus();
   }
 
@@ -80,8 +185,83 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
         .join('&');
   }
 
+  // ── R1D11 — State A helpers ───────────────────────────────────────────────
+
+  /// Called from the notify-me email text field's onChanged.
+  /// If a crisis keyword is detected, swap to the 988 surface in 200ms (P6).
+  void _onEmailChanged(String value) {
+    if (_ext == _ExtensionState.crisis) return; // already showing crisis
+    if (CrisisKeywordDetector.match(value)) {
+      _activateCrisisOverride();
+    }
+  }
+
+  void _activateCrisisOverride() {
+    setState(() => _ext = _ExtensionState.crisis);
+    _crisisSwapCtrl.forward();
+    _urgencyPulseCtrl.repeat();
+  }
+
+  void _dismissCrisisOverride() {
+    _urgencyPulseCtrl.stop();
+    _crisisSwapCtrl.reverse().then((_) {
+      if (mounted) setState(() => _ext = _ExtensionState.none);
+    });
+  }
+
+  // ── R1D11 — State C helper ────────────────────────────────────────────────
+
+  Future<void> _submitNotifyEmail() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) return;
+    setState(() => _isSubmittingEmail = true);
+    // TODO(backend): POST email to /api/compliance/notify-me
+    // Stub: 300ms crossfade to confirmation after simulated submit.
+    await Future<void>.delayed(GQDurations.notifyConfirmCrossfade);
+    if (!mounted) return;
+    setState(() {
+      _isSubmittingEmail = false;
+      _ext = _ExtensionState.notifyOk;
+    });
+    _notifyConfirmCtrl.forward();
+    _envelopePulseCtrl.forward(); // single pulse (not repeat)
+  }
+
+  void _dismissNotifyConfirmation() {
+    _notifyConfirmCtrl.reverse().then((_) {
+      if (mounted) {
+        setState(() => _ext = _ExtensionState.none);
+        _emailCtrl.clear();
+      }
+    });
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    // R1D11 State B — MDM override (region-agnostic; highest priority after crisis)
+    if (_ext == _ExtensionState.mdm) {
+      return _buildManagedDeviceBlock();
+    }
+
+    // R1D11 State A — Crisis-keyword override (P6: always shows, even inside block)
+    if (_ext == _ExtensionState.crisis) {
+      return FadeTransition(
+        opacity: _crisisSwapAnim,
+        child: _buildCrisisOverride(),
+      );
+    }
+
+    // R1D11 State C — Notify-me confirmation
+    if (_ext == _ExtensionState.notifyOk) {
+      return FadeTransition(
+        opacity: _notifyConfirmAnim,
+        child: _buildNotifyConfirmation(),
+      );
+    }
+
+    // Standard compliance flow (R1D10 base)
     if (_status == ComplianceStatus.loading || _isLoadingAction) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -112,6 +292,657 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
         return const Scaffold(body: SizedBox()); // Should have navigated
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // R1D11 State A — Crisis-keyword override
+  // Verbatim copy from GentleQuest_Compliance_Extensions.html
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildCrisisOverride() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF1F1), // soft coral atmosphere per HTML
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+
+              // Urgency ring — soft pulse (not alarm). Coral-not-red (P4).
+              Center(
+                child: AnimatedBuilder(
+                  animation: _urgencyPulseCtrl,
+                  builder: (context, child) {
+                    // Pulse: box-shadow expands from 0 to 16px and back
+                    final t = _urgencyPulseCtrl.value;
+                    final shadowRadius = t < 0.7
+                        ? (t / 0.7) * 16.0
+                        : ((1.0 - t) / 0.3) * 16.0;
+                    final shadowOpacity = t < 0.7
+                        ? 0.45 * (1.0 - (t / 0.7))
+                        : 0.0;
+                    return Container(
+                      width: 74,
+                      height: 74,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFFFD9D9), Color(0xFFFFE8E8)],
+                        ),
+                        border: Border.all(
+                          color: GQColors.coral.withAlpha(89), // 0.35 opacity
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: GQColors.coral
+                                .withAlpha((shadowOpacity * 255).round()),
+                            blurRadius: shadowRadius,
+                          ),
+                        ],
+                      ),
+                      child: child,
+                    );
+                  },
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: Color(0xFFE0494C), // gq-accent-dk
+                    size: 32,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Urgency block — verbatim copy (State A)
+              const Text(
+                'Right now, please call 988.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.displayFamily,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  height: 1.18,
+                  color: GQColors.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Free, confidential, available 24/7.\nThey want to help.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.6,
+                  color: GQColors.ink2,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Primary CTA — Call 988 (tel:988)
+              Semantics(
+                button: true,
+                label: 'Call 988 — free, confidential, available 24/7',
+                child: GestureDetector(
+                  onTap: () =>
+                      _launchUri(context, Uri.parse('tel:988'), label: 'Call 988'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    decoration: BoxDecoration(
+                      color: GQColors.coral,
+                      borderRadius: BorderRadius.circular(GQRadii.button),
+                      boxShadow: [
+                        BoxShadow(
+                          color: GQColors.coral.withAlpha(153),
+                          blurRadius: 32,
+                          offset: const Offset(0, 14),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone_rounded,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Call 988',
+                          style: TextStyle(
+                            fontFamily: GQTypography.displayFamily,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Secondary CTAs — Text 988 + Chat online
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      button: true,
+                      label: 'Text 988',
+                      child: GestureDetector(
+                        onTap: () => _launchUri(
+                            context, Uri.parse('sms:988'), label: 'Text 988'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(GQRadii.button),
+                            border: Border.all(color: GQColors.hair),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.message_rounded,
+                                  color: GQColors.ink, size: 14),
+                              SizedBox(width: 6),
+                              Text(
+                                'Text 988',
+                                style: TextStyle(
+                                  fontFamily: GQTypography.bodyFamily,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: GQColors.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Semantics(
+                      button: true,
+                      label: 'Chat online at 988lifeline.org',
+                      child: GestureDetector(
+                        onTap: () => _launchUri(
+                          context,
+                          Uri.parse('https://988lifeline.org/chat'),
+                          label: 'Chat online',
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(GQRadii.button),
+                            border: Border.all(color: GQColors.hair),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.language_rounded,
+                                  color: GQColors.ink, size: 14),
+                              SizedBox(width: 6),
+                              Text(
+                                'Chat online',
+                                style: TextStyle(
+                                  fontFamily: GQTypography.bodyFamily,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: GQColors.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              // "More resources" divider
+              Row(
+                children: [
+                  Expanded(child: Container(height: 1, color: GQColors.hair)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'MORE RESOURCES',
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.4,
+                        color: GQColors.ink3,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Container(height: 1, color: GQColors.hair)),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Regional resource cards (verbatim labels per spec)
+              _RegionalResourceCard(
+                icon: Icons.message_rounded,
+                iconBgColor: GQColors.primarySoft,
+                iconColor: GQColors.primary,
+                title: 'Crisis Text Line',
+                subtitle: 'Text HOME to 741741',
+                onTap: () => _launchUri(
+                  context,
+                  Uri.parse('sms:741741?body=HOME'),
+                  label: 'Crisis Text Line',
+                ),
+              ),
+              const SizedBox(height: 8),
+              _RegionalResourceCard(
+                icon: Icons.favorite_outlined,
+                iconBgColor: GQColors.primarySoft,
+                iconColor: GQColors.primary,
+                title: 'NAMI Illinois',
+                subtitle: 'Helpline · 800-950-6264',
+                onTap: () => _launchUri(
+                  context,
+                  Uri.parse('tel:8009506264'),
+                  label: 'NAMI Illinois',
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Collapsible block reason — verbatim transition text (State A)
+              _BlockReasonDisclosure(
+                summaryText:
+                    "When you're ready, here's why GentleQuest isn't available in your state",
+                bodyText:
+                    'Illinois law requires additional clinical licensure for AI mental-health services. We\'re working with state regulators and will be available as soon as we can be.',
+                onDismiss: _dismissCrisisOverride,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // R1D11 State B — Managed-device block (MDM detected)
+  // UI only — backend detection stubbed; see mdm_detection_service.dart.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildManagedDeviceBlock() {
+    return Scaffold(
+      backgroundColor: GQColors.softBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+
+              // Device-with-shield icon — calm lavender (not alarming)
+              Center(
+                child: Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [GQColors.primarySoft, Color(0xFFE0E5FB)],
+                    ),
+                    border: Border.all(
+                      color: GQColors.primary.withAlpha(46),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: GQColors.primaryDk,
+                    size: 36,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Heading — verbatim from HTML
+              const Text(
+                'This device limits some apps.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.displayFamily,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  height: 1.2,
+                  color: GQColors.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Your school or workplace may restrict GentleQuest. Try one of these instead — they work everywhere.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.6,
+                  color: GQColors.ink2,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Universal resource list — SMS / Call / Web (no native deeplinks
+              // that MDM would block)
+              _UniversalResourceCard(
+                icon: Icons.message_rounded,
+                iconBgColor: GQColors.primarySoft,
+                iconColor: GQColors.primary,
+                tagText: 'SMS',
+                tagBg: GQColors.primarySoft,
+                tagColor: GQColors.primaryDk,
+                title: 'Crisis Text Line',
+                subtitle: 'Text HOME to 741741 · works on any phone',
+                onTap: () => _launchUri(
+                  context,
+                  Uri.parse('sms:741741?body=HOME'),
+                  label: 'Crisis Text Line',
+                ),
+              ),
+              const SizedBox(height: 10),
+              _UniversalResourceCard(
+                icon: Icons.phone_rounded,
+                iconBgColor: GQColors.accentSoft,
+                iconColor: GQColors.coral,
+                tagText: 'CALL',
+                tagBg: GQColors.accentSoft,
+                tagColor: const Color(0xFFB73E3E),
+                title: '988 Lifeline',
+                subtitle: 'Dial 988 · works on any phone, 24/7',
+                onTap: () => _launchUri(
+                  context,
+                  Uri.parse('tel:988'),
+                  label: '988 Lifeline',
+                ),
+              ),
+              const SizedBox(height: 10),
+              _UniversalResourceCard(
+                icon: Icons.language_rounded,
+                iconBgColor: const Color(0xFFE8F4EE),
+                iconColor: const Color(0xFF3F8B6A),
+                tagText: 'WEB',
+                tagBg: const Color(0xFFE8F4EE),
+                tagColor: const Color(0xFF3F8B6A),
+                title: 'IASP Resources',
+                subtitle: 'Find a local hotline anywhere in the world',
+                onTap: () => _launchUri(
+                  context,
+                  Uri.parse('https://www.iasp.info/resources/Crisis_Centres/'),
+                  label: 'IASP Resources',
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Footer — personal device link
+              Center(
+                child: Semantics(
+                  button: true,
+                  label: 'Or use GentleQuest on your personal device',
+                  child: GestureDetector(
+                    onTap: () => _launchUri(
+                      context,
+                      Uri.parse('https://gentlequest.app/get'),
+                      label: 'GentleQuest personal device',
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(GQRadii.button),
+                        border: Border.all(color: GQColors.hair),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Or use GentleQuest on your personal device',
+                            style: TextStyle(
+                              fontFamily: GQTypography.bodyFamily,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: GQColors.ink2,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.chevron_right_rounded,
+                              size: 14, color: GQColors.ink2),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // R1D11 State C — Notify-me confirmation
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildNotifyConfirmation() {
+    return Scaffold(
+      backgroundColor: GQColors.softBg,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Envelope icon — single animated pulse on enter
+            Positioned(
+              top: 200,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ScaleTransition(
+                  scale: _envelopePulseAnim,
+                  child: Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [GQColors.primary, GQColors.coral],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: GQColors.primary.withAlpha(115),
+                          blurRadius: 40,
+                          offset: const Offset(0, 16),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.mail_outline_rounded,
+                        color: Colors.white, size: 40),
+                  ),
+                ),
+              ),
+            ),
+
+            // Headline + body (verbatim from HTML)
+            Positioned(
+              top: 328,
+              left: 28,
+              right: 28,
+              child: Column(
+                children: [
+                  const Text(
+                    "You're on the list.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: GQTypography.displayFamily,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1.15,
+                      color: GQColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        height: 1.6,
+                        color: GQColors.ink2,
+                      ),
+                      children: [
+                        TextSpan(text: "We'll email you "),
+                        TextSpan(
+                          text: 'once',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, color: GQColors.ink),
+                        ),
+                        TextSpan(
+                            text:
+                                ' — when GentleQuest is available in Illinois.\nNo marketing, no follow-ups.'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Promise pill — "Your email is encrypted at rest"
+            Positioned(
+              top: 484,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(GQRadii.button),
+                    border: Border.all(color: GQColors.hair),
+                    boxShadow: [
+                      BoxShadow(
+                        color: GQColors.ink.withAlpha(26),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded,
+                          color: Color(0xFF3F8B6A), size: 13),
+                      SizedBox(width: 6),
+                      Text(
+                        'Your email is encrypted at rest',
+                        style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: GQColors.ink2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // "Got it" CTA — routes back to compliance block
+            Positioned(
+              bottom: 108,
+              left: 24,
+              right: 24,
+              child: Semantics(
+                button: true,
+                label: 'Got it — dismiss confirmation',
+                child: GestureDetector(
+                  onTap: _dismissNotifyConfirmation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    decoration: BoxDecoration(
+                      color: GQColors.primary,
+                      borderRadius: BorderRadius.circular(GQRadii.button),
+                      boxShadow: [
+                        BoxShadow(
+                          color: GQColors.primary.withAlpha(153),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'Got it',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: GQTypography.displayFamily,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Plain-language opt-out — verbatim from HTML
+            const Positioned(
+              bottom: 54,
+              left: 28,
+              right: 28,
+              child: Text(
+                'Want to remove yourself? Just reply "unsubscribe" to that email.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1.55,
+                  color: GQColors.ink3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // R1D10 base screens (preserved — no drive-by refactors)
+  // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildAgeGate() {
     return Scaffold(
@@ -193,9 +1024,9 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
               child: const Text("Verify Location", style: TextStyle(fontSize: 18)),
             ),
             if (_status == ComplianceStatus.locationServicesDisabled)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: const Text(
+              const Padding(
+                padding: EdgeInsets.only(top: 16.0),
+                child: Text(
                   "Please enable Location Services in your device settings to proceed.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.red),
@@ -259,7 +1090,45 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 24),
+
+            // Notify-me form (exposed in blocked-region state)
+            if (title != "Age Requirement") ...[
+              TextField(
+                controller: _emailCtrl,
+                onChanged: _onEmailChanged, // ← R1D11: crisis-keyword hook
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  hintText: 'Your email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(GQRadii.card),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _isSubmittingEmail ? null : _submitNotifyEmail,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GQColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: _isSubmittingEmail
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Notify me when available'),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             if (title == "Age Requirement") ...[
                 const Text("Need Help?", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -330,5 +1199,336 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen> {
         ),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private shared widgets (file-scoped; not exported)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Resource card row used in State A (regional list).
+class _RegionalResourceCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _RegionalResourceCard({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$title — $subtitle',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: GQColors.hair),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: iconBgColor,
+                ),
+                child: Icon(icon, color: iconColor, size: 16),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: GQColors.ink,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: GQColors.ink3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GQColors.ink3, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Resource card row used in State B (universal list — no deeplinks blocked by MDM).
+class _UniversalResourceCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String tagText;
+  final Color tagBg;
+  final Color tagColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _UniversalResourceCard({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.tagText,
+    required this.tagBg,
+    required this.tagColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$title — $subtitle',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(GQRadii.card),
+            border: Border.all(color: GQColors.hair),
+            boxShadow: [
+              BoxShadow(
+                color: GQColors.ink.withAlpha(13),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: iconBgColor,
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: GQColors.ink,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: tagBg,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            tagText,
+                            style: TextStyle(
+                              fontFamily: GQTypography.bodyFamily,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                              color: tagColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                        color: GQColors.ink3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GQColors.ink3, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Collapsible block-reason disclosure — State A only.
+/// collapsed by default (urgent help is the focus).
+class _BlockReasonDisclosure extends StatefulWidget {
+  final String summaryText;
+  final String bodyText;
+  final VoidCallback? onDismiss;
+
+  const _BlockReasonDisclosure({
+    required this.summaryText,
+    required this.bodyText,
+    this.onDismiss,
+  });
+
+  @override
+  State<_BlockReasonDisclosure> createState() =>
+      _BlockReasonDisclosureState();
+}
+
+class _BlockReasonDisclosureState extends State<_BlockReasonDisclosure> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Summary row (tap to expand)
+        Semantics(
+          button: true,
+          label: widget.summaryText,
+          child: GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(140),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: GQColors.hair,
+                    style: BorderStyle.solid),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.summaryText,
+                      style: const TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                        color: GQColors.ink2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: GQColors.ink3,
+                    size: 14,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        if (_expanded) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              widget.bodyText,
+              style: const TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                height: 1.6,
+                color: GQColors.ink3,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// URL launcher (same pattern as crisis_resources.dart)
+// ─────────────────────────────────────────────────────────────────────────────
+
+Future<void> _launchUri(BuildContext context, Uri uri,
+    {String? label}) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  try {
+    final launched = await canLaunchUrl(uri) &&
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (launched) return;
+  } catch (_) {
+    // fall through to clipboard fallback
+  }
+
+  if (uri.scheme == 'tel') {
+    final number = uri.path;
+    if (messenger != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Phone number: $number')),
+      );
+    }
+    return;
+  }
+  if (uri.scheme == 'sms') {
+    final number = uri.path;
+    if (messenger != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Text: $number')),
+      );
+    }
+    return;
+  }
+  final urlStr = uri.toString();
+  if (messenger != null) {
+    messenger.showSnackBar(SnackBar(content: Text('Link: $urlStr')));
   }
 }
