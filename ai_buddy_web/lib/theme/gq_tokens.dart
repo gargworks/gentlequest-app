@@ -85,6 +85,10 @@ class GQColors {
   /// Source: REVIEW.md cross-cutting tokens + GentleQuest_Push_Notifications.html --gq-amber
   static const amber = Color(0xFFC8923D);
 
+  /// Amber soft tint — background for offline banners and amber-state surfaces.
+  /// Source: GentleQuest_Offline_States.html --gq-amber-soft: #FBF1DC (R1D12)
+  static const amberSoft = Color(0xFFFBF1DC);
+
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
   /// Warm peach tint — start of crisis gradient / icon halos.

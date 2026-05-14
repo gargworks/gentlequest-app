@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import '../theme/theme_helper.dart';
@@ -28,6 +30,8 @@ import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
+// R1D12 — Offline States
+import '../widgets/offline_banner.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -53,6 +57,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
+
+  // ── R1D12 Offline States ─────────────────────────────────────────────────
+  /// True when device has no network connectivity (mid-chat offline).
+  bool _isOffline = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -357,6 +366,20 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     });
     // Listen for tab reselect events
     widget.reselect?.addListener(_onReselect);
+    // R1D12 — Offline States: subscribe to connectivity changes.
+    // Auto-dismisses OfflineBanner on reconnect (no manual action required).
+    _connectivitySub =
+        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
+    // Kick an immediate check so we detect pre-existing offline state.
+    Connectivity().checkConnectivity().then(_onConnectivityChanged);
+  }
+
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    if (!mounted) return;
+    final nowOffline = results.every((r) => r == ConnectivityResult.none);
+    if (nowOffline != _isOffline) {
+      setState(() => _isOffline = nowOffline);
+    }
   }
 
   @override
@@ -598,9 +621,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       final msgCount = chatProvider.messages.length;
                       final hasTyping = chatProvider.isTyping;
                       // R1D7: inline crisis banner adds an extra row when active
-                      // Items: messages + (suggestions?) + (crisis banner?) + (typing?)
+                      // R1D12: offline banner adds an extra row when offline
+                      // Items: messages + (suggestions?) + (crisis banner?) +
+                      //        (offline banner?) + (typing?)
                       final extraRows = (showSuggestions ? 1 : 0) +
                           (_showInlineCrisis ? 1 : 0) +
+                          (_isOffline ? 1 : 0) +
                           (hasTyping ? 1 : 0);
                       final count = msgCount + extraRows;
 
@@ -632,10 +658,29 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             );
                           }
 
+                          // R1D12 State A — offline banner at top of stream
+                          // Shown after suggestions/crisis rows so it sits near
+                          // the compose area; auto-hides on reconnect.
+                          final offlineIndex = msgCount +
+                              (showSuggestions ? 1 : 0) +
+                              (_showInlineCrisis ? 1 : 0);
+                          if (_isOffline && index == offlineIndex) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 4.h, vertical: 4.h),
+                              child: AnimatedOpacity(
+                                opacity: _isOffline ? 1.0 : 0.0,
+                                duration: GQDurations.fade,
+                                child: const OfflineBanner(),
+                              ),
+                            );
+                          }
+
                           // R1D7 State A — thinking indicator
                           final typingIndex = msgCount +
                               (showSuggestions ? 1 : 0) +
-                              (_showInlineCrisis ? 1 : 0);
+                              (_showInlineCrisis ? 1 : 0) +
+                              (_isOffline ? 1 : 0);
                           if (hasTyping && index == typingIndex) {
                             return _buildTypingBubble();
                           }
@@ -1250,6 +1295,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   @override
   void dispose() {
     widget.reselect?.removeListener(_onReselect);
+    _connectivitySub?.cancel(); // R1D12 — Offline States
     _messageController.dispose();
     _scrollController.dispose();
     _inputFocus.dispose();
