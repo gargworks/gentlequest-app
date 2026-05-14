@@ -81,6 +81,10 @@ class GQColors {
   static const moodPeach         = Color(0xFFFFB59B); // index 3
   static const moodCoralPeach    = Color(0xFFFF8E7A); // index 4 — warm/high
 
+  /// Amber — offline state indicator, non-critical warnings.
+  /// Source: REVIEW.md cross-cutting tokens + GentleQuest_Push_Notifications.html --gq-amber
+  static const amber = Color(0xFFC8923D);
+
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
   /// Warm peach tint — start of crisis gradient / icon halos.
