@@ -37,3 +37,11 @@ Every screen has been redesigned around three rules: warmth over utility, skip a
 
 New & redesigned:
 • Onboarding · Mood entry with context chips · Mood reflection after submit · Wellness dashboard with state-aware greeting · Chat with breathing orb & gentle starter chips · Clinical assessments framed as reflection not diagnosis · Crisis intervention (3 states) · Compliance + crisis-keyword override · Offline state with 988 always reachable · Quests reframed (no streaks, no levels) · Journal with timeline view · Weekly review on Sundays · 3 exercise types (4-7-8, grounding, body scan) · Resource library · Push notifications (gentle, opt-in) · Profile + safety plan · Settings with anonymity + data export
+
+## Universal links — operator action required
+
+1. **Replace `TEAM_ID_PLACEHOLDER` in `.well-known/apple-app-site-association`** with your Apple Developer Team ID (10-char alphanumeric, e.g. `ABCDE12345`). Look up via App Store Connect → Membership → Team ID.
+2. **Verify bundle ID** matches Xcode project (`com.gentlequest.app` assumed; correct in AASA + entitlements + xcodeproj if different).
+3. **Host the AASA file** at `https://gentlequest.app/.well-known/apple-app-site-association` (no `.json` extension, `Content-Type: application/json`). Cloudflare Pages serves the `.well-known/` dir if present in `landing-page/public/.well-known/`. May need to copy or symlink.
+4. **Verify**: `curl -I https://gentlequest.app/.well-known/apple-app-site-association` → 200 + `application/json` content-type.
+5. **Test universal link**: long-press `https://gentlequest.app/journal/abc` in Notes; should offer to open in app.
