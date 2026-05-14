@@ -20,6 +20,7 @@ MIGRATION_STATEMENTS = [
     "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS offer_stage INTEGER DEFAULT 1",
     "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS effectiveness_rating FLOAT",
     "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS feedback TEXT",
+    "ALTER TABLE mood_entries ADD COLUMN IF NOT EXISTS context_chips JSONB NOT NULL DEFAULT '[]'::jsonb",
     "ALTER TABLE sessions RENAME TO user_sessions",
     # Phase H: triage state machine
     "ALTER TABLE counselor_alerts ADD COLUMN IF NOT EXISTS triage_state VARCHAR(20) DEFAULT 'new'",
