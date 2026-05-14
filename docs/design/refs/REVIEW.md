@@ -30,7 +30,7 @@ Per-design HTML: docs/design/refs/htmls/
 | R1D18 | Push Notifications      | R3    | GentleQuest_Push_Notifications.html         | ai_buddy_web/lib/services/notification_service.dart                                         | 3    | in-flight — https://github.com/eidetic-works/ai-mental-health-assistant/pull/25 |
 | R1D19 | Profile                 | R2    | GentleQuest_Profile.html                    | ai_buddy_web/lib/screens/profile_screen.dart                                                | 2    | in-flight — https://github.com/eidetic-works/ai-mental-health-assistant/pull/29 |
 | R1D20 | Settings                | R2    | GentleQuest_Settings.html                   | ai_buddy_web/lib/screens/settings_screen.dart                                               | 2    | in-flight — https://github.com/eidetic-works/ai-mental-health-assistant/pull/24 |
-| R1D21 | Onboarding Extensions   | R3    | GentleQuest_Onboarding_Extensions.html      | ai_buddy_web/lib/screens/welcome_screen.dart                                                | 3    | Not started |
+| R1D21 | Onboarding Extensions   | R3    | GentleQuest_Onboarding_Extensions.html      | ai_buddy_web/lib/screens/onboarding_extensions_screen.dart                                  | 3    | In flight (PR TBD) |
 
 **Prior rollout PRs (Sonnet-driven, guess-work basis):**
 - PR #9 → Tier 0+1: compliance block, chat warmth, mood reflection, dashboard tokens
