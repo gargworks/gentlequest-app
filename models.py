@@ -144,6 +144,21 @@ class MoodEntry(db.Model):
         return f"<MoodEntry id={self.id} level={self.mood_level}>"
 
 
+class JournalEntry(db.Model):
+    __tablename__ = "journal_entries"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
+    title = db.Column(db.Text)
+    body = db.Column(db.Text, nullable=False)
+    mood_tag = db.Column(db.String(40))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    deleted_at = db.Column(db.DateTime)
+
+    def __repr__(self):
+        return f"<JournalEntry id={self.id} session_id={self.session_id}>"
+
 class AnalyticsEvent(db.Model):
     __tablename__ = "analytics_events"
 

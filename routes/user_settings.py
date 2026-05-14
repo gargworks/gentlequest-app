@@ -13,6 +13,7 @@ from models import (
     CrisisEscalation,
     CrisisEvent,
     InterventionOutcome,
+    JournalEntry,
     Message,
     MoodEntry,
     QuestProgress,
@@ -74,6 +75,18 @@ def _mood_entry(entry: MoodEntry):
         "note": entry.note,
         "contextChips": entry.context_chips or [],
         "timestamp": _iso(entry.timestamp),
+    }
+
+
+def _journal_entry(entry: JournalEntry):
+    return {
+        "id": entry.id,
+        "title": entry.title,
+        "body": entry.body,
+        "moodTag": entry.mood_tag,
+        "createdAt": _iso(entry.created_at),
+        "updatedAt": _iso(entry.updated_at),
+        "deletedAt": _iso(entry.deleted_at),
     }
 
 
@@ -139,13 +152,13 @@ def export_user_data():
             "notification_prefs": user.notification_prefs or {},
         },
         "mood_entries": [_mood_entry(e) for e in MoodEntry.query.filter_by(session_id=session_id).all()],
-        "journal_entries": [],
+        "journal_entries": [_journal_entry(e) for e in JournalEntry.query.filter_by(session_id=session_id).all()],
         "chat_history": [_message_entry(m) for m in Message.query.filter_by(session_id=session_id).order_by(Message.timestamp.asc()).all()],
         "self_assessments": [_assessment_entry(a) for a in SelfAssessmentEntry.query.filter_by(session_id=session_id).all()],
         "analytics_events": [_analytics_entry(a, anonymity_mode) for a in AnalyticsEvent.query.filter_by(session_id=session_id).all()],
         "counts": {
             "mood_entries": MoodEntry.query.filter_by(session_id=session_id).count(),
-            "journal_entries": 0,
+            "journal_entries": JournalEntry.query.filter_by(session_id=session_id).count(),
             "chat_messages": Message.query.filter_by(session_id=session_id).count(),
             "self_assessments": SelfAssessmentEntry.query.filter_by(session_id=session_id).count(),
             "analytics_events": AnalyticsEvent.query.filter_by(session_id=session_id).count(),
@@ -179,6 +192,7 @@ def delete_user_data():
     ConversationLog.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     Message.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     MoodEntry.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    JournalEntry.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     user.deleted_at = datetime.utcnow()
     user.email = None
     user.anonymity_mode = True
