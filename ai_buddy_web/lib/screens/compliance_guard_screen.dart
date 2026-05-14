@@ -63,6 +63,9 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   final TextEditingController _emailCtrl = TextEditingController();
   bool _isSubmittingEmail = false;
 
+  // ── R1D10 — stored region name for blocked-region UI ─────────────────────
+  String? _storedRegion;
+
   @override
   void initState() {
     super.initState();
@@ -135,8 +138,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
       // Navigate to Home/Main
       Navigator.of(context).pushReplacementNamed('/main');
     } else {
+      // Pre-fetch stored region so _buildBlockedScreen can template it
+      final region = await _complianceService.getStoredRegion();
+      if (!mounted) return;
       setState(() {
         _status = status;
+        _storedRegion = region;
         _isLoadingAction = false;
       });
     }
@@ -1071,85 +1078,243 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   }
 
   Widget _buildBlockedScreen(String title, String message) {
+    final bool isRegionBlock = title != "Age Requirement";
+    // Use stored region name; fall back to "your state" if unavailable.
+    final String regionName = _storedRegion ?? 'your state';
+
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.block, size: 80, color: Colors.red),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-
-            // Notify-me form (exposed in blocked-region state)
-            if (title != "Age Requirement") ...[
-              TextField(
-                controller: _emailCtrl,
-                onChanged: _onEmailChanged, // ← R1D11: crisis-keyword hook
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  hintText: 'Your email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(GQRadii.card),
+      backgroundColor: GQColors.softBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Sunrise gradient header (coral/amber — NOT red) ─────────────
+              Container(
+                height: 280,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFFFD085), GQColors.coral],
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(32),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.25),
+                          ),
+                          child: const Icon(
+                            Icons.wb_sunny_outlined,
+                            color: Colors.white,
+                            size: 38,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 28),
+                          child: Text(
+                            'Some support is local-first.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: GQTypography.displayFamily,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                              height: 1.2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            isRegionBlock
+                                ? "GentleQuest isn't available in $regionName yet —\nbut you have great options right where you are."
+                                : message,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: GQTypography.bodyFamily,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              height: 1.55,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _isSubmittingEmail ? null : _submitNotifyEmail,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GQColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 14),
-                  shape: const StadiumBorder(),
-                ),
-                child: _isSubmittingEmail
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Notify me when available'),
-              ),
-              const SizedBox(height: 24),
-            ],
 
-            if (title == "Age Requirement") ...[
-                const Text("Need Help?", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 28),
+
+              // ── "Right now in {state}" section header ────────────────────
+              if (isRegionBlock) ...[
+                Row(
+                  children: [
+                    Expanded(child: Container(height: 1, color: GQColors.hair)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'RIGHT NOW IN ${regionName.toUpperCase()}',
+                        style: const TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.4,
+                          color: GQColors.ink3,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Container(height: 1, color: GQColors.hair)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Center(
+                  child: Text(
+                    'ALL FREE · 24/7',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: GQColors.ink3,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 988 Lifeline — P6: always present on blocked-region path
+                _LifelineCard988(
+                  onTap: () => _launchUri(
+                    context,
+                    Uri.parse('tel:988'),
+                    label: '988 Lifeline',
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text("Dial 988 (USA) for immediate support."),
-            ] else ...[
+
+                // Crisis Text Line
+                _RegionalResourceCard(
+                  icon: Icons.message_rounded,
+                  iconBgColor: GQColors.primarySoft,
+                  iconColor: GQColors.primary,
+                  title: 'Crisis Text Line',
+                  subtitle: 'Text HOME to 741741',
+                  onTap: () => _launchUri(
+                    context,
+                    Uri.parse('sms:741741?body=HOME'),
+                    label: 'Crisis Text Line',
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // NAMI — label uses regionName where available
+                _RegionalResourceCard(
+                  icon: Icons.favorite_outlined,
+                  iconBgColor: GQColors.primarySoft,
+                  iconColor: GQColors.primary,
+                  title: 'NAMI $regionName',
+                  subtitle: 'Helpline · 800-950-6264',
+                  onTap: () => _launchUri(
+                    context,
+                    Uri.parse('tel:8009506264'),
+                    label: 'NAMI $regionName',
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+              ],
+
+              // ── Notify-me form (region block only) ───────────────────────
+              if (isRegionBlock) ...[
+                TextField(
+                  controller: _emailCtrl,
+                  onChanged: _onEmailChanged, // ← R1D11: crisis-keyword hook
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: 'Your email',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(GQRadii.card),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _isSubmittingEmail ? null : _submitNotifyEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GQColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 14),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _isSubmittingEmail
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Notify me when available'),
+                ),
+                const SizedBox(height: 24),
+
                 // Data Export Link for CCPA/GDPR Compliance
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 300),
-                  child: TextButton.icon(
-                    onPressed: _launchEmail,
-                    icon: const Icon(Icons.download),
-                    label: const Text("Request My Data (Export)"),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: _launchEmail,
+                      icon: const Icon(Icons.download),
+                      label: const Text("Request My Data (Export)"),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   "Blocked users retain full rights to their data.",
+                  textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-            ]
-          ],
+              ],
+
+              // ── Age block — 988 nudge (P6) ───────────────────────────────
+              if (!isRegionBlock) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Need Help?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _LifelineCard988(
+                  onTap: () => _launchUri(
+                    context,
+                    Uri.parse('tel:988'),
+                    label: '988 Lifeline',
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -1205,6 +1370,124 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
 // ─────────────────────────────────────────────────────────────────────────────
 // Private shared widgets (file-scoped; not exported)
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Shared 988 Lifeline card — used in both blocked-region (R1D10) and MDM
+/// surfaces. Keeps P6 (crisis never blocks) consistent across all paths.
+class _LifelineCard988 extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LifelineCard988({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '988 Lifeline — Dial 988 — free, confidential, 24/7',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(GQRadii.card),
+            border: Border.all(color: GQColors.hair),
+            boxShadow: [
+              BoxShadow(
+                color: GQColors.ink.withValues(alpha: 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: GQColors.accentSoft,
+                ),
+                child: const Icon(
+                  Icons.phone_rounded,
+                  color: GQColors.coral,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '988 Lifeline',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: GQColors.ink,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        _TagPill(label: 'CALL', bg: GQColors.accentSoft,
+                            fg: Color(0xFFB73E3E)),
+                      ],
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Dial 988 · free, confidential, 24/7',
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                        color: GQColors.ink3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GQColors.ink3, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tiny pill label used inside resource cards.
+class _TagPill extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  const _TagPill({required this.label, required this.bg, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: GQTypography.bodyFamily,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.3,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
 
 /// Resource card row used in State A (regional list).
 class _RegionalResourceCard extends StatelessWidget {

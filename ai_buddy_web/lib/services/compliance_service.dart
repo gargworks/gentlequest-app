@@ -183,6 +183,13 @@ class ComplianceService {
     return await Geolocator.requestPermission();
   }
 
+  /// Return the most-recently stored region string (e.g. "Illinois", "Utah").
+  /// Returns null if no verification has been stored yet.
+  Future<String?> getStoredRegion() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kVerifiedRegionKey);
+  }
+
   /// Get the block reason for a region (for analytics/UI)
   BlockReason getBlockReason(String? region) {
     if (region == null) return BlockReason.none;
