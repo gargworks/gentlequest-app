@@ -406,6 +406,36 @@ class CrisisEscalation(db.Model):
         return f"<CrisisEscalation id={self.id} session={self.session_id} channel={self.channel}>"
 
 
+class UserResourcePref(db.Model):
+    __tablename__ = "user_resource_prefs"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
+    resource_id = db.Column(db.Text, nullable=False)
+    is_favorite = db.Column(db.Boolean, default=False, server_default=text('false'), nullable=False)
+    last_opened_at = db.Column(db.DateTime)
+
+    __table_args__ = (db.UniqueConstraint("session_id", "resource_id", name="uq_user_resource_prefs_session_resource"),)
+
+    def __repr__(self):
+        return f"<UserResourcePref session_id={self.session_id} resource_id={self.resource_id}>"
+
+
+class PushToken(db.Model):
+    __tablename__ = "push_tokens"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
+    token = db.Column(db.Text, nullable=False)
+    platform = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    revoked_at = db.Column(db.DateTime)
+
+    __table_args__ = (db.UniqueConstraint("session_id", "token", name="uq_push_tokens_session_token"),)
+
+    def __repr__(self):
+        return f"<PushToken session_id={self.session_id} platform={self.platform}>"
+
 class BrainState(db.Model):
     """Singleton model for database-backed brain state."""
     __tablename__ = "brain_state"
