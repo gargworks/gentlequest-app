@@ -5,7 +5,7 @@ Revises: 001_add_quests_system
 Create Date: 2026-01-17 10:01:00.000000
 
 """
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -17,13 +17,20 @@ depends_on = None
 
 
 def upgrade():
-    # Create resource_category enum
-    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'resourcecategory') THEN CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external'); END IF; END $$;")
-    
-    # Inspector to check for existing tables
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    existing_tables = inspector.get_table_names()
+    dialect_name = context.get_context().dialect.name
+    is_postgresql = dialect_name == 'postgresql'
+    resource_category = (
+        postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory', create_type=False)
+        if is_postgresql
+        else sa.String(length=20)
+    )
+    if is_postgresql:
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'resourcecategory') THEN CREATE TYPE resourcecategory AS ENUM ('crisis', 'self_help', 'university', 'external'); END IF; END $$;")
+    if context.is_offline_mode():
+        existing_tables = set()
+    else:
+        conn = op.get_bind()
+        existing_tables = set(sa.inspect(conn).get_table_names())
 
     # Create resources table
     if 'resources' not in existing_tables:
@@ -33,7 +40,7 @@ def upgrade():
             sa.Column('title', sa.String(200), nullable=False),
             sa.Column('description', sa.String(1000), nullable=False),
             sa.Column('url', sa.String(500)),
-            sa.Column('category', postgresql.ENUM('crisis', 'self_help', 'university', 'external', name='resourcecategory', create_type=False), nullable=False),
+            sa.Column('category', resource_category, nullable=False),
             sa.Column('country', sa.String(10)),
             sa.Column('university_id', sa.Integer()),
             sa.Column('tags', sa.String(500)),
@@ -45,11 +52,11 @@ def upgrade():
         op.create_index('idx_resources_country', 'resources', ['country'])
         op.create_index('idx_resources_active', 'resources', ['is_active'])
         
-        # Create full-text search index for resources
-        op.execute("""
-            CREATE INDEX idx_resources_search ON resources 
-            USING GIN(to_tsvector('english', title || ' ' || description || ' ' || COALESCE(tags, '')))
-        """)
+        if is_postgresql:
+            op.execute("""
+                CREATE INDEX idx_resources_search ON resources 
+                USING GIN(to_tsvector('english', title || ' ' || description || ' ' || COALESCE(tags, '')))
+            """)
     
     # Create user_resource_interactions table
     if 'user_resource_interactions' not in existing_tables:
@@ -69,15 +76,18 @@ def upgrade():
 
 
 def downgrade():
+    dialect_name = context.get_context().dialect.name
     op.drop_index('idx_interactions_viewed_at', table_name='user_resource_interactions')
     op.drop_index('idx_interactions_resource', table_name='user_resource_interactions')
     op.drop_index('idx_interactions_session', table_name='user_resource_interactions')
     op.drop_table('user_resource_interactions')
     
-    op.execute('DROP INDEX IF EXISTS idx_resources_search')
+    if dialect_name == 'postgresql':
+        op.execute('DROP INDEX IF EXISTS idx_resources_search')
     op.drop_index('idx_resources_active', table_name='resources')
     op.drop_index('idx_resources_country', table_name='resources')
     op.drop_index('idx_resources_category', table_name='resources')
     op.drop_table('resources')
     
-    op.execute('DROP TYPE IF EXISTS resourcecategory')
+    if dialect_name == 'postgresql':
+        op.execute('DROP TYPE IF EXISTS resourcecategory')

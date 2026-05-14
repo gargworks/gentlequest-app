@@ -5,9 +5,9 @@ Revises:
 Create Date: 2026-02-02 01:00:00.000000
 
 """
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision = '000_initial_base'
@@ -16,10 +16,12 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
-    # Inspector to check for existing tables
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    existing_tables = inspector.get_table_names()
+    json_type = sa.JSON().with_variant(JSONB(), 'postgresql')
+    if context.is_offline_mode():
+        existing_tables = set()
+    else:
+        conn = op.get_bind()
+        existing_tables = set(sa.inspect(conn).get_table_names())
 
     # 1. sessions
     if 'sessions' not in existing_tables:
@@ -52,7 +54,7 @@ def upgrade():
             sa.Column('welcome_message', sa.Text(), nullable=True),
             sa.Column('sso_enabled', sa.Boolean(), server_default=sa.text('false'), nullable=True),
             sa.Column('sso_provider', sa.String(length=50), nullable=True),
-            sa.Column('sso_config', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+            sa.Column('sso_config', json_type, nullable=True),
             sa.Column('lms_integration', sa.String(length=50), nullable=True),
             sa.Column('custom_domain', sa.String(length=100), nullable=True),
             sa.Column('outreach_status', sa.String(length=50), nullable=True),
@@ -114,7 +116,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('session_id', sa.String(length=36), nullable=False),
             sa.Column('timestamp', sa.DateTime(), nullable=False),
-            sa.Column('assessment_data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+            sa.Column('assessment_data', json_type, nullable=False),
             sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ),
             sa.PrimaryKeyConstraint('id')
         )
@@ -139,7 +141,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('session_id', sa.String(length=36), nullable=True),
             sa.Column('event_type', sa.String(length=50), nullable=False),
-            sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+            sa.Column('metadata', json_type, nullable=True),
             sa.Column('request_id', sa.String(length=64), nullable=True),
             sa.Column('timestamp', sa.DateTime(), nullable=True),
             sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ),
@@ -205,12 +207,12 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('session_id', sa.String(length=36), nullable=False),
             sa.Column('assessment_type', sa.String(length=20), nullable=False),
-            sa.Column('responses', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+            sa.Column('responses', json_type, nullable=False),
             sa.Column('total_score', sa.Integer(), nullable=False),
             sa.Column('severity', sa.String(length=20), nullable=False),
             sa.Column('requires_follow_up', sa.Boolean(), nullable=True),
             sa.Column('timestamp', sa.DateTime(), nullable=False),
-            sa.Column('assessment_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+            sa.Column('assessment_metadata', json_type, nullable=True),
             sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ),
             sa.PrimaryKeyConstraint('id')
         )
@@ -220,7 +222,7 @@ def upgrade():
         op.create_table(
             'brain_state',
             sa.Column('id', sa.Integer(), nullable=False),
-            sa.Column('state_data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+            sa.Column('state_data', json_type, nullable=False),
             sa.Column('last_updated', sa.DateTime(), nullable=True),
             sa.PrimaryKeyConstraint('id')
         )
@@ -234,8 +236,8 @@ def upgrade():
             sa.Column('event_type', sa.String(length=100), nullable=False),
             sa.Column('emitter', sa.String(length=50), nullable=False),
             sa.Column('severity', sa.String(length=20), nullable=True),
-            sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-            sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+            sa.Column('payload', json_type, nullable=True),
+            sa.Column('metadata', json_type, nullable=True),
             sa.Column('created_at', sa.DateTime(), nullable=True),
             sa.PrimaryKeyConstraint('id')
         )

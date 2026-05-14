@@ -5,7 +5,7 @@ Revises: 003_add_counselor_alerts
 Create Date: 2026-01-17 10:03:00.000000
 
 """
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
@@ -16,8 +16,10 @@ depends_on = None
 
 
 def upgrade():
-    # Messages table indexes (for chat history queries)
-    op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_session_timestamp ON chat_messages USING btree (session_id, timestamp)")
+    if context.get_context().dialect.name == 'postgresql':
+        op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_session_timestamp ON chat_messages USING btree (session_id, timestamp)")
+    else:
+        op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_session_timestamp ON chat_messages (session_id, timestamp)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages (timestamp)")
     
     # Mood entries indexes (for mood history and analytics)
@@ -26,9 +28,16 @@ def upgrade():
     
     # Clinical assessments indexes (for outcome tracking)
     # Wrap these in if exists table check because they are new tables in this sprint
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    existing_tables = inspector.get_table_names()
+    if context.is_offline_mode():
+        existing_tables = {
+            'clinical_assessments',
+            'crisis_detections',
+            'analytics_events',
+            'intervention_outcomes',
+        }
+    else:
+        conn = op.get_bind()
+        existing_tables = set(sa.inspect(conn).get_table_names())
 
     if 'clinical_assessments' in existing_tables:
         op.execute("CREATE INDEX IF NOT EXISTS idx_clinical_assessments_session ON clinical_assessments (session_id, timestamp)")

@@ -22,7 +22,7 @@ def upgrade():
     )
     op.add_column(
         'users',
-        sa.Column('notification_prefs', JSONB, nullable=False, server_default='{}'),
+        sa.Column('notification_prefs', sa.JSON().with_variant(JSONB(), "postgresql"), nullable=False, server_default='{}'),
     )
     op.add_column('users', sa.Column('deleted_at', sa.DateTime(), nullable=True))
 

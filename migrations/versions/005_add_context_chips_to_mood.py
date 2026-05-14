@@ -21,7 +21,7 @@ def upgrade():
         'mood_entries',
         sa.Column(
             'context_chips',
-            JSONB,
+            sa.JSON().with_variant(JSONB(), "postgresql"),
             nullable=False,
             server_default='[]',
         ),

@@ -5,7 +5,7 @@ Revises: 002_add_resources_system
 Create Date: 2026-01-17 10:02:00.000000
 
 """
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -17,13 +17,20 @@ depends_on = None
 
 
 def upgrade():
-    # Create alert_severity enum
-    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'alertseverity') THEN CREATE TYPE alertseverity AS ENUM ('low', 'medium', 'high', 'critical'); END IF; END $$;")
-    
-    # Inspector to check for existing tables
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    existing_tables = inspector.get_table_names()
+    dialect_name = context.get_context().dialect.name
+    is_postgresql = dialect_name == 'postgresql'
+    alert_severity = (
+        postgresql.ENUM('low', 'medium', 'high', 'critical', name='alertseverity', create_type=False)
+        if is_postgresql
+        else sa.String(length=20)
+    )
+    if is_postgresql:
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'alertseverity') THEN CREATE TYPE alertseverity AS ENUM ('low', 'medium', 'high', 'critical'); END IF; END $$;")
+    if context.is_offline_mode():
+        existing_tables = set()
+    else:
+        conn = op.get_bind()
+        existing_tables = set(sa.inspect(conn).get_table_names())
 
     # Create university_counselors table
     if 'university_counselors' not in existing_tables:
@@ -51,7 +58,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('session_id', sa.String(255), nullable=False),
             sa.Column('university_id', sa.Integer()),
-            sa.Column('severity', postgresql.ENUM('low', 'medium', 'high', 'critical', name='alertseverity', create_type=False), nullable=False),
+            sa.Column('severity', alert_severity, nullable=False),
             sa.Column('trigger_message', sa.Text(), nullable=False),
             sa.Column('conversation_excerpt', sa.Text()),
             sa.Column('risk_keywords', sa.String(500)),
@@ -67,8 +74,9 @@ def upgrade():
         op.create_index('idx_alerts_severity', 'counselor_alerts', ['severity', 'sent_at'])
         op.create_index('idx_alerts_acknowledged', 'counselor_alerts', ['acknowledged_at'])
         op.create_index('idx_alerts_university', 'counselor_alerts', ['university_id', 'acknowledged_at'])
-        op.create_index('idx_alerts_pending', 'counselor_alerts', ['university_id', 'severity'], 
-                        postgresql_where=sa.text('acknowledged_at IS NULL'))
+        if is_postgresql:
+            op.create_index('idx_alerts_pending', 'counselor_alerts', ['university_id', 'severity'], 
+                            postgresql_where=sa.text('acknowledged_at IS NULL'))
     
     # Create alert_acknowledgments table
     if 'alert_acknowledgments' not in existing_tables:
@@ -88,11 +96,13 @@ def upgrade():
 
 
 def downgrade():
+    dialect_name = context.get_context().dialect.name
     op.drop_index('idx_acknowledgments_counselor', table_name='alert_acknowledgments')
     op.drop_index('idx_acknowledgments_alert', table_name='alert_acknowledgments')
     op.drop_table('alert_acknowledgments')
     
-    op.drop_index('idx_alerts_pending', table_name='counselor_alerts')
+    if dialect_name == 'postgresql':
+        op.drop_index('idx_alerts_pending', table_name='counselor_alerts')
     op.drop_index('idx_alerts_university', table_name='counselor_alerts')
     op.drop_index('idx_alerts_acknowledged', table_name='counselor_alerts')
     op.drop_index('idx_alerts_severity', table_name='counselor_alerts')
@@ -103,4 +113,5 @@ def downgrade():
     op.drop_index('idx_counselors_university', table_name='university_counselors')
     op.drop_table('university_counselors')
     
-    op.execute('DROP TYPE IF EXISTS alertseverity')
+    if dialect_name == 'postgresql':
+        op.execute('DROP TYPE IF EXISTS alertseverity')

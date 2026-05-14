@@ -5,7 +5,7 @@ Revises:
 Create Date: 2026-01-17 10:00:00.000000
 
 """
-from alembic import op
+from alembic import context, op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -16,16 +16,26 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
-    # Create quest_type enum
-    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'questtype') THEN CREATE TYPE questtype AS ENUM ('task', 'tip', 'check_in', 'progress'); END IF; END $$;")
-    
-    # Create quest_status enum
-    op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'queststatus') THEN CREATE TYPE queststatus AS ENUM ('available', 'in_progress', 'completed', 'expired'); END IF; END $$;")
-    
-    # Inspector to check for existing tables
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    existing_tables = inspector.get_table_names()
+    dialect_name = context.get_context().dialect.name
+    is_postgresql = dialect_name == 'postgresql'
+    quest_type = (
+        postgresql.ENUM('task', 'tip', 'check_in', 'progress', name='questtype', create_type=False)
+        if is_postgresql
+        else sa.String(length=20)
+    )
+    quest_status = (
+        postgresql.ENUM('available', 'in_progress', 'completed', 'expired', name='queststatus', create_type=False)
+        if is_postgresql
+        else sa.String(length=20)
+    )
+    if is_postgresql:
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'questtype') THEN CREATE TYPE questtype AS ENUM ('task', 'tip', 'check_in', 'progress'); END IF; END $$;")
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'queststatus') THEN CREATE TYPE queststatus AS ENUM ('available', 'in_progress', 'completed', 'expired'); END IF; END $$;")
+    if context.is_offline_mode():
+        existing_tables = set()
+    else:
+        conn = op.get_bind()
+        existing_tables = set(sa.inspect(conn).get_table_names())
 
     # Create quests table
     if 'quests' not in existing_tables:
@@ -34,7 +44,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('title', sa.String(200), nullable=False),
             sa.Column('description', sa.String(500), nullable=False),
-            sa.Column('quest_type', postgresql.ENUM('task', 'tip', 'check_in', 'progress', name='questtype', create_type=False), nullable=False),
+            sa.Column('quest_type', quest_type, nullable=False),
             sa.Column('xp_reward', sa.Integer(), nullable=False, server_default='10'),
             sa.Column('difficulty', sa.Integer(), nullable=False, server_default='1'),
             sa.Column('week_number', sa.Integer(), nullable=False),
@@ -51,7 +61,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('session_id', sa.String(255), nullable=False),
             sa.Column('quest_id', sa.Integer(), nullable=False),
-            sa.Column('status', postgresql.ENUM('available', 'in_progress', 'completed', 'expired', name='queststatus', create_type=False), nullable=False, server_default='available'),
+            sa.Column('status', quest_status, nullable=False, server_default='available'),
             sa.Column('started_at', sa.DateTime()),
             sa.Column('completed_at', sa.DateTime()),
             sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ondelete='CASCADE'),
@@ -83,6 +93,7 @@ def upgrade():
 
 
 def downgrade():
+    dialect_name = context.get_context().dialect.name
     op.drop_index('idx_user_profiles_session', table_name='user_profiles')
     op.drop_table('user_profiles')
     
@@ -94,5 +105,6 @@ def downgrade():
     op.drop_index('idx_quests_week', table_name='quests')
     op.drop_table('quests')
     
-    op.execute('DROP TYPE IF EXISTS queststatus')
-    op.execute('DROP TYPE IF EXISTS questtype')
+    if dialect_name == 'postgresql':
+        op.execute('DROP TYPE IF EXISTS queststatus')
+        op.execute('DROP TYPE IF EXISTS questtype')
