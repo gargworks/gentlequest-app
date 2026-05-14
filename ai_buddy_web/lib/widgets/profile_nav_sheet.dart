@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
 import '../screens/settings_screen.dart';
 import '../screens/journal_screen.dart';
-import '../screens/resources_screen.dart';
+import '../screens/resource_library_screen.dart';
 
 // profile_nav_sheet.dart — Tier 2.1
 //
@@ -10,7 +10,7 @@ import '../screens/resources_screen.dart';
 // Surfaces 3 destinations that exist in lib/screens/ as of Tier 2.1:
 //   • Settings (SettingsScreen)  — Privacy, Notifications, Analytics
 //   • Journal  (JournalScreen)   — Reflections entry point
-//   • Resources (ResourcesScreen) — Self-help library
+//   • Library (ResourceLibraryScreen) — R1D17 full library screen
 //
 // Deferred (screens do not exist yet, will be Tier 3):
 //   • Profile + Safety Plan (no ProfileScreen / SafetyPlanScreen found)
@@ -99,15 +99,16 @@ class _ProfileNavSheet extends StatelessWidget {
           ),
           const _TileDivider(),
 
-          // Resources
+          // Library (R1D17)
           _SheetTile(
             icon: Icons.library_books_outlined,
-            label: 'Resources',
+            label: 'Library',
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ResourcesScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const ResourceLibraryScreen()),
               );
             },
           ),

@@ -1,20 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:async';
+import 'package:flutter/services.dart';
 
-import '../models/resource.dart';
-import '../widgets/resource_card.dart';
+import '../theme/gq_tokens.dart';
+import '../screens/chat_screen.dart';
+
+// resource_library_screen.dart — Tier R1D17
+//
+// Design source: docs/design/refs/htmls/GentleQuest_Library.html
+// REVIEW.md tier: R1D17
+//
+// Implements:
+//   • Header "Library" + search icon (tappable, not yet wired to search flow)
+//   • Horizontal single-select filter chips: All · Breathing · Grounding · Body · Quick wins · Sleep
+//   • Featured section: "RECOMMENDED · BASED ON YOUR LAST 3 DAYS" / "TRY THIS WHEN YOU'RE HEAVY"
+//     with animated breathing orb, 4-7-8 breathing card, Start CTA
+//   • 2-column exercise grid with Recent/Favorite inline badge chips
+//   • Footer "Ask Alex if nothing fits" → deep-links to chat
+//
+// Privacy note: recommendation runs locally on the last 3 mood entries.
+// While Anonymity Mode is ON, recommender falls back to .default — no mood read.
+// (Anonymity mode is not yet wired; always falls back to .recentMoodHeavy for v1.)
+//
+// ExerciseCardScaffold fullscreen tap destination is NOT yet implemented (R1D16 pending).
+// Card taps are wired but show a TODO snackbar until R1D16 lands.
+//
+// "Ask Alex" deep link opens ChatScreen. Library context pre-fill is stubbed
+// (ChatScreen does not yet accept an initial-message parameter; flagged in PR).
+
+// ─── Data model ──────────────────────────────────────────────────────────────
+
+enum _ExerciseCategory { all, breathing, grounding, body, quickWins, sleep }
+
+extension _ExerciseCategoryLabel on _ExerciseCategory {
+  String get label {
+    switch (this) {
+      case _ExerciseCategory.all:
+        return 'All';
+      case _ExerciseCategory.breathing:
+        return 'Breathing';
+      case _ExerciseCategory.grounding:
+        return 'Grounding';
+      case _ExerciseCategory.body:
+        return 'Body';
+      case _ExerciseCategory.quickWins:
+        return 'Quick wins';
+      case _ExerciseCategory.sleep:
+        return 'Sleep';
+    }
+  }
+}
+
+class _Exercise {
+  final String id;
+  final String name;
+  final String emoji;
+  final String durationLabel; // e.g. "1 min"
+  final String categoryLabel; // e.g. "breath"
+  final _ExerciseCategory category;
+  final Color tileBackground;
+  final bool isFavorite;
+  final bool isRecent;
+
+  const _Exercise({
+    required this.id,
+    required this.name,
+    required this.emoji,
+    required this.durationLabel,
+    required this.categoryLabel,
+    required this.category,
+    required this.tileBackground,
+    this.isFavorite = false,
+    this.isRecent = false,
+  });
+}
+
+// Static exercise list (v1 — backend API is out of scope for this tier).
+// Sort order: favorites → recents → rest, per HTML spec.
+const List<_Exercise> _kExercises = [
+  _Exercise(
+    id: 'breath_478',
+    name: '4-7-8 breathing',
+    emoji: '🌬️',
+    durationLabel: '1 min',
+    categoryLabel: 'breath',
+    category: _ExerciseCategory.breathing,
+    tileBackground: GQColors.primarySoft,
+    isFavorite: true,
+  ),
+  _Exercise(
+    id: 'grounding_54321',
+    name: '5-4-3-2-1 grounding',
+    emoji: '🪨',
+    durationLabel: '3 min',
+    categoryLabel: 'grounding',
+    category: _ExerciseCategory.grounding,
+    tileBackground: Color(0xFFFFF1E5),
+    isRecent: true,
+  ),
+  _Exercise(
+    id: 'body_scan',
+    name: '3-min body scan',
+    emoji: '🫁',
+    durationLabel: '3 min',
+    categoryLabel: 'body',
+    category: _ExerciseCategory.body,
+    tileBackground: Color(0xFFF0F5EC),
+  ),
+  _Exercise(
+    id: 'box_breathing',
+    name: 'Box breathing',
+    emoji: '⬛',
+    durationLabel: '2 min',
+    categoryLabel: 'breath',
+    category: _ExerciseCategory.breathing,
+    tileBackground: GQColors.primarySoft,
+  ),
+  _Exercise(
+    id: 'prog_relax',
+    name: 'Progressive relaxation',
+    emoji: '😌',
+    durationLabel: '5 min',
+    categoryLabel: 'body',
+    category: _ExerciseCategory.body,
+    tileBackground: Color(0xFFF4ECEC),
+  ),
+  _Exercise(
+    id: 'loving_kindness',
+    name: 'Loving-kindness',
+    emoji: '💝',
+    durationLabel: '4 min',
+    categoryLabel: 'quick',
+    category: _ExerciseCategory.quickWins,
+    tileBackground: GQColors.accentSoft,
+  ),
+];
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 class ResourceLibraryScreen extends StatefulWidget {
-  final String apiBaseUrl;
-  final String sessionId;
-
-  const ResourceLibraryScreen({
-    super.key,
-    required this.apiBaseUrl,
-    required this.sessionId,
-  });
+  const ResourceLibraryScreen({super.key});
 
   @override
   State<ResourceLibraryScreen> createState() => _ResourceLibraryScreenState();
@@ -22,176 +146,826 @@ class ResourceLibraryScreen extends StatefulWidget {
 
 class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
-  Timer? _debounce;
-
-  List<Resource> _resources = [];
-  bool _isLoading = true;
-  String? _error;
+  _ExerciseCategory _selectedCategory = _ExerciseCategory.all;
+  late final AnimationController _breatheController;
+  late final Animation<double> _breatheScale;
+  late final Animation<double> _breatheOpacity;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_handleTabChange);
-    _fetchResources();
+    _breatheController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 6000),
+    )..repeat(reverse: true);
+
+    _breatheScale = Tween<double>(begin: 0.85, end: 1.08).animate(
+      CurvedAnimation(parent: _breatheController, curve: Curves.easeInOut),
+    );
+    _breatheOpacity = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _breatheController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    _debounce?.cancel();
+    _breatheController.dispose();
     super.dispose();
   }
 
-  void _handleTabChange() {
-    if (_tabController.indexIsChanging) {
-      _fetchResources();
+  List<_Exercise> get _filteredExercises {
+    if (_selectedCategory == _ExerciseCategory.all) {
+      // Sort: favorites → recents → rest
+      final favs = _kExercises.where((e) => e.isFavorite).toList();
+      final recents =
+          _kExercises.where((e) => e.isRecent && !e.isFavorite).toList();
+      final rest = _kExercises
+          .where((e) => !e.isFavorite && !e.isRecent)
+          .toList();
+      return [...favs, ...recents, ...rest];
     }
+    return _kExercises.where((e) => e.category == _selectedCategory).toList();
   }
 
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchResources();
-    });
+  void _onExerciseTap(_Exercise exercise) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${exercise.name} — fullscreen exercise view coming in R1D16.',
+          style: const TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontSize: 13,
+          ),
+        ),
+        backgroundColor: GQColors.ink2,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
-  String _getCurrentCategory() {
-    switch (_tabController.index) {
-      case 1:
-        return 'self_help';
-      case 2:
-        return 'crisis';
-      case 3:
-        return 'university';
-      default:
-        return '';
-    }
-  }
-
-  Future<void> _fetchResources() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final category = _getCurrentCategory();
-      final search = _searchController.text;
-
-      String url =
-          '${widget.apiBaseUrl}/api/resources?session_id=${widget.sessionId}';
-      if (category.isNotEmpty) url += '&category=$category';
-      if (search.isNotEmpty) url += '&search=$search';
-
-      final response = await http
-          .get(Uri.parse(url), headers: {"X-Session-ID": widget.sessionId});
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _resources = (data['resources'] as List)
-              .map((r) => Resource.fromJson(r))
-              .toList();
-          _isLoading = false;
-        });
-      } else {
-        throw Exception("Failed to load resources: ${response.statusCode}");
-      }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _trackView(int resourceId) async {
-    try {
-      await http.post(
-          Uri.parse('${widget.apiBaseUrl}/api/resources/$resourceId/view'),
-          headers: {"X-Session-ID": widget.sessionId});
-    } catch (e) {
-      debugPrint("Error tracking view: $e");
-    }
+  void _onAskAlex() {
+    // Deep-link to chat with library context.
+    // TODO(R1D17-followup): ChatScreen needs an optional initialMessage param
+    // so this can prefill "I'm looking for an exercise to " + cursor.
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ChatScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text("Library"),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: "All"),
-            Tab(text: "Self-Help"),
-            Tab(text: "Crisis Support"),
-            Tab(text: "University"),
+      backgroundColor: GQColors.softBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _LibraryNavBar(onSearch: () {
+              // Search affordance — out of scope for v1; icon is tappable
+              // but search UI is deferred to a follow-up tier.
+            }),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // Filter chips
+                  _FilterChipsRow(
+                    selected: _selectedCategory,
+                    onTap: (cat) =>
+                        setState(() => _selectedCategory = cat),
+                  ),
+
+                  // Featured section (shown only when "All" or "Breathing")
+                  if (_selectedCategory == _ExerciseCategory.all ||
+                      _selectedCategory == _ExerciseCategory.breathing) ...[
+                    const _FeaturedLabel(),
+                    _FeaturedExerciseCard(
+                      breatheScale: _breatheScale,
+                      breatheOpacity: _breatheOpacity,
+                      onStart: () => _onExerciseTap(_kExercises.first),
+                    ),
+                  ],
+
+                  // Grid header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          'ALL EXERCISES',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: GQColors.ink3,
+                            letterSpacing: 0.7,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_filteredExercises.length}',
+                          style: const TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: GQColors.ink3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 2-column exercise grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _ExerciseGrid(
+                      exercises: _filteredExercises,
+                      onTap: _onExerciseTap,
+                    ),
+                  ),
+
+                  // Ask Alex footer
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                    child: _AskAlexFallback(onTap: _onAskAlex),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      body: Column(
+    );
+  }
+}
+
+// ─── Nav bar ─────────────────────────────────────────────────────────────────
+
+class _LibraryNavBar extends StatelessWidget {
+  final VoidCallback onSearch;
+
+  const _LibraryNavBar({required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: GQColors.softBg.withAlpha(217), // ~0.85 opacity
+        border: const Border(
+          bottom: BorderSide(color: GQColors.hair, width: 1),
+        ),
+      ),
+      child: Row(
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: "Search resources...",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+          // Back button
+          GestureDetector(
+            onTap: () => Navigator.of(context).maybePop(),
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: GQColors.hair),
+              ),
+              child: const Icon(
+                Icons.chevron_left,
+                color: GQColors.ink,
+                size: 18,
               ),
             ),
           ),
-
-          // Resource List
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Error loading resources"),
-                            ElevatedButton(
-                              onPressed: _fetchResources,
-                              child: const Text("Retry"),
-                            )
-                          ],
-                        ),
-                      )
-                    : _resources.isEmpty
-                        ? const Center(child: Text("No resources found"))
-                        : RefreshIndicator(
-                            onRefresh: _fetchResources,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(8),
-                              itemCount: _resources.length,
-                              itemBuilder: (context, index) {
-                                return ResourceCard(
-                                  resource: _resources[index],
-                                  onView: _trackView,
-                                );
-                              },
-                            ),
-                          ),
+          const SizedBox(width: 10),
+          // Title — verbatim from HTML
+          const Text(
+            'Library',
+            style: TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: GQColors.ink,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const Spacer(),
+          // Search icon
+          GestureDetector(
+            onTap: onSearch,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: GQColors.hair),
+              ),
+              child: const Icon(
+                Icons.search,
+                color: GQColors.ink2,
+                size: 16,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Filter chips row ────────────────────────────────────────────────────────
+
+class _FilterChipsRow extends StatelessWidget {
+  final _ExerciseCategory selected;
+  final ValueChanged<_ExerciseCategory> onTap;
+
+  const _FilterChipsRow({required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Row(
+        children: _ExerciseCategory.values.map((cat) {
+          final isOn = cat == selected;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onTap(cat),
+              child: AnimatedContainer(
+                duration: GQDurations.fade,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isOn ? GQColors.primary : Colors.white,
+                  borderRadius:
+                      BorderRadius.circular(GQRadii.button),
+                  border: Border.all(
+                    color: isOn ? GQColors.primary : GQColors.hair,
+                  ),
+                  boxShadow: isOn
+                      ? [
+                          BoxShadow(
+                            color: GQColors.primary.withAlpha(115), // ~0.45
+                            offset: const Offset(0, 6),
+                            blurRadius: 14,
+                            spreadRadius: -6,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  cat.label,
+                  style: TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isOn ? Colors.white : GQColors.ink2,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ─── Featured section ─────────────────────────────────────────────────────────
+
+class _FeaturedLabel extends StatelessWidget {
+  const _FeaturedLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
+      child: Text(
+        // Verbatim from spec
+        'RECOMMENDED · BASED ON YOUR LAST 3 DAYS',
+        style: const TextStyle(
+          fontFamily: GQTypography.bodyFamily,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
+          color: GQColors.ink3,
+          letterSpacing: 0.7,
+        ),
+      ),
+    );
+  }
+}
+
+class _FeaturedExerciseCard extends StatelessWidget {
+  final Animation<double> breatheScale;
+  final Animation<double> breatheOpacity;
+  final VoidCallback onStart;
+
+  const _FeaturedExerciseCard({
+    required this.breatheScale,
+    required this.breatheOpacity,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6BA8E8), Color(0xFF8C77E0)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: GQColors.primary.withAlpha(140), // ~0.55
+                offset: const Offset(0, 18),
+                blurRadius: 38,
+                spreadRadius: -16,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Art section with breathing orb
+              SizedBox(
+                height: 110,
+                child: Stack(
+                  children: [
+                    // Outer ring
+                    Center(
+                      child: Container(
+                        width: 170,
+                        height: 170,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withAlpha(102), // ~0.4
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Animated orb
+                    Center(
+                      child: AnimatedBuilder(
+                        animation: breatheScale,
+                        builder: (_, __) => Transform.scale(
+                          scale: breatheScale.value,
+                          child: Opacity(
+                            opacity: breatheOpacity.value,
+                            child: Container(
+                              width: 130,
+                              height: 130,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  center: Alignment(-0.3, -0.4),
+                                  radius: 0.9,
+                                  colors: [
+                                    Color(0xD9FFFFFF),
+                                    Color(0x2EFFFFFF),
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.55, 0.70],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Sub-label chip — verbatim: "TRY THIS WHEN YOU'RE HEAVY"
+                    Positioned(
+                      top: 12,
+                      left: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(56), // ~0.22
+                          borderRadius:
+                              BorderRadius.circular(GQRadii.button),
+                        ),
+                        child: const Text(
+                          "TRY THIS WHEN YOU'RE HEAVY",
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Duration chip — verbatim: "1 MIN"
+                    Positioned(
+                      top: 12,
+                      right: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(56), // ~0.22
+                          borderRadius:
+                              BorderRadius.circular(GQRadii.button),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 10,
+                              color: Colors.white.withAlpha(230),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '1 MIN',
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Body section
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Text('🌬️', style: TextStyle(fontSize: 18)),
+                        SizedBox(width: 7),
+                        // Verbatim from spec: "4-7-8 breathing" [with leaf emoji]
+                        // Note: HTML uses 🌬️ (wind-face); REVIEW.md says "leaf emoji" —
+                        // HTML is authoritative; using 🌬️. [assumed: leaf may be design-doc
+                        // shorthand for "breathing emoji".]
+                        Text(
+                          '4-7-8 breathing',
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: GQColors.ink,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'In for 4, hold for 7, out for 8. Slows your nervous system in a single round.',
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: GQColors.ink2,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: GestureDetector(
+                        onTap: onStart,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          decoration: BoxDecoration(
+                            color: GQColors.primary,
+                            borderRadius:
+                                BorderRadius.circular(GQRadii.button),
+                            boxShadow: [
+                              BoxShadow(
+                                color: GQColors.primary.withAlpha(140),
+                                offset: const Offset(0, 10),
+                                blurRadius: 22,
+                                spreadRadius: -10,
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Start',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: GQTypography.bodyFamily,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+// ─── Exercise grid ───────────────────────────────────────────────────────────
+
+class _ExerciseGrid extends StatelessWidget {
+  final List<_Exercise> exercises;
+  final void Function(_Exercise) onTap;
+
+  const _ExerciseGrid({required this.exercises, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    if (exercises.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Text(
+          'No exercises in this category yet.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontSize: 13,
+            color: GQColors.ink3,
+          ),
+        ),
+      );
+    }
+
+    // Build pairs for 2-column layout
+    final rows = <Widget>[];
+    for (var i = 0; i < exercises.length; i += 2) {
+      final left = exercises[i];
+      final right = i + 1 < exercises.length ? exercises[i + 1] : null;
+      rows.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _ExerciseGridItem(exercise: left, onTap: onTap)),
+            const SizedBox(width: 10),
+            right != null
+                ? Expanded(
+                    child: _ExerciseGridItem(exercise: right, onTap: onTap))
+                : const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
+      );
+      if (i + 2 < exercises.length) rows.add(const SizedBox(height: 10));
+    }
+    return Column(children: rows);
+  }
+}
+
+class _ExerciseGridItem extends StatelessWidget {
+  final _Exercise exercise;
+  final void Function(_Exercise) onTap;
+
+  const _ExerciseGridItem({required this.exercise, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onTap(exercise),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 138),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: GQColors.hair),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon tile
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: exercise.tileBackground,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    exercise.emoji,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Name
+                Text(
+                  exercise.name,
+                  style: const TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: GQColors.ink,
+                    height: 1.25,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Meta
+                Text(
+                  '⏱ ${exercise.durationLabel} · ${exercise.categoryLabel}',
+                  style: const TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: GQColors.ink3,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const Spacer(),
+                // Start row
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Start',
+                        style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: GQColors.primaryDk,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: GQColors.primaryDk,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Trailing badge: FavoritePin (coral) or RecentTag (primarySoft)
+            if (exercise.isFavorite)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    // HTML: rgba(255,107,107,0.14) ≈ GQColors.coral at 14% opacity
+                    color: Color(0x24FF6B6B),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    size: 11,
+                    color: GQColors.coral,
+                  ),
+                ),
+              )
+            else if (exercise.isRecent)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: GQColors.primarySoft,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'RECENT',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: GQColors.primaryDk,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Ask Alex fallback ───────────────────────────────────────────────────────
+
+class _AskAlexFallback extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AskAlexFallback({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [GQColors.primarySoft, Color(0xFFF8F1FA)],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Color(0x59667EEA), // primary at ~0.35 opacity
+            // Using explicit hex since withOpacity produces same value
+            // and there's no dedicated "primary-dashed" token. [assumed]
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "Don't see what you need?",
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: GQColors.ink,
+                      height: 1.3,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    // Verbatim from spec: "Ask Alex if nothing fits"
+                    // HTML sub-text says "Tell Alex — opens chat with a head start."
+                    // Using REVIEW.md footer CTA verbatim as the primary label.
+                    'Ask Alex if nothing fits',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: GQColors.ink2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'Ask',
+                  style: TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: GQColors.primaryDk,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
+                  color: GQColors.primaryDk,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
