@@ -32,6 +32,8 @@ import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
+// R1D6 — QuestsEngine for streak badge (read-only).
+import '../quests/quests_engine.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -62,6 +64,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// True when device has no network connectivity (mid-chat offline).
   bool _isOffline = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+
+  // R1D6 — lazy QuestsEngine instance for streak badge (read-only, no side-effects).
+  QuestsEngine? _questsEngineForStreak;
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -347,6 +352,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   @override
   void initState() {
     super.initState();
+    // R1D6 — init QuestsEngine for streak badge (best-effort; silent on failure).
+    try {
+      _questsEngineForStreak = QuestsEngine();
+    } catch (_) {}
     // Initialize with some sample messages if empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final chatProvider = Provider.of<ChatProvider>(context, listen: false);
@@ -1108,33 +1117,22 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final knownName = rawName.isNotEmpty && rawName != 'You';
     final greeting = knownName ? '$timeGreeting, $rawName.' : '$timeGreeting.';
 
-    // Time-of-day chip sets (3 chips each)
-    final List<String> starters;
-    if (hour >= 5 && hour < 12) {
-      starters = [
-        'I slept badly',
-        "I'm anxious about today",
-        "I'm okay, just checking in",
-      ];
-    } else if (hour >= 12 && hour < 17) {
-      starters = [
-        'Rough day so far',
-        'Need a vent',
-        'Just want to talk',
-      ];
-    } else {
-      starters = [
-        "Can't switch off",
-        'Feeling lonely tonight',
-        'Wind-down chat',
-      ];
-    }
+    // R1D6 — Named starter set (same 4 across all time-of-day buckets).
+    const List<String> starters = [
+      "Today's been heavy",
+      'I want to vent a little',
+      'Just need someone to listen',
+      'Quick win, please',
+    ];
 
     return Padding(
       padding: EdgeInsets.only(top: 8.h, bottom: 20.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // R1D6 — CompanionHeader with optional streak badge.
+          _buildCompanionHeader(),
+          SizedBox(height: 8.h),
           // Warmth zone background card
           Container(
             margin: EdgeInsets.symmetric(horizontal: 8.h),
@@ -1146,6 +1144,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // R1D6 — BreathingOrb: gentle 5.6 s pulse.
+                Align(
+                  alignment: Alignment.center,
+                  child: _BreathingOrb(),
+                ),
+                SizedBox(height: 12.h),
                 Text(
                   greeting,
                   style: const TextStyle(
@@ -1163,28 +1167,93 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     color: Colors.grey.shade600,
                   ),
                 ),
+                SizedBox(height: 12.h),
+                // R1D6 — Privacy micro-line.
+                Text(
+                  'History stays on your phone. We don\'t sell, train, or share.',
+                  style: TextStyle(
+                    fontSize: 11.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
               ],
             ),
           ),
           SizedBox(height: 10.h),
-          // 3 time-of-day conversation chips (reuse existing _buildChip — same stadium shape)
+          // R1D6 — 3 named starter chips (fill input, no auto-send).
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8.h, right: 16.h),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: starters
+                  .take(3)
                   .expand((prompt) => [
                         _buildChip(prompt, () {
+                          // R1D6 — Fill input only; user taps send explicitly (no auto-send).
                           _messageController.text = prompt;
-                          _sendMessage();
+                          _messageController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: prompt.length),
+                          );
+                          FocusScope.of(context).requestFocus(_inputFocus);
                         }),
                         SizedBox(width: 8.h),
                       ])
-                  .take(starters.length * 2 - 1)
+                  .take(3 * 2 - 1)
                   .toList(),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// R1D6 — CompanionHeader: app name + recognition-only streak badge (≥2 days).
+  Widget _buildCompanionHeader() {
+    int streakDays = 0;
+    try {
+      streakDays = _questsEngineForStreak?.computeDailyStreak() ?? 0;
+    } catch (_) {}
+    final showStreak = streakDays >= 2;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.h),
+      child: Row(
+        children: [
+          Text(
+            'GentleQuest',
+            style: const TextStyle(
+              fontSize: 15.0,
+              fontWeight: FontWeight.w600,
+              color: GQColors.coral,
+              letterSpacing: 0.2,
+            ),
+          ),
+          if (showStreak) ...[
+            SizedBox(width: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: GQColors.accentSoft,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🌱', style: TextStyle(fontSize: 11)),
+                  SizedBox(width: 4.h),
+                  Text(
+                    '$streakDays days',
+                    style: const TextStyle(
+                      fontSize: 11.0,
+                      fontWeight: FontWeight.w500,
+                      color: GQColors.coral,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1544,6 +1613,76 @@ class _TypingDotsState extends State<_TypingDots>
           }),
         );
       },
+    );
+  }
+}
+
+/// R1D6 — BreathingOrb: 5.6 s gentle scale pulse using GQDurations.breathe.
+/// Renders a soft coral circle that inhales/exhales to create a calming rhythm.
+class _BreathingOrb extends StatefulWidget {
+  const _BreathingOrb();
+
+  @override
+  State<_BreathingOrb> createState() => _BreathingOrbState();
+}
+
+class _BreathingOrbState extends State<_BreathingOrb>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: GQDurations.breathe,
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).accessibleNavigation;
+    if (reduceMotion) {
+      return _orbShape(1.0);
+    }
+    return AnimatedBuilder(
+      animation: _scale,
+      builder: (_, __) => _orbShape(_scale.value),
+    );
+  }
+
+  Widget _orbShape(double scale) {
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: GQColors.accentSoft,
+          border: Border.all(
+            color: GQColors.coral.withValues(alpha: 0.35),
+            width: 1.5,
+          ),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.favorite_rounded,
+            size: 22,
+            color: GQColors.coral,
+          ),
+        ),
+      ),
     );
   }
 }
