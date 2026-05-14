@@ -1,9 +1,10 @@
 import json
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from extensions import limiter
+from services.export_email import mask_email, send_user_export_email
 from models import (
     AnalyticsEvent,
     AlertAcknowledgment,
@@ -164,6 +165,15 @@ def export_user_data():
             "analytics_events": AnalyticsEvent.query.filter_by(session_id=session_id).count(),
         },
     }
+    if not anonymity_mode and user.email:
+        try:
+            result = send_user_export_email(user.email, bundle)
+        except Exception as exc:
+            current_app.logger.warning("user export email failed; falling back to inline", exc_info=exc)
+        else:
+            if result.get("sent"):
+                return jsonify({"delivery": "email", "email": mask_email(user.email)}), 202
+
     return jsonify(bundle), 200
 
 
