@@ -17,6 +17,7 @@ from models import (
     JournalEntry,
     Message,
     MoodEntry,
+    PushToken,
     QuestProgress,
     SelfAssessmentEntry,
     User,
@@ -201,6 +202,7 @@ def delete_user_data():
     InterventionOutcome.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     UserResourceInteraction.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     UserResourcePref.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    PushToken.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     QuestProgress.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     UserProfile.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     AnalyticsEvent.query.filter_by(session_id=session_id).delete(synchronize_session=False)
