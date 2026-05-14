@@ -22,6 +22,7 @@ from models import (
     User,
     UserProfile,
     UserResourceInteraction,
+    UserResourcePref,
     UserSession,
     db,
 )
@@ -199,6 +200,7 @@ def delete_user_data():
     SelfAssessmentEntry.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     InterventionOutcome.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     UserResourceInteraction.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    UserResourcePref.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     QuestProgress.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     UserProfile.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     AnalyticsEvent.query.filter_by(session_id=session_id).delete(synchronize_session=False)
