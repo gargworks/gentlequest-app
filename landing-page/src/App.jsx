@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Brain, Download, Smartphone, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Shield, Download, Smartphone, ExternalLink, Lock, PhoneCall } from 'lucide-react';
 
 function App() {
   const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
@@ -26,12 +26,13 @@ function App() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              Progress{' '}
-              <span className="gradient-text">Without Pressure</span>
+              A quiet place,{' '}
+              <span className="gradient-text">whenever you need it.</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-lg">
-              The gentle guide that helps you build mental resilience through
-              gamified daily quests. Tiny wins when you're overwhelmed.
+              Private. Judgment-free. Here when you need it — and not when you don&apos;t.
+              GentleQuest is a wellness companion for the heavy moments, not a habit tracker.
+              No streaks. No scores. No shame.
             </p>
 
             {/* App Store Badges */}
@@ -65,7 +66,6 @@ function App() {
             </a>
           </div>
 
-          {/* Hero Image Placeholder */}
           {/* Hero Image */}
           <div className="flex justify-center relative">
             <div className="absolute -inset-1 rounded-full bg-purple-500/20 blur-xl"></div>
@@ -78,47 +78,107 @@ function App() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Trust Strip */}
+      <section className="px-6 py-6 border-t border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-center items-center gap-4 md:gap-10 text-center">
+          <p className="text-sm text-gray-400">
+            Not medical care. Not therapy. Not a substitute.
+          </p>
+          <span className="hidden md:block text-white/20">·</span>
+          <p className="text-sm" style={{ color: '#FF6B6B' }}>
+            If you&apos;re in crisis, call{' '}
+            <a href="tel:988" className="font-semibold underline underline-offset-2">
+              988
+            </a>{' '}
+            (US) or your local emergency line.
+          </p>
+        </div>
+      </section>
+
+      {/* Features Section — R1 aligned */}
       <section className="px-6 py-16 bg-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Why GentleQuest?
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+            Built for the heavy moments
           </h2>
+          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
+            Every part of GentleQuest is designed to be there when you need it — and to get out of your way when you don&apos;t.
+          </p>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
+          {/* Row 1 */}
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            {/* Feature 1 — Private by default */}
             <div className="glass-card p-8 text-center">
               <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-pink-400" />
+                <Lock className="w-8 h-8 text-pink-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">No Guilt Streaks</h3>
+              <h3 className="text-xl font-semibold mb-3">Private by default</h3>
               <p className="text-gray-300">
-                We never shame you for missed days. Life happens.
-                We&apos;re here when you're ready.
+                Anonymity mode, data export, your phone stays your phone.
+                We don&apos;t sell, train, or share what you say.
               </p>
             </div>
 
-            {/* Feature 2 */}
+            {/* Feature 2 — Crisis paths that never block */}
+            <div className="glass-card p-8 text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <PhoneCall className="w-8 h-8" style={{ color: '#FF6B6B' }} />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Crisis paths that never block</h3>
+              <p className="text-gray-300">
+                988 is always one tap away, even offline. A user in crisis is never
+                locked out — not by compliance screens, not by anything.
+              </p>
+            </div>
+
+            {/* Feature 3 — Skip anything, no shame */}
+            <div className="glass-card p-8 text-center">
+              <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Skip anything, no shame</h3>
+              <p className="text-gray-300">
+                Every step has a graceful exit. We don&apos;t gate you. &ldquo;Skip&rdquo; and
+                &ldquo;Not now&rdquo; are always visible, never buried.
+              </p>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Feature 4 — Warmer onboarding */}
             <div className="glass-card p-8 text-center">
               <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Meet Alex</h3>
+              <h3 className="text-xl font-semibold mb-3">Warmer onboarding</h3>
               <p className="text-gray-300">
-                A compassionate listener that remembers your context
-                and adapts to your unique journey.
+                Three trust rows up front: Private. No judgment. No pressure.
+                You know what you&apos;re walking into before you share a thing.
               </p>
             </div>
 
-            {/* Feature 3 */}
+            {/* Feature 5 — Journal that stays on your phone */}
             <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Brain className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-green-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Science-Backed</h3>
+              <h3 className="text-xl font-semibold mb-3">Journal that stays on your phone</h3>
               <p className="text-gray-300">
-                Built on CBT & DBT principles. Real techniques,
-                delivered gently.
+                Local-first. Today, an entry, the timeline. Never synced, never shared —
+                just yours, encrypted on your device.
+              </p>
+            </div>
+
+            {/* Feature 6 — Weekly review without scores */}
+            <div className="glass-card p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-8 h-8 text-yellow-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Weekly review without scores</h3>
+              <p className="text-gray-300">
+                Mood shapes, not diagnoses. One thing worth remembering from the week.
+                We surface patterns — we never label you.
               </p>
             </div>
           </div>
@@ -129,17 +189,18 @@ function App() {
       <section className="px-6 py-20 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Start Your Gentle Journey Today
+            Here when you need it.
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Free to download. No credit card required.
+            Free to download. No credit card. No commitments.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href={IOS_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+              className="px-8 py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(to right, #667EEA, #FF6B6B)' }}
             >
               Download for iOS
             </a>
