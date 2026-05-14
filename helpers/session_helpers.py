@@ -130,7 +130,10 @@ def _log_analytics_event(app_ctx, session_id: str, event_type: str, metadata: di
     """Background: log a behavioral event to analytics_events table."""
     try:
         with app_ctx.app_context():
-            from models import AnalyticsEvent
+            from models import AnalyticsEvent, User
+            user = User.query.filter_by(session_id=session_id, deleted_at=None).first()
+            if user and user.anonymity_mode:
+                return
             event = AnalyticsEvent(
                 session_id=session_id,
                 event_type=event_type,

@@ -22,6 +22,7 @@ def register_blueprints(app: Flask) -> None:
     from routes.quests import quests_bp
     from routes.session import session_bp
     from routes.static import static_bp
+    from routes.user_settings import user_settings_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(chat_bp)
@@ -35,9 +36,10 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(quests_bp)
     app.register_blueprint(alerts_bp)
     app.register_blueprint(crisis_bp)
+    app.register_blueprint(user_settings_bp)
 
     app.logger.info(
-        "Registered 12 route blueprints: health, chat, session, analytics, "
+        "Registered 13 route blueprints: health, chat, session, analytics, "
         "admin, static, compliance, assessment, insights, quests_v2, "
-        "alerts_v2, crisis_v2"
+        "alerts_v2, crisis_v2, user_settings"
     )

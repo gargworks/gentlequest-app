@@ -187,6 +187,9 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"))
+    anonymity_mode = db.Column(db.Boolean, nullable=False, server_default=text('false'), default=False)
+    notification_prefs = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, server_default='{}', default=dict)
+    deleted_at = db.Column(db.DateTime)
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email}>"
