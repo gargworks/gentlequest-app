@@ -92,6 +92,17 @@ class GQColors {
   /// Warm salmon — mid-stop of crisis icon gradient.
   static const warm2 = Color(0xFFFFB89E); // --gq-warm-2
 
+  // ── Safety plan card gradient (R1D19 — Profile) ───────────────────────────
+  // Source: GentleQuest_Profile.html .safety-card gradient stops.
+  /// Safety plan card — gradient start (deep indigo).
+  static const safetyGradStart = Color(0xFF6F62D6);
+  /// Safety plan card — gradient mid (medium purple).
+  static const safetyGradMid = Color(0xFF8C77E0);
+  /// Safety plan card — gradient end (soft lilac).
+  static const safetyGradEnd = Color(0xFFB488DF);
+  /// Safety plan card — contact-row call button text (crisis-line accent).
+  static const safetyCallButtonInk = Color(0xFF5C49B6);
+
   /// Ordered list for programmatic mood-scale rendering (e.g. sliders, charts).
   static const moodPalette = [
     moodSlateLavender,

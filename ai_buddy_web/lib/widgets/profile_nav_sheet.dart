@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
+import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/journal_screen.dart';
 import '../screens/resource_library_screen.dart';
@@ -12,8 +13,8 @@ import '../screens/resource_library_screen.dart';
 //   • Journal  (JournalScreen)   — Reflections entry point
 //   • Library (ResourceLibraryScreen) — R1D17 full library screen
 //
-// Deferred (screens do not exist yet, will be Tier 3):
-//   • Profile + Safety Plan (no ProfileScreen / SafetyPlanScreen found)
+// Tier 3.6 R1D19: Profile + Safety Plan now wired (ProfileScreen added).
+// Deferred:
 //   • Weekly Review          (no WeeklyReviewScreen found)
 
 Future<void> showProfileNavSheet(BuildContext context) {
@@ -70,6 +71,20 @@ class _ProfileNavSheet extends StatelessWidget {
               ),
             ),
           ),
+
+          // Profile (R1D19)
+          _SheetTile(
+            icon: Icons.person_outline_rounded,
+            label: 'Profile',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
+          const _TileDivider(),
 
           // Settings
           _SheetTile(
