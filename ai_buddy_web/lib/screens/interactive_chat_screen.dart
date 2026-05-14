@@ -19,12 +19,15 @@ import '../widgets/safety_legal_sheet.dart';
 import '../widgets/crisis_resources.dart';
 import '../models/interactive_exercise.dart';
 import '../services/firebase_service.dart';
-import '../widgets/exercises/breathing_exercise_widget.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
 import '../widgets/message_bubble.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/profile_nav_sheet.dart';
+import '../widgets/ai_thinking_indicator.dart';
+import '../widgets/inline_crisis_banner.dart';
+import '../widgets/exercise_card_inline.dart';
+import '../widgets/voice_input_bar.dart';
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -43,6 +46,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   double _lastBottomInset = 0.0;
   final GlobalKey _inputBarKey = GlobalKey();
   double _inputBarHeight = 0.0;
+
+  // ── R1D7 Chat Active States ──────────────────────────────────────────────
+  /// State B — inline crisis banner visible in chat stream.
+  bool _showInlineCrisis = false;
+  /// State D — voice input mode active.
+  bool _voiceInputActive = false;
+  String _voiceTranscript = '';
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -587,9 +597,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       // Normal chat with optional suggestion chips after greeting
                       final msgCount = chatProvider.messages.length;
                       final hasTyping = chatProvider.isTyping;
-                      // Items: messages + (suggestions row if empty) + (typing if active)
-                      final extraRows =
-                          (showSuggestions ? 1 : 0) + (hasTyping ? 1 : 0);
+                      // R1D7: inline crisis banner adds an extra row when active
+                      // Items: messages + (suggestions?) + (crisis banner?) + (typing?)
+                      final extraRows = (showSuggestions ? 1 : 0) +
+                          (_showInlineCrisis ? 1 : 0) +
+                          (hasTyping ? 1 : 0);
                       final count = msgCount + extraRows;
 
                       return ListView.builder(
@@ -600,17 +612,36 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ScrollViewKeyboardDismissBehavior.manual,
                         itemCount: count,
                         itemBuilder: (context, index) {
-                          // First-turn warmth block (R1D3: greeting + sub-line + time-of-day chips)
-                          if (showSuggestions && index == msgCount) {
+                          int virtualIndex = index;
+
+                          // First-turn warmth block (R1D3)
+                          if (showSuggestions && virtualIndex == msgCount) {
                             return _buildFirstTurnWarmth();
                           }
-                          // Typing indicator row
-                          final typingIndex =
+                          if (showSuggestions && virtualIndex > msgCount) {
+                            virtualIndex--; // shift past suggestions row
+                          }
+
+                          // R1D7 State B — inline crisis banner after last user msg
+                          final crisisIndex =
                               msgCount + (showSuggestions ? 1 : 0);
+                          if (_showInlineCrisis && index == crisisIndex) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4.h),
+                              child: _buildInlineCrisisBanner(),
+                            );
+                          }
+
+                          // R1D7 State A — thinking indicator
+                          final typingIndex = msgCount +
+                              (showSuggestions ? 1 : 0) +
+                              (_showInlineCrisis ? 1 : 0);
                           if (hasTyping && index == typingIndex) {
                             return _buildTypingBubble();
                           }
+
                           // Normal message
+                          if (index >= msgCount) return const SizedBox.shrink();
                           final message = chatProvider.messages[index];
                           final isLast = index == msgCount - 1 && !hasTyping;
                           return _buildMessageBubble(message, isLast: isLast);
@@ -619,96 +650,144 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     },
                   ),
                 ),
-                // Input Area
+                // Input Area — R1D7: supports 4 active states:
+                //   A (thinking)  → input dimmed (opacity 0.55), hint "Alex is thinking…"
+                //   B (crisis)    → standard input (banner shown in stream above)
+                //   C (exercise)  → input dimmed, hint "Take your time…"
+                //   D (voice)     → VoiceInputBar replaces text input in-place
                 Container(
                   key: _inputBarKey,
                   color: appTheme.whiteCustom,
-                  padding: EdgeInsets.fromLTRB(16.h, 4.h, 0.h, 16.h),
                   child: SafeArea(
                     top: false,
                     bottom: true,
                     left: false,
                     right: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: appTheme.colorFFF3F4,
-                                  borderRadius: BorderRadius.circular(24.h),
+                    child: Consumer<ChatProvider>(
+                      builder: (ctx, chatProvider, _) {
+                        final isThinking = chatProvider.isTyping;
+
+                        // State D — Voice input replaces text bar in-place
+                        if (_voiceInputActive) {
+                          return VoiceInputBar(
+                            liveTranscript: _voiceTranscript,
+                            onStop: (transcript) {
+                              setState(() {
+                                _voiceInputActive = false;
+                                if (transcript.isNotEmpty) {
+                                  _messageController.text = transcript;
+                                }
+                              });
+                              if (transcript.isNotEmpty) {
+                                _sendMessage();
+                              }
+                            },
+                            onCancel: () {
+                              setState(() {
+                                _voiceInputActive = false;
+                                _voiceTranscript = '';
+                              });
+                            },
+                          );
+                        }
+
+                        // States A/B/C — standard text input with dim for thinking/exercise
+                        final dimInput = isThinking;
+                        final hintText = isThinking
+                            ? 'Alex is thinking…'
+                            : 'Type your message...';
+
+                        return Opacity(
+                          opacity: dimInput ? 0.55 : 1.0,
+                          child: Padding(
+                            padding:
+                                EdgeInsets.fromLTRB(16.h, 4.h, 0.h, 16.h),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    // R1D7 State D — mic button to activate voice mode
+                                    _buildVoiceMicButton(),
+                                    SizedBox(width: 8.h),
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: appTheme.colorFFF3F4,
+                                          borderRadius:
+                                              BorderRadius.circular(24.h),
+                                        ),
+                                        child: TextField(
+                                          controller: _messageController,
+                                          focusNode: _inputFocus,
+                                          enabled: !dimInput,
+                                          decoration: InputDecoration(
+                                            hintText: hintText,
+                                            hintStyle: TextStyle(
+                                              fontSize: 16.0,
+                                              color: Colors.grey[600],
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 16.h,
+                                              vertical: 10.h,
+                                            ),
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 16.0,
+                                            color: Colors.black87,
+                                          ),
+                                          onSubmitted: (_) {
+                                            _sendMessage();
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback((_) {
+                                              if (mounted) {
+                                                _inputFocus.requestFocus();
+                                              }
+                                            });
+                                          },
+                                          onEditingComplete: () {},
+                                          textInputAction: TextInputAction.send,
+                                          keyboardType: TextInputType.multiline,
+                                          maxLines: null,
+                                          minLines: 1,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.h),
+                                    SizedBox(
+                                      width: 44.h,
+                                      child: Center(
+                                        child: GestureDetector(
+                                          onTap:
+                                              dimInput ? null : _sendMessage,
+                                          child: Container(
+                                            padding: EdgeInsets.all(10.h),
+                                            decoration: BoxDecoration(
+                                              color: dimInput
+                                                  ? GQColors.primary
+                                                      .withValues(alpha: 0.4)
+                                                  : GQColors.primary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.send_rounded,
+                                              color: Colors.white,
+                                              size: 20.h,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.h),
+                                  ],
                                 ),
-                                child: TextField(
-                                  controller: _messageController,
-                                  focusNode: _inputFocus,
-                                  decoration: InputDecoration(
-                                    hintText: 'Type your message...',
-                                    hintStyle: TextStyle(
-                                      fontSize:
-                                          16.0, // iOS standard input text size
-                                      color: Colors.grey[600],
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 16.h,
-                                      vertical: 10.h,
-                                    ),
-                                  ),
-                                  style: TextStyle(
-                                    fontSize:
-                                        16.0, // iOS standard input text size
-                                    color: Colors.black87,
-                                  ),
-                                  onSubmitted: (_) {
-                                    // Match the send button exactly: send without dismissing the keyboard
-                                    _sendMessage();
-                                    // Reassert focus to keep iOS keyboard open
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                      if (mounted) _inputFocus.requestFocus();
-                                    });
-                                  },
-                                  // Prevent the default editing-complete behavior from unfocusing on iOS
-                                  onEditingComplete: () {},
-                                  textInputAction: TextInputAction.send,
-                                  keyboardType: TextInputType.multiline,
-                                  maxLines: null,
-                                  minLines: 1,
-                                ),
-                              ), // end Container
-                            ), // end Expanded
-                            SizedBox(width: 8.h),
-                            SizedBox(
-                              width: 74.h,
-                              child: Center(
-                                child: GestureDetector(
-                                  onTap: _sendMessage,
-                                  child: Container(
-                                    padding: EdgeInsets.all(10.h),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.send_rounded,
-                                      color: Colors.white,
-                                      size: 20.h,
-                                    ),
-                                    // Backup Icon: Arrow Up
-                                    // child: Icon(
-                                    //   Icons.arrow_upward_rounded,
-                                    //   color: Colors.white,
-                                    //   size: 32.h,
-                                    // ),
-                                  ),
-                                ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -916,16 +995,18 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
     switch (exercise.type) {
       case ExerciseType.breathing:
-        return BreathingExerciseWidget(
-          exercise: exercise as BreathingExercise,
-          onComplete: () {
-            // Track completion via chat provider
+        // R1D7 State C — use ExerciseCardInline for 4-7-8 breathing in chat stream.
+        // ExerciseCardInline is the compact inline variant per P11.
+        return ExerciseCardInline(
+          key: ValueKey(exerciseId),
+          totalRounds: 3,
+          onDone: () {
             context.read<ChatProvider>().trackExerciseOutcome(
                   exerciseType: 'breathing',
                   outcome: 'completed',
                   interventionId: exerciseId,
                 );
-            if (kDebugMode) debugPrint('✓ Breathing exercise completed');
+            if (kDebugMode) debugPrint('✓ Breathing exercise completed (inline)');
           },
         );
       case ExerciseType.grounding:
@@ -1092,6 +1173,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   Widget _buildTypingBubble() {
+    // R1D7 State A — AIThinkingIndicator: 3-dot wave pill in chat bubble position.
+    // Input bar is dimmed (opacity 0.55) while isTyping is true (handled in build()).
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
     return AnimatedSize(
       duration:
@@ -1111,38 +1194,54 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               showStatus: false,
             ),
             SizedBox(width: 12.h),
-            Flexible(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: appTheme.whiteCustom,
-                  borderRadius: BorderRadius.circular(16.h),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4.h,
-                      offset: Offset(0, 2.h),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Thinking',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14.h,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    SizedBox(width: 6.h),
-                    const _TypingDots(),
-                  ],
-                ),
-              ),
-            ),
+            // AIThinkingIndicator — GQColors.primary dots, 800ms wave
+            const AIThinkingIndicator(),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the R1D7 State B inline crisis banner for insertion in the
+  /// message list. Renders above the next AI bubble; never blocks the
+  /// conversation (P6: crisis never blocks).
+  Widget _buildInlineCrisisBanner() {
+    return InlineCrisisBanner(
+      onImOkay: () {
+        setState(() => _showInlineCrisis = false);
+      },
+      onHelp: () {
+        // Expand inline 988 sheet; does NOT navigate (per design spec)
+        setState(() => _showInlineCrisis = false);
+        _showHelpSheet();
+      },
+    );
+  }
+
+  /// R1D7 voice input mic button for the input bar.
+  Widget _buildVoiceMicButton() {
+    return Semantics(
+      button: true,
+      label: 'Start voice input',
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _voiceInputActive = true;
+            _voiceTranscript = '';
+          });
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: const BoxDecoration(
+            color: GQColors.primarySoft,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.mic_rounded,
+            color: GQColors.primary,
+            size: 22,
+          ),
         ),
       ),
     );
