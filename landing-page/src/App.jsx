@@ -1,232 +1,210 @@
-import { Heart, MessageCircle, Shield, Download, Smartphone, ExternalLink, Lock, PhoneCall } from 'lucide-react';
+import {
+  Lock,
+  PhoneCall,
+  SkipForward,
+  Sparkles,
+  BookOpen,
+  CalendarHeart,
+  ExternalLink,
+  ArrowRight,
+} from 'lucide-react';
+
+const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
+const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
+const WEB_APP_URL = 'https://nucleus.gentlequest.app';
+
+function AppleGlyph() {
+  return (
+    <svg width="26" height="28" viewBox="0 0 24 28" fill="currentColor" aria-hidden="true">
+      <path d="M16.7 14.8c0-2.6 2.1-3.9 2.2-3.9-1.2-1.7-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.3 2.6 1.3 0 1.8-.8 3.4-.8s2 .8 3.4.8c1.4 0 2.3-1.2 3.2-2.5 1-1.4 1.4-2.9 1.4-2.9-.1 0-2.7-1-2.7-4.1zM14.3 6.1c.7-.8 1.2-2 1-3.1-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z" />
+    </svg>
+  );
+}
+
+function PlayGlyph() {
+  return (
+    <svg width="24" height="26" viewBox="0 0 24 26" aria-hidden="true">
+      <path d="M3 2.5v21l16.5-10.5L3 2.5z" fill="var(--gq-primary)" />
+    </svg>
+  );
+}
+
+const FEATURES = [
+  {
+    Icon: Lock,
+    title: 'Private by default',
+    body: "Stays on your device. Never synced. Never shared by default. Export when you want. Delete when you're done.",
+  },
+  {
+    Icon: PhoneCall,
+    title: 'Crisis paths that never block',
+    body: '988 always reachable — even when the app is in a compliance state. Even offline. Even mid-flow.',
+  },
+  {
+    Icon: SkipForward,
+    title: 'Skip anything, no shame',
+    body: 'Every step has a skip. Every input is optional. Coming back is never penalized.',
+  },
+  {
+    Icon: Sparkles,
+    title: 'Warmer onboarding',
+    body: 'Three trust chips up front: private, no judgment, no pressure. Age gate as a quiet check, not a wall.',
+  },
+  {
+    Icon: BookOpen,
+    title: 'Journal on phone',
+    body: 'Local-first by default. Three views: today, an entry, the timeline. Yours.',
+  },
+  {
+    Icon: CalendarHeart,
+    title: 'Weekly review without scores',
+    body: 'Sundays show mood shapes — not a diagnosis. One thing worth remembering.',
+  },
+];
 
 function App() {
-  const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
-  const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
-  const WEB_APP_URL = 'https://nucleus.gentlequest.app';
-
   return (
-    <div className="min-h-screen">
-      {/* Navbar */}
-      <nav className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <img src="/logo-192.png" alt="GentleQuest" className="w-10 h-10 rounded-xl" />
-          <span className="text-xl font-semibold">GentleQuest</span>
+    <div>
+      <header className="gq-topbar">
+        <div className="gq-container row">
+          <a className="gq-brand" href="/">
+            <span className="gq-brand-mark" />
+            <span>GentleQuest</span>
+          </a>
+          <nav className="gq-nav-links">
+            <a href="#features">Features</a>
+            <a href="#crisis">988</a>
+            <a href="#download">Download</a>
+            <a href={WEB_APP_URL}>Open app</a>
+          </nav>
         </div>
-        <a
-          href={WEB_APP_URL}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium transition-colors"
-        >
-          Open App →
-        </a>
-      </nav>
+      </header>
 
-      {/* Hero Section */}
-      <section className="px-6 py-16 md:py-24 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              A quiet place,{' '}
-              <span className="gradient-text">whenever you need it.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-lg">
-              Private. Judgment-free. Here when you need it — and not when you don&apos;t.
-              GentleQuest is a wellness companion for the heavy moments, not a habit tracker.
-              No streaks. No scores. No shame.
-            </p>
-
-            {/* App Store Badges */}
-            <div className="flex flex-wrap gap-4 mb-6">
-              <a
-                href={IOS_APP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                <span className="font-medium">Download on iOS</span>
-              </a>
-              <a
-                href={ANDROID_APP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
-              >
-                <Smartphone className="w-5 h-5" />
-                <span className="font-medium">Get on Android</span>
-              </a>
-            </div>
-
+      <section className="gq-hero">
+        <div className="gq-container inner">
+          <h1>
+            A quiet place,
+            <br />
+            <span className="accent">whenever you need it.</span>
+          </h1>
+          <p className="sub">
+            GentleQuest is a wellness companion for heavy moments. Not therapy. Not medical care. A
+            space to log how you're feeling and find resources that match where you are.
+          </p>
+          <div className="gq-hero-cta" id="download">
             <a
-              href={WEB_APP_URL}
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              <span>Or try the Web App</span>
-            </a>
-          </div>
-
-          {/* Hero Image */}
-          <div className="flex justify-center relative">
-            <div className="absolute -inset-1 rounded-full bg-purple-500/20 blur-xl"></div>
-            <img
-              src="/app-screenshot.png"
-              alt="GentleQuest App Interface showing Luna AI"
-              className="relative w-72 rounded-[2.5rem] shadow-2xl border-4 border-white/10 rotate-[-2deg] hover:rotate-0 transition-transform duration-500"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Strip */}
-      <section className="px-6 py-6 border-t border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-center items-center gap-4 md:gap-10 text-center">
-          <p className="text-sm text-gray-400">
-            Not medical care. Not therapy. Not a substitute.
-          </p>
-          <span className="hidden md:block text-white/20">·</span>
-          <p className="text-sm" style={{ color: '#FF6B6B' }}>
-            If you&apos;re in crisis, call{' '}
-            <a href="tel:988" className="font-semibold underline underline-offset-2">
-              988
-            </a>{' '}
-            (US) or your local emergency line.
-          </p>
-        </div>
-      </section>
-
-      {/* Features Section — R1 aligned */}
-      <section className="px-6 py-16 bg-white/5">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-            Built for the heavy moments
-          </h2>
-          <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
-            Every part of GentleQuest is designed to be there when you need it — and to get out of your way when you don&apos;t.
-          </p>
-
-          {/* Row 1 */}
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            {/* Feature 1 — Private by default */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-pink-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Private by default</h3>
-              <p className="text-gray-300">
-                Anonymity mode, data export, your phone stays your phone.
-                We don&apos;t sell, train, or share what you say.
-              </p>
-            </div>
-
-            {/* Feature 2 — Crisis paths that never block */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <PhoneCall className="w-8 h-8" style={{ color: '#FF6B6B' }} />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Crisis paths that never block</h3>
-              <p className="text-gray-300">
-                988 is always one tap away, even offline. A user in crisis is never
-                locked out — not by compliance screens, not by anything.
-              </p>
-            </div>
-
-            {/* Feature 3 — Skip anything, no shame */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-purple-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Skip anything, no shame</h3>
-              <p className="text-gray-300">
-                Every step has a graceful exit. We don&apos;t gate you. &ldquo;Skip&rdquo; and
-                &ldquo;Not now&rdquo; are always visible, never buried.
-              </p>
-            </div>
-          </div>
-
-          {/* Row 2 */}
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 4 — Warmer onboarding */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-8 h-8 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Warmer onboarding</h3>
-              <p className="text-gray-300">
-                Three trust rows up front: Private. No judgment. No pressure.
-                You know what you&apos;re walking into before you share a thing.
-              </p>
-            </div>
-
-            {/* Feature 5 — Journal that stays on your phone */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-green-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Journal that stays on your phone</h3>
-              <p className="text-gray-300">
-                Local-first. Today, an entry, the timeline. Never synced, never shared —
-                just yours, encrypted on your device.
-              </p>
-            </div>
-
-            {/* Feature 6 — Weekly review without scores */}
-            <div className="glass-card p-8 text-center">
-              <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-yellow-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Weekly review without scores</h3>
-              <p className="text-gray-300">
-                Mood shapes, not diagnoses. One thing worth remembering from the week.
-                We surface patterns — we never label you.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="px-6 py-20 text-center">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Here when you need it.
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Free to download. No credit card. No commitments.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
+              className="gq-appstore-badge"
               href={IOS_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-              style={{ background: 'linear-gradient(to right, #667EEA, #FF6B6B)' }}
+              aria-label="Download on the App Store"
             >
-              Download for iOS
+              <AppleGlyph />
+              <div>
+                <div className="gq-store-line1">Download on the</div>
+                <div className="gq-store-line2">App&nbsp;Store</div>
+              </div>
             </a>
             <a
+              className="gq-androidstore-badge"
               href={ANDROID_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-white/10 rounded-xl font-semibold hover:bg-white/20 transition-colors"
+              aria-label="Get it on Google Play"
             >
-              Download for Android
+              <PlayGlyph />
+              <div>
+                <div className="gq-store-line1">Get it on</div>
+                <div className="gq-store-line2">Google&nbsp;Play</div>
+              </div>
             </a>
+            <a className="gq-web-cta" href={WEB_APP_URL}>
+              <ExternalLink size={14} />
+              <span>Or try the Web App</span>
+            </a>
+          </div>
+          <div className="gq-hero-meta" style={{ marginTop: 16 }}>
+            Free · iOS · Android · v1.3.0
+          </div>
+        </div>
+
+        <div className="gq-container gq-trust-strip">
+          <div className="gq-trust-chips" aria-label="Promises">
+            <span className="gq-trust-chip">
+              <span className="glyph">🔒</span> Private by default
+            </span>
+            <span className="gq-trust-chip">
+              <span className="glyph">🙅</span> No streaks
+            </span>
+            <span className="gq-trust-chip">
+              <span className="glyph">📞</span> 988 always reachable
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-8 border-t border-white/10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/logo-192.png" alt="GentleQuest" className="w-8 h-8 rounded-lg" />
-            <span className="text-sm text-gray-400">© 2026 GentleQuest</span>
+      <section className="gq-section" id="features">
+        <div className="gq-container">
+          <div className="gq-section-eyebrow">What it is, what it isn't</div>
+          <h2 className="gq-section-title">
+            Quiet structure for <em>harder days</em>.
+          </h2>
+          <p className="gq-section-sub">
+            Six pieces. Every one of them has a skip. Every one of them respects where you are.
+          </p>
+
+          <div className="gq-features">
+            {FEATURES.map(({ Icon, title, body }) => (
+              <article className="gq-feature" key={title}>
+                <span className="ic" aria-hidden="true">
+                  <Icon size={20} />
+                </span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
+            ))}
           </div>
-          <div className="flex gap-6 text-sm text-gray-400">
-            <a href="https://nucleus.gentlequest.app/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="https://nucleus.gentlequest.app/terms" className="hover:text-white transition-colors">Terms</a>
-            <a href="mailto:support@gentlequest.app" className="hover:text-white transition-colors">Support</a>
+        </div>
+      </section>
+
+      <section className="gq-crisis-strip" id="crisis">
+        <div className="row">
+          <span className="pill">
+            <span className="dot" /> WORKS OFFLINE
+          </span>
+          <h2>
+            If you're in crisis, call <span className="num">988</span>.
+            <br />
+            We never block this. Even offline.
+          </h2>
+          <p className="meta">Suicide &amp; Crisis Lifeline · free · 24 / 7 · multilingual</p>
+        </div>
+      </section>
+
+      <footer className="gq-footer">
+        <div className="gq-container">
+          <div className="row">
+            <div className="brand-row">
+              <a className="gq-brand" href="/">
+                <span className="gq-brand-mark" />
+                <span>GentleQuest</span>
+              </a>
+              <span className="tagline">
+                A wellness companion for heavy moments. Not therapy. Not medical care.
+              </span>
+            </div>
+            <nav className="links" aria-label="Footer">
+              <a href="/privacy">Privacy</a>
+              <a href="/terms">Terms</a>
+              <a href="/about">About</a>
+              <a href="/press">Press</a>
+            </nav>
+          </div>
+          <div className="meta-row">
+            <span>© 2026 Eidetic Works. All rights reserved.</span>
+            <span className="contact">
+              Contact · <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a>
+            </span>
           </div>
         </div>
       </footer>
