@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest — About</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:     #667EEA;
+    --gq-primary-dk:  #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:      #FF6B6B;
+    --gq-accent-soft: #FFE8E8;
+    --gq-amber:       #C8923D;
+    --gq-amber-soft:  #FBF1DC;
+    --gq-bg:          #F8F7FF;
+    --gq-ink:         #1F1B3A;
+    --gq-ink-2:       #4A4670;
+    --gq-ink-3:       #8B86AB;
+    --gq-hair:        rgba(31,27,58,0.08);
+    --display: -apple-system-rounded, 'SF Pro Rounded', ui-rounded, 'Inter', system-ui, sans-serif;
+    --body:    'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --serif:   'Fraunces', ui-serif, Georgia, serif;
+    --mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body { background: var(--gq-bg); color: var(--gq-ink); font-family: var(--body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: var(--gq-primary-dk); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ===== Top bar (shared) ===== */
+  .topbar {
+    padding: 24px 0; position: sticky; top: 0;
+    background: rgba(248,247,255,0.85);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--gq-hair); z-index: 20;
+  }
+  .topbar .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.3px; color: var(--gq-ink); }
+  .brand-mark { width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--gq-primary-soft) 45%, var(--gq-primary) 100%);
+    box-shadow: 0 4px 10px -4px rgba(102,126,234,0.45); }
+  .nav-links { display: flex; gap: 22px; }
+  .nav-links a { color: var(--gq-ink-2); font-weight: 600; font-size: 14px; }
+  .nav-links a.active { color: var(--gq-ink); }
+  .nav-links a:hover { color: var(--gq-ink); text-decoration: none; }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* ===== Hero ===== */
+  .hero { position: relative; overflow: hidden; padding: 88px 0; display: flex; align-items: center; }
+  .hero.h50 { min-height: 50vh; }
+  .hero.h40 { min-height: 40vh; padding: 64px 0; }
+  .hero::before, .hero::after { content:""; position:absolute; border-radius:50%; pointer-events:none; filter: blur(60px); }
+  .hero::before { width: 480px; height: 480px; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), rgba(182,168,250,0.30) 50%, rgba(102,126,234,0.16) 100%); top:-160px; right:-120px; }
+  .hero::after { width: 340px; height: 340px; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.45), rgba(255,181,155,0.18) 60%, rgba(255,107,107,0.10) 100%); bottom:-120px; left:-80px; }
+  .hero .inner { position: relative; z-index: 2; max-width: 880px; }
+  .hero h1 { margin:0; font-family: var(--display); font-size: clamp(36px, 5.5vw, 60px); font-weight: 700; letter-spacing: -1.2px; line-height: 1.1; color: var(--gq-ink); }
+  .hero h1 .accent { color: var(--gq-primary-dk); }
+  .hero .sub { margin-top: 20px; max-width: 640px; font-size: clamp(16px, 1.4vw, 18px); color: var(--gq-ink-2); font-weight: 500; line-height: 1.55; }
+
+  /* ===== Sections ===== */
+  .section { padding: 72px 0; }
+  .section.tight { padding: 48px 0; }
+  .eyebrow { font-size: 12px; font-weight: 800; color: var(--gq-ink-3); letter-spacing: 1.5px; text-transform: uppercase; }
+  .section-title { font-family: var(--serif); font-weight: 500; font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.5px; margin: 10px 0 0; color: var(--gq-ink); line-height: 1.25; }
+  .section-title em { font-style: italic; color: var(--gq-primary-dk); }
+  .section-sub { margin-top: 14px; max-width: 620px; color: var(--gq-ink-2); font-size: 16px; }
+
+  /* ===== Principles grid (5) ===== */
+  .principles { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .principles { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .principles { grid-template-columns: 1fr; } }
+  .principle { background: white; border: 1px solid var(--gq-hair); border-radius: 16px; padding: 20px; }
+  .principle .ic { width: 38px; height: 38px; border-radius: 11px; background: var(--gq-primary-soft); display:inline-flex; align-items:center; justify-content:center; color: var(--gq-primary-dk); }
+  .principle h3 { margin: 14px 0 6px; font-size: 16px; font-weight: 700; letter-spacing: -0.2px; color: var(--gq-ink); }
+  .principle p { margin: 0; color: var(--gq-ink-2); font-size: 14px; line-height: 1.55; font-weight: 500; }
+
+  /* ===== We don't do (mono list) ===== */
+  .dont-list { margin-top: 28px; display: flex; flex-direction: column; gap: 8px; max-width: 540px; }
+  .dont-line { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--gq-ink); display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 12px; background: white; border: 1px solid var(--gq-hair); }
+  .dont-line .x { color: var(--gq-accent); font-weight: 600; }
+  .dont-line .lbl { color: var(--gq-ink); }
+
+  /* ===== Publisher note ===== */
+  .publisher-note { margin-top: 36px; padding: 24px 28px; border-left: 3px solid var(--gq-primary); background: rgba(102,126,234,0.05); border-radius: 0 12px 12px 0; }
+  .publisher-note p { margin: 0; font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--gq-ink-2); line-height: 1.55; max-width: 620px; }
+  .publisher-note a { font-style: normal; font-family: var(--body); font-weight: 700; }
+
+  /* ===== Definition list (Key facts) ===== */
+  .dl { margin-top: 28px; display: grid; grid-template-columns: max-content 1fr; column-gap: 32px; row-gap: 16px; max-width: 720px; }
+  .dl dt { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--gq-ink-3); letter-spacing: 0.4px; text-transform: uppercase; padding-top: 3px; }
+  .dl dd { margin: 0; font-size: 15.5px; color: var(--gq-ink); font-weight: 600; line-height: 1.5; }
+  .dl dd .meta { color: var(--gq-ink-3); font-weight: 500; }
+  @media (max-width: 560px) { .dl { grid-template-columns: 1fr; row-gap: 22px; } .dl dt { padding-top: 0; } }
+
+  /* ===== Asset grid ===== */
+  .asset-grid { margin-top: 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .asset-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .asset-grid { grid-template-columns: 1fr; } }
+  .asset { background: white; border: 1px solid var(--gq-hair); border-radius: 16px; overflow: hidden; transition: transform 200ms cubic-bezier(.22,.94,.32,1); }
+  .asset:hover { transform: translateY(-2px); }
+  .asset .thumb { aspect-ratio: 9/16; background: linear-gradient(160deg, var(--gq-primary-soft) 0%, #FFE8E8 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .asset .thumb svg { width: 60%; height: 60%; opacity: 0.85; }
+  .asset .thumb .frame-num { position: absolute; top: 12px; left: 12px; font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--gq-ink-2); background: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 6px; }
+  .asset .info { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--gq-hair); }
+  .asset .info .name { font-size: 13.5px; font-weight: 700; color: var(--gq-ink); }
+  .asset .info .dl-link { font-size: 12px; font-weight: 700; color: var(--gq-primary-dk); display: inline-flex; align-items: center; gap: 4px; }
+  .asset.brand-card .thumb { aspect-ratio: 9/12; }
+  .asset.brand-card .icon-tile { width: 96px; height: 96px; border-radius: 22px;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--gq-primary-soft) 40%, var(--gq-primary) 100%);
+    box-shadow: 0 14px 30px -10px rgba(102,126,234,0.5); }
+  .asset.brand-card .palette { display: flex; gap: 6px; }
+  .asset.brand-card .palette span { width: 26px; height: 60px; border-radius: 6px; }
+
+  /* ===== Pull quotes ===== */
+  .quote-grid { margin-top: 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .quote-grid { grid-template-columns: 1fr; } }
+  .pull-quote { background: white; border: 1px solid var(--gq-hair); border-radius: 16px; padding: 24px; position: relative; }
+  .pull-quote::before { content: "\201C"; position: absolute; top: 4px; left: 18px; font-family: var(--serif); font-size: 56px; line-height: 1; color: var(--gq-primary); opacity: 0.4; }
+  .pull-quote p { margin: 22px 0 0; font-family: var(--serif); font-size: 17px; line-height: 1.5; color: var(--gq-ink); font-weight: 500; letter-spacing: -0.2px; }
+  .pull-quote .attr { margin-top: 14px; font-size: 11.5px; font-weight: 800; color: var(--gq-ink-3); letter-spacing: 0.6px; text-transform: uppercase; }
+
+  /* ===== Contact card ===== */
+  .contact-card { margin-top: 28px; padding: 28px 32px; border-radius: 16px; background: white; border: 1px solid var(--gq-hair); display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .contact-card .email { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: var(--gq-primary-dk); }
+  .contact-card .meta { font-size: 13.5px; color: var(--gq-ink-2); font-weight: 600; max-width: 400px; }
+
+  /* ===== Footer (shared) ===== */
+  .footer { padding: 56px 0 64px; border-top: 1px solid var(--gq-hair); background: var(--gq-bg); margin-top: 56px; }
+  .footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 32px; align-items: flex-start; }
+  .footer .brand-row { display: flex; flex-direction: column; gap: 8px; }
+  .footer .tagline { color: var(--gq-ink-3); font-size: 13px; font-weight: 600; max-width: 320px; }
+  .footer .links { display: flex; flex-wrap: wrap; gap: 28px; }
+  .footer .links a { color: var(--gq-ink-2); font-weight: 600; font-size: 14px; }
+  .footer .links a:hover { color: var(--gq-ink); text-decoration: none; }
+  .footer .meta-row { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--gq-hair); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 12px; color: var(--gq-ink-3); font-weight: 600; }
+  .footer .meta-row .contact a { color: var(--gq-primary-dk); }
+
+  /* ===== Page separator (canvas-only) ===== */
+  .page-sep { padding: 80px 0; background: #1A1730; color: rgba(255,255,255,0.85); text-align: center; }
+  .page-sep .lbl { font-family: var(--mono); font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; opacity: 0.7; }
+  .page-sep .file { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: -0.4px; margin-top: 6px; }
+
+</style>
+</head>
+<body>
+<section data-screen-label="01 /about">
+
+  <header class="topbar">
+    <div class="container row">
+      <a class="brand" href="/"><span class="brand-mark"></span><span>GentleQuest</span></a>
+      <nav class="nav-links">
+        <a class="active" href="/about">About</a>
+        <a href="/press">Press</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero h50">
+    <div class="container inner">
+      <div class="eyebrow">About</div>
+      <h1 style="margin-top:10px;">We built GentleQuest because mental&nbsp;health software <span class="accent">shouldn't feel like a job.</span></h1>
+      <p class="sub">A quiet space to log how you're feeling and find resources that match where you are. Not therapy. Not medical care. A wellness companion for heavy moments.</p>
+    </div>
+  </section>
+
+  <!-- Five principles -->
+  <section class="section">
+    <div class="container">
+      <div class="eyebrow">How we build</div>
+      <h2 class="section-title">Five principles, <em>every screen</em>.</h2>
+
+      <div class="principles">
+        <article class="principle">
+          <span class="ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>Warmth over utility</h3>
+          <p>Every string written for a person in a low moment. Clinical is never cold.</p>
+        </article>
+        <article class="principle">
+          <span class="ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>Skip anything, no shame</h3>
+          <p>Every step has a skip. Every input is optional. Coming back is never penalized.</p>
+        </article>
+        <article class="principle">
+          <span class="ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <h3>One clear next action</h3>
+          <p>One primary CTA per screen. Choice is a kindness, not a maze.</p>
+        </article>
+        <article class="principle">
+          <span class="ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.39 7.36H22l-6.18 4.5 2.36 7.36L12 16.72l-6.18 4.5 2.36-7.36L2 9.36h7.61z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>Coral, not red</h3>
+          <p>Even errors stay warm. Alarm colors belong to actual alarms, not to UI states.</p>
+        </article>
+        <article class="principle">
+          <span class="ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <h3>Privacy is visible, not footnoted</h3>
+          <p>Anonymity mode in the first viewport of Settings. "Stays on your device" said plainly, often.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- What we don't do -->
+  <section class="section tight">
+    <div class="container">
+      <div class="eyebrow">What we don't do</div>
+      <h2 class="section-title">No engagement loops <em>that drain you</em>.</h2>
+
+      <div class="dont-list">
+        <div class="dont-line"><span class="x">×</span><span class="lbl">No streaks</span></div>
+        <div class="dont-line"><span class="x">×</span><span class="lbl">No levels</span></div>
+        <div class="dont-line"><span class="x">×</span><span class="lbl">No scores</span></div>
+        <div class="dont-line"><span class="x">×</span><span class="lbl">No diagnoses</span></div>
+        <div class="dont-line"><span class="x">×</span><span class="lbl">No data sales</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Publisher note -->
+  <section class="section tight">
+    <div class="container">
+      <div class="publisher-note">
+        <p>We publish under Eidetic Works to keep the focus on the work, not the people behind it. Questions? <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="brand-row">
+          <a class="brand" href="/"><span class="brand-mark"></span><span>GentleQuest</span></a>
+          <span class="tagline">A wellness companion for heavy moments. Not therapy. Not medical care.</span>
+        </div>
+        <nav class="links" aria-label="Footer">
+          <a href="/about">About</a>
+          <a href="/press">Press</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+      </div>
+      <div class="meta-row">
+        <span>© 2026 Eidetic Works. All rights reserved.</span>
+        <span class="contact">Contact · <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a></span>
+      </div>
+    </div>
+  </footer>
+</section>
+</body>
+</html>

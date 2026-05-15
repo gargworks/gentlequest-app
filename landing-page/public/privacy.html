@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest — Privacy Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gq-primary:     #667EEA;
+    --gq-primary-dk:  #4F63C9;
+    --gq-primary-soft:#EEF0FE;
+    --gq-accent:      #FF6B6B;
+    --gq-amber:       #C8923D;
+    --gq-amber-soft:  #FBF1DC;
+    --gq-bg:          #F8F7FF;
+    --gq-ink:         #1F1B3A;
+    --gq-ink-2:       #4A4670;
+    --gq-ink-3:       #8B86AB;
+    --gq-hair:        rgba(31,27,58,0.08);
+    --display: -apple-system-rounded, 'SF Pro Rounded', ui-rounded, 'Inter', system-ui, sans-serif;
+    --body:    'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --serif:   'Fraunces', ui-serif, Georgia, serif;
+    --mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body { background: var(--gq-bg); color: var(--gq-ink); font-family: var(--body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: var(--gq-primary-dk); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* shared topbar */
+  .topbar { padding: 24px 0; position: sticky; top: 0; background: rgba(248,247,255,0.88); backdrop-filter: blur(14px); border-bottom: 1px solid var(--gq-hair); z-index: 30; }
+  .topbar .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.3px; color: var(--gq-ink); }
+  .brand-mark { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--gq-primary-soft) 45%, var(--gq-primary) 100%); box-shadow: 0 4px 10px -4px rgba(102,126,234,0.45); }
+  .nav-links { display: flex; gap: 22px; }
+  .nav-links a { color: var(--gq-ink-2); font-weight: 600; font-size: 14px; }
+  .nav-links a.active { color: var(--gq-ink); }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* hero */
+  .legal-hero { padding: 64px 0 48px; position: relative; overflow: hidden; min-height: 30vh; display: flex; align-items: center; }
+  .legal-hero::before { content:""; position:absolute; width: 440px; height: 440px; border-radius:50%; top:-160px; right:-120px; filter: blur(60px); background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6), rgba(182,168,250,0.25) 55%, rgba(102,126,234,0.10) 100%); pointer-events:none; }
+  .legal-hero .eyebrow { font-size: 12px; font-weight: 800; color: var(--gq-ink-3); letter-spacing: 1.5px; text-transform: uppercase; position: relative; z-index: 2; }
+  .legal-hero h1 { margin: 12px 0 0; font-family: var(--display); font-size: clamp(36px, 5vw, 56px); font-weight: 700; letter-spacing: -1.2px; line-height: 1.08; color: var(--gq-ink); position: relative; z-index: 2; }
+  .legal-hero .meta { margin-top: 14px; font-size: 13px; font-family: var(--mono); color: var(--gq-ink-3); font-weight: 500; letter-spacing: 0.4px; position: relative; z-index: 2; text-transform: uppercase; }
+
+  /* mobile TOC trigger */
+  .toc-mobile { display: none; }
+  @media (max-width: 960px) {
+    .toc-mobile { display: block; margin: 0 0 24px; }
+    .toc-mobile summary {
+      list-style: none; cursor: pointer;
+      padding: 14px 18px; border-radius: 12px;
+      background: white; border: 1px solid var(--gq-hair);
+      font-family: var(--body); font-size: 14px; font-weight: 700; color: var(--gq-ink);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .toc-mobile summary::-webkit-details-marker { display: none; }
+    .toc-mobile[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .toc-mobile .toc-list { padding: 8px 18px 18px; background: white; border: 1px solid var(--gq-hair); border-top: none; border-radius: 0 0 12px 12px; }
+    .toc-mobile .toc-list a { display: block; padding: 8px 0; font-size: 14px; color: var(--gq-ink-2); font-weight: 600; }
+  }
+
+  /* legal layout: sidebar + content */
+  .legal-shell { display: grid; grid-template-columns: 240px 1fr; gap: 56px; padding: 24px 0 72px; }
+  @media (max-width: 960px) { .legal-shell { grid-template-columns: 1fr; gap: 0; } }
+
+  .toc-desktop { position: sticky; top: 100px; align-self: start; }
+  @media (max-width: 960px) { .toc-desktop { display: none; } }
+  .toc-desktop .toc-eyebrow { font-size: 11px; font-weight: 800; color: var(--gq-ink-3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+  .toc-desktop ol { list-style: none; padding: 0; margin: 0; border-left: 1px solid var(--gq-hair); }
+  .toc-desktop li { margin: 0; }
+  .toc-desktop a {
+    display: block; padding: 7px 16px; font-size: 13.5px; font-weight: 600; color: var(--gq-ink-3);
+    line-height: 1.45; margin-left: -1px; border-left: 2px solid transparent;
+    transition: color 200ms, border-color 200ms;
+  }
+  .toc-desktop a:hover { color: var(--gq-ink); text-decoration: none; }
+  .toc-desktop a.active { color: var(--gq-primary-dk); border-left-color: var(--gq-primary); }
+
+  /* article typography — verbatim copy */
+  .legal-body { max-width: 720px; font-size: 18px; line-height: 1.7; color: var(--gq-ink-2); font-weight: 500; }
+  .legal-body p { margin: 0 0 22px; }
+  .legal-body p strong, .legal-body strong { color: var(--gq-ink); font-weight: 700; }
+  .legal-body h2 {
+    font-family: var(--display); font-size: clamp(28px, 2.6vw, 36px); font-weight: 700;
+    letter-spacing: -0.6px; color: var(--gq-ink); line-height: 1.2;
+    margin: 56px 0 18px; scroll-margin-top: 100px;
+  }
+  .legal-body h2 .anchor {
+    opacity: 0; transition: opacity 200ms; margin-left: 8px;
+    color: var(--gq-ink-3); font-weight: 500; font-family: var(--mono); font-size: 0.55em;
+  }
+  .legal-body h2:hover .anchor { opacity: 1; }
+  .legal-body h2:first-of-type { margin-top: 0; }
+  .legal-body h3 {
+    font-family: var(--body); font-size: 19px; font-weight: 700;
+    letter-spacing: -0.2px; color: var(--gq-ink); margin: 32px 0 10px;
+    scroll-margin-top: 100px;
+  }
+  .legal-body ul, .legal-body ol { margin: 0 0 22px; padding-left: 26px; }
+  .legal-body li { margin-bottom: 8px; }
+  .legal-body li::marker { color: var(--gq-primary); }
+  .legal-body code { font-family: var(--mono); font-size: 0.92em; background: var(--gq-primary-soft); color: var(--gq-primary-dk); padding: 1px 6px; border-radius: 5px; }
+  .legal-body blockquote {
+    margin: 24px 0; padding: 16px 22px; border-left: 3px solid var(--gq-primary);
+    background: rgba(102,126,234,0.05); border-radius: 0 12px 12px 0;
+    font-family: var(--serif); font-style: italic; color: var(--gq-ink-2);
+  }
+  .legal-body blockquote p:last-child { margin-bottom: 0; }
+
+  /* eligibility highlight */
+  .eligibility {
+    margin: 0 0 32px; padding: 20px 24px;
+    background: var(--gq-amber-soft); border: 1px solid rgba(200,146,61,0.30); border-radius: 14px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .eligibility .ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,0.7); display: inline-flex; align-items: center; justify-content: center; color: #7A5A20; }
+  .eligibility .text { font-family: var(--body); font-size: 15.5px; font-weight: 600; color: #6F4E1A; line-height: 1.55; }
+  .eligibility .text strong { font-weight: 800; color: #5A3F12; }
+
+  /* laeula card */
+  .laeula-card {
+    margin: 28px 0; padding: 20px 22px;
+    border-radius: 14px; background: white; border: 1px solid var(--gq-hair);
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .laeula-card .ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: #000; color: white; display: inline-flex; align-items: center; justify-content: center; }
+  .laeula-card .text { font-size: 14.5px; color: var(--gq-ink-2); font-weight: 500; line-height: 1.55; }
+  .laeula-card .text strong { color: var(--gq-ink); font-weight: 700; }
+
+  /* footer */
+  .footer { padding: 56px 0 64px; border-top: 1px solid var(--gq-hair); background: var(--gq-bg); margin-top: 48px; }
+  .footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 32px; align-items: flex-start; }
+  .footer .brand-row { display: flex; flex-direction: column; gap: 8px; }
+  .footer .tagline { color: var(--gq-ink-3); font-size: 13px; font-weight: 600; max-width: 320px; }
+  .footer .links { display: flex; flex-wrap: wrap; gap: 28px; }
+  .footer .links a { color: var(--gq-ink-2); font-weight: 600; font-size: 14px; }
+  .footer .meta-row { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--gq-hair); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 12px; color: var(--gq-ink-3); font-weight: 600; }
+  .footer .meta-row .contact a { color: var(--gq-primary-dk); }
+
+  /* file break separator (canvas only) */
+  .page-sep { padding: 80px 0; background: #1A1730; color: rgba(255,255,255,0.85); text-align: center; }
+  .page-sep .lbl { font-family: var(--mono); font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; opacity: 0.7; }
+  .page-sep .file { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: -0.4px; margin-top: 6px; }
+
+  html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+<section data-screen-label="01 /privacy">
+
+  <header class="topbar">
+    <div class="container row">
+      <a class="brand" href="/"><span class="brand-mark"></span><span>GentleQuest</span></a>
+      <nav class="nav-links">
+        <a href="/about">About</a>
+        <a href="/press">Press</a>
+        <a class="active" href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="legal-hero">
+    <div class="container">
+      <div class="eyebrow">Legal</div>
+      <h1>Privacy Policy</h1>
+      <div class="meta">Last updated · May 15, 2026 · Version 1.3.0</div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="legal-shell">
+
+      <aside class="toc-desktop">
+        <div class="toc-eyebrow">In this policy</div>
+        <ol>
+          <li><a href="#overview" class="active">Overview</a></li>
+          <li><a href="#what-we-collect">What we collect</a></li>
+          <li><a href="#what-stays-local">What stays on your device</a></li>
+          <li><a href="#how-we-use">How we use information</a></li>
+          <li><a href="#third-parties">Third parties</a></li>
+          <li><a href="#data-retention">Data retention</a></li>
+          <li><a href="#your-rights">Your rights</a></li>
+          <li><a href="#crisis">Crisis disclosures</a></li>
+          <li><a href="#children">Children &amp; teens</a></li>
+          <li><a href="#changes">Changes to this policy</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ol>
+      </aside>
+
+      <article class="legal-body">
+
+        <details class="toc-mobile">
+          <summary>In this policy
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#1F1B3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="toc-list">
+            <a href="#overview">Overview</a>
+            <a href="#what-we-collect">What we collect</a>
+            <a href="#what-stays-local">What stays on your device</a>
+            <a href="#how-we-use">How we use information</a>
+            <a href="#third-parties">Third parties</a>
+            <a href="#data-retention">Data retention</a>
+            <a href="#your-rights">Your rights</a>
+            <a href="#crisis">Crisis disclosures</a>
+            <a href="#children">Children &amp; teens</a>
+            <a href="#changes">Changes to this policy</a>
+            <a href="#contact">Contact</a>
+          </div>
+        </details>
+
+        <h2 id="overview">Overview<a href="#overview" class="anchor">#</a></h2>
+        <p>GentleQuest is published by Eidetic Works ("we", "us", "our"). This Privacy Policy describes how we collect, use, and share information when you use the GentleQuest mobile application (the "App"). We have built the App so that the most sensitive information you create — your chats, mood entries, journal notes, and safety plan — stays on your device by default and is never transmitted to our servers unless you explicitly choose to export or share it.</p>
+        <p>We follow a simple guiding principle: <strong>collect as little as possible, store as little as possible, share nothing by default.</strong></p>
+
+        <h2 id="what-we-collect">What we collect<a href="#what-we-collect" class="anchor">#</a></h2>
+        <p>The information we collect falls into two categories.</p>
+        <h3>Information you provide directly to our servers</h3>
+        <ul>
+          <li><strong>Account identifiers (if you create an account).</strong> Email address, anonymized user ID. No real name is required.</li>
+          <li><strong>Crash and diagnostic data.</strong> Anonymized error reports, device model, OS version. Used only to fix bugs.</li>
+          <li><strong>Support correspondence.</strong> If you email us, we keep that message.</li>
+        </ul>
+        <h3>Information processed on your device only</h3>
+        <ul>
+          <li><strong>Chat history.</strong> Your conversations with Alex stay on your phone in encrypted local storage.</li>
+          <li><strong>Mood entries.</strong> All mood logs, context tags, and notes are written to a local encrypted database.</li>
+          <li><strong>Journal entries.</strong> Stored in an SQLCipher database with a key held in the device Keychain or Keystore. Never transmitted.</li>
+          <li><strong>Safety plan.</strong> If you build one, it lives only on the device that created it.</li>
+        </ul>
+
+        <h2 id="what-stays-local">What stays on your device<a href="#what-stays-local" class="anchor">#</a></h2>
+        <blockquote><p>Chat history. Mood entries. Journal entries. Safety plan. Auto-detected tags. Notification preferences. Anything you type into the App that is not explicitly an account-management action.</p></blockquote>
+        <p>None of the above is synced to our servers, none of it is backed up to iCloud or Google Drive unless you turn that on yourself in iOS or Android system settings, and none of it leaves your device unless you tap an explicit "Export" or "Share" action.</p>
+
+        <h2 id="how-we-use">How we use information<a href="#how-we-use" class="anchor">#</a></h2>
+        <p>Anonymized analytics events are used to understand which features are reached, in aggregate. We never send the contents of your chats, mood entries, or journal to analytics. The only data shape that reaches our analytics provider is event metadata like <code>{ entryCount, hasEntryToday }</code> — counts, never content.</p>
+        <p>When <strong>Anonymity Mode</strong> is enabled in Settings, all analytics calls become no-ops. Crisis detection still runs locally on your device.</p>
+
+        <h2 id="third-parties">Third parties<a href="#third-parties" class="anchor">#</a></h2>
+        <p>We use the following service providers. Each is contractually limited to processing data on our behalf and may not sell or reuse it.</p>
+        <ul>
+          <li><strong>Apple, Inc.</strong> — App Store distribution, push notifications (APNs), crash reporting.</li>
+          <li><strong>Google Firebase</strong> — anonymized analytics and crash reporting. Personal content never enters Firebase.</li>
+          <li><strong>Our email provider</strong> — for support correspondence and notify-me emails (one email, ever).</li>
+        </ul>
+        <p>We <strong>do not</strong> sell your data. We <strong>do not</strong> use your data to train AI models. We <strong>do not</strong> share your data with advertisers, data brokers, or insurance providers.</p>
+
+        <h2 id="data-retention">Data retention<a href="#data-retention" class="anchor">#</a></h2>
+        <p>Anonymized analytics events are retained for up to 14 months and then deleted. Crash logs are retained for up to 90 days. Support emails are retained until the conversation is resolved plus 12 months. Local-only data on your device is retained until you delete it — we have no way to access it.</p>
+
+        <h2 id="your-rights">Your rights<a href="#your-rights" class="anchor">#</a></h2>
+        <p>You can, at any time from within the App:</p>
+        <ul>
+          <li><strong>Export your data.</strong> Settings → Your data → Export my data sends a JSON copy to your email.</li>
+          <li><strong>Delete your account.</strong> Settings → Your data → Delete my account requires a typed confirmation and removes all server-side data.</li>
+          <li><strong>Enable Anonymity Mode.</strong> Stops all analytics events.</li>
+          <li><strong>Erase local data.</strong> Wipes the on-device cache. Cloud account remains.</li>
+        </ul>
+        <p>If you are in a jurisdiction with additional rights — including the EU/UK (GDPR), California (CCPA), and others — those rights apply in full. Email <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a> with the words "data request" in the subject line and we will respond within 30 days.</p>
+
+        <h2 id="crisis">Crisis disclosures<a href="#crisis" class="anchor">#</a></h2>
+        <p>GentleQuest is <strong>not</strong> a medical or emergency service. If we detect language indicating imminent risk to yourself or others, we surface the 988 Suicide &amp; Crisis Lifeline and other resources prominently. We do not share the content of these detections with any third party. We do not contact emergency services on your behalf. Crisis-keyword detection is heuristic and may not catch every case — please call 988 or your local emergency number if you need help.</p>
+
+        <h2 id="children">Children &amp; teens<a href="#children" class="anchor">#</a></h2>
+        <p>GentleQuest is built for adults aged 18 and older. We ask for an age confirmation during onboarding. We do not knowingly collect information from anyone under 18. If you are under 18, please use one of the youth-tailored services listed in the App's under-18 dignity screen, including Crisis Text Line (text HOME to 741741), Teen Line, and the JED Foundation.</p>
+
+        <h2 id="changes">Changes to this policy<a href="#changes" class="anchor">#</a></h2>
+        <p>If we make material changes, we will update the "Last updated" date at the top of this page and notify active users in the App. Continued use of GentleQuest after a change means you accept the updated policy.</p>
+
+        <h2 id="contact">Contact<a href="#contact" class="anchor">#</a></h2>
+        <p>Questions about this policy or your data: <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a>. We respond within 5 business days for general questions, within 30 days for formal data requests.</p>
+
+        <p style="margin-top:48px; font-size:14px; color:var(--gq-ink-3); font-style:italic;">© 2026 Eidetic Works. This policy is published in plain English so it can actually be read. Where it conflicts with the verbatim legal source, the legal source controls.</p>
+
+      </article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="brand-row">
+          <a class="brand" href="/"><span class="brand-mark"></span><span>GentleQuest</span></a>
+          <span class="tagline">A wellness companion for heavy moments. Not therapy. Not medical care.</span>
+        </div>
+        <nav class="links" aria-label="Footer">
+          <a href="/about">About</a>
+          <a href="/press">Press</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+      </div>
+      <div class="meta-row">
+        <span>© 2026 Eidetic Works. All rights reserved.</span>
+        <span class="contact">Contact · <a href="mailto:hi@gentlequest.app">hi@gentlequest.app</a></span>
+      </div>
+    </div>
+  </footer>
+</section>
+</body>
+</html>
