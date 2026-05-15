@@ -8,6 +8,7 @@ import {
   ExternalLink,
   ArrowRight,
 } from 'lucide-react';
+import { createElement } from 'react';
 
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
@@ -154,10 +155,10 @@ function App() {
           </p>
 
           <div className="gq-features">
-            {FEATURES.map(({ Icon, title, body }) => (
+            {FEATURES.map(({ Icon: FeatureIcon, title, body }) => (
               <article className="gq-feature" key={title}>
                 <span className="ic" aria-hidden="true">
-                  <Icon size={20} />
+                  {createElement(FeatureIcon, { size: 20 })}
                 </span>
                 <h3>{title}</h3>
                 <p>{body}</p>
