@@ -4,7 +4,7 @@ Extracted from app.py monolith.
 """
 
 from flask import Flask
-from sqlalchemy import text as sql_text
+from sqlalchemy import inspect, text as sql_text
 
 from models import db
 
@@ -21,7 +21,6 @@ MIGRATION_STATEMENTS = [
     "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS effectiveness_rating FLOAT",
     "ALTER TABLE intervention_outcomes ADD COLUMN IF NOT EXISTS feedback TEXT",
     "ALTER TABLE mood_entries ADD COLUMN IF NOT EXISTS context_chips JSONB NOT NULL DEFAULT '[]'::jsonb",
-    "ALTER TABLE sessions RENAME TO user_sessions",
     # Phase H: triage state machine
     "ALTER TABLE counselor_alerts ADD COLUMN IF NOT EXISTS triage_state VARCHAR(20) DEFAULT 'new'",
     # Phase I: crisis escalation events
@@ -45,6 +44,17 @@ def run_auto_migrations(app: Flask) -> None:
     """Apply idempotent ALTER TABLE statements for the Agentic Wellness feature set."""
     try:
         with app.app_context():
+            inspector = inspect(db.engine)
+            table_names = set(inspector.get_table_names())
+            if "sessions" in table_names and "user_sessions" not in table_names:
+                try:
+                    statement = "ALTER TABLE sessions RENAME TO user_sessions"
+                    db.session.execute(sql_text(statement))
+                    db.session.commit()
+                    app.logger.info(f"Migration successful: {statement}")
+                except Exception as e:
+                    db.session.rollback()
+                    app.logger.warning(f"Migration error for '{statement}': {e}")
             for statement in MIGRATION_STATEMENTS:
                 try:
                     db.session.execute(sql_text(statement))
