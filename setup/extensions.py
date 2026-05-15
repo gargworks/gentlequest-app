@@ -46,7 +46,7 @@ def _setup_session(app: Flask) -> None:
             app.config["SESSION_REDIS"] = redis_client
             app.logger.info("Redis sessions enabled")
         except Exception as e:
-            app.logger.warning(
+            app.logger.info(
                 f"Redis connection failed: {e}, using filesystem sessions"
             )
             app.config["SESSION_TYPE"] = "filesystem"
