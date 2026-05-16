@@ -75,7 +75,8 @@ function App() {
           <nav className="gq-nav-links">
             <a href="#features">Features</a>
             <a href="#crisis">988</a>
-            <a href="#download">Download</a>
+            <a href="/about">About</a>
+            <a href="/app">Get the app</a>
             <a href={WEB_APP_URL}>Open app</a>
           </nav>
         </div>
