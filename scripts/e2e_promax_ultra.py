@@ -15,7 +15,7 @@ import asyncio
 
 # Setup Environment
 os.environ["NUCLEUS_TOOL_TIER"] = "0"
-os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
+os.environ["NUCLEUS_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
 os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 
 # Inject Src Path

@@ -1,6 +1,6 @@
 """Governance & Hypervisor tools — lock/unlock, watch, hypervisor mode, egress proxy.
 
-Super-Tools Facade: All 10 governance actions exposed via a single
+Super-Tools Facade: All 19 governance actions exposed via a single
 `nucleus_governance(action, params)` MCP tool.
 """
 
@@ -105,7 +105,7 @@ def register(mcp, helpers):
         """Auto-detect brain path."""
         import os
         from pathlib import Path
-        env = os.environ.get("NUCLEAR_BRAIN_PATH")
+        env = os.environ.get("NUCLEUS_BRAIN_PATH")
         if env:
             return Path(env)
         cwd = Path.cwd() / ".brain"

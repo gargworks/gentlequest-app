@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List
 
-BRAIN_PATH = Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+BRAIN_PATH = Path(os.getenv("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
 ARTIFACTS_PATH = BRAIN_PATH / "artifacts"
 
 def detect_rabbit_holes() -> Dict[str, List[str]]:

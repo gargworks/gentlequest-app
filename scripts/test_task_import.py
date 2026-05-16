@@ -9,7 +9,7 @@ import sys
 import json
 
 # Set brain path
-os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
+os.environ["NUCLEUS_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
 
 # Add mcp-server-nucleus to path
 sys.path.insert(0, "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")

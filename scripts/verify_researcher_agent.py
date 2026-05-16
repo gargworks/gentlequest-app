@@ -98,7 +98,7 @@ def verify_flow():
     
     logger.info("3. Install Agent (via CLI logic)")
     # Set env var for CLI to pick up correct brain path
-    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain_path)
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain_path)
     
     args = MockArgs(artifact_path)
     handle_install_command(args)

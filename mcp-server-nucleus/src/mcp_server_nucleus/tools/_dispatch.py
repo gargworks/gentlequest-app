@@ -17,6 +17,8 @@ import os
 from typing import Dict, Callable, Any, Optional
 from collections import defaultdict
 
+from . import _envelope
+
 logger = logging.getLogger("nucleus.dispatch")
 
 
@@ -26,6 +28,70 @@ logger = logging.getLogger("nucleus.dispatch")
 
 _health_cache = {"line": "", "expires": 0.0}
 _HEALTH_CACHE_TTL = 60  # seconds
+
+
+# ============================================================
+# VARIANT B (Phase-2 test vs control) — runtime-substrate-off flag
+# ============================================================
+# When NUCLEUS_VARIANT_B_RUNTIME_OFF=1 is set, substrate READ actions return
+# a tiny stub instead of executing. Tool plumbing (registration, schemas)
+# stays fully active so the experimental arm has identical prompt/tool surface
+# to the baseline; only the *runtime gain* of substrate (engram retrieval,
+# context injection, ledger reads) is removed. Token-economics measurement
+# can then attribute the delta cleanly between "Anthropic cache" and
+# "Nucleus runtime substrate."
+#
+# Writes pass through unchanged (token-cost effect is dominated by what gets
+# returned, not what gets persisted). Always-passthrough actions (version,
+# health, export_schema) execute normally regardless.
+#
+# Spec: .brain/plans/phase2_test_vs_control_spec.md (Variant B).
+
+_VARIANT_B_READ_PREFIXES = (
+    "query_", "search_", "read_", "get_", "list_", "view_", "recall",
+    "metrics", "status", "morning_brief", "dashboard", "context_graph",
+    "render_graph", "audit_log", "trace_list", "trace_view",
+    "engram_neighbors", "session_inject",
+)
+_VARIANT_B_READ_EXACT = {
+    "list_decisions", "list_snapshots", "list_agents", "list_pending_consents",
+    "ipc_tokens", "metering_summary", "list_drafts", "search_threads",
+    "satellite", "open_loops", "patterns", "commitment_health",
+    "list_commitments", "list_dashboard_snapshots", "get_alerts",
+    "weekly_consolidate", "compounding_status",
+}
+_VARIANT_B_PASSTHROUGH = {
+    "version", "export_schema", "health", "list_tools",
+    "prometheus_metrics",  # generic ops, no substrate gain
+}
+
+
+def _is_variant_b_active() -> bool:
+    return os.environ.get("NUCLEUS_VARIANT_B_RUNTIME_OFF", "").lower() in ("1", "true", "yes")
+
+
+def _variant_b_stub_if_read(module_name: str, action: str) -> Optional[str]:
+    """If Variant B is on and `action` is a substrate read, return a stub
+    JSON response. Otherwise return None (caller continues normal dispatch)."""
+    if not _is_variant_b_active():
+        return None
+    if action in _VARIANT_B_PASSTHROUGH:
+        return None
+    is_read = (
+        action in _VARIANT_B_READ_EXACT
+        or any(action.startswith(p) for p in _VARIANT_B_READ_PREFIXES)
+    )
+    if not is_read:
+        return None
+    stub = json.dumps({
+        "variant_b_runtime_off": True,
+        "module": module_name,
+        "action": action,
+        "data": None,
+        "note": "substrate runtime disabled for Phase-2 measurement; "
+                "tool plumbing remains active",
+    }, separators=(",", ":"))
+    return stub
 
 
 def _ambient_health_line() -> str:
@@ -288,6 +354,53 @@ def get_dispatch_rate_limiter() -> DispatchRateLimiter:
 # DISPATCHERS
 # ============================================================
 
+def _maybe_wrap_response(
+    result_str: str,
+    *,
+    ok: bool,
+    module_name: str,
+    action: str,
+    error_type: Optional[str] = None,
+) -> str:
+    """Wrap a handler JSON string in the envelope when enabled.
+
+    When NUCLEUS_ENVELOPE=on:
+      - Parses `result_str` as JSON; on failure, wraps as `{"text": ...}`.
+      - If parsed payload already looks like an envelope (idempotent guard),
+        passes it through untouched — avoids double-wrapping when a handler
+        pre-wraps.
+      - On error paths, uses `_envelope.error_envelope(...)` when error_type
+        is given; otherwise wraps with ok=ok.
+
+    When envelope is disabled (default): returns `result_str` unchanged.
+    This keeps the 1,327 existing tests green until the codemod flips the
+    default ON (scripts/codemod_envelope_tests.py, shipping in the same
+    v1.2.0 release).
+    """
+    if not _envelope.is_enabled():
+        return result_str
+
+    try:
+        payload = json.loads(result_str)
+    except (ValueError, TypeError):
+        payload = {"text": result_str}
+
+    if _envelope.is_envelope(payload):
+        # Handler already wrapped — respect it.
+        return result_str
+
+    if error_type is not None:
+        err = _envelope.error_envelope(
+            error_type,
+            recovery_hint=f"check {module_name}.{action} params",
+            detail=payload.get("error") if isinstance(payload, dict) else None,
+        )
+        return json.dumps(err, indent=2, default=str)
+
+    envelope = _envelope.wrap(payload, ok=ok)
+    return json.dumps(envelope, indent=2, default=str)
+
+
 def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
     """Synchronous action dispatcher for facade tools.
 
@@ -299,33 +412,47 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
 
     Returns:
         JSON string result from the handler, or an error message.
+        When NUCLEUS_ENVELOPE=on, the string is a serialized envelope dict
+        (see tools/_envelope.py + schemas/envelope.schema.json).
     """
     if not action:
-        return json.dumps({
+        raw = json.dumps({
             "error": f"No action specified for {module_name}",
             "available_actions": sorted(router.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
     if rate_error:
         _telemetry.record(module_name, action or "_rate_limited", 0, rate_error)
-        return json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        raw = json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="rate_limited")
 
     handler = router.get(action)
     if not handler:
         _telemetry.record(module_name, action or "_unknown", 0, f"Unknown action '{action}'")
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Unknown action '{action}' in {module_name}",
             "available_actions": sorted(router.keys()),
             "hint": f"Try: {module_name}(action='{sorted(router.keys())[0]}', params={{...}})"
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
+
+    # Variant B (Phase-2 test vs control): if runtime-substrate-off flag is
+    # set and this action is a substrate read, stub it. Tool plumbing stays
+    # active so prompt/tool surface is identical between baseline + experimental.
+    stub = _variant_b_stub_if_read(module_name, action)
+    if stub is not None:
+        _telemetry.record(module_name, action, 0)
+        return _maybe_wrap_response(stub, ok=True, module_name=module_name, action=action)
 
     try:
         params = sanitize_params(params, module_name, action)
     except ValueError as e:
         _telemetry.record(module_name, action, 0, str(e))
-        return json.dumps({"error": str(e), "module": module_name}, indent=2)
+        raw = json.dumps({"error": str(e), "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
 
     t0 = time.perf_counter()
     try:
@@ -334,23 +461,26 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         _telemetry.record(module_name, action, duration_ms)
         # Ensure result is always a string — guards against structured_content errors
         result_str = result if isinstance(result, str) else json.dumps(result, indent=2, default=str)
-        return result_str + _ambient_health_line()
+        wrapped = _maybe_wrap_response(result_str, ok=True, module_name=module_name, action=action)
+        return wrapped + _ambient_health_line()
     except TypeError as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         sig = inspect.signature(handler)
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Invalid params for action '{action}': {e}",
             "expected_params": str(sig),
             "provided_params": list(params.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Action '{action}' failed: {e}",
             "module": module_name,
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="handler_error")
 
 
 def _ensure_str(result: Any) -> str:
@@ -369,34 +499,47 @@ def _ensure_str(result: Any) -> str:
 async def async_dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
     """Async action dispatcher for facade tools with async handlers.
 
-    Same as dispatch() but awaits coroutine handlers.
+    Same as dispatch() but awaits coroutine handlers. Envelope wrapping
+    honors the NUCLEUS_ENVELOPE flag identically (see _maybe_wrap_response).
     """
     if not action:
-        return json.dumps({
+        raw = json.dumps({
             "error": f"No action specified for {module_name}",
             "available_actions": sorted(router.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
     if rate_error:
         _telemetry.record(module_name, action or "_rate_limited", 0, rate_error)
-        return json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        raw = json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="rate_limited")
 
     handler = router.get(action)
     if not handler:
         _telemetry.record(module_name, action or "_unknown", 0, f"Unknown action '{action}'")
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Unknown action '{action}' in {module_name}",
             "available_actions": sorted(router.keys()),
             "hint": f"Try: {module_name}(action='{sorted(router.keys())[0]}', params={{...}})"
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
+
+    # Variant B (Phase-2 test vs control): if runtime-substrate-off flag is
+    # set and this action is a substrate read, stub it. Tool plumbing stays
+    # active so prompt/tool surface is identical between baseline + experimental.
+    stub = _variant_b_stub_if_read(module_name, action)
+    if stub is not None:
+        _telemetry.record(module_name, action, 0)
+        return _maybe_wrap_response(stub, ok=True, module_name=module_name, action=action)
 
     try:
         params = sanitize_params(params, module_name, action)
     except ValueError as e:
         _telemetry.record(module_name, action, 0, str(e))
-        return json.dumps({"error": str(e), "module": module_name}, indent=2)
+        raw = json.dumps({"error": str(e), "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
 
     t0 = time.perf_counter()
     try:
@@ -406,22 +549,23 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
             result = handler(**params)
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms)
-        if isinstance(result, str):
-            return result
-        return json.dumps(result, indent=2, default=str)
+        result_str = result if isinstance(result, str) else json.dumps(result, indent=2, default=str)
+        return _maybe_wrap_response(result_str, ok=True, module_name=module_name, action=action)
     except TypeError as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         sig = inspect.signature(handler)
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Invalid params for action '{action}': {e}",
             "expected_params": str(sig),
             "provided_params": list(params.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Action '{action}' failed: {e}",
             "module": module_name,
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="handler_error")

@@ -56,9 +56,9 @@ def main():
     print(f"\n🧠 {YELLOW}Brain Implementation Assessment{RESET}")
     print("==================================================")
     
-    brain_str = os.environ.get("NUCLEAR_BRAIN_PATH")
+    brain_str = os.environ.get("NUCLEUS_BRAIN_PATH")
     if not brain_str:
-        print("❌ NUCLEAR_BRAIN_PATH not set")
+        print("❌ NUCLEUS_BRAIN_PATH not set")
         sys.exit(1)
         
     brain_path = Path(brain_str)

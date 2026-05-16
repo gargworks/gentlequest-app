@@ -29,7 +29,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Set environment
-export NUCLEAR_BRAIN_PATH="$PROJECT_ROOT/.brain"
+export NUCLEUS_BRAIN_PATH="$PROJECT_ROOT/.brain"
 export PATH="/usr/local/bin:/usr/bin:$PATH"
 
 # Load .env if exists

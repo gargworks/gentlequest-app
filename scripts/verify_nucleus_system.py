@@ -23,7 +23,7 @@ SERVER_SRC = PROJECT_ROOT / "mcp-server-nucleus" / "src"
 sys.path.insert(0, str(SERVER_SRC))
 
 # Set brain path
-os.environ["NUCLEAR_BRAIN_PATH"] = str(PROJECT_ROOT / ".brain")
+os.environ["NUCLEUS_BRAIN_PATH"] = str(PROJECT_ROOT / ".brain")
 
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
@@ -53,7 +53,7 @@ def verify_event_stream():
     print("\n📡 Component 1: EVENT STREAM")
     try:
         from mcp_server_nucleus.runtime.event_stream import read_events, emit_event, EventSeverity
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         
         # Count events
         events = read_events(brain_path, limit=100)
@@ -90,7 +90,7 @@ def verify_triggers():
     print("\n🎯 Component 2: TRIGGER MATCHING")
     try:
         from mcp_server_nucleus.runtime.triggers import load_triggers, match_triggers
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         
         triggers = load_triggers(brain_path)
         trigger_count = len(triggers.get('triggers', []))
@@ -111,7 +111,7 @@ def verify_factory():
     print("\n🏭 Component 3: AGENT FACTORY")
     try:
         from mcp_server_nucleus.runtime.factory import ContextFactory
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         
         factory = ContextFactory(brain_path=brain_path)
         print(f"   Factory initialized: ✅")
@@ -131,7 +131,7 @@ def verify_orchestrator():
     """Verify orchestrator can run"""
     print("\n📋 Component 4: ORCHESTRATOR")
     try:
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         digest_path = brain_path / "artifacts" / "synthesis"
         
         # Check for digest files
@@ -155,7 +155,7 @@ def verify_meta_optimizer():
     """Verify meta-optimizer"""
     print("\n🧠 Component 5: META-OPTIMIZER")
     try:
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         opt_log = brain_path / "meta" / "optimization_log.md"
         
         if opt_log.exists():
@@ -174,7 +174,7 @@ def verify_health_check():
     """Verify health check"""
     print("\n🏥 Component 6: HEALTH CHECK")
     try:
-        brain_path = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+        brain_path = Path(os.environ["NUCLEUS_BRAIN_PATH"])
         health_dir = brain_path / "meta" / "health_checks"
         
         if health_dir.exists():
@@ -308,7 +308,7 @@ def run_full_verification():
     """Run verification of all components"""
     print_header("NUCLEUS SYSTEM VERIFICATION")
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Brain Path: {os.environ.get('NUCLEAR_BRAIN_PATH')}")
+    print(f"Brain Path: {os.environ.get('NUCLEUS_BRAIN_PATH')}")
     
     results = {}
     

@@ -319,7 +319,7 @@ def cmd_extract(args):
     """Extract Marketing Gold from Brain/Raw"""
     logger.info("⛏️  Mining Brain for Marketing Gold...")
     
-    brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+    brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
     raw_path = brain_path / "raw"
     insights_path = DOCS_DIR / "insights.md"
     

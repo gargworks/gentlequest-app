@@ -7,8 +7,10 @@ from pathlib import Path
 LAUNCH_AGENT_DIR = Path.home() / "Library" / "LaunchAgents"
 LAUNCH_AGENT_DIR.mkdir(parents=True, exist_ok=True)
 
-python_exe = "/opt/homebrew/bin/python3" # System python or use current sys.executable
-script_path = "/Users/lokeshgarg/ai-mvp-backend/scripts/twin_routine.py"
+import sys
+# Portability Pass: Slice-1
+python_exe = sys.executable
+script_path = str(Path(__file__).parent / "twin_routine.py")
 
 # --- MORNING PLIST (Runs at 08:00) ---
 morning_plist = f"""<?xml version="1.0" encoding="UTF-8"?>
