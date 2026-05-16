@@ -962,13 +962,13 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const Icon(Icons.verified_user_outlined, size: 80, color: Color(0xFF667EEA)),
             const SizedBox(height: 24),
             Text(
-              "Verify Your Age",
+              "One quick check",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             const Text(
-              "GentleQuest uses advanced AI. To comply with safety regulations, you must be 18 years or older to use this application.",
+              "GentleQuest is built for adults. We need to confirm you're 18 or older before you continue.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.black87),
             ),
