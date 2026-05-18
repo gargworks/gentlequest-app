@@ -1217,7 +1217,7 @@ class _ResultRevealScreen extends StatelessWidget {
                           'Try a 1-minute breathing exercise', // verbatim from HTML
                       subtitle: '4-7-8 breathing · short and grounding.',
                       isPrimary: false,
-                      onTap: () {}, // [assumed] navigation target
+                      onTap: () => Navigator.pushNamed(context, '/interactive-chat'),
                     ),
                     const SizedBox(height: 8),
 
@@ -1240,7 +1240,9 @@ class _ResultRevealScreen extends StatelessWidget {
                         title: 'Save this result for your therapist', // verbatim from HTML
                         subtitle: 'Exports as PDF-ready summary.',
                         isPrimary: false,
-                        onTap: () {}, // [assumed] export navigation target
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Export coming in the next update.')),
+                        ),
                       ),
                     ],
 

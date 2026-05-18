@@ -393,7 +393,7 @@ class _BarSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxH = 64.0;
+    const maxH = 60.0;
     final idx = entry.moodIndex;
     final barH = idx == null ? 0.0 : (0.2 + idx * 0.2) * maxH;
     final color = idx == null
@@ -502,7 +502,7 @@ class _NextWeekPromptCardState extends State<NextWeekPromptCard> {
           if (widget.emphasizeRest) ...[
             // .emphasizeRest: "Just rest" is primary, chips are dimmed
             GestureDetector(
-              onTap: () {},
+              onTap: () => Navigator.of(context).pop(),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -566,7 +566,7 @@ class _NextWeekPromptCardState extends State<NextWeekPromptCard> {
           const SizedBox(height: 10),
           Center(
             child: GestureDetector(
-              onTap: () {},
+              onTap: () => Navigator.of(context).pop(),
               child: const Text(
                 "Skip this — I'll figure it out",
                 style: TextStyle(

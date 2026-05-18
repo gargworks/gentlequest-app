@@ -34,10 +34,6 @@ Future<CrisisSheetChoice?> showCrisisInterventionSheet(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: GQColors.ink.withAlpha(153), // 0.6 opacity
-    transitionAnimationController: AnimationController(
-      vsync: Navigator.of(context),
-      duration: GQDurations.crisisSheetSlide,
-    ),
     builder: (ctx) => CrisisInterventionSheet(risk: risk),
   );
 }

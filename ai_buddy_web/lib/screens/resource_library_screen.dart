@@ -808,7 +808,7 @@ class _ExerciseGridItem extends StatelessWidget {
                     letterSpacing: 0.4,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 12),
                 // Start row
                 Padding(
                   padding: const EdgeInsets.only(top: 10),

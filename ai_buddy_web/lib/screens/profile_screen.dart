@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/crisis_resources.dart';
+import 'settings_screen.dart';
 
 // profile_screen.dart — Tier 3.6 R1D19
 //
@@ -132,7 +134,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
                 const SizedBox(height: 18),
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                     child: Text(
                       'Settings →',
                       style: TextStyle(
@@ -579,7 +581,7 @@ class _SafetyPlanFilled extends StatelessWidget {
                     Expanded(
                       child: _SafetyButton(
                         label: 'Use now',
-                        onTap: () {},
+                        onTap: () => showCrisisInterventionSheet(context),
                         style: _SafetyButtonStyle.solid,
                       ),
                     ),
@@ -663,7 +665,7 @@ class _SafetyPlanEmpty extends StatelessWidget {
               Expanded(
                 child: _SafetyButton(
                   label: 'Maybe later',
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).maybePop(),
                   style: _SafetyButtonStyle.ghost,
                 ),
               ),
@@ -768,7 +770,9 @@ class _ContactRow extends StatelessWidget {
           ),
           // Call button
           GestureDetector(
-            onTap: () {},
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Calling ${contact.name}…')),
+            ),
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
@@ -924,7 +928,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                     Expanded(
                       child: _PrimaryButton(
                         label: 'Save & continue',
-                        onTap: () {},
+                        onTap: widget.onClose ?? () => Navigator.maybePop(context),
                       ),
                     ),
                   ],
@@ -932,7 +936,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 const SizedBox(height: 10),
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: widget.onClose ?? () => Navigator.maybePop(context),
                     child: Text(
                       'Save & exit · you can come back anytime',
                       style: TextStyle(
@@ -1104,7 +1108,7 @@ class NoOneSkipBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.of(context).maybePop(),
             child: Text(
               'Skip — use 988 only',
               style: TextStyle(
