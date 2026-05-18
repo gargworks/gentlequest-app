@@ -249,6 +249,12 @@ for step in ${WALK_STEPS[@]+"${WALK_STEPS[@]}"}; do
     (( STEP_IDX++ )) || true
 done
 
+# ─── idb comprehensive walk delegation (no-op when WALK_JOURNEY not set) ─────
+if command -v idb_companion &>/dev/null && [[ -n "${WALK_JOURNEY:-}" ]]; then
+    log "Delegating to gq_comprehensive_walk.sh for journey ${WALK_JOURNEY}"
+    "${SCRIPT_DIR}/gq_comprehensive_walk.sh" "${WALK_JOURNEY}"
+fi
+
 # ─── Step 9: Diff vs legacy baseline ─────────────────────────────────────────
 
 HAS_COMPARE=false

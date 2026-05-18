@@ -29,6 +29,7 @@ class QuestPreviewScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildQuestCard(
+              context: context,
               title: 'Daily Check-in',
               description: 'Complete your daily mood check-in',
               progress: 0.3,
@@ -37,6 +38,7 @@ class QuestPreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
+              context: context,
               title: 'Meditation Challenge',
               description: 'Meditate for 5 minutes',
               progress: 0.7,
@@ -45,6 +47,7 @@ class QuestPreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
+              context: context,
               title: 'Gratitude Journal',
               description: 'Write 3 things you\'re grateful for',
               progress: 0.0,
@@ -58,6 +61,7 @@ class QuestPreviewScreen extends StatelessWidget {
   }
 
   Widget _buildQuestCard({
+    required BuildContext context,
     required String title,
     required String description,
     required double progress,
@@ -108,7 +112,17 @@ class QuestPreviewScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  key: const ValueKey('quest_preview_start_button'),
+                  onPressed: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/home',
+                        (route) => false,
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: color,
                     foregroundColor: Colors.white,
