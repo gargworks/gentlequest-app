@@ -719,6 +719,8 @@ def handle_turn(payload):
     except (TypeError, ValueError):
         req_min_dense = TB_RAG_MIN_DENSE
     req_min_dense = max(0.0, min(req_min_dense, 1.0))
+    # UNUSED until lever-4 rewire — see build_full_context call site below.
+    # Env-flag plumbing kept wired so re-activation is a one-line restore.
     # Per-turn inference levers; defaults preserve existing behavior.
     # temperature: 0.0 (deterministic) → 1.0+ (creative). Default 0.7.
     # num_predict: max output tokens. Default DEFAULT_NUM_PREDICT (env-tunable).
@@ -845,10 +847,17 @@ def handle_turn(payload):
                                       mode=mode, sovereignty=sovereignty,
                                       quality_meta=quality_meta)
     rag_chunks_pre_filter = 0
+    # NOTE(valiant-mixing-nebula:lever-4): min_dense_score kwarg dropped from
+    # this call on 2026-05-17. tb_endpoint.py was restored from `main` during
+    # TB-revive mid-Eidetic-pause, but providers/brain_rag.py on release/v1.3.0
+    # does not accept the kwarg — passing it raised TypeError silently caught
+    # below, emptying RAG every turn. Plan: lever-4 defaults to off in
+    # valiant-mixing-nebula.md; today's drop matches plan's default state.
+    # Re-activation: ship bundled-levers PR post-2026-08-08 gate, which rewires
+    # brain_rag.build_full_context to accept the kwarg; then restore the line.
     try:
         context, results = build_full_context(
             user_input, brain_path=BRAIN_PATH, scope=resolved_scope,
-            min_dense_score=req_min_dense,
         )
         # rag_chunks_pre_filter is not exposed by build_full_context's API
         # (it returns post-filter results); the post-count below is the
