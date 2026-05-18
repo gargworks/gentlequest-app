@@ -82,17 +82,10 @@ const ogImage = `${siteUrl}/og-eidetic-works.png`;
           <!-- Install snippet -->
           <div class="install-block">
             <p class="install-label">Install</p>
-            <pre class="install-code"><code># macOS (Apple Silicon)
-curl -fsSL https://github.com/eidetic-works/eidetic-daemon/releases/latest/download/eideticd-darwin-arm64 -o eideticd
-chmod +x eideticd && sudo mv eideticd /usr/local/bin/eideticd
-eideticd -version
+            <pre class="install-code"><code># macOS + Linux — one line
+curl -fsSL https://eidetic.works/install.sh | sh
 
-# Linux (amd64)
-curl -fsSL https://github.com/eidetic-works/eidetic-daemon/releases/latest/download/eideticd-linux-amd64 -o eideticd
-chmod +x eideticd && sudo mv eideticd /usr/local/bin/eideticd
-eideticd -version
-
-# MCP bridge for Claude Code / Cursor
+# MCP bridge (Claude Code / Cursor)
 pip install eidetic-mcp
 claude mcp add eidetic -- python -m eidetic_mcp.server</code></pre>
           </div>
