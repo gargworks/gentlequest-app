@@ -23,10 +23,10 @@ WALKS_DIR="${REPO_ROOT}/docs/design/refs/walks"
 SCREENSHOTS_BASE="${REPO_ROOT}/docs/design/refs/screenshots/walks"
 REPORT_FILE="${WALKS_DIR}/WALK_REPORT.md"
 BUNDLE_ID="com.gentlequest.app"
-PREFERRED_UDID="519A108A-4FF3-495B-962E-8568A6870383"
+PREFERRED_UDID="95843C74-7CB1-411B-965B-12CCB6F433AF"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
-log()  { echo "[walk] $*"; }
+log()  { echo "[walk] $*" >&2; }
 warn() { echo "[walk][WARN] $*" >&2; }
 die()  { echo "[walk][ERROR] $*" >&2; exit "${2:-1}"; }
 
@@ -129,8 +129,9 @@ boot_sim() {
     [[ -d "${APP_PATH}" ]] || die "Runner.app not found at ${APP_PATH}"
 
     log "Installing and launching..."
-    xcrun simctl install "${udid}" "${APP_PATH}"
-    xcrun simctl launch "${udid}" "${BUNDLE_ID}"
+    # Xcode 26.5: simctl install <UDID> hangs; 'booted' works (script always boots exactly one sim)
+    xcrun simctl install booted "${APP_PATH}"
+    xcrun simctl launch booted "${BUNDLE_ID}"
     sleep 3
     log "App launched"
 }
@@ -158,7 +159,7 @@ execute_action() {
             local x y
             x=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read())['x'])" <<< "${step_json}")
             y=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read())['y'])" <<< "${step_json}")
-            "${IDB_CMD}" ui tap --x "${x}" --y "${y}" --udid "${udid}" && sleep 0.3 || warn "Tap failed at ${x},${y}"
+            "${IDB_CMD}" ui tap "${x}" "${y}" --udid "${udid}" && sleep 0.3 || warn "Tap failed at ${x},${y}"
             ;;
         wait)
             local ms
@@ -168,7 +169,7 @@ execute_action() {
         type)
             local text
             text=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read())['text'])" <<< "${step_json}")
-            "${IDB_CMD}" ui type --text "${text}" --udid "${udid}" || warn "Type failed"
+            "${IDB_CMD}" ui text "${text}" --udid "${udid}" || warn "Type failed"
             ;;
         swipe)
             local x1 y1 x2 y2 dur
@@ -177,11 +178,11 @@ execute_action() {
             x2=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read())['x2'])" <<< "${step_json}")
             y2=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read())['y2'])" <<< "${step_json}")
             dur=$(python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('duration_ms',300)/1000.0)" <<< "${step_json}")
-            "${IDB_CMD}" ui swipe --x "${x1}" --y "${y1}" --target-x "${x2}" --target-y "${y2}" --duration "${dur}" --udid "${udid}" && sleep 0.3 || warn "Swipe failed"
+            "${IDB_CMD}" ui swipe "${x1}" "${y1}" "${x2}" "${y2}" --duration "${dur}" --udid "${udid}" && sleep 0.3 || warn "Swipe failed"
             ;;
         back)
             # iOS back: swipe from left edge
-            "${IDB_CMD}" ui swipe --x 5 --y 426 --target-x 150 --target-y 426 --duration 0.3 --udid "${udid}" && sleep 0.4 || warn "Back gesture failed"
+            "${IDB_CMD}" ui swipe 5 426 150 426 --duration 0.3 --udid "${udid}" && sleep 0.4 || warn "Back gesture failed"
             ;;
         *)
             warn "Unknown action '${action}' — skipping"
