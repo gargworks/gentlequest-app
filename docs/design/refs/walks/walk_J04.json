@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.1",
+  "tier": "J04",
+  "design_id": "GentleQuest_Talk_Chat",
+  "description": "Talk tab: type 'I feel anxious' → send → AI thinking → AI response",
+  "bypass_compliance": true,
+  "steps": [
+    {"action": "wait", "duration_ms": 3000, "note": "App boot with DEV_BYPASS_COMPLIANCE=true → HomeShell Talk tab"},
+    {"action": "screenshot", "screen_name": "01_talk_initial", "note": "Chat: greeting bubble + 4 starter chips at bottom"},
+    {"action": "tap", "x": 196, "y": 790, "note": "Tap chat input field → keyboard appears"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "type", "text": "I feel anxious"},
+    {"action": "screenshot", "screen_name": "02_message_typed"},
+    {"action": "tap", "x": 368, "y": 790, "note": "Tap send button → _sendMessage()"},
+    {"action": "wait", "duration_ms": 800},
+    {"action": "screenshot", "screen_name": "03_ai_thinking", "note": "AI thinking indicator: 3-dot wave pill"},
+    {"action": "wait", "duration_ms": 5000, "note": "Wait for AI first token response"},
+    {"action": "screenshot", "screen_name": "04_ai_response", "note": "Alex response bubble visible"}
+  ]
+}

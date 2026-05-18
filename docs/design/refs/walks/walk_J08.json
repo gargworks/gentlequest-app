@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.1",
+  "tier": "J08",
+  "design_id": "GentleQuest_Profile_Settings",
+  "description": "Chat header avatar → ProfileNavSheet → Settings screen + Profile screen",
+  "bypass_compliance": true,
+  "steps": [
+    {"action": "wait", "duration_ms": 3000, "note": "App boot → HomeShell Talk tab"},
+    {"action": "screenshot", "screen_name": "01_talk_tab", "note": "Chat header: account_circle icon at top-right (x≈368, y≈80)"},
+    {"action": "tap", "x": 368, "y": 80, "note": "Tap profile avatar → showProfileNavSheet()"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "screenshot", "screen_name": "02_profile_nav_sheet", "note": "Bottom sheet: 'Your space' header, Profile / Settings / Journal / Library tiles"},
+    {"action": "tap", "x": 196, "y": 530, "note": "Tap Settings tile → Navigator.push SettingsScreen"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "screenshot", "screen_name": "03_settings_home", "note": "Settings: YOUR DATA, NOTIFICATIONS, CHAT PREFERENCES, ABOUT, LEGAL, DELETE"},
+    {"action": "swipe", "x1": 196, "y1": 600, "x2": 196, "y2": 200, "duration_ms": 300, "note": "Scroll down to see more settings"},
+    {"action": "screenshot", "screen_name": "04_settings_scrolled"},
+    {"action": "back", "note": "Left-edge swipe back to HomeShell"},
+    {"action": "wait", "duration_ms": 300},
+    {"action": "tap", "x": 368, "y": 80, "note": "Tap avatar again"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "tap", "x": 196, "y": 400, "note": "Tap Profile tile → ProfileScreen"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "screenshot", "screen_name": "05_profile_screen", "note": "Profile: nickname, pronouns, avatar picker, safety plan section"}
+  ]
+}

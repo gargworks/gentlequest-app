@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.1",
+  "tier": "J01",
+  "design_id": "GentleQuest_Cold_Launch",
+  "description": "Cold launch: new user → WelcomeScreen → age modal (18+) → ComplianceGuard → HomeShell Talk tab",
+  "bypass_compliance": false,
+  "steps": [
+    {"action": "screenshot", "screen_name": "01_splash", "note": "Splash: CircularProgressIndicator while checking has_seen_welcome_v1"},
+    {"action": "wait", "duration_ms": 2000, "note": "Wait for splash to resolve to WelcomeScreen (no seen key set)"},
+    {"action": "screenshot", "screen_name": "02_welcome_hero", "note": "Welcome: breathing circles, headline, trust chips, Continue button"},
+    {"action": "tap", "x": 196, "y": 760, "screen_name": "03_continue_tapped", "note": "Tap Continue → _showAgeModal() → slide-up age modal"},
+    {"action": "wait", "duration_ms": 700, "note": "Wait for modal slide-up animation (700ms)"},
+    {"action": "screenshot", "screen_name": "04_age_modal", "note": "Age modal: headline, 'Not yet' / 'Yes, I am' buttons"},
+    {"action": "tap", "x": 294, "y": 650, "screen_name": "05_yes_tapped", "note": "Tap 'Yes, I am' → _confirmAdult() → writes has_seen_welcome_v1 → pushes ComplianceGuardScreen"},
+    {"action": "wait", "duration_ms": 3000, "note": "Compliance check: GPS permission prompt + geocode + allowed check"},
+    {"action": "screenshot", "screen_name": "06_home_shell_talk", "note": "Allowed → pushReplacementNamed('/main') → HomeShell Talk tab (InteractiveChatScreen)"}
+  ]
+}

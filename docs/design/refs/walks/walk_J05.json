@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.1",
+  "tier": "J05",
+  "design_id": "GentleQuest_Mood_Flow",
+  "description": "Mood tab: emoji selection → submit → reflection sheet",
+  "bypass_compliance": true,
+  "steps": [
+    {"action": "wait", "duration_ms": 3000, "note": "App boot → HomeShell Talk tab"},
+    {"action": "tap", "x": 131, "y": 820, "note": "Tap Mood tab (2nd tab, x≈131 on spaceEvenly 4-tab bar)"},
+    {"action": "wait", "duration_ms": 500},
+    {"action": "screenshot", "screen_name": "01_mood_initial", "note": "Mood: 'How are you, right now?' trigger card"},
+    {"action": "tap", "x": 196, "y": 300, "note": "Tap mood trigger card → _showMoodEntrySheet()"},
+    {"action": "wait", "duration_ms": 400},
+    {"action": "screenshot", "screen_name": "02_mood_sheet_open", "note": "Bottom sheet: emoji row, note field, Save button"},
+    {"action": "tap", "x": 118, "y": 550, "note": "Tap 2nd emoji in row (calm/okay area)"},
+    {"action": "wait", "duration_ms": 300},
+    {"action": "screenshot", "screen_name": "03_mood_selected"},
+    {"action": "tap", "x": 196, "y": 750, "note": "Tap Save → MoodProvider.addEntry()"},
+    {"action": "wait", "duration_ms": 600},
+    {"action": "screenshot", "screen_name": "04_mood_saved", "note": "Chart updated; low-mood reflection sheet may auto-trigger if score ≤ 2"}
+  ]
+}
