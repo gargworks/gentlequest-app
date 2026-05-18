@@ -1,0 +1,203 @@
+---
+import '../styles/global.css';
+const title = "Eidetic Works — Total recall for AI workflows";
+const description = "Always-on memory daemon. Captures every record from every Claude Code session. Local-first, single binary, verifiable via curl.";
+const siteUrl = "https://eidetic.works";
+const ogImage = `${siteUrl}/og-eidetic-works.png`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+
+    <!-- Open Graph (Facebook, LinkedIn, Slack, Discord) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Eidetic Works — Total recall for AI workflows. 141,502 engrams from 564 Claude Code sessions in 12 seconds. Zero skips." />
+    <meta property="og:site_name" content="Eidetic Works" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={siteUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content="Eidetic Works — Total recall for AI workflows. 141,502 engrams from 564 Claude Code sessions in 12 seconds. Zero skips." />
+    <meta name="twitter:site" content="@eidetic_works" />
+  </head>
+
+  <body>
+    <!-- Nav -->
+    <nav>
+      <div class="container">
+        <a href="/" class="logo">
+          <svg width="16" height="16" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="logo-icon">
+            <rect width="120" height="120" fill="#0b0d10"/>
+            <rect x="0.5" y="0.5" width="119" height="119" fill="none" stroke="#232830" stroke-width="1"/>
+            <rect x="46" y="46" width="28" height="28" fill="#5eead4"/>
+          </svg>
+          EIDETIC WORKS
+        </a>
+        <span class="nav-tag">v0.0.25</span>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <main>
+      <section class="hero">
+        <div class="container">
+          <span class="eyebrow">Memory daemon · early access</span>
+          <h1>Total recall for AI <em>workflows</em>.</h1>
+          <p class="subhead">
+            141,502 engrams from 564 Claude Code sessions in 12 seconds. Zero skips. Local SQLite, single Go binary. Verify the numbers yourself: <code>curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/metrics</code>
+          </p>
+
+          <!-- Visual anchor A1 — key metrics -->
+          <div class="metrics-anchor">
+            <div class="metric">
+              <span class="metric-val">141,502</span>
+              <span class="metric-label">engrams captured</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val">564</span>
+              <span class="metric-label">sessions indexed</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val">&lt;50ms</span>
+              <span class="metric-label">per write</span>
+            </div>
+          </div>
+
+          <!-- Install snippet -->
+          <div class="install-block">
+            <p class="install-label">Install</p>
+            <pre class="install-code"><code># macOS (Apple Silicon)
+curl -fsSL https://github.com/eidetic-works/eidetic-daemon/releases/latest/download/eideticd-darwin-arm64 -o eideticd
+chmod +x eideticd && sudo mv eideticd /usr/local/bin/eideticd
+eideticd -version
+
+# Linux (amd64)
+curl -fsSL https://github.com/eidetic-works/eidetic-daemon/releases/latest/download/eideticd-linux-amd64 -o eideticd
+chmod +x eideticd && sudo mv eideticd /usr/local/bin/eideticd
+eideticd -version
+
+# MCP bridge for Claude Code / Cursor
+pip install eidetic-mcp
+claude mcp add eidetic -- python -m eidetic_mcp.server</code></pre>
+          </div>
+
+          <!-- ConvertKit waitlist embed -->
+          <div class="waitlist-wrap">
+            <span class="waitlist-label">Get release notes in your inbox</span>
+
+            <!--
+              ConvertKit form embed.
+              Kit form ID 0371970a01 (Track A — Nucleus Waitlist developer)
+              Script loads async so it never blocks page render.
+            -->
+            <div id="ck-embed">
+              <!-- Shown until CK script replaces this node -->
+              <form
+                action="https://app.kit.com/forms/9432005/subscriptions"
+                method="post"
+                class="ck-fallback"
+                aria-label="Waitlist signup"
+              >
+                <input
+                  type="email"
+                  name="email_address"
+                  placeholder="your@email.com"
+                  required
+                  autocomplete="email"
+                />
+                <button type="submit">Notify me</button>
+              </form>
+            </div>
+
+            <p class="privacy-note">No spam. Unsubscribe anytime. We do not share your email.</p>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- What the daemon actually does -->
+      <section class="what-section">
+        <div class="container">
+          <p class="section-label">What ships today</p>
+          <h2>Three things the daemon does.<br />Every claim has a curl.</h2>
+
+          <ul class="bullets">
+            <li>
+              <span class="bullet-icon" aria-hidden="true">[1]</span>
+              <div class="bullet-text">
+                <strong>Captures every session, automatically</strong>
+                <span>
+                  fsnotify watchers tail Claude Code, Cursor, and Cowork session
+                  files. New text becomes an engram row in &lt;50&nbsp;ms.
+                  Records over 7&nbsp;MiB are split into idempotent chunks
+                  (ADR-018) — no hard wall.
+                </span>
+              </div>
+            </li>
+            <li>
+              <span class="bullet-icon" aria-hidden="true">[2]</span>
+              <div class="bullet-text">
+                <strong>Local-first, single binary, no CGO</strong>
+                <span>
+                  Pure-Go SQLite (<code>modernc.org/sqlite</code>). One
+                  cross-compile-clean executable for darwin-arm64, linux-amd64,
+                  windows-amd64. Data stays in <code>~/.eidetic/engrams.db</code>.
+                  Nothing leaves your machine.
+                </span>
+              </div>
+            </li>
+            <li>
+              <span class="bullet-icon" aria-hidden="true">[3]</span>
+              <div class="bullet-text">
+                <strong>MCP-native — your AI can read your engram store</strong>
+                <span>
+                  Three tools over MCP: <code>query_engrams</code>,
+                  <code>daemon_status</code>, <code>daemon_metrics</code>.
+                  Cursor, Claude Code, Cline — any MCP client can ask the
+                  daemon what it has captured.
+                </span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <span>© 2026 Eidetic Works. All rights reserved.</span>
+        <a href="mailto:hi@eidetic.works">hi@eidetic.works</a>
+        <a href="/terms">Terms</a>
+        <a href="https://app.termly.io/policy-viewer/policy.html?policyUUID=4683d585-ce73-4055-9efc-7b586577188b" target="_blank" rel="noopener">Privacy</a>
+      </div>
+    </footer>
+
+    <!--
+      Kit (ConvertKit) async loader. Track A form ID 0371970a01.
+      async = never blocks FCP; loads after page is interactive.
+    -->
+    <script
+      async
+      data-uid="0371970a01"
+      src="https://nucleus-ai.kit.com/0371970a01/index.js"
+    ></script>
+  </body>
+</html>
