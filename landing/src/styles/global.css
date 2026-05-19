@@ -1,0 +1,418 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Tokens from docs/design/DESIGN.md v1.0 LOCKED — single source of truth.
+   Edit DESIGN.md first; this file mirrors it. */
+:root {
+  --bg: #0b0d10;
+  --surface: #14171b;
+  --surface-2: #1a1e23;
+  --border: #232830;
+  --border-strong: #2c333d;
+  --accent: #5eead4;          /* electric teal — single accent */
+  --accent-dim: #2dd4bf;
+  --accent-bg: rgba(94, 234, 212, 0.08);
+  --text: #e8ecf1;
+  --text-dim: #a8b0bc;
+  --text-mute: #6c7480;
+  --muted: #6c7480;           /* legacy alias for compatibility */
+  --max-w: 720px;
+  --radius-0: 0;
+  --radius-sm: 4px;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, 'Cascadia Code', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-w);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+nav {
+  border-bottom: 1px solid var(--border);
+  padding-block: 1rem;
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
+.nav-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  padding: 0.2em 0.6em;
+  border-radius: var(--radius-0);
+  font-family: var(--font-mono);
+}
+
+.hero {
+  padding-block: 5rem 4rem;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+/* DESIGN.md §2: no gradients. Single accent color, solid only. */
+h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.subhead {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin-inline: auto;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+/* Inline code in subhead + body — DESIGN.md §3 typography */
+.subhead code,
+.bullet-text code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.4em;
+  color: var(--text);
+  border-radius: var(--radius-0);
+  white-space: nowrap;
+  overflow-wrap: break-word;
+}
+
+.see-motion {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 2rem;
+  margin-top: -1rem;
+}
+
+.see-motion a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+  padding-bottom: 1px;
+}
+
+.see-motion a:hover { border-bottom-color: var(--accent); }
+.see-motion span { margin-left: 0.25em; }
+
+.pro-cta-wrap {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.pro-cta-btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius-0);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.pro-cta-btn:hover { opacity: 0.85; }
+
+.pro-cta-note {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.waitlist-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-0);
+  padding: 2rem;
+  max-width: 440px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.waitlist-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+#ck-embed { min-height: 56px; display: flex; flex-direction: column; align-items: center; }
+
+/* Kit-injected form centering */
+#ck-embed form, #ck-embed .formkit-form { width: 100%; }
+#ck-embed .formkit-fields { display: flex; gap: 0.5rem; justify-content: center; }
+#ck-embed .formkit-field { flex: 1; max-width: 260px; }
+
+/* Kit's async script appends a duplicate form to <body> — hide it; .ck-fallback handles submissions */
+body > .seva-form,
+body > .formkit-form { display: none !important; }
+
+.ck-fallback {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.ck-fallback input[type="email"] {
+  flex: 1;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-0);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ck-fallback input[type="email"]:focus { border-color: var(--accent); }
+
+.ck-fallback button {
+  padding: 0.65rem 1.1rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.ck-fallback button:hover { background: var(--accent-dim); }
+
+.privacy-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin-block: 4rem;
+}
+
+.what-section { padding-bottom: 5rem; }
+
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 2rem;
+}
+
+.bullets {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bullets li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.bullet-icon {
+  width: 2rem;
+  height: 2rem;
+  background: var(--accent-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-0);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.bullet-text strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+
+.bullet-text span {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-block: 1.5rem;
+}
+
+footer .container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+/* Visual anchor A1 — key metrics row */
+.metrics-anchor {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-block: 1.5rem 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Install block — honest early-access copy */
+.install-block {
+  margin-block: 0 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.install-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.install-code {
+  display: block;
+  padding: 1rem;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.install-code code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  color: inherit;
+}
+
+@media (max-width: 480px) {
+  .ck-fallback { flex-direction: column; }
+  .hero { padding-block: 3.5rem 3rem; }
+  .metrics-anchor { flex-wrap: wrap; gap: 1rem; }
+  .install-code { font-size: 0.72rem; }
+}
