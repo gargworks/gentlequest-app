@@ -234,23 +234,49 @@ Before committing, update the tier's status row in REVIEW.md:
 
 Include this REVIEW.md change in the same commit as the implementation.
 
-### 6.c — Screenshot rig
+### 6.c — Screenshot rig + Oracle validation
 
-Run the screenshot rig from the tier branch:
-
+**Step 1 — Install the updated build onto the simulator:**
 ```bash
-bash scripts/gq_screenshot_diff.sh tier-{TIER_ID}
+cd ai_buddy_web
+UDID="95843C74-7CB1-411B-965B-12CCB6F433AF"
+xcrun simctl install "$UDID" build/ios/iphonesimulator/Runner.app
+xcrun simctl launch "$UDID" com.gentlequest.app
+sleep 4
 ```
 
-The rig captures a launch screenshot.  Walk-mode (interaction sequences) is
-**idb-blocked** and not currently functional; the rig captures only the launch
-frame until idb_companion is available (see §10, Future Extension Hooks).
+**Step 2 — Run the oracle walk** (captures screenshots + detects no-ops):
+```bash
+bash docs/design/refs/testing/gq_walk_oracle.sh
+```
 
-- If the rig succeeds: attach the screenshot path in the PR body under
-  "## Visual diff".
-- If the rig fails: ship the PR anyway but add a "## Screenshot status" section
-  that says exactly what failed.  Do NOT hold the PR for screenshot issues.
-  Document it as a review item for Lokesh.
+This walk:
+- Navigates every major screen (Chat, Profile, Settings, Mood, Quest, Journal, Library, Clinical)
+- After every `tap`, md5-hashes before/after screenshots — logs silent no-ops to `noop_suspects.txt`
+- Validates all screenshots against `gq_oracle.json` (97-screen baseline from walk-2026-05-19)
+- Exits 0 if all PASS, exits 1 if any FAIL
+
+**Step 3 — Interpret results:**
+
+| Result | Action |
+|--------|--------|
+| All PASS, 0 no-ops | Attach `oracle-run-{date}/` dir path in PR body |
+| 1–2 FAIL on irrelevant screens | Note in PR under "Screenshot status"; ship anyway |
+| FAIL on screens touched by this tier | **Stop — diagnose before opening PR** |
+| No-ops detected | Check `noop_suspects.txt`; if any tap target in this tier's scope is silent, fix before PR |
+
+**Validate-only mode** (if walk already ran):
+```bash
+bash docs/design/refs/testing/gq_walk_oracle.sh --validate-only
+```
+
+**Updating the oracle** (after intentional visual changes):
+```bash
+python3 docs/design/refs/testing/build_oracle.py \
+  --golden docs/design/refs/screenshots/oracle-run-{date} \
+  --out docs/design/refs/testing/gq_oracle.json
+```
+Commit the updated `gq_oracle.json` in the same PR as the visual change.
 
 ### 6.d — PR body shape
 
@@ -285,6 +311,8 @@ The PR description must contain these sections in order:
 - [ ] `flutter build ios --debug --simulator --no-codesign` succeeded (exit 0, ✓ Built line present)
 - [ ] `gq_tokens.dart` used for all colours/typography (no hardcoded hex)
 - [ ] REVIEW.md status updated to `in-flight` with PR URL
+- [ ] Oracle walk ran (`gq_walk_oracle.sh`): all screens PASS, 0 no-ops on tier-scope taps
+- [ ] If visual change: `gq_oracle.json` updated and committed in this PR
 
 ## Reviewer notes
 {anything the foreman is uncertain about, assumed values, design gaps, or
@@ -408,10 +436,10 @@ These are **not live today**.  Do not implement or reference them as if they
 are.  Each item has a one-line activation trigger once the prerequisite
 exists.
 
-1. **Walk-mode screenshot capture** — once `idb_companion` is available on the
-   CI runner, add the interaction sequence to `gq_screenshot_diff.sh`'s
-   `WALK_STEPS` array.  No other change needed; the rig already has a
-   `WALK_STEPS` hook point.
+1. **Walk-mode screenshot capture** — ✅ **LIVE** (`docs/design/refs/testing/gq_walk_oracle.sh`).
+   Uses `idb ui tap/swipe` + `xcrun simctl io screenshot`. Oracle baseline at
+   `docs/design/refs/testing/gq_oracle.json` (97 screens, walk-2026-05-19).
+   Integrated into §6.c post-flight. No further activation needed.
 
 2. **Multi-screen capture per tier** — extend `gq_screenshot_diff.sh` to loop
    over a list of screen names passed as arguments:
