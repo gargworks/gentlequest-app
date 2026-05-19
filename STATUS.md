@@ -43,16 +43,18 @@
 | `install.ps1` | Live at eidetic.works/install.ps1 |
 | Homebrew tap | Live — `brew tap eidetic-works/nucleus && brew install eideticd` |
 | `eidetic-mcp` PyPI | v0.0.4 — `pip install eidetic-mcp` |
-| Gumroad → Kit webhook | Live (gumroad-kit-sync worker, Telegram secrets wired) |
-| Pro purchase flow | Live — Gumroad→Kit eidetic-pro tag + Telegram ping to Lokesh |
-| eidetic-sync Worker | KV namespace created, wrangler.toml patched — **BLOCKED on R2 billing** (Lokesh: dash.cloudflare.com → R2 → enable free tier) |
-| `gen_pro_key.sh` | Ready in scripts/ — KV namespace ID pre-filled |
+| Gumroad → Kit webhook | ✅ Live (gumroad-kit-sync.morning-lake-f944.workers.dev) |
+| **eidetic-sync Worker** | ✅ **LIVE** — eidetic-sync.morning-lake-f944.workers.dev/healthz → ok |
+| **Gumroad Pro product** | ✅ **LIVE** — eideticworks.gumroad.com/l/eidetic-pro, $29/mo |
+| Landing Pro CTA | ✅ Gumroad href live at eidetic.works |
+| `gen_pro_key.sh` | ✅ Worker URL + KV namespace ID pre-filled, zero env vars needed |
+| Kit announcement email | **PENDING Lokesh keyboard** — template in docs/PRO_LAUNCH.md § 3 |
 | ConvertKit waitlist form | Embedded on landing |
-| X DMs (5 targets) | **PENDING Lokesh keyboard** (day8-dm-targets.md) |
-| X thread | Drafted, updated to 278K — **PENDING Lokesh post** |
-| HN Show HN | Drafted — **PENDING Lokesh post** |
-| Reddit r/ClaudeAI | Drafted — **PENDING Lokesh post** |
-| dev.to article | Drafted — **PENDING Lokesh post** |
+| X replies (5 accounts) | Sent by op-assistant: @shushant_l, @RLanceMartin, @iannuttall, @yigitkonur, @PawelHuryn |
+| X thread (own post) | **PENDING Lokesh** — docs/posts/x-thread-day8.md |
+| HN Show HN | **PENDING Lokesh** — docs/posts/hn-show-hn-day8.md |
+| Reddit r/ClaudeAI | **PENDING Lokesh** — docs/posts/reddit-rclaudeai-day8.md |
+| dev.to article | **PENDING Lokesh** — docs/posts/devto-day8.md |
 
 ### Sovereign (cc_voice lane)
 
