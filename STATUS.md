@@ -30,6 +30,7 @@
 | v0.0.30 | Day 9 | Windows capture paths (`%APPDATA%\Claude\projects`, `%APPDATA%\Cursor`) |
 | v0.0.31 | Day 9 | Bridge dual-listener (`-bridge <addr>` TCP alongside UDS, CORS, auth) |
 | v0.0.32 | Day 9 | `--restore` flag — download latest R2 backup + `/download` Worker endpoint |
+| v0.0.33 | Day 9 | Sync-state persistence — `--stats` shows last cloud backup time across restarts |
 
 **Current live numbers:** 278,561 engrams, 803 sessions, P95 retrieval 2.09ms, DB 3.3 GB
 
