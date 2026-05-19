@@ -1,13 +1,33 @@
-const KIT_API_KEY = "R3gQh4pB1VsHaq29EFDvQA";
-const KIT_SEQUENCE_ID = "2756160";  // Cost Playbook v0 sequence
-const KIT_TAG_ID = "19565558";      // cost-playbook-v0 tag
+// Gumroad → Kit webhook bridge + Pro purchase notification.
+//
+// Routes:
+//   POST /           — Gumroad sale webhook (form-encoded or JSON)
+//   GET  /ping       — eidetic-mcp telemetry ping (204, no storage)
+//
+// Product routing (keyed on Gumroad product_permalink):
+//   cost-playbook    → KIT_COSTPLAYBOOK_SEQUENCE_ID + KIT_COSTPLAYBOOK_TAG_ID
+//   eidetic-pro      → KIT_PRO_TAG_ID + Telegram ping to operator
+//   <any other>      → KIT_COSTPLAYBOOK_TAG_ID (fallback, no sequence)
+//
+// Secrets (set via `wrangler secret put`, never hardcoded):
+//   TELEGRAM_BOT_TOKEN   — bot token for operator notifications
+//   TELEGRAM_CHAT_ID     — Lokesh's personal chat ID (or group)
+//
+// Kit IDs below are hardcoded constants (non-secret, fine to commit).
+
+const KIT_API_KEY          = "R3gQh4pB1VsHaq29EFDvQA";
+const KIT_COSTPLAYBOOK_SEQ = "2756160";   // Cost Playbook v0 sequence
+const KIT_COSTPLAYBOOK_TAG = "19565558";  // cost-playbook-v0 tag
+// TODO: create Pro tag + sequence in Kit, paste IDs here
+const KIT_PRO_TAG          = "REPLACE_WITH_PRO_TAG_ID";
+const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // welcome sequence: "we'll deliver sync.json within 24h"
+
+const PRO_PERMALINK = "eidetic-pro"; // Gumroad product permalink for Pro tier
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Telemetry ping — eidetic-mcp fires once on first startup.
-    // CF analytics counts by day/country/version with zero storage cost.
     if (url.pathname === "/ping") {
       return new Response(null, { status: 204 });
     }
@@ -16,34 +36,89 @@ export default {
       return new Response("OK", { status: 200 });
     }
 
-    let email;
+    // Parse Gumroad payload (form-encoded or JSON).
+    let email, productPermalink, productName, saleId, purchaserId;
     const contentType = request.headers.get("content-type") || "";
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
       const body = await request.formData();
-      email = body.get("email");
+      email            = body.get("email");
+      productPermalink = body.get("product_permalink") || "";
+      productName      = body.get("product_name") || "";
+      saleId           = body.get("sale_id") || "";
+      purchaserId      = body.get("purchaser_id") || "";
     } else {
       const body = await request.json().catch(() => ({}));
-      email = body.email;
+      email            = body.email;
+      productPermalink = body.product_permalink || "";
+      productName      = body.product_name || "";
+      saleId           = body.sale_id || "";
+      purchaserId      = body.purchaser_id || "";
     }
 
     if (!email) return new Response("no email", { status: 400 });
 
-    const payload = JSON.stringify({ api_key: KIT_API_KEY, email });
+    const isPro = productPermalink === PRO_PERMALINK ||
+                  productName.toLowerCase().includes("pro");
+
+    const kitPayload = JSON.stringify({ api_key: KIT_API_KEY, email });
     const hdrs = { "Content-Type": "application/json" };
 
-    const [seqRes] = await Promise.all([
-      fetch(`https://api.convertkit.com/v3/sequences/${KIT_SEQUENCE_ID}/subscribe`, {
-        method: "POST", headers: hdrs, body: payload,
-      }),
-      fetch(`https://api.convertkit.com/v3/tags/${KIT_TAG_ID}/subscribe`, {
-        method: "POST", headers: hdrs, body: payload,
-      }),
-    ]);
+    let kitRequests;
+    if (isPro) {
+      // Pro purchase: tag as pro + enroll in Pro welcome sequence (if configured)
+      kitRequests = [
+        fetch(`https://api.convertkit.com/v3/tags/${KIT_PRO_TAG}/subscribe`, {
+          method: "POST", headers: hdrs, body: kitPayload,
+        }),
+      ];
+      if (KIT_PRO_SEQ && !KIT_PRO_SEQ.startsWith("REPLACE")) {
+        kitRequests.push(
+          fetch(`https://api.convertkit.com/v3/sequences/${KIT_PRO_SEQ}/subscribe`, {
+            method: "POST", headers: hdrs, body: kitPayload,
+          })
+        );
+      }
+    } else {
+      // Cost playbook (default)
+      kitRequests = [
+        fetch(`https://api.convertkit.com/v3/sequences/${KIT_COSTPLAYBOOK_SEQ}/subscribe`, {
+          method: "POST", headers: hdrs, body: kitPayload,
+        }),
+        fetch(`https://api.convertkit.com/v3/tags/${KIT_COSTPLAYBOOK_TAG}/subscribe`, {
+          method: "POST", headers: hdrs, body: kitPayload,
+        }),
+      ];
+    }
 
-    const seqData = await seqRes.json();
+    const [primaryRes] = await Promise.all(kitRequests);
+
+    // Telegram ping for Pro purchases — tells Lokesh to run gen_pro_key.sh.
+    if (isPro && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+      const msg = `🎉 New Pro subscriber: ${email}\n` +
+                  `Product: ${productName}\n` +
+                  `Sale ID: ${saleId}\n\n` +
+                  `Run:\n` +
+                  `EIDETIC_WORKER_URL=https://eidetic-sync.<account>.workers.dev \\\n` +
+                  `EIDETIC_KV_NS_ID=<kv-id> \\\n` +
+                  `./scripts/gen_pro_key.sh ${email} <device_id>\n\n` +
+                  `Reply to ${email} with sync.json within 24h.`;
+
+      // Fire-and-forget — don't fail the webhook if Telegram is down.
+      fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: msg }),
+      }).catch(() => {});
+    }
+
+    const primaryData = await primaryRes.json().catch(() => ({}));
     return new Response(
-      JSON.stringify({ ok: true, subscriber_id: seqData?.subscription?.subscriber?.id }),
+      JSON.stringify({
+        ok: true,
+        product_type: isPro ? "pro" : "cost-playbook",
+        subscriber_id: primaryData?.subscription?.subscriber?.id,
+      }),
       { headers: { "Content-Type": "application/json" } }
     );
   },

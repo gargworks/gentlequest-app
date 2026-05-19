@@ -1,3 +1,13 @@
 name = "gumroad-kit-sync"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+
+# Secrets (set via `wrangler secret put`, never in this file):
+#   TELEGRAM_BOT_TOKEN  — Telegram bot token for Pro purchase pings
+#   TELEGRAM_CHAT_ID    — Lokesh's Telegram chat ID (get from @userinfobot)
+#
+# After adding secrets, redeploy: wrangler deploy
+#
+# Kit IDs that still need filling in worker.js:
+#   KIT_PRO_TAG  — create in Kit → Subscribers → Tags → "eidetic-pro"
+#   KIT_PRO_SEQ  — create in Kit → Sequences → "Pro Welcome" (24h sync.json delivery promise)
