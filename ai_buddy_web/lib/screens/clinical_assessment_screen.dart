@@ -1217,7 +1217,9 @@ class _ResultRevealScreen extends StatelessWidget {
                           'Try a 1-minute breathing exercise', // verbatim from HTML
                       subtitle: '4-7-8 breathing · short and grounding.',
                       isPrimary: false,
-                      onTap: () => Navigator.pushNamed(context, '/interactive-chat'),
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Breathing exercise coming in the next update.')),
+                      ),
                     ),
                     const SizedBox(height: 8),
 

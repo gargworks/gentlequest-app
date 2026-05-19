@@ -77,11 +77,9 @@ class _ProfileNavSheet extends StatelessWidget {
             icon: Icons.person_outline_rounded,
             label: 'Profile',
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
+              final nav = Navigator.of(context, rootNavigator: true);
+              nav.pop();
+              nav.push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
             },
           ),
           const _TileDivider(),
@@ -91,11 +89,9 @@ class _ProfileNavSheet extends StatelessWidget {
             icon: Icons.settings_outlined,
             label: 'Settings',
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
+              final nav = Navigator.of(context, rootNavigator: true);
+              nav.pop();
+              nav.push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
           ),
           const _TileDivider(),
@@ -105,11 +101,9 @@ class _ProfileNavSheet extends StatelessWidget {
             icon: Icons.book_outlined,
             label: 'Journal',
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const JournalScreen()),
-              );
+              final nav = Navigator.of(context, rootNavigator: true);
+              nav.pop();
+              nav.push(MaterialPageRoute(builder: (_) => const JournalScreen()));
             },
           ),
           const _TileDivider(),
@@ -119,12 +113,9 @@ class _ProfileNavSheet extends StatelessWidget {
             icon: Icons.library_books_outlined,
             label: 'Library',
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ResourceLibraryScreen()),
-              );
+              final nav = Navigator.of(context, rootNavigator: true);
+              nav.pop();
+              nav.push(MaterialPageRoute(builder: (_) => const ResourceLibraryScreen()));
             },
           ),
         ],

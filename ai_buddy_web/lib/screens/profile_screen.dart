@@ -24,6 +24,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showBuilder = false;
+  int _builderStep = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: GQColors.softBg,
       body: _showBuilder
           ? SafetyPlanBuilderStep(
-              stepIdx: 2,
-              onClose: () => setState(() => _showBuilder = false),
+              stepIdx: _builderStep,
+              onClose: () => setState(() { _showBuilder = false; _builderStep = 0; }),
+              onNext: () => setState(() => _builderStep++),
             )
           : _ProfileHome(
-              onBuildPlan: () => setState(() => _showBuilder = true),
-              onEditPlan: () => setState(() => _showBuilder = true),
+              onBuildPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
+              onEditPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
             ),
     );
   }
@@ -804,11 +806,13 @@ class _ContactRow extends StatelessWidget {
 class SafetyPlanBuilderStep extends StatefulWidget {
   final int stepIdx;
   final VoidCallback? onClose;
+  final VoidCallback? onNext;
 
   const SafetyPlanBuilderStep({
     super.key,
     required this.stepIdx,
     this.onClose,
+    this.onNext,
   });
 
   @override
@@ -928,7 +932,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                     Expanded(
                       child: _PrimaryButton(
                         label: 'Save & continue',
-                        onTap: widget.onClose ?? () => Navigator.maybePop(context),
+                        onTap: widget.onNext ?? widget.onClose ?? () => Navigator.maybePop(context),
                       ),
                     ),
                   ],
