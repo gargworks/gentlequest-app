@@ -272,7 +272,16 @@ Where `TIER_SCOPE_UC_IDS` is the comma-separated list of UC IDs touched by this 
 3. `claude` CLI authenticated → Max plan via `claude -p` (zero extra cost)
 4. None of the above → pixel oracle only (structural verdict, zero cost)
 
-Modes 1–3 run Layers 2+3 (LLM judge + Maya). Mode 4 runs Layer 1 oracle only.
+Layer × provider compatibility:
+
+| Layer | Anthropic API | Gemini | `claude -p` | No provider |
+|-------|:---:|:---:|:---:|:---:|
+| 1 — pixel oracle | ✅ | ✅ | ✅ | ✅ |
+| 2 — behavioral judge | ✅ | ✅ | ✅ | auto → L1 |
+| 3 — Maya mind | ✅ (cached) | ✅ | ✅ | auto → L1 |
+| 4 — backlog | ✅ | ✅ | ✅ | ✅ |
+
+All layers work with all three LLM providers. Prompt caching (`cache_control`) only applies on the Anthropic direct path; Gemini and `claude -p` receive the plain extracted text.
 To force zero-API mode explicitly: `--layer 1,4`
 
 | Exit code | Action |
