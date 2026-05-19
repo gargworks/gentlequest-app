@@ -43,7 +43,10 @@
 | `install.ps1` | Live at eidetic.works/install.ps1 |
 | Homebrew tap | Live — `brew tap eidetic-works/nucleus && brew install eideticd` |
 | `eidetic-mcp` PyPI | v0.0.4 — `pip install eidetic-mcp` |
-| Gumroad → Kit webhook | Live (CF Worker) |
+| Gumroad → Kit webhook | Live (gumroad-kit-sync worker, Telegram secrets wired) |
+| Pro purchase flow | Live — Gumroad→Kit eidetic-pro tag + Telegram ping to Lokesh |
+| eidetic-sync Worker | KV namespace created, wrangler.toml patched — **BLOCKED on R2 billing** (Lokesh: dash.cloudflare.com → R2 → enable free tier) |
+| `gen_pro_key.sh` | Ready in scripts/ — KV namespace ID pre-filled |
 | ConvertKit waitlist form | Embedded on landing |
 | X DMs (5 targets) | **PENDING Lokesh keyboard** (day8-dm-targets.md) |
 | X thread | Drafted, updated to 278K — **PENDING Lokesh post** |

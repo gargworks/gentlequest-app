@@ -97,10 +97,10 @@ export default {
       const msg = `🎉 New Pro subscriber: ${email}\n` +
                   `Product: ${productName}\n` +
                   `Sale ID: ${saleId}\n\n` +
-                  `Run:\n` +
-                  `EIDETIC_WORKER_URL=https://eidetic-sync.<account>.workers.dev \\\n` +
-                  `EIDETIC_KV_NS_ID=<kv-id> \\\n` +
+                  `Run (cd eidetic-daemon repo first):\n` +
+                  `EIDETIC_WORKER_URL=https://eidetic-sync.morning-lake-f944.workers.dev \\\n` +
                   `./scripts/gen_pro_key.sh ${email} <device_id>\n\n` +
+                  `KV namespace ID already defaulted in script.\n` +
                   `Reply to ${email} with sync.json within 24h.`;
 
       // Fire-and-forget — don't fail the webhook if Telegram is down.
