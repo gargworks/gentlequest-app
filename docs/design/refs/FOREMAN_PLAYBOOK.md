@@ -256,6 +256,28 @@ This walk:
 - Validates all screenshots against `gq_oracle.json` (97-screen baseline from walk-2026-05-19)
 - Exits 0 if all PASS, exits 1 if any FAIL
 
+**Step 2b — Run Synthetic QA** (behavioral judge + Maya UX simulation):
+```bash
+ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+  --product gentlequest --uc-ids {TIER_SCOPE_UC_IDS}
+```
+
+Where `TIER_SCOPE_UC_IDS` is the comma-separated list of UC IDs touched by this tier
+(e.g. `UC-M1,UC-M2,UC-M3` for a mood-screen tier).  See
+`docs/design/refs/testing/synthetic_ux/products/gentlequest/uc_spec.json` for the full list.
+
+| Exit code | Action |
+|-----------|--------|
+| 0 — no BLOCKERs | Paste BACKLOG.md path + DELIGHT count in PR body |
+| 1 — BLOCKERs present | **Stop — fix BLOCKERs in tier scope before opening PR.** BLOCKERs in unrelated UCs → note in PR body |
+| 2 — walk failure | Note infrastructure failure in PR; treat as oracle walk failure |
+
+Full-product run (pre-release gate):
+```bash
+ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+  --product gentlequest
+```
+
 **Step 3 — Interpret results:**
 
 | Result | Action |
@@ -313,6 +335,14 @@ The PR description must contain these sections in order:
 - [ ] REVIEW.md status updated to `in-flight` with PR URL
 - [ ] Oracle walk ran (`gq_walk_oracle.sh`): all screens PASS, 0 no-ops on tier-scope taps
 - [ ] If visual change: `gq_oracle.json` updated and committed in this PR
+
+## UX Observations (Synthetic QA)
+- Run path: `docs/design/refs/testing/synthetic_ux/reports/{run-id}/`
+- BLOCKERs in tier scope: {N} — {uc_ids or "none"}
+- Highest abandon-risk UC: {uc_id} ({score}/100) — or "none"
+- DELIGHT findings: {N} worth protecting
+
+{paste top BLOCKER finding from BACKLOG.md, or "No BLOCKERs — all tier UCs PASS"}
 
 ## Reviewer notes
 {anything the foreman is uncertain about, assumed values, design gaps, or
