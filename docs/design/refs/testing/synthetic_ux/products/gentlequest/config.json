@@ -1,0 +1,12 @@
+{
+  "product_id": "gentlequest",
+  "product_name": "GentleQuest",
+  "product_description": "AI mental health companion for young adults with anxiety and mood concerns",
+  "persona_id": "maya",
+  "walk_type": "ios-simulator",
+  "walk_config": {
+    "udid": "95843C74-7CB1-411B-965B-12CCB6F433AF",
+    "bundle": "com.gentlequest.app"
+  },
+  "uc_spec_path": "products/gentlequest/uc_spec.json"
+}

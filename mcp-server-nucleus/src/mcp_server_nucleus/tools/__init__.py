@@ -31,7 +31,8 @@ from . import (
     align,
     skills,
     flywheel,
-    delegate,  # Nucleus-Delegate v0.2 — singular endpoint
+    delegate,      # Nucleus-Delegate v0.2 — singular endpoint
+    synthetic_qa,  # Synthetic QA Framework — AI-driven behavioral + UX testing
 )
 
 _ALL_MODULES = {
@@ -48,6 +49,7 @@ _ALL_MODULES = {
     "skills": skills,
     "flywheel": flywheel,
     "delegate": delegate,
+    "synthetic_qa": synthetic_qa,
 }
 
 
