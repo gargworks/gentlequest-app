@@ -82,8 +82,11 @@ const ogImage = `${siteUrl}/og-eidetic-works.png`;
           <!-- Install snippet -->
           <div class="install-block">
             <p class="install-label">Install</p>
-            <pre class="install-code"><code># macOS + Linux — one line
+            <pre class="install-code"><code># macOS + Linux
 curl -fsSL https://eidetic.works/install.sh | sh
+
+# Windows (PowerShell)
+irm https://eidetic.works/install.ps1 | iex
 
 # MCP bridge (Claude Code / Cursor)
 pip install eidetic-mcp
