@@ -133,6 +133,10 @@ main() {
   sleep 1
   if "${PREFIX}/bin/eideticd" -version; then
     log "OK — daemon installed and registered. UDS: /tmp/eidetic-daemon.sock (Mac) or /var/run/eidetic.sock (Linux)"
+    log ""
+    log "Pro users: drop sync.json at ~/.eidetic/sync.json, then restart the daemon."
+    log "  Restoring from cloud backup: eideticd --restore"
+    log "  Uploading immediately:       eideticd --sync-now"
   else
     err "binary failed -version smoke; see logs"
   fi
