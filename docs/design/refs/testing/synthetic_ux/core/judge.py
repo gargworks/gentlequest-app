@@ -87,6 +87,7 @@ def judge_uc(
     before_b64 = _encode_image(before_path)
     after_b64 = _encode_image(after_path)
 
+    response = None
     for attempt in range(2):
         try:
             response = client.messages.create(
@@ -121,7 +122,7 @@ def judge_uc(
                 output_tokens=response.usage.output_tokens,
             )
         except json.JSONDecodeError as e:
-            raw_text = response.content[0].text if "response" in dir() else ""
+            raw_text = response.content[0].text if response is not None else ""
             return JudgeResult(
                 verdict="UNCERTAIN",
                 confidence=0,

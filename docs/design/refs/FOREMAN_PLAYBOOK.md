@@ -258,13 +258,22 @@ This walk:
 
 **Step 2b — Run Synthetic QA** (behavioral judge + Maya UX simulation):
 ```bash
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
   --product gentlequest --uc-ids {TIER_SCOPE_UC_IDS}
 ```
 
 Where `TIER_SCOPE_UC_IDS` is the comma-separated list of UC IDs touched by this tier
 (e.g. `UC-M1,UC-M2,UC-M3` for a mood-screen tier).  See
 `docs/design/refs/testing/synthetic_ux/products/gentlequest/uc_spec.json` for the full list.
+
+**Provider auto-selection** (no manual config needed):
+1. `ANTHROPIC_API_KEY` in env → direct Sonnet API (fastest, ~$0.01/UC)
+2. `GEMINI_API_KEY` in env → Gemini Vision fallback
+3. `claude` CLI authenticated → Max plan via `claude -p` (zero extra cost)
+4. None of the above → pixel oracle only (structural verdict, zero cost)
+
+Modes 1–3 run Layers 2+3 (LLM judge + Maya). Mode 4 runs Layer 1 oracle only.
+To force zero-API mode explicitly: `--layer 1,4`
 
 | Exit code | Action |
 |-----------|--------|
@@ -274,7 +283,7 @@ Where `TIER_SCOPE_UC_IDS` is the comma-separated list of UC IDs touched by this 
 
 Full-product run (pre-release gate):
 ```bash
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
   --product gentlequest
 ```
 

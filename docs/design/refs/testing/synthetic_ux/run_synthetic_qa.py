@@ -8,7 +8,13 @@ Usage:
 Options:
   --uc-ids UC-I2,UC-M1   Comma-separated UC IDs to run (default: all)
   --layer 2,3,4          Which layers to run (default: 2,3,4)
-  --dry-run              Walk only; skip all LLM calls
+                           Layer 1 = walk + pixel oracle (no LLM required)
+                           Layer 2 = LLM behavioral judge
+                           Layer 3 = Maya synthetic user mind
+                           Layer 4 = prioritized backlog generator
+                           Zero-API mode: --layer 1,4  (or omit --layer; oracle
+                           auto-activates when no API key is present)
+  --dry-run              Walk only; skip all LLM + oracle calls
   --no-walk              Skip simulator walk; use --walk-dir for screenshots
   --walk-dir PATH        Directory with before/after PNG pairs for --no-walk
   --out-dir PATH         Output directory for reports (default: reports/)
@@ -22,6 +28,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -36,6 +43,71 @@ from core.observation_log import (
     JudgeResult, MindResult, Observation, append_observation
 )
 from core.backlog import generate_backlog
+
+
+# ── Shared adapter utilities ──────────────────────────────────────────────────
+
+_BRIGHTNESS_PROBES = [
+    (0.20, 0.15), (0.50, 0.15), (0.80, 0.15),
+    (0.20, 0.35), (0.50, 0.35), (0.80, 0.35),
+    (0.20, 0.55), (0.50, 0.55), (0.80, 0.55),
+    (0.20, 0.75), (0.50, 0.75), (0.80, 0.75),
+]
+
+_ANSI_RE = re.compile(r'\x1b(?:\[[0-9;]*[a-zA-Z]|\][^\x07\x1b]*(?:\x07|\x1b\\))')
+
+
+class _LLMContent:
+    def __init__(self, text: str):
+        self.text = text
+
+
+class _LLMUsage:
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
+class _LLMResponse:
+    def __init__(self, text: str):
+        self.content = [_LLMContent(text)]
+        self.usage = _LLMUsage()
+
+
+def _extract_images_and_text(
+    messages: list | None, system: str | None
+) -> tuple[list[str], str]:
+    """Pull base64 image data and text from an Anthropic-style messages list."""
+    images_b64: list[str] = []
+    text = ""
+    for msg in (messages or []):
+        for block in msg.get("content", []):
+            if isinstance(block, dict):
+                if block.get("type") == "image":
+                    images_b64.append(block["source"]["data"])
+                elif block.get("type") == "text":
+                    text = block["text"]
+    if system:
+        text = f"{system}\n\n{text}"
+    return images_b64, text
+
+
+def _b64_to_tempfiles(images_b64: list[str]) -> list[str]:
+    """Decode base64 PNG strings to temp files. Returns list of paths to clean up."""
+    paths = []
+    for b64 in images_b64:
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        tmp.write(base64.standard_b64decode(b64))
+        tmp.close()
+        paths.append(tmp.name)
+    return paths
+
+
+def _cleanup_tempfiles(paths: list[str]) -> None:
+    for p in paths:
+        try:
+            os.unlink(p)
+        except OSError:
+            pass
 
 
 # ── Provider factory ──────────────────────────────────────────────────────────
@@ -123,10 +195,13 @@ def _launch_app(udid: str, bundle: str) -> None:
 
 
 def _terminate_app(udid: str, bundle: str) -> None:
-    subprocess.run(
-        ["xcrun", "simctl", "terminate", udid, bundle],
-        capture_output=True, timeout=10,
-    )
+    try:
+        subprocess.run(
+            ["xcrun", "simctl", "terminate", udid, bundle],
+            capture_output=True, timeout=6,
+        )
+    except subprocess.TimeoutExpired:
+        pass  # App may not be running; safe to continue
 
 
 def execute_walk(
@@ -200,56 +275,189 @@ class _GeminiAdapter:
         self.messages = self
 
     def create(self, model=None, max_tokens=400, messages=None, system=None, **kwargs):
-        images_b64 = []
-        text = ""
-        for msg in (messages or []):
-            for block in msg.get("content", []):
-                if isinstance(block, dict):
-                    if block.get("type") == "image":
-                        images_b64.append(block["source"]["data"])
-                    elif block.get("type") == "text":
-                        text = block["text"]
-
-        image_paths = []
-        tmp_files = []
-        for b64 in images_b64:
-            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-            tmp.write(base64.standard_b64decode(b64))
-            tmp.close()
-            image_paths.append(tmp.name)
-            tmp_files.append(tmp.name)
-
-        if system:
-            text = f"{system}\n\n{text}"
-
+        images_b64, text = _extract_images_and_text(messages, system)
+        tmp_paths = _b64_to_tempfiles(images_b64)
         try:
             result = self._client.generate_vision(
-                image_paths=image_paths,
+                image_paths=tmp_paths,
                 text_prompt=text,
                 max_tokens=max_tokens,
             )
-            response_text = getattr(result, "text", str(result))
+            return _LLMResponse(getattr(result, "text", str(result)))
         finally:
-            for p in tmp_files:
-                try:
-                    os.unlink(p)
-                except OSError:
-                    pass
+            _cleanup_tempfiles(tmp_paths)
 
-        class _Content:
-            def __init__(self, text):
-                self.text = text
 
-        class _Usage:
-            input_tokens = 0
-            output_tokens = 0
+# ── Claude CLI adapter (Max-plan fallback, no API key needed) ─────────────────
 
-        class _Response:
-            def __init__(self, text):
-                self.content = [_Content(text)]
-                self.usage = _Usage()
+class _ClaudeCliAdapter:
+    """
+    Calls `claude -p --allowedTools Read` via subprocess using the Max plan
+    OAuth session. No separate API key required. Decodes base64 images to
+    temp files so the Claude CLI Read tool can access them.
+    """
 
-        return _Response(response_text)
+    def __init__(self):
+        self.messages = self
+
+    def create(self, model=None, max_tokens=400, messages=None, system=None, **kwargs):
+        images_b64, text = _extract_images_and_text(messages, system)
+        tmp_paths = _b64_to_tempfiles(images_b64)
+        read_lines = [f"Read {p} — this is Image {i+1}" for i, p in enumerate(tmp_paths)]
+        full_prompt = ("\n".join(read_lines) + "\n\n" + text) if read_lines else text
+
+        try:
+            r = subprocess.run(
+                ["claude", "-p", "--allowedTools", "Read",
+                 "--output-format", "text", full_prompt],
+                capture_output=True, text=True, timeout=120,
+            )
+            # _ANSI_RE strips terminal-title hook escape sequences from stdout
+            response_text = _ANSI_RE.sub("", r.stdout).strip()
+        finally:
+            _cleanup_tempfiles(tmp_paths)
+
+        return _LLMResponse(response_text)
+
+
+def _get_claude_cli_client():
+    """Return _ClaudeCliAdapter if `claude` CLI is available and authenticated."""
+    import shutil
+    if not shutil.which("claude"):
+        return None
+    r = subprocess.run(
+        ["claude", "-p", "--output-format", "text", "Say: ok"],
+        capture_output=True, text=True, timeout=30,
+    )
+    if r.returncode != 0:
+        return None
+    out = (r.stdout + r.stderr).lower()
+    if "not logged in" in out or "login" in out:
+        return None
+    return _ClaudeCliAdapter()
+
+
+# ── Layer 1: Pixel oracle (zero-API fallback) ─────────────────────────────────
+
+def _oracle_check(png_path: Path) -> tuple[bool, str]:
+    """
+    Pixel-level sanity check for iOS simulator screenshots.
+
+    Strategy: file size is the primary signal.
+    - ≥ 80 KB → real screenshot (PNG compression doesn't shrink real UI below this)
+    - < 30 KB → blank capture (a white 390×844 @2x PNG packs to ~2–5 KB)
+    - 30–79 KB → ambiguous; fall through to brightness check
+
+    Brightness check catches black-screen crashes only — we skip the color-
+    diversity check because light-themed apps (lavender/white bg) naturally
+    produce uniform color samples with just 12 probe points.
+    """
+    if not png_path.exists():
+        return False, "screenshot file not found"
+
+    size_kb = png_path.stat().st_size // 1024
+
+    if size_kb >= 80:
+        # Large enough to be a real screenshot — skip pixel checks
+        return True, f"screen alive (size={size_kb} KB)"
+
+    if size_kb < 30:
+        return False, f"file too small ({size_kb} KB) — likely blank capture"
+
+    # Ambiguous size range: probe for black screen (crash indicator)
+    try:
+        from PIL import Image
+    except ImportError:
+        return True, f"PIL not installed — size-range check passed (size={size_kb} KB)"
+
+    img = Image.open(png_path).convert("RGB")
+    w, h = img.size
+    brightnesses = []
+    for fx, fy in _BRIGHTNESS_PROBES:
+        r, g, b = img.getpixel((int(w * fx), int(h * fy)))
+        brightnesses.append((r * 299 + g * 587 + b * 114) // 1000)
+
+    if max(brightnesses) < 15:
+        return False, f"screen too dark (max_br={max(brightnesses)}) — black screen"
+    return True, f"screen alive (size={size_kb} KB)"
+
+
+_ORACLE_ABANDON_RISK = {"BLOCKER": 85, "HIGH": 65, "MEDIUM": 45, "LOW": 25, "DELIGHT": 5}
+
+
+def _synthetic_results_from_oracle(
+    before_ok: bool, before_reason: str,
+    after_ok: bool, after_reason: str,
+    uc: dict,
+) -> tuple[JudgeResult, MindResult]:
+    """
+    Derive Layer 2 + 3 results from pixel oracle without any LLM call.
+    Oracle FAIL → UC's severity_floor verdict.  Oracle PASS → LOW (structural only).
+    """
+    severity_floor = uc.get("severity_floor", "MEDIUM")
+
+    if not after_ok:
+        judge = JudgeResult(
+            verdict="FAIL", confidence=80,
+            reason=f"After-state pixel check failed: {after_reason}",
+            raw_response="", issues=[after_reason], model="pixel-oracle-layer1",
+        )
+        mind = MindResult(
+            first_reaction=f"Something went wrong — {after_reason}",
+            emotional_state="anxious, confused",
+            expected=uc.get("after_state", {}).get("description", ""),
+            actual=after_reason,
+            gap="Screen appears broken or blank",
+            unspoken_frustration="This isn't working. I don't know why.",
+            unspoken_delight="",
+            continue_or_abandon="abandon" if severity_floor in ("BLOCKER", "HIGH") else "hesitate",
+            abandon_risk_score=_ORACLE_ABANDON_RISK.get(severity_floor, 45),
+            heuristic_violated="H1 — Visibility of system status",
+            design_verdict=severity_floor,
+            refinement_suggestion="Fix rendering — after-state appears blank or broken",
+            raw_response="", model="pixel-oracle-layer1",
+        )
+    elif not before_ok:
+        judge = JudgeResult(
+            verdict="UNCERTAIN", confidence=40,
+            reason=f"Before-state oracle warning: {before_reason}",
+            raw_response="", issues=[before_reason], model="pixel-oracle-layer1",
+        )
+        mind = MindResult(
+            first_reaction="Before state looked off, hard to judge what changed",
+            emotional_state="uncertain",
+            expected="", actual=before_reason, gap="Starting state unclear",
+            unspoken_frustration="I wasn't sure what I was looking at",
+            unspoken_delight="",
+            continue_or_abandon="hesitate",
+            abandon_risk_score=35,
+            heuristic_violated="H1 — Visibility of system status",
+            design_verdict="MEDIUM",
+            refinement_suggestion="Verify before-state renders correctly",
+            raw_response="", model="pixel-oracle-layer1",
+        )
+    else:
+        judge = JudgeResult(
+            verdict="PASS", confidence=50,
+            reason=f"Pixel oracle passed: {after_reason}",
+            raw_response="", issues=[], model="pixel-oracle-layer1",
+        )
+        mind = MindResult(
+            first_reaction="Seems to have worked — screen looks normal",
+            emotional_state="neutral, calm",
+            expected=uc.get("after_state", {}).get("description", ""),
+            actual=after_reason,
+            gap="",
+            unspoken_frustration="",
+            unspoken_delight="Screen rendered without obvious errors",
+            continue_or_abandon="continue",
+            abandon_risk_score=10,
+            heuristic_violated="none",
+            design_verdict="LOW",
+            refinement_suggestion="",
+            raw_response="", model="pixel-oracle-layer1",
+        )
+    return judge, mind
 
 
 # ── Layer runners ─────────────────────────────────────────────────────────────
@@ -317,11 +525,16 @@ def main():
                 llm_client = _GeminiAdapter(gemini)
                 print("ℹ Using Gemini Vision (ANTHROPIC_API_KEY not set)", file=sys.stderr)
             else:
-                print(
-                    "⚠ No ANTHROPIC_API_KEY or GEMINI_API_KEY found. "
-                    "Skipping Layers 2+3. Walk + Layer 1 oracle will still run.",
-                    file=sys.stderr,
-                )
+                cli = _get_claude_cli_client()
+                if cli is not None:
+                    llm_client = cli
+                    print("ℹ Using claude CLI (Max plan) for LLM calls", file=sys.stderr)
+                else:
+                    print(
+                        "⚠ No API key or claude CLI available. "
+                        "Oracle fallback will run (pixel-only, no AI judgment).",
+                        file=sys.stderr,
+                    )
 
     # ── Output directories ────────────────────────────────────
     run_id = f"{args.product}-{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H-%M-%S')}"
@@ -395,10 +608,18 @@ def main():
             "after": str(after_path),
         }
 
-        # ── Layer 2: Behavioral Judge ───────────────────────
+        # ── Layer 2: Behavioral Judge (or pixel oracle fallback) ────────────
         judge_result = None
+        mind_result = None
         if 2 in layers and not args.dry_run and llm_client:
             judge_result = run_layer2(llm_client, before_path, after_path, uc, product_name)
+        elif not args.dry_run and (1 in layers or llm_client is None):
+            # Pixel oracle: explicit --layer 1,... OR no API key available
+            before_ok, before_reason = _oracle_check(before_path)
+            after_ok, after_reason = _oracle_check(after_path)
+            judge_result, mind_result = _synthetic_results_from_oracle(
+                before_ok, before_reason, after_ok, after_reason, uc
+            )
         else:
             judge_result = JudgeResult(
                 verdict="UNCERTAIN", confidence=0,
@@ -407,15 +628,17 @@ def main():
             )
 
         # ── Layer 3: Synthetic User Mind ────────────────────
-        mind_result = None
-        if 3 in layers and not args.dry_run and llm_client:
+        if mind_result is None and 3 in layers and not args.dry_run and llm_client:
             mind_result = run_layer3(llm_client, after_path, uc, judge_result)
 
         # ── Status line ─────────────────────────────────────
-        judge_str = f"judge={judge_result.verdict} conf={judge_result.confidence}"
+        is_oracle = getattr(judge_result, "model", "") == "pixel-oracle-layer1"
+        mode = "oracle" if is_oracle else "llm"
+        judge_str = f"judge={judge_result.verdict}({mode}) conf={judge_result.confidence}"
         mind_str = ""
         if mind_result:
-            mind_str = f" maya={mind_result.design_verdict} risk={mind_result.abandon_risk_score}"
+            src = "oracle" if is_oracle else "maya"
+            mind_str = f" {src}={mind_result.design_verdict} risk={mind_result.abandon_risk_score}"
         print(f"  [{uc_id}] {judge_str}{mind_str}")
 
         # ── Append observation ───────────────────────────────
