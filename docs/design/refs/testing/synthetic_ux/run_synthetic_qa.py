@@ -26,9 +26,16 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import io
 import json
 import os
 import re
+import sys as _sys
+
+# Force line-buffered stdout so per-UC status lines appear immediately when piped
+_sys.stdout = io.TextIOWrapper(
+    _sys.stdout.buffer, line_buffering=True, errors="replace"
+)
 import subprocess
 import sys
 import tempfile
@@ -159,6 +166,35 @@ def _md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest() if path.exists() else ""
 
 
+_IDB_COMPANION_PORT = 10882
+
+
+def _ensure_idb_connected(udid: str) -> None:
+    """Ensure idb_companion is alive and connected. Restarts companion if needed."""
+    import shutil
+    if not shutil.which("idb_companion") or not shutil.which("idb"):
+        return
+    # Check if companion process is alive on our port
+    r_lsof = subprocess.run(
+        ["lsof", "-ti", f"tcp:{_IDB_COMPANION_PORT}"],
+        capture_output=True, text=True,
+    )
+    if not r_lsof.stdout.strip():
+        # No companion on port — start a fresh one
+        subprocess.Popen(
+            ["idb_companion", "--udid", udid, "--grpc-port", str(_IDB_COMPANION_PORT)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        time.sleep(2)
+    try:
+        subprocess.run(
+            ["idb", "connect", "localhost", str(_IDB_COMPANION_PORT)],
+            capture_output=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+
 def _idb_tap(udid: str, x: int, y: int) -> bool:
     r = subprocess.run(
         ["idb", "ui", "tap", str(x), str(y), "--udid", udid],
@@ -176,44 +212,72 @@ def _idb_type(udid: str, text: str) -> bool:
 
 
 def _idb_screenshot(udid: str, out_path: Path) -> bool:
+    # xcrun simctl io is more reliable than idb screenshot (no companion dependency)
     r = subprocess.run(
-        ["idb", "screenshot", str(out_path), "--udid", udid],
+        ["xcrun", "simctl", "io", udid, "screenshot", str(out_path)],
         capture_output=True, timeout=15,
     )
     return r.returncode == 0 and out_path.exists()
 
 
 def _bypass_compliance(udid: str, bundle: str) -> None:
-    """Set SharedPreferences keys to skip Welcome + ComplianceGuard screens."""
-    script = (
-        "import Foundation; "
-        "let d = UserDefaults.standard; "
-        "d.set(true, forKey: \"flutter.age_verified\"); "
-        "d.set(true, forKey: \"flutter.has_seen_welcome_v1\"); "
-        "d.synchronize()"
-    )
-    subprocess.run(
-        ["idb", "ui", "exec", "--udid", udid, script],
-        capture_output=True, timeout=10,
-    )
+    """Write compliance SharedPreferences keys directly to the app's plist."""
+    import glob as _glob
+    patterns = [
+        os.path.expanduser(
+            f"~/Library/Developer/CoreSimulator/Devices/{udid}"
+            f"/data/Containers/Data/Application/*/Library/Preferences/{bundle}.plist"
+        ),
+        f"/Volumes/*/Archives/CoreSimulatorDevices/{udid}"
+        f"/data/Containers/Data/Application/*/Library/Preferences/{bundle}.plist",
+    ]
+    plists = [p for pat in patterns for p in _glob.glob(pat)]
+    if not plists:
+        return
+    keys = [
+        ("flutter.age_verified", "-bool", "YES"),
+        ("flutter.has_seen_welcome_v1", "-bool", "YES"),
+        ("flutter.compliance_age_verified_18_plus", "-bool", "YES"),
+    ]
+    for plist in plists:
+        for key, kind, val in keys:
+            try:
+                subprocess.run(
+                    ["/usr/libexec/PlistBuddy", "-c", f"Set :{key} {val}", plist],
+                    capture_output=True, timeout=5,
+                )
+                subprocess.run(
+                    ["/usr/libexec/PlistBuddy", "-c", f"Add :{key} {kind} {val}", plist],
+                    capture_output=True, timeout=5,
+                )
+            except (subprocess.TimeoutExpired, OSError):
+                pass
 
 
 def _launch_app(udid: str, bundle: str) -> None:
-    subprocess.run(
-        ["xcrun", "simctl", "launch", udid, bundle],
-        capture_output=True, timeout=20,
-    )
-    time.sleep(1.5)
+    # xcrun simctl launch blocks until the process PID appears (not full render).
+    # Cold start on simulator can take ~15s; warm start after terminate ~0.5s.
+    try:
+        subprocess.run(
+            ["xcrun", "simctl", "launch", udid, bundle],
+            capture_output=True, timeout=25,
+        )
+    except subprocess.TimeoutExpired:
+        pass  # Process may still have started; proceed
+    time.sleep(1.5)  # Allow first frame to render
 
 
 def _terminate_app(udid: str, bundle: str) -> None:
     try:
-        subprocess.run(
+        r = subprocess.run(
             ["xcrun", "simctl", "terminate", udid, bundle],
-            capture_output=True, timeout=6,
+            capture_output=True, timeout=8,
         )
+        # RC=3 (ESRCH) means app was not running — safe to ignore
     except subprocess.TimeoutExpired:
-        pass  # App may not be running; safe to continue
+        # Daemon busy; fall back to pkill for reliability
+        subprocess.run(["pkill", "-f", "Runner.app/Runner"], capture_output=True)
+        time.sleep(0.5)
 
 
 def execute_walk(
@@ -238,6 +302,8 @@ def execute_walk(
         before_path.write_bytes(b"DRY_RUN_PLACEHOLDER")
         after_path.write_bytes(b"DRY_RUN_PLACEHOLDER")
         return before_path, after_path, True
+
+    _ensure_idb_connected(udid)
 
     try:
         # Terminate + relaunch for clean state
@@ -356,9 +422,10 @@ def _oracle_check(png_path: Path) -> tuple[bool, str]:
     Pixel-level sanity check for iOS simulator screenshots.
 
     Strategy: file size is the primary signal.
-    - ≥ 80 KB → real screenshot (PNG compression doesn't shrink real UI below this)
-    - < 30 KB → blank capture (a white 390×844 @2x PNG packs to ~2–5 KB)
-    - 30–79 KB → ambiguous; fall through to brightness check
+    - ≥ 55 KB → real screenshot (calibrated against GentleQuest's white/lavender
+                 UI: confirmed real app screens are 60–80 KB on iOS 26.5 @3x)
+    - < 30 KB → blank capture (empty 390×844 @2x PNG compresses to ~2–5 KB)
+    - 30–54 KB → ambiguous; fall through to brightness check
 
     Brightness check catches black-screen crashes only — we skip the color-
     diversity check because light-themed apps (lavender/white bg) naturally
@@ -369,7 +436,7 @@ def _oracle_check(png_path: Path) -> tuple[bool, str]:
 
     size_kb = png_path.stat().st_size // 1024
 
-    if size_kb >= 80:
+    if size_kb >= 55:
         # Large enough to be a real screenshot — skip pixel checks
         return True, f"screen alive (size={size_kb} KB)"
 

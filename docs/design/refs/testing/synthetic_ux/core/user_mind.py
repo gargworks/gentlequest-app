@@ -13,7 +13,12 @@ import json
 import time
 from pathlib import Path
 
-import anthropic
+try:
+    import anthropic
+    _APIError = anthropic.APIError
+except ImportError:
+    anthropic = None  # type: ignore[assignment]
+    _APIError = Exception  # type: ignore[assignment,misc]
 
 from .observation_log import JudgeResult, MindResult
 
@@ -167,7 +172,7 @@ Nielsen's heuristics. Assign severity honestly — DELIGHT is as valuable as BLO
             result = MindResult.parse_error()
             result.raw_response = raw_text
             return result
-        except anthropic.APIError as e:
+        except _APIError as e:
             if attempt == 0:
                 time.sleep(5)
                 continue

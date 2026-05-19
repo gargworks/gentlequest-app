@@ -13,7 +13,12 @@ import json
 import time
 from pathlib import Path
 
-import anthropic
+try:
+    import anthropic
+    _APIError = anthropic.APIError
+except ImportError:
+    anthropic = None  # type: ignore[assignment]
+    _APIError = Exception  # type: ignore[assignment,misc]
 
 from .observation_log import JudgeResult
 
@@ -131,7 +136,7 @@ def judge_uc(
                 issues=[str(e)],
                 model=MODEL,
             )
-        except anthropic.APIError as e:
+        except _APIError as e:
             if attempt == 0:
                 time.sleep(5)
                 continue

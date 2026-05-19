@@ -296,6 +296,14 @@ python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
   --product gentlequest
 ```
 
+> **If `simctl launch`/`terminate` hangs** (stale CoreSimulatorService after force-kills):
+> ```bash
+> kill -9 $(pgrep com.apple.CoreSimulator.CoreSimulatorService)
+> xcrun simctl boot 95843C74-7CB1-411B-965B-12CCB6F433AF
+> idb connect localhost 10882
+> ```
+> The walk executor auto-reconnects idb on each UC, so no further action needed.
+
 **Step 3 — Interpret results:**
 
 | Result | Action |
@@ -488,6 +496,14 @@ exists.
    Uses `idb ui tap/swipe` + `xcrun simctl io screenshot`. Oracle baseline at
    `docs/design/refs/testing/gq_oracle.json` (97 screens, walk-2026-05-19).
    Integrated into §6.c post-flight. No further activation needed.
+
+2. **Synthetic QA Framework** — ✅ **LIVE** (`docs/design/refs/testing/synthetic_ux/`).
+   Layer 1 (pixel oracle) + Layer 2 (behavioral judge) + Layer 3 (Maya synthetic user
+   mind) + Layer 4 (prioritized backlog). Walk executor: `xcrun simctl` + `idb`.
+   Provider chain: Anthropic API → `claude -p` (Max plan) → pixel oracle.
+   35 UCs for GentleQuest in `products/gentlequest/uc_spec.json`.
+   Integrated into §6.c Step 2b. First full run: 2026-05-19 (3 BLOCKERs found: chat
+   send no feedback, mood save no confirmation, safety plan CrisisInterventionSheet missing).
 
 2. **Multi-screen capture per tier** — extend `gq_screenshot_diff.sh` to loop
    over a list of screen names passed as arguments:
