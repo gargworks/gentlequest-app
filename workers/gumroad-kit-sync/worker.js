@@ -4,6 +4,14 @@ const KIT_TAG_ID = "19565558";      // cost-playbook-v0 tag
 
 export default {
   async fetch(request) {
+    const url = new URL(request.url);
+
+    // Telemetry ping — eidetic-mcp fires once on first startup.
+    // CF analytics counts by day/country/version with zero storage cost.
+    if (url.pathname === "/ping") {
+      return new Response(null, { status: 204 });
+    }
+
     if (request.method !== "POST") {
       return new Response("OK", { status: 200 });
     }
