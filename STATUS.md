@@ -54,7 +54,7 @@
 | X thread (own post) | **PENDING Lokesh** — docs/posts/x-thread-day8.md |
 | HN Show HN | **PENDING Lokesh** — docs/posts/hn-show-hn-day8.md |
 | Reddit r/ClaudeAI | **PENDING Lokesh** — docs/posts/reddit-rclaudeai-day8.md |
-| dev.to article | **PENDING Lokesh** — docs/posts/devto-day8.md |
+| dev.to article | ✅ PUBLISHED 2026-05-19 — dev.to/nucleusos/i-got-tired-of-losing-claude-code-context-between-sessions-so-i-built-a-daemon-4ca5 |
 
 ### Sovereign (cc_voice lane)
 
