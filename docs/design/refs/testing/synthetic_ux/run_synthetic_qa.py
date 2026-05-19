@@ -74,9 +74,13 @@ class _LLMResponse:
 
 
 def _extract_images_and_text(
-    messages: list | None, system: str | None
+    messages: list | None, system: str | list | None
 ) -> tuple[list[str], str]:
-    """Pull base64 image data and text from an Anthropic-style messages list."""
+    """Pull base64 image data and text from an Anthropic-style messages list.
+
+    system may be a plain string or a list of Anthropic content blocks
+    (as user_mind.py passes it for cache_control). Both are normalised to str.
+    """
     images_b64: list[str] = []
     text = ""
     for msg in (messages or []):
@@ -87,7 +91,15 @@ def _extract_images_and_text(
                 elif block.get("type") == "text":
                     text = block["text"]
     if system:
-        text = f"{system}\n\n{text}"
+        if isinstance(system, list):
+            # Extract text from Anthropic content-block list (ignores cache_control)
+            system_text = "\n".join(
+                b.get("text", "") for b in system
+                if isinstance(b, dict) and b.get("type") == "text"
+            )
+        else:
+            system_text = system
+        text = f"{system_text}\n\n{text}"
     return images_b64, text
 
 
