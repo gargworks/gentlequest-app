@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
 import 'settings_screen.dart';
@@ -68,7 +69,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
   bool _voiceNotes = false;
 
   // Safety plan state — empty in this tier (read from secure storage TBD)
-  final bool _planFilled = true; // [assumed] show filled state for demo
+  final bool _planFilled = false; // empty until user completes builder
 
   static const _pronouns = ['he/him', 'she/her', 'they/them', 'custom', 'prefer not'];
   static const _avatarGradients = [
@@ -483,9 +484,9 @@ class _SafetyPlanFilled extends StatelessWidget {
 
   // Sample contacts per HTML mockup
   static const _contacts = [
-    SafetyContact(initial: 'M', name: 'Mum', detail: 'Family · ★ favorite', isCrisis: false),
-    SafetyContact(initial: 'J', name: 'Dr. Jordan', detail: 'Therapist · weekday only', isCrisis: false),
-    SafetyContact(initial: '988', name: 'Crisis line', detail: 'Always available', isCrisis: true),
+    SafetyContact(initial: 'M', name: 'Mum', detail: 'Family · ★ favorite', isCrisis: false, phone: ''),
+    SafetyContact(initial: 'J', name: 'Dr. Jordan', detail: 'Therapist · weekday only', isCrisis: false, phone: ''),
+    SafetyContact(initial: '988', name: 'Crisis line', detail: 'Always available', isCrisis: true, phone: '988'),
   ];
 
   @override
@@ -686,12 +687,14 @@ class SafetyContact {
   final String name;
   final String detail;
   final bool isCrisis;
+  final String phone;
 
   const SafetyContact({
     required this.initial,
     required this.name,
     required this.detail,
     required this.isCrisis,
+    required this.phone,
   });
 }
 
@@ -772,9 +775,23 @@ class _ContactRow extends StatelessWidget {
           ),
           // Call button
           GestureDetector(
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Calling ${contact.name}…')),
-            ),
+            onTap: () async {
+              final phone = contact.phone;
+              if (phone.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Add a phone number for ${contact.name} first.')),
+                );
+                return;
+              }
+              final uri = Uri.parse('tel:$phone');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Cannot dial ${contact.name} from this device.')),
+                );
+              }
+            },
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 11, vertical: 7),

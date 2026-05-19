@@ -248,13 +248,11 @@ The 6 avatar gradient dots are tappable (setState). But the large avatar circle 
 
 | # | Severity | File | Line | Status |
 |---|---|---|---|---|
-| BUG-001 | CRITICAL | profile_nav_sheet.dart | 78–130 | **Fix in this PR** |
-| BUG-002 | HIGH | profile_screen.dart | 33, 925–952 | **Fix in this PR** |
-| BUG-003 | HIGH | clinical_assessment_screen.dart | 1220 | **Fix in this PR** |
-| BUG-004 | MEDIUM | profile_screen.dart | 773 | Fix next sprint (needs SafetyContact.phone field) |
+| BUG-001 | CRITICAL | profile_nav_sheet.dart | 78–130 | ✅ Fixed |
+| BUG-002 | HIGH | profile_screen.dart | 33, 925–952 | ✅ Fixed |
+| BUG-003 | HIGH | clinical_assessment_screen.dart | 1220 | ✅ Fixed |
+| BUG-004 | MEDIUM | profile_screen.dart | 773 | ✅ Fixed (url_launcher + phone field) |
 | BUG-005 | MEDIUM | interactive_chat_screen.dart | 531–609 | Not currently overlapping — monitor |
-| BUG-006 | LOW | profile_screen.dart | 69 | Fix when persistence is wired |
+| BUG-006 | LOW | profile_screen.dart | 69 | ✅ Fixed (_planFilled → false) |
 | BUG-007 | LOW | clinical_assessment_screen.dart | 1243 | Known stub — feature gap |
 | BUG-008 | INFO | profile_screen.dart | avatar section | Acceptable for current tier |
-
-## Bugs marked "Fix in this PR": BUG-001, BUG-002, BUG-003
