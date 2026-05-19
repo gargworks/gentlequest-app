@@ -29,6 +29,7 @@
 | v0.0.29 | Day 9 | `-install` flag (launchd/systemd one-command setup) |
 | v0.0.30 | Day 9 | Windows capture paths (`%APPDATA%\Claude\projects`, `%APPDATA%\Cursor`) |
 | v0.0.31 | Day 9 | Bridge dual-listener (`-bridge <addr>` TCP alongside UDS, CORS, auth) |
+| v0.0.32 | Day 9 | `--restore` flag — download latest R2 backup + `/download` Worker endpoint |
 
 **Current live numbers:** 278,561 engrams, 803 sessions, P95 retrieval 2.09ms, DB 3.3 GB
 
