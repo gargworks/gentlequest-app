@@ -18,9 +18,8 @@
 const KIT_API_KEY          = "R3gQh4pB1VsHaq29EFDvQA";
 const KIT_COSTPLAYBOOK_SEQ = "2756160";   // Cost Playbook v0 sequence
 const KIT_COSTPLAYBOOK_TAG = "19565558";  // cost-playbook-v0 tag
-// TODO: create Pro tag + sequence in Kit, paste IDs here
-const KIT_PRO_TAG          = "REPLACE_WITH_PRO_TAG_ID";
-const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // welcome sequence: "we'll deliver sync.json within 24h"
+const KIT_PRO_TAG          = "19666228";   // eidetic-pro tag (created 2026-05-19)
+const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // Pro Welcome sequence — blocked: Kit free plan (1 seq limit)
 
 const PRO_PERMALINK = "eidetic-pro"; // Gumroad product permalink for Pro tier
 
