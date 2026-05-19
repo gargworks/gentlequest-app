@@ -502,8 +502,13 @@ exists.
    mind) + Layer 4 (prioritized backlog). Walk executor: `xcrun simctl` + `idb`.
    Provider chain: Anthropic API → `claude -p` (Max plan) → pixel oracle.
    35 UCs for GentleQuest in `products/gentlequest/uc_spec.json`.
-   Integrated into §6.c Step 2b. First full run: 2026-05-19 (3 BLOCKERs found: chat
-   send no feedback, mood save no confirmation, safety plan CrisisInterventionSheet missing).
+   Integrated into §6.c Step 2b.
+   **Full 35-UC run — 2026-05-20:** BLOCKER:25 HIGH:9 MEDIUM:1. Dominant finding: H1
+   (Visibility of System Status) violated across all flows — nearly every navigation action
+   lands on Talk/chat screen instead of intended destination, indicating systematic routing
+   failures throughout the app. Highest-risk UCs: UC-P4 (safety plan Use Now, abandon 91/100),
+   UC-I2 (chat send, abandon 91/100), UC-J3 (journal entry, abandon 82/100).
+   Run report: `docs/design/refs/testing/synthetic_ux/reports/gentlequest-2026-05-19T17-49-11/`.
 
 2. **Multi-screen capture per tier** — extend `gq_screenshot_diff.sh` to loop
    over a list of screen names passed as arguments:
