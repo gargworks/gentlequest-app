@@ -257,6 +257,7 @@ def _bypass_compliance(udid: str, bundle: str) -> None:
 def _launch_app(udid: str, bundle: str) -> None:
     # xcrun simctl launch blocks until the process PID appears (not full render).
     # Cold start on simulator can take ~15s; warm start after terminate ~0.5s.
+    # Flutter needs ~3-5s after process start to render first frame on iOS 26.5.
     try:
         subprocess.run(
             ["xcrun", "simctl", "launch", udid, bundle],
@@ -264,7 +265,7 @@ def _launch_app(udid: str, bundle: str) -> None:
         )
     except subprocess.TimeoutExpired:
         pass  # Process may still have started; proceed
-    time.sleep(1.5)  # Allow first frame to render
+    time.sleep(5.0)  # Allow first frame to render (Flutter cold-render budget)
 
 
 def _terminate_app(udid: str, bundle: str) -> None:
