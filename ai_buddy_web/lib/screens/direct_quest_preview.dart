@@ -51,6 +51,7 @@ class QuestPreviewScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildQuestCard(
+              context,
               title: 'Daily Check-in',
               description: 'Complete your daily mood check-in',
               progress: 0.3,
@@ -59,6 +60,7 @@ class QuestPreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
+              context,
               title: 'Meditation Challenge',
               description: 'Meditate for 5 minutes',
               progress: 0.7,
@@ -67,6 +69,7 @@ class QuestPreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
+              context,
               title: 'Gratitude Journal',
               description: 'Write 3 things you\'re grateful for',
               progress: 0.0,
@@ -75,6 +78,7 @@ class QuestPreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
+              context,
               title: 'Breathing Exercise',
               description: 'Complete a 2-minute breathing exercise',
               progress: 0.0,
@@ -87,7 +91,8 @@ class QuestPreviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuestCard({
+  Widget _buildQuestCard(
+    BuildContext context, {
     required String title,
     required String description,
     required double progress,
