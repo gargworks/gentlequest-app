@@ -1333,16 +1333,32 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   /// R1D7 voice input mic button for the input bar.
+  ///
+  /// VoiceInputBar is UI-only — speech_to_text is not yet wired, so opening
+  /// it sends the user into a recording UI that always produces an empty
+  /// transcript. Until the backend ships, surface a "coming soon" SnackBar
+  /// instead of advertising a feature that doesn't work.
   Widget _buildVoiceMicButton() {
     return Semantics(
       button: true,
-      label: 'Start voice input',
+      label: 'Voice input — coming soon',
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _voiceInputActive = true;
-            _voiceTranscript = '';
-          });
+          HapticFeedback.lightImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Voice input is coming soon · for now, please type',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(GQRadii.card),
+              ),
+              backgroundColor: GQColors.ink2,
+            ),
+          );
         },
         child: Container(
           width: 44,

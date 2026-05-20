@@ -359,7 +359,26 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
 
   void _saveAndExit() {
     // [backend_assessment_storage_missing] — partial draft saved only in memory.
-    Navigator.of(context).maybePop();
+    // Synthetic UX QA UC-CA3: confirm to the user the action registered before
+    // popping, so the exit doesn't feel like a silent drop.
+    HapticFeedback.lightImpact();
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    nav.maybePop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Progress saved · resume anytime from the Mood tab',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+        backgroundColor: GQColors.ink2,
+      ),
+    );
   }
 
   @override

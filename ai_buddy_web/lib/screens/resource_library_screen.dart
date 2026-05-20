@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../theme/gq_tokens.dart';
 import '../screens/chat_screen.dart';
+import '../screens/exercise_scaffold_screen.dart';
+import '../widgets/exercise_card_scaffold.dart';
 
 // resource_library_screen.dart — Tier R1D17
 //
@@ -188,10 +190,17 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
   }
 
   void _onExerciseTap(_Exercise exercise) {
+    final scaffoldType = _exerciseScaffoldType(exercise);
+    if (scaffoldType != null) {
+      HapticFeedback.lightImpact();
+      ExerciseScaffoldScreen.show(context, scaffoldType);
+      return;
+    }
+    // No scaffold mapping yet — degrade gracefully with an honest message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${exercise.name} — fullscreen exercise view coming in R1D16.',
+          '${exercise.name} — guided version coming soon. Try a similar exercise meanwhile?',
           style: const TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 13,
@@ -205,6 +214,21 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  ExerciseType? _exerciseScaffoldType(_Exercise exercise) {
+    switch (exercise.id) {
+      case 'breath_478':
+      case 'box_breathing':
+        return ExerciseType.breathing;
+      case 'grounding_54321':
+        return ExerciseType.grounding;
+      case 'body_scan':
+      case 'prog_relax':
+        return ExerciseType.bodyScan;
+      default:
+        return null;
+    }
   }
 
   void _onAskAlex() {

@@ -299,17 +299,33 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               ),
             ),
             const SizedBox(width: 12),
+            // Labeled pill instead of bare '+' circle: recognition > recall
+            // (synthetic UX QA UC-M1 H6 — Maya didn't know the '+' meant "log mood").
             Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
                 color: GQColors.primarySoft,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: GQColors.primary,
-                size: 22,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_rounded,
+                    color: GQColors.primary,
+                    size: 18,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Log mood',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: GQColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
