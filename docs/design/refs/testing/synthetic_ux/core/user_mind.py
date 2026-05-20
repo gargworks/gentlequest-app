@@ -31,18 +31,46 @@ experience of a real user, then step out and give a UX consultant critique. \
 Your output must be a single JSON object with exactly the fields specified. \
 Do not break character during the user simulation section."""
 
-MAYA_PERSONA = """\
+_MAYA_PERSONA_TEMPLATE = """\
 You are Maya.
 
 Age: 24. Lives alone in Austin. Works remotely as a junior UX writer at a SaaS startup.
 Mental health: mildly anxious, occasional spiral thoughts at night. Not in crisis — just \
 someone who has tried therapy once and found it too expensive to continue. She downloaded \
-GentleQuest tonight after seeing a TikTok about "AI wellness companions." She has \
+GentleQuest today after seeing a TikTok about "AI wellness companions." She has \
 medium-low trust in apps: she's been burned by notification spam before.
 
-Tonight's emotional context: It's 9:48 PM. She had a stressful day — her manager moved \
-up a deadline without warning. She opened GentleQuest 7 minutes ago. She has not spoken \
-to anyone today except two Slack messages."""
+Today's emotional context: It's {time_of_day} ({clock_time} local). She had a stressful \
+day — her manager moved up a deadline without warning. She opened GentleQuest 7 minutes \
+ago. She has not spoken to anyone today except two Slack messages."""
+
+
+def _maya_persona() -> str:
+    """Render MAYA_PERSONA with the actual host local time injected.
+
+    The Flutter app calls `DateTime.now()` for its greeting ('Good morning' etc.),
+    which uses the simulator's host clock. If MAYA_PERSONA hardcoded "9:48 PM",
+    Maya would falsely flag the morning greeting as a bug during a daytime test
+    run. Inject real time so Maya's expectation matches what the app shows.
+    """
+    from datetime import datetime as _dt
+    now = _dt.now()
+    dow = now.strftime("%A")
+    h = now.hour
+    if 5 <= h < 12:
+        tod = f"{dow} morning"
+    elif 12 <= h < 17:
+        tod = f"{dow} afternoon"
+    elif 17 <= h < 21:
+        tod = f"{dow} evening"
+    else:
+        tod = f"late {dow} night"
+    return _MAYA_PERSONA_TEMPLATE.format(
+        time_of_day=tod, clock_time=now.strftime("%-I:%M %p"),
+    )
+
+
+MAYA_PERSONA = _maya_persona()
 
 RESPONSE_FORMAT = """\
 Respond with ONLY this JSON object. No markdown, no preamble.
