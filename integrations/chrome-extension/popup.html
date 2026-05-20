@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Eidetic</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-soft: #141414;
+      --bg-input: #1a1a1a;
+      --fg: #e5e5e5;
+      --muted: #888;
+      --accent: #5eead4;
+      --accent-dim: #2dd4bf;
+      --border: #262626;
+      --err: #f87171;
+      --ok: #4ade80;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+      width: 360px;
+    }
+    .wrap { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .brand { color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 6px rgba(255,255,255,0.05);
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .dot.err { background: var(--err); box-shadow: 0 0 6px var(--err); }
+    button {
+      background: var(--bg-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s ease;
+    }
+    button:hover:not(:disabled) { background: rgba(94, 234, 212, 0.08); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    button.primary:hover:not(:disabled) { background: var(--accent-dim); }
+    input[type="text"], input[type="search"] {
+      width: 100%;
+      background: var(--bg-input);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      padding: 7px 9px;
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 4px;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent-dim); }
+    section { display: flex; flex-direction: column; gap: 6px; }
+    .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .row { display: flex; gap: 6px; }
+    .row input { flex: 1; }
+    .results { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+    .result {
+      padding: 6px 8px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .result .meta { color: var(--muted); font-size: 10px; margin-bottom: 2px; }
+    .answer {
+      padding: 8px;
+      background: var(--bg-soft);
+      border-left: 2px solid var(--accent);
+      border-radius: 3px;
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .msg { font-size: 11px; color: var(--muted); }
+    .msg.err { color: var(--err); }
+    .msg.ok { color: var(--ok); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      font-size: 10px;
+      color: var(--muted);
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="brand">EIDETIC</span>
+      <span class="status">
+        <span id="dot" class="dot"></span>
+        <span id="statusText">checking…</span>
+      </span>
+    </header>
+
+    <section>
+      <button id="saveBtn" class="primary">Save this page</button>
+      <span id="saveMsg" class="msg"></span>
+    </section>
+
+    <section>
+      <span class="label">Search</span>
+      <div class="row">
+        <input id="searchInput" type="search" placeholder="search engrams…" autofocus>
+        <button id="searchBtn">Go</button>
+      </div>
+      <div id="searchResults" class="results"></div>
+    </section>
+
+    <section>
+      <span class="label">Ask</span>
+      <div class="row">
+        <input id="askInput" type="text" placeholder="ask a question…">
+        <button id="askBtn">Ask</button>
+      </div>
+      <div id="askAnswer"></div>
+      <div id="askResults" class="results"></div>
+    </section>
+
+    <footer>
+      <a href="#" id="optsLink">settings</a>
+    </footer>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
