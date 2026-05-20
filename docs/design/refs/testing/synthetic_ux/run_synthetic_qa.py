@@ -311,7 +311,7 @@ def _launch_app(udid: str, bundle: str) -> None:
         )
     except subprocess.TimeoutExpired:
         pass  # Process may still have started; proceed
-    time.sleep(5.0)  # Allow first frame to render (Flutter cold-render budget)
+    time.sleep(7.5)  # Allow first frame + HomeShell layout (Flutter cold-render budget)
 
 
 def _terminate_app(udid: str, bundle: str) -> None:
@@ -362,6 +362,21 @@ def execute_walk(
         if uc.get("bypass_compliance"):
             _bypass_compliance(udid, bundle)
         _launch_app(udid, bundle)
+
+        # precondition_steps: silent navigation that runs BEFORE walk_steps.
+        # No screenshots captured; gets the simulator from cold-launch state
+        # to the UC's expected starting screen. Without this, every non-Talk
+        # UC FAILs because the launch lands on Talk and the first tap fires
+        # from the wrong screen.
+        for step in uc.get("precondition_steps", []):
+            action = step["action"]
+            if action == "tap":
+                _idb_tap(udid, step["x"], step["y"])
+                time.sleep(0.3)
+            elif action == "type":
+                _idb_type(udid, step["text"])
+            elif action == "wait":
+                time.sleep(step.get("duration_ms", 500) / 1000)
 
         for step in uc.get("walk_steps", []):
             action = step["action"]

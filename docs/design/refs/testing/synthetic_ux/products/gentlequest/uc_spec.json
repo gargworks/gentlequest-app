@@ -237,8 +237,8 @@
     "after_state": {"description": "MoodTrackerScreen with MoodTriggerCard (Check in CTA), ClinicalCheckInCard, WeeklyReviewRow all visible"},
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
-      {"action": "tap", "x": 196, "y": 845, "TODO_CALIBRATE": true},
-      {"action": "wait", "duration_ms": 800},
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500},
       {"action": "screenshot", "screen_name": "after"}
     ],
     "bypass_compliance": true,
@@ -260,6 +260,10 @@
     "defining_action": "Tap 'Great' mood button → tap 'Save check-in'",
     "before_state": {"description": "Mood bottom sheet open with 5 emoji mood buttons"},
     "after_state": {"description": "Sheet dismissed; mood logged; MoodTrackerScreen shows today's mood"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 40, "y": 500, "TODO_CALIBRATE": true},
@@ -287,6 +291,10 @@
     "defining_action": "Tap 'Rough' mood → tap 'Save check-in'",
     "before_state": {"description": "Mood bottom sheet open"},
     "after_state": {"description": "MoodReflectionSheet slides up automatically with FaceOption row and Talk to Alex button"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 350, "y": 500, "TODO_CALIBRATE": true},
@@ -314,6 +322,10 @@
     "defining_action": "Tap ClinicalCheckInCard",
     "before_state": {"description": "MoodTrackerScreen with ClinicalCheckInCard visible"},
     "after_state": {"description": "ClinicalAssessmentScreen entry screen loaded with PHQ-9 and GAD-7 cards"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 196, "y": 400, "TODO_CALIBRATE": true},
@@ -339,6 +351,10 @@
     "defining_action": "Tap WeeklyReviewRow",
     "before_state": {"description": "MoodTrackerScreen with WeeklyReviewRow visible"},
     "after_state": {"description": "WeeklyReviewScreen pushed; MoodShapeChart and weekly summary visible"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 196, "y": 580, "TODO_CALIBRATE": true},
@@ -366,8 +382,8 @@
     "after_state": {"description": "QuestScreen with QuestCardWidget list, ProgressRing visible, 3 Good Things quest first"},
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
-      {"action": "tap", "x": 313, "y": 845, "TODO_CALIBRATE": true},
-      {"action": "wait", "duration_ms": 800},
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500},
       {"action": "screenshot", "screen_name": "after"}
     ],
     "bypass_compliance": true,
@@ -389,6 +405,10 @@
     "defining_action": "Tap first QuestCardWidget",
     "before_state": {"description": "QuestScreen list view with quest cards"},
     "after_state": {"description": "QuestPreviewView visible: icon, title, description, Start/Continue button"},
+    "precondition_steps": [
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 196, "y": 280, "TODO_CALIBRATE": true},
@@ -414,6 +434,10 @@
     "defining_action": "Tap 'Complete today' button",
     "before_state": {"description": "QuestInProgressView with TextFields for 3 Good Things quest"},
     "after_state": {"description": "Completion animation fires; XP microinteraction; quest marked done for today"},
+    "precondition_steps": [
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
       {"action": "tap", "x": 196, "y": 300, "TODO_CALIBRATE": true},
