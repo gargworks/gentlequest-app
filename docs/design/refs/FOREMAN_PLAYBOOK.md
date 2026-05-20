@@ -503,12 +503,31 @@ exists.
    Provider chain: Anthropic API → `claude -p` (Max plan) → pixel oracle.
    35 UCs for GentleQuest in `products/gentlequest/uc_spec.json`.
    Integrated into §6.c Step 2b.
-   **Full 35-UC run — 2026-05-20:** BLOCKER:25 HIGH:9 MEDIUM:1. Dominant finding: H1
-   (Visibility of System Status) violated across all flows — nearly every navigation action
-   lands on Talk/chat screen instead of intended destination, indicating systematic routing
-   failures throughout the app. Highest-risk UCs: UC-P4 (safety plan Use Now, abandon 91/100),
-   UC-I2 (chat send, abandon 91/100), UC-J3 (journal entry, abandon 82/100).
-   Run report: `docs/design/refs/testing/synthetic_ux/reports/gentlequest-2026-05-19T17-49-11/`.
+   **Run-1 (2026-05-19, baseline):** BLOCKER:25 HIGH:9 MEDIUM:1. Plist state leaked between
+   UCs; almost every UC FAILed with "Talk/chat screen rendered instead of expected destination."
+   Misleading: dominant finding was a framework artifact, not 25 app bugs.
+
+   **Hardening landed 2026-05-20:** (a) per-UC sandbox wipe via `simctl get_app_container`
+   eliminates plist leakage; (b) `_bypass_compliance` now creates the plist if missing;
+   (c) WALK_DRIFT clustering in `core/backlog.py` demotes "wrong screen → Talk" findings out
+   of the priority list; (d) added `flutter.legal_ack_v1=YES` to bypass keys (was triggering
+   Safety & Legal modal on every chat mount); (e) UC-I1/UC-I3 chip text updated to
+   "Today's been heavy" etc. (R1D6 renamed chips; spec was stale).
+
+   **Run-3 (2026-05-20, post-hardening):** 8 BLOCKER + 2 HIGH + 1 MEDIUM + 1 LOW real findings;
+   22 demoted to WALK_DRIFT (need tap-coord recalibration); 1 DELIGHT.
+   Real-bug shortlist:
+   - UC-I2 chat send → navigates to Community tab (abandon 91/100)
+   - UC-W3/W4/C1 — age modal taps don't navigate (3 BLOCKERs in onboarding)
+   - UC-I5 profile avatar tap → no ProfileNavSheet
+   - UC-M1 Mood tab → renders Quest screen
+   - UC-Q1 Quest tab → Community screen
+   - UC-I1 "Good morning" greeting at 9:48 PM — time-aware string fix needed
+   Run report: `docs/design/refs/testing/synthetic_ux/reports/gentlequest-2026-05-20T01-19-49/`.
+
+   **Outstanding framework work** (see `~/.claude/.../project_synth_qa_next_steps.md`):
+   tap-coordinate recalibration (drives the 22-UC drift cluster down), `precondition_assert`
+   step type, golden precondition screenshots.
 
 2. **Multi-screen capture per tier** — extend `gq_screenshot_diff.sh` to loop
    over a list of screen names passed as arguments:
