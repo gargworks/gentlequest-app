@@ -275,6 +275,10 @@ def _bypass_compliance(udid: str, bundle: str) -> None:
         ("flutter.age_verified", "bool", "YES"),
         ("flutter.has_seen_welcome_v1", "bool", "YES"),
         ("flutter.compliance_age_verified_18_plus", "bool", "YES"),
+        # interactive_chat_screen._ensureLegalAck fires on every chat mount
+        # when this is missing. Set it during bypass so post-onboarding UCs
+        # don't all get intercepted by the Safety & Legal sheet.
+        ("flutter.legal_ack_v1", "bool", "YES"),
     ]
     for key, kind, val in keys:
         # Try Set (existing key) first, then Add (new key). PlistBuddy creates
