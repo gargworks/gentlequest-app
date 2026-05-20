@@ -1118,10 +1118,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final greeting = knownName ? '$timeGreeting, $rawName.' : '$timeGreeting.';
 
     // R1D6 — Named starter set (same 4 across all time-of-day buckets).
+    // Reordered: leading with "Today's been heavy" presumed a heavy day for
+    // a first-time user. Now leads with the most neutral option ("Just need
+    // someone to listen") so the default isn't framing the user's mood.
     const List<String> starters = [
-      "Today's been heavy",
-      'I want to vent a little',
       'Just need someone to listen',
+      'I want to vent a little',
+      "Today's been heavy",
       'Quick win, please',
     ];
 

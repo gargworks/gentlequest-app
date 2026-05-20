@@ -366,14 +366,18 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Clinical Check-in',
+                      // Softened from "Clinical Check-in" — medical jargon
+                      // at first-touch was scaring anxious target users.
+                      'Mental wellness check-in',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'PHQ-9 & GAD-7 assessments',
+                      // PHQ-9/GAD-7 names still used internally; user-facing
+                      // copy describes the experience, not the instrument.
+                      'A brief, private check-in · ~2 min',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color
                             ?.withValues(alpha: 0.7),
