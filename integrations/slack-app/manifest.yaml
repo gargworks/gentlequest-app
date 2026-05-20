@@ -1,0 +1,45 @@
+# Slack App Manifest — eidetic-daemon
+#
+# Paste this into https://api.slack.com/apps → Create New App → "From a manifest".
+# Then replace the <WORKER_HOST> placeholders with your deployed Worker hostname
+# (e.g. eidetic-slack.<your-subdomain>.workers.dev or slack.eidetic.works).
+
+display_information:
+  name: Eidetic
+  description: Ask your local eidetic-daemon from any Slack channel.
+  background_color: "#0b0f17"
+  long_description: |
+    Eidetic is a personal memory layer that runs on your own machine
+    (eideticd -bridge :8421). This Slack app lets you run /eidetic <question>
+    in any channel and get an answer sourced from YOUR engrams, delivered as an
+    ephemeral message (only visible to you). The Slack workspace never sees your
+    bridge URL, bearer token, or engram contents — those live in Cloudflare
+    Workers KV scoped to your team_id + user_id.
+
+features:
+  bot_user:
+    display_name: Eidetic
+    always_online: false
+  slash_commands:
+    - command: /eidetic
+      url: https://<WORKER_HOST>/slack/command
+      description: Ask your eidetic-daemon a question (results visible only to you).
+      usage_hint: "<your question>"
+      should_escape: false
+
+oauth_config:
+  redirect_urls:
+    - https://<WORKER_HOST>/slack/oauth
+  scopes:
+    bot:
+      - commands
+
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+  event_subscriptions:
+    request_url: null
+    bot_events: []
+  interactivity:
+    is_enabled: false
