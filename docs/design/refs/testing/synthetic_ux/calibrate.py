@@ -95,17 +95,125 @@ def _find_saturated_blob(
     return int(xs.mean() + x_offset), int(ys.mean() + y_offset)
 
 
+def _render_grid_overlay(
+    src_path: Path,
+    out_path: Path,
+    scale: int = DEFAULT_SCALE,
+    major_step: int = 50,
+    minor_step: int = 10,
+) -> bool:
+    """Overlay a labeled coordinate grid (in POINTS) on src_path → out_path.
+
+    Without an overlay, Vision LLMs cannot reliably report pixel positions
+    on a bare screenshot — they confabulate. With a numbered grid drawn
+    directly on the image, the LLM only needs to read labels at the
+    intersection of the element's center → which it does reliably.
+
+    Grid is drawn in POINT coordinates (pixel / scale) since that's what
+    idb tap consumes. Major lines every `major_step` points are labeled;
+    minor lines every `minor_step` points are unlabeled.
+    """
+    if not _HAVE_PIL:
+        return False
+    try:
+        from PIL import ImageDraw, ImageFont
+    except ImportError:
+        return False
+
+    img = Image.open(src_path).convert("RGB")
+    w_px, h_px = img.size
+    w_pt, h_pt = w_px // scale, h_px // scale
+
+    overlay = img.copy()
+    draw = ImageDraw.Draw(overlay, "RGBA")
+
+    # Minor grid — light, no labels
+    minor_color = (255, 64, 64, 60)
+    for x_pt in range(0, w_pt + 1, minor_step):
+        x = x_pt * scale
+        draw.line([(x, 0), (x, h_px)], fill=minor_color, width=1)
+    for y_pt in range(0, h_pt + 1, minor_step):
+        y = y_pt * scale
+        draw.line([(0, y), (w_px, y)], fill=minor_color, width=1)
+
+    # Major grid — bright red, labeled
+    major_color = (255, 0, 0, 180)
+    label_bg = (255, 255, 255, 220)
+    label_fg = (200, 0, 0, 255)
+
+    # Try to load a reasonable font; fall back to default
+    font = None
+    for candidate in [
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]:
+        try:
+            font = ImageFont.truetype(candidate, 24 * (scale // 2 or 1))
+            break
+        except (OSError, IOError):
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    for x_pt in range(0, w_pt + 1, major_step):
+        x = x_pt * scale
+        draw.line([(x, 0), (x, h_px)], fill=major_color, width=2)
+        # Label at top edge
+        text = str(x_pt)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        bg = (x - tw // 2 - 4, 4, x + tw // 2 + 4, 8 + th + 4)
+        draw.rectangle(bg, fill=label_bg)
+        draw.text((x - tw // 2, 6), text, font=font, fill=label_fg)
+
+    for y_pt in range(0, h_pt + 1, major_step):
+        y = y_pt * scale
+        draw.line([(0, y), (w_px, y)], fill=major_color, width=2)
+        text = str(y_pt)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        bg = (4, y - th // 2 - 2, 8 + tw + 4, y + th // 2 + 6)
+        draw.rectangle(bg, fill=label_bg)
+        draw.text((8, y - th // 2), text, font=font, fill=label_fg)
+
+    overlay.save(out_path, "PNG")
+    return True
+
+
 def _vision_locate(
     img_path: Path,
     description: str,
+    use_grid: bool = True,
+    scale: int = DEFAULT_SCALE,
 ) -> tuple[int, int] | None:
-    """Ask claude CLI to locate an element. Returns (x_px, y_px) or None."""
+    """Ask claude CLI to locate an element. Returns (x_pt, y_pt) in POINTS.
+
+    With use_grid=True (default), an overlay with labeled gridlines (in
+    point coords) is rendered first; Vision then reads the grid labels
+    directly and returns coords in POINTS — far more reliable than asking
+    it to estimate pixel positions on a bare screenshot.
+    """
+    grid_path = img_path.with_suffix(".grid.png")
+    if use_grid:
+        if not _render_grid_overlay(img_path, grid_path, scale=scale):
+            use_grid = False  # PIL missing or font failed
+
+    target = grid_path if use_grid else img_path
+    coord_kind = "POINTS (using the red gridline labels)" if use_grid else "image pixels"
+    extra = (
+        " The image has a red coordinate grid: major lines every 50 points "
+        "with the point value labeled, minor lines every 10 points. Read the "
+        "labels at the nearest major lines and interpolate to estimate the "
+        "element's center in points."
+        if use_grid else ""
+    )
     prompt = (
-        f"Read {img_path} — it is an iOS simulator screenshot at 3x scale "
-        f"(physical pixels). Find the element described as: '{description}'. "
+        f"Read {target} — iOS simulator screenshot.{extra} "
+        f"Find the element described as: '{description}'. "
         f"Respond with ONLY a JSON object: "
-        f'{{"x_px": <int>, "y_px": <int>, "confidence": "high"|"medium"|"low"}}. '
-        f"x_px and y_px are the CENTER of the element in image pixel coordinates. "
+        f'{{"x": <int>, "y": <int>, "confidence": "high"|"medium"|"low"}}. '
+        f"x and y are the CENTER of the element in {coord_kind}. "
         f"No prose, no markdown, just the JSON."
     )
     try:
@@ -124,9 +232,14 @@ def _vision_locate(
             raw = raw[4:]
     try:
         data = json.loads(raw)
-        return int(data["x_px"]), int(data["y_px"])
+        x, y = int(data["x"]), int(data["y"])
     except (json.JSONDecodeError, KeyError, ValueError):
         return None
+    # With grid: x/y are already in points → return as-is, but main() expects
+    # pixel coords for consistency, so convert back to pixels here.
+    if use_grid:
+        return x * scale, y * scale
+    return x, y
 
 
 def main() -> int:
