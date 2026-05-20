@@ -1,0 +1,26 @@
+name = "eidetic-analytics"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Privacy-safe conversion funnel analytics.
+# See README.md + ADR-020 (local-first privacy posture) for compliance notes.
+
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "eidetic_funnel"
+
+# Vars: dataset name is also exposed to the worker for SQL queries.
+[vars]
+ANALYTICS_DATASET = "eidetic_funnel"
+
+# Secrets (set via `wrangler secret put <NAME>`, NEVER committed):
+#   ADMIN_SECRET         — Bearer token guarding GET /stats
+#   ANALYTICS_ACCOUNT_ID — Cloudflare account ID (for SQL query endpoint)
+#   ANALYTICS_API_TOKEN  — token with Account.Account Analytics: Read scope
+#
+# Deploy:
+#   cd workers/eidetic-analytics
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put ADMIN_SECRET
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put ANALYTICS_ACCOUNT_ID
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put ANALYTICS_API_TOKEN
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler deploy

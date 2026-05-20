@@ -8,10 +8,18 @@ const description = "Local-first dashboard for your eidetic-daemon. Browse, sear
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- PWA: install to home screen on iPhone/Android; works offline once cached -->
+    <link rel="manifest" href="/dashboard-manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Engrams" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <!-- Privacy: this page only ever talks to YOUR daemon (the URL+token you paste).
          No data leaves your machine + the Cloudflare edge you've already authorized. -->
@@ -170,6 +178,46 @@ const description = "Local-first dashboard for your eidetic-daemon. Browse, sear
         text-align: center;
       }
       .hidden { display: none; }
+
+      /* Mobile + PWA: stack controls, larger tap targets, safe-area insets for iPhone notch */
+      @media (max-width: 640px) {
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .wrap { padding: 16px; }
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        .controls input[type="text"],
+        .controls select,
+        .config input,
+        .config button {
+          font-size: 16px;     /* prevents iOS auto-zoom on focus */
+          padding: 10px 12px;  /* larger tap target */
+        }
+        .config button {
+          width: 100%;
+        }
+        .stats {
+          flex-wrap: wrap;
+          gap: 12px;
+          font-size: 12px;
+        }
+        table { font-size: 13px; }
+        th, td { padding: 8px 4px; }
+        .payload { max-width: none; }
+        .ts { font-size: 11px; }
+        h1 { font-size: 16px; }
+      }
+
+      /* Installed-PWA-only tweaks: hide the config form once connected so the
+         home-screen launcher feels like a real app, not a configured web page. */
+      @media (display-mode: standalone) {
+        .sub { display: none; } /* the standalone app doesn't need the marketing sub-line */
+      }
     </style>
   </head>
   <body>
@@ -379,6 +427,13 @@ const description = "Local-first dashboard for your eidetic-daemon. Browse, sear
       // Auto-connect if we have saved credentials
       if (SAVED.url && SAVED.token) {
         btn.click();
+      }
+
+      // PWA: register service worker so the dashboard works offline + is installable
+      // on iPhone/Android. Privacy: SW only caches static shell, never bridge responses.
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/dashboard-sw.js", { scope: "/dashboard/" })
+          .catch((err) => console.warn("[eidetic] SW register failed:", err));
       }
     </script>
   </body>
