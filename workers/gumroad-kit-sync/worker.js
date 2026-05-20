@@ -5,10 +5,12 @@
 //   GET  /ping       — eidetic-mcp telemetry ping (204, no storage)
 //
 // Product routing (keyed on Gumroad product_permalink):
-//   cost-playbook    → KIT_COSTPLAYBOOK_SEQUENCE_ID + KIT_COSTPLAYBOOK_TAG_ID
-//   eidetic-pro      → KIT_PRO_TAG_ID + Telegram ping to operator (single-seat)
-//   eidetic-team     → KIT_TEAM_TAG_ID + URGENT Telegram ping (multi-seat, $99/mo)
-//   <any other>      → KIT_COSTPLAYBOOK_TAG_ID (fallback, no sequence)
+//   cost-playbook         → KIT_COSTPLAYBOOK_SEQUENCE_ID + KIT_COSTPLAYBOOK_TAG_ID
+//   eidetic-pro           → KIT_PRO_TAG_ID + Telegram ping ($29/mo, single-seat)
+//   eidetic-pro-annual    → KIT_PRO_TAG_ID + KIT_ANNUAL_TAG + Telegram ($299/yr, single-seat — same provisioning as Pro)
+//   eidetic-pro-founder   → KIT_PRO_TAG_ID + KIT_FOUNDER_TAG + Telegram ($499 one-time, lifetime, capped at 50 buyers)
+//   eidetic-team          → KIT_TEAM_TAG_ID + URGENT Telegram (multi-seat, $99/mo)
+//   <any other>           → KIT_COSTPLAYBOOK_TAG_ID (fallback, no sequence)
 //
 // Secrets (set via `wrangler secret put`, never hardcoded):
 //   TELEGRAM_BOT_TOKEN   — bot token for operator notifications
@@ -22,9 +24,13 @@ const KIT_COSTPLAYBOOK_TAG = "19565558";  // cost-playbook-v0 tag
 const KIT_PRO_TAG          = "19666228";   // eidetic-pro tag (created 2026-05-19)
 const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // Pro Welcome sequence — blocked: Kit free plan (1 seq limit)
 const KIT_TEAM_TAG         = "19682686";  // eidetic-team tag (created 2026-05-20)
+const KIT_ANNUAL_TAG       = "REPLACE_WITH_ANNUAL_TAG_ID";  // eidetic-pro-annual tag — Lokesh creates in Kit
+const KIT_FOUNDER_TAG      = "REPLACE_WITH_FOUNDER_TAG_ID"; // eidetic-pro-founder tag — Lokesh creates in Kit
 
-const PRO_PERMALINK  = "eidetic-pro";  // Gumroad product permalink for Pro tier ($29/mo)
-const TEAM_PERMALINK = "eidetic-team"; // Gumroad product permalink for Team tier ($99/mo, 5-seat)
+const PRO_PERMALINK         = "eidetic-pro";         // $29/mo subscription
+const PRO_ANNUAL_PERMALINK  = "eidetic-pro-annual";  // $299/yr (~14% discount; 10 months pricing for 12)
+const PRO_FOUNDER_PERMALINK = "eidetic-pro-founder"; // $499 one-time lifetime; capped at 50 buyers
+const TEAM_PERMALINK        = "eidetic-team";        // $99/mo, 5-seat
 
 export default {
   async fetch(request, env) {
@@ -60,12 +66,15 @@ export default {
 
     if (!email) return new Response("no email", { status: 400 });
 
-    const isTeam = productPermalink === TEAM_PERMALINK ||
-                   productName.toLowerCase().includes("team");
-    const isPro  = !isTeam && (
-                     productPermalink === PRO_PERMALINK ||
-                     productName.toLowerCase().includes("pro")
-                   );
+    const isTeam    = productPermalink === TEAM_PERMALINK ||
+                      productName.toLowerCase().includes("team");
+    const isFounder = !isTeam && productPermalink === PRO_FOUNDER_PERMALINK;
+    const isAnnual  = !isTeam && !isFounder && productPermalink === PRO_ANNUAL_PERMALINK;
+    const isPro     = !isTeam && (
+                        isFounder || isAnnual ||
+                        productPermalink === PRO_PERMALINK ||
+                        productName.toLowerCase().includes("pro")
+                      );
 
     const kitPayload = JSON.stringify({ api_key: KIT_API_KEY, email });
     const hdrs = { "Content-Type": "application/json" };
@@ -89,12 +98,26 @@ export default {
         );
       }
     } else if (isPro) {
-      // Pro purchase: tag as pro + enroll in Pro welcome sequence (if configured)
+      // Pro purchase: tag as pro + (annual or founder secondary tag) + enroll in Pro welcome sequence (if configured)
       kitRequests = [
         fetch(`https://api.convertkit.com/v3/tags/${KIT_PRO_TAG}/subscribe`, {
           method: "POST", headers: hdrs, body: kitPayload,
         }),
       ];
+      if (isAnnual && KIT_ANNUAL_TAG && !KIT_ANNUAL_TAG.startsWith("REPLACE")) {
+        kitRequests.push(
+          fetch(`https://api.convertkit.com/v3/tags/${KIT_ANNUAL_TAG}/subscribe`, {
+            method: "POST", headers: hdrs, body: kitPayload,
+          })
+        );
+      }
+      if (isFounder && KIT_FOUNDER_TAG && !KIT_FOUNDER_TAG.startsWith("REPLACE")) {
+        kitRequests.push(
+          fetch(`https://api.convertkit.com/v3/tags/${KIT_FOUNDER_TAG}/subscribe`, {
+            method: "POST", headers: hdrs, body: kitPayload,
+          })
+        );
+      }
       if (KIT_PRO_SEQ && !KIT_PRO_SEQ.startsWith("REPLACE")) {
         kitRequests.push(
           fetch(`https://api.convertkit.com/v3/sequences/${KIT_PRO_SEQ}/subscribe`, {
@@ -119,13 +142,24 @@ export default {
 
     // Telegram ping for Pro / Team purchases — tells Lokesh to run gen_pro_key.sh.
     if ((isPro || isTeam) && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
-      const tier = isTeam ? "🚀 TEAM" : "🎉 Pro";
-      const seatLine = isTeam
-        ? "\nTier: TEAM ($99/mo, multi-seat) — provision 5 keys, one per seat email.\n"
-        : "\n";
+      let tier;
+      let tierLine = "";
+      if (isTeam) {
+        tier = "🚀 TEAM";
+        tierLine = "\nTier: TEAM ($99/mo, multi-seat) — provision 5 keys, one per seat email.\n";
+      } else if (isFounder) {
+        tier = "💎 FOUNDER (lifetime)";
+        tierLine = "\nTier: FOUNDER ($499 one-time, LIFETIME ACCESS) — provision normally; no renewal handling needed.\n";
+      } else if (isAnnual) {
+        tier = "📅 PRO ANNUAL";
+        tierLine = "\nTier: PRO ANNUAL ($299/yr; 14% discount vs monthly).\n";
+      } else {
+        tier = "🎉 Pro";
+        tierLine = "\n";
+      }
       const msg = `${tier} subscriber: ${email}\n` +
                   `Product: ${productName}\n` +
-                  `Sale ID: ${saleId}${seatLine}\n` +
+                  `Sale ID: ${saleId}${tierLine}\n` +
                   `Run (cd eidetic-daemon repo first):\n` +
                   `EIDETIC_WORKER_URL=https://eidetic-sync.morning-lake-f944.workers.dev \\\n` +
                   `./scripts/gen_pro_key.sh ${email} <device_id>\n\n` +
@@ -144,7 +178,7 @@ export default {
     return new Response(
       JSON.stringify({
         ok: true,
-        product_type: isTeam ? "team" : (isPro ? "pro" : "cost-playbook"),
+        product_type: isTeam ? "team" : (isFounder ? "pro-founder" : (isAnnual ? "pro-annual" : (isPro ? "pro" : "cost-playbook"))),
         subscriber_id: primaryData?.subscription?.subscriber?.id,
       }),
       { headers: { "Content-Type": "application/json" } }

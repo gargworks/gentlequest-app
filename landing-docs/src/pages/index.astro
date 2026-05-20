@@ -1,0 +1,98 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'Reference documentation for eidetic-daemon — the local-first memory daemon for Claude Code, Cursor, and Cowork sessions.';
+---
+
+<Docs title="Docs" description={description} pageSlug="">
+  <div class="hero-head">
+    <span class="eyebrow">v0.0.45 · MIT licensed</span>
+    <h1>eidetic-daemon <em>docs</em></h1>
+    <p class="subhead">
+      Local-first Go daemon that captures every Claude Code, Cursor, and Cowork
+      session into a single SQLite-WAL engram store, and serves it back in
+      &lt;100ms P95. 278,561 engrams. 803 sessions. 3.3 GB. Two weeks of real
+      dogfood. Free and MIT.
+    </p>
+  </div>
+
+  <h2>What you'll find here</h2>
+
+  <div class="toc-grid">
+    <a href="/install/" class="toc-card">
+      <div class="toc-card-title">Install</div>
+      <div class="toc-card-desc">curl, Homebrew, PowerShell, manual download.</div>
+    </a>
+    <a href="/api/" class="toc-card">
+      <div class="toc-card-title">HTTP API</div>
+      <div class="toc-card-desc">Every endpoint: /engrams, /search, /ask, /export, /metrics, more.</div>
+    </a>
+    <a href="/mcp/" class="toc-card">
+      <div class="toc-card-title">MCP tools</div>
+      <div class="toc-card-desc">13 tools exposed via eidetic-mcp — Claude Code, Cursor, Cline.</div>
+    </a>
+    <a href="/cli/" class="toc-card">
+      <div class="toc-card-title">CLI flags</div>
+      <div class="toc-card-desc">-install, -uninstall, -stats, -check, -backups, -restore, -sync-now, -bridge.</div>
+    </a>
+    <a href="/recall/" class="toc-card">
+      <div class="toc-card-title">nucleus_ask recipes</div>
+      <div class="toc-card-desc">5 copy-paste recipes for natural-language recall.</div>
+    </a>
+    <a href="/pro/" class="toc-card">
+      <div class="toc-card-title">Pro tier</div>
+      <div class="toc-card-desc">$29/mo — managed cloud sync, dashboard, AI recall.</div>
+    </a>
+    <a href="/team/" class="toc-card">
+      <div class="toc-card-title">Team tier</div>
+      <div class="toc-card-desc">$99/mo — 5 seats with shared engram pooling.</div>
+    </a>
+    <a href="/changelog/" class="toc-card">
+      <div class="toc-card-title">Changelog</div>
+      <div class="toc-card-desc">Per-release notes from v0.0.2 → v0.0.45.</div>
+    </a>
+    <a href="/security/" class="toc-card">
+      <div class="toc-card-title">Security</div>
+      <div class="toc-card-desc">Threat model, storage modes, vulnerability disclosure.</div>
+    </a>
+  </div>
+
+  <h2>30-second quickstart</h2>
+
+  <pre is:raw><code># macOS + Linux
+curl -fsSL https://eidetic.works/install.sh | sh
+
+# Confirm it's alive
+curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/healthz
+# → {"status":"ok"}
+
+# See your stats
+eideticd --stats</code></pre>
+
+  <p>
+    For the MCP bridge into Claude Code / Cursor / Cline, see the
+    <a href="/install/">install guide</a> and
+    <a href="/mcp/">MCP reference</a>. For nucleus_ask, jump straight to
+    <a href="/recall/">recall recipes</a>.
+  </p>
+
+  <h2>Architecture</h2>
+
+  <ul>
+    <li><strong>Driver:</strong> <code>modernc.org/sqlite</code> (pure-Go, no CGO, cross-compile-clean).</li>
+    <li><strong>Store:</strong> SQLite WAL + open-string pragmas (<code>busy_timeout=5000</code>, <code>cache=shared</code>, <code>synchronous=NORMAL</code>).</li>
+    <li><strong>Connection pools:</strong> 1 writer (single conn) + 8 readers (read-only opens).</li>
+    <li><strong>Retrieval:</strong> prepared statement + composite index <code>(surface, ts DESC)</code>.</li>
+    <li><strong>Capture:</strong> <code>fsnotify</code> per-surface watchers + incremental parsers + offset-state in <code>~/.eidetic/state.json</code>.</li>
+    <li><strong>Lifecycle:</strong> spawn-at-app-startup mandatory (absorbs 1.75s modernc cold-init behind app load).</li>
+  </ul>
+
+  <h2>Privacy posture</h2>
+
+  <p>
+    Engrams never leave your machine without an explicit user action. Every
+    network call the daemon makes is opt-in. See the
+    <a href="/security/">security policy</a> for the full audit table, and
+    ADR-020 in the source repo for the lock-in contract.
+  </p>
+</Docs>

@@ -1,0 +1,11 @@
+---
+import Docs from '../layouts/Docs.astro';
+import { Content as Changelog } from '../content/changelog.md';
+
+const description = 'Per-release notes for eidetic-daemon — every version from v0.0.2 through v0.0.45.';
+---
+
+<Docs title="Changelog" description={description} pageSlug="changelog">
+  <span class="eyebrow">Get started</span>
+  <Changelog />
+</Docs>

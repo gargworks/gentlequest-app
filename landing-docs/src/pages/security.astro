@@ -1,0 +1,11 @@
+---
+import Docs from '../layouts/Docs.astro';
+import { Content as Security } from '../content/security.md';
+
+const description = 'eidetic-daemon security policy — threat model, storage modes, network exposure, known limitations, and vulnerability disclosure channel.';
+---
+
+<Docs title="Security" description={description} pageSlug="security">
+  <span class="eyebrow">Policy</span>
+  <Security />
+</Docs>

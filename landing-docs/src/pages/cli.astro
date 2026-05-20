@@ -1,0 +1,119 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'CLI flag reference for eidetic-daemon — install, uninstall, stats, check, backups, restore, sync, bridge, version.';
+---
+
+<Docs title="CLI flags" description={description} pageSlug="cli">
+  <span class="eyebrow">Reference</span>
+  <h1>CLI <em>flags</em></h1>
+  <p class="subhead">
+    The <code>eideticd</code> binary doubles as a service manager and ops
+    tool. Most flags run a single one-shot action and exit; the rest control
+    the long-running daemon.
+  </p>
+
+  <h2>Service lifecycle</h2>
+
+  <h3>-install</h3>
+  <p>Registers eideticd as a login-time service: <code>launchd</code> (<code>works.eidetic.eideticd</code>) on macOS, <code>systemd-user</code> (<code>eideticd.service</code>) on Linux. Binary path resolved via <code>os.Executable()</code> + <code>EvalSymlinks</code> so Homebrew shims resolve correctly. (v0.0.29+)</p>
+  <pre is:raw><code>eideticd -install
+# Daemon starts and passes /healthz within 1 second</code></pre>
+
+  <h3>-uninstall</h3>
+  <p>Stops the daemon, removes the launchd plist or systemd-user unit, then prompts to delete <code>&lt;dataDir&gt;</code> interactively. (v0.0.44+)</p>
+  <pre is:raw><code>eideticd -uninstall          # interactive prompt before deleting data
+eideticd -uninstall -purge   # unattended: skip prompt, delete &lt;dataDir&gt;</code></pre>
+
+  <h3>-version</h3>
+  <p>Prints the daemon's version and exits. Injected at build time via <code>-ldflags "-X main.Version=$(git describe ...)"</code>.</p>
+  <pre is:raw><code>eideticd -version
+# → eideticd 0.0.45</code></pre>
+
+  <h2>Observability</h2>
+
+  <h3>-stats</h3>
+  <p>Prints engram count, per-surface breakdown, oldest/newest timestamps, DB file size, and P95 retrieval latency; then exits. Works whether the daemon is running or not (opens the SQLite file directly in read-only mode). (v0.0.26+)</p>
+  <p>v0.0.33+ adds a "cloud sync" block when <code>sync-state.json</code> exists. v0.0.37+ adds an upgrade hint when a newer release is cached.</p>
+  <pre is:raw><code>eideticd --stats
+# → eideticd v0.0.45 — engram statistics
+# →   engrams:    278561
+# →     claude_code          274203
+# →     cursor                 4135
+# →     cowork                  223
+# →   oldest:     2026-03-01
+# →   newest:     2026-05-20
+# →   db size:    3.3 GB
+# →   P95 fetch:  0.27 ms
+# →
+# →   cloud sync:
+# →     last sync:  2026-05-20 09:00:00
+# →     last key:   engrams/macbook-m2/engrams-1779235200000.db
+# →     last size:  3.3 MB</code></pre>
+
+  <h2>Cloud sync</h2>
+
+  <p>Cloud sync requires <code>~/.eidetic/sync.json</code>. See the <a href="/pro/">Pro tier</a> docs for managed setup, or bring your own R2.</p>
+
+  <h3>-sync-now</h3>
+  <p>Upload <code>engrams.db</code> immediately and exit. Useful for manual one-shot backup or post-export before machine wipe. (v0.0.24+)</p>
+  <pre is:raw><code>eideticd --sync-now</code></pre>
+
+  <h3>-restore</h3>
+  <p>Downloads the most recent R2 backup for the configured device and atomically replaces the local <code>engrams.db</code>. Previous file is saved to <code>engrams.db.bak</code>. Runs before <code>store.Open</code> so there is no write-lock conflict. (v0.0.32+)</p>
+  <pre is:raw><code>eideticd --restore
+# ✓ Downloaded 3.3 GB engrams.db from cloud backup
+#   key: engrams/macbook-m2/engrams-1748300000000.db
+#   previous db saved to ~/.eidetic/engrams.db.bak
+#   restart eideticd to use the restored database</code></pre>
+
+  <h3>-check</h3>
+  <p>Validates <code>sync.json</code>, pings the Worker's <code>/healthz</code> with the configured api_key, and reports last sync state. Exits 0 if healthy, 1 if config is missing or Worker unreachable. (v0.0.34+)</p>
+  <pre is:raw><code>eideticd --check
+# → worker: ✓ reachable (200 OK)
+# → last sync: 2026-05-20 09:00 (4m ago)
+# → status: ✓ sync healthy</code></pre>
+
+  <h3>-backups</h3>
+  <p>Prints the last 10 cloud backups (timestamp, R2 key, MB). Ring buffer is appended after every successful upload. Falls back to single LastSync row for pre-v0.0.36 state files. (v0.0.36+)</p>
+  <pre is:raw><code>eideticd --backups</code></pre>
+
+  <h2>Listeners</h2>
+
+  <h3>-bridge &lt;addr&gt;</h3>
+  <p>Starts a second TCP listener alongside the primary UDS server. Both share the same <code>*store.Store</code> (one SQLite write path, no lock contention). Used for the web dashboard, or remote access via Cloudflare tunnel. (v0.0.31+)</p>
+  <p>Bridge auth is always-on — the bridge listener generates its own Bearer token at startup (independent of the primary <code>EIDETIC_AUTH</code> flag). Token written to <code>~/.eidetic/bridge-token</code> (0600). Rotates every restart. CORS headers added on bridge responses only.</p>
+  <pre is:raw><code>eideticd -bridge :8421
+# Then open https://eidetic.works/dashboard and paste
+# http://127.0.0.1:8421 + the token from ~/.eidetic/bridge-token</code></pre>
+
+  <h3>-auth</h3>
+  <p>Enables Bearer-token auth on the primary UDS listener (off by default). Equivalent to <code>EIDETIC_AUTH=1</code> env var. <code>/healthz</code> stays open; everything else requires <code>Authorization: Bearer &lt;token&gt;</code>. Token at <code>&lt;dataDir&gt;/auth-token</code>, rotates every restart. (v0.0.9+)</p>
+
+  <h2>Environment variables</h2>
+
+  <table>
+    <thead>
+      <tr><th>Var</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>EIDETIC_DATA_DIR</code></td><td>Override the data root (default <code>~/.eidetic/</code>).</td></tr>
+      <tr><td><code>EIDETIC_TCP=1</code></td><td>Listen on <code>127.0.0.1:9876</code> instead of (or in addition to) the UDS. Loopback only.</td></tr>
+      <tr><td><code>EIDETIC_AUTH=1</code></td><td>Enable Bearer-token auth (same as <code>-auth</code> flag).</td></tr>
+      <tr><td><code>EIDETIC_AUTH_TOKEN</code></td><td>Override the auto-discovered token in MCP bridge clients.</td></tr>
+      <tr><td><code>EIDETIC_PING=0</code></td><td>Opt out of the post-install ping from the <code>pip install eidetic-mcp</code> hook.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>eideticd-compliance</h2>
+
+  <p>Separate binary for per-surface data retention. Reads <code>~/.eidetic/retention-policy.json</code>, purges rows older than configured day thresholds per surface, appends audit lines to <code>~/.eidetic/compliance.log</code>. Designed to run via cron / launchd timer / systemd timer — runs one pass and exits. Zero impact on daemon uptime — operates against the same <code>engrams.db</code> via the existing writer pool. (v0.0.25+)</p>
+
+  <pre is:raw><code># Dry-run: report what would be deleted, change nothing
+eideticd-compliance --dry-run
+
+# Live: enforce the policy
+eideticd-compliance</code></pre>
+
+  <p>Example policy at <code>scripts/retention-policy.example.json</code> in the source repo: <code>claude_code: 30d, cursor: 90d, cowork: 365d</code>.</p>
+</Docs>

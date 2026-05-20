@@ -1,0 +1,119 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'eidetic-daemon Team tier — $99/mo for 5 seats with shared engram pooling, multi-device sync, 12h email support.';
+---
+
+<Docs title="Team tier" description={description} pageSlug="team">
+  <span class="eyebrow">Pricing</span>
+  <h1>Team <em>tier</em></h1>
+  <p class="subhead">
+    eidetic Pro for teams. Same daemon, multi-seat license. Targets dev teams
+    who want shared engram visibility across 3-5 engineers.
+  </p>
+
+  <p>
+    <a class="endpoint-path" href="mailto:hi@eidetic.works?subject=eidetic%20Team">→ Contact for Team ($99/mo)</a>
+  </p>
+
+  <h2>What Team includes</h2>
+
+  <h3>5 Pro seats</h3>
+  <p>
+    Each seat gets its own <code>sync.json</code>, its own R2 namespace, its
+    own device-id pool. Engrams stay private per seat — no cross-engineer
+    leakage by default.
+  </p>
+
+  <h3>Shared-context opt-in</h3>
+  <p>
+    The Team tier ships the <code>X-Team-ID</code> header foundation (v0.0.39+):
+    when configured, the daemon sends the header on every <code>/sync</code>
+    upload, dual-writing engrams under
+    <code>engrams/team/&lt;team_id&gt;/&lt;device_id&gt;/</code> for cross-seat
+    recall. Designate any of the 5 seats as a "team" surface; their engrams
+    sync to a shared bucket so anyone on the team can query "did anyone solve
+    this already?" via <code>nucleus_ask</code>.
+  </p>
+
+  <h3>Onboarding within 24h</h3>
+  <p>
+    Pay → reply with the 5 seat emails + a team identifier → you get 5
+    <code>sync.json</code> files within 24 hours of payment.
+  </p>
+
+  <h3>Email support</h3>
+  <p>
+    <a href="mailto:hi@eidetic.works">hi@eidetic.works</a>. Response within
+    12 hours on weekdays for Team subscribers (vs 24h for Pro).
+  </p>
+
+  <h3>Early-access features</h3>
+  <p>
+    Team subscribers get new features 1 week before Pro. AI-powered recall,
+    web dashboard, retention policy templates land on Team first.
+  </p>
+
+  <h2>Pricing</h2>
+
+  <p>
+    <strong>$99/month flat.</strong> No per-seat scaling — your 6th hire pays
+    nothing extra, but tier ceiling is 10 seats per Team subscription. Larger
+    teams: contact for Org tier.
+  </p>
+
+  <p>First 10 Team subscribers keep this price forever.</p>
+
+  <h2>Setup</h2>
+
+  <ol>
+    <li>Pay via Gumroad → confirmation email.</li>
+    <li>Reply with 5 seat emails + a team identifier (e.g. <code>team-acme</code>).</li>
+    <li>We run <code>gen_pro_key.sh</code> 5 times — one per seat — using device_id format <code>&lt;team&gt;-seat-N</code> (e.g. <code>acme-seat-1</code>).</li>
+    <li>Each seat gets their individual <code>sync.json</code> by email.</li>
+    <li>Drop the file at <code>~/.eidetic/sync.json</code> per seat. v0.0.35+ hot-reload picks it up automatically.</li>
+  </ol>
+
+  <h2>Configuration</h2>
+
+  <p>
+    The Team-specific addition to <code>sync.json</code> is the
+    <code>team_id</code> field:
+  </p>
+
+  <pre is:raw><code>{
+  "worker_url": "https://eidetic-sync.morning-lake-f944.workers.dev",
+  "api_key":    "<per-seat-key>",
+  "device_id":  "acme-seat-1",
+  "team_id":    "acme-engineering",
+  "sync_interval": 60
+}</code></pre>
+
+  <p>
+    Format constraint on <code>team_id</code>: 4-32 chars, lowercase
+    alphanumeric plus <code>-</code> and <code>_</code>. Omit the field for
+    solo Pro behavior.
+  </p>
+
+  <p>
+    <code>--check</code> shows <code>team_id</code> and prints
+    <code>(shared-team mode)</code> annotation when configured.
+  </p>
+
+  <h2>What stays private vs shared</h2>
+
+  <ul>
+    <li><strong>Private (default):</strong> every engram captured under each seat's local daemon. Stored at <code>engrams/&lt;device_id&gt;/</code> in R2.</li>
+    <li><strong>Shared (opt-in via <code>team_id</code>):</strong> the same engram dual-writes to <code>engrams/team/&lt;team_id&gt;/&lt;device_id&gt;/</code>. The Worker exposes a <code>GET /team-engrams?team_id=X</code> endpoint that lists across all team uploads.</li>
+  </ul>
+
+  <p>
+    Until the Worker is updated with the team-listing endpoint, the
+    <code>X-Team-ID</code> header is silently accepted and ignored — safe to
+    ship before the server side is live.
+  </p>
+
+  <h2>Refund</h2>
+
+  <p>7 days no-questions-asked.</p>
+</Docs>

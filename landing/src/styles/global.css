@@ -537,3 +537,17 @@ footer a:hover { color: var(--text); }
     gap: 1rem;
   }
 }
+
+.pricing-alt {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0.4rem 0 0;
+}
+.pricing-alt a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.pricing-alt a:hover {
+  text-decoration: underline;
+}
