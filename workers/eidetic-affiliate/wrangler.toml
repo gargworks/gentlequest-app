@@ -9,10 +9,9 @@ compatibility_date = "2024-01-01"
 # Then paste the returned `id` into the binding block below (and a separate
 # `preview_id` if you want `wrangler dev` to use an isolated KV).
 #
-# [[kv_namespaces]]
-# binding    = "EIDETIC_AFFILIATES_KV"
-# id         = "REPLACE_WITH_KV_NAMESPACE_ID"
-# preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+[[kv_namespaces]]
+binding    = "EIDETIC_AFFILIATES_KV"
+id         = "73547fa01d77483391c177bfee6bc058"
 
 # Deploy with a Workers:Edit token (the Pages-only CLOUDFLARE_API_TOKEN won't work):
 #   cd workers/eidetic-affiliate
