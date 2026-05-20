@@ -22,6 +22,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart' show RiskLevel;
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
+import '../widgets/exercise_card_scaffold.dart';
+import 'exercise_scaffold_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public entry point
@@ -1236,9 +1238,15 @@ class _ResultRevealScreen extends StatelessWidget {
                           'Try a 1-minute breathing exercise', // verbatim from HTML
                       subtitle: '4-7-8 breathing · short and grounding.',
                       isPrimary: false,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Breathing exercise coming in the next update.')),
-                      ),
+                      // R1D16 ExerciseScaffoldScreen is shipped — wiring the
+                      // CTA so a user who just completed a PHQ-9/GAD-7 doesn't
+                      // get told "coming in the next update" after disclosing
+                      // depression symptoms. Stale stub from before R1D16.
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        ExerciseScaffoldScreen.show(
+                            context, ExerciseType.breathing);
+                      },
                     ),
                     const SizedBox(height: 8),
 
@@ -1261,8 +1269,15 @@ class _ResultRevealScreen extends StatelessWidget {
                         title: 'Save this result for your therapist', // verbatim from HTML
                         subtitle: 'Exports as PDF-ready summary.',
                         isPrimary: false,
+                        // PDF export needs server-side rendering — not built
+                        // yet. Be honest about what's saved vs not so the
+                        // user isn't promised a feature that doesn't exist.
                         onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Export coming in the next update.')),
+                          const SnackBar(
+                            content: Text(
+                                'PDF export is coming soon · your result stays on this device until then'),
+                            duration: Duration(seconds: 4),
+                          ),
                         ),
                       ),
                     ],
