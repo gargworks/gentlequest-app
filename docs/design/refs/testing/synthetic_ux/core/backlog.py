@@ -70,15 +70,52 @@ def _verdict_counts(observations: list[Observation]) -> dict:
     return counts
 
 
+_DRIFT_PHRASES = (
+    "talk/chat screen",
+    "talk/home screen",
+    "talk screen",
+    "talk/chat home",
+    "chat screen is shown",
+    "chat screen still displayed",
+)
+
+
+def _is_drift_finding(obs: Observation) -> bool:
+    """A FAIL is suspected WALK_DRIFT if the judge reason or issues mention
+    the Talk/chat screen as the rendered destination — i.e., the precondition
+    likely was never reached, so the BLOCKER verdict is a framework artifact
+    rather than an app bug."""
+    judge = obs.layer2_judge
+    if not judge or judge.verdict != "FAIL":
+        return False
+    haystack = " ".join([
+        (judge.reason or "").lower(),
+        " ".join(judge.issues or []).lower(),
+    ])
+    return any(p in haystack for p in _DRIFT_PHRASES)
+
+
 def _pattern_alerts(observations: list[Observation], counts: dict) -> list[str]:
     alerts = []
 
-    # BLOCKERs in onboarding
+    # WALK_DRIFT (must run first — clusters the dominant false-positive pattern)
+    drift = [o for o in observations if _is_drift_finding(o)]
+    if len(drift) >= 5:
+        alerts.append(
+            f"🧭 WALK_DRIFT: {len(drift)} UCs FAILed with Talk/chat screen rendered "
+            "in place of the expected destination — likely a precondition/calibration "
+            "issue in the walk executor, NOT N separate app bugs. See "
+            "'Suspected WALK_DRIFT' section for the list; fix the precondition "
+            "or tap coordinates before treating these as real findings."
+        )
+
+    # BLOCKERs in onboarding (exclude drift cases — they're noise)
     onboarding_blockers = [
         o for o in observations
         if o.flow_position == "onboarding"
         and o.layer3_user_mind
         and o.layer3_user_mind.design_verdict == "BLOCKER"
+        and not _is_drift_finding(o)
     ]
     if len(onboarding_blockers) >= 2:
         alerts.append(
@@ -175,6 +212,7 @@ def generate_backlog(
     current_verdict = None
     verdict_order = ["BLOCKER", "HIGH", "MEDIUM", "LOW"]
     rendered_verdicts: set = set()
+    drift_obs: list[Observation] = []
 
     for obs in scored:
         if not obs.layer3_user_mind:
@@ -184,12 +222,33 @@ def generate_backlog(
             continue
         if verdict not in verdict_order:
             continue
+        # Drift findings are demoted to their own section — they're framework
+        # noise (wrong precondition), not real app bugs.
+        if _is_drift_finding(obs):
+            drift_obs.append(obs)
+            continue
         if verdict not in rendered_verdicts:
             md_lines += [f"### {verdict}", ""]
             rendered_verdicts.add(verdict)
         finding = _render_finding(obs, 0)
         if finding:
             md_lines += [finding, ""]
+
+    if drift_obs:
+        md_lines += [
+            "## Suspected WALK_DRIFT — fix framework before treating as bugs",
+            "",
+            "These UCs FAILed because the simulator landed on the Talk/chat "
+            "screen instead of the precondition screen. The Maya findings "
+            "below are not actionable until either (a) tap coordinates are "
+            "recalibrated, or (b) a navigation precondition step is added.",
+            "",
+        ]
+        for obs in drift_obs:
+            judge = obs.layer2_judge
+            reason = (judge.reason if judge else "") or ""
+            md_lines.append(f"- **[{obs.uc_id}]** {obs.uc_title} — {reason[:140]}")
+        md_lines.append("")
 
     # DELIGHTs at the bottom
     delights = [o for o in scored if o.layer3_user_mind and o.layer3_user_mind.design_verdict == "DELIGHT"]

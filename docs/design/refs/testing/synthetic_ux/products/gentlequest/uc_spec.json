@@ -141,7 +141,7 @@
     "bypass_compliance": true,
     "judge_criteria": [
       "Alex greeting chat bubble visible (left-aligned, surface background)",
-      "Suggestion chips row visible ('I'm anxious', 'I'm okay', 'I had a bad day')",
+      "Suggestion chips row visible ('Today's been heavy', 'I want to vent a little', 'Just need someone to listen', 'Quick win, please')",
       "Message TextField visible at bottom",
       "Send IconButton visible",
       "No blank chat area or loading spinner stuck"
@@ -182,8 +182,8 @@
     "flow_position": "core",
     "title": "Suggestion chip → prefill → send",
     "precondition": "First-turn state; chips visible",
-    "defining_action": "Tap suggestion chip 'I'm anxious'",
-    "before_state": {"description": "Chat with suggestion chips visible ('I'm anxious', etc.)"},
+    "defining_action": "Tap suggestion chip 'Today's been heavy'",
+    "before_state": {"description": "Chat with suggestion chips visible ('Today's been heavy', 'I want to vent a little', etc.)"},
     "after_state": {"description": "TextField prefilled with chip text; cursor at end; chips still present (not auto-sent)"},
     "walk_steps": [
       {"action": "screenshot", "screen_name": "before"},
@@ -198,7 +198,7 @@
       "TextField cursor visible at end of prefilled text",
       "No crash"
     ],
-    "persona_context": "Maya saw 'I'm anxious' and tapped it. She expected it to start her message for her — not send it. This micro-interaction either feels helpful or invasive.",
+    "persona_context": "Maya saw 'Today's been heavy' and tapped it. She expected it to start her message for her — not send it. This micro-interaction either feels helpful or invasive.",
     "severity_floor": "MEDIUM"
   },
   {

@@ -220,38 +220,80 @@ def _idb_screenshot(udid: str, out_path: Path) -> bool:
     return r.returncode == 0 and out_path.exists()
 
 
-def _bypass_compliance(udid: str, bundle: str) -> None:
-    """Write compliance SharedPreferences keys directly to the app's plist."""
-    import glob as _glob
-    patterns = [
-        os.path.expanduser(
-            f"~/Library/Developer/CoreSimulator/Devices/{udid}"
-            f"/data/Containers/Data/Application/*/Library/Preferences/{bundle}.plist"
-        ),
-        f"/Volumes/*/Archives/CoreSimulatorDevices/{udid}"
-        f"/data/Containers/Data/Application/*/Library/Preferences/{bundle}.plist",
-    ]
-    plists = [p for pat in patterns for p in _glob.glob(pat)]
-    if not plists:
+def _reset_app_data(udid: str, bundle: str) -> None:
+    """Wipe app sandbox (Documents/Library/tmp) without uninstalling.
+
+    Preserves the installed binary so the next launch is fast, but gives every
+    UC a clean Preferences/SharedPreferences state. Without this, plist
+    compliance flags + navigation state leak between UCs and contaminate runs.
+    """
+    import shutil as _shutil
+    try:
+        r = subprocess.run(
+            ["xcrun", "simctl", "get_app_container", udid, bundle, "data"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, OSError):
         return
-    keys = [
-        ("flutter.age_verified", "-bool", "YES"),
-        ("flutter.has_seen_welcome_v1", "-bool", "YES"),
-        ("flutter.compliance_age_verified_18_plus", "-bool", "YES"),
-    ]
-    for plist in plists:
-        for key, kind, val in keys:
+    if r.returncode != 0 or not r.stdout.strip():
+        return
+    container = Path(r.stdout.strip())
+    for sub in ("Documents", "Library", "tmp"):
+        target = container / sub
+        if not target.exists():
+            continue
+        for item in target.iterdir():
             try:
-                subprocess.run(
-                    ["/usr/libexec/PlistBuddy", "-c", f"Set :{key} {val}", plist],
-                    capture_output=True, timeout=5,
-                )
-                subprocess.run(
-                    ["/usr/libexec/PlistBuddy", "-c", f"Add :{key} {kind} {val}", plist],
-                    capture_output=True, timeout=5,
-                )
-            except (subprocess.TimeoutExpired, OSError):
+                if item.is_dir():
+                    _shutil.rmtree(item, ignore_errors=True)
+                else:
+                    item.unlink()
+            except OSError:
                 pass
+
+
+def _bypass_compliance(udid: str, bundle: str) -> None:
+    """Write Flutter SharedPreferences compliance keys directly into the app's plist.
+
+    Creates the plist if it doesn't exist (after a sandbox wipe). Resolves the
+    data container via `simctl get_app_container` so we don't need to glob.
+    """
+    try:
+        r = subprocess.run(
+            ["xcrun", "simctl", "get_app_container", udid, bundle, "data"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return
+    if r.returncode != 0 or not r.stdout.strip():
+        return
+    prefs_dir = Path(r.stdout.strip()) / "Library" / "Preferences"
+    prefs_dir.mkdir(parents=True, exist_ok=True)
+    plist = prefs_dir / f"{bundle}.plist"
+
+    keys = [
+        ("flutter.age_verified", "bool", "YES"),
+        ("flutter.has_seen_welcome_v1", "bool", "YES"),
+        ("flutter.compliance_age_verified_18_plus", "bool", "YES"),
+    ]
+    for key, kind, val in keys:
+        # Try Set (existing key) first, then Add (new key). PlistBuddy creates
+        # the file when -c "Save" is used or via Add against a missing root —
+        # the trailing Save is implicit on successful Add.
+        try:
+            subprocess.run(
+                ["/usr/libexec/PlistBuddy", "-c", f"Set :{key} {val}", str(plist)],
+                capture_output=True, timeout=5,
+            )
+            subprocess.run(
+                ["/usr/libexec/PlistBuddy",
+                 "-c", f"Add :{key} {kind} {val}",
+                 "-c", "Save",
+                 str(plist)],
+                capture_output=True, timeout=5,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            pass
 
 
 def _launch_app(udid: str, bundle: str) -> None:
@@ -307,8 +349,12 @@ def execute_walk(
     _ensure_idb_connected(udid)
 
     try:
-        # Terminate + relaunch for clean state
+        # Terminate → wipe sandbox → (optionally write compliance plist) → launch.
+        # Sandbox wipe is unconditional so plist state from a prior UC cannot
+        # leak. _bypass_compliance now creates the plist if absent, so we no
+        # longer need a cold-launch dance to materialize it.
         _terminate_app(udid, bundle)
+        _reset_app_data(udid, bundle)
         if uc.get("bypass_compliance"):
             _bypass_compliance(udid, bundle)
         _launch_app(udid, bundle)
