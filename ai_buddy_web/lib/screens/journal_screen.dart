@@ -17,15 +17,81 @@
 // System default (sans-serif) is used as the cross-platform fallback until the
 // fonts are added to pubspec.yaml + assets/fonts/. Flag for Lokesh review.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../theme/gq_tokens.dart';
 import '../widgets/app_back_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Data model (in-memory stub — replace with repository when persistence ships)
+// Data model + on-device persistence (SharedPreferences).
+// Backend journaling API not yet wired — entries stay on the device.
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum JournalMood { great, good, okay, meh, rough }
+
+String _moodToKey(JournalMood? m) => switch (m) {
+      JournalMood.great => 'great',
+      JournalMood.good => 'good',
+      JournalMood.okay => 'okay',
+      JournalMood.meh => 'meh',
+      JournalMood.rough => 'rough',
+      null => '',
+    };
+
+JournalMood? _moodFromKey(String? k) => switch (k) {
+      'great' => JournalMood.great,
+      'good' => JournalMood.good,
+      'okay' => JournalMood.okay,
+      'meh' => JournalMood.meh,
+      'rough' => JournalMood.rough,
+      _ => null,
+    };
+
+/// JournalStorage — on-device persistence for JournalEntry list.
+///
+/// Backend journaling API is not yet wired; entries live on the device under
+/// a single SharedPreferences key. Once the API ships, this class becomes the
+/// migration point: load() can pull from server, save() can dual-write.
+class JournalStorage {
+  static const _key = 'journal_entries_v1';
+
+  static Future<List<JournalEntry>> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw == null || raw.isEmpty) return [];
+      final List<dynamic> arr = jsonDecode(raw) as List<dynamic>;
+      return arr
+          .whereType<Map<String, dynamic>>()
+          .map(JournalEntry.fromJson)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> save(List<JournalEntry> entries) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonEncode(entries.map((e) => e.toJson()).toList());
+      await prefs.setString(_key, raw);
+    } catch (_) {
+      // Silent — caller already has the entry in memory; next save will retry.
+    }
+  }
+
+  /// Append a single entry to the persisted list. Returns the updated list.
+  /// Used by mood_reflection_sheet so reflections aren't silently discarded.
+  static Future<List<JournalEntry>> append(JournalEntry entry) async {
+    final entries = await load();
+    entries.insert(0, entry);
+    await save(entries);
+    return entries;
+  }
+}
 
 class JournalEntry {
   JournalEntry({
@@ -53,6 +119,24 @@ class JournalEntry {
         createdAt: createdAt,
         mood: mood ?? this.mood,
         tags: tags ?? this.tags,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'body': body,
+        'createdAt': createdAt.toIso8601String(),
+        'mood': _moodToKey(mood),
+        'tags': tags,
+      };
+
+  factory JournalEntry.fromJson(Map<String, dynamic> j) => JournalEntry(
+        id: j['id'] as String,
+        body: j['body'] as String,
+        createdAt: DateTime.parse(j['createdAt'] as String),
+        mood: _moodFromKey(j['mood'] as String?),
+        tags: (j['tags'] as List<dynamic>? ?? [])
+            .whereType<String>()
+            .toList(),
       );
 }
 
@@ -103,7 +187,23 @@ class JournalScreen extends StatefulWidget {
 }
 
 class _JournalScreenState extends State<JournalScreen> {
-  final List<JournalEntry> _entries = [];
+  List<JournalEntry> _entries = [];
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final loaded = await JournalStorage.load();
+    if (!mounted) return;
+    setState(() {
+      _entries = loaded;
+      _loaded = true;
+    });
+  }
 
   void _addEntry(String body) {
     if (body.trim().isEmpty) return;
@@ -117,12 +217,14 @@ class _JournalScreenState extends State<JournalScreen> {
         ),
       );
     });
+    JournalStorage.save(_entries);
   }
 
   void _deleteEntry(String id) {
     setState(() {
       _entries.removeWhere((e) => e.id == id);
     });
+    JournalStorage.save(_entries);
   }
 
   Future<void> _openEditor({String? prefill}) async {
@@ -150,6 +252,21 @@ class _JournalScreenState extends State<JournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // First frame after navigation: show a placeholder while SharedPreferences
+    // load. Without this, the screen briefly flashes the empty state even when
+    // entries exist on device — a small but jarring blink.
+    if (!_loaded) {
+      return Scaffold(
+        backgroundColor: GQColors.softBg,
+        body: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
     if (_entries.isEmpty) {
       return _JournalEmptyState(onStartEntry: _openEditor);
     }
