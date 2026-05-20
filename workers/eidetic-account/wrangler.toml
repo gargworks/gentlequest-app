@@ -1,0 +1,38 @@
+name = "eidetic-account"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Customer-facing self-serve Pro account dashboard.
+# Reads (read-only) the KV namespace + R2 bucket the eidetic-sync worker
+# already writes. Customers paste their api_key and see their backups.
+
+# KV namespace holding SHA-256(api_key) → {email, device_id, added} records.
+# Same namespace bound on the eidetic-sync worker:
+#   id = 34d23af4669a40bd907f5c58c56802e8
+[[kv_namespaces]]
+binding    = "EIDETIC_KEYS_KV"
+id         = "34d23af4669a40bd907f5c58c56802e8"
+# preview_id = "<op-assistant: fill if you want isolated `wrangler dev`>"
+
+# R2 bucket holding the engram backups (uploaded by the eidetic CLI).
+[[r2_buckets]]
+binding     = "EIDETIC_ENGRAMS_R2"
+bucket_name = "eidetic-engrams"
+# preview_bucket_name = "<op-assistant: fill if you want isolated `wrangler dev`>"
+
+# No secrets required — this worker has no admin surface. Auth is the
+# customer's api_key itself, verified server-side via SHA-256 → KV lookup.
+
+# Deploy with a Workers:Edit token (same one used for eidetic-sync /
+# eidetic-affiliate):
+#   cd workers/eidetic-account
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler deploy
+#
+# Route mapping (set in Cloudflare dashboard → Workers → Routes), recommended:
+#   account.eidetic.works/*    → eidetic-account
+#
+# Subdomain DNS (Cloudflare → DNS → Records):
+#   Type   CNAME
+#   Name   account
+#   Target eidetic-account.<account>.workers.dev
+#   Proxy  ON (orange cloud)
