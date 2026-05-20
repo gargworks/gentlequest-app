@@ -49,6 +49,10 @@
 | v0.0.52 | Day 10 | `--capture` stdin → engram (universal pipe target) |
 | v0.0.53 | Day 10 | refactor: `internal/textsearch` (single source of truth for question→FTS) |
 | v0.0.54 | Day 10 | `--vacuum` SQLite compaction for long-running stores |
+| v0.0.55 | Day 10 | outbound webhook hooks (~/.eidetic/hooks.json fires on matching engrams) |
+| v0.0.56 | Day 10 | regex hook patterns + `GET /hooks` status endpoint |
+| v0.0.58 | Day 10 | `--capture` enriches meta with host + cwd + git_branch + user |
+| v0.0.59 | Day 10 | `/hooks` endpoint test coverage + eidetic-mcp 0.0.8 nucleus_link tool |
 
 **Current live numbers:** 300K+ engrams (per Mac menubar test), 803+ sessions, P95 retrieval 0.27ms, DB ~3.5 GB
 
@@ -60,6 +64,7 @@
 | eidetic-mcp 0.0.5 | `nucleus_ask` tool — AI-powered recall via FTS5 |
 | eidetic-mcp 0.0.6 | `nucleus_digest` tool — RAG-shaped weekly recap |
 | eidetic-mcp 0.0.7 | `nucleus_timeline` tool — cross-tool chronological view |
+| eidetic-mcp 0.0.8 | `nucleus_link` tool — temporally-adjacent engrams across surfaces |
 
 ### Integrations shipped (11 surfaces in `integrations/`)
 
@@ -76,6 +81,8 @@
 | Telegram /eidetic bot | ✅ Webhook-secret constant-time Worker |
 | docs.eidetic.works | ✅ 10-page Astro static site (pending op-assistant deploy) |
 | Web dashboard PWA | ✅ Mobile-installable on iPhone/Android |
+| WordPress plugin (eidetic-capture.php) | ✅ save_post hook + admin settings; phply-validated |
+| Notion sync (Worker + cron poller) | ✅ Polling primary, webhook secondary; KV checkpoint |
 
 ### Cloudflare Workers (6 total)
 
