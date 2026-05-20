@@ -24,8 +24,8 @@ const KIT_COSTPLAYBOOK_TAG = "19565558";  // cost-playbook-v0 tag
 const KIT_PRO_TAG          = "19666228";   // eidetic-pro tag (created 2026-05-19)
 const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // Pro Welcome sequence — blocked: Kit free plan (1 seq limit)
 const KIT_TEAM_TAG         = "19682686";  // eidetic-team tag (created 2026-05-20)
-const KIT_ANNUAL_TAG       = "REPLACE_WITH_ANNUAL_TAG_ID";  // eidetic-pro-annual tag — Lokesh creates in Kit
-const KIT_FOUNDER_TAG      = "REPLACE_WITH_FOUNDER_TAG_ID"; // eidetic-pro-founder tag — Lokesh creates in Kit
+const KIT_ANNUAL_TAG       = "19684077";  // eidetic-pro-annual tag (created 2026-05-20)
+const KIT_FOUNDER_TAG      = "19684078"; // eidetic-pro-founder tag (created 2026-05-20)
 
 const PRO_PERMALINK         = "eidetic-pro";         // $29/mo subscription
 const PRO_ANNUAL_PERMALINK  = "eidetic-pro-annual";  // $299/yr (~14% discount; 10 months pricing for 12)

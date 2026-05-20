@@ -11,8 +11,8 @@ compatibility_date = "2025-03-10"
 # then paste the IDs below.
 [[kv_namespaces]]
 binding = "EIDETIC_TELEGRAM_KV"
-id = "REPLACE_WITH_KV_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+id = "1224567a4c0a4b489aea8056e79daaf1"
+preview_id = "1224567a4c0a4b489aea8056e79daaf1"
 
 # Secrets are NOT stored in this file. Set them with:
 #   wrangler secret put WEBHOOK_SECRET    # openssl rand -hex 32

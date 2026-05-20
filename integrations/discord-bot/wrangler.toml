@@ -11,8 +11,8 @@ compatibility_date = "2025-03-10"
 # then paste the IDs below.
 [[kv_namespaces]]
 binding = "EIDETIC_DISCORD_KV"
-id = "REPLACE_WITH_KV_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+id = "f4c20898ea2d41cb8831ea8be1c598e2"
+preview_id = "f4c20898ea2d41cb8831ea8be1c598e2"
 
 # Secrets are NOT stored in this file. Set them with:
 #   wrangler secret put DISCORD_PUBLIC_KEY      # Ed25519 hex (Developer Portal)

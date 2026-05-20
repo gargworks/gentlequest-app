@@ -5,9 +5,11 @@ compatibility_date = "2024-09-23"
 # Privacy-safe conversion funnel analytics.
 # See README.md + ADR-020 (local-first privacy posture) for compliance notes.
 
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "eidetic_funnel"
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "eidetic_funnel"
+# Uncomment after enabling Analytics Engine in CF dashboard:
+# https://dash.cloudflare.com/0ccfed02970a5a08f1e54d9f3c42d3f9/workers/analytics-engine
 
 # Vars: dataset name is also exposed to the worker for SQL queries.
 [vars]
