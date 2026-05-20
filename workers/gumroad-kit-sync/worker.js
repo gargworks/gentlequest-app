@@ -21,7 +21,7 @@ const KIT_COSTPLAYBOOK_SEQ = "2756160";   // Cost Playbook v0 sequence
 const KIT_COSTPLAYBOOK_TAG = "19565558";  // cost-playbook-v0 tag
 const KIT_PRO_TAG          = "19666228";   // eidetic-pro tag (created 2026-05-19)
 const KIT_PRO_SEQ          = "REPLACE_WITH_PRO_SEQ_ID"; // Pro Welcome sequence — blocked: Kit free plan (1 seq limit)
-const KIT_TEAM_TAG         = "REPLACE_WITH_TEAM_TAG_ID"; // eidetic-team tag — Lokesh creates in Kit when product launches
+const KIT_TEAM_TAG         = "19682686";  // eidetic-team tag (created 2026-05-20)
 
 const PRO_PERMALINK  = "eidetic-pro";  // Gumroad product permalink for Pro tier ($29/mo)
 const TEAM_PERMALINK = "eidetic-team"; // Gumroad product permalink for Team tier ($99/mo, 5-seat)
