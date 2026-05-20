@@ -1,9 +1,8 @@
 # Eidetic Works — Live Status
 
-**Last updated:** 2026-05-19 (Day 9)
-**Current week:** W2 (Day 8-14)
-**Current focus:** Distribution push — 5 X DMs, HN Show HN, Reddit r/ClaudeAI, dev.to post
-**Days to next bright-line:** 20 (W4 / 2026-06-08)
+**Last updated:** 2026-05-20 (Day 10, mid-compression-sprint)
+**Current cycle:** Lokesh "finish 80 days of plan in next 2 days" — ~24h elapsed of 36h
+**Days to W4 bright-line:** 19 (W4 = 2026-06-08, target 5 paid Pro = $145 MRR)
 
 ---
 
@@ -31,8 +30,64 @@
 | v0.0.31 | Day 9 | Bridge dual-listener (`-bridge <addr>` TCP alongside UDS, CORS, auth) |
 | v0.0.32 | Day 9 | `--restore` flag — download latest R2 backup + `/download` Worker endpoint |
 | v0.0.33 | Day 9 | Sync-state persistence — `--stats` shows last cloud backup time across restarts |
+| v0.0.34 | Day 9 | `--check` health validator |
+| v0.0.35 | Day 10 | sync.json hot-reload via fsnotify (no daemon restart on Pro onboarding) |
+| v0.0.36 | Day 10 | `--backups` history (ring buffer of last 10 cloud uploads) |
+| v0.0.37 | Day 10 | version-check (24h GitHub poll → /metrics update_available) |
+| v0.0.38 | Day 10 | HTTP `/ask` endpoint (nucleus_ask semantics for non-MCP clients) |
+| v0.0.39 | Day 10 | shared-team surface (`X-Team-ID` header, dual-write to team prefix) |
+| v0.0.41 | Day 10 | Cursor PathContains filter (excludes workspace.json noise) |
+| v0.0.42 | Day 10 | HTTP `/export` (NDJSON streaming, paginated, memory-bounded) |
+| v0.0.44 | Day 10 | `--uninstall` flag (symmetric to `--install`) |
+| v0.0.45 | Day 10 | `/ask` result cache (LRU + 5min TTL, 64-entry cap) |
+| v0.0.46 | Day 10 | `--init` first-run wizard + `udsDialer()` helper |
+| v0.0.47 | Day 10 | `/timeline` cross-tool + `/digest` weekly recap endpoints |
+| v0.0.48 | Day 10 | bash + zsh shell completions, auto-installed by brew |
+| v0.0.49 | Day 10 | `/metrics` exposes `/ask` cache hit/miss + size |
+| v0.0.50 | Day 10 | `--digest` CLI (local recap, no daemon needed) |
+| v0.0.51 | Day 10 | `--ask` CLI (terminal nucleus_ask, no MCP needed) |
+| v0.0.52 | Day 10 | `--capture` stdin → engram (universal pipe target) |
+| v0.0.53 | Day 10 | refactor: `internal/textsearch` (single source of truth for question→FTS) |
+| v0.0.54 | Day 10 | `--vacuum` SQLite compaction for long-running stores |
 
-**Current live numbers:** 278,561 engrams, 803 sessions, P95 retrieval 2.09ms, DB 3.3 GB
+**Current live numbers:** 300K+ engrams (per Mac menubar test), 803+ sessions, P95 retrieval 0.27ms, DB ~3.5 GB
+
+### MCP package
+
+| Version | What |
+|---|---|
+| eidetic-mcp 0.0.4 | Earlier shipped to PyPI |
+| eidetic-mcp 0.0.5 | `nucleus_ask` tool — AI-powered recall via FTS5 |
+| eidetic-mcp 0.0.6 | `nucleus_digest` tool — RAG-shaped weekly recap |
+| eidetic-mcp 0.0.7 | `nucleus_timeline` tool — cross-tool chronological view |
+
+### Integrations shipped (11 surfaces in `integrations/`)
+
+| Surface | Status |
+|---|---|
+| VS Code extension | ✅ TS+esbuild, 11/11 tests, 17.4kB bundle |
+| JetBrains plugin (IntelliJ/PyCharm/GoLand/...) | ✅ Kotlin+Gradle v2 |
+| Chrome MV3 extension | ✅ 12 files, manifest validated |
+| Raycast extension | ✅ TS, 4 commands, build clean |
+| Mac SwiftBar plugin | ✅ Live-tested ("🧠 300K") |
+| Mac native AppKit menubar | ✅ Swift scaffold (xcodebuild deferred to Lokesh) |
+| Slack /eidetic app | ✅ HMAC verified Worker + manifest |
+| Discord /eidetic bot | ✅ Ed25519 Web Crypto Worker |
+| Telegram /eidetic bot | ✅ Webhook-secret constant-time Worker |
+| docs.eidetic.works | ✅ 10-page Astro static site (pending op-assistant deploy) |
+| Web dashboard PWA | ✅ Mobile-installable on iPhone/Android |
+
+### Cloudflare Workers (6 total)
+
+| Worker | Status |
+|---|---|
+| eidetic-sync | ✅ Live va4e1c516 — Pro sync + Team dual-write |
+| gumroad-kit-sync | ✅ Live ve1287839 — 4-tier routing (Pro/Annual/Founder/Team) |
+| eidetic-affiliate | ✅ Scaffold ready — /ref/&lt;code&gt; tracking (op-assistant deploy pending) |
+| eidetic-analytics | ✅ Scaffold ready — ADR-020-compliant funnel (op-assistant deploy pending) |
+| slack-app | ✅ Scaffold (op-assistant deploy pending) |
+| discord-bot | ✅ Scaffold (op-assistant deploy pending) |
+| telegram-bot | ✅ Scaffold (op-assistant deploy pending) |
 
 ### Distribution
 
