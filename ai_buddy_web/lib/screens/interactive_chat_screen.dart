@@ -661,6 +661,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                 _voiceInputActive = false;
                                 if (transcript.isNotEmpty) {
                                   _messageController.text = transcript;
+                                  _messageController.selection =
+                                      TextSelection.fromPosition(
+                                    TextPosition(offset: transcript.length),
+                                  );
                                 }
                               });
                               // R1D7 Phase 1: surface the transcript in the
@@ -668,7 +672,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                               // sending. Anxious users want a confirmation
                               // step — auto-send (ChatGPT Voice Mode style)
                               // is a Phase 3 conversational-mode behavior,
-                              // not Phase 1.
+                              // not Phase 1. Restore focus so the keyboard
+                              // raises immediately and the cursor lands at
+                              // the end of the inserted transcript.
+                              if (transcript.isNotEmpty) {
+                                WidgetsBinding.instance.addPostFrameCallback(
+                                    (_) => _inputFocus.requestFocus());
+                              }
                             },
                             onCancel: () {
                               setState(() {
@@ -1149,14 +1159,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             ),
           ),
           SizedBox(height: 10.h),
-          // R1D6 — 3 named starter chips (fill input, no auto-send).
+          // R1D6 — named starter chips (fill input, no auto-send). Renders
+          // all 4 per the verbatim R1D6 chip set; was previously .take(3)
+          // which dropped the tonal "Quick win, please" option the design
+          // explicitly included.
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8.h, right: 16.h),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: starters
-                  .take(3)
                   .expand((prompt) => [
                         _buildChip(prompt, () {
                           // R1D6 — Fill input only; user taps send explicitly (no auto-send).

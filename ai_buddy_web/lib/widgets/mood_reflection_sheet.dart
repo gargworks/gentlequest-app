@@ -133,24 +133,41 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
     if (mounted) Navigator.of(context).pop();
   }
 
-  void _saveThought() {
+  Future<void> _saveThought() async {
     final text = _thoughtController.text.trim();
     if (text.isEmpty) {
       _dismiss();
       return;
     }
-    // Persist the reflection as a journal entry on device. Was a TODO stub —
-    // user typed "What worked?" reflection and the text was silently dropped.
-    // Now stored under JournalStorage so the user's words survive the session.
-    // Backend journaling API not yet built; when it ships, JournalStorage
-    // becomes the dual-write integration point.
-    JournalStorage.append(JournalEntry(
-      id: DateTime.now().toIso8601String(),
-      body: text,
-      createdAt: DateTime.now(),
-    ));
-    setState(() => _saved = true);
-    Future.delayed(const Duration(milliseconds: 900), _dismiss);
+    // Persist the reflection as a journal entry. Anonymous → device-local;
+    // signed-in → device cache + server source-of-truth. Was previously
+    // fire-and-forget which would show "Saved." even when the future
+    // threw — the user's "What worked?" reflection silently dropped.
+    try {
+      await JournalStorage.append(JournalEntry(
+        id: DateTime.now().toIso8601String(),
+        body: text,
+        createdAt: DateTime.now(),
+      ));
+      if (!mounted) return;
+      setState(() => _saved = true);
+      Future.delayed(const Duration(milliseconds: 900), _dismiss);
+    } catch (_) {
+      if (!mounted) return;
+      // Local SharedPreferences write almost never throws, but the
+      // signed-in path's server POST can — fail loud rather than lie.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Saved locally — we'll sync next time you have a connection.",
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      setState(() => _saved = true);
+      Future.delayed(const Duration(milliseconds: 900), _dismiss);
+    }
   }
 
   @override

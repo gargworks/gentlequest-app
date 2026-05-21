@@ -288,6 +288,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
         return _buildBlockedScreen(
           "Come back when you're $minAge",
           "GentleQuest needs you to be $minAge or older in your region. We'll be here for you when the time comes — until then, please talk to a parent, school counselor, or a trusted adult if things feel heavy.",
+          isRegionBlock: false,
         );
       case ComplianceStatus.blockedRegion:
         return _buildBlockedScreen(
@@ -1100,10 +1101,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     );
   }
 
-  Widget _buildBlockedScreen(String title, String message) {
-    final bool isRegionBlock = title != "Age Requirement";
-    // Use stored region name; fall back to "your state" if unavailable.
-    final String regionName = _storedRegion ?? 'your state';
+  Widget _buildBlockedScreen(String title, String message,
+      {bool isRegionBlock = true}) {
+    // Use stored region name; fall back to "your region" — not "your state",
+    // since the user might be in the UK / EU / India / etc.
+    final String regionName = _storedRegion ?? 'your region';
 
     return Scaffold(
       backgroundColor: GQColors.softBg,

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
@@ -366,25 +367,40 @@ class _WelcomeContent extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // Already with us? Sign in (P2 — optional path visible)
-                          RichText(
-                            text: TextSpan(
-                              style: TextStyle(
-                                fontFamily: GQTypography.bodyFamily,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: GQColors.ink3,
-                              ),
-                              children: [
-                                const TextSpan(text: 'Already with us? '),
-                                TextSpan(
-                                  text: 'Sign in',
-                                  style: TextStyle(
-                                    color: GQColors.primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                          // "Already with us? Sign in" — wires to the
+                          // passwordless magic-link LoginScreen. Was an
+                          // inert RichText (looked tappable, did nothing)
+                          // until 2026-05-21.
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
                                 ),
-                              ],
+                              );
+                            },
+                            child: RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontFamily: GQTypography.bodyFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: GQColors.ink3,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Already with us? '),
+                                  TextSpan(
+                                    text: 'Sign in',
+                                    style: TextStyle(
+                                      color: GQColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: GQColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],

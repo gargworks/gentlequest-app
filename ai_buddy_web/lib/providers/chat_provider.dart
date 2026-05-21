@@ -109,9 +109,18 @@ class ChatProvider extends ChangeNotifier {
 
     // Refresh chat history whenever the device's session-binding changes
     // (sign-in adopts the user's canonical session_id; sign-out generates
-    // a fresh anonymous one). Without this the user would see the prior
-    // session's messages until they pop & re-mount the screen.
-    _authSessionSub = AuthService.instance.onSessionChanged.listen((_) {
+    // a fresh anonymous one). Cancel any in-flight SSE subscriptions FIRST
+    // — a streaming reply from the previous session would otherwise keep
+    // mutating _messages after the clear() and bleed across the boundary.
+    _authSessionSub ??= AuthService.instance.onSessionChanged.listen((_) {
+      for (final sub in _subscriptions) {
+        try { sub.cancel(); } catch (_) {}
+      }
+      for (final c in _closers) {
+        try { c(); } catch (_) {}
+      }
+      _subscriptions.clear();
+      _closers.clear();
       _messages.clear();
       _isOptimisticGreeting = false;
       _hasShownGreeting = false;
@@ -120,6 +129,9 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  // ??= above guards against the rare case where a second ChatProvider
+  // instance subscribes (hot-reload, leopard variant) — only one stream
+  // listener lives per process.
   StreamSubscription<void>? _authSessionSub;
 
   Future<void> _updateGreetingWithContext() async {

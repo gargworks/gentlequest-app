@@ -16,11 +16,17 @@
 // NOT yet implemented. Partial-draft auto-save is local in-memory only for now.
 // Flag: backend_assessment_storage_missing — needs server-side persistence.
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart' show RiskLevel;
+import '../navigation/home_tab_deeplink.dart';
+import '../providers/assessment_provider.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/app_bottom_nav.dart' show AppTab;
 import '../widgets/crisis_resources.dart';
 import '../widgets/exercise_card_scaffold.dart';
 import 'exercise_scaffold_screen.dart';
@@ -306,8 +312,26 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
     if (_qIdx < _totalQ - 1) {
       _animateToQuestion(_qIdx + 1);
     } else {
+      _submitToBackend();
       setState(() => _showResult = true);
     }
+  }
+
+  /// Send the completed assessment to /api/assessment via the provider.
+  /// Fire-and-forget; surface failure via provider.error → SnackBar on the
+  /// result reveal screen. Without this, the user's PHQ-9/GAD-7 responses
+  /// were computed locally + dropped — no row, no follow-up, no audit
+  /// trail.
+  void _submitToBackend() {
+    final responses = _responses
+        .whereType<int>()
+        .toList(growable: false);
+    if (responses.length != _totalQ) return;
+    // ignore: unawaited_futures
+    context.read<AssessmentProvider>().submitAssessment(
+          assessmentType: widget.scale == AssessmentScale.phq9 ? 'phq9' : 'gad7',
+          responses: responses,
+        );
   }
 
   void _animateToQuestion(int newIdx) {
@@ -339,22 +363,35 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
           if (_qIdx < _totalQ - 1) {
             _animateToQuestion(_qIdx + 1);
           } else {
+            _submitToBackend();
             setState(() => _showResult = true);
           }
           if (action == _BridgeAction.heavy) {
-            // flag24hFollowUp — [backend_assessment_storage_missing]
-            // TODO: persist 24h follow-up flag to server when backend available
+            // The user just signaled "this is heavy — check on me later".
+            // Backend persistence (POST /api/follow-up) isn't built yet,
+            // but silently dropping a self-harm-adjacent commitment is
+            // the wrong fail mode (per feedback_silent_skip_paths). Stamp
+            // a local timestamp so QA + the next session can at least
+            // see the request landed; queue can be drained later.
+            SharedPreferences.getInstance().then((prefs) async {
+              final ts = DateTime.now().toIso8601String();
+              final list = prefs.getStringList('follow_up_24h_pending') ?? [];
+              list.add(ts);
+              await prefs.setStringList('follow_up_24h_pending', list);
+              if (kDebugMode) {
+                debugPrint('[follow-up] 24h flag queued @ $ts');
+              }
+            });
           }
         case _BridgeAction.talkNow:
           // Hand off to existing CrisisInterventionSheet (R1D9)
           showCrisisInterventionSheet(context, risk: RiskLevel.high);
         case null:
-          // Sheet closed without choice — treat as safe continue
-          if (_qIdx < _totalQ - 1) {
-            _animateToQuestion(_qIdx + 1);
-          } else {
-            setState(() => _showResult = true);
-          }
+          // Sheet closed without explicit choice (system back gesture on
+          // Android, etc.). The user just signaled Q9 ≥ 1 — silently
+          // advancing past a self-harm signal is the worst possible
+          // failure mode. Re-open the bridge so the user must pick.
+          _openQ9Bridge();
       }
     });
   }
@@ -362,11 +399,12 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
   void _saveAndExit() {
     // [backend_assessment_storage_missing] — partial draft saved only in memory.
     // Synthetic UX QA UC-CA3: confirm to the user the action registered before
-    // popping, so the exit doesn't feel like a silent drop.
+    // popping, so the exit doesn't feel like a silent drop. Show snackbar
+    // BEFORE pop so it surfaces on the parent route's messenger (otherwise
+    // the popped Scaffold's messenger has already been deactivated).
     HapticFeedback.lightImpact();
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
-    nav.maybePop();
     messenger.showSnackBar(
       SnackBar(
         content: const Text(
@@ -381,6 +419,7 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
         backgroundColor: GQColors.ink2,
       ),
     );
+    nav.maybePop();
   }
 
   @override
@@ -391,7 +430,15 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
         score: _totalScore,
         severity: _severity,
         onClose: () => Navigator.of(context).pop(),
-        onChatWithAlex: () => Navigator.of(context).pop(),
+        onChatWithAlex: () {
+          // Pop the assessment screen, then switch to the Talk tab so
+          // the user lands in chat with Alex. Subtitle promises this
+          // ("Opens chat with this result as gentle context"); previously
+          // just popped to nowhere, leaving the user stranded at the
+          // most fragile post-disclosure moment.
+          Navigator.of(context).pop();
+          homeTabDeepLink.value = AppTab.talk;
+        },
       );
     }
 

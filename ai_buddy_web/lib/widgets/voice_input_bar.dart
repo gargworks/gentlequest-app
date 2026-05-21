@@ -89,6 +89,11 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   final stt.SpeechToText _speech = stt.SpeechToText();
   String _transcript = '';
   bool _engineReady = false;
+  // Prevent double-fire: the 60s auto-stop timer AND the engine's
+  // 'done'/'notListening' status listener can both call _onStop in the
+  // same frame; without this guard the transcript would land in the
+  // text field twice or _onStop would touch a disposed controller.
+  bool _stopped = false;
 
   @override
   void initState() {
@@ -170,6 +175,8 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   void _onStop() {
+    if (_stopped) return;
+    _stopped = true;
     if (_speech.isListening) {
       _speech.stop();
     }
@@ -177,6 +184,8 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   void _onCancel() {
+    if (_stopped) return;
+    _stopped = true;
     if (_speech.isListening) {
       _speech.cancel();
     }
