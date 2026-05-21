@@ -77,16 +77,26 @@ class ExerciseCardScaffold extends StatefulWidget {
 class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
     with TickerProviderStateMixin {
   // ── 4-7-8 Breathing state ─────────────────────────────────────────────────
+  // Note: we don't kick off `.repeat()` in the field initializer — it's
+  // started from `initState` with `count: _breathTotalRounds` so the
+  // controller fires `AnimationStatus.completed` after the final cycle
+  // (which lets us trigger `_onDone()` deterministically).
   late final AnimationController _breathCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 19000),
-  )..repeat();
+  );
 
   int _breathRound = 1;
   static const _breathTotalRounds = 3;
   _BreathPhase _breathPhase = _BreathPhase.inhale;
   bool _breathPaused = false;
   bool _voiceGuideOn = false;
+  // R1D16 fix: `_breathCtrl.repeat()` wraps `value` from ~1.0 back to 0.0
+  // between frames, so a per-frame `value >= 1.0` check fires
+  // non-deterministically (or not at all on a fast tick). Track the
+  // previous tick's value and detect the wrap-around explicitly to
+  // advance the round counter.
+  double _prevBreathValue = 0.0;
 
   static const _inhaleMs = 4000;
   static const _holdMs = 7000;
@@ -138,11 +148,26 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   void initState() {
     super.initState();
     _breathCtrl.addListener(_onBreathTick);
+    // Listen for `AnimationStatus.completed` — when `repeat(count: N)` is
+    // used, the controller emits `completed` only once, after the Nth
+    // cycle finishes. This is our deterministic "all rounds done" signal.
+    _breathCtrl.addStatusListener(_onBreathStatus);
+    // Start with an explicit cycle count so the controller knows when to
+    // stop and emit `completed`. Without `count`, a plain `.repeat()`
+    // never fires `completed` and the orb would pulse forever — exactly
+    // the bug we're fixing here.
+    _breathCtrl.repeat(count: _breathTotalRounds);
   }
 
   void _onBreathTick() {
     if (_breathPaused) return;
-    final ms = _breathCtrl.value * _cycleMs;
+    final v = _breathCtrl.value;
+    // Detect wrap-around: when `repeat()` finishes a cycle, `value` jumps
+    // from ~1.0 back to ~0.0 between two consecutive ticks. That wrap is
+    // our cue to bump the round counter. We compare against the previous
+    // tick's value rather than against a fixed threshold, because the
+    // tick that lands exactly at 1.0 is not guaranteed.
+    final ms = v * _cycleMs;
     final _BreathPhase np;
     if (ms < _inhaleMs) {
       np = _BreathPhase.inhale;
@@ -151,18 +176,47 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
     } else {
       np = _BreathPhase.exhale;
     }
-    if (np != _breathPhase) setState(() => _breathPhase = np);
-    if (_breathCtrl.value >= 1.0 && _breathRound < _breathTotalRounds) {
+
+    final wrapped = v < _prevBreathValue;
+    _prevBreathValue = v;
+
+    if (wrapped && _breathRound < _breathTotalRounds) {
+      // A cycle just ended (value wrapped back to ~0). The controller is
+      // still running (`completed` only fires after the final cycle when
+      // `count: N` is set), so this is a mid-exercise round boundary.
       setState(() {
         _breathRound++;
         _breathPhase = _BreathPhase.inhale;
       });
+      return;
     }
+    if (np != _breathPhase) setState(() => _breathPhase = np);
   }
+
+  void _onBreathStatus(AnimationStatus status) {
+    // With `repeat(count: _breathTotalRounds)`, the controller emits
+    // `AnimationStatus.completed` exactly once — after the final cycle.
+    // That's the natural-completion path that ends the exercise.
+    if (status != AnimationStatus.completed) return;
+    _breathCtrl.stop();
+    _onDone();
+  }
+
+  /// Number of cycles still to play given the current `_breathRound`.
+  /// `_breathRound` is 1-based and represents the round currently in
+  /// progress, so remaining = total - round + 1.
+  int get _breathRoundsRemaining =>
+      (_breathTotalRounds - _breathRound + 1).clamp(1, _breathTotalRounds);
 
   void _toggleBreathPause() {
     setState(() => _breathPaused = !_breathPaused);
-    _breathPaused ? _breathCtrl.stop() : _breathCtrl.repeat();
+    if (_breathPaused) {
+      _breathCtrl.stop();
+    } else {
+      // Resume with a finite count so `AnimationStatus.completed` still
+      // fires once the remaining rounds finish.
+      _breathCtrl.repeat(count: _breathRoundsRemaining);
+    }
   }
 
   /// P7 — explicit phase skip; never auto-advances.
@@ -188,7 +242,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           }
       }
     });
-    if (!_breathPaused) _breathCtrl.repeat();
+    // Reset the wrap-detection baseline so the manual `value` jump above
+    // isn't misread as a natural cycle wrap by `_onBreathTick`.
+    _prevBreathValue = _breathCtrl.value;
+    if (!_breathPaused) _breathCtrl.repeat(count: _breathRoundsRemaining);
   }
 
 
@@ -227,6 +284,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   @override
   void dispose() {
     _breathCtrl.removeListener(_onBreathTick);
+    _breathCtrl.removeStatusListener(_onBreathStatus);
     _breathCtrl.dispose();
     _scanCtrl.dispose();
     super.dispose();

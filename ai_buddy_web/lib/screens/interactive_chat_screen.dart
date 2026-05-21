@@ -56,7 +56,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
   // ── R1D7 Chat Active States ──────────────────────────────────────────────
   /// State B — inline crisis banner visible in chat stream.
+  ///
+  /// Activation contract: when the last message arrives with
+  /// riskLevel >= medium (medium, high, or crisis), we surface the banner
+  /// once per high-risk message. The user can dismiss it ("I'm okay") which
+  /// records the message id in [_crisisBannerDismissedForMessageId] so the
+  /// banner stays dismissed until a NEW high-risk message lands. This avoids
+  /// the previous dead-code state (initialized false, only set false) where
+  /// the inline banner never appeared even on a crisis bubble.
   bool _showInlineCrisis = false;
+  String? _crisisBannerDismissedForMessageId;
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
@@ -546,6 +555,32 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       WidgetsBinding.instance
                           .addPostFrameCallback((_) => _scrollToBottom());
 
+                      // R1D7 State B — inline crisis banner activation.
+                      //
+                      // Surface the banner when the most recent message lands
+                      // with riskLevel ∈ {medium, high, crisis}. Skip activation
+                      // if the user already dismissed the banner for THIS
+                      // specific message (sticky dismissal). Re-arms on the
+                      // next high-risk message.
+                      //
+                      // Runs post-frame to avoid calling setState during build.
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        final msgs = chatProvider.messages;
+                        if (msgs.isEmpty) return;
+                        final last = msgs.last;
+                        final isElevated = last.riskLevel == RiskLevel.medium ||
+                            last.riskLevel == RiskLevel.high ||
+                            last.riskLevel == RiskLevel.crisis;
+                        final alreadyDismissedForThisMsg =
+                            _crisisBannerDismissedForMessageId == last.id;
+                        final shouldShow =
+                            isElevated && !alreadyDismissedForThisMsg;
+                        if (shouldShow != _showInlineCrisis) {
+                          setState(() => _showInlineCrisis = shouldShow);
+                        }
+                      });
+
                       // Detect empty conversation: only greeting, no user messages
                       final hasUserMessages =
                           chatProvider.messages.any((m) => m.isUser);
@@ -564,11 +599,30 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       // R1D12: offline banner adds an extra row when offline
                       // Items: messages + (suggestions?) + (crisis banner?) +
                       //        (offline banner?) + (typing?)
-                      final extraRows = (showSuggestions ? 1 : 0) +
-                          (_showInlineCrisis ? 1 : 0) +
-                          (_isOffline ? 1 : 0) +
-                          (hasTyping ? 1 : 0);
-                      final count = msgCount + extraRows;
+                      //
+                      // Row indices are computed ONCE here and reused in both
+                      // itemCount and the index dispatch below. Previously the
+                      // offsets were re-derived per branch with duplicated
+                      // (showSuggestions ? 1 : 0) chains — adding a row meant
+                      // editing four places and risked drift between
+                      // itemCount and the dispatch (crisis row would race
+                      // with offline/typing rows). Single source of truth now.
+                      final int suggestionsRowCount = showSuggestions ? 1 : 0;
+                      final int crisisRowCount = _showInlineCrisis ? 1 : 0;
+                      final int offlineRowCount = _isOffline ? 1 : 0;
+                      final int typingRowCount = hasTyping ? 1 : 0;
+
+                      final int suggestionsIndex = msgCount;
+                      final int crisisIndex =
+                          suggestionsIndex + suggestionsRowCount;
+                      final int offlineIndex = crisisIndex + crisisRowCount;
+                      final int typingIndex = offlineIndex + offlineRowCount;
+
+                      final int count = msgCount +
+                          suggestionsRowCount +
+                          crisisRowCount +
+                          offlineRowCount +
+                          typingRowCount;
 
                       return ListView.builder(
                         controller: _scrollController,
@@ -578,19 +632,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             ScrollViewKeyboardDismissBehavior.manual,
                         itemCount: count,
                         itemBuilder: (context, index) {
-                          int virtualIndex = index;
-
                           // First-turn warmth block (R1D3)
-                          if (showSuggestions && virtualIndex == msgCount) {
+                          if (showSuggestions && index == suggestionsIndex) {
                             return _buildFirstTurnWarmth();
-                          }
-                          if (showSuggestions && virtualIndex > msgCount) {
-                            virtualIndex--; // shift past suggestions row
                           }
 
                           // R1D7 State B — inline crisis banner after last user msg
-                          final crisisIndex =
-                              msgCount + (showSuggestions ? 1 : 0);
                           if (_showInlineCrisis && index == crisisIndex) {
                             return Padding(
                               padding: EdgeInsets.symmetric(horizontal: 4.h),
@@ -598,12 +645,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             );
                           }
 
-                          // R1D12 State A — offline banner at top of stream
-                          // Shown after suggestions/crisis rows so it sits near
-                          // the compose area; auto-hides on reconnect.
-                          final offlineIndex = msgCount +
-                              (showSuggestions ? 1 : 0) +
-                              (_showInlineCrisis ? 1 : 0);
+                          // R1D12 State A — offline banner near compose area;
+                          // auto-hides on reconnect.
                           if (_isOffline && index == offlineIndex) {
                             return Padding(
                               padding: EdgeInsets.symmetric(
@@ -617,10 +660,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           }
 
                           // R1D7 State A — thinking indicator
-                          final typingIndex = msgCount +
-                              (showSuggestions ? 1 : 0) +
-                              (_showInlineCrisis ? 1 : 0) +
-                              (_isOffline ? 1 : 0);
                           if (hasTyping && index == typingIndex) {
                             return _buildTypingBubble();
                           }
@@ -842,15 +881,28 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _retryLastFailedMessage() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     final msgs = chatProvider.messages;
-    // Walk backwards: find the last error bubble, then the user message before it
+    // Retry contract: only the user message IMMEDIATELY preceding the most
+    // recent error bubble is eligible. We do not walk further back looking
+    // for "any" prior user message — that would retry stale content the
+    // user already moved past (e.g. user → ai-ok → user → ai-ok → user
+    // → error: only the last user msg is the candidate). If the slot
+    // before the error isn't a user message (e.g. two errors in a row, or
+    // the error landed before any user input), we skip the retry entirely
+    // rather than guess.
     String? errorId;
     String? retryText;
+    int errorIndex = -1;
     for (int i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].type == MessageType.error && errorId == null) {
+      if (msgs[i].type == MessageType.error) {
         errorId = msgs[i].id;
-      } else if (errorId != null && msgs[i].isUser) {
-        retryText = msgs[i].content;
+        errorIndex = i;
         break;
+      }
+    }
+    if (errorIndex > 0) {
+      final prev = msgs[errorIndex - 1];
+      if (prev.isUser && prev.type != MessageType.error) {
+        retryText = prev.content;
       }
     }
     if (errorId != null) chatProvider.removeMessage(errorId);
@@ -1299,14 +1351,29 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// Builds the R1D7 State B inline crisis banner for insertion in the
   /// message list. Renders above the next AI bubble; never blocks the
   /// conversation (P6: crisis never blocks).
+  ///
+  /// Dismissal (onImOkay / close-X) pins the dismissed message id so the
+  /// post-frame reactivation hook in the `Consumer<ChatProvider>` builder
+  /// doesn't immediately re-show the banner for the SAME high-risk message.
+  /// The banner re-arms when a newer high-risk message arrives with a
+  /// different id.
   Widget _buildInlineCrisisBanner() {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final lastId = chatProvider.messages.isNotEmpty
+        ? chatProvider.messages.last.id
+        : null;
+    void dismissForCurrentMessage() {
+      setState(() {
+        _showInlineCrisis = false;
+        _crisisBannerDismissedForMessageId = lastId;
+      });
+    }
+
     return InlineCrisisBanner(
-      onImOkay: () {
-        setState(() => _showInlineCrisis = false);
-      },
+      onImOkay: dismissForCurrentMessage,
       onHelp: () {
         // Expand inline 988 sheet; does NOT navigate (per design spec)
-        setState(() => _showInlineCrisis = false);
+        dismissForCurrentMessage();
         _showHelpSheet();
       },
     );

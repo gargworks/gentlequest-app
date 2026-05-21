@@ -706,14 +706,33 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       backgroundColor: Colors.transparent,
       useRootNavigator: true,
       builder: (sheetCtx) => _MoodEntrySheet(
-        onSave: (int moodLevel, List<_MoodContext> contexts, String? note) {
+        onSave: (int moodLevel, List<_MoodContext> contexts, String? note) async {
           HapticFeedback.mediumImpact();
-          moodProvider.addMoodEntry(
+          // R1D5 streak-race fix: await the provider so the optimistic cache
+          // update + first save have landed before we compute the streak for
+          // the reflection sheet. `addMoodEntry` is `Future<void>` and only
+          // returns once the local cache is updated; computing streakDays
+          // afterwards prevents the badge from under-counting on first entry
+          // of the day. We also resolve streakDays *here* (in the closure)
+          // rather than inside `addPostFrameCallback`, so the value is bound
+          // to the moment we know the entry is in.
+          final addFuture = moodProvider.addMoodEntry(
             moodLevel,
             note: note?.trim(),
             contextChips: contexts.map((context) => context.label).toList(),
           );
+          // Pop the sheet immediately for snappy UX — the await runs in
+          // parallel with the pop transition.
           Navigator.of(sheetCtx, rootNavigator: true).pop();
+          await addFuture;
+          // Sheet was popped; the parent (MoodTrackerWidget) may have rebuilt
+          // or unmounted. Guard with `mounted` before any further UI.
+          if (!mounted) return;
+          // Pre-compute streak now that the entry has propagated. Bind it
+          // into the closure so the post-frame callback uses this value
+          // rather than recomputing after another frame.
+          final int? streakDays =
+              moodLevel == 5 ? QuestsEngine().computeTotalActiveDays() : null;
           // R1D5 — Post-submit reflection: branch by mood level.
           //   moodLevel 1–2 → Low mood sheet (State A)
           //   moodLevel 5   → Great mood sheet (State B, celebrates + harvests insight)
@@ -726,10 +745,8 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             if (moodLevel <= 2) {
               showMoodLowReflectionSheet(context);
             } else if (moodLevel == 5) {
-              // Pass current streak for badge bounce; QuestsEngine reads from
-              // SharedPreferences so we can safely instantiate it here.
-              final streakDays = QuestsEngine().computeTotalActiveDays();
-              showMoodGreatReflectionSheet(context, streakDays: streakDays);
+              // streakDays already computed above with fresh provider state.
+              showMoodGreatReflectionSheet(context, streakDays: streakDays!);
             } else {
               // Neutral (3–4): lightweight logged toast, auto-dismisses ~3s.
               showMoodNeutralToast(context);

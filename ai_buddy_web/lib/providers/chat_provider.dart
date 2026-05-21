@@ -25,15 +25,6 @@ class ChatProvider extends ChangeNotifier {
   bool _isOptimisticGreeting =
       false; // Track if we are showing the temporary local greeting
 
-  // Warm greeting variations for personality
-  static const List<String> _greetings = [
-    "This is your space to think out loud. Share what's on your mind. I'm here when you're ready. 🌱",
-    "Hi! Ready when you are. No pressure, just here to listen. 🌱",
-    "Hey! What's on your mind today? I'm all ears. 💭",
-    "Hello! This is your space to think out loud. How can I help? ✨",
-    "Hi there! How's your day going? I'm here whenever you need me. 🌟",
-  ];
-
   // Welcome back messages based on time away
   static const List<String> _welcomeBackMessages = [
     "Welcome back! 👋 Good to see you again.",
@@ -42,6 +33,15 @@ class ChatProvider extends ChangeNotifier {
   ];
 
   static const String _lastVisitKey = 'chat_last_visit';
+
+  // Persisted across sessions so first-message analytics fires exactly once
+  // per device. _messages.length == 1 was wrong: after chat history hydration
+  // a returning user's "first" send can land at message 50+, undercounting
+  // retention. The boolean transitions false→true on the first successful
+  // emit; subsequent sends short-circuit. Versioned suffix lets us re-issue
+  // the gate without losing history if the contract ever changes.
+  static const String _firstChatMessageLoggedKey =
+      'first_chat_message_logged_v1';
 
   Future<String> _getGreetingWithContext() async {
     try {
@@ -79,14 +79,26 @@ class ChatProvider extends ChangeNotifier {
 
   String _getRandomGreeting() {
     final hour = DateTime.now().hour;
-    // Time-aware greetings
+    // Time-aware greetings — buckets MUST mirror the header's
+    // _buildFirstTurnWarmth() bucketing in interactive_chat_screen.dart so the
+    // bubble greeting and the header greeting agree on the time-of-day word.
+    // Header buckets:
+    //   morning   5–12   → "Good morning"
+    //   afternoon 12–17  → "Good afternoon"
+    //   evening   17–22  → "Good evening"  (header collapses 17–5 into evening)
+    //   night-owl 22–5   → bubble carves this out for warmth ("night owl 🌙")
     if (hour >= 5 && hour < 12) {
       return "Good morning! ☀️ How are you feeling today?";
-    } else if (hour >= 22 || hour < 5) {
+    } else if (hour >= 12 && hour < 17) {
+      return "Good afternoon! 🌤️ How's your day going?";
+    } else if (hour >= 17 && hour < 22) {
+      return "Good evening! 🌆 How are you winding down?";
+    } else {
+      // 22:00–04:59 — header still says "Good evening" but the bubble keeps
+      // the warmer night-owl flavour. They agree on bucket boundaries; only
+      // the bubble copy differs by design.
       return "Hey, night owl! 🌙 What's on your mind?";
     }
-    // Random from list for other times
-    return _greetings[Random().nextInt(_greetings.length)];
   }
 
   ChatProvider() : _apiService = ApiService() {
@@ -197,8 +209,26 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Track first message for retention analytics
-      final isFirstMessage = _messages.length == 1; // only the user msg we just added
+      // Track first message for retention analytics.
+      //
+      // We can't rely on `_messages.length == 1` — chat history hydrates
+      // from the server, so a returning user's "first send" can land at
+      // message 50+ and never satisfy that predicate (analytics undercount).
+      //
+      // Source of truth: a SharedPreferences boolean
+      // (`first_chat_message_logged_v1`) that transitions false→true on the
+      // first successful emit. The legacy `chat_session_started.is_first`
+      // payload mirrors the same flag for downstream consumers; we only
+      // emit the dedicated `first_chat_message_sent` event on the actual
+      // transition, never twice.
+      bool isFirstMessage = false;
+      SharedPreferences? prefs;
+      try {
+        prefs = await SharedPreferences.getInstance();
+        isFirstMessage = !(prefs.getBool(_firstChatMessageLoggedKey) ?? false);
+      } catch (e) {
+        debugPrint('first_chat_message pref read failed: $e');
+      }
       FirebaseService().logChatMessage(isFirstMessage ? 'first' : 'follow_up');
       FirebaseService().logEvent('chat_session_started', {
         'message_length': content.length,
@@ -208,6 +238,15 @@ class ChatProvider extends ChangeNotifier {
         FirebaseService().logEvent('first_chat_message_sent', {
           'message_length': content.length,
         });
+        // Flip the gate AFTER the event lands so a crash between read and
+        // log doesn't burn the analytics fire. Best-effort write; if prefs
+        // is null (read failed above) we accept the rare double-fire risk
+        // over silent loss of analytics.
+        try {
+          await prefs?.setBool(_firstChatMessageLoggedKey, true);
+        } catch (e) {
+          debugPrint('first_chat_message pref write failed: $e');
+        }
       }
 
       // Try streaming first (web-only, feature-gated). Fallback to non-streaming.

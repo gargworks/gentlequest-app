@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/resource.dart';
 
@@ -12,11 +13,34 @@ class ResourceCard extends StatelessWidget {
     required this.onView,
   });
 
-  Future<void> _launchUrl() async {
-    final Uri url = Uri.parse(resource.url);
-    if (!await launchUrl(url)) {
-      throw Exception('Could not launch $url');
+  /// Open the resource URL. On web, popup-blockers (or a missing external
+  /// handler) can make `launchUrl` throw or return false; copy the link to
+  /// the clipboard and surface a SnackBar so the user can paste it manually
+  /// instead of hitting an uncaught exception. Mirrors the pattern in
+  /// crisis_resources.dart#_launchUri.
+  Future<void> _launchUrl(BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final Uri uri = Uri.parse(resource.url);
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      if (canLaunch) {
+        final launched =
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (launched) {
+          onView(resource.id);
+          return;
+        }
+      }
+    } catch (_) {
+      // fall through to clipboard fallback
     }
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    messenger?.showSnackBar(
+      const SnackBar(
+        content: Text('Link copied — open it in your browser'),
+      ),
+    );
+    // Still count the view — user has been handed the URL.
     onView(resource.id);
   }
 
@@ -53,7 +77,7 @@ class ResourceCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: _launchUrl,
+        onTap: () => _launchUrl(context),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),

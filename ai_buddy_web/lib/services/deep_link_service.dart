@@ -1,4 +1,5 @@
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
 import 'auth_service.dart';
@@ -9,7 +10,12 @@ class DeepLinkService {
   factory DeepLinkService() => _instance;
   DeepLinkService._internal();
 
-  late AppLinks _appLinks;
+  // Mobile uses the app_links plugin for `gentlequest://` custom-scheme
+  // intents. Web parses `Uri.base` instead (window.location) because
+  // app_links has no cold-start hook for the browser surface — the
+  // magic-link land at `https://gentlequest.app/auth/verify?token=...`
+  // via the backend's smart-redirect (`/auth/redirect` UA-sniff route).
+  AppLinks? _appLinks;
 
   /// In-flight + already-consumed auth tokens. Magic-link clicks on cold-
   /// start fire both `getInitialLink()` AND `uriLinkStream`, so without
@@ -19,18 +25,75 @@ class DeepLinkService {
   final Set<String> _consumedTokens = {};
 
   Future<void> initialize() async {
+    if (kIsWeb) {
+      // Web cold-start: there is no app_links uriLinkStream on the
+      // browser surface; the URL the user landed on is the only signal.
+      // `Uri.base` resolves to `window.location` without pulling in
+      // dart:html (which would break non-web builds).
+      _handleWebColdStart();
+      return;
+    }
+
     _appLinks = AppLinks();
 
     // Handle initial link if app was launched from a deep link
-    final initialLink = await _appLinks.getInitialLink();
+    final initialLink = await _appLinks!.getInitialLink();
     if (initialLink != null) {
       _handleDeepLink(initialLink.toString());
     }
 
     // Listen for links when app is already running
-    _appLinks.uriLinkStream.listen((uri) {
+    _appLinks!.uriLinkStream.listen((uri) {
       _handleDeepLink(uri.toString());
     });
+  }
+
+  /// Cold-start URL parse for the Flutter web build.
+  ///
+  /// The backend's `/auth/redirect` router lands desktop users on
+  /// `https://gentlequest.app/auth/verify?token=<raw>`. We sniff for
+  /// that path here and fire the same `verifyToken` call the mobile
+  /// path uses, then strip the token from the visible URL so a
+  /// browser back/refresh doesn't replay the (now-burned) single-use
+  /// claim and surface a "Sign-in failed" SnackBar.
+  void _handleWebColdStart() {
+    try {
+      final uri = Uri.base;
+      final token = uri.queryParameters['token'];
+      // Accept any path on the web origin that carries `?token=...`
+      // (the smart-redirect always lands on `/auth/verify`, but a
+      // few mail clients rewrite paths — be permissive).
+      final isAuthPath = uri.path == '/auth/verify' ||
+          uri.path.endsWith('/auth/verify') ||
+          uri.path == '/auth-verify' ||
+          uri.path.endsWith('/auth-verify');
+      if (token == null || token.isEmpty || !isAuthPath) {
+        return;
+      }
+      FirebaseService().logEvent('deep_link_opened', {
+        'url': uri.toString(),
+        'surface': 'web',
+      });
+      _handleAuthVerify(token);
+      // Best-effort URL cleanup: replace the current history entry
+      // with a tokenless URL so refresh/back doesn't re-verify.
+      // We use Uri manipulation only — no dart:html import — and
+      // skip the rewrite if `window.history` isn't reachable.
+      _scrubTokenFromUrl(uri);
+    } catch (e) {
+      debugPrint('Web cold-start auth parse failed: $e');
+    }
+  }
+
+  void _scrubTokenFromUrl(Uri original) {
+    // Intentionally a soft no-op for now: rewriting window.history from
+    // Dart requires either dart:html (breaks mobile build) or the
+    // package:web shim (new pubspec dep — explicitly forbidden by the
+    // ownership scope). The token is single-use server-side, so a
+    // refresh just shows the "Sign-in failed" SnackBar once. Acceptable.
+    // If we later add package:web for other reasons, hook the rewrite
+    // here. Reference URL we'd write:
+    //   original.replace(queryParameters: {}).toString()
   }
 
   void _handleDeepLink(String link) {

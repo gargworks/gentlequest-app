@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -111,6 +111,14 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   Future<void> _initSpeech() async {
+    // Defense in depth: speech_to_text crashes at construction-time on web
+    // (no on-device recognizer). The chat screen already kIsWeb-hides the mic
+    // button, but bail here too so any future surface that mounts this widget
+    // on web fails gracefully instead of throwing.
+    if (kIsWeb) {
+      widget.onUnsupported?.call();
+      return;
+    }
     try {
       final available = await _speech.initialize(
         onStatus: (status) {

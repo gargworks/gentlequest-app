@@ -197,6 +197,15 @@ class MoodProvider extends ChangeNotifier {
     }
   }
 
+  /// Add a mood entry.
+  ///
+  /// Returns a `Future<void>` that completes once the local cache update
+  /// (Phase 1) and the first network save attempt (Phase 2) are done.
+  /// Phase 3 (history reconciliation) and Phase 4 (pulse fetch) continue
+  /// asynchronously in the background after the returned future has
+  /// completed — callers that need an immediate, consistent UI signal
+  /// (e.g. streak badge after reflection sheet) can `await` this method
+  /// without paying for the full reconciliation roundtrip.
   Future<void> addMoodEntry(
     int moodLevel, {
     String? note,
@@ -257,29 +266,44 @@ class MoodProvider extends ChangeNotifier {
       _scheduleDrain();
     }
 
-    // Phase 3: if POST succeeded, refresh history for consistency
-    if (postOk) {
-      try {
-        final entries = await _apiService.getMoodHistory();
-        _moodEntries = entries;
-        _error = null; // clear any previous error on success
-        _sortByTimestampAsc();
-        await _saveCachedMoodHistory();
-      } catch (_) {
-        // Silent: keep optimistic entries and cached state; next reload() will reconcile
-      }
-
-      // Phase 4: Fetch "You Are Not Alone" pulse data
-      try {
-        _latestPulse = await _apiService.getMoodPulse();
-        _lastMoodLevel = moodLevel;
-      } catch (_) {
-        // Silent: pulse is optional enhancement
-      }
-    }
-
     _isLoading = false;
     notifyListeners();
+
+    // Phase 3 + 4: background reconciliation & pulse fetch. Fire-and-forget
+    // so callers awaiting `addMoodEntry` get a snappy return after the
+    // first save attempt; UI will refresh again via `notifyListeners()`
+    // once these complete.
+    if (postOk) {
+      // Intentionally unawaited — runs in background.
+      // ignore: unawaited_futures
+      _reconcileAfterPost(moodLevel);
+    }
+  }
+
+  /// Phase 3 (reconcile history with backend) + Phase 4 (fetch pulse).
+  /// Runs after the foreground `addMoodEntry` future has completed so
+  /// callers don't block on these network roundtrips for a snappy UX.
+  Future<void> _reconcileAfterPost(int moodLevel) async {
+    // Phase 3: refresh history for consistency.
+    try {
+      final entries = await _apiService.getMoodHistory();
+      _moodEntries = entries;
+      _error = null; // clear any previous error on success
+      _sortByTimestampAsc();
+      await _saveCachedMoodHistory();
+      notifyListeners();
+    } catch (_) {
+      // Silent: keep optimistic entries and cached state; next reload() will reconcile
+    }
+
+    // Phase 4: Fetch "You Are Not Alone" pulse data
+    try {
+      _latestPulse = await _apiService.getMoodPulse();
+      _lastMoodLevel = moodLevel;
+      notifyListeners();
+    } catch (_) {
+      // Silent: pulse is optional enhancement
+    }
   }
 
   /// Manually trigger retry of pending submissions (testing and manual use)
