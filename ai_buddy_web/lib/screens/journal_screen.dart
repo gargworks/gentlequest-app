@@ -19,9 +19,12 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/auth_service.dart';
+import '../services/journal_api.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/app_back_button.dart';
 
@@ -50,15 +53,29 @@ JournalMood? _moodFromKey(String? k) => switch (k) {
       _ => null,
     };
 
-/// JournalStorage — on-device persistence for JournalEntry list.
+/// JournalStorage — journal persistence with optional server sync.
 ///
-/// Backend journaling API is not yet wired; entries live on the device under
-/// a single SharedPreferences key. Once the API ships, this class becomes the
-/// migration point: load() can pull from server, save() can dual-write.
+/// Anonymous users: device-local via SharedPreferences only. Preserves
+/// the verbatim "Stays on your device. Never synced." promise from the
+/// empty-state design.
+///
+/// Signed-in users: dual-write — local SharedPreferences as the offline
+/// cache, backend `/api/journal/*` as the cross-device source of truth.
+/// The canonical session_id mechanism (see services/auth_service.dart
+/// + services/session_manager.dart) means every device signed into the
+/// same account shares server-side rows automatically.
 class JournalStorage {
   static const _key = 'journal_entries_v1';
+  static const _kMigratedKey = 'journal_local_migrated_to_server_v1';
 
-  static Future<List<JournalEntry>> load() async {
+  /// How long load() will wait for the server before returning local-only.
+  /// Long enough for typical mobile latencies; short enough that a flaky
+  /// network doesn't block the screen on cold-open.
+  static const Duration _serverPullTimeout = Duration(milliseconds: 1500);
+
+  // ── Local helpers ──────────────────────────────────────────────────
+
+  static Future<List<JournalEntry>> _loadLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_key);
@@ -73,7 +90,7 @@ class JournalStorage {
     }
   }
 
-  static Future<void> save(List<JournalEntry> entries) async {
+  static Future<void> _saveLocal(List<JournalEntry> entries) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = jsonEncode(entries.map((e) => e.toJson()).toList());
@@ -83,13 +100,195 @@ class JournalStorage {
     }
   }
 
-  /// Append a single entry to the persisted list. Returns the updated list.
-  /// Used by mood_reflection_sheet so reflections aren't silently discarded.
+  // ── Public API ─────────────────────────────────────────────────────
+
+  /// Load entries. Anonymous → local only. Signed-in → local + a
+  /// short-timeout server pull, merged by id (server wins on tie).
+  ///
+  /// Always returns the freshest available list; callers don't need to
+  /// know whether the network was reachable.
+  static Future<List<JournalEntry>> load() async {
+    final local = await _loadLocal();
+    if (!AuthService.instance.isSignedIn) return local;
+    try {
+      final remote = await JournalApi.list(limit: 100)
+          .timeout(_serverPullTimeout);
+      final merged = _mergeById(local, remote);
+      await _saveLocal(merged);
+      return merged;
+    } catch (e) {
+      if (kDebugMode) debugPrint('JournalStorage.load server pull failed: $e');
+      return local;
+    }
+  }
+
+  /// Persist [entries] verbatim. Backend isn't touched here — server-side
+  /// state is mutated only through `append` / `remove`. Used when the
+  /// caller has already reconciled (e.g. after a server pull in load()).
+  static Future<void> save(List<JournalEntry> entries) async {
+    await _saveLocal(entries);
+  }
+
+  /// Append a single entry to the persisted list. Writes locally
+  /// immediately, then (if signed in) creates the entry server-side and
+  /// replaces the local row's id with the server-assigned canonical id.
+  /// Returns the updated list.
+  ///
+  /// Used by mood_reflection_sheet and JournalScreen's editor.
   static Future<List<JournalEntry>> append(JournalEntry entry) async {
-    final entries = await load();
+    final entries = await _loadLocal();
     entries.insert(0, entry);
-    await save(entries);
+    await _saveLocal(entries);
+
+    if (AuthService.instance.isSignedIn) {
+      try {
+        final remote = await JournalApi.create(
+          body: entry.body,
+          moodTag: _moodToKey(entry.mood).isEmpty ? null : _moodToKey(entry.mood),
+        );
+        final idx = entries.indexWhere((e) => e.id == entry.id);
+        if (idx >= 0) {
+          // Replace the local entry with the server-canonical one so future
+          // patches / deletes hit the right row.
+          entries[idx] = JournalEntry(
+            id: remote.id,
+            body: remote.body,
+            createdAt: remote.createdAt,
+            mood: _moodFromKey(remote.moodTag),
+            tags: entries[idx].tags,
+          );
+          await _saveLocal(entries);
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('JournalStorage.append server post failed: $e');
+        // Local copy retained; will get pushed up on next migrate call.
+      }
+    }
     return entries;
+  }
+
+  /// Soft-delete an entry. Removes locally and (if signed in) sends
+  /// DELETE to the server. Server failures are non-fatal.
+  static Future<List<JournalEntry>> remove(String entryId) async {
+    final entries = await _loadLocal();
+    entries.removeWhere((e) => e.id == entryId);
+    await _saveLocal(entries);
+    if (AuthService.instance.isSignedIn) {
+      // Only attempt server delete if the id LOOKS server-assigned
+      // (uuid v4 shape — 36 chars with dashes). Local ids are ISO-8601
+      // timestamps and won't exist server-side until migrate() runs.
+      if (entryId.length == 36 && entryId.contains('-')) {
+        try {
+          await JournalApi.delete(entryId);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('JournalStorage.remove server delete failed: $e');
+          }
+        }
+      }
+    }
+    return entries;
+  }
+
+  /// One-time migration: push every local-only entry to the server.
+  /// Called right after a successful magic-link verify so the user's
+  /// pre-login journal entries follow them across devices.
+  ///
+  /// Idempotent via a SharedPreferences flag so re-running on subsequent
+  /// sign-ins doesn't double-upload.
+  static Future<void> migrateLocalToServer() async {
+    if (!AuthService.instance.isSignedIn) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_kMigratedKey) ?? false) return;
+      final local = await _loadLocal();
+      if (local.isEmpty) {
+        await prefs.setBool(_kMigratedKey, true);
+        return;
+      }
+      // Push oldest first so server timeline reads in the same order.
+      final reversed = local.reversed.toList();
+      final replaced = <JournalEntry>[];
+      for (final entry in reversed) {
+        // Skip rows that already look server-assigned (uuid-shaped id).
+        if (entry.id.length == 36 && entry.id.contains('-')) {
+          replaced.insert(0, entry);
+          continue;
+        }
+        try {
+          final remote = await JournalApi.create(
+            body: entry.body,
+            moodTag: _moodToKey(entry.mood).isEmpty
+                ? null
+                : _moodToKey(entry.mood),
+          );
+          replaced.insert(
+            0,
+            JournalEntry(
+              id: remote.id,
+              body: remote.body,
+              createdAt: remote.createdAt,
+              mood: _moodFromKey(remote.moodTag),
+              tags: entry.tags,
+            ),
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('JournalStorage.migrate: skip $e (entry stays local)');
+          }
+          replaced.insert(0, entry);
+        }
+      }
+      await _saveLocal(replaced);
+      await prefs.setBool(_kMigratedKey, true);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('JournalStorage.migrate top-level failure: $e');
+      }
+    }
+  }
+
+  /// Reset the migrate flag — called on sign-out so the NEXT sign-in
+  /// (potentially a different user on this device) re-migrates from
+  /// whatever's still on disk at that time.
+  static Future<void> resetMigrationFlag() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kMigratedKey);
+    } catch (_) {}
+  }
+
+  // ── Merge ──────────────────────────────────────────────────────────
+
+  /// Merge local + remote by id. If both sides have the same id, prefer
+  /// the remote copy (server is source of truth when reachable).
+  /// Entries unique to one side carry through.
+  static List<JournalEntry> _mergeById(
+    List<JournalEntry> local,
+    List<JournalApiEntry> remote,
+  ) {
+    final remoteById = <String, JournalApiEntry>{
+      for (final r in remote) r.id: r,
+    };
+    final out = <JournalEntry>[];
+    final seen = <String>{};
+    for (final r in remote) {
+      seen.add(r.id);
+      out.add(JournalEntry(
+        id: r.id,
+        body: r.body,
+        createdAt: r.createdAt,
+        mood: _moodFromKey(r.moodTag),
+      ));
+    }
+    for (final l in local) {
+      if (remoteById.containsKey(l.id)) continue; // remote wins
+      if (seen.contains(l.id)) continue;
+      out.add(l);
+      seen.add(l.id);
+    }
+    out.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return out;
   }
 }
 
@@ -205,26 +404,23 @@ class _JournalScreenState extends State<JournalScreen> {
     });
   }
 
-  void _addEntry(String body) {
+  Future<void> _addEntry(String body) async {
     if (body.trim().isEmpty) return;
-    setState(() {
-      _entries.insert(
-        0,
-        JournalEntry(
-          id: DateTime.now().toIso8601String(),
-          body: body.trim(),
-          createdAt: DateTime.now(),
-        ),
-      );
-    });
-    JournalStorage.save(_entries);
+    final localEntry = JournalEntry(
+      id: DateTime.now().toIso8601String(),
+      body: body.trim(),
+      createdAt: DateTime.now(),
+    );
+    // Optimistic local insert for instant feedback.
+    setState(() => _entries.insert(0, localEntry));
+    final updated = await JournalStorage.append(localEntry);
+    if (!mounted) return;
+    setState(() => _entries = updated);
   }
 
-  void _deleteEntry(String id) {
-    setState(() {
-      _entries.removeWhere((e) => e.id == id);
-    });
-    JournalStorage.save(_entries);
+  Future<void> _deleteEntry(String id) async {
+    setState(() => _entries.removeWhere((e) => e.id == id));
+    await JournalStorage.remove(id);
   }
 
   Future<void> _openEditor({String? prefill}) async {
@@ -417,16 +613,23 @@ class _JournalEmptyState extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(
+                  children: [
+                    const Icon(
                       Icons.lock_outline,
                       size: 11,
                       color: GQColors.ink2,
                     ),
-                    SizedBox(width: 5),
+                    const SizedBox(width: 5),
                     Text(
-                      'Stays on your device. Never synced. Never shared.',
-                      style: TextStyle(
+                      // Branch on sign-in state — the privacy promise has to
+                      // match what's actually true. Anonymous = device-only
+                      // (verbatim from R1D-Journal HTML). Signed in =
+                      // synced to the user's account, still private to
+                      // them, accessible across devices.
+                      AuthService.instance.isSignedIn
+                          ? 'Synced to your account. Only you can see it.'
+                          : 'Stays on your device. Never synced. Never shared.',
+                      style: const TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,

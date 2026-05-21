@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
+import '../screens/journal_screen.dart' show JournalStorage;
 import 'session_manager.dart';
 
 /// Passwordless magic-link auth client.
@@ -95,6 +96,14 @@ class AuthService {
         await SessionManager.adoptCanonicalSessionId(canonical);
       }
       await _persist(id: id, email: emailValue);
+      // Push any local-only journal entries to the user's server-side
+      // store now that we have a canonical session. Idempotent — runs
+      // at most once per sign-in window (guarded by a SharedPreferences
+      // flag inside JournalStorage).
+      // Fire-and-forget: a server hiccup here shouldn't block the UI
+      // confirming the sign-in.
+      // ignore: unawaited_futures
+      JournalStorage.migrateLocalToServer();
       return AuthIdentity(id: id, email: emailValue);
     } on DioException catch (e) {
       final body = e.response?.data;
@@ -119,6 +128,9 @@ class AuthService {
     } catch (_) {
       // best effort
     }
+    // Reset the journal migration flag so the next sign-in (possibly a
+    // different user on this device) re-runs the local→server push.
+    await JournalStorage.resetMigrationFlag();
   }
 
   Future<Map<String, dynamic>> _sessionHeaders() async {
