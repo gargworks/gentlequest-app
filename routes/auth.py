@@ -543,3 +543,63 @@ def whoami():
     return jsonify(
         {"user": {"id": user.id, "email": user.email}}
     ), 200
+
+
+@auth_bp.route("/api/auth/signOut", methods=["POST"])
+@limiter.limit(
+    "10 per hour",
+    key_func=lambda: (
+        request.headers.get("X-Session-ID") or request.remote_addr or "anon"
+    ),
+)
+def sign_out():
+    """Revoke the server-side session→user binding for the current device.
+
+    Why this exists: client-only sign-out leaves the User row pointing at
+    the device's session_id. If the device is lost / stolen / handed off,
+    the previous owner can't revoke the binding from another device.
+    Posting here breaks the link server-side so subsequent requests under
+    the same X-Session-ID are treated as anonymous.
+
+    We deliberately do NOT delete the UserSession row — that would orphan
+    chat history, journal entries, mood reflections etc. that are
+    foreign-keyed to it. We only clear `User.session_id`, which severs
+    the user↔session edge while leaving both endpoints intact. The user
+    can re-bind a (possibly new) device session via a fresh magic-link.
+
+    Returns 200 with {"status": "signed_out"} unconditionally — even if
+    the X-Session-ID had no user binding (already anonymous). Same info-
+    leak posture as the rest of this module: never reveal account state.
+
+    Rate-limited at 10 per hour per session-id to prevent griefing
+    (forcing repeated re-bindings on a victim account).
+    """
+    session_id = request.headers.get("X-Session-ID")
+    if not session_id:
+        # No session header → nothing to unbind. Anonymous is the natural
+        # post-signout state, so report success.
+        return jsonify({"status": "signed_out"}), 200
+
+    user: Optional[User] = (
+        User.query.filter_by(session_id=session_id, deleted_at=None).first()
+    )
+    if user is None:
+        # Session id has no user binding (already anonymous, or never
+        # signed in on this device). Idempotent — still 200.
+        return jsonify({"status": "signed_out"}), 200
+
+    # Sever the user→session edge. We leave the session row + the user
+    # row themselves alone:
+    #   - UserSession (id=session_id) still owns its content rows
+    #     (journal, chat, mood, etc.) via the FK from those tables.
+    #   - User row is preserved so a future magic-link re-binds the same
+    #     account to whatever fresh session id the device adopts next.
+    # Setting user.session_id = None is the lightest possible undo of
+    # the bind that verify_magic_link performs.
+    user.session_id = None
+    db.session.commit()
+    logger.info(
+        "auth.sign_out user_id=%s session_id=%s", user.id, session_id
+    )
+
+    return jsonify({"status": "signed_out"}), 200

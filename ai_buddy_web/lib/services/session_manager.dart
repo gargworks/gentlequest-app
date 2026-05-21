@@ -2,15 +2,45 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import 'storage/kv_storage.dart';
 
 /// Centralized session ID coordinator to deduplicate network calls to
 /// `/api/get_or_create_session` across services.
+///
+/// Storage layering (read order on first access):
+///   1. In-memory (`_sessionId`) — fast path
+///   2. FlutterSecureStorage at `gq_session_id_v1`
+///      (Android: encryptedSharedPreferences; iOS/macOS: Keychain)
+///   3. Legacy fallbacks read once for migration:
+///        - FlutterSecureStorage at the old `session_id` key
+///        - SharedPreferences at `session_id` (pre-KvStorage era)
+///      If either has a value, copy into secure storage at the v1 key,
+///      delete the legacy copies, and never read the legacy keys again.
+/// On web, FlutterSecureStorage isn't a real secure surface — KvStorage
+/// already shims to SharedPreferences on web, which is the best we can do
+/// in a browser. Mobile is where the value lives.
 class SessionManager {
-  static const String _sessionKey = 'session_id';
+  /// Legacy key — read once for migration, then deleted.
+  static const String _legacySessionKey = 'session_id';
+
+  /// Canonical key (post-migration). Bumped to v1 to make the migration
+  /// trigger trivially observable.
+  static const String _sessionKey = 'gq_session_id_v1';
+
+  /// Mobile-only secure storage handle. On Android this opts into
+  /// `EncryptedSharedPreferences` (AES-256 backed by AndroidKeyStore);
+  /// on iOS/macOS it uses Keychain (first_unlock). On web/desktop the
+  /// plugin falls back, so we still wrap reads in try/catch.
+  static const FlutterSecureStorage _secure = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   static String? _sessionId;
   static Completer<String>? _inflight;
+  static bool _migrationChecked = false;
 
   /// Returns an in-memory session id if present, else loads from secure storage,
   /// else performs a single, deduplicated network call to create one.
@@ -18,9 +48,9 @@ class SessionManager {
     // Fast path: in-memory
     if (_sessionId != null && _sessionId!.trim().isNotEmpty) return _sessionId!;
 
-    // Try persisted storage
+    // Try persisted storage (secure storage → migration fallback)
     try {
-      final existing = await KvStorage.read(_sessionKey);
+      final existing = await _loadPersisted();
       if (existing != null && existing.trim().isNotEmpty) {
         _sessionId = existing;
         return _sessionId!;
@@ -55,7 +85,7 @@ class SessionManager {
       _sessionId =
           (sid != null && sid.trim().isNotEmpty) ? sid : _fallbackSessionId();
       try {
-        await KvStorage.write(_sessionKey, _sessionId);
+        await _writePersisted(_sessionId!);
       } catch (e) {
         if (kDebugMode) debugPrint('SessionManager: storage write error: $e');
       }
@@ -78,7 +108,7 @@ class SessionManager {
     _sessionId = null;
     _inflight = null;
     try {
-      await KvStorage.delete(_sessionKey);
+      await _deletePersisted();
     } catch (e) {
       if (kDebugMode) debugPrint('SessionManager: clear error: $e');
     }
@@ -98,7 +128,7 @@ class SessionManager {
     _sessionId = fresh;
     _inflight = null;
     try {
-      await KvStorage.write(_sessionKey, fresh);
+      await _writePersisted(fresh);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SessionManager: regenerate write error: $e');
@@ -136,7 +166,7 @@ class SessionManager {
     _sessionId = canonical;
     _inflight = null;
     try {
-      await KvStorage.write(_sessionKey, canonical);
+      await _writePersisted(canonical);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SessionManager: adoptCanonical write error: $e');
@@ -146,4 +176,134 @@ class SessionManager {
 
   static String _fallbackSessionId() =>
       DateTime.now().millisecondsSinceEpoch.toString();
+
+  // ─── Persistence internals ──────────────────────────────────────────
+
+  /// Read from secure storage, falling back once to legacy locations.
+  ///
+  /// On web FlutterSecureStorage isn't truly secure, so we stick with
+  /// KvStorage (which is SharedPreferences on web) and skip the
+  /// secure-storage hop entirely. Mobile is where the secrecy matters.
+  static Future<String?> _loadPersisted() async {
+    if (kIsWeb) {
+      return KvStorage.read(_sessionKey).then((v) async {
+        if (v != null && v.trim().isNotEmpty) return v;
+        // Migrate from legacy key on web too (KvStorage on web == prefs).
+        final legacy = await KvStorage.read(_legacySessionKey);
+        if (legacy != null && legacy.trim().isNotEmpty) {
+          await KvStorage.write(_sessionKey, legacy);
+          await KvStorage.delete(_legacySessionKey);
+          return legacy;
+        }
+        return null;
+      });
+    }
+
+    // Mobile / desktop: encrypted-shared-preferences (Android) or Keychain.
+    String? current;
+    try {
+      current = await _secure.read(key: _sessionKey);
+    } catch (e) {
+      if (kDebugMode) debugPrint('SessionManager: secure read error: $e');
+      current = null;
+    }
+    if (current != null && current.trim().isNotEmpty) return current;
+
+    // One-time migration sweep (lazy, runs on first read miss).
+    if (!_migrationChecked) {
+      _migrationChecked = true;
+      final migrated = await _migrateLegacyToSecure();
+      if (migrated != null && migrated.trim().isNotEmpty) return migrated;
+    }
+    return null;
+  }
+
+  /// Read from any of the legacy locations and, if found, copy into
+  /// secure storage at the v1 key and delete the legacy copy. Returns
+  /// the migrated value, or null if nothing legacy existed.
+  static Future<String?> _migrateLegacyToSecure() async {
+    // Path 1: legacy FlutterSecureStorage key (`session_id`).
+    // Before this change, KvStorage on IO used FlutterSecureStorage()
+    // without aOptions and stored under 'session_id'.
+    String? legacy;
+    try {
+      legacy = await _secure.read(key: _legacySessionKey);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SessionManager: legacy secure read error: $e');
+      }
+      legacy = null;
+    }
+    // Also try the default (non-encryptedSharedPreferences) handle in case
+    // the prior install used the plain backend — values written without
+    // aOptions live in a different Android SharedPreferences file.
+    if (legacy == null || legacy.trim().isEmpty) {
+      try {
+        const plain = FlutterSecureStorage();
+        legacy = await plain.read(key: _legacySessionKey);
+      } catch (_) {
+        legacy = null;
+      }
+    }
+
+    // Path 2: SharedPreferences at the legacy key (very old pre-KvStorage
+    // installs, or web→mobile re-installs that synced prefs).
+    if (legacy == null || legacy.trim().isEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        legacy = prefs.getString(_legacySessionKey);
+      } catch (_) {
+        legacy = null;
+      }
+    }
+
+    if (legacy == null || legacy.trim().isEmpty) return null;
+
+    // Copy into v1 secure storage, then clear the legacy copies. Best
+    // effort — a failure to delete the legacy row is acceptable (the
+    // _migrationChecked flag prevents re-running this in-session).
+    try {
+      await _secure.write(key: _sessionKey, value: legacy);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SessionManager: migrate write error: $e');
+      }
+      // If we couldn't write to the new key, don't delete the legacy one
+      // — losing the session id silently would be worse than carrying
+      // the legacy storage location for one more session.
+      return legacy;
+    }
+    try {
+      await _secure.delete(key: _legacySessionKey);
+    } catch (_) {}
+    try {
+      const plain = FlutterSecureStorage();
+      await plain.delete(key: _legacySessionKey);
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_legacySessionKey);
+    } catch (_) {}
+    return legacy;
+  }
+
+  static Future<void> _writePersisted(String value) async {
+    if (kIsWeb) {
+      await KvStorage.write(_sessionKey, value);
+      return;
+    }
+    await _secure.write(key: _sessionKey, value: value);
+  }
+
+  static Future<void> _deletePersisted() async {
+    if (kIsWeb) {
+      await KvStorage.delete(_sessionKey);
+      return;
+    }
+    try {
+      await _secure.delete(key: _sessionKey);
+    } catch (e) {
+      if (kDebugMode) debugPrint('SessionManager: secure delete error: $e');
+    }
+  }
 }

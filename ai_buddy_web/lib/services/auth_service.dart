@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
 import '../screens/journal_screen.dart' show JournalStorage;
+import 'firebase_service.dart';
 import 'session_manager.dart';
 
 /// Passwordless magic-link auth client.
@@ -135,31 +136,75 @@ class AuthService {
     }
   }
 
-  /// Sign out by dropping the cached identity. Server-side the session
-  /// remains bound (so signing back in on the same device reattaches the
-  /// history); a true "wipe device session" is a separate destructive
-  /// action covered by Delete-my-account in Settings.
+  /// Sign out by:
+  ///   1. Asking the server to revoke the session→user binding
+  ///      (`POST /api/auth/signOut`). This is the device-loss-recovery
+  ///      story: without it, the User row keeps pointing at the device's
+  ///      session id, so anyone with that session id could still hit
+  ///      `/api/auth/me` and impersonate.
+  ///   2. Dropping the locally cached identity (SharedPreferences).
+  ///   3. Resetting the journal-migration flag.
+  ///   4. Rotating the local session id to a fresh anonymous one.
+  ///   5. Emitting `onSessionChanged` so server-backed providers refetch.
+  ///
+  /// Network failure on step 1 is non-fatal — being locally signed out
+  /// matters more for user trust than waiting for a flaky network. The
+  /// server-side binding is then stale until the user signs in again,
+  /// at which point a new session id is bound and the old one is
+  /// orphaned (still revocable via the cancel-account flow if needed).
   Future<void> signOut() async {
+    // Step 1: server-side revoke. Best-effort — log + continue on
+    // failure rather than trapping the user in a signed-in UI.
+    try {
+      await _dio.post(
+        '/api/auth/signOut',
+        options: Options(headers: await _sessionHeaders()),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AuthService: server signOut failed (continuing): $e');
+      }
+      // Surface to analytics so a flaky endpoint shows up as a metric,
+      // not a silent failure mode.
+      try {
+        await FirebaseService().logEvent('auth_signout_server_failed', {
+          'error': e.toString(),
+        });
+      } catch (_) {}
+    }
+
+    // Step 2: drop local identity cache.
     _userId = null;
     _email = null;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kEmailKey);
       await prefs.remove(_kUserIdKey);
-    } catch (_) {
-      // best effort
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AuthService: signOut prefs clear failed: $e');
+      }
+      try {
+        await FirebaseService().logEvent('auth_persist_failed', {
+          'phase': 'signout_clear',
+          'error': e.toString(),
+        });
+      } catch (_) {}
     }
-    // Reset the journal migration flag so the next sign-in (possibly a
-    // different user on this device) re-runs the local→server push.
+    // Step 3: reset the journal migration flag so the next sign-in
+    // (possibly a different user on this device) re-runs the
+    // local→server push.
     await JournalStorage.resetMigrationFlag();
-    // Privacy: drop the previous user's canonical session_id so subsequent
-    // API calls don't keep hitting their server-side data. Replace with a
-    // fresh anonymous session id so anonymous use post-sign-out works
-    // immediately. The previous user's server-side data is still bound to
-    // their account — signing back in re-adopts the canonical session.
+    // Step 4: drop the previous user's canonical session_id so
+    // subsequent API calls don't keep hitting their server-side data.
+    // Replace with a fresh anonymous session id so anonymous use post
+    // sign-out works immediately. The previous user's server-side data
+    // is still bound to their account — signing back in re-adopts a
+    // canonical session id (which may differ now that we unbound).
     await SessionManager.regenerateAnonymousSessionId();
-    // Notify subscribers so any open chat / mood views clear their
-    // server-backed state and re-pull under the new anonymous session.
+    // Step 5: notify subscribers so any open chat / mood views clear
+    // their server-backed state and re-pull under the new anonymous
+    // session.
     _emitSessionChanged();
   }
 
@@ -176,8 +221,24 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_kUserIdKey, id);
       await prefs.setString(_kEmailKey, email);
-    } catch (e) {
-      if (kDebugMode) debugPrint('AuthService persist failed: $e');
+    } catch (e, st) {
+      // Previously silently swallowed — meaning a broken device store
+      // (full disk / corrupt prefs / sandbox revocation) looked like a
+      // successful sign-in but lost identity on the next cold start.
+      // Now surface to debug logs + analytics so it shows up in the
+      // metrics dashboard rather than as a "huh, kept getting signed
+      // out" user-trust hit.
+      debugPrint('AuthService._persist failed: $e\n$st');
+      try {
+        await FirebaseService().logEvent('auth_persist_failed', {
+          'phase': 'verify_persist',
+          'error': e.toString(),
+        });
+      } catch (_) {
+        // Firebase itself isn't critical to the auth flow; if it's down
+        // we still want the debugPrint above to surface the original
+        // failure.
+      }
     }
   }
 }
