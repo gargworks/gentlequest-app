@@ -196,7 +196,23 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
             # This ensures wellness interventions ALWAYS trigger when needed.
             # Skip when Layer 2 blocked — injecting a wellness tool result on top
             # of a safety block would surface ambiguous UI.
-            if not layer2_blocked and not tool_calls:
+            #
+            # 2026-05-21 audit fix — also skip when the message reads as a VENT
+            # (social/relational complaint) rather than an internal-feeling
+            # disclosure. The audit caught "today was the worst, my friend
+            # ghosted me again" getting a canned 4-7-8 breathing offer because
+            # the LLM didn't tool-call and the fallback fired on weak signals.
+            # Vents need listening, not an intervention.
+            VENT_MARKERS = (
+                "ghost", "ghosted", "ghosting",
+                "my friend", "my mom", "my dad", "my parent", "my partner",
+                "my boyfriend", "my girlfriend", "my brother", "my sister",
+                "my roommate", "my boss", "my teacher", "they told me",
+                "they said", "told me to", "argued with", "fought with",
+                "fight with", "fights with",
+            )
+            looks_like_vent = any(m in message.lower() for m in VENT_MARKERS)
+            if not layer2_blocked and not tool_calls and not looks_like_vent:
                 msg_lower = message.lower()
                 
                 # Detect wellness issues

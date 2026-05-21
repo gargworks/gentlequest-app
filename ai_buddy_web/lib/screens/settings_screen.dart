@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
@@ -185,17 +186,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleExportData() async {
-    // TODO(backend): POST /api/user/export — trigger email send.
+    // Backend POST /api/user/export isn't built yet. Was previously
+    // telling the user "Export requested — a JSON copy will be sent to
+    // your email" while no request actually fired (audit caught GDPR
+    // portability lie). Honest copy until backend ships.
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Export requested — a JSON copy will be sent to your email.',
-            style: TextStyle(
-                fontFamily: GQTypography.bodyFamily,
-                fontWeight: FontWeight.w600)),
+        content: Text(
+          "Data export isn't available yet — we'll let you know when it ships.",
+          style: TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontWeight: FontWeight.w600),
+        ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: GQColors.ink,
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 4),
       ),
     );
   }
@@ -539,12 +545,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
 
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Column(
-            children: [
-              Text(
-                'Version 1.2.2 · build 26032321',
+        // Version + sync footer — was hardcoded `'Version 1.2.2 · build
+        // 26032321'` and `'Last sync · just now'` regardless of actual
+        // version or sync state. Now reads at runtime via PackageInfo
+        // (FutureBuilder, since pubspec is the source of truth).
+        // Sync line dropped entirely until JournalStorage exposes a
+        // last-success timestamp — easier than fake-displaying it.
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (ctx, snap) {
+            final v = snap.hasData
+                ? 'Version ${snap.data!.version} · build ${snap.data!.buildNumber}'
+                : 'Version —';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(
+                v,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
@@ -552,18 +568,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontWeight: FontWeight.w700,
                     color: GQColors.ink3),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Last sync · just now',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontFamily: GQTypography.bodyFamily,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: GQColors.ink3),
-              ),
-            ],
-          ),
+            );
+          },
         ),
 
         // DELETE APP DATA — destructive at the bottom (P13)
@@ -836,21 +842,24 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
   Future<void> _handleDeleteForever() async {
     if (!_confirmed || _deleting) return;
     setState(() => _deleting = true);
-    // TODO(backend): DELETE /api/user — remove all server-side data.
-    // After server confirms, clear local storage and sign out.
-    // For now: show confirmation and dismiss.
+    // Backend DELETE /api/user isn't built yet. Was previously telling the
+    // user "Account deletion requested" while NOTHING actually deleted —
+    // hard GDPR / CCPA "right to erasure" lie. Honest copy until backend
+    // ships, AND we explicitly do NOT mark _confirmed=false so the user
+    // sees nothing happened (no false success indicator).
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Account deletion requested — backend wiring is a follow-up TODO.',
-              style: TextStyle(
-                  fontFamily: GQTypography.bodyFamily,
-                  fontWeight: FontWeight.w600)),
+            "Account deletion isn't available yet — email privacy@gentlequest.app to request manual erasure.",
+            style: TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontWeight: FontWeight.w600),
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: GQColors.ink,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 6),
         ),
       );
     }

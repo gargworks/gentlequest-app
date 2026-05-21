@@ -38,8 +38,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from flask import Blueprint, current_app, jsonify, request
-from flask_limiter.util import get_remote_address
 
+from extensions import limiter
 from models import AuthToken, User, db
 from helpers.session_helpers import _get_or_create_session
 
@@ -331,6 +331,16 @@ def _parse_email_addr(s: str) -> dict:
 
 
 @auth_bp.route("/api/auth/magic-link", methods=["POST"])
+@limiter.limit(
+    # Per-email cap (prevents bombing one inbox) + per-IP cap (prevents
+    # session-ID-rotation bypass). Both must trip to refuse. Catches the
+    # email-enumeration + Resend-quota-exhaustion attack the audit flagged.
+    "5 per hour;20 per day",
+    key_func=lambda: (
+        (request.get_json(silent=True) or {}).get("email", "anon").strip().lower()
+    ),
+)
+@limiter.limit("30 per hour", key_func=lambda: request.remote_addr or "anon")
 def request_magic_link():
     """Request a one-time login link for an email.
 
@@ -377,6 +387,7 @@ def request_magic_link():
 
 
 @auth_bp.route("/api/auth/verify", methods=["POST"])
+@limiter.limit("20 per minute;200 per hour")
 def verify_magic_link():
     """Verify a token and bind the user to the current device session.
 
@@ -390,17 +401,33 @@ def verify_magic_link():
         return jsonify({"error": "token is required"}), 400
 
     token_hash = _hash_token(raw.strip())
+    # Atomic single-use claim: only the first concurrent request that
+    # finds `used_at IS NULL` AND `expires_at > NOW()` wins. Previously
+    # two concurrent verifies could both pass the Python-side check
+    # before either committed — now SQL serializes for us.
+    now = datetime.utcnow()
+    claimed = (
+        AuthToken.query
+        .filter(
+            AuthToken.token_hash == token_hash,
+            AuthToken.used_at.is_(None),
+            AuthToken.expires_at > now,
+        )
+        .update({AuthToken.used_at: now}, synchronize_session=False)
+    )
+    if claimed == 0:
+        # Single generic message — distinguishing invalid / used / expired
+        # leaks token state to an attacker probing the endpoint. Same
+        # response time regardless of which path matched.
+        db.session.commit()
+        return jsonify({"error": "invalid or expired token"}), 400
     token = AuthToken.query.filter_by(token_hash=token_hash).first()
-    if token is None:
-        return jsonify({"error": "invalid token"}), 400
-    if token.used_at is not None:
-        return jsonify({"error": "token already used"}), 400
-    if datetime.utcnow() > token.expires_at:
-        return jsonify({"error": "token expired"}), 400
 
-    user = db.session.get(User, token.user_id)
+    user = db.session.get(User, token.user_id) if token else None
     if user is None or user.deleted_at is not None:
-        return jsonify({"error": "account no longer active"}), 400
+        # Roll back the claim so the token isn't burned on an orphaned row
+        db.session.rollback()
+        return jsonify({"error": "invalid or expired token"}), 400
 
     # Phase 1.5 cross-device sync: instead of overwriting user.session_id
     # on each verify (last-device-wins, kicks the previous device out), we
@@ -416,7 +443,7 @@ def verify_magic_link():
     if user.session_id is None:
         user.session_id = _get_or_create_session()
     canonical_session_id = user.session_id
-    token.used_at = datetime.utcnow()
+    # token.used_at was already set atomically above by the claim UPDATE.
     db.session.commit()
 
     return jsonify(

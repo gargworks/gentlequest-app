@@ -482,11 +482,22 @@ class _SafetyPlanFilled extends StatelessWidget {
   final VoidCallback onEdit;
   const _SafetyPlanFilled({required this.onEdit});
 
-  // Sample contacts per HTML mockup
+  // Safety-plan contacts. Was a static const list of fake personas
+  // ('Mum', 'Dr. Jordan', '988') shipping in release builds — the user
+  // who'd actually built a plan saw fake contacts as if they entered
+  // them. Now only the universal crisis line is hardcoded; user-supplied
+  // contacts will populate from secure storage once SafetyPlanBuilderStep
+  // actually persists data (currently stub — see _planFilled = false).
+  // Until then, "filled" state shows only the 988 fallback so the card
+  // doesn't lie about the user's own contacts.
   static const _contacts = [
-    SafetyContact(initial: 'M', name: 'Mum', detail: 'Family · ★ favorite', isCrisis: false, phone: ''),
-    SafetyContact(initial: 'J', name: 'Dr. Jordan', detail: 'Therapist · weekday only', isCrisis: false, phone: ''),
-    SafetyContact(initial: '988', name: 'Crisis line', detail: 'Always available', isCrisis: true, phone: '988'),
+    SafetyContact(
+      initial: '988',
+      name: 'Crisis line',
+      detail: 'Free, 24/7, confidential',
+      isCrisis: true,
+      phone: '988',
+    ),
   ];
 
   @override
@@ -852,9 +863,13 @@ class SafetyPlanBuilderStep extends StatefulWidget {
 
 class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
   // Contact 1 — pre-filled per HTML mockup
-  final _c1NameCtrl = TextEditingController(text: 'Mum');
-  final _c1RelCtrl = TextEditingController(text: 'Family');
-  final _c1PhoneCtrl = TextEditingController(text: '555 · 0149');
+  // Builder Contact-1 fields — were prefilled "Mum / Family / 555 · 0149"
+  // as if defaults, so every user who tapped Build saw Mum in their first
+  // contact slot. Now empty; hint text in the TextFields tells the user
+  // what to enter.
+  final _c1NameCtrl = TextEditingController();
+  final _c1RelCtrl = TextEditingController();
+  final _c1PhoneCtrl = TextEditingController();
   bool _c1Fav = true;
 
   // Contact 2 — empty
