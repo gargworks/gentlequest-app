@@ -18,6 +18,12 @@ IDENTITY_MAP_PRIVATE.md
 key.properties
 .secrets/
 
+# Archive dirs — preserved on external SSD per archive-only convention.
+# Re-create from /Volumes/Samsung SSD 990 PRO 2TB Media/Archives/ if needed.
+_attic/
+ai_buddy_web_backup/
+*_backup/
+
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins
