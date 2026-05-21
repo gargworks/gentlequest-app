@@ -1263,24 +1263,28 @@ class _ResultRevealScreen extends StatelessWidget {
                           risk: RiskLevel.high,
                         ),
                       ),
-                    ] else ...[
-                      _ResultActionCard(
-                        emoji: '📨',
-                        title: 'Save this result for your therapist', // verbatim from HTML
-                        subtitle: 'Exports as PDF-ready summary.',
-                        isPrimary: false,
-                        // PDF export needs server-side rendering — not built
-                        // yet. Be honest about what's saved vs not so the
-                        // user isn't promised a feature that doesn't exist.
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'PDF export is coming soon · your result stays on this device until then'),
-                            duration: Duration(seconds: 4),
-                          ),
-                        ),
-                      ),
                     ],
+                    // FUTURE WORK — "Save this result for your therapist"
+                    // action card (verbatim from HTML), with a PDF-export
+                    // payload sent to the user's email.
+                    //
+                    // Removed from the result reveal screen because the
+                    // server-side PDF rendering + email handoff isn't built
+                    // yet — the previous in-UI "PDF export is coming soon"
+                    // SnackBar was a placeholder that promised a feature
+                    // that doesn't exist. Re-add the action card once the
+                    // backend exists (POST /api/assessment/{id}/export-pdf
+                    // → email send). Reference design source for the
+                    // copy + iconography:
+                    //   docs/design/refs/htmls/GentleQuest_PHQ9_Results.html
+                    //
+                    //   _ResultActionCard(
+                    //     emoji: '📨',
+                    //     title: 'Save this result for your therapist',
+                    //     subtitle: 'Exports as PDF-ready summary.',
+                    //     isPrimary: false,
+                    //     onTap: _exportResultPdf, // wire backend first
+                    //   ),
 
                     const SizedBox(height: 16),
 
