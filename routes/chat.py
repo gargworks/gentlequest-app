@@ -51,21 +51,27 @@ def chat():
             return jsonify({"error": "Message too long (max 5000 characters)"}), 400
 
         # Detect first-time vs returning user (lightweight query)
-        # Graceful fallback: if DB is down, assume first message (safe default)
+        # Tri-state: True/False on success, None if DB query fails (skip greeting behavior).
         try:
             _is_first_message = Message.query.filter_by(
                 session_id=session_id, is_user=True
             ).first() is None
-        except Exception:
-            _is_first_message = True
+        except Exception as _first_msg_exc:
+            current_app.logger.warning(
+                "first_message_lookup_failed session_id=%s err=%s",
+                session_id, _first_msg_exc,
+            )
+            _is_first_message = None
 
         # Get country from request
         country = get_country_from_request(request)
 
         _t1 = time.monotonic()
-        # Process message with AI provider
+        # Process message with AI provider.
+        # When _is_first_message is None (DB lookup failed), skip first-time greeting
+        # behavior rather than fall through to True.
         ai_response, risk_level, tool_calls = _process_chat_message(
-            user_message, session_id, is_first_message=_is_first_message
+            user_message, session_id, is_first_message=bool(_is_first_message)
         )
         _t2 = time.monotonic()
 

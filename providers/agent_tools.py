@@ -386,9 +386,12 @@ def get_wellness_intervention(
             if user_id:
                 try:
                     record_intervention_shown(user_id, issue_lower, "journaling", intervention_id, offer_stage)
-                except Exception:
-                    pass
-            
+                except Exception as exc:
+                    current_app.logger.warning(
+                        "record_intervention_shown failed for %s/%s: %s",
+                        "journaling", intervention_id, exc,
+                    )
+
             return {
                 "success": True,
                 "intervention_type": "journaling",
@@ -409,9 +412,12 @@ def get_wellness_intervention(
                 try:
                     from providers.session_memory import record_intervention_shown
                     record_intervention_shown(user_id, issue_lower, "grounding", intervention_id, offer_stage)
-                except Exception:
-                    pass
-            
+                except Exception as exc:
+                    current_app.logger.warning(
+                        "record_intervention_shown failed for %s/%s: %s",
+                        "grounding", intervention_id, exc,
+                    )
+
             return {
                 "success": True,
                 "intervention_type": "grounding",
@@ -443,8 +449,11 @@ def get_wellness_intervention(
                 try:
                     from providers.session_memory import record_intervention_shown
                     record_intervention_shown(user_id, issue_lower, "breathing", selection["intervention_id"], offer_stage)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    current_app.logger.warning(
+                        "record_intervention_shown failed for %s/%s: %s",
+                        "breathing", selection.get("intervention_id"), exc,
+                    )
             
             return {
                 "success": True,

@@ -259,8 +259,18 @@ def quests_achievements():
                 profile.updated_at = datetime.utcnow()
             try:
                 db.session.commit()
-            except Exception:
+            except Exception as commit_err:
+                current_app.logger.warning(
+                    "quests/achievements badge_commit_failed session_id=%s err=%s",
+                    sid, commit_err,
+                )
                 db.session.rollback()
+                # Re-query persisted badges; drop new_badges that didn't survive commit.
+                persisted_profile = UserProfile.query.filter_by(session_id=sid).first()
+                persisted = (persisted_profile.badges or "").split(",") if persisted_profile else []
+                persisted = [b for b in persisted if b]
+                already = persisted
+                new_badges = [b for b in new_badges if b in persisted]
 
         # Build response
         all_earned = sorted(set(already + new_badges))

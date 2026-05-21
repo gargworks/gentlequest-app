@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import requests
+from flask import current_app
 
 from models import CrisisEvent, db
 from providers.alert_manager import AlertManager
@@ -159,7 +160,13 @@ def get_country_code_from_ip(ip: str) -> str:
         else:
             return "generic"
     except Exception as e:
-        print(f"IP geolocation error: {e}")
+        try:
+            current_app.logger.warning(
+                "ipinfo_geolocation_failed ip=%s err=%s", ip, e
+            )
+        except RuntimeError:
+            # Outside Flask app context (e.g. cache warm-up); skip silently.
+            pass
         return "generic"
 
 

@@ -93,6 +93,7 @@ def submit_assessment(assessment_type):
                 should_alert = True
                 trigger_reason += " - Severe Anxiety"
 
+        alert_dispatched = False
         if should_alert:
             try:
                 from app_alert_routes import AlertManager
@@ -106,8 +107,15 @@ def submit_assessment(assessment_type):
                 if alert_id:
                     AlertManager.send_alert(alert_id)
                     current_app.logger.info(f"🚨 Clinical Alert Triggered: {alert_id} for session {session_id}")
+                    alert_dispatched = True
             except Exception as alert_err:
-                 current_app.logger.error(f"Failed to trigger clinical alert: {alert_err}")
+                current_app.logger.exception(
+                    "alert_dispatch_failed assessment_id=%s err=%s",
+                    new_id, alert_err,
+                )
+
+        if should_alert:
+            result["alert_dispatched"] = alert_dispatched
 
         return jsonify(result)
 

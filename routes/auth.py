@@ -37,7 +37,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, redirect, request
 
 from extensions import limiter
 from models import AuthToken, User, db
@@ -57,6 +57,21 @@ TOKEN_TTL = timedelta(minutes=15)
 # Info.plist / AndroidManifest.xml (see flutter_app config).
 DEEP_LINK_SCHEME = "gentlequest"
 
+# Smart-redirect wrapper: the email link points here (HTTPS, opens
+# cleanly in any client/browser/preview), and this route sniffs the
+# User-Agent to either deep-link into the mobile app or land on the
+# Flutter web build. Solves the "desktop user clicks email link →
+# gentlequest:// scheme is unrecognised by the browser → dead end"
+# bug flagged by the cross-platform audit.
+WEB_AUTH_VERIFY_URL = "https://gentlequest.app/auth/verify"
+REDIRECT_ROUTER_BASE = "https://nucleus.gentlequest.app/auth/redirect"
+
+# UA substrings that identify a mobile device where the native app
+# (with the gentlequest:// scheme registered) is likely installed.
+# Case-insensitive substring match — keep this list narrow; false
+# positives just send a desktop user to a broken scheme handler.
+_MOBILE_UA_MARKERS = ("iphone", "ipad", "ipod", "android")
+
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
@@ -73,7 +88,25 @@ def _hash_token(raw: str) -> str:
 
 
 def _build_magic_link(raw_token: str) -> str:
-    return f"{DEEP_LINK_SCHEME}://auth/verify?token={raw_token}"
+    """The canonical link embedded in the magic-link email.
+
+    Previously this was the raw `gentlequest://` deep link — which the
+    cross-platform audit caught as a dead-end for desktop users: their
+    browser doesn't know the custom scheme. We now ship an HTTPS wrapper
+    that resolves at runtime (`/auth/redirect`) based on User-Agent:
+    mobile → deep link into the app, desktop/other → Flutter web build.
+    Both routes call the same `/api/auth/verify` POST endpoint, so the
+    server-side single-use semantics are unchanged.
+    """
+    return f"{REDIRECT_ROUTER_BASE}?token={raw_token}"
+
+
+def _is_mobile_user_agent(ua: str) -> bool:
+    """True if the UA looks like a mobile device that should deep-link."""
+    if not ua:
+        return False
+    ua_lower = ua.lower()
+    return any(marker in ua_lower for marker in _MOBILE_UA_MARKERS)
 
 
 def _send_magic_link_email(email: str, raw_token: str) -> None:
@@ -452,6 +485,44 @@ def verify_magic_link():
             "session_id": canonical_session_id,
         }
     ), 200
+
+
+@auth_bp.route("/auth/redirect", methods=["GET"])
+def auth_redirect_router():
+    """Smart redirect from the magic-link email to the right surface.
+
+    Note: deliberately mounted at `/auth/redirect` (no `/api/` prefix)
+    because this URL is opened directly by an email client / web
+    browser, not by the Flutter app's API client. It returns a 302
+    `Location:` header — never JSON.
+
+    UA-sniffing strategy:
+      - iPhone / iPad / iPod / Android → 302 to `gentlequest://auth/verify?token=...`
+        so the registered native scheme handler opens the installed app.
+      - Anything else (desktop, mail-preview bot, unknown) → 302 to
+        `https://gentlequest.app/auth/verify?token=...` so the Flutter
+        web build can pick up the token from window.location and call
+        the same `/api/auth/verify` POST endpoint.
+
+    Token is round-tripped untouched. We don't peek at / validate it
+    here — that's the verify endpoint's job, and doing it twice means
+    the wrapper would burn the token before the client could spend it.
+    """
+    raw_token = request.args.get("token", "").strip()
+    if not raw_token:
+        # Missing token = link malformed or stripped by an email
+        # client. Send the user to the marketing site rather than
+        # dump them on a broken verify screen.
+        return redirect("https://gentlequest.app/", code=302)
+
+    ua = request.headers.get("User-Agent", "")
+    if _is_mobile_user_agent(ua):
+        target = f"{DEEP_LINK_SCHEME}://auth/verify?token={raw_token}"
+        logger.info("auth_redirect.mobile ua=%s", ua[:80])
+    else:
+        target = f"{WEB_AUTH_VERIFY_URL}?token={raw_token}"
+        logger.info("auth_redirect.web ua=%s", ua[:80])
+    return redirect(target, code=302)
 
 
 @auth_bp.route("/api/auth/me", methods=["GET"])
