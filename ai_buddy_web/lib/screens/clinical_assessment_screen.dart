@@ -429,6 +429,9 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
         scale: widget.scale,
         score: _totalScore,
         severity: _severity,
+        q9Score: widget.scale == AssessmentScale.phq9
+            ? (_responses[8] ?? 0)
+            : 0,
         onClose: () => Navigator.of(context).pop(),
         onChatWithAlex: () {
           // Pop the assessment screen, then switch to the Talk tab so
@@ -1067,6 +1070,7 @@ class _ResultRevealScreen extends StatelessWidget {
   final AssessmentScale scale;
   final int score;
   final AssessmentSeverity severity;
+  final int q9Score;
   final VoidCallback onClose;
   final VoidCallback onChatWithAlex;
 
@@ -1074,6 +1078,7 @@ class _ResultRevealScreen extends StatelessWidget {
     required this.scale,
     required this.score,
     required this.severity,
+    required this.q9Score,
     required this.onClose,
     required this.onChatWithAlex,
   });
@@ -1132,7 +1137,11 @@ class _ResultRevealScreen extends StatelessWidget {
 
   bool get _showCrisisAlways =>
       severity == AssessmentSeverity.moderateSevere ||
-      severity == AssessmentSeverity.severe;
+      severity == AssessmentSeverity.severe ||
+      // PHQ-9 Q9 (suicidal ideation) ≥ 1 is a crisis signal regardless of
+      // total score — a user with mild total but Q9=2 should still get the
+      // crisis resource card, not the "save for therapist" path.
+      q9Score >= 1;
 
   @override
   Widget build(BuildContext context) {

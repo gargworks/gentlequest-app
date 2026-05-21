@@ -718,7 +718,11 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           //   moodLevel 1–2 → Low mood sheet (State A)
           //   moodLevel 5   → Great mood sheet (State B, celebrates + harvests insight)
           //   moodLevel 3–4 → Neutral auto-dismiss toast (State C)
+          // Guard with `mounted` — the parent widget can unmount between
+          // pop and post-frame (e.g. user backs out during the haptic)
+          // and we'd hit "showModalBottomSheet on a defunct context".
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
             if (moodLevel <= 2) {
               showMoodLowReflectionSheet(context);
             } else if (moodLevel == 5) {

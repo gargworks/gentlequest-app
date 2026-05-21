@@ -269,7 +269,14 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
                     _FeaturedExerciseCard(
                       breatheScale: _breatheScale,
                       breatheOpacity: _breatheOpacity,
-                      onStart: () => _onExerciseTap(_kExercises.first),
+                      onStart: () => _onExerciseTap(
+                        // Look up by id rather than .first so a future
+                        // favorites/recents reorder doesn't accidentally
+                        // route "4-7-8 breathing" Start to a different
+                        // exercise.
+                        _kExercises
+                            .firstWhere((e) => e.id == 'breath_478'),
+                      ),
                     ),
                   ],
 
@@ -381,24 +388,14 @@ class _LibraryNavBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          // Search icon
-          GestureDetector(
-            onTap: onSearch,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: GQColors.hair),
-              ),
-              child: const Icon(
-                Icons.search,
-                color: GQColors.ink2,
-                size: 16,
-              ),
-            ),
-          ),
+          // Search icon hidden until the search UI ships — the onSearch
+          // callback was wired to `() {}` which is a vestigial affordance
+          // (visible search button, tap does nothing). Re-render when the
+          // search feature lands. Original GestureDetector + Icon block
+          // preserved as a code comment below for the rewrite:
+          //
+          //   GestureDetector(onTap: onSearch, child: Container(...
+          //     child: Icon(Icons.search, color: GQColors.ink2, size: 16)));
         ],
       ),
     );

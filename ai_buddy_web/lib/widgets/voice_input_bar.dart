@@ -115,29 +115,29 @@ class _VoiceInputBarState extends State<VoiceInputBar>
       final available = await _speech.initialize(
         onStatus: (status) {
           if (kDebugMode) debugPrint('[voice] status=$status');
-          // 'done' / 'notListening' after a natural pause → finalize.
-          if (status == 'done' || status == 'notListening') {
-            if (mounted && _speech.isAvailable && !_speech.isListening) {
-              // If we got a transcript, propagate it via onStop; otherwise
-              // leave the user to tap Stop manually.
-              if (_transcript.trim().isNotEmpty) {
-                _onStop();
-              }
-            }
-          }
+          // R1D7 Phase 1 contract: user reviews transcript before sending.
+          // Previously this listener auto-fired _onStop on 'done' (after
+          // a 3s pause) which sent the transcript straight to the parent
+          // without a review window — contradicted the interactive_chat
+          // screen comment that said "auto-send is Phase 3". We now do
+          // nothing on 'done': the user must tap the Stop button (or hit
+          // the 60s cap) to finalize. Transcript keeps streaming until then.
         },
         onError: (err) {
           if (kDebugMode) debugPrint('[voice] error=${err.errorMsg}');
           // Permission-denied / no-recognizer / network failures all land here.
           // Treat as unsupported and bail out so the caller can fall back.
-          if (mounted) widget.onUnsupported?.call();
+          // Guard with mounted — onError can fire after a fast user-cancel
+          // disposed the widget mid-init.
+          if (!mounted) return;
+          widget.onUnsupported?.call();
         },
       );
+      if (!mounted) return;
       if (!available) {
         widget.onUnsupported?.call();
         return;
       }
-      if (!mounted) return;
       setState(() => _engineReady = true);
       await _speech.listen(
         onResult: (result) {
