@@ -1,0 +1,26 @@
+name = "eidetic-discord"
+main = "worker.js"
+# Ed25519 in Web Crypto landed in Workers via the `experimental:Ed25519` flag
+# and is GA on recent compatibility dates. Keep this current or the modern
+# importKey path falls back to NODE-ED25519 silently.
+compatibility_date = "2025-03-10"
+
+# Workers KV namespace. Create with:
+#   wrangler kv:namespace create EIDETIC_DISCORD_KV
+#   wrangler kv:namespace create EIDETIC_DISCORD_KV --preview
+# then paste the IDs below.
+[[kv_namespaces]]
+binding = "EIDETIC_DISCORD_KV"
+id = "f4c20898ea2d41cb8831ea8be1c598e2"
+preview_id = "f4c20898ea2d41cb8831ea8be1c598e2"
+
+# Secrets are NOT stored in this file. Set them with:
+#   wrangler secret put DISCORD_PUBLIC_KEY      # Ed25519 hex (Developer Portal)
+#   wrangler secret put DISCORD_APPLICATION_ID  # snowflake
+#   wrangler secret put DISCORD_BOT_TOKEN       # (only needed by OAuth path)
+#   wrangler secret put DISCORD_CLIENT_SECRET   # (only needed by OAuth path)
+#
+# Custom domain (optional, recommended once you're past scaffold):
+# [[routes]]
+# pattern = "discord.eidetic.works/*"
+# zone_name = "eidetic.works"

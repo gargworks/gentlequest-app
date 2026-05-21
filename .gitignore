@@ -18,6 +18,12 @@ IDENTITY_MAP_PRIVATE.md
 key.properties
 .secrets/
 
+# Archive dirs — preserved on external SSD per archive-only convention.
+# Re-create from /Volumes/Samsung SSD 990 PRO 2TB Media/Archives/ if needed.
+_attic/
+ai_buddy_web_backup/
+*_backup/
+
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins
@@ -268,16 +274,20 @@ test/screenshots/
 test/all_results.json
 test/chat_latency_results.json
 
-# Duplicate app directory (if exists)
-app/
+# Duplicate app directory (if exists) — leading slash so we only ignore
+# the duplicate at repo root, not legitimate `app/` subdirs like the
+# Flutter Android module's `android/app/`.
+/app/
 
 # One-off test scripts at root
 test_autonomic_blocker.sh
 test_genai.js
 test_nucleus_engram.sh
 
-# One-off test directory (not tests/)
-test/
+# One-off test directory (not tests/) — leading slash so we only ignore
+# the root-level `test/` scratch dir, not legitimate `test/` subdirs like
+# `ai_buddy_web/test/` (Flutter's standard test location).
+/test/
 
 # Lock files
 mcp-server-nucleus/test_metadata.lock

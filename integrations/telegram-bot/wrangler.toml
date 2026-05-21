@@ -1,0 +1,26 @@
+name = "eidetic-telegram"
+main = "worker.js"
+# No exotic crypto in this Worker (just a constant-time string compare), so
+# the compatibility_date can be conservative. Bump it alongside the other
+# eidetic Workers when you do a coordinated refresh.
+compatibility_date = "2025-03-10"
+
+# Workers KV namespace. Create with:
+#   wrangler kv:namespace create EIDETIC_TELEGRAM_KV
+#   wrangler kv:namespace create EIDETIC_TELEGRAM_KV --preview
+# then paste the IDs below.
+[[kv_namespaces]]
+binding = "EIDETIC_TELEGRAM_KV"
+id = "1224567a4c0a4b489aea8056e79daaf1"
+preview_id = "1224567a4c0a4b489aea8056e79daaf1"
+
+# Secrets are NOT stored in this file. Set them with:
+#   wrangler secret put WEBHOOK_SECRET    # openssl rand -hex 32
+#   wrangler secret put ADMIN_BOT_TOKEN   # optional — only needed if you
+#                                         # want /telegram-setup/install/
+#                                         # without a token in the path.
+#
+# Custom domain (optional, recommended once you're past scaffold):
+# [[routes]]
+# pattern = "telegram.eidetic.works/*"
+# zone_name = "eidetic.works"

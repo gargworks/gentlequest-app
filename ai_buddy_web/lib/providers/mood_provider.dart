@@ -1,10 +1,14 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/mood_entry.dart';
 import '../services/api_service.dart';
-import '../services/firebase_service.dart';
 import '../services/app_rating_service.dart';
+import '../services/auth_service.dart';
+import '../services/firebase_service.dart';
 
 class MoodProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -35,6 +39,22 @@ class MoodProvider extends ChangeNotifier {
       // Try draining any pending submissions in the background
       _scheduleDrain();
     }
+    // Refresh when device session-binding changes (sign-in adopts the
+    // user's canonical session_id; sign-out generates a fresh anon one).
+    _authSessionSub = AuthService.instance.onSessionChanged.listen((_) {
+      _moodEntries = [];
+      _latestPulse = null;
+      notifyListeners();
+      _loadMoodHistory();
+    });
+  }
+
+  StreamSubscription<void>? _authSessionSub;
+
+  @override
+  void dispose() {
+    _authSessionSub?.cancel();
+    super.dispose();
   }
 
   List<MoodEntry> get moodEntries => List.unmodifiable(_moodEntries);

@@ -55,7 +55,7 @@ def run_evening_routine():
     
     # 1. Consolidate Memory
     try:
-        subprocess.run(["nucleus", "consolidate"], env={**os.environ, "NUCLEAR_BRAIN_PATH": str(BRAIN_PATH)}, check=False)
+        subprocess.run(["nucleus", "consolidate"], env={**os.environ, "NUCLEUS_BRAIN_PATH": str(BRAIN_PATH)}, check=False)
         print("✅ Brain consolidated.")
     except Exception as e:
         print(f"⚠️ Consolidation notice: {e}")

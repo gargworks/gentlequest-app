@@ -1,0 +1,440 @@
+---
+import '../styles/global.css';
+const title = "Eidetic Works — Engrams Dashboard";
+const description = "Local-first dashboard for your eidetic-daemon. Browse, search, and recall engrams captured from your Claude Code / Cursor sessions.";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- PWA: install to home screen on iPhone/Android; works offline once cached -->
+    <link rel="manifest" href="/dashboard-manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Engrams" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- Privacy: this page only ever talks to YOUR daemon (the URL+token you paste).
+         No data leaves your machine + the Cloudflare edge you've already authorized. -->
+    <meta name="referrer" content="no-referrer" />
+
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --fg: #e8e8e8;
+        --dim: #888;
+        --accent: #5eead4;
+        --warn: #fbbf24;
+        --error: #f87171;
+        --row-hover: #161616;
+        --border: #1f1f1f;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 4px;
+        color: var(--accent);
+      }
+      .sub {
+        color: var(--dim);
+        margin-bottom: 24px;
+      }
+      .config {
+        background: #0f0f0f;
+        border: 1px solid var(--border);
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .config label {
+        display: block;
+        font-size: 12px;
+        color: var(--dim);
+        margin-bottom: 4px;
+      }
+      .config input {
+        width: 100%;
+        background: #1a1a1a;
+        border: 1px solid var(--border);
+        color: var(--fg);
+        padding: 8px 10px;
+        font: inherit;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+      }
+      .config button {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 8px 16px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .config button:hover {
+        opacity: 0.9;
+      }
+      .controls {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center;
+      }
+      .controls input[type="text"] {
+        flex: 1;
+        background: #1a1a1a;
+        border: 1px solid var(--border);
+        color: var(--fg);
+        padding: 8px 12px;
+        font: inherit;
+      }
+      .controls select {
+        background: #1a1a1a;
+        border: 1px solid var(--border);
+        color: var(--fg);
+        padding: 8px 12px;
+        font: inherit;
+      }
+      .stats {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .stats strong {
+        color: var(--fg);
+        font-weight: 500;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--dim);
+        font-weight: 500;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      tr:hover td {
+        background: var(--row-hover);
+      }
+      .surface {
+        color: var(--accent);
+        white-space: nowrap;
+      }
+      .ts {
+        color: var(--dim);
+        white-space: nowrap;
+        font-size: 12px;
+      }
+      .payload {
+        max-width: 600px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+      }
+      .payload-expand {
+        color: var(--accent);
+        cursor: pointer;
+        text-decoration: underline;
+        margin-left: 6px;
+      }
+      .error {
+        color: var(--error);
+        padding: 12px;
+        border: 1px solid var(--error);
+        background: rgba(248, 113, 113, 0.08);
+        margin-bottom: 16px;
+      }
+      .empty {
+        color: var(--dim);
+        padding: 40px;
+        text-align: center;
+      }
+      .hidden { display: none; }
+
+      /* Mobile + PWA: stack controls, larger tap targets, safe-area insets for iPhone notch */
+      @media (max-width: 640px) {
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .wrap { padding: 16px; }
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        .controls input[type="text"],
+        .controls select,
+        .config input,
+        .config button {
+          font-size: 16px;     /* prevents iOS auto-zoom on focus */
+          padding: 10px 12px;  /* larger tap target */
+        }
+        .config button {
+          width: 100%;
+        }
+        .stats {
+          flex-wrap: wrap;
+          gap: 12px;
+          font-size: 12px;
+        }
+        table { font-size: 13px; }
+        th, td { padding: 8px 4px; }
+        .payload { max-width: none; }
+        .ts { font-size: 11px; }
+        h1 { font-size: 16px; }
+      }
+
+      /* Installed-PWA-only tweaks: hide the config form once connected so the
+         home-screen launcher feels like a real app, not a configured web page. */
+      @media (display-mode: standalone) {
+        .sub { display: none; } /* the standalone app doesn't need the marketing sub-line */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>engrams.eidetic.works</h1>
+      <p class="sub">Local-first dashboard. Talks only to your daemon — no proxy, no telemetry, no analytics on this page.</p>
+
+      <div id="config" class="config">
+        <label for="bridge-url">Bridge URL (eideticd -bridge address, or your Cloudflare tunnel)</label>
+        <input id="bridge-url" type="text" placeholder="http://127.0.0.1:8421 or https://eidetic.yourdomain.com" />
+        <label for="bridge-token">Bearer token (from <code>~/.eidetic/bridge-token</code>)</label>
+        <input id="bridge-token" type="text" placeholder="paste bridge-token here" />
+        <button id="connect-btn">Connect</button>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+
+      <div id="main" class="hidden">
+        <div class="stats" id="stats"></div>
+        <div class="controls">
+          <input id="q" type="text" placeholder="Search engrams (FTS5: bare keywords, &quot;phrase&quot;, AND/OR/NOT)…" />
+          <select id="surface-filter">
+            <option value="">all surfaces</option>
+          </select>
+          <select id="limit">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px">when</th>
+              <th style="width:120px">surface</th>
+              <th>payload</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="empty" class="empty hidden">no engrams matched</div>
+      </div>
+    </div>
+
+    <script is:inline>
+      const cfgEl   = document.getElementById('config');
+      const errEl   = document.getElementById('error');
+      const mainEl  = document.getElementById('main');
+      const urlEl   = document.getElementById('bridge-url');
+      const tokenEl = document.getElementById('bridge-token');
+      const btn     = document.getElementById('connect-btn');
+      const q       = document.getElementById('q');
+      const surface = document.getElementById('surface-filter');
+      const limit   = document.getElementById('limit');
+      const rowsEl  = document.getElementById('rows');
+      const statsEl = document.getElementById('stats');
+      const emptyEl = document.getElementById('empty');
+
+      // Persist credentials in localStorage — local-first, never POSTed anywhere.
+      const SAVED = JSON.parse(localStorage.getItem('eidetic-dashboard') || '{}');
+      if (SAVED.url) urlEl.value = SAVED.url;
+      if (SAVED.token) tokenEl.value = SAVED.token;
+
+      let baseUrl = '';
+      let token   = '';
+
+      function showError(msg) {
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+      }
+      function clearError() {
+        errEl.classList.add('hidden');
+      }
+
+      async function req(path) {
+        const r = await fetch(baseUrl + path, {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (r.status === 401) throw new Error('unauthorized — check bridge-token');
+        if (!r.ok) throw new Error('daemon returned ' + r.status);
+        return r.json();
+      }
+
+      async function loadSurfaces() {
+        try {
+          const m = await req('/metrics');
+          if (m.engram_by_surface) {
+            // Populate filter dropdown
+            surface.innerHTML = '<option value="">all surfaces</option>';
+            for (const s of Object.keys(m.engram_by_surface).sort()) {
+              const opt = document.createElement('option');
+              opt.value = s;
+              opt.textContent = s + ' (' + m.engram_by_surface[s] + ')';
+              surface.appendChild(opt);
+            }
+          }
+          statsEl.innerHTML =
+            '<span>engrams: <strong>' + (m.engram_total || 0).toLocaleString() + '</strong></span>' +
+            '<span>db: <strong>' + ((m.db_size_bytes || 0) / 1e6).toFixed(1) + ' MB</strong></span>' +
+            '<span>uptime: <strong>' + Math.round((m.uptime_seconds || 0) / 60) + ' min</strong></span>' +
+            (m.version ? '<span>daemon: <strong>' + m.version + '</strong></span>' : '');
+        } catch (e) {
+          showError(e.message);
+          throw e;
+        }
+      }
+
+      function fmtTs(ns) {
+        const d = new Date(Math.floor(ns / 1e6));
+        return d.toISOString().replace('T', ' ').slice(0, 16);
+      }
+
+      function trunc(s, n) {
+        if (!s) return '';
+        return s.length > n ? s.slice(0, n) + '…' : s;
+      }
+
+      async function loadEngrams() {
+        const query = q.value.trim();
+        const params = new URLSearchParams();
+        params.set('limit', limit.value);
+        if (surface.value) params.set('surface', surface.value);
+
+        let path;
+        if (query) {
+          params.set('q', query);
+          path = '/search?' + params.toString();
+        } else {
+          path = '/recent?' + params.toString();
+        }
+        try {
+          clearError();
+          const data = await req(path);
+          // Daemon returns {engrams: [...]} or similar; accept either shape
+          const rows = Array.isArray(data) ? data : (data.engrams || data.results || []);
+          rowsEl.innerHTML = '';
+          if (!rows.length) {
+            emptyEl.classList.remove('hidden');
+            return;
+          }
+          emptyEl.classList.add('hidden');
+          for (const e of rows) {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td class="ts">' + fmtTs(e.ts) + '</td>' +
+              '<td class="surface">' + (e.surface || '?') + '</td>' +
+              '<td class="payload">' +
+                (e.snippet ? '<span style="color:var(--warn)">'+escapeHtml(e.snippet)+'</span>' : '') +
+                escapeHtml(trunc(e.payload || '', 280)) +
+                ((e.payload || '').length > 280
+                  ? '<span class="payload-expand" data-id="' + e.id + '">show full</span>'
+                  : '') +
+              '</td>';
+            rowsEl.appendChild(tr);
+          }
+          // Wire up "show full" expanders
+          rowsEl.querySelectorAll('.payload-expand').forEach(el => {
+            el.addEventListener('click', () => {
+              const id = el.dataset.id;
+              const row = rows.find(r => String(r.id) === id);
+              if (row) {
+                el.parentElement.innerHTML = escapeHtml(row.payload || '');
+              }
+            });
+          });
+        } catch (e) {
+          showError(e.message);
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;');
+      }
+
+      btn.addEventListener('click', async () => {
+        baseUrl = urlEl.value.trim().replace(/\/+$/, '');
+        token   = tokenEl.value.trim();
+        if (!baseUrl || !token) {
+          showError('both bridge URL and token are required');
+          return;
+        }
+        localStorage.setItem('eidetic-dashboard', JSON.stringify({url: baseUrl, token}));
+        try {
+          await loadSurfaces();
+          cfgEl.classList.add('hidden');
+          mainEl.classList.remove('hidden');
+          await loadEngrams();
+        } catch (e) {
+          // already shown
+        }
+      });
+
+      let debounceTimer;
+      function scheduleReload() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(loadEngrams, 300);
+      }
+      q.addEventListener('input', scheduleReload);
+      surface.addEventListener('change', loadEngrams);
+      limit.addEventListener('change', loadEngrams);
+
+      // Auto-connect if we have saved credentials
+      if (SAVED.url && SAVED.token) {
+        btn.click();
+      }
+
+      // PWA: register service worker so the dashboard works offline + is installable
+      // on iPhone/Android. Privacy: SW only caches static shell, never bridge responses.
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/dashboard-sw.js", { scope: "/dashboard/" })
+          .catch((err) => console.warn("[eidetic] SW register failed:", err));
+      }
+    </script>
+  </body>
+</html>

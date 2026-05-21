@@ -1,0 +1,17 @@
+name = "gumroad-kit-sync"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Deploy with a Workers:Edit token (the Pages-only CLOUDFLARE_API_TOKEN won't work):
+#   cd workers/gumroad-kit-sync
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put TELEGRAM_BOT_TOKEN
+#   # enter the value from .env TELEGRAM_BOT_TOKEN
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put TELEGRAM_CHAT_ID
+#   # enter the value from .env TELEGRAM_CHAT_ID
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler deploy
+#
+# Kit IDs still needed in worker.js (KIT_PRO_TAG + KIT_PRO_SEQ):
+#   1. Go to Kit → Subscribers → Tags → New Tag → "eidetic-pro" → copy ID
+#   2. Go to Kit → Sequences → New Sequence → "Pro Welcome" → copy ID
+#   3. Edit worker.js const KIT_PRO_TAG and KIT_PRO_SEQ
+#   4. Redeploy

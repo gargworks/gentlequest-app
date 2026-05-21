@@ -1,0 +1,56 @@
+name = "growth-scheduler"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Multi-channel content publisher. Reads queued posts from KV, fires per-channel
+# adapters on cron schedule, logs to eidetic-analytics for funnel measurement.
+#
+# After one-time Lokesh-keyboard setup (see docs/DISTRIBUTION_AUTOPILOT.md),
+# posting to X / LinkedIn / Substack becomes a function of time, not effort.
+
+# KV bindings — content queue + idempotency log + per-channel post schedule.
+# Create via:
+#   wrangler kv namespace create CONTENT_QUEUE
+#   wrangler kv namespace create POSTED_LOG
+# Then paste returned `id` values below.
+[[kv_namespaces]]
+binding = "CONTENT_QUEUE"
+id = "REPLACE_WITH_CONTENT_QUEUE_KV_ID"
+
+[[kv_namespaces]]
+binding = "POSTED_LOG"
+id = "REPLACE_WITH_POSTED_LOG_KV_ID"
+
+# Analytics — re-use the eidetic-analytics dataset so growth + product
+# events live in one place and the existing /stats endpoint sees them.
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "eidetic_funnel"
+
+[vars]
+# Posting cadence per channel (cron-friendly). Tunable without redeploy
+# by editing here + redeploying; idempotency log prevents double-posts.
+X_PER_HOUR_CAP = "1"
+LINKEDIN_PER_DAY_CAP = "1"
+SUBSTACK_PER_WEEK_CAP = "1"
+# Default channel routing when a queue entry doesn't specify one.
+DEFAULT_CHANNEL = "buffer"
+
+# Cron triggers — Worker's [triggers] block fires scheduled() entrypoint.
+# Hourly: process X queue + log noop if cap hit.
+# Daily at 13:30 UTC (~9am EST): process LinkedIn queue.
+# Sunday 06:30 UTC: run weekly-digest generator + enqueue next Substack.
+[triggers]
+crons = [
+  "13 * * * *",          # hourly, off-peak minute for jitter
+  "27 13 * * *",         # daily LinkedIn slot (~9am EST)
+  "33 6 * * 0",          # Sunday weekly-digest generation
+]
+
+# Secrets (set via `unset CLOUDFLARE_API_TOKEN && wrangler secret put <NAME>`):
+#   BUFFER_ACCESS_TOKEN     — Buffer API token (covers X + LinkedIn + Substack)
+#   BUFFER_PROFILE_X        — Buffer profile_id for the @eidetic_works X account
+#   BUFFER_PROFILE_LINKEDIN — Buffer profile_id for the LinkedIn page
+#   BUFFER_PROFILE_SUBSTACK — Buffer profile_id (or empty if Substack via email)
+#   X_BEARER_TOKEN          — (optional) Own X API v2 publisher fallback
+#   ADMIN_SECRET            — Bearer guard on GET /growth dashboard

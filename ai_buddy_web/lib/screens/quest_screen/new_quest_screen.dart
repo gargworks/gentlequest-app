@@ -158,7 +158,10 @@ class NewQuestScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () {}, // Trigger reseed or check back later
+            key: const ValueKey('quest_empty_refresh_button'),
+            onPressed: () {
+              context.read<QuestProvider>().loadQuests();
+            },
             child: const Text('Refresh'),
           ),
         ],

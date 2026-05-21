@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
 import '../navigation/home_tab_deeplink.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../screens/journal_screen.dart' show JournalEntry, JournalStorage;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // R1D5 — Mood Reflection Sheet
@@ -138,7 +139,16 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
       _dismiss();
       return;
     }
-    // TODO(backend): persist `text` to journaling API.
+    // Persist the reflection as a journal entry on device. Was a TODO stub —
+    // user typed "What worked?" reflection and the text was silently dropped.
+    // Now stored under JournalStorage so the user's words survive the session.
+    // Backend journaling API not yet built; when it ships, JournalStorage
+    // becomes the dual-write integration point.
+    JournalStorage.append(JournalEntry(
+      id: DateTime.now().toIso8601String(),
+      body: text,
+      createdAt: DateTime.now(),
+    ));
     setState(() => _saved = true);
     Future.delayed(const Duration(milliseconds: 900), _dismiss);
   }

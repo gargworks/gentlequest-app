@@ -25,6 +25,7 @@ import 'navigation/home_shell.dart';
 import 'navigation/home_tab_deeplink.dart';
 import 'widgets/app_bottom_nav.dart' show AppTab;
 import 'services/notification_service.dart';
+import 'services/auth_service.dart';
 import 'services/deep_link_service.dart';
 import 'screens/legal/legal_screen.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
@@ -156,6 +157,15 @@ Future<void> main() async {
     } catch (e) {
       debugPrint('AppRatingService initialization error: $e');
     }
+  }
+
+  // Hydrate cached auth identity from SharedPreferences before any UI
+  // mounts so the Settings/Profile screens know who's signed in without
+  // a network round-trip flicker.
+  try {
+    await AuthService.instance.hydrate();
+  } catch (e) {
+    debugPrint('AuthService hydrate error: $e');
   }
 
   // Initialize deep link handling (app links / universal links)

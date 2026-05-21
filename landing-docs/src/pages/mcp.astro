@@ -1,0 +1,130 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'eidetic-mcp tool reference — 13 tools exposed via MCP for Claude Code, Cursor, Cline, and any MCP stdio client.';
+---
+
+<Docs title="MCP tools" description={description} pageSlug="mcp">
+  <span class="eyebrow">Reference</span>
+  <h1>MCP <em>tools</em></h1>
+  <p class="subhead">
+    <code>eidetic-mcp</code> is a Python wrapper exposing the daemon's UDS API
+    as MCP tools. Process-isolated from the daemon (separate install, separate
+    crash surface). 13 tools live in <code>eidetic-mcp 0.0.5+</code>.
+  </p>
+
+  <h2>Install</h2>
+
+  <pre is:raw><code>pip install eidetic-mcp
+
+# Claude Code
+claude mcp add eidetic -- python -m eidetic_mcp.server
+
+# Cursor / Cline / other MCP clients use the same command in their settings
+{"eidetic": {"command": "python", "args": ["-m", "eidetic_mcp.server"]}}</code></pre>
+
+  <p>
+    If the daemon is running with caller auth on, the bridge auto-discovers the
+    token from <code>&lt;dataDir&gt;/auth-token</code> (or
+    <code>EIDETIC_AUTH_TOKEN</code> env var). No bridge config change required.
+  </p>
+
+  <h2>Tools</h2>
+
+  <h3>query_engrams</h3>
+  <p>Retrieve engrams by surface, time window, and order. <code>surface</code> is optional — omit to retrieve across all surfaces.</p>
+  <p><strong>Args:</strong> <code>surface</code> (str, optional), <code>limit</code> (int, default 50, max 500), <code>since</code> (int64 ns), <code>before</code> (int64 ns), <code>asc</code> (bool, default false).</p>
+  <p><strong>Returns:</strong> list of <code>Engram</code> objects.</p>
+
+  <h3>search_engrams</h3>
+  <p>FTS5 keyword / phrase / boolean search over payloads, ranked by relevance.</p>
+  <p><strong>Args:</strong> <code>q</code> (str, required), <code>surface</code> (str, optional), <code>limit</code> (int, default 50).</p>
+  <p><strong>Returns:</strong> list of <code>Engram</code> with <code>snippet</code> populated (v0.0.4+).</p>
+
+  <h3>recent_engrams</h3>
+  <p>Newest engrams across all surfaces, newest-first. Use for "what happened lately" without a keyword.</p>
+  <p><strong>Args:</strong> <code>limit</code> (int, default 50, max 500), <code>since</code> (int64 ns), <code>before</code> (int64 ns).</p>
+
+  <h3>count_engrams</h3>
+  <p>Fast count without fetching rows. Returns <code>{`{"count": N}`}</code>.</p>
+  <p><strong>Args:</strong> <code>surface</code> (str, optional), <code>since</code> (int64 ns, optional).</p>
+
+  <h3>get_engram_by_id</h3>
+  <p>Point lookup by primary key. Returns the <code>Engram</code> or raises if not found.</p>
+  <p><strong>Args:</strong> <code>id</code> (int, required).</p>
+
+  <h3>delete_engram_by_id</h3>
+  <p>Surgical removal of a single engram. Use to scrub captured secrets or dedup relay noise.</p>
+  <p><strong>Args:</strong> <code>id</code> (int, required).</p>
+
+  <h3>insert_engram</h3>
+  <p>Direct API-side insert; bypasses the fsnotify capture path. Useful for injection from mobile, webhooks, relay pipelines.</p>
+  <p><strong>Args:</strong> <code>surface</code> (str, required), <code>payload</code> (str, required), <code>ts</code> (int64 ns, optional).</p>
+  <p><strong>Returns:</strong> <code>{`{"id": N}`}</code>.</p>
+
+  <h3>insert_engrams_batch</h3>
+  <p>Bulk atomic insert; one transaction, one round-trip. 32 MiB body cap.</p>
+  <p><strong>Args:</strong> <code>engrams</code> (list of <code>{`{surface, payload, ts?}`}</code>).</p>
+  <p><strong>Returns:</strong> <code>{`{"inserted": N}`}</code>.</p>
+
+  <h3>purge_engrams</h3>
+  <p>Bulk delete by surface, optionally bounded by timestamp.</p>
+  <p><strong>Args:</strong> <code>surface</code> (str, required), <code>before</code> (int64 ns, optional).</p>
+  <p><strong>Returns:</strong> <code>{`{"deleted": N}`}</code>.</p>
+
+  <h3>list_surfaces</h3>
+  <p>Map of every active surface to its engram count. Live view of what the daemon has seen.</p>
+  <p><strong>Args:</strong> none.</p>
+  <p><strong>Returns:</strong> <code>{`{"claude_code": 274203, "cursor": 4135, ...}`}</code>.</p>
+
+  <h3>daemon_status</h3>
+  <p>Liveness probe — wraps <code>GET /healthz</code>.</p>
+  <p><strong>Returns:</strong> <code>{`{"status": "ok"}`}</code>.</p>
+
+  <h3>daemon_metrics</h3>
+  <p>Wraps <code>GET /metrics</code> (JSON variant). Use for dashboards or to surface engram stats into a Claude Code conversation.</p>
+  <p><strong>Returns:</strong> the full metrics JSON (version, uptime, counts per surface, query latency percentiles, update-available flag).</p>
+
+  <h3>nucleus_ask</h3>
+
+  <p>
+    The killer tool. RAG over your local engrams: extracts keywords from a
+    natural-language question, FTS5-retrieves top-K via the daemon, returns
+    them wrapped in answer-scaffolding for the host LLM. <strong>Your engrams
+    never leave your machine.</strong>
+  </p>
+
+  <p><strong>Args:</strong> <code>question</code> (str, required), <code>surface</code> (str, optional), <code>limit</code> (int, default 10).</p>
+
+  <p><strong>Returns:</strong> <code>{`{question, fts_query, instructions, engrams}`}</code>. The host LLM (Claude / Cursor / Cline) reads the engrams and synthesizes the answer.</p>
+
+  <p>
+    See <a href="/recall/">nucleus_ask recipes</a> for 5 copy-paste setups
+    across Claude Code, Cursor, Cline, CLI, and the web dashboard.
+  </p>
+
+  <h2>Why a separate bridge?</h2>
+
+  <p>
+    Process-isolation. The daemon is Go; the MCP bridge is Python. If the
+    Python MCP stack crashes mid-session, your engrams keep capturing. If the
+    daemon's writer pool stalls, the MCP bridge surfaces the error cleanly
+    without taking down the Claude Code session.
+  </p>
+
+  <p>
+    Practically: the bridge is a thin HTTP client over the daemon's UDS API
+    (TCP on Windows). Every MCP tool call maps to one daemon endpoint.
+    No duplicate state, no second source of truth.
+  </p>
+
+  <h2>Chunked-record reassembly</h2>
+
+  <p>
+    When a captured record exceeds 7 MiB, the daemon splits it into N chunks
+    sharing a <code>chunk_id</code> in <code>meta</code>. The MCP bridge
+    reassembles chunked records into ONE logical engram before returning them
+    to the host LLM — callers never see fragmented payloads. See ADR-018 in
+    the source repo for the meta-encoding contract.
+  </p>
+</Docs>

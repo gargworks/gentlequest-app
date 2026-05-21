@@ -1,0 +1,915 @@
+[
+  {
+    "id": "UC-W1",
+    "screen": "WelcomeScreen",
+    "flow_position": "onboarding",
+    "title": "Cold launch — hero render",
+    "precondition": "No SharedPreferences key age_verified; fresh install state",
+    "defining_action": "App launches — WelcomeContent renders",
+    "before_state": {"description": "App not yet launched; blank simulator screen"},
+    "after_state": {"description": "WelcomeScreen fully rendered: AmbientBlob animated, BreathingIllustration pulsing, 3 TrustChips visible, Continue button present"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "wait", "duration_ms": 1500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": false,
+    "judge_criteria": [
+      "WelcomeScreen is visible (not blank or loading spinner)",
+      "At least one TrustChip pill visible (private/diagnosis/always-here)",
+      "Continue ElevatedButton visible",
+      "No crash dialog or red error widget"
+    ],
+    "persona_context": "Maya just tapped the GentleQuest app for the very first time after seeing a TikTok. She's nervous and slightly embarrassed — she's never used a wellness app before. First impressions are everything.",
+    "severity_floor": "BLOCKER"
+  },
+  {
+    "id": "UC-W2",
+    "screen": "WelcomeScreen",
+    "flow_position": "onboarding",
+    "title": "Continue → age modal",
+    "precondition": "WelcomeScreen hero visible",
+    "defining_action": "Tap Continue ElevatedButton",
+    "before_state": {"description": "WelcomeScreen hero fully rendered"},
+    "after_state": {"description": "AgeModal slides up as ModalBottomSheet; drag handle visible; both age buttons present"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 750, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": false,
+    "judge_criteria": [
+      "AgeModal bottom sheet is visible",
+      "'Yes, I am 18 or older' ElevatedButton visible",
+      "'Not yet' TextButton visible",
+      "Sheet is not dismissible (no dark scrim tap-away)"
+    ],
+    "persona_context": "Maya just tapped Continue. She's now being asked about her age — this is a gate. She wants to get in quickly; friction here could make her second-guess whether the app is worth it.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-W3",
+    "screen": "WelcomeScreen",
+    "flow_position": "onboarding",
+    "title": "Age modal → 18+ confirmed → ComplianceGuard",
+    "precondition": "AgeModal open",
+    "defining_action": "Tap 'Yes, I am 18 or older'",
+    "before_state": {"description": "AgeModal open with both age buttons"},
+    "after_state": {"description": "ComplianceGuardScreen renders; WelcomeScreen removed from stack"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 530, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": false,
+    "judge_criteria": [
+      "ComplianceGuardScreen is visible (not WelcomeScreen)",
+      "GQ logo visible",
+      "'I am 18 or older' button visible on new screen",
+      "No crash"
+    ],
+    "persona_context": "Maya confirmed she's 18+. She expects to land somewhere meaningful — the gate should feel lightweight, not like another barrier.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-W4",
+    "screen": "WelcomeScreen",
+    "flow_position": "onboarding",
+    "title": "Age modal → under-18 dignity path",
+    "precondition": "AgeModal open",
+    "defining_action": "Tap 'Not yet' TextButton",
+    "before_state": {"description": "AgeModal open with both age buttons"},
+    "after_state": {"description": "Under18Screen renders with compassionate headline and resource cards"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 590, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": false,
+    "judge_criteria": [
+      "Under18Screen visible with compassionate headline",
+      "At least one ResourceCard visible",
+      "Footer text mentioning 988 visible",
+      "No crash or blank screen"
+    ],
+    "persona_context": "An under-18 user just got redirected. This is not Maya, but this screen reflects the app's care for all users. Maya might show this to a younger friend — the dignity of this path matters.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-C1",
+    "screen": "ComplianceGuardScreen",
+    "flow_position": "onboarding",
+    "title": "Available region — standard age gate → HomeShell",
+    "precondition": "ComplianceGuardScreen visible; region = available",
+    "defining_action": "Tap 'I am 18 or older'",
+    "before_state": {"description": "ComplianceGuardScreen with both age buttons"},
+    "after_state": {"description": "HomeShell loads; bottom nav visible; Talk/Mood/Quest/Dashboard tabs present"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 530, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 1000},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": false,
+    "judge_criteria": [
+      "HomeShell is visible (bottom nav with tabs)",
+      "ComplianceGuardScreen is no longer on stack",
+      "Chat tab (Talk) or Mood tab visible",
+      "No crash"
+    ],
+    "persona_context": "Maya got through the gate. She's now in the app for the first time. Every second that takes before she sees something useful is trust draining.",
+    "severity_floor": "BLOCKER"
+  },
+  {
+    "id": "UC-I1",
+    "screen": "InteractiveChatScreen",
+    "flow_position": "core",
+    "title": "First-turn render — Alex greeting visible",
+    "precondition": "HomeShell loaded; Talk tab selected; no prior messages",
+    "defining_action": "Navigate to Talk tab",
+    "before_state": {"description": "HomeShell on another tab (Mood or Dashboard)"},
+    "after_state": {"description": "InteractiveChatScreen: Alex greeting bubble visible, suggestion chips present, TextField and Send button at bottom"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 79, "y": 845, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 1200},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Alex greeting chat bubble visible (left-aligned, surface background)",
+      "Suggestion chips row visible ('Today's been heavy', 'I want to vent a little', 'Just need someone to listen', 'Quick win, please')",
+      "Message TextField visible at bottom",
+      "Send IconButton visible",
+      "No blank chat area or loading spinner stuck"
+    ],
+    "persona_context": "Maya opened the Talk tab for the first time. She wants to feel welcomed and understood immediately — not face a blank screen or generic instructions.",
+    "severity_floor": "BLOCKER"
+  },
+  {
+    "id": "UC-I2",
+    "screen": "InteractiveChatScreen",
+    "flow_position": "core",
+    "title": "Send a text message — full round-trip",
+    "precondition": "HomeShell loaded; Talk tab active",
+    "defining_action": "Type message → tap Send",
+    "before_state": {"description": "Chat screen with empty TextField and Alex greeting bubble"},
+    "after_state": {"description": "User message bubble on right; typing indicator appeared then AI response bubble on left; TextField cleared"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 790},
+      {"action": "type", "text": "I feel anxious today"},
+      {"action": "tap", "x": 368, "y": 790},
+      {"action": "wait", "duration_ms": 2500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "User message bubble on right side of screen",
+      "TextField is cleared after send",
+      "No error dialog or red error bubble",
+      "At minimum typing indicator OR AI response bubble is visible"
+    ],
+    "persona_context": "Maya typed her first real feeling and hit send — she is waiting and vulnerable. If this fails, she will never open the app again.",
+    "severity_floor": "BLOCKER"
+  },
+  {
+    "id": "UC-I3",
+    "screen": "InteractiveChatScreen",
+    "flow_position": "core",
+    "title": "Suggestion chip → prefill → send",
+    "precondition": "First-turn state; chips visible",
+    "defining_action": "Tap suggestion chip 'Today's been heavy'",
+    "before_state": {"description": "Chat with suggestion chips visible ('Today's been heavy', 'I want to vent a little', etc.)"},
+    "after_state": {"description": "TextField prefilled with chip text; cursor at end; chips still present (not auto-sent)"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 75, "y": 720, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 400},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "TextField shows text from the tapped chip",
+      "Message was NOT auto-sent (no user bubble in chat yet)",
+      "TextField cursor visible at end of prefilled text",
+      "No crash"
+    ],
+    "persona_context": "Maya saw 'Today's been heavy' and tapped it. She expected it to start her message for her — not send it. This micro-interaction either feels helpful or invasive.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-I5",
+    "screen": "InteractiveChatScreen",
+    "flow_position": "core",
+    "title": "Navigate to Profile via app bar icon",
+    "precondition": "Chat screen visible",
+    "defining_action": "Tap account_circle_outlined IconButton in app bar",
+    "before_state": {"description": "Chat screen with app bar visible"},
+    "after_state": {"description": "ProfileNavSheet slides up as modal bottom sheet; navigation options 'Profile', 'Settings', 'Journal' visible"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 360, "y": 55, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "ProfileNavSheet bottom sheet visible",
+      "At least 'Profile' or 'Settings' navigation option visible",
+      "Sheet overlays but does not cover the full screen",
+      "No crash"
+    ],
+    "persona_context": "Maya wants to check her profile. She tapped the avatar icon — she expects a quick path to her settings and personal info, not a navigation maze.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-M1",
+    "screen": "MoodTrackerScreen",
+    "flow_position": "core",
+    "title": "Mood tab render — no mood logged today",
+    "precondition": "Mood tab selected; no mood logged today",
+    "defining_action": "Navigate to Mood tab",
+    "before_state": {"description": "HomeShell on Talk tab"},
+    "after_state": {"description": "MoodTrackerScreen with MoodTriggerCard (Check in CTA), ClinicalCheckInCard, WeeklyReviewRow all visible"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "MoodTriggerCard visible with Check in CTA",
+      "ClinicalCheckInCard visible (PHQ-9/GAD-7)",
+      "WeeklyReviewRow visible with chart stub",
+      "No blank or loading screen"
+    ],
+    "persona_context": "Maya opened the Mood tab for the first time today. She hasn't checked in yet. She wants a clear, low-friction path to log how she's feeling.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-M2",
+    "screen": "MoodTrackerScreen",
+    "flow_position": "core",
+    "title": "Mood entry sheet — select mood and save",
+    "precondition": "Mood sheet open (from UC-M1)",
+    "defining_action": "Tap 'Great' mood button → tap 'Save check-in'",
+    "before_state": {"description": "Mood bottom sheet open with 5 emoji mood buttons"},
+    "after_state": {"description": "Sheet dismissed; mood logged; MoodTrackerScreen shows today's mood"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 40, "y": 500, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 300},
+      {"action": "tap", "x": 196, "y": 620, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Mood bottom sheet is closed",
+      "MoodTrackerScreen shows a logged mood (emoji or color indicator)",
+      "No error snackbar",
+      "No crash"
+    ],
+    "persona_context": "Maya picked 'Great' and saved. It was quick — she's testing the app. The feedback after saving tells her if the app actually heard her.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-M3",
+    "screen": "MoodTrackerScreen",
+    "flow_position": "core",
+    "title": "Low-mood reflection sheet auto-appears",
+    "precondition": "Saved mood = 'Rough' or 'Meh'",
+    "defining_action": "Tap 'Rough' mood → tap 'Save check-in'",
+    "before_state": {"description": "Mood bottom sheet open"},
+    "after_state": {"description": "MoodReflectionSheet slides up automatically with FaceOption row and Talk to Alex button"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 350, "y": 500, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 300},
+      {"action": "tap", "x": 196, "y": 620, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "MoodReflectionSheet bottom sheet is visible",
+      "FaceOption row visible (Heavy/Flat/Hanging in/Turning around)",
+      "'Talk to Alex about it' button visible",
+      "'Skip for now' TextButton visible"
+    ],
+    "persona_context": "Maya logged a rough day. The app is about to check in further — this moment is critical. If it feels preachy or formulaic she'll tap Skip. If it feels human she might open up.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-M4",
+    "screen": "MoodTrackerScreen",
+    "flow_position": "secondary",
+    "title": "Clinical check-in card → ClinicalAssessmentScreen",
+    "precondition": "Mood tab visible; ClinicalCheckInCard present",
+    "defining_action": "Tap ClinicalCheckInCard",
+    "before_state": {"description": "MoodTrackerScreen with ClinicalCheckInCard visible"},
+    "after_state": {"description": "ClinicalAssessmentScreen entry screen loaded with PHQ-9 and GAD-7 cards"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 400, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "ClinicalAssessmentScreen entry visible (not MoodTrackerScreen)",
+      "PHQ-9 AssessmentEntryCard visible",
+      "GAD-7 AssessmentEntryCard visible",
+      "No crash"
+    ],
+    "persona_context": "Maya tapped the 'PHQ-9 / GAD-7 reflection' card out of curiosity. She's not sure what a PHQ-9 is — the screen needs to explain itself immediately without scaring her.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-M5",
+    "screen": "MoodTrackerScreen",
+    "flow_position": "secondary",
+    "title": "Weekly review row → WeeklyReviewScreen",
+    "precondition": "Mood tab; WeeklyReviewRow visible",
+    "defining_action": "Tap WeeklyReviewRow",
+    "before_state": {"description": "MoodTrackerScreen with WeeklyReviewRow visible"},
+    "after_state": {"description": "WeeklyReviewScreen pushed; MoodShapeChart and weekly summary visible"},
+    "precondition_steps": [
+      {"action": "tap", "x": 150, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 580, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "WeeklyReviewScreen is visible",
+      "MoodShapeChart visible (bar chart or empty state)",
+      "Back navigation available",
+      "No crash"
+    ],
+    "persona_context": "Maya is curious how her week looked in chart form. She expects a clean summary — if bars or data are missing she'll feel like the app doesn't remember her.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-Q1",
+    "screen": "QuestScreen",
+    "flow_position": "core",
+    "title": "Quest list view render",
+    "precondition": "Quest tab selected",
+    "defining_action": "Navigate to Quest tab",
+    "before_state": {"description": "HomeShell on another tab"},
+    "after_state": {"description": "QuestScreen with QuestCardWidget list, ProgressRing visible, 3 Good Things quest first"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "QuestScreen visible with at least one QuestCardWidget",
+      "ProgressRing (arc) visible at top",
+      "Quest card titles and descriptions visible",
+      "No blank content area"
+    ],
+    "persona_context": "Maya tapped Quests to see what the app expects of her. She's already tired from her day — if the list looks overwhelming she'll close it without starting anything.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-Q2",
+    "screen": "QuestScreen",
+    "flow_position": "core",
+    "title": "Quest card tap → preview screen",
+    "precondition": "Quest list visible",
+    "defining_action": "Tap first QuestCardWidget",
+    "before_state": {"description": "QuestScreen list view with quest cards"},
+    "after_state": {"description": "QuestPreviewView visible: icon, title, description, Start/Continue button"},
+    "precondition_steps": [
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 280, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Quest preview is visible (not list view)",
+      "Start or Continue ElevatedButton visible",
+      "Quest description text visible",
+      "No crash"
+    ],
+    "persona_context": "Maya tapped a quest to see what it involves before committing. She's risk-averse about time — the preview must tell her clearly what she's signing up for.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-Q3",
+    "screen": "QuestScreen",
+    "flow_position": "core",
+    "title": "Quest in-progress — complete today",
+    "precondition": "Quest started; in-progress view active",
+    "defining_action": "Tap 'Complete today' button",
+    "before_state": {"description": "QuestInProgressView with TextFields for 3 Good Things quest"},
+    "after_state": {"description": "Completion animation fires; XP microinteraction; quest marked done for today"},
+    "precondition_steps": [
+      {"action": "tap", "x": 250, "y": 813},
+      {"action": "wait", "duration_ms": 1500}
+    ],
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 300, "TODO_CALIBRATE": true},
+      {"action": "type", "text": "Coffee this morning"},
+      {"action": "tap", "x": 196, "y": 380, "TODO_CALIBRATE": true},
+      {"action": "type", "text": "Got through my tasks"},
+      {"action": "tap", "x": 196, "y": 460, "TODO_CALIBRATE": true},
+      {"action": "type", "text": "Had a nice walk"},
+      {"action": "tap", "x": 196, "y": 740, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 1200},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Completion state visible (check animation or XP indicator)",
+      "Quest marked as done (progress shows 100% or 'Done today')",
+      "No error state",
+      "No crash"
+    ],
+    "persona_context": "Maya just completed a quest — 'Write 3 good things.' This is a key moment of positive reinforcement. If the completion animation is absent or the quest doesn't mark done, the dopamine loop breaks.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-P1",
+    "screen": "ProfileScreen",
+    "flow_position": "secondary",
+    "title": "About You section — nickname and pronoun edit",
+    "precondition": "ProfileScreen open via ProfileNavSheet",
+    "defining_action": "Tap TextField(nickname) → type name",
+    "before_state": {"description": "ProfileScreen with AboutYouCard visible; nickname field empty"},
+    "after_state": {"description": "Nickname TextField shows typed name; pronoun chip selected with primary border"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 220, "TODO_CALIBRATE": true},
+      {"action": "type", "text": "Maya"},
+      {"action": "tap", "x": 90, "y": 280, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 400},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Nickname TextField shows typed text",
+      "At least one pronoun chip selected (highlighted)",
+      "No error state or navigation away",
+      "No crash"
+    ],
+    "persona_context": "Maya is setting up her profile — this is identity declaration. She wants the app to call her by name. If the nickname doesn't save or pronoun chips don't respond, the app feels indifferent.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-P2",
+    "screen": "ProfileScreen",
+    "flow_position": "secondary",
+    "title": "Voice / Tone section — select tone",
+    "precondition": "ProfileScreen open; VoiceCard visible",
+    "defining_action": "Tap 'Warm' tone button",
+    "before_state": {"description": "ProfileScreen with VoiceCard showing 3 tone options"},
+    "after_state": {"description": "'Warm' tone selected with primary border; voice notes toggle visible"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 80, "y": 400, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 400},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "One tone option is visually selected (highlighted border/fill)",
+      "Other tone options are deselected",
+      "Voice notes toggle visible",
+      "No crash"
+    ],
+    "persona_context": "Maya is customizing how Alex talks to her. This feels personal — if her selection doesn't register visually she'll assume it's broken and Alex will keep sounding wrong.",
+    "severity_floor": "LOW"
+  },
+  {
+    "id": "UC-P3",
+    "screen": "ProfileScreen",
+    "flow_position": "secondary",
+    "title": "Safety Plan — empty state → build step 1",
+    "precondition": "SafetyPlanState.empty; no plan saved",
+    "defining_action": "Tap 'Build my safety plan' button",
+    "before_state": {"description": "SafetyPlanCard showing '0/3 steps' pill and 'Build my safety plan' CTA"},
+    "after_state": {"description": "SafetyPlanBuilderStep 1 open: 'What are your warning signs?' with TextField and StepDots (dot 1 active)"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 550, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "SafetyPlanBuilderStep screen visible (not SafetyPlanCard)",
+      "'What are your warning signs?' text visible",
+      "StepDots visible with first dot active",
+      "Save & continue button visible",
+      "No crash"
+    ],
+    "persona_context": "Maya is building a safety plan for the first time. This is an emotionally loaded moment — she's acknowledging she might need help someday. The form must feel safe, not clinical.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-P4",
+    "screen": "ProfileScreen",
+    "flow_position": "secondary",
+    "title": "Safety Plan — filled state → Use now",
+    "precondition": "SafetyPlanState.filled; plan exists",
+    "defining_action": "Tap 'Use now' button",
+    "before_state": {"description": "SafetyPlanCard showing '3/3 steps' pill and Use now + Edit plan buttons"},
+    "after_state": {"description": "CrisisInterventionSheet slides up with 988 and crisis support options"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 120, "y": 620, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "CrisisInterventionSheet visible",
+      "'Call 988' ElevatedButton visible",
+      "Sheet is non-dismissible (isDismissible: false)",
+      "No crash"
+    ],
+    "persona_context": "Maya tapped 'Use now' on her safety plan. This means she's in distress RIGHT NOW. Every millisecond of friction here is a safety risk. This is a BLOCKER scenario.",
+    "severity_floor": "BLOCKER"
+  },
+  {
+    "id": "UC-P5",
+    "screen": "ProfileScreen",
+    "flow_position": "secondary",
+    "title": "Safety Contacts — add contact and test call button",
+    "precondition": "ProfileScreen open; SafetyContactsPreview visible",
+    "defining_action": "Tap phone IconButton on first contact row",
+    "before_state": {"description": "SafetyContactsPreview with at least one ContactRow; contact has a name"},
+    "after_state": {"description": "Snackbar appears 'Calling [name]…'"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 330, "y": 700, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Snackbar visible at bottom",
+      "Snackbar contains 'Calling' text",
+      "No crash or navigation away",
+      "No error state"
+    ],
+    "persona_context": "Maya is checking whether the call button actually works. In a real crisis she would use this to call someone she trusts. If it silently fails she has no fallback.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-S1",
+    "screen": "SettingsScreen",
+    "flow_position": "settings",
+    "title": "Default view — all settings sections render",
+    "precondition": "SettingsScreen open",
+    "defining_action": "Open SettingsScreen",
+    "before_state": {"description": "ProfileNavSheet or ProfileScreen visible"},
+    "after_state": {"description": "SettingsScreen fully rendered: YOUR DATA, NOTIFICATIONS, ABOUT sections; all rows visible; EraseLocalDataBtn at bottom"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 500, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "YOUR DATA section visible with Export/Delete/Anonymity rows",
+      "NOTIFICATIONS section visible with reminder/streak rows",
+      "ABOUT section visible (Privacy policy, Crisis resources)",
+      "No crash or partial render"
+    ],
+    "persona_context": "Maya opened Settings to understand what the app does with her data. This screen should feel trustworthy — every row should be clear, not buried.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-S2",
+    "screen": "SettingsScreen",
+    "flow_position": "settings",
+    "title": "Export my data — snackbar confirmation",
+    "precondition": "SettingsScreen open",
+    "defining_action": "Tap 'Export my data' row",
+    "before_state": {"description": "SettingsScreen with Export my data row visible"},
+    "after_state": {"description": "Snackbar: 'Export started — you'll receive an email shortly'"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 200, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Snackbar visible with 'Export' or 'email' text",
+      "No navigation away from Settings",
+      "No crash"
+    ],
+    "persona_context": "Maya wants to export her journal and mood data. She tapped it to test — if nothing happens she'll assume the feature is broken.",
+    "severity_floor": "LOW"
+  },
+  {
+    "id": "UC-S3",
+    "screen": "SettingsScreen",
+    "flow_position": "settings",
+    "title": "Delete account — confirmation modal renders",
+    "precondition": "SettingsScreen open",
+    "defining_action": "Tap 'Delete my account' row",
+    "before_state": {"description": "SettingsScreen with Delete row visible"},
+    "after_state": {"description": "Confirmation ModalBottomSheet: warning icon, 'This can't be undone' text, DELETE confirmation TextField, Cancel button"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 250, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Confirmation modal sheet visible",
+      "'This can't be undone' or warning text visible",
+      "TextField for confirmation visible",
+      "Cancel TextButton visible",
+      "Delete button visible (should be disabled initially)"
+    ],
+    "persona_context": "Maya is thinking about deleting her account — she wants to feel in control of her data. The guard here must feel protective, not threatening.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-S4",
+    "screen": "SettingsScreen",
+    "flow_position": "settings",
+    "title": "Anonymity mode toggle — banner appears",
+    "precondition": "SettingsScreen open; anonymity toggle off",
+    "defining_action": "Tap anonymity mode GQToggle",
+    "before_state": {"description": "SettingsScreen with Anonymity mode row; toggle is OFF"},
+    "after_state": {"description": "Toggle is ON; AnonymityBanner slides in below row: 'Your name is hidden from exports'"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 340, "y": 310, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Toggle visual state changed (on vs off)",
+      "AnonymityBanner text visible below row OR toggle state changed clearly",
+      "No crash"
+    ],
+    "persona_context": "Maya toggled anonymity mode — she wants her name hidden from exports. The immediate visual feedback is critical: she needs to see confirmation it worked.",
+    "severity_floor": "LOW"
+  },
+  {
+    "id": "UC-S5",
+    "screen": "SettingsScreen",
+    "flow_position": "settings",
+    "title": "Daily check-in reminder — notification detail screen",
+    "precondition": "SettingsScreen open",
+    "defining_action": "Tap 'Daily check-in reminder' row",
+    "before_state": {"description": "SettingsScreen with Notifications section visible"},
+    "after_state": {"description": "Notification detail screen: day chips, time display, Enable toggle, Send test notification button"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 420, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Notification detail screen visible (not SettingsScreen list)",
+      "Day chips (Mon-Sun) visible",
+      "Time display visible",
+      "Enable toggle visible",
+      "No crash"
+    ],
+    "persona_context": "Maya is setting a reminder. She has high notification anxiety — she'll only enable this if she can control exactly when it fires. The day/time controls need to be intuitive.",
+    "severity_floor": "LOW"
+  },
+  {
+    "id": "UC-CA1",
+    "screen": "ClinicalAssessmentScreen",
+    "flow_position": "secondary",
+    "title": "Entry screen — PHQ-9 and GAD-7 cards render",
+    "precondition": "ClinicalAssessmentScreen open from UC-M4",
+    "defining_action": "Land on assessment entry screen",
+    "before_state": {"description": "Navigation in progress to ClinicalAssessmentScreen"},
+    "after_state": {"description": "Entry screen with PHQ-9 and GAD-7 AssessmentEntryCards; ExpansionTile for rationale visible"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "wait", "duration_ms": 500},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "PHQ-9 AssessmentEntryCard visible",
+      "GAD-7 AssessmentEntryCard visible",
+      "'Why we ask' ExpansionTile visible",
+      "No crash or empty screen"
+    ],
+    "persona_context": "Maya sees PHQ-9 and GAD-7 for the first time. She doesn't know what these are. The cards must explain themselves gently, not feel like a medical intake form.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-CA2",
+    "screen": "ClinicalAssessmentScreen",
+    "flow_position": "secondary",
+    "title": "PHQ-9 question flow — Q1 LikertPill selection",
+    "precondition": "PHQ-9 selected; AssessmentFlowScreen open on Q1",
+    "defining_action": "Tap PHQ-9 card → tap 'Several days' LikertPill",
+    "before_state": {"description": "ClinicalAssessmentScreen entry screen"},
+    "after_state": {"description": "Q1 visible with 'Several days' pill selected; Next button enabled"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 230, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "tap", "x": 140, "y": 400, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 400},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Question text visible (Little interest or pleasure...)",
+      "LikertPill is selected (highlighted/filled)",
+      "Next ElevatedButton is enabled (not greyed out)",
+      "No crash"
+    ],
+    "persona_context": "Maya is answering questions about how she's been feeling. This is intimate and vulnerable. The LikertPills must feel responsive — if her tap doesn't register she'll feel unheard.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-CA3",
+    "screen": "ClinicalAssessmentScreen",
+    "flow_position": "secondary",
+    "title": "Save & exit mid-assessment",
+    "precondition": "Mid-assessment on Q3 or later",
+    "defining_action": "Tap 'Save & exit' TextButton",
+    "before_state": {"description": "AssessmentFlowScreen on Q3 with at least one answer given"},
+    "after_state": {"description": "Assessment closed; navigator popped back to MoodTrackerScreen or previous screen"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 330, "y": 55, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "ClinicalAssessmentScreen is no longer on top of stack",
+      "Previous screen (MoodTrackerScreen or entry) is visible",
+      "No data loss snackbar or error",
+      "No crash"
+    ],
+    "persona_context": "Maya wants to exit the assessment halfway. She's anxious about being 'locked in'. Save & exit must feel safe and immediate — not trap her with an extra confirmation dialog.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-CA4",
+    "screen": "ClinicalAssessmentScreen",
+    "flow_position": "secondary",
+    "title": "PHQ-9 result reveal screen — all 4 action cards",
+    "precondition": "All 9 PHQ-9 questions answered",
+    "defining_action": "Answer all questions → result screen loads",
+    "before_state": {"description": "Q9 answered; tapping Next"},
+    "after_state": {"description": "ResultRevealScreen: SeverityBandViz, score text, all 4 ResultActionCards visible, 2-week reminder toggle"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "wait", "duration_ms": 1000},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "ResultRevealScreen visible with score and severity label",
+      "SeverityBandViz gradient bar visible",
+      "At least 3 ResultActionCards visible",
+      "2-week reminder toggle visible",
+      "No crash"
+    ],
+    "persona_context": "Maya just got her PHQ-9 result. Whatever the score, this moment is sensitive. She needs to feel supported, not diagnosed. The action cards must feel like care, not clinical referrals.",
+    "severity_floor": "HIGH"
+  },
+  {
+    "id": "UC-RL1",
+    "screen": "ResourceLibraryScreen",
+    "flow_position": "secondary",
+    "title": "Resource library — initial render with All filter",
+    "precondition": "ResourceLibraryScreen opened",
+    "defining_action": "Navigate to Resource Library",
+    "before_state": {"description": "HomeShell or previous screen"},
+    "after_state": {"description": "ResourceLibraryScreen: LibraryNavBar with 6 filter chips, FeaturedExerciseCard, ExerciseGrid with items"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Filter chip bar visible with All/Breathing/Grounding/Body/Quick wins/Sleep",
+      "Featured exercise card visible",
+      "Exercise grid with at least 2 items visible",
+      "No layout overflow or blank area"
+    ],
+    "persona_context": "Maya found the resource library. She came here looking for something to help her right now. If the grid is empty or the filter bar is broken she'll go back and feel like the app has nothing to offer.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-RL2",
+    "screen": "ResourceLibraryScreen",
+    "flow_position": "secondary",
+    "title": "Filter by Breathing category",
+    "precondition": "ResourceLibraryScreen with All filter active",
+    "defining_action": "Tap 'Breathing' filter chip",
+    "before_state": {"description": "ResourceLibraryScreen with All filter active and full grid"},
+    "after_state": {"description": "'Breathing' chip highlighted; grid shows only breathing exercises"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 120, "y": 130, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "'Breathing' filter chip is visually selected (primary fill)",
+      "Grid shows a subset of items (fewer than All view)",
+      "No layout crash or empty grid with no empty-state message",
+      "No crash"
+    ],
+    "persona_context": "Maya is looking for breathing exercises specifically. If the filter silently fails and shows all exercises (or nothing), she'll feel lost in the library.",
+    "severity_floor": "LOW"
+  },
+  {
+    "id": "UC-J1",
+    "screen": "JournalScreen",
+    "flow_position": "secondary",
+    "title": "Journal empty state render",
+    "precondition": "No journal entries in memory",
+    "defining_action": "Navigate to JournalScreen",
+    "before_state": {"description": "ProfileNavSheet or HomeShell"},
+    "after_state": {"description": "JournalEmptyState: illustration, 'Your journal lives here' heading, starter chips, 'Start an entry' button"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "wait", "duration_ms": 800},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "JournalEmptyState visible (not blank)",
+      "Starter chips visible (Today what worked was... / I noticed myself...)",
+      "'Start an entry' ElevatedButton visible",
+      "No crash or white screen"
+    ],
+    "persona_context": "Maya opened the Journal for the first time — it's empty. This moment either invites her in warmly or makes her feel like she arrived in the wrong room.",
+    "severity_floor": "MEDIUM"
+  },
+  {
+    "id": "UC-J3",
+    "screen": "JournalScreen",
+    "flow_position": "secondary",
+    "title": "Start an entry → editor opens",
+    "precondition": "JournalEmptyState visible",
+    "defining_action": "Tap 'Start an entry' ElevatedButton",
+    "before_state": {"description": "JournalEmptyState with Start an entry button"},
+    "after_state": {"description": "Journal editor open: text input, character count or toolbar, save/close controls"},
+    "walk_steps": [
+      {"action": "screenshot", "screen_name": "before"},
+      {"action": "tap", "x": 196, "y": 680, "TODO_CALIBRATE": true},
+      {"action": "wait", "duration_ms": 600},
+      {"action": "screenshot", "screen_name": "after"}
+    ],
+    "bypass_compliance": true,
+    "judge_criteria": [
+      "Journal editor screen visible (not empty state)",
+      "Text input field visible and focused (keyboard likely up)",
+      "Save or close controls visible",
+      "No crash"
+    ],
+    "persona_context": "Maya tapped 'Start an entry.' She's deciding whether to actually write something. If the editor feels clunky or the keyboard doesn't appear she'll close it without writing.",
+    "severity_floor": "MEDIUM"
+  }
+]

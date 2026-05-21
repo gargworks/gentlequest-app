@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.1",
+  "tier": "J02",
+  "design_id": "GentleQuest_Under18",
+  "description": "Under-18 dignity path: Welcome → AgeModal → 'Not yet' → resource list → back to welcome",
+  "bypass_compliance": false,
+  "steps": [
+    {"action": "wait", "duration_ms": 2000, "note": "Splash resolves to WelcomeScreen (has_seen_welcome_v1 not set)"},
+    {"action": "screenshot", "screen_name": "01_welcome"},
+    {"action": "tap", "x": 196, "y": 760, "note": "Tap Continue → age modal"},
+    {"action": "wait", "duration_ms": 700},
+    {"action": "screenshot", "screen_name": "02_age_modal"},
+    {"action": "tap", "x": 98, "y": 650, "screen_name": "03_not_yet_tapped", "note": "Tap 'Not yet' → _showUnder18() → under18 state fade-in"},
+    {"action": "wait", "duration_ms": 600, "note": "Under-18 fade-in animation"},
+    {"action": "screenshot", "screen_name": "04_under18_dignity", "note": "Under-18 view: warm text, resource cards, back arrow"},
+    {"action": "tap", "x": 30, "y": 80, "screen_name": "05_back_to_welcome", "note": "Tap back arrow → _backFromUnder18() → returns to welcome state"}
+  ]
+}

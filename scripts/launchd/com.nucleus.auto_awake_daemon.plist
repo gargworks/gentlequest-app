@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nucleus.auto_awake_daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/lokeshgarg/ai-mvp-backend/scripts/auto_awake_daemon.sh</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>30</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/lokeshgarg/ai-mvp-backend/.brain/log/auto_awake_daemon.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/lokeshgarg/ai-mvp-backend/.brain/log/auto_awake_daemon.err.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/lokeshgarg/ai-mvp-backend</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/lokeshgarg</string>
+        <key>REPO_ROOT</key>
+        <string>/Users/lokeshgarg/ai-mvp-backend</string>
+    </dict>
+
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

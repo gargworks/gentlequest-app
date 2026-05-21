@@ -39,7 +39,12 @@ def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
     
     # Avoid duplicate handlers
     if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
+        # stderr, not stdout: stdio MCP transport reads newline-delimited
+        # JSON-RPC from stdout. A log line like "2026-04-14 10:45:20 - …"
+        # parses "2026" as a 4-char JSON number, then chokes on "-" at
+        # position 4 → "Unexpected non-whitespace character after JSON
+        # at position 4 (line 1 column 5)" on the client side.
+        handler = logging.StreamHandler(sys.stderr)
         
         # Use JSON if specified via env
         if os.environ.get("NUCLEUS_LOG_JSON", "false").lower() == "true":
@@ -74,8 +79,8 @@ def get_nucleus_mcp_command() -> list:
 
 
 def get_brain_path() -> Path:
-    """Get the brain path from environment variable or auto-detect from working directory."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
+    """Get the brain path from NUCLEUS_BRAIN_PATH env or auto-detect from working directory."""
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
     
     if brain_path:
         path = Path(brain_path)
@@ -102,7 +107,7 @@ def get_brain_path() -> Path:
             return parent / ".brain"
             
     # If we get here, no brain was found
-    raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
+    raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
 
 def make_response(success: bool, data=None, error=None, error_code=None):
     """Standardized API response formatter.

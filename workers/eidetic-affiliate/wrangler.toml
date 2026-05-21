@@ -1,0 +1,27 @@
+name = "eidetic-affiliate"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# KV namespace for affiliate codes + click logs.
+# Create once with:
+#   cd workers/eidetic-affiliate
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler kv:namespace create EIDETIC_AFFILIATES_KV
+# Then paste the returned `id` into the binding block below (and a separate
+# `preview_id` if you want `wrangler dev` to use an isolated KV).
+#
+[[kv_namespaces]]
+binding    = "EIDETIC_AFFILIATES_KV"
+id         = "73547fa01d77483391c177bfee6bc058"
+
+# Deploy with a Workers:Edit token (the Pages-only CLOUDFLARE_API_TOKEN won't work):
+#   cd workers/eidetic-affiliate
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler secret put ADMIN_SECRET
+#   # paste a long random string (e.g. `openssl rand -hex 32`)
+#   CLOUDFLARE_API_TOKEN=<workers-token> wrangler deploy
+#
+# Until ADMIN_SECRET is set, /admin/* returns 503 "admin not configured"
+# (intentional: lets you deploy the public /ref/* surface first, lock down later).
+#
+# Route mapping (set in Cloudflare dashboard → Workers → Routes):
+#   eidetic.works/ref/*    → eidetic-affiliate
+#   eidetic.works/admin/*  → eidetic-affiliate   (optional; or use *.workers.dev)

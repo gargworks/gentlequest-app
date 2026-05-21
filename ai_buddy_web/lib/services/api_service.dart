@@ -97,8 +97,17 @@ class ApiService {
           handler.next(error);
         },
         onRequest: (options, handler) async {
-          // Add session ID to headers if available (prefer SessionManager cache)
-          _sessionId ??= SessionManager.peekSessionId();
+          // Always pull the freshest session id from the SessionManager
+          // rather than trusting our own cached _sessionId. After a
+          // passwordless sign-in the device adopts the user's canonical
+          // session_id via SessionManager.adoptCanonicalSessionId — if we
+          // read our own stale cache here, subsequent calls would still
+          // carry the device's pre-login anonymous session and miss the
+          // user's server-side history.
+          final fresh = SessionManager.peekSessionId();
+          if (fresh != null && fresh.isNotEmpty) {
+            _sessionId = fresh;
+          }
           if (_sessionId != null) {
             options.headers['X-Session-ID'] = _sessionId;
           }

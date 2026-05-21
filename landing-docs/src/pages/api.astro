@@ -1,0 +1,281 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'Full HTTP API reference for eidetic-daemon. Every endpoint over the local Unix socket: /engrams, /search, /ask, /export, /metrics, more.';
+---
+
+<Docs title="HTTP API" description={description} pageSlug="api">
+  <span class="eyebrow">Reference</span>
+  <h1>HTTP <em>API</em></h1>
+  <p class="subhead">
+    Every endpoint, every parameter. The daemon listens on a Unix-domain
+    socket at <code>/tmp/eidetic-daemon.sock</code> by default
+    (<code>/var/run/eidetic.sock</code> on Linux). Set <code>EIDETIC_TCP=1</code>
+    for a loopback TCP fallback on <code>127.0.0.1:9876</code>.
+  </p>
+
+  <h2>Conventions</h2>
+
+  <ul>
+    <li><strong>Base URL:</strong> All examples use <code>--unix-socket /tmp/eidetic-daemon.sock http://localhost</code>. Over TCP, replace with <code>http://127.0.0.1:9876</code>.</li>
+    <li><strong>Timestamps</strong> are unix epoch nanoseconds (<code>int64</code>).</li>
+    <li><strong>Auth:</strong> off by default. Set <code>EIDETIC_AUTH=1</code> (or pass <code>-auth</code>) to enable Bearer-token auth on every endpoint except <code>/healthz</code>. Token at <code>&lt;dataDir&gt;/auth-token</code> (0600 perms, 64-char hex, rotates every restart).</li>
+    <li><strong>Engram shape:</strong> <code>{`{"id": int, "surface": "string", "ts": int64, "payload": "string", "meta": "string"}`}</code>.</li>
+  </ul>
+
+  <h2>Health &amp; observability</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/healthz</span>
+  </div>
+
+  <p>Liveness probe. Returns 200 + <code>{`{"status":"ok"}`}</code>. No store touch — answers from the listener thread, so a stuck writer pool doesn't tip the readiness signal. Stays open even when auth is enabled.</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/healthz
+# → {"status":"ok"}</code></pre>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/metrics</span>
+  </div>
+
+  <p>Version, uptime, engram counts per surface, capture skip-counter, DB size, query latency P50/P95/P99. Schema is additive-only across versions. Three formats via <code>Accept</code> header:</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/metrics                                              # JSON (default)
+curl -H 'Accept: text/plain' --unix-socket /tmp/eidetic-daemon.sock http://localhost/metrics                      # Prometheus exposition (v0.0.10+)
+curl -H 'Accept: application/openmetrics-text' --unix-socket /tmp/eidetic-daemon.sock http://localhost/metrics    # OpenMetrics 1.0.0 (v0.0.11+)</code></pre>
+
+  <p>v0.0.12+ adds <code>query_latency_p50_us</code>, <code>_p95_us</code>, <code>_p99_us</code> to JSON and <code>eidetic_query_duration_microseconds{`{quantile=...}`}</code> summary to Prometheus / OpenMetrics. Real Prometheus scrapers send a multi-type Accept by default; v0.0.11+ honors the OpenMetrics clause when present. v0.0.37+ adds <code>latest_version</code> + <code>update_available</code> fields populated by a 24h GitHub releases poll.</p>
+
+  <h2>Surfaces</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/surfaces</span>
+  </div>
+
+  <p>Map of every active surface to its engram count. Live view of what the daemon has seen. Empty store returns <code>{`{}`}</code>. (v0.0.13+)</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/surfaces
+# → {"claude_code": 274203, "cursor": 4135, "cowork": 223}</code></pre>
+
+  <h2>Engrams — query</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/engrams?[surface=X]&amp;[limit=N]&amp;[since=ns]&amp;[before=ns]&amp;[order=asc]</span>
+  </div>
+
+  <p>The core retrieval endpoint. Returns a JSON array of engrams.</p>
+
+  <table>
+    <thead>
+      <tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>surface</code></td><td>string</td><td>(optional, v0.0.23+)</td><td>Surface name. Omit to retrieve across all surfaces.</td></tr>
+      <tr><td><code>limit</code></td><td>int</td><td>50</td><td>Max rows. Capped at 500.</td></tr>
+      <tr><td><code>since</code></td><td>int64 ns</td><td>(none)</td><td>Lower bound on <code>ts</code> (exclusive).</td></tr>
+      <tr><td><code>before</code></td><td>int64 ns</td><td>(none, v0.0.21+)</td><td>Upper bound on <code>ts</code> (exclusive).</td></tr>
+      <tr><td><code>order</code></td><td>string</td><td><code>desc</code></td><td><code>asc</code> for oldest-first (v0.0.22+); anything else = newest-first.</td></tr>
+    </tbody>
+  </table>
+
+  <pre is:raw><code># Last 5 engrams from claude_code surface
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams?surface=claude_code&limit=5'
+
+# Sliding time-window across all surfaces
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams?since=1747000000000000000&before=1747500000000000000'
+
+# Oldest-first for replay
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams?surface=claude_code&order=asc'</code></pre>
+
+  <p>P95 retrieval is <strong>0.27 ms</strong> on a 10K-row fixture (M4 MacBook, 2026-05-13). Spec SLO is ≤100 ms; current headroom ~370×.</p>
+
+  <h2>Engrams — insert</h2>
+
+  <div class="endpoint">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-path">/engrams</span>
+  </div>
+
+  <p>Direct API-side insert; bypasses the fsnotify capture path. Enables injection from mobile, webhooks, relay pipelines. (v0.0.16+)</p>
+
+  <p>Body: <code>{`{"surface": "...", "payload": "...", "ts": unix-ns}`}</code>. <code>ts</code> optional (defaults to <code>time.Now()</code>).</p>
+
+  <pre is:raw><code>curl -X POST --unix-socket /tmp/eidetic-daemon.sock \
+  -H 'Content-Type: application/json' \
+  -d '{"surface":"mobile","payload":"noted from phone"}' \
+  http://localhost/engrams
+# → {"id": 1234}</code></pre>
+
+  <div class="endpoint">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-path">/engrams/batch</span>
+  </div>
+
+  <p>Bulk atomic insert — array of engrams committed in one transaction. Efficient for relay sync, session replay, bulk import. Body cap: 32 MiB. (v0.0.17+)</p>
+
+  <pre is:raw><code>curl -X POST --unix-socket /tmp/eidetic-daemon.sock \
+  -H 'Content-Type: application/json' \
+  -d '[{"surface":"mobile","payload":"note 1"},{"surface":"mobile","payload":"note 2"}]' \
+  http://localhost/engrams/batch
+# → {"inserted": 2}</code></pre>
+
+  <h2>Engrams — point access</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/engrams/{`{id}`}</span>
+  </div>
+
+  <p>Fetch a single engram by primary key. 404 when not found, 400 on non-integer or zero. Use after a <code>POST /engrams</code> to confirm the stored row. (v0.0.18+)</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams/1234'
+# → {"id":1234,"surface":"mobile","ts":...,"payload":"...","meta":""}</code></pre>
+
+  <div class="endpoint">
+    <span class="method method-delete">DELETE</span>
+    <span class="endpoint-path">/engrams/{`{id}`}</span>
+  </div>
+
+  <p>Surgical removal of a single engram. 404 when not found, 400 on non-integer or zero. Use to remove accidentally captured sensitive data or dedup relay noise. (v0.0.19+)</p>
+
+  <pre is:raw><code>curl -X DELETE --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams/1234'
+# → {"deleted":1}</code></pre>
+
+  <h2>Engrams — count + purge</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/engrams/count?[surface=X][&amp;since=ns]</span>
+  </div>
+
+  <p>Returns <code>{`{"count": N}`}</code> without fetching rows. Use for monitoring badges, health dashboards, sync-diff checks. (v0.0.20+)</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams/count'
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams/count?surface=claude_code'
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams/count?since=1747500000000000000'</code></pre>
+
+  <div class="endpoint">
+    <span class="method method-delete">DELETE</span>
+    <span class="endpoint-path">/engrams?surface=X[&amp;before=ns]</span>
+  </div>
+
+  <p>Bulk delete by surface (optionally bounded by timestamp). Returns <code>{`{"deleted": N}`}</code>. (v0.0.13+)</p>
+
+  <pre is:raw><code># Purge all cursor engrams
+curl -X DELETE --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams?surface=cursor'
+
+# Purge only engrams older than a cutoff
+curl -X DELETE --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/engrams?surface=cursor&before=1715000000000000000'</code></pre>
+
+  <h2>Search</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/search?q=...[&amp;surface=X][&amp;limit=N]</span>
+  </div>
+
+  <p>FTS5 keyword / phrase / boolean search over engram payloads, ranked by relevance. Answers "what did I say about X?" Same engram JSON shape as <code>/engrams</code>, plus a <code>snippet</code> field (~200-char context window around the match keyword, v0.0.28+). (v0.0.14+)</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/search?q=benchmark'
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/search?q="benchmark+result"&surface=claude_code&limit=10'</code></pre>
+
+  <h2>Recent</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/recent?[since=ns][&amp;before=ns]&amp;[limit=N]</span>
+  </div>
+
+  <p>Newest engrams across all surfaces, newest-first. <code>since</code> + <code>before</code> enable sliding-window polling. Answers "what happened lately?" without a keyword or surface filter. Max 500 rows. (v0.0.15+)</p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/recent'
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/recent?since=1747500000000000000&limit=20'
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/recent?before=1747500000000000000&limit=20'</code></pre>
+
+  <h2>AI-powered recall</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/ask?question=&lt;text&gt;[&amp;surface=X][&amp;limit=N]</span>
+  </div>
+
+  <p>
+    Extracts keywords from a natural-language question, FTS5-retrieves top-K
+    engrams, returns them wrapped in answer-scaffolding for the caller's host
+    LLM. Same semantics as the <code>nucleus_ask</code> MCP tool — MCP + HTTP
+    <code>/ask</code> have identical retrieval behavior. (v0.0.38+)
+  </p>
+
+  <p>
+    Response shape: <code>{`{question, fts_query, instructions, engrams}`}</code>. LRU + TTL cache so repeat questions don't re-hit the index (v0.0.45+) — every response includes <code>X-Ask-Cache: hit</code> or <code>miss</code>.
+  </p>
+
+  <pre is:raw><code>curl --unix-socket /tmp/eidetic-daemon.sock \
+  'http://localhost/ask?question=what+was+that+Postgres+trick'
+
+# Inspect the generated FTS query
+curl --unix-socket /tmp/eidetic-daemon.sock \
+  'http://localhost/ask?question=what+was+that+Postgres+trick' | jq '.fts_query'</code></pre>
+
+  <h2>Export</h2>
+
+  <div class="endpoint">
+    <span class="method">GET</span>
+    <span class="endpoint-path">/export[?surface=X][&amp;since=ns][&amp;before=ns]</span>
+  </div>
+
+  <p>
+    Paginated NDJSON stream of every engram, asc timestamp order. Memory-bounded
+    — safe against 10M-row stores via 1000-row pages. Final line is a summary
+    <code>{`{"_export_complete": true, "_count": N}`}</code> so clients can
+    verify completion. (v0.0.42+)
+  </p>
+
+  <p>
+    Headers: <code>Content-Type: application/x-ndjson</code> +
+    <code>Content-Disposition: attachment; filename="engrams-export.ndjson"</code>
+    — <code>curl -O</code> saves the file with a sensible name; <code>jq</code>
+    consumes one line at a time.
+  </p>
+
+  <pre is:raw><code># Save everything
+curl -O --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/export'
+
+# Or pipe to jq line-by-line
+curl --unix-socket /tmp/eidetic-daemon.sock 'http://localhost/export' \
+  | jq -r 'select(._export_complete | not) | .payload[0:100]'</code></pre>
+
+  <h2>Caller auth (opt-in)</h2>
+
+  <p>
+    Off by default — preserves the single-user UDS-trust model in the
+    <a href="/security/">security policy</a>. Enable with one env var or flag:
+  </p>
+
+  <pre is:raw><code>EIDETIC_AUTH=1 eideticd      # env var (recommended for service managers)
+eideticd -auth                # flag (recommended for one-shot invocations)</code></pre>
+
+  <p>
+    On enable, the daemon writes <code>&lt;dataDir&gt;/auth-token</code> (0600
+    perms, 64-char hex from <code>crypto/rand</code>). Token rotates every
+    restart — no stale-token replay. <code>/healthz</code> stays open even
+    with auth on; everything else requires
+    <code>Authorization: Bearer &lt;token&gt;</code>. (v0.0.9+)
+  </p>
+
+  <h2>TCP bridge</h2>
+
+  <p>
+    The <code>-bridge :8421</code> flag starts a second TCP listener alongside
+    the primary UDS server. Both share the same store. Used to expose the
+    daemon to local web pages (the <a href="https://eidetic.works/dashboard">web dashboard</a>)
+    or remote clients via a Cloudflare tunnel. The bridge listener always
+    enables Bearer auth using a separate token at
+    <code>~/.eidetic/bridge-token</code> (rotates each restart) and adds CORS
+    headers. (v0.0.31+)
+  </p>
+</Docs>

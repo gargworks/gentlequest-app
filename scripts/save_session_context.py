@@ -18,7 +18,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Configuration
-BRAIN_PATH = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
 RAW_PATH = BRAIN_PATH / "raw"
 SNAPSHOT_PATH = BRAIN_PATH / "snapshots"
 

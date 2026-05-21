@@ -10,7 +10,7 @@ PASS=0
 FAIL=0
 SKIP=0
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-export NUCLEAR_BRAIN_PATH="$PROJECT_ROOT/.brain"
+export NUCLEUS_BRAIN_PATH="$PROJECT_ROOT/.brain"
 
 pass() { PASS=$((PASS + 1)); echo "  ✅ PASS: $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  ❌ FAIL: $1 — $2"; }
@@ -21,7 +21,7 @@ echo "════════════════════════�
 echo "  Nucleus Coordinator Autopilot — Test Suite"
 echo "═══════════════════════════════════════════════════"
 echo "  Project: $PROJECT_ROOT"
-echo "  Brain:   $NUCLEAR_BRAIN_PATH"
+echo "  Brain:   $NUCLEUS_BRAIN_PATH"
 echo ""
 
 # ── Phase 1: Perplexity Test Case 1 — Windsurf → nucleus CLI ──
@@ -132,7 +132,7 @@ sys.path.insert(0, '$PROJECT_ROOT/mcp-server-nucleus/src')
 
 # Use a temp brain to avoid polluting real state
 tmpdir = tempfile.mkdtemp()
-os.environ['NUCLEAR_BRAIN_PATH'] = tmpdir
+os.environ['NUCLEUS_BRAIN_PATH'] = tmpdir
 
 import coordinator
 coordinator._COORDINATOR_STATE_DIR = None  # force re-resolve

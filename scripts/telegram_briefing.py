@@ -27,7 +27,7 @@ except ImportError:
     HAS_TELEGRAM_LIB = False
     print("⚠️ 'python-telegram-bot' not installed. Running in graceful fallback mode.")
 
-BRAIN_PATH = Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+BRAIN_PATH = Path(os.getenv("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 

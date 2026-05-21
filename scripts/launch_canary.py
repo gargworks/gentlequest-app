@@ -17,11 +17,11 @@ def run_canary():
     # Simulate a clean environment
     env = os.environ.copy()
     env["PYTHONPATH"] = str(mcp_pkg_path / "src")
-    if "NUCLEAR_BRAIN_PATH" not in env:
-        env["NUCLEAR_BRAIN_PATH"] = str(repo_root / ".brain")
+    if "NUCLEUS_BRAIN_PATH" not in env:
+        env["NUCLEUS_BRAIN_PATH"] = str(repo_root / ".brain")
     
     print(f"📍 Target: {mcp_pkg_path}")
-    print(f"🧠 Brain Path: {env['NUCLEAR_BRAIN_PATH']}")
+    print(f"🧠 Brain Path: {env['NUCLEUS_BRAIN_PATH']}")
     print(f"🐍 PYTHONPATH: {env['PYTHONPATH']}")
     
     # 1. Start MCP Server in subprocess (Stdio mode)

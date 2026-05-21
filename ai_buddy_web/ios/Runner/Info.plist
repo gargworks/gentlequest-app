@@ -86,5 +86,11 @@
 	<false/>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
+	<!-- R1D7 voice input — speech_to_text package needs mic + speech permissions.
+	     Phrasing kept human, not legal/clinical, to match wellness-companion tone. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GentleQuest needs the microphone so you can speak instead of type when that feels easier.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech is recognized on this device — your voice stays here. Used so you can talk to Alex without typing.</string>
 </dict>
 </plist>

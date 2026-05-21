@@ -1,0 +1,206 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'Integration recipes for nucleus_ask — natural-language recall across Claude Code, Cursor, Cline, CLI, and the web dashboard.';
+---
+
+<Docs title="nucleus_ask recipes" description={description} pageSlug="recall">
+  <span class="eyebrow">Guides</span>
+  <h1>Integrating <em>nucleus_ask</em></h1>
+  <p class="subhead">
+    <code>nucleus_ask</code> is the killer eidetic-daemon feature: ask Claude
+    / Cursor / Cline a natural-language question about your past work and the
+    host LLM reads matching engrams from your local store. <strong>Engrams
+    never leave your machine.</strong>
+  </p>
+
+  <p>
+    This guide is 5 copy-paste recipes for the most common integrations.
+    Setup time per recipe: 30-90 seconds.
+  </p>
+
+  <h2>Prerequisites</h2>
+
+  <ol>
+    <li><strong>eidetic-daemon installed + running.</strong> Verify: <code>eideticd --stats</code> shows non-zero engrams.</li>
+    <li><strong>eidetic-mcp 0.0.5+</strong> installed: <code>pip install --upgrade eidetic-mcp</code> (verify: <code>pip show eidetic-mcp | grep Version</code> ≥ 0.0.5).</li>
+    <li><strong>The daemon's UDS socket reachable</strong> at <code>/tmp/eidetic-daemon.sock</code> — verify with <code>curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/healthz</code>.</li>
+  </ol>
+
+  <p>If any of these fail, see <code>eideticd --check</code> for a diagnostic.</p>
+
+  <h2>Recipe 1 — Claude Code: nucleus_ask as a slash-like trigger</h2>
+
+  <p><strong>Goal:</strong> ask Claude past-tense questions in a session and get an answer grounded in your past sessions.</p>
+
+  <pre is:raw><code># 1. Add the MCP server to Claude Code (one-time)
+claude mcp add eidetic -- python -m eidetic_mcp.server
+
+# 2. Verify it appears
+claude mcp list
+# → eidetic    python -m eidetic_mcp.server    Ready</code></pre>
+
+  <p>
+    In any Claude Code session: just ask. Claude will pick
+    <code>nucleus_ask</code> itself when the question is past-tense ("what did
+    we decide about…", "did I write anything about…", etc.).
+  </p>
+
+  <p>If you want to force it, prefix:</p>
+
+  <pre is:raw><code>Use nucleus_ask to find: what was that Postgres tuning trick I learned last week?</code></pre>
+
+  <p>
+    <strong>What happens:</strong> Claude calls
+    <code>nucleus_ask(question="…")</code>, eidetic-mcp extracts keywords +
+    FTS-retrieves top-10 engrams from your local store, returns them wrapped
+    in answer-scaffolding. Claude reads the engrams, cites surface +
+    timestamp, synthesizes the answer.
+  </p>
+
+  <h2>Recipe 2 — Cursor: same MCP, different config path</h2>
+
+  <p>Cursor uses the same MCP protocol. Add the server in Cursor's settings:</p>
+
+  <pre is:raw><code>// ~/.cursor/config/mcp_servers.json
+{
+  "mcpServers": {
+    "eidetic": {
+      "command": "python",
+      "args": ["-m", "eidetic_mcp.server"]
+    }
+  }
+}</code></pre>
+
+  <p>Restart Cursor. The <code>nucleus_ask</code> tool will appear in any Cursor agent session.</p>
+
+  <p>
+    <strong>Tip:</strong> Cursor's chat is more conservative about tool calls.
+    Phrase your question with explicit recall intent: "Recall any earlier work
+    on X" or "Find what I wrote about Y last month".
+  </p>
+
+  <h2>Recipe 3 — Cline (VS Code): MCP add via settings.json</h2>
+
+  <pre is:raw><code>// VS Code settings.json (Cline section)
+"cline.mcpServers": {
+  "eidetic": {
+    "command": "python",
+    "args": ["-m", "eidetic_mcp.server"]
+  }
+}</code></pre>
+
+  <p>Reload VS Code. Cline picks up the server automatically.</p>
+
+  <h2>Recipe 4 — CLI / shell scripts: hit /ask directly</h2>
+
+  <p>
+    For automation outside an AI host (cron jobs, git hooks, shell aliases),
+    call the daemon's HTTP endpoint:
+  </p>
+
+  <pre is:raw><code># Quick recall from terminal
+ask() {
+  local question="$*"
+  local q=$(printf %s "$question" | jq -sRr @uri)
+  curl --unix-socket /tmp/eidetic-daemon.sock \
+    "http://localhost/ask?question=$q&limit=5" \
+  | jq -r '.engrams[] | "[\(.surface) \(.ts | tonumber / 1000000 | floor / 1000 | strftime("%Y-%m-%d"))] \(.payload[0:200])"'
+}
+
+# Usage
+ask what was that Postgres trick I learned</code></pre>
+
+  <p>
+    Returns top-5 matching engrams in
+    <code>[surface YYYY-MM-DD] &lt;payload preview&gt;</code> format. Wire
+    into git hooks, shell prompts, anywhere you want past-context-aware
+    automation.
+  </p>
+
+  <h2>Recipe 5 — Web dashboard: browse + search in your browser</h2>
+
+  <p>
+    If you don't want to wire MCP, the
+    <a href="https://eidetic.works/dashboard">web dashboard</a> gives you the
+    same retrieval power in the browser:
+  </p>
+
+  <ol>
+    <li>
+      Start the daemon's bridge listener:
+      <pre is:raw><code>eideticd -bridge :8421</code></pre>
+    </li>
+    <li>Open <a href="https://eidetic.works/dashboard">https://eidetic.works/dashboard</a>.</li>
+    <li>Paste <code>http://127.0.0.1:8421</code> and the bearer token from <code>~/.eidetic/bridge-token</code>.</li>
+  </ol>
+
+  <p>
+    The dashboard renders your engram store with full-text search, surface
+    filters, and clickable expand. No data leaves your machine — the page only
+    talks to your daemon.
+  </p>
+
+  <p>For remote access (so you can browse from your phone), expose the bridge via Cloudflare Tunnel:</p>
+
+  <pre is:raw><code>cloudflared tunnel --url http://localhost:8421
+# → https://random-name.trycloudflare.com — paste that into the dashboard</code></pre>
+
+  <h2>Verification — is nucleus_ask actually retrieving the right things?</h2>
+
+  <pre is:raw><code># Check what FTS query nucleus_ask generates for your phrasing
+curl --unix-socket /tmp/eidetic-daemon.sock \
+  "http://localhost/ask?question=what+was+that+Postgres+trick" \
+| jq '.fts_query'
+# → "postgres OR trick"
+
+# See the raw matches
+curl --unix-socket /tmp/eidetic-daemon.sock \
+  "http://localhost/ask?question=what+was+that+Postgres+trick" \
+| jq '.engrams[].payload[0:200]'</code></pre>
+
+  <p>
+    If the FTS query is too narrow or your phrasing is too generic, you'll see
+    empty results. The fix is usually to use a more specific keyword in your
+    question.
+  </p>
+
+  <h2>Troubleshooting</h2>
+
+  <table>
+    <thead>
+      <tr><th>Symptom</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>nucleus_ask</code> tool doesn't appear in Claude Code</td>
+        <td><code>pip install --upgrade eidetic-mcp</code> (need ≥ 0.0.5) + <code>claude mcp restart</code></td>
+      </tr>
+      <tr>
+        <td>Tool returns "no engrams matched" for queries you know should hit</td>
+        <td>Try <code>eideticd --stats</code> — confirm you actually have data; try different keywords; the FTS5 tokenizer is lowercase + word-boundary split</td>
+      </tr>
+      <tr>
+        <td>MCP server fails to start</td>
+        <td>Check <code>python -m eidetic_mcp.server --help</code> runs standalone; check daemon's UDS socket exists; check <code>eidetic_mcp</code> package version</td>
+      </tr>
+      <tr>
+        <td>Web dashboard says "unauthorized"</td>
+        <td><code>cat ~/.eidetic/bridge-token</code> — the file rotates each daemon restart; copy fresh and reconnect</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>What nucleus_ask is NOT</h2>
+
+  <ul>
+    <li><strong>Not embeddings-based.</strong> It's FTS5 keyword retrieval — fast, offline, no GPU cost, no external API. Vector search may land in v0.1; FTS5 will remain the default for sub-millisecond response.</li>
+    <li><strong>Not external-AI-call.</strong> No prompt ever leaves your machine. The "AI" is the host LLM (Claude Code etc.); we just hand it relevant engrams and answer-scaffolding.</li>
+    <li><strong>Not cross-user.</strong> Each user's engrams are private to their device. Team subscribers can opt-in to cross-seat shared engrams (<code>team_id</code> in sync.json) — that's the one exception, and it's still opt-in.</li>
+  </ul>
+
+  <p>
+    Questions? <a href="mailto:hi@eidetic.works">hi@eidetic.works</a> — Pro
+    subscribers get 24h response, Team gets 12h.
+  </p>
+</Docs>

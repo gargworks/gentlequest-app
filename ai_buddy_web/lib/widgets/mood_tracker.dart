@@ -299,17 +299,33 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
               ),
             ),
             const SizedBox(width: 12),
+            // Labeled pill instead of bare '+' circle: recognition > recall
+            // (synthetic UX QA UC-M1 H6 — Maya didn't know the '+' meant "log mood").
             Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
                 color: GQColors.primarySoft,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: GQColors.primary,
-                size: 22,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_rounded,
+                    color: GQColors.primary,
+                    size: 18,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Log mood',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: GQColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -350,14 +366,18 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Clinical Check-in',
+                      // Softened from "Clinical Check-in" — medical jargon
+                      // at first-touch was scaring anxious target users.
+                      'Mental wellness check-in',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'PHQ-9 & GAD-7 assessments',
+                      // PHQ-9/GAD-7 names still used internally; user-facing
+                      // copy describes the experience, not the instrument.
+                      'A brief, private check-in · ~2 min',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color
                             ?.withValues(alpha: 0.7),

@@ -1,9 +1,15 @@
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
+import '../widgets/crisis_resources.dart' show showCrisisInterventionSheet;
 import '../widgets/safety_legal_sheet.dart';
+import './auth/login_screen.dart';
 import './legal/legal_screen.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
+import '../services/auth_service.dart';
 import '../theme/gq_tokens.dart';
 
 // ─── Settings Screen — R1D20 ─────────────────────────────────────────────────
@@ -107,6 +113,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _openLoginScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+    // Refresh visible state — user may have signed in via deep link
+    // while the LoginScreen was on top.
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _handleSignOut() async {
+    await AuthService.instance.signOut();
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Signed out · your local history stays on this device.'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _handleSendFeedback() async {
+    // Open a mailto: with a pre-filled subject. Fallback to clipboard +
+    // SnackBar if the platform has no mail client (e.g. some web browsers).
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'feedback@gentlequest.app',
+      query: 'subject=Feedback on GentleQuest',
+    );
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {
+      // fall through to clipboard fallback
+    }
+    if (!mounted) return;
+    messenger?.showSnackBar(
+      const SnackBar(
+        content: Text('Email feedback@gentlequest.app — we read every note.'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _handleExportData() async {
     // TODO(backend): POST /api/user/export — trigger email send.
     if (!mounted) return;
@@ -182,9 +237,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ── View A: Settings home ─────────────────────────────────────────────────
 
   Widget _buildDefaultView() {
+    final authService = AuthService.instance;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
       children: [
+        // ACCOUNT — opt-in passwordless sign-in for cross-device sync.
+        _SectionLabel(label: 'ACCOUNT'),
+        _SettingsCard(
+          children: [
+            if (authService.isSignedIn)
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.check_circle_outline,
+                    size: 14, color: GQColors.primaryDk),
+                title: 'Signed in',
+                subtitle: authService.email ?? '',
+                trailing: TextButton(
+                  onPressed: _handleSignOut,
+                  child: const Text(
+                    'Sign out',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: GQColors.ink2,
+                    ),
+                  ),
+                ),
+              )
+            else
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.sync_outlined,
+                    size: 14, color: GQColors.primaryDk),
+                title: 'Sign in to sync across devices',
+                subtitle:
+                    'Passwordless · anonymous use stays supported',
+                trailing: const _Chevron(),
+                onTap: _openLoginScreen,
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
         // YOUR DATA
         _SectionLabel(label: 'YOUR DATA'),
         _SettingsCard(
@@ -223,50 +318,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
 
-        const SizedBox(height: 14),
+        // Notifications section hidden on web: flutter_local_notifications
+        // is a native-only plugin. Showing toggles that don't fire would be
+        // a "say feature exists, does nothing" trap. Web users skip the
+        // whole section; daily reminders ship only on iOS/Android in Phase 1.
+        if (!kIsWeb) ...[
+          const SizedBox(height: 14),
 
-        // NOTIFICATIONS
-        _SectionLabel(label: 'NOTIFICATIONS'),
-        _SettingsCard(
-          children: [
-            _SettingsRow(
-              iconBg: GQColors.primarySoft,
-              iconWidget: const Icon(Icons.notifications_outlined,
-                  size: 14, color: GQColors.primaryDk),
-              title: 'Daily check-in reminder',
-              subtitle: '8:00 PM · all 7 days',
-              trailing: _GQToggle(
-                value: _dailyReminderOn,
-                onChanged: (v) {
-                  setState(() => _dailyReminderOn = v);
-                },
+          // NOTIFICATIONS
+          _SectionLabel(label: 'NOTIFICATIONS'),
+          _SettingsCard(
+            children: [
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.notifications_outlined,
+                    size: 14, color: GQColors.primaryDk),
+                title: 'Daily check-in reminder',
+                subtitle: '8:00 PM · all 7 days',
+                trailing: _GQToggle(
+                  value: _dailyReminderOn,
+                  onChanged: (v) {
+                    setState(() => _dailyReminderOn = v);
+                  },
+                ),
+                onTap: _openNotificationDetail,
               ),
-              onTap: _openNotificationDetail,
-            ),
-            _SettingsRow(
-              iconBg: const Color(0xFFFFF1E5),
-              iconWidget: const Text('🔥',
-                  style: TextStyle(fontSize: 14)),
-              title: 'Streak gentle nudge',
-              subtitle: 'Off — only celebrate, never shame',
-              trailing: _GQToggle(
-                value: _streakNudgeOn,
-                onChanged: (v) => setState(() => _streakNudgeOn = v),
+              _SettingsRow(
+                iconBg: const Color(0xFFFFF1E5),
+                iconWidget: const Text('🔥',
+                    style: TextStyle(fontSize: 14)),
+                title: 'Streak gentle nudge',
+                subtitle: 'Off — only celebrate, never shame',
+                trailing: _GQToggle(
+                  value: _streakNudgeOn,
+                  onChanged: (v) => setState(() => _streakNudgeOn = v),
+                ),
               ),
-            ),
-            _SettingsRow(
-              iconBg: GQColors.primarySoft,
-              iconWidget: const Icon(Icons.favorite_outline,
-                  size: 14, color: GQColors.primaryDk),
-              title: "If I'm worried about you",
-              subtitle: 'One message after a heavy day · always optional',
-              trailing: _GQToggle(
-                value: _worriedCheckInOn,
-                onChanged: (v) => setState(() => _worriedCheckInOn = v),
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.favorite_outline,
+                    size: 14, color: GQColors.primaryDk),
+                title: "If I'm worried about you",
+                subtitle: 'One message after a heavy day · always optional',
+                trailing: _GQToggle(
+                  value: _worriedCheckInOn,
+                  onChanged: (v) => setState(() => _worriedCheckInOn = v),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
 
         const SizedBox(height: 14),
 
@@ -280,28 +381,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   size: 14, color: GQColors.primaryDk),
               title: 'Companion name',
               subtitle: 'Currently: Alex',
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Alex',
-                      style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: GQColors.primaryDk)),
-                  const SizedBox(width: 4),
-                  const _Chevron(),
-                ],
-              ),
+              // Chevron removed — name picker isn't built yet. Was a
+              // vestigial affordance: row looked tappable, did nothing.
+              trailing: Text('Alex',
+                  style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: GQColors.primaryDk)),
             ),
-            _SettingsRow(
-              iconBg: GQColors.primarySoft,
-              iconWidget: const Icon(Icons.graphic_eq,
-                  size: 14, color: GQColors.primaryDk),
-              title: 'Voice',
-              subtitle: 'Warm female · coming soon',
-              trailing: const _Chevron(),
-            ),
+            // Voice TTS row entirely hidden — feature lives in Phase 3
+            // of the voice rollout (bidirectional conversational mode
+            // with ElevenLabs-grade TTS). Surfacing a "coming soon" row
+            // with a tappable chevron is a vestigial affordance.
             _SettingsRow(
               iconBg: GQColors.primarySoft,
               iconWidget: const Icon(Icons.star_outline,
@@ -361,6 +453,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   size: 14, color: GQColors.primaryDk),
               title: 'Send feedback',
               trailing: const _Chevron(),
+              onTap: _handleSendFeedback,
             ),
           ],
         ),
@@ -392,9 +485,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   size: 14, color: GQColors.primaryDk),
               title: 'Open source licenses',
               trailing: const _Chevron(),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'GentleQuest',
+              ),
             ),
           ],
         ),
+
+        // Debug-only: lets us QA the crisis sheet end-to-end without
+        // engineering fake risk state. Hidden in release builds.
+        if (kDebugMode) ...[
+          const SizedBox(height: 14),
+          _SectionLabel(label: 'DEBUG'),
+          _SettingsCard(
+            children: [
+              _SettingsRow(
+                iconBg: GQColors.accentSoft,
+                iconWidget: const Icon(Icons.bug_report_outlined,
+                    size: 14, color: GQColors.coral),
+                title: 'Test crisis intervention sheet',
+                subtitle: 'Opens the sheet without triggering real risk',
+                trailing: const _Chevron(),
+                onTap: () => showCrisisInterventionSheet(
+                  context,
+                  risk: RiskLevel.medium,
+                  source: 'settings_debug',
+                ),
+              ),
+            ],
+          ),
+        ],
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 14),

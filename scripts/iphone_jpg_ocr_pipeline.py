@@ -13,11 +13,14 @@ import sys
 import re
 import time
 
-PMD3 = "/Applications/Xcode.app/Contents/Developer/usr/bin/python3"
-OCR_BIN = "/tmp/ocr_screenshot"
-OUTPUT_DIR = "/Users/lokeshgarg/ai-mvp-backend/.brain/training/inbox"
+import tempfile
+# Portability Pass: Slice-1
+PMD3 = sys.executable
+OCR_BIN = os.path.join(tempfile.gettempdir(), "ocr_screenshot")
+_brain_path = os.environ.get("NUCLEUS_BRAIN_PATH", ".brain")
+OUTPUT_DIR = os.path.join(_brain_path, "training", "inbox")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "iphone_saved_images_sft.jsonl")
-STAGING = "/Users/lokeshgarg/iphone_jpg_staging"
+STAGING = os.path.join(tempfile.gettempdir(), "iphone_jpg_staging")
 
 DCIM_FOLDERS = [
     "100APPLE", "101APPLE", "102APPLE", "103APPLE", "104APPLE",

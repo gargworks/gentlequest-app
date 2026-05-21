@@ -3,13 +3,13 @@ import sys
 import asyncio
 from pathlib import Path
 
-# Add project root to path
-project_root = Path("/Users/lokeshgarg/ai-mvp-backend")
+# Portability Pass: Slice-1
+project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root / "mcp-server-nucleus" / "src"))
 
-# Set environment variable
-os.environ["NUCLEUS_BRAIN_PATH"] = str(project_root / ".brain")
-os.environ["NUCLEAR_BRAIN_PATH"] = str(project_root / ".brain")
+# Set environment variable (Prefer env, then relative root)
+brain_path = os.environ.get("NUCLEUS_BRAIN_PATH") or str(project_root / ".brain")
+os.environ["NUCLEUS_BRAIN_PATH"] = brain_path
 
 from mcp_server_nucleus.runtime.swarm import _orchestrate_swarm
 

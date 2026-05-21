@@ -1,0 +1,31 @@
+name = "eidetic-notion"
+main = "worker.js"
+# Notion sync uses crypto.subtle (HMAC-SHA256 webhook verification) — keep the
+# compatibility_date current with the other eidetic Workers.
+compatibility_date = "2024-10-01"
+
+# Workers KV namespace. Create with:
+#   wrangler kv:namespace create EIDETIC_NOTION_KV
+#   wrangler kv:namespace create EIDETIC_NOTION_KV --preview
+# then paste the IDs below.
+[[kv_namespaces]]
+binding = "EIDETIC_NOTION_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_KV_PREVIEW_ID"
+
+# Secrets are NOT stored in this file. Set them with:
+#   wrangler secret put ADMIN_SECRET            # openssl rand -hex 32
+#   wrangler secret put NOTION_WEBHOOK_SECRET   # only if using the webhook path
+#
+# Custom domain (optional, recommended once you're past scaffold):
+# [[routes]]
+# pattern = "notion.eidetic.works/*"
+# zone_name = "eidetic.works"
+
+# Optional cron trigger — fires /notion/poll on a schedule so users don't have
+# to wire an external cron. Uncomment + set the schedule once you're past
+# scaffold. Note: the scheduled handler is NOT implemented in worker.js yet
+# (Workers cron sends a scheduled event, not an HTTP request). Wire it up when
+# you flip from cron-curl to native cron.
+# [triggers]
+# crons = ["*/15 * * * *"]

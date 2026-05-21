@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/crisis_resources.dart';
+import 'settings_screen.dart';
 
 // profile_screen.dart — Tier 3.6 R1D19
 //
@@ -22,6 +25,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showBuilder = false;
+  int _builderStep = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +33,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: GQColors.softBg,
       body: _showBuilder
           ? SafetyPlanBuilderStep(
-              stepIdx: 2,
-              onClose: () => setState(() => _showBuilder = false),
+              stepIdx: _builderStep,
+              onClose: () => setState(() { _showBuilder = false; _builderStep = 0; }),
+              onNext: () => setState(() => _builderStep++),
             )
           : _ProfileHome(
-              onBuildPlan: () => setState(() => _showBuilder = true),
-              onEditPlan: () => setState(() => _showBuilder = true),
+              onBuildPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
+              onEditPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
             ),
     );
   }
@@ -64,7 +69,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
   bool _voiceNotes = false;
 
   // Safety plan state — empty in this tier (read from secure storage TBD)
-  final bool _planFilled = true; // [assumed] show filled state for demo
+  final bool _planFilled = false; // empty until user completes builder
 
   static const _pronouns = ['he/him', 'she/her', 'they/them', 'custom', 'prefer not'];
   static const _avatarGradients = [
@@ -132,7 +137,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
                 const SizedBox(height: 18),
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                     child: Text(
                       'Settings →',
                       style: TextStyle(
@@ -479,9 +484,9 @@ class _SafetyPlanFilled extends StatelessWidget {
 
   // Sample contacts per HTML mockup
   static const _contacts = [
-    SafetyContact(initial: 'M', name: 'Mum', detail: 'Family · ★ favorite', isCrisis: false),
-    SafetyContact(initial: 'J', name: 'Dr. Jordan', detail: 'Therapist · weekday only', isCrisis: false),
-    SafetyContact(initial: '988', name: 'Crisis line', detail: 'Always available', isCrisis: true),
+    SafetyContact(initial: 'M', name: 'Mum', detail: 'Family · ★ favorite', isCrisis: false, phone: ''),
+    SafetyContact(initial: 'J', name: 'Dr. Jordan', detail: 'Therapist · weekday only', isCrisis: false, phone: ''),
+    SafetyContact(initial: '988', name: 'Crisis line', detail: 'Always available', isCrisis: true, phone: '988'),
   ];
 
   @override
@@ -579,7 +584,7 @@ class _SafetyPlanFilled extends StatelessWidget {
                     Expanded(
                       child: _SafetyButton(
                         label: 'Use now',
-                        onTap: () {},
+                        onTap: () => showCrisisInterventionSheet(context),
                         style: _SafetyButtonStyle.solid,
                       ),
                     ),
@@ -663,7 +668,7 @@ class _SafetyPlanEmpty extends StatelessWidget {
               Expanded(
                 child: _SafetyButton(
                   label: 'Maybe later',
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).maybePop(),
                   style: _SafetyButtonStyle.ghost,
                 ),
               ),
@@ -682,12 +687,14 @@ class SafetyContact {
   final String name;
   final String detail;
   final bool isCrisis;
+  final String phone;
 
   const SafetyContact({
     required this.initial,
     required this.name,
     required this.detail,
     required this.isCrisis,
+    required this.phone,
   });
 }
 
@@ -768,7 +775,23 @@ class _ContactRow extends StatelessWidget {
           ),
           // Call button
           GestureDetector(
-            onTap: () {},
+            onTap: () async {
+              final phone = contact.phone;
+              if (phone.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Add a phone number for ${contact.name} first.')),
+                );
+                return;
+              }
+              final uri = Uri.parse('tel:$phone');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Cannot dial ${contact.name} from this device.')),
+                );
+              }
+            },
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
@@ -800,11 +823,13 @@ class _ContactRow extends StatelessWidget {
 class SafetyPlanBuilderStep extends StatefulWidget {
   final int stepIdx;
   final VoidCallback? onClose;
+  final VoidCallback? onNext;
 
   const SafetyPlanBuilderStep({
     super.key,
     required this.stepIdx,
     this.onClose,
+    this.onNext,
   });
 
   @override
@@ -924,7 +949,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                     Expanded(
                       child: _PrimaryButton(
                         label: 'Save & continue',
-                        onTap: () {},
+                        onTap: widget.onNext ?? widget.onClose ?? () => Navigator.maybePop(context),
                       ),
                     ),
                   ],
@@ -932,7 +957,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 const SizedBox(height: 10),
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: widget.onClose ?? () => Navigator.maybePop(context),
                     child: Text(
                       'Save & exit · you can come back anytime',
                       style: TextStyle(
@@ -1104,7 +1129,7 @@ class NoOneSkipBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.of(context).maybePop(),
             child: Text(
               'Skip — use 988 only',
               style: TextStyle(

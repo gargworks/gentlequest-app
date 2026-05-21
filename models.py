@@ -210,6 +210,35 @@ class User(db.Model):
         return f"<User id={self.id} email={self.email}>"
 
 
+class AuthToken(db.Model):
+    """One-time passwordless magic-link token.
+
+    Flow:
+      1. POST /api/auth/magic-link {email} → creates a row with
+         token_hash + expires_at + email, emails (or logs in dev) the
+         raw token via gentlequest://auth/verify?token=<raw>.
+      2. POST /api/auth/verify {token} → looks up by token_hash, marks
+         used_at, returns the user_id + session_id. Future requests
+         carry X-Session-ID to identify the user across devices.
+
+    Token expires in 15 minutes. Single-use (used_at sentinel).
+    Stored as SHA-256 hash; raw token never persisted on the server.
+    """
+
+    __tablename__ = "auth_tokens"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    email = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime)
+
+    def __repr__(self):
+        return f"<AuthToken id={self.id} user_id={self.user_id} used={self.used_at is not None}>"
+
+
 class CommunityPost(db.Model):
     __tablename__ = "community_posts"
 

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.3.0+26032322
+version: 1.3.0+26051612
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -74,6 +74,13 @@ dependencies:
   geocoding: ^4.0.0
 
   http: any
+
+  # Voice input (R1D7 Phase 1) — on-device speech-to-text.
+  # iOS uses Apple Speech framework; Android uses Google SpeechRecognizer.
+  # We pass onDevice: true to honor the "your voice stays on this device"
+  # promise verbatim from the design HTML. Falls back to "type instead" on
+  # devices/languages where on-device isn't supported.
+  speech_to_text: ^7.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

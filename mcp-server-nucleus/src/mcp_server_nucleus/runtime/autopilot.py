@@ -396,7 +396,7 @@ class AutopilotEngine:
         brain_path: Path = None,
     ):
         self.orch = orchestrator
-        self.brain_path = brain_path or Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        self.brain_path = brain_path or Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
         
         # State
         self.current_sprint_id: Optional[str] = None

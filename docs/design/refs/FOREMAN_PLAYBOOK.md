@@ -234,23 +234,97 @@ Before committing, update the tier's status row in REVIEW.md:
 
 Include this REVIEW.md change in the same commit as the implementation.
 
-### 6.c — Screenshot rig
+### 6.c — Screenshot rig + Oracle validation
 
-Run the screenshot rig from the tier branch:
-
+**Step 1 — Install the updated build onto the simulator:**
 ```bash
-bash scripts/gq_screenshot_diff.sh tier-{TIER_ID}
+cd ai_buddy_web
+UDID="95843C74-7CB1-411B-965B-12CCB6F433AF"
+xcrun simctl install "$UDID" build/ios/iphonesimulator/Runner.app
+xcrun simctl launch "$UDID" com.gentlequest.app
+sleep 4
 ```
 
-The rig captures a launch screenshot.  Walk-mode (interaction sequences) is
-**idb-blocked** and not currently functional; the rig captures only the launch
-frame until idb_companion is available (see §10, Future Extension Hooks).
+**Step 2 — Run the oracle walk** (captures screenshots + detects no-ops):
+```bash
+bash docs/design/refs/testing/gq_walk_oracle.sh
+```
 
-- If the rig succeeds: attach the screenshot path in the PR body under
-  "## Visual diff".
-- If the rig fails: ship the PR anyway but add a "## Screenshot status" section
-  that says exactly what failed.  Do NOT hold the PR for screenshot issues.
-  Document it as a review item for Lokesh.
+This walk:
+- Navigates every major screen (Chat, Profile, Settings, Mood, Quest, Journal, Library, Clinical)
+- After every `tap`, md5-hashes before/after screenshots — logs silent no-ops to `noop_suspects.txt`
+- Validates all screenshots against `gq_oracle.json` (97-screen baseline from walk-2026-05-19)
+- Exits 0 if all PASS, exits 1 if any FAIL
+
+**Step 2b — Run Synthetic QA** (behavioral judge + Maya UX simulation):
+```bash
+python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+  --product gentlequest --uc-ids {TIER_SCOPE_UC_IDS}
+```
+
+Where `TIER_SCOPE_UC_IDS` is the comma-separated list of UC IDs touched by this tier
+(e.g. `UC-M1,UC-M2,UC-M3` for a mood-screen tier).  See
+`docs/design/refs/testing/synthetic_ux/products/gentlequest/uc_spec.json` for the full list.
+
+**Provider auto-selection** (no manual config needed):
+1. `ANTHROPIC_API_KEY` in env → direct Sonnet API (fastest, ~$0.01/UC)
+2. `GEMINI_API_KEY` in env → Gemini Vision fallback
+3. `claude` CLI authenticated → Max plan via `claude -p` (zero extra cost)
+4. None of the above → pixel oracle only (structural verdict, zero cost)
+
+Layer × provider compatibility:
+
+| Layer | Anthropic API | Gemini | `claude -p` | No provider |
+|-------|:---:|:---:|:---:|:---:|
+| 1 — pixel oracle | ✅ | ✅ | ✅ | ✅ |
+| 2 — behavioral judge | ✅ | ✅ | ✅ | auto → L1 |
+| 3 — Maya mind | ✅ (cached) | ✅ | ✅ | auto → L1 |
+| 4 — backlog | ✅ | ✅ | ✅ | ✅ |
+
+All layers work with all three LLM providers. Prompt caching (`cache_control`) only applies on the Anthropic direct path; Gemini and `claude -p` receive the plain extracted text.
+To force zero-API mode explicitly: `--layer 1,4`
+
+| Exit code | Action |
+|-----------|--------|
+| 0 — no BLOCKERs | Paste BACKLOG.md path + DELIGHT count in PR body |
+| 1 — BLOCKERs present | **Stop — fix BLOCKERs in tier scope before opening PR.** BLOCKERs in unrelated UCs → note in PR body |
+| 2 — walk failure | Note infrastructure failure in PR; treat as oracle walk failure |
+
+Full-product run (pre-release gate):
+```bash
+python3 docs/design/refs/testing/synthetic_ux/run_synthetic_qa.py \
+  --product gentlequest
+```
+
+> **If `simctl launch`/`terminate` hangs** (stale CoreSimulatorService after force-kills):
+> ```bash
+> kill -9 $(pgrep com.apple.CoreSimulator.CoreSimulatorService)
+> xcrun simctl boot 95843C74-7CB1-411B-965B-12CCB6F433AF
+> idb connect localhost 10882
+> ```
+> The walk executor auto-reconnects idb on each UC, so no further action needed.
+
+**Step 3 — Interpret results:**
+
+| Result | Action |
+|--------|--------|
+| All PASS, 0 no-ops | Attach `oracle-run-{date}/` dir path in PR body |
+| 1–2 FAIL on irrelevant screens | Note in PR under "Screenshot status"; ship anyway |
+| FAIL on screens touched by this tier | **Stop — diagnose before opening PR** |
+| No-ops detected | Check `noop_suspects.txt`; if any tap target in this tier's scope is silent, fix before PR |
+
+**Validate-only mode** (if walk already ran):
+```bash
+bash docs/design/refs/testing/gq_walk_oracle.sh --validate-only
+```
+
+**Updating the oracle** (after intentional visual changes):
+```bash
+python3 docs/design/refs/testing/build_oracle.py \
+  --golden docs/design/refs/screenshots/oracle-run-{date} \
+  --out docs/design/refs/testing/gq_oracle.json
+```
+Commit the updated `gq_oracle.json` in the same PR as the visual change.
 
 ### 6.d — PR body shape
 
@@ -285,6 +359,16 @@ The PR description must contain these sections in order:
 - [ ] `flutter build ios --debug --simulator --no-codesign` succeeded (exit 0, ✓ Built line present)
 - [ ] `gq_tokens.dart` used for all colours/typography (no hardcoded hex)
 - [ ] REVIEW.md status updated to `in-flight` with PR URL
+- [ ] Oracle walk ran (`gq_walk_oracle.sh`): all screens PASS, 0 no-ops on tier-scope taps
+- [ ] If visual change: `gq_oracle.json` updated and committed in this PR
+
+## UX Observations (Synthetic QA)
+- Run path: `docs/design/refs/testing/synthetic_ux/reports/{run-id}/`
+- BLOCKERs in tier scope: {N} — {uc_ids or "none"}
+- Highest abandon-risk UC: {uc_id} ({score}/100) — or "none"
+- DELIGHT findings: {N} worth protecting
+
+{paste top BLOCKER finding from BACKLOG.md, or "No BLOCKERs — all tier UCs PASS"}
 
 ## Reviewer notes
 {anything the foreman is uncertain about, assumed values, design gaps, or
@@ -408,10 +492,42 @@ These are **not live today**.  Do not implement or reference them as if they
 are.  Each item has a one-line activation trigger once the prerequisite
 exists.
 
-1. **Walk-mode screenshot capture** — once `idb_companion` is available on the
-   CI runner, add the interaction sequence to `gq_screenshot_diff.sh`'s
-   `WALK_STEPS` array.  No other change needed; the rig already has a
-   `WALK_STEPS` hook point.
+1. **Walk-mode screenshot capture** — ✅ **LIVE** (`docs/design/refs/testing/gq_walk_oracle.sh`).
+   Uses `idb ui tap/swipe` + `xcrun simctl io screenshot`. Oracle baseline at
+   `docs/design/refs/testing/gq_oracle.json` (97 screens, walk-2026-05-19).
+   Integrated into §6.c post-flight. No further activation needed.
+
+2. **Synthetic QA Framework** — ✅ **LIVE** (`docs/design/refs/testing/synthetic_ux/`).
+   Layer 1 (pixel oracle) + Layer 2 (behavioral judge) + Layer 3 (Maya synthetic user
+   mind) + Layer 4 (prioritized backlog). Walk executor: `xcrun simctl` + `idb`.
+   Provider chain: Anthropic API → `claude -p` (Max plan) → pixel oracle.
+   35 UCs for GentleQuest in `products/gentlequest/uc_spec.json`.
+   Integrated into §6.c Step 2b.
+   **Run-1 (2026-05-19, baseline):** BLOCKER:25 HIGH:9 MEDIUM:1. Plist state leaked between
+   UCs; almost every UC FAILed with "Talk/chat screen rendered instead of expected destination."
+   Misleading: dominant finding was a framework artifact, not 25 app bugs.
+
+   **Hardening landed 2026-05-20:** (a) per-UC sandbox wipe via `simctl get_app_container`
+   eliminates plist leakage; (b) `_bypass_compliance` now creates the plist if missing;
+   (c) WALK_DRIFT clustering in `core/backlog.py` demotes "wrong screen → Talk" findings out
+   of the priority list; (d) added `flutter.legal_ack_v1=YES` to bypass keys (was triggering
+   Safety & Legal modal on every chat mount); (e) UC-I1/UC-I3 chip text updated to
+   "Today's been heavy" etc. (R1D6 renamed chips; spec was stale).
+
+   **Run-3 (2026-05-20, post-hardening):** 8 BLOCKER + 2 HIGH + 1 MEDIUM + 1 LOW real findings;
+   22 demoted to WALK_DRIFT (need tap-coord recalibration); 1 DELIGHT.
+   Real-bug shortlist:
+   - UC-I2 chat send → navigates to Community tab (abandon 91/100)
+   - UC-W3/W4/C1 — age modal taps don't navigate (3 BLOCKERs in onboarding)
+   - UC-I5 profile avatar tap → no ProfileNavSheet
+   - UC-M1 Mood tab → renders Quest screen
+   - UC-Q1 Quest tab → Community screen
+   - UC-I1 "Good morning" greeting at 9:48 PM — time-aware string fix needed
+   Run report: `docs/design/refs/testing/synthetic_ux/reports/gentlequest-2026-05-20T01-19-49/`.
+
+   **Outstanding framework work** (see `~/.claude/.../project_synth_qa_next_steps.md`):
+   tap-coordinate recalibration (drives the 22-UC drift cluster down), `precondition_assert`
+   step type, golden precondition screenshots.
 
 2. **Multi-screen capture per tier** — extend `gq_screenshot_diff.sh` to loop
    over a list of screen names passed as arguments:

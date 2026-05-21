@@ -22,6 +22,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart' show RiskLevel;
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
+import '../widgets/exercise_card_scaffold.dart';
+import 'exercise_scaffold_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public entry point
@@ -359,7 +361,26 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
 
   void _saveAndExit() {
     // [backend_assessment_storage_missing] — partial draft saved only in memory.
-    Navigator.of(context).maybePop();
+    // Synthetic UX QA UC-CA3: confirm to the user the action registered before
+    // popping, so the exit doesn't feel like a silent drop.
+    HapticFeedback.lightImpact();
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    nav.maybePop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Progress saved · resume anytime from the Mood tab',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+        backgroundColor: GQColors.ink2,
+      ),
+    );
   }
 
   @override
@@ -1217,7 +1238,15 @@ class _ResultRevealScreen extends StatelessWidget {
                           'Try a 1-minute breathing exercise', // verbatim from HTML
                       subtitle: '4-7-8 breathing · short and grounding.',
                       isPrimary: false,
-                      onTap: () {}, // [assumed] navigation target
+                      // R1D16 ExerciseScaffoldScreen is shipped — wiring the
+                      // CTA so a user who just completed a PHQ-9/GAD-7 doesn't
+                      // get told "coming in the next update" after disclosing
+                      // depression symptoms. Stale stub from before R1D16.
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        ExerciseScaffoldScreen.show(
+                            context, ExerciseType.breathing);
+                      },
                     ),
                     const SizedBox(height: 8),
 
@@ -1234,15 +1263,28 @@ class _ResultRevealScreen extends StatelessWidget {
                           risk: RiskLevel.high,
                         ),
                       ),
-                    ] else ...[
-                      _ResultActionCard(
-                        emoji: '📨',
-                        title: 'Save this result for your therapist', // verbatim from HTML
-                        subtitle: 'Exports as PDF-ready summary.',
-                        isPrimary: false,
-                        onTap: () {}, // [assumed] export navigation target
-                      ),
                     ],
+                    // FUTURE WORK — "Save this result for your therapist"
+                    // action card (verbatim from HTML), with a PDF-export
+                    // payload sent to the user's email.
+                    //
+                    // Removed from the result reveal screen because the
+                    // server-side PDF rendering + email handoff isn't built
+                    // yet — the previous in-UI "PDF export is coming soon"
+                    // SnackBar was a placeholder that promised a feature
+                    // that doesn't exist. Re-add the action card once the
+                    // backend exists (POST /api/assessment/{id}/export-pdf
+                    // → email send). Reference design source for the
+                    // copy + iconography:
+                    //   docs/design/refs/htmls/GentleQuest_PHQ9_Results.html
+                    //
+                    //   _ResultActionCard(
+                    //     emoji: '📨',
+                    //     title: 'Save this result for your therapist',
+                    //     subtitle: 'Exports as PDF-ready summary.',
+                    //     isPrimary: false,
+                    //     onTap: _exportResultPdf, // wire backend first
+                    //   ),
 
                     const SizedBox(height: 16),
 

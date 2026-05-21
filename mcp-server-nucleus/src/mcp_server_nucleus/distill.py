@@ -75,6 +75,19 @@ class DecisionAtom:
         tags: Optional[List[str]] = None,
         timestamp: Optional[str] = None,
     ):
+        """Initialize a DecisionAtom.
+
+        Args:
+            decision (str): What was decided.
+            rationale (str): Why it was decided.
+            source_tool (str): Origin IDE/tool (e.g., "antigravity", "claude").
+            source_session (str): Session/conversation ID.
+            evidence (Optional[List[str]]): Supporting evidence.
+            alternatives (Optional[List[str]]): Considered alternatives.
+            confidence (float): Confidence score 0.0-1.0. Default 0.8.
+            tags (Optional[List[str]]): Semantic categories.
+            timestamp (Optional[str]): ISO 8601 timestamp. Defaults to now.
+        """
         self.decision = decision
         self.rationale = rationale
         self.source_tool = source_tool
@@ -87,12 +100,20 @@ class DecisionAtom:
         self.sha256 = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        """Content-addressable hash for deduplication."""
+        """Compute content-addressable hash for deduplication.
+
+        Returns:
+            str: First 16 characters of SHA256 hash of decision+rationale+source.
+        """
         content = f"{self.decision}|{self.rationale}|{self.source_tool}|{self.source_session}"
         return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
 
     def to_jsonld(self) -> Dict[str, Any]:
-        """Serialize to JSON-LD format."""
+        """Serialize to JSON-LD format.
+
+        Returns:
+            Dict[str, Any]: JSON-LD object with @context, @type, and all fields.
+        """
         return {
             "@context": DCA_CONTEXT,
             "@type": DCA_TYPE,
@@ -109,7 +130,11 @@ class DecisionAtom:
         }
 
     def to_adr(self) -> str:
-        """Auto-generate a human-readable Architecture Decision Record (C28)."""
+        """Auto-generate a human-readable Architecture Decision Record (C28).
+
+        Returns:
+            str: Markdown-formatted ADR with context, evidence, and alternatives.
+        """
         adr = [
             f"# ADR: {self.decision[:80]}",
             f"\n**Date**: {self.timestamp[:10]}",
@@ -144,6 +169,15 @@ class VibeEngram:
         source_tool: str,
         source_session: str,
     ):
+        """Initialize a VibeEngram.
+
+        Args:
+            patterns (List[str]): Communication patterns detected.
+            tone (str): Dominant tone (e.g., "formal", "casual").
+            vocabulary (List[str]): Characteristic vocabulary.
+            source_tool (str): Origin IDE/tool.
+            source_session (str): Session/conversation ID.
+        """
         self.patterns = patterns
         self.tone = tone
         self.vocabulary = vocabulary
@@ -152,6 +186,11 @@ class VibeEngram:
         self.timestamp = datetime.now(timezone.utc).isoformat()
 
     def to_jsonld(self) -> Dict[str, Any]:
+        """Serialize VibeEngram to JSON-LD format.
+
+        Returns:
+            Dict[str, Any]: JSON-LD object with @context, @type, and vibe fields.
+        """
         return {
             "@context": DCA_CONTEXT,
             "@type": VIBE_TYPE,
@@ -217,10 +256,23 @@ class AntigravityAdapter:
     ]
 
     def __init__(self, brain_root: Optional[Path] = None):
+        """Initialize AntigravityAdapter.
+
+        Args:
+            brain_root (Optional[Path]): Path to Antigravity brain directory.
+                Defaults to ~/.gemini/antigravity/brain.
+        """
         self.brain_root = brain_root or (Path.home() / ".gemini" / "antigravity" / "brain")
 
     def discover_sessions(self, limit: int = 5) -> List[Path]:
-        """Discover the N most recent Antigravity sessions."""
+        """Discover the N most recent Antigravity sessions.
+
+        Args:
+            limit (int): Maximum sessions to return. Default 5.
+
+        Returns:
+            List[Path]: Session directories sorted by modification time (newest first).
+        """
         if not self.brain_root.exists():
             return []
 
@@ -232,7 +284,14 @@ class AntigravityAdapter:
         return sessions[:limit]
 
     def extract_from_session(self, session_path: Path) -> List[DecisionAtom]:
-        """Extract DCAs from a single Antigravity session."""
+        """Extract DCAs from a single Antigravity session.
+
+        Args:
+            session_path (Path): Path to session directory.
+
+        Returns:
+            List[DecisionAtom]: Extracted decision atoms.
+        """
         atoms = []
         session_id = session_path.name
 
@@ -259,7 +318,16 @@ class AntigravityAdapter:
         return atoms
 
     def _extract_decisions(self, content: str, session_id: str, filename: str) -> List[DecisionAtom]:
-        """Extract decision atoms from markdown content using pattern matching."""
+        """Extract decision atoms from markdown content using pattern matching.
+
+        Args:
+            content (str): Markdown content to parse.
+            session_id (str): Session identifier.
+            filename (str): Source filename for context.
+
+        Returns:
+            List[DecisionAtom]: Extracted and deduplicated decision atoms.
+        """
         atoms = []
         seen_hashes = set()
 
@@ -305,7 +373,15 @@ class AntigravityAdapter:
         return final_atoms
 
     def _extract_from_plan(self, content: str, session_id: str) -> List[DecisionAtom]:
-        """Extract structured decisions from implementation plan format."""
+        """Extract structured decisions from implementation plan format.
+
+        Args:
+            content (str): Implementation plan markdown content.
+            session_id (str): Session identifier.
+
+        Returns:
+            List[DecisionAtom]: Decision atoms for file modifications.
+        """
         atoms = []
         # Look for file modification entries
         file_entries = re.finditer(
@@ -327,7 +403,15 @@ class AntigravityAdapter:
         return atoms
 
     def _extract_from_tasks(self, content: str, session_id: str) -> List[DecisionAtom]:
-        """Extract completed decisions from task.md format."""
+        """Extract completed decisions from task.md format.
+
+        Args:
+            content (str): Task markdown content.
+            session_id (str): Session identifier.
+
+        Returns:
+            List[DecisionAtom]: Decision atoms for completed tasks.
+        """
         atoms = []
         completed = re.finditer(r"- \[x\]\s+(.+?)$", content, re.MULTILINE)
         for task in completed:
@@ -344,7 +428,15 @@ class AntigravityAdapter:
         return atoms
 
     def _find_nearby_rationale(self, content: str, position: int) -> Optional[str]:
-        """Search for rationale text near a decision."""
+        """Search for rationale text near a decision.
+
+        Args:
+            content (str): Full content to search.
+            position (int): Character position of the decision.
+
+        Returns:
+            Optional[str]: Rationale text if found, else None.
+        """
         # Look in a 500-char window after the decision
         window = content[position:position + 500]
         for pattern in RATIONALE_PATTERNS:
@@ -354,7 +446,15 @@ class AntigravityAdapter:
         return None
 
     def _infer_tags(self, text: str, filename: str) -> List[str]:
-        """Infer semantic tags from decision text and filename."""
+        """Infer semantic tags from decision text and filename.
+
+        Args:
+            text (str): Decision text to analyze.
+            filename (str): Source filename for context.
+
+        Returns:
+            List[str]: Inferred tags (e.g., "architecture", "deployment").
+        """
         tags = []
         text_lower = text.lower()
 
@@ -397,11 +497,25 @@ class ClaudeAdapter:
     TOOL_NAME = "claude"
 
     def __init__(self, project_root: Optional[Path] = None, brain_path: Optional[Path] = None):
+        """Initialize ClaudeAdapter.
+
+        Args:
+            project_root (Optional[Path]): Path to project root for export discovery.
+                Defaults to current working directory.
+            brain_path (Optional[Path]): Path to brain directory for siphoned artifacts.
+        """
         self.project_root = project_root or Path.cwd()
         self.brain_path = brain_path
 
     def discover_sessions(self, limit: int = 5) -> List[Path]:
-        """Discover Claude export directories and siphoned artifacts."""
+        """Discover Claude export directories and siphoned artifacts.
+
+        Args:
+            limit (int): Maximum sessions to return. Default 5.
+
+        Returns:
+            List[Path]: Session directories sorted by modification time (newest first).
+        """
         sessions = []
 
         # 1. Claude project export dirs in the project root
@@ -427,7 +541,14 @@ class ClaudeAdapter:
         return sessions[:limit]
 
     def extract_from_session(self, session_path: Path) -> List[DecisionAtom]:
-        """Extract DCAs from a Claude export directory."""
+        """Extract DCAs from a Claude export directory.
+
+        Args:
+            session_path (Path): Path to Claude export directory.
+
+        Returns:
+            List[DecisionAtom]: Extracted and deduplicated decision atoms.
+        """
         atoms = []
         session_id = session_path.name[:40]
 
@@ -453,7 +574,16 @@ class ClaudeAdapter:
         return self._dedup(atoms)
 
     def _extract_from_claude_md(self, content: str, session_id: str, filename: str) -> List[DecisionAtom]:
-        """Extract decisions from Claude conversation markdown."""
+        """Extract decisions from Claude conversation markdown.
+
+        Args:
+            content (str): Claude conversation markdown content.
+            session_id (str): Session identifier.
+            filename (str): Source filename for context.
+
+        Returns:
+            List[DecisionAtom]: Extracted decision atoms.
+        """
         atoms = []
 
         # Claude export uses multiple heading formats depending on export version:
@@ -542,7 +672,15 @@ class ClaudeAdapter:
         return atoms
 
     def _extract_from_conversations_json(self, json_path: Path, session_id: str) -> List[DecisionAtom]:
-        """Extract decisions from Claude's conversations.json structured format."""
+        """Extract decisions from Claude's conversations.json structured format.
+
+        Args:
+            json_path (Path): Path to conversations.json file.
+            session_id (str): Session identifier.
+
+        Returns:
+            List[DecisionAtom]: Extracted decision atoms from structured data.
+        """
         atoms = []
         try:
             data = json.loads(json_path.read_text(encoding="utf-8"))
@@ -582,6 +720,14 @@ class ClaudeAdapter:
 
     @staticmethod
     def _dedup(atoms: List[DecisionAtom]) -> List[DecisionAtom]:
+        """Deduplicate atoms by sha256 hash.
+
+        Args:
+            atoms (List[DecisionAtom]): List of atoms to deduplicate.
+
+        Returns:
+            List[DecisionAtom]: Unique atoms with first occurrence kept.
+        """
         seen = set()
         unique = []
         for atom in atoms:
@@ -606,12 +752,25 @@ class WindsurfAdapter:
     TOOL_NAME = "windsurf"
 
     def __init__(self, project_root: Optional[Path] = None, brain_path: Optional[Path] = None):
+        """Initialize WindsurfAdapter.
+
+        Args:
+            project_root (Optional[Path]): Path to project root. Defaults to cwd.
+            brain_path (Optional[Path]): Path to brain directory for siphoned artifacts.
+        """
         self.project_root = project_root or Path.cwd()
         self.brain_path = brain_path
         self.project_name = self.project_root.name
 
     def discover_sessions(self, limit: int = 5) -> List[Path]:
-        """Discover Windsurf session directories."""
+        """Discover Windsurf session directories.
+
+        Args:
+            limit (int): Maximum sessions to return. Default 5.
+
+        Returns:
+            List[Path]: Session directories sorted by modification time (newest first).
+        """
         sessions = []
 
         # 1. Pre-siphoned artifacts
@@ -638,7 +797,14 @@ class WindsurfAdapter:
         return sessions[:limit]
 
     def extract_from_session(self, session_path: Path) -> List[DecisionAtom]:
-        """Extract DCAs from a Windsurf session directory."""
+        """Extract DCAs from a Windsurf session directory.
+
+        Args:
+            session_path (Path): Path to Windsurf session directory.
+
+        Returns:
+            List[DecisionAtom]: Extracted and deduplicated decision atoms.
+        """
         atoms = []
         session_id = session_path.name[:40]
 
@@ -657,7 +823,16 @@ class WindsurfAdapter:
         return self._dedup(atoms)
 
     def _extract_from_windsurf_file(self, content: str, session_id: str, filename: str) -> List[DecisionAtom]:
-        """Extract decisions from Windsurf snapshot files."""
+        """Extract decisions from Windsurf snapshot files.
+
+        Args:
+            content (str): File content to parse.
+            session_id (str): Session identifier.
+            filename (str): Source filename for context.
+
+        Returns:
+            List[DecisionAtom]: Extracted decision atoms.
+        """
         atoms = []
 
         # Windsurf chat exports typically contain conversation in raw format
@@ -693,6 +868,14 @@ class WindsurfAdapter:
 
     @staticmethod
     def _dedup(atoms: List[DecisionAtom]) -> List[DecisionAtom]:
+        """Deduplicate atoms by sha256 hash.
+
+        Args:
+            atoms (List[DecisionAtom]): List of atoms to deduplicate.
+
+        Returns:
+            List[DecisionAtom]: Unique atoms with first occurrence kept.
+        """
         seen = set()
         unique = []
         for atom in atoms:
@@ -707,7 +890,15 @@ class WindsurfAdapter:
 # ============================================================================
 
 def _infer_tags_generic(text: str, filename: str) -> List[str]:
-    """Shared tag inference for all adapters."""
+    """Shared tag inference for all adapters.
+
+    Args:
+        text (str): Decision text to analyze.
+        filename (str): Source filename for context.
+
+    Returns:
+        List[str]: Inferred tags (e.g., "architecture", "deployment").
+    """
     tags = []
     text_lower = text.lower()
 
@@ -745,6 +936,12 @@ class DistillationEngine:
     """
 
     def __init__(self, brain_path: Optional[Path] = None):
+        """Initialize DistillationEngine.
+
+        Args:
+            brain_path (Optional[Path]): Path to brain directory.
+                Defaults to get_brain_path() result.
+        """
         from .runtime.common import get_brain_path
         self.brain_path = brain_path or get_brain_path()
         self.distill_dir = self.brain_path / "distill"
@@ -765,16 +962,16 @@ class DistillationEngine:
         session_limit: int = 3,
         output_format: str = "jsonld",
     ) -> Dict[str, Any]:
-        """
-        Run the full distillation pipeline.
+        """Run the full distillation pipeline.
 
         Args:
-            source: Which tool to distill from ("antigravity", "all")
-            session_limit: Max sessions to process per tool
-            output_format: "jsonld" or "engram" (summary markdown)
+            source (str): Which tool to distill from ("antigravity", "claude", "windsurf", "all").
+            session_limit (int): Max sessions to process per tool. Default 3.
+            output_format (str): "jsonld", "engram", or "both". Default "jsonld".
 
         Returns:
-            Dict with stats and output paths.
+            Dict[str, Any]: Results containing total_atoms, duplicates_removed,
+                by_source stats, output_paths, and timestamp.
         """
         all_atoms: List[DecisionAtom] = []
         stats: Dict[str, int] = {}
@@ -831,7 +1028,15 @@ class DistillationEngine:
         }
 
     def _write_jsonld(self, atoms: List[DecisionAtom], timestamp: str) -> Path:
-        """Write atoms as JSON-LD (one object per line)."""
+        """Write atoms as JSON-LD (one object per line).
+
+        Args:
+            atoms (List[DecisionAtom]): Atoms to write.
+            timestamp (str): Timestamp for filename.
+
+        Returns:
+            Path: Path to written JSONL file.
+        """
         path = self.distill_dir / f"dca_{timestamp}.jsonl"
         with open(path, "w", encoding="utf-8") as f:
             for atom in atoms:
@@ -839,7 +1044,15 @@ class DistillationEngine:
         return path
 
     def _write_engram(self, atoms: List[DecisionAtom], timestamp: str) -> Path:
-        """Write a Sovereign Context Engram — the human-readable summary."""
+        """Write a Sovereign Context Engram — the human-readable summary.
+
+        Args:
+            atoms (List[DecisionAtom]): Atoms to summarize.
+            timestamp (str): Timestamp for filename.
+
+        Returns:
+            Path: Path to written markdown engram file.
+        """
         path = self.distill_dir / f"engram_{timestamp}.md"
 
         # Group by tag
@@ -881,7 +1094,16 @@ class DistillationEngine:
 # ============================================================================
 
 def run_distill(source: str = "all", limit: int = 3, output: str = "both") -> Dict[str, Any]:
-    """CLI entry point for context distillation."""
+    """CLI entry point for context distillation.
+
+    Args:
+        source (str): Which tool to distill from. Default "all".
+        limit (int): Max sessions to process per tool. Default 3.
+        output (str): Output format ("jsonld", "engram", "both"). Default "both".
+
+    Returns:
+        Dict[str, Any]: Distillation results with stats and output paths.
+    """
     engine = DistillationEngine()
     print(f"🧬 [Distill] Extracting Decision Context Atoms from {source}...")
 

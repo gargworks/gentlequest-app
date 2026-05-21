@@ -458,6 +458,42 @@ class DualEngineLLM:
                 logger.error(f"❌ LLM Generate Content Failed ({self.engine}): {e}")
             raise
 
+    def generate_vision(
+        self,
+        image_paths: list,
+        text_prompt: str,
+        max_tokens: int = 400,
+        **kwargs,
+    ) -> Any:
+        """Generate text from one or more images + a text prompt (NEW SDK only)."""
+        session_id = os.environ.get("NUCLEUS_SESSION_ID", "default")
+        agent_id = kwargs.pop("_agent_id", "default")
+
+        if self.engine != "NEW":
+            raise RuntimeError("generate_vision() requires the google-genai NEW SDK engine.")
+
+        parts = []
+        for path in image_paths:
+            import mimetypes
+            mime = mimetypes.guess_type(path)[0] or "image/png"
+            data = open(path, "rb").read()
+            parts.append(types.Part.from_bytes(data=data, mime_type=mime))
+        parts.append(types.Part.from_text(text=text_prompt))
+
+        config_args = {}
+        if self.system_instruction:
+            config_args["system_instruction"] = self.system_instruction
+        config = types.GenerateContentConfig(max_output_tokens=max_tokens, **config_args)
+
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=parts,
+            config=config,
+        )
+        self._log_interaction(text_prompt[:200], response)
+        self._record_token_usage(text_prompt, response, session_id, agent_id)
+        return response
+
     def _record_token_usage(self, prompt: str, response: Any, session_id: str = "default", agent_id: str = "default"):
         """Record token usage to the BudgetManager after each LLM call."""
         try:
@@ -680,6 +716,44 @@ class AnthropicLLM:
 
         self._log_interaction(prompt, response)
         self._record_token_usage(prompt, response, session_id, agent_id)
+        return response
+
+    def generate_vision(
+        self,
+        image_paths: list,
+        text_prompt: str,
+        max_tokens: int = 400,
+        **kwargs,
+    ) -> "AnthropicResponse":
+        """Generate text from one or more images + a text prompt (multimodal)."""
+        import base64
+        content = []
+        for path in image_paths:
+            import mimetypes
+            mime = mimetypes.guess_type(path)[0] or "image/png"
+            data = base64.standard_b64encode(open(path, "rb").read()).decode()
+            content.append({"type": "image", "source": {"type": "base64", "media_type": mime, "data": data}})
+        content.append({"type": "text", "text": text_prompt})
+
+        session_id = os.environ.get("NUCLEUS_SESSION_ID", "default")
+        agent_id = kwargs.pop("_agent_id", "default")
+        msg_kwargs: Dict[str, Any] = {
+            "model": self.model_name,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": content}],
+        }
+        if self.system_instruction:
+            msg_kwargs["system"] = self.system_instruction
+
+        raw = self._client.messages.create(**msg_kwargs)
+        text_parts = [block.text for block in raw.content if getattr(block, "text", None)]
+        response = AnthropicResponse(
+            text="\n".join(text_parts),
+            model=raw.model,
+            usage={"input_tokens": raw.usage.input_tokens, "output_tokens": raw.usage.output_tokens},
+        )
+        self._log_interaction(text_prompt[:200], response)
+        self._record_token_usage(text_prompt, response, session_id, agent_id)
         return response
 
     def stream_content(self, prompt, **kwargs):

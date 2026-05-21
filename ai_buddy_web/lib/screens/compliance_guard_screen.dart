@@ -149,8 +149,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     }
   }
 
-  Future<void> _handleAgeVerification(bool isOver18) async {
-    if (!isOver18) {
+  Future<void> _handleAgeVerification(bool meetsMinAge) async {
+    if (!meetsMinAge) {
       setState(() {
         _status = ComplianceStatus.blockedAge;
       });
@@ -284,9 +284,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
       case ComplianceStatus.conversionRequired:
         return _buildConversionScreen();
       case ComplianceStatus.blockedAge:
+        final minAge = ComplianceService.minAgeForRegion(_storedRegion);
         return _buildBlockedScreen(
-          "Age Requirement",
-          "GentleQuest is designed for adults (18+). We cannot provide services to minors at this time due to regulatory restrictions.",
+          "Come back when you're $minAge",
+          "GentleQuest needs you to be $minAge or older in your region. We'll be here for you when the time comes — until then, please talk to a parent, school counselor, or a trusted adult if things feel heavy.",
         );
       case ComplianceStatus.blockedRegion:
         return _buildBlockedScreen(
@@ -952,6 +953,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildAgeGate() {
+    // Region is set after the IP/GPS step in the compliance flow. On the
+    // very first launch _storedRegion may be null — in that case use the
+    // universal floor (13) since unknown-region falls through to the
+    // permissive default per minAgeForRegion.
+    final minAge = ComplianceService.minAgeForRegion(_storedRegion);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -962,15 +968,17 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const Icon(Icons.verified_user_outlined, size: 80, color: Color(0xFF667EEA)),
             const SizedBox(height: 24),
             Text(
-              "Verify Your Age",
+              "One quick check",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            const Text(
-              "GentleQuest uses advanced AI. To comply with safety regulations, you must be 18 years or older to use this application.",
+            Text(
+              // Copy was "built for adults · 18+" — softened so the
+              // high-school target audience doesn't bounce on first touch.
+              "GentleQuest is here for you. We just need to confirm you're $minAge or older to continue.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black87),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
             ),
             const SizedBox(height: 48),
             ElevatedButton(
@@ -980,12 +988,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
-              child: const Text("I am 18 or older", style: TextStyle(fontSize: 18)),
+              child: Text("I am $minAge or older", style: const TextStyle(fontSize: 18)),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => _handleAgeVerification(false),
-              child: const Text("I am under 18", style: TextStyle(fontSize: 16, color: Colors.grey)),
+              child: Text("I am under $minAge", style: const TextStyle(fontSize: 16, color: Colors.grey)),
             ),
           ],
         ),
@@ -1045,6 +1053,16 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     );
   }
 
+  // Retained because the ComplianceStatus.conversionRequired enum value
+  // still exists for backwards compatibility, but no compliance code path
+  // returns it as of 2026-05-21 — web is now first-class. If we ever
+  // re-introduce a terminal "your platform can't be served" state, this
+  // is the screen that renders it.
+  //
+  // Was a hard "Mobile App Required" block. Replaced with a soft message
+  // pointing at the optional mobile-app promo sheet (which fires on chat
+  // screen first mount on web). If someone *does* land here, give them a
+  // useful action instead of a dead end.
   Widget _buildConversionScreen() {
     return Scaffold(
       body: Padding(
@@ -1052,24 +1070,29 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.mobile_friendly, size: 80, color: Color(0xFF667EEA)),
+            const Icon(Icons.refresh,
+                size: 80, color: Color(0xFF667EEA)),
             const SizedBox(height: 24),
             Text(
-              "Mobile App Required",
+              "Something went sideways",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             const Text(
-              "To ensure privacy and regulatory compliance, GentleQuest is currently available only on our mobile app.",
+              "We couldn't finish setting up your session. Please check your connection and try again.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 48),
-            const Text(
-              "Please download GentleQuest from the App Store or Google Play Store.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.w500),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _checkStatus,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF667EEA),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Try again", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

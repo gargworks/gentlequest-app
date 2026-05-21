@@ -52,7 +52,7 @@ def setup_cracken_swarm():
             "command": PYTHON_BIN,
             "args": ["-m", "mcp_server_nucleus"],
             "env": {
-                "NUCLEAR_BRAIN_PATH": str(BRAIN_ROOT / agent_id),
+                "NUCLEUS_BRAIN_PATH": str(BRAIN_ROOT / agent_id),
                 "MODEL_OVERRIDE": config["model"],
                 "SYSTEM_PROMPT_APPENDIX": config["system_prompt"]
             },
@@ -79,7 +79,7 @@ def show_activation_snippet():
     "command": "{PYTHON_BIN}",
     "args": ["-m", "mcp_server_nucleus"],
     "env": {{
-        "NUCLEAR_BRAIN_PATH": "{abs_path}"
+        "NUCLEUS_BRAIN_PATH": "{abs_path}"
     }}
 }}
 ''')

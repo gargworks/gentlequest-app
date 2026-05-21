@@ -1,19 +1,19 @@
 #!/bin/bash
 # Nucleus CLI wrapper for Gemini CLI integration
-# Automatically sets NUCLEAR_BRAIN_PATH and forwards all arguments to nucleus
+# Automatically sets NUCLEUS_BRAIN_PATH and forwards all arguments to nucleus
 
 # Detect brain path (priority order: env var, .brain in cwd, default)
-if [ -n "$NUCLEAR_BRAIN_PATH" ]; then
-    BRAIN_PATH="$NUCLEAR_BRAIN_PATH"
+if [ -n "$NUCLEUS_BRAIN_PATH" ]; then
+    BRAIN_PATH="$NUCLEUS_BRAIN_PATH"
 elif [ -d ".brain" ]; then
     BRAIN_PATH="$(pwd)/.brain"
 elif [ -d "$HOME/.nucleus/brain" ]; then
     BRAIN_PATH="$HOME/.nucleus/brain"
 else
-    echo "Error: No brain found. Set NUCLEAR_BRAIN_PATH or run from project directory." >&2
+    echo "Error: No brain found. Set NUCLEUS_BRAIN_PATH or run from project directory." >&2
     exit 1
 fi
 
 # Export and run nucleus with all arguments
-export NUCLEAR_BRAIN_PATH="$BRAIN_PATH"
+export NUCLEUS_BRAIN_PATH="$BRAIN_PATH"
 exec nucleus "$@"

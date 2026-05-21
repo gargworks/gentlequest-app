@@ -366,6 +366,116 @@ def init_brain_solo(brain_path: Path) -> bool:
     return True
 
 
+def init_brain_v0(brain_path: Path, repo_root: Path) -> bool:
+    """Initialize with wedge spec v0 skeleton (CC-only, ADR scan)."""
+    print(f"🧠 Initializing Nucleus v0 at {brain_path}/ (wedge spec)...")
+    
+    # Step 1: Create skeleton directories
+    dirs = [
+        brain_path / "decisions",
+        brain_path / "policies",
+        brain_path / "plans",
+        brain_path / "session_mirror",
+    ]
+    
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+        print(f"  📁 Created {d}")
+    
+    # Step 2: Scan git log for ADR-pattern commits
+    adr_patterns = ["adr:", "decision:", "why:", "feat(adr)"]
+    adr_commits = []
+    
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-100"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                if any(pattern in line.lower() for pattern in adr_patterns):
+                    adr_commits.append(line)
+                    print(f"  📜 Found ADR commit: {line[:60]}...")
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        print("  ⚠️  Git scan skipped (not a git repo or timeout)")
+    
+    # Step 3: Populate decisions/ from ADR scan
+    if adr_commits:
+        decisions_file = brain_path / "decisions" / "from_git_log.md"
+        lines = ["# Decisions from Git Log\n\n"]
+        for commit in adr_commits:
+            lines.append(f"- {commit}\n")
+        decisions_file.write_text("".join(lines), encoding="utf-8")
+        print(f"  📝 Created decisions/from_git_log.md ({len(adr_commits)} commits)")
+    else:
+        print("  ℹ️  No ADR commits found in git log")
+    
+    # Step 4: Scan for existing .brain/ and docs/adr/*.md files
+    existing_brain = (repo_root / ".brain").exists()
+    existing_adr_dir = (repo_root / "docs" / "adr").exists()
+    existing_adr_files = []
+    
+    if existing_adr_dir:
+        existing_adr_files = list((repo_root / "docs" / "adr").glob("*.md"))
+        print(f"  ℹ️  Found {len(existing_adr_files)} existing docs/adr/*.md files")
+    
+    # Step 5: Create README.md
+    readme_content = """# .brain — Portable decision log
+
+This is your Nucleus decision log. Everything stored here stays on your machine.
+
+## Structure
+
+- `decisions/` — Architectural and strategic decisions
+- `policies/` — Team policies and guidelines
+- `plans/` — Sprint plans and roadmaps
+- `session_mirror/` — Session state and handoffs
+
+## Query
+
+Ask your AI: "Why did we [X]?" to retrieve decisions from this log.
+"""
+    (brain_path / "README.md").write_text(readme_content)
+    print("  📖 Created README.md")
+    
+    # Step 6: Register MCP in Claude Code config (CC-only per Risk 3 descope)
+    abs_path = str(brain_path.absolute())
+    nucleus_config = _build_nucleus_mcp_config(abs_path)
+    
+    # Only Claude Code (CC-only per Risk 3 descope)
+    home = Path.home()
+    cc_config_path = home / ".claude" / ".mcp.json"
+    
+    if cc_config_path.exists():
+        print(f"  🔍 Found Claude Code config...")
+        try:
+            with open(cc_config_path, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
+            
+            if "mcpServers" not in config_data:
+                config_data["mcpServers"] = {}
+            
+            if "nucleus" not in config_data["mcpServers"]:
+                config_data["mcpServers"]["nucleus"] = nucleus_config
+                with open(cc_config_path, 'w', encoding='utf-8') as f:
+                    json.dump(config_data, f, indent=2, ensure_ascii=False)
+                print("  ✅ Registered nucleus in Claude Code config")
+            else:
+                print("  ℹ️  nucleus already configured in Claude Code")
+        except Exception as e:
+            print(f"  ⚠️  Could not configure Claude Code: {e}")
+    else:
+        print("  ℹ️  Claude Code config not found (skipped MCP registration)")
+    
+    # Step 7: Print confirmation
+    print("\n✅ .brain/ initialized. ✅ MCP registered in Claude Code.")
+    
+    return True
+
+
 
 def _build_nucleus_mcp_config(brain_path: str) -> dict:
     """Single source of truth for generating MCP config."""
@@ -375,7 +485,7 @@ def _build_nucleus_mcp_config(brain_path: str) -> dict:
     if len(cmd) > 1:
         config["args"] = cmd[1:]
     config["env"] = {
-        "NUCLEAR_BRAIN_PATH": brain_path,
+        "NUCLEUS_BRAIN_PATH": brain_path,
         "NUCLEUS_AMBIENT_HEALTH": "1",
     }
     return config
@@ -483,6 +593,11 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
     # Route to template-specific init
     if template == "solo":
         init_brain_solo(brain_path)
+    elif template == "v0":
+        repo_root = Path.cwd()
+        init_brain_v0(brain_path, repo_root)
+        # v0 handles its own MCP registration (CC-only)
+        return True
     else:
         init_brain_default(brain_path)
     
@@ -3409,9 +3524,9 @@ def main():
     )
     init_parser.add_argument(
         '-t', '--template',
-        choices=['default', 'solo'],
+        choices=['default', 'solo', 'v0'],
         default='default',
-        help='Template to use: default (full) or solo (minimal)'
+        help='Template to use: default (full), solo (minimal), or v0 (wedge spec)'
     )
     init_parser.add_argument(
         '--sidecar',
@@ -4187,7 +4302,22 @@ def main():
     # ADAPTIVE BRAIN DISCOVERY & SESSION RECOVERY (MDR_001)
     # ════════════════════════════════════════════════════════════════
     # 1. Resolve Brain Path
+    # Canonical: NUCLEUS_BRAIN_PATH. Legacy: NUCLEAR_BRAIN_PATH (deprecation
+    # shim — sunset 2026-05-27). External consumers like nucleus-mcp-cloud's
+    # /ready endpoint may still read the legacy name; the dual-write below
+    # keeps them working until they migrate.
     brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
+    if (
+        os.environ.get("NUCLEAR_BRAIN_PATH")
+        and not os.environ.get("NUCLEUS_BRAIN_PATH")
+    ):
+        import warnings
+        warnings.warn(
+            "NUCLEAR_BRAIN_PATH is deprecated; use NUCLEUS_BRAIN_PATH "
+            "(legacy alias sunsets 2026-05-27)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if not brain_path_str:
         try:
             cwd = Path.cwd()
@@ -4197,9 +4327,11 @@ def main():
                     break
         except Exception:
             pass
-    
+
     if brain_path_str:
         os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
+        # Legacy alias for external consumers (nucleus-mcp-cloud /ready
+        # endpoint, older deploy scripts). Sunset 2026-05-27.
         os.environ["NUCLEAR_BRAIN_PATH"] = brain_path_str
         brain_path = Path(brain_path_str)
         
@@ -4430,6 +4562,9 @@ def main():
         elif cli_command == 'loop':
             handle_loop_command(args)
 
+        elif cli_command == 'depth':
+            handle_depth_command(args)
+
         elif cli_command == 'end-of-day':
             handle_end_of_day_command(args)
 
@@ -4631,6 +4766,7 @@ def handle_start_command(args):
 
 def handle_stop_command(args):
     """nucleus stop — graceful shutdown via PID file."""
+    import signal
     from .runtime.common import get_brain_path
     brain_path = get_brain_path()
     pid_path = brain_path / "daemon" / "daemon.pid"
@@ -4915,7 +5051,7 @@ def _setup_agent_env(args):
     """Set brain path from --brain-path flag before calling runtime."""
     bp = getattr(args, 'brain_path', None)
     if bp:
-        os.environ["NUCLEAR_BRAIN_PATH"] = str(Path(bp).resolve())
+        os.environ["NUCLEUS_BRAIN_PATH"] = str(Path(bp).resolve())
 
 
 def _get_fmt(args) -> str:
@@ -5398,13 +5534,13 @@ def handle_doctor_command(args) -> int:
 
     # 4. Brain path
     print("\n4. Brain Configuration")
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH", "")
     if brain_path:
-        _pass("NUCLEAR_BRAIN_PATH set", brain_path)
+        _pass("NUCLEUS_BRAIN_PATH set", brain_path)
         bp = Path(brain_path)
         if bp.exists():
             _pass("Brain directory exists")
-            expected_dirs = ["ledger", "engrams", "sessions", "memory"]
+            expected_dirs = ["ledger", "memory", "sessions", "config"]
             for d in expected_dirs:
                 if (bp / d).exists():
                     _pass(f"  {d}/")
@@ -5413,7 +5549,7 @@ def handle_doctor_command(args) -> int:
         else:
             _fail("Brain directory does not exist", brain_path, "Run 'nucleus init'")
     else:
-        _warn("NUCLEAR_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEAR_BRAIN_PATH=~/.brain")
+        _warn("NUCLEUS_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEUS_BRAIN_PATH=~/.brain")
 
     # 5. Tool tier
     print("\n5. Tool Tier")
@@ -5586,7 +5722,7 @@ def handle_depth_command(args):
         try:
             from mcp_server_nucleus.runtime.depth_ops import _depth_show, _depth_pop, _depth_reset, _depth_set_max, _depth_push, _generate_depth_map
         except ImportError:
-            print("Error: Could not import depth functions. Make sure NUCLEAR_BRAIN_PATH is set.")
+            print("Error: Could not import depth functions. Make sure NUCLEUS_BRAIN_PATH is set.")
             return
     
     if args.depth_action == 'show' or args.depth_action is None:
@@ -6055,7 +6191,7 @@ def handle_consolidate_command(args):
         try:
             from mcp_server_nucleus.runtime.consolidation_ops import _archive_resolved_files, _get_archive_path
         except ImportError:
-            print("Error: Could not import consolidation functions. Make sure NUCLEAR_BRAIN_PATH is set.")
+            print("Error: Could not import consolidation functions. Make sure NUCLEUS_BRAIN_PATH is set.")
             return
     
     if args.consolidate_action == 'archive':
@@ -6487,7 +6623,7 @@ def handle_status_command(args):
         else:
             print(f"❌ Error getting satellite view: {e}")
             print()
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 
@@ -6623,8 +6759,8 @@ def handle_morning_brief_command(args):
     except Exception as e:
         print(f"❌ Error generating morning brief: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-        print("  export NUCLEAR_BRAIN_PATH=/path/to/.brain")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
+        print("  export NUCLEUS_BRAIN_PATH=/path/to/.brain")
 
 
 def handle_loop_command(args):
@@ -6651,7 +6787,7 @@ def handle_loop_command(args):
     except Exception as e:
         print(f"❌ Error getting loop status: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_end_of_day_command(args):
@@ -6684,7 +6820,7 @@ def handle_end_of_day_command(args):
     except Exception as e:
         print(f"❌ Error capturing end-of-day: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_graph_command(args):
@@ -6729,7 +6865,7 @@ def handle_graph_command(args):
             print(output)
     except Exception as e:
         print(f"❌ Error generating context graph: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_billing_command(args):
@@ -6781,7 +6917,7 @@ def handle_billing_command(args):
             print("=" * 60)
     except Exception as e:
         print(f"❌ Error generating billing summary: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_combo_command(args):
@@ -6827,7 +6963,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ Pulse & Polish failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     elif args.combo_action == 'diagnose':
         try:
@@ -6855,7 +6991,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ SRE Diagnosis failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     elif args.combo_action == 'learn':
         try:
@@ -6885,7 +7021,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ Fusion Reactor failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     else:
         print(f"Unknown combo: {args.combo_action}")
@@ -7816,8 +7952,9 @@ def handle_chief_command(args) -> int:
         init_brain(".brain")
         brain_path_str = str(Path(".brain").resolve())
         os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
+        # Legacy alias dual-write (sunset 2026-05-27).
         os.environ["NUCLEAR_BRAIN_PATH"] = brain_path_str
-    
+
     brain_path = Path(brain_path_str)
     daemon = DaemonManager(brain_path)
     

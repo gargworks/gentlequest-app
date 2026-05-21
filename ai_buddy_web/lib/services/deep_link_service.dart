@@ -1,6 +1,7 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
+import 'auth_service.dart';
 import 'firebase_service.dart';
 
 class DeepLinkService {
@@ -32,6 +33,19 @@ class DeepLinkService {
     final uri = Uri.parse(link);
     final path = uri.path;
     final queryParams = uri.queryParameters;
+
+    // Auth magic-link: gentlequest://auth/verify?token=<raw>
+    // Host parsing varies — some platforms put 'auth' in host, others
+    // in the leading path segment — accept both shapes.
+    final host = uri.host;
+    if ((host == 'auth' && path == '/verify') ||
+        path == '/auth/verify') {
+      final token = queryParams['token'];
+      if (token != null && token.isNotEmpty) {
+        _handleAuthVerify(token);
+      }
+      return;
+    }
 
     // Route to appropriate screen based on path
     switch (path) {
@@ -70,6 +84,41 @@ class DeepLinkService {
     final context = AppRoutes.navigatorKey.currentContext;
     if (context != null) {
       Navigator.of(context).pushNamed(route, arguments: params);
+    }
+  }
+
+  Future<void> _handleAuthVerify(String rawToken) async {
+    final context = AppRoutes.navigatorKey.currentContext;
+    try {
+      final identity = await AuthService.instance.verifyToken(rawToken);
+      FirebaseService().logEvent('auth_magic_link_verified', {
+        'user_id': identity.id,
+      });
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signed in as ${identity.email}'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      FirebaseService().logEvent('auth_magic_link_verify_failed', {
+        'reason': e.message,
+      });
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sign-in failed · ${e.message}'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (_) {
+      // Network failure / non-auth error — silent. User can retry from
+      // Settings → Sign in.
     }
   }
 

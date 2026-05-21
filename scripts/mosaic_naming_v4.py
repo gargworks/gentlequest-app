@@ -4,16 +4,20 @@ import os
 import json
 from pathlib import Path
 
-# Add src to python path
-sys.path.append("/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src")
+# Add src to python path (Portability Pass: Slice-1)
+_root = Path(__file__).parent.parent
+_src_path = os.environ.get("NUCLEUS_SRC_PATH", str(_root / "mcp-server-nucleus" / "src"))
+if _src_path not in sys.path:
+    sys.path.append(_src_path)
 
 from mcp_server_nucleus.runtime.agent import EphemeralAgent
 from mcp_server_nucleus.runtime.llm_client import DualEngineLLM, LLMTier
 
 def load_mega_context():
     """Load foundational documents to eliminate recency bias."""
-    base_path = Path("/Users/lokeshgarg/ai-mvp-backend")
-    brain_path = base_path / ".brain"
+    from mcp_server_nucleus.runtime.common import get_brain_path
+    brain_path = get_brain_path()
+    base_path = brain_path.parent
     
     docs = {
         "SOVEREIGN_TESTAMENT": brain_path / "strategy" / "SOVEREIGN_TESTAMENT.md",
@@ -31,8 +35,9 @@ def load_mega_context():
 async def run_agent(persona, intent, mega_context, tools=[]):
     print(f"🚀 Spawning Agent: {persona}...")
     
-    # Live Feed Hook
-    live_feed_path = Path("/Users/lokeshgarg/ai-mvp-backend/.brain/swarms/trial-naming-mosaic-v4/LIVE_FEED.md")
+    # Live Feed Hook (Portability Pass: Slice-1)
+    from mcp_server_nucleus.runtime.common import get_brain_path
+    live_feed_path = get_brain_path() / "swarms" / "trial-naming-mosaic-v4" / "LIVE_FEED.md"
     live_feed_path.parent.mkdir(parents=True, exist_ok=True)
     with open(live_feed_path, "a") as f:
         f.write(f"\n### 🔥 {persona} (The Titan) has entered the Boardroom...\n")

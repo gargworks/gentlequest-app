@@ -42,9 +42,9 @@ test_command() {
 }
 
 # Set brain path
-export NUCLEAR_BRAIN_PATH="/Users/lokeshgarg/ai-mvp-backend/.brain"
+export NUCLEUS_BRAIN_PATH="/Users/lokeshgarg/ai-mvp-backend/.brain"
 
-echo "Brain Path: $NUCLEAR_BRAIN_PATH"
+echo "Brain Path: $NUCLEUS_BRAIN_PATH"
 echo ""
 
 # Test 1: Wrapper script exists and is executable
@@ -118,7 +118,7 @@ else
     echo -e "${RED}❌ Some tests failed${NC}"
     echo ""
     echo "Please review the failures above and check:"
-    echo "1. Brain path is correct: $NUCLEAR_BRAIN_PATH"
+    echo "1. Brain path is correct: $NUCLEUS_BRAIN_PATH"
     echo "2. Nucleus is installed: pip list | grep nucleus"
     echo "3. Wrapper script is in place: ./scripts/nucleus-gemini"
     exit 1

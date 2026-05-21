@@ -21,7 +21,11 @@ enum ComplianceStatus {
   blockedRegion,
   blockedAge,
   error,
-  conversionRequired, // v3.1: Web users must use Mobile App
+  // Retained for backwards compatibility with anything that switches on
+  // this enum, but no compliance path returns it anymore (was the web →
+  // mobile-only hard bounce, removed 2026-05-21). If we ever need a true
+  // "your platform can't be served" terminal state again, re-wire here.
+  conversionRequired,
 }
 
 /// Block reason for analytics and future unlock logic
@@ -35,10 +39,71 @@ class ComplianceService {
   // ============================================
   // PREFERENCE KEYS
   // ============================================
+  // Legacy key — kept as-is so existing 18+ verifications stay valid.
+  // Naming is a misnomer now (post-2026-05-21 the threshold is 13+ for
+  // most regions, see minAgeForRegion); the *bool value* just means
+  // "user attested to be of acceptable age for their region".
   static const String _kAgeVerifiedKey = 'compliance_age_verified_18_plus';
   static const String _kLocationVerifiedKey = 'compliance_location_verified';
   static const String _kVerifiedRegionKey = 'compliance_verified_region';
   static const String _kVerificationTimestampKey = 'compliance_verification_timestamp';
+
+  // ============================================
+  // AGE-GATE THRESHOLDS BY REGION
+  // ============================================
+  // Lowered from blanket 18+ on 2026-05-21 — original app objective was
+  // high-school students. The new floor is 13 (US COPPA / UK ICO digital
+  // age of consent) wherever local law allows, stepping up to 16 or 18
+  // for jurisdictions that mandate it. Default for unknown regions is the
+  // GLOBAL universal threshold (currently 13) — review with counsel
+  // before shipping to a market not already covered here.
+  //
+  // ⚠ LEGAL-REVIEW-NEEDED before public scale:
+  //   - India (DPDP 2023): article 9 effectively requires 18+ for
+  //     digital service consent unless verifiable parental consent flow
+  //     is built. We mark India 18+ below but parental-consent flow is
+  //     out of scope for Phase 1.
+  //   - EU member states that chose >13 under GDPR-K (DE/FR/IT/NL/IE/
+  //     LU/HU/LT/PL/RO/SK/CY/HR/EL): 16+.
+  //   - Australia: no specific minimum but eSafety Commissioner
+  //     guidance suggests 13+; treated as 13 here.
+  static const int _kMinAgeUniversal = 13;
+
+  /// Region-appropriate minimum age (years) before a user can use the app.
+  /// Region is the ISO 3166-1 alpha-2 code stored at `_kVerifiedRegionKey`
+  /// after the GPS / IP geolocation step. Returns the universal floor
+  /// (13) for unknown / unset regions so we err on the inclusive side per
+  /// the "lowest possible age basis compliance" direction; tighten later
+  /// once legal-review covers more markets.
+  static int minAgeForRegion(String? region) {
+    if (region == null || region.isEmpty) return _kMinAgeUniversal;
+    final r = region.toUpperCase();
+    // 18+ jurisdictions (digital-service consent age without parental flow)
+    if (const {'IN', 'INDIA'}.contains(r)) return 18;
+    // 16+ — EU member states that picked >13 under GDPR-K Article 8.
+    if (const {
+      'DE', 'GERMANY',
+      'FR', 'FRANCE',
+      'IT', 'ITALY',
+      'NL', 'NETHERLANDS',
+      'IE', 'IRELAND',
+      'LU', 'LUXEMBOURG',
+      'HU', 'HUNGARY',
+      'LT', 'LITHUANIA',
+      'PL', 'POLAND',
+      'RO', 'ROMANIA',
+      'SK', 'SLOVAKIA',
+      'CY', 'CYPRUS',
+      'HR', 'CROATIA',
+      'GR', 'GREECE', 'EL',
+    }.contains(r)) {
+      return 16;
+    }
+    // Everywhere else — 13 (US COPPA cutoff, UK ICO, most of EU, Australia,
+    // Canada, NZ). The hard-ban / pending-compliance state lists below
+    // (Illinois, Utah, Washington) still gate independently of age.
+    return _kMinAgeUniversal;
+  }
 
   // ============================================
   // 🔴 HARD BAN STATES (Permanent GPS Block)
@@ -120,32 +185,38 @@ class ComplianceService {
 
     await FirebaseService().logEvent('compliance_check_started');
 
-    // 1. Age Check (must be 18+)
+    // 1. Age Check (per-region minimum age; see minAgeForRegion())
     final ageVerified = await isAgeVerified();
     if (!ageVerified) {
       await _logBlockEvent('age_verification_required', null);
       return ComplianceStatus.ageVerificationRequired;
     }
 
-    // 2. Web platform - BLOCKED (v3.1 Hardening: Close browser loophole)
-    // Web cannot reliably verify GPS without backend GeoIP.
-    // Force users to Mobile App for geofence compliance.
-    if (kIsWeb) {
-      await _logBlockEvent('web_platform_conversion', null);
-      return ComplianceStatus.conversionRequired;
-    }
-
-    // 3. Check if location already verified (ONE-TIME check)
+    // 2. Check if location already verified (ONE-TIME check)
     if (await _isLocationAlreadyVerified()) {
-      // Check stored region against blocklists
       return await _checkStoredRegion();
     }
 
-    // 4. Server-IP region check (PRIMARY — Phase 1 hardening)
+    // 3. Server-IP region check (PRIMARY).
+    //
+    // Web platform note: was previously hard-bounced here to a "use mobile
+    // app" conversion screen on the assumption that browsers couldn't
+    // verify region. That cost us the entire web acquisition surface for
+    // no real safety win — the IP-region check below runs against our
+    // own backend and is platform-agnostic, so it works fine on web.
+    // The mobile-app upsell now happens as a non-blocking promo sheet on
+    // the chat screen instead of as a compliance gate (see
+    // WebMobilePromoSheet in widgets/web_mobile_promo_sheet.dart).
     final ipResult = await _verifyViaIpRegion();
     if (ipResult != null) return ipResult;
 
-    // 5. GPS fallback (only if IP unreachable)
+    // 4. GPS fallback (only if IP unreachable).
+    //
+    // On web the geolocator plugin uses the browser's navigator.geolocation
+    // API, which prompts for permission and can resolve country/region with
+    // varying accuracy. If both IP AND GPS fail on web, _verifyAndStoreLocation
+    // returns ComplianceStatus.locationPermissionRequired or .error — the
+    // user can retry. We no longer force a conversionRequired bounce.
     return await _verifyAndStoreLocation();
   }
 

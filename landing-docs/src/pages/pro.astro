@@ -1,0 +1,137 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'eidetic-daemon Pro tier — $29/mo managed cloud sync, web dashboard, AI-powered recall via nucleus_ask.';
+---
+
+<Docs title="Pro tier" description={description} pageSlug="pro">
+  <span class="eyebrow">Pricing</span>
+  <h1>Pro <em>tier</em></h1>
+  <p class="subhead">
+    eidetic-daemon is free and open-source. You don't need to pay for the
+    daemon. <strong>Pro is for people who want their engrams to follow them.</strong>
+  </p>
+
+  <p>
+    <a class="endpoint-path" href="https://eideticworks.gumroad.com/l/eidetic-pro">→ Get Pro on Gumroad ($29/mo)</a>
+  </p>
+
+  <h2>What Pro includes</h2>
+
+  <h3>Managed cloud backup</h3>
+  <p>
+    Your <code>engrams.db</code> syncs to Eidetic Works' Cloudflare R2 bucket
+    automatically — every hour while the daemon runs. Restore to any machine
+    in 60 seconds.
+  </p>
+
+  <pre is:raw><code>eideticd --restore
+# ✓ Downloaded 3.3 GB engrams.db from cloud backup
+#   key: engrams/macbook-m2/engrams-1748300000000.db
+#   previous db saved to ~/.eidetic/engrams.db.bak
+#   restart eideticd to use the restored database</code></pre>
+
+  <p>
+    We manage the infrastructure. You get a personal API key by email within
+    24 hours of payment.
+  </p>
+
+  <h3>Retention policy setup</h3>
+  <p>
+    We'll configure <code>retention-policy.json</code> for your setup — how
+    long to keep Claude Code sessions, Cursor history, Cowork logs. One email,
+    we handle it.
+  </p>
+
+  <h3>Email support</h3>
+  <p>
+    <a href="mailto:hi@eidetic.works">hi@eidetic.works</a>. Response within 24
+    hours on weekdays.
+  </p>
+
+  <h3>Early-access features</h3>
+  <p>
+    Pro subscribers get new features before free users. Already-shipped Pro-first
+    features include AI-powered natural-language recall
+    (<a href="/recall/"><code>nucleus_ask</code></a>) and the
+    <a href="https://eidetic.works/dashboard">web dashboard</a>.
+  </p>
+
+  <h2>What Pro does NOT include</h2>
+
+  <ul>
+    <li>Any data leaving your machine <em>without your sync.json configured</em> — the daemon is still local-first.</li>
+    <li>Hosted cloud AI — we don't process your engrams on our servers.</li>
+    <li>Anything we'd need to see your data for — the sync is encrypted in transit, encrypted at rest by Cloudflare default.</li>
+  </ul>
+
+  <h2>Setup after payment</h2>
+
+  <ol>
+    <li>Pay via Gumroad → you get a confirmation email within minutes.</li>
+    <li>Reply with your machine's <code>device_id</code> (pick any short identifier: <code>macbook-m2</code>, <code>work-laptop</code>, etc.).</li>
+    <li>We reply with your <code>sync.json</code> within 24 hours.</li>
+    <li>Drop it at <code>~/.eidetic/sync.json</code>, restart daemon — sync starts immediately (v0.0.35+ hot-reload picks it up within ~1s without manual restart).</li>
+  </ol>
+
+  <h2>Pricing</h2>
+
+  <p>
+    <strong>$29/month</strong> — early-bird rate for the first 50 Pro
+    subscribers. Price may increase after 50.
+  </p>
+
+  <p>
+    No annual discount yet. Month-to-month, cancel anytime via Gumroad. 7 days
+    no-questions-asked refund.
+  </p>
+
+  <h2>Bring your own R2 (free)</h2>
+
+  <p>
+    If you'd rather host the bucket yourself, the same daemon works against
+    your own R2: create an R2 bucket, deploy the sync Worker from
+    <code>bridge/cloudflare/</code>, set <code>EIDETIC_API_KEY</code>, drop
+    your own <code>sync.json</code>. No ongoing cost for personal-scale data
+    (R2 stays in the free tier at typical dataset sizes; see ADR-019 in the
+    source repo for the cost table).
+  </p>
+
+  <h2>What you can do with Pro on day 2</h2>
+
+  <h3>1. Confirm sync is firing</h3>
+  <pre is:raw><code>eideticd --check
+# Expect: "worker: ✓ reachable (200 OK)" + a "last sync" timestamp
+# within the last hour</code></pre>
+
+  <h3>2. AI-powered recall (nucleus_ask)</h3>
+  <p>
+    In any Claude Code session: <em>"What was that Postgres tuning trick I
+    worked on last week?"</em> — Claude calls <code>nucleus_ask</code>,
+    retrieves the matching engrams from your local store, and synthesizes the
+    answer. Your engrams never leave your machine; the AI is the Claude
+    session you already pay for.
+  </p>
+  <p>Full recipe: <a href="/recall/">nucleus_ask recipes</a>.</p>
+
+  <h3>3. Web dashboard</h3>
+  <pre is:raw><code>eideticd -bridge :8421
+open https://eidetic.works/dashboard
+# Paste http://127.0.0.1:8421 + the token from ~/.eidetic/bridge-token</code></pre>
+
+  <h3>4. Restore-ready</h3>
+  <p>New laptop? <code>eideticd --restore</code> and you're back in 60 seconds.</p>
+
+  <h2>Three habits that compound</h2>
+
+  <p>
+    After a week with Pro, three habits turn the daemon into a real cognitive
+    multiplier:
+  </p>
+
+  <ol>
+    <li><strong>Ask before you grep.</strong> Stop opening Spotlight / VS Code search / browser history when you remember "I worked on that thing." Open Claude Code and ask. If it's in your engrams, Claude finds it in &lt;1 sec via <code>nucleus_ask</code>.</li>
+    <li><strong>Check your backup history once a month.</strong> <code>eideticd --backups</code> shows your last 10 cloud uploads — catch timing or size oddities before the day you actually need a restore.</li>
+    <li><strong>Export before experimenting.</strong> <code>eideticd --export &gt; engrams-$(date +%F).ndjson</code> — your right to leave, proof that you own the data.</li>
+  </ol>
+</Docs>

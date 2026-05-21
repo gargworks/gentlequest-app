@@ -1,0 +1,119 @@
+---
+import Docs from '../layouts/Docs.astro';
+
+const description = 'Install eidetic-daemon on macOS, Linux, or Windows. Single binary, no CGO, statically linked.';
+---
+
+<Docs title="Install" description={description} pageSlug="install">
+  <span class="eyebrow">Get started</span>
+  <h1>Install <em>eidetic-daemon</em></h1>
+  <p class="subhead">
+    Pre-built binaries for darwin-arm64, linux-amd64, linux-arm64, and
+    windows-amd64. Single static binary, no CGO. Pick a path below.
+  </p>
+
+  <h2>One-liner (macOS + Linux)</h2>
+
+  <pre is:raw><code>curl -fsSL https://eidetic.works/install.sh | sh</code></pre>
+
+  <p>
+    The script detects your OS + arch, downloads the matching release artifact
+    from GitHub, places the binary in <code>/usr/local/bin/eideticd</code>, and
+    auto-registers the launchd (macOS) or systemd-user (Linux) service. The
+    daemon starts immediately and begins capturing on next session write.
+  </p>
+
+  <p>
+    Read what the script does at
+    <a href="https://github.com/eidetic-works/eidetic-daemon/blob/main/scripts/install.sh">scripts/install.sh</a>
+    before piping it to sh, if that's your style.
+  </p>
+
+  <h2>Homebrew (macOS, recommended)</h2>
+
+  <pre is:raw><code>brew tap eidetic-works/nucleus
+brew install eideticd</code></pre>
+
+  <p>
+    Homebrew formula auto-updates on every tag push (v0.0.43+). After install,
+    register the service with one command:
+  </p>
+
+  <pre is:raw><code>eideticd -install   # launchd on macOS, systemd-user on Linux</code></pre>
+
+  <h2>Windows (PowerShell)</h2>
+
+  <pre is:raw><code>irm https://eidetic.works/install.ps1 | iex</code></pre>
+
+  <p>
+    No admin required. Downloads <code>eideticd-windows-amd64.exe</code> from
+    the latest GitHub release, installs to
+    <code>%LOCALAPPDATA%\EideticWorks\bin\</code>, registers an HKCU Run key
+    for login-startup, and starts the daemon in TCP mode (the only supported
+    mode on Windows).
+  </p>
+
+  <h2>Manual download</h2>
+
+  <p>
+    All releases live at
+    <a href="https://github.com/eidetic-works/eidetic-daemon/releases">github.com/eidetic-works/eidetic-daemon/releases</a>.
+    Artifacts:
+  </p>
+
+  <ul>
+    <li><code>eideticd-darwin-arm64.tar.gz</code> — Apple Silicon (M1/M2/M3/M4)</li>
+    <li><code>eideticd-linux-amd64.tar.gz</code> — x86-64 Linux</li>
+    <li><code>eideticd-linux-arm64.tar.gz</code> — ARM64 Linux (Graviton, RPi 4/5, Oracle Cloud free tier)</li>
+    <li><code>eideticd-windows-amd64.zip</code> — Windows x86-64</li>
+  </ul>
+
+  <p>
+    Extract, move the <code>eideticd</code> binary into your <code>PATH</code>,
+    then <code>eideticd -install</code> to register the service.
+  </p>
+
+  <h2>MCP bridge (Claude Code / Cursor / Cline / any MCP client)</h2>
+
+  <p>
+    The Python bridge is shipped separately from the daemon, so the daemon's
+    crash surface stays isolated.
+  </p>
+
+  <pre is:raw><code>pip install eidetic-mcp
+claude mcp add eidetic -- python -m eidetic_mcp.server</code></pre>
+
+  <p>
+    For Cursor / other MCP clients, add the same command under their
+    <code>mcpServers</code> config. See <a href="/mcp/">MCP tools</a> for the
+    full tool reference, and <a href="/recall/">nucleus_ask recipes</a> for
+    natural-language recall setup.
+  </p>
+
+  <h2>Verify</h2>
+
+  <pre is:raw><code># Confirm the daemon is alive
+curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/healthz
+# → {"status":"ok"}
+
+# See your engram stats
+eideticd --stats
+
+# All surfaces with engram counts
+curl --unix-socket /tmp/eidetic-daemon.sock http://localhost/surfaces</code></pre>
+
+  <h2>Uninstall</h2>
+
+  <p>
+    Symmetric to install — one command stops the service, removes the launchd
+    plist or systemd-user unit, then prompts to delete the data directory.
+  </p>
+
+  <pre is:raw><code>eideticd -uninstall          # interactive: prompts y/N before deleting data
+eideticd -uninstall -purge   # unattended: skip prompt, delete &lt;dataDir&gt;</code></pre>
+
+  <p>
+    For Homebrew installs, finish with <code>brew uninstall eideticd</code> to
+    remove the binary itself.
+  </p>
+</Docs>

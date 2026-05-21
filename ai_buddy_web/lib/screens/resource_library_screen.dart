@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../theme/gq_tokens.dart';
 import '../screens/chat_screen.dart';
+import '../screens/exercise_scaffold_screen.dart';
+import '../widgets/exercise_card_scaffold.dart';
 
 // resource_library_screen.dart — Tier R1D17
 //
@@ -124,15 +126,23 @@ const List<_Exercise> _kExercises = [
     category: _ExerciseCategory.body,
     tileBackground: Color(0xFFF4ECEC),
   ),
-  _Exercise(
-    id: 'loving_kindness',
-    name: 'Loving-kindness',
-    emoji: '💝',
-    durationLabel: '4 min',
-    categoryLabel: 'quick',
-    category: _ExerciseCategory.quickWins,
-    tileBackground: GQColors.accentSoft,
-  ),
+  // FUTURE WORK — Loving-kindness exercise.
+  //
+  // Removed from the live catalog because there is no ExerciseScaffold
+  // implementation for it yet. The previous in-UI "guided version coming
+  // soon" SnackBar was a placeholder that lied — re-add when the scaffold
+  // ships, with the matching ExerciseType.lovingKindness branch wired in
+  // _exerciseScaffoldType() below.
+  //
+  //   _Exercise(
+  //     id: 'loving_kindness',
+  //     name: 'Loving-kindness',
+  //     emoji: '💝',
+  //     durationLabel: '4 min',
+  //     categoryLabel: 'quick',
+  //     category: _ExerciseCategory.quickWins,
+  //     tileBackground: GQColors.accentSoft,
+  //   ),
 ];
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -188,23 +198,36 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
   }
 
   void _onExerciseTap(_Exercise exercise) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${exercise.name} — fullscreen exercise view coming in R1D16.',
-          style: const TextStyle(
-            fontFamily: GQTypography.bodyFamily,
-            fontSize: 13,
-          ),
-        ),
-        backgroundColor: GQColors.ink2,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GQRadii.card),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    HapticFeedback.lightImpact();
+    // Every exercise in _kExercises has a scaffold mapping; ids without
+    // one are kept out of the catalog (see the FUTURE WORK block above
+    // _kExercises) so we never need a "coming soon" fallback at the tap
+    // surface. Assertion-style — if a new id ever lands here without a
+    // mapping, fail fast in debug rather than silently no-op'ing.
+    final scaffoldType = _exerciseScaffoldType(exercise);
+    assert(scaffoldType != null,
+        'Exercise ${exercise.id} has no scaffold mapping; '
+        'add to _exerciseScaffoldType() or remove from _kExercises.');
+    ExerciseScaffoldScreen.show(context, scaffoldType!);
+  }
+
+  ExerciseType? _exerciseScaffoldType(_Exercise exercise) {
+    switch (exercise.id) {
+      case 'breath_478':
+      case 'box_breathing':
+        return ExerciseType.breathing;
+      case 'grounding_54321':
+        return ExerciseType.grounding;
+      case 'body_scan':
+      case 'prog_relax':
+        return ExerciseType.bodyScan;
+      // FUTURE WORK — add `case 'loving_kindness': return
+      //   ExerciseType.lovingKindness;` once the scaffold ships
+      //   (currently only breathing/grounding/bodyScan are implemented
+      //   in widgets/exercise_card_scaffold.dart).
+      default:
+        return null;
+    }
   }
 
   void _onAskAlex() {
@@ -808,7 +831,7 @@ class _ExerciseGridItem extends StatelessWidget {
                     letterSpacing: 0.4,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 12),
                 // Start row
                 Padding(
                   padding: const EdgeInsets.only(top: 10),

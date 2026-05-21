@@ -30,6 +30,7 @@ import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
+import '../widgets/web_mobile_promo_sheet.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
 // R1D6 — QuestsEngine for streak badge (read-only).
@@ -72,11 +73,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   static const _prefsLegalAckV1 = 'legal_ack_v1';
   // Global in-flight guard to prevent duplicate Safety & Legal sheet
   static bool _legalSheetShowing = false;
-  // Chat disclaimer cadence: show small top notice for first few sessions
-  static const _prefsDisclaimerSeenCount = 'chat_disclaimer_seen_count_v1';
-  static const _maxDisclaimerSessions = 3;
-  int _disclaimerSeenCount = 0;
-  bool _showTopDisclaimer = false;
+  // (Removed) Chat disclaimer cadence — replaced by ChatGPT-style footer
+  // chip that's always visible below the input bar. The old
+  // chat_disclaimer_seen_count_v1 SharedPreferences key is left alone so
+  // users who already saw the old banner aren't affected on upgrade.
 
   Future<void> _ensureLegalAck() async {
     try {
@@ -95,36 +95,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Safety & Legal ack check failed: $e');
-    }
-  }
-
-  Future<void> _loadDisclaimerPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final seen = prefs.getInt(_prefsDisclaimerSeenCount) ?? 0;
-      if (!mounted) return;
-      setState(() {
-        _disclaimerSeenCount = seen;
-        _showTopDisclaimer = seen < _maxDisclaimerSessions;
-      });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Disclaimer prefs read failed: $e');
-    }
-  }
-
-  Future<void> _dismissTopDisclaimer({bool increment = true}) async {
-    if (mounted) {
-      setState(() => _showTopDisclaimer = false);
-    }
-    if (!increment) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final next = (_disclaimerSeenCount + 1).clamp(0, _maxDisclaimerSessions);
-      await prefs.setInt(_prefsDisclaimerSeenCount, next);
-      if (!mounted) return;
-      setState(() => _disclaimerSeenCount = next);
-    } catch (e) {
-      if (kDebugMode) debugPrint('Disclaimer prefs write failed: $e');
     }
   }
 
@@ -366,8 +336,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _scrollToBottom();
       // One-time Safety & Legal acknowledgment
       _ensureLegalAck();
-      // Load disclaimer cadence and decide whether to show top notice
-      _loadDisclaimerPrefs();
+      // On web only: offer the mobile app once per device. Non-blocking
+      // — user can install OR continue on web (web is now first-class).
+      WebMobilePromoSheet.maybeShow(context);
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
@@ -561,52 +532,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   height: 8.h,
                   color: appTheme.colorFFF3F4,
                 ),
-                // Ephemeral top disclaimer (first few sessions only)
-                Builder(builder: (ctx) {
-                  final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
-                  if (!_showTopDisclaimer || isKb) {
-                    return const SizedBox.shrink();
-                  }
-                  return Semantics(
-                    label: 'Wellness disclaimer',
-                    child: Container(
-                      width: double.infinity,
-                      color: Colors.amber.shade50,
-                      padding: EdgeInsets.fromLTRB(12.h, 8.h, 4.h, 8.h),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.info_outline,
-                              size: 18.0, color: Colors.black54),
-                          SizedBox(width: 8.h),
-                          Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                style: const TextStyle(
-                                    fontSize: 12.0,
-                                    color: Colors.black87,
-                                    height: 1.2),
-                                children: const [
-                                  TextSpan(
-                                      text:
-                                          'Not medical care. For crisis, call local emergency.'),
-                                ],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Dismiss',
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () =>
-                                _dismissTopDisclaimer(increment: true),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                // Disclaimer moved to a ChatGPT-style footer below the input
+                // bar (see end of Column). Was an amber dismissible banner
+                // above the greeting — created an "are you in danger?" framing
+                // at the exact moment we're trying to build trust with the
+                // user. Footer position keeps the compliance copy visible on
+                // every screen without competing with first-touch warmth.
                 // Chat Messages
                 Expanded(
                   child: Consumer<ChatProvider>(
@@ -732,9 +663,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   _messageController.text = transcript;
                                 }
                               });
-                              if (transcript.isNotEmpty) {
-                                _sendMessage();
-                              }
+                              // R1D7 Phase 1: surface the transcript in the
+                              // text field for explicit user review before
+                              // sending. Anxious users want a confirmation
+                              // step — auto-send (ChatGPT Voice Mode style)
+                              // is a Phase 3 conversational-mode behavior,
+                              // not Phase 1.
                             },
                             onCancel: () {
                               setState(() {
@@ -742,6 +676,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                 _voiceTranscript = '';
                               });
                             },
+                            onUnsupported: _onVoiceUnsupported,
                           );
                         }
 
@@ -845,6 +780,36 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     ),
                   ),
                 ),
+                // ChatGPT-style persistent footer disclaimer. Verbatim
+                // compliance copy preserved; placement moved here so it's
+                // always visible without competing with the first-touch
+                // greeting. Hidden when keyboard is up to free vertical
+                // space for typing.
+                Builder(builder: (ctx) {
+                  final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
+                  if (isKb) return const SizedBox.shrink();
+                  return Semantics(
+                    label: 'Wellness disclaimer',
+                    child: Container(
+                      width: double.infinity,
+                      color: appTheme.whiteCustom,
+                      padding: EdgeInsets.fromLTRB(12.h, 0, 12.h, 6.h),
+                      child: const Text(
+                        // Verbatim compliance copy.
+                        'Not medical care. For crisis, call local emergency.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.0,
+                          color: Color(0xFF8C8AA0),
+                          height: 1.3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                }),
               ],
             ),
           ],
@@ -1118,10 +1083,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final greeting = knownName ? '$timeGreeting, $rawName.' : '$timeGreeting.';
 
     // R1D6 — Named starter set (same 4 across all time-of-day buckets).
+    // Reordered: leading with "Today's been heavy" presumed a heavy day for
+    // a first-time user. Now leads with the most neutral option ("Just need
+    // someone to listen") so the default isn't framing the user's mood.
     const List<String> starters = [
-      "Today's been heavy",
-      'I want to vent a little',
       'Just need someone to listen',
+      'I want to vent a little',
+      "Today's been heavy",
       'Quick win, please',
     ];
 
@@ -1332,13 +1300,27 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     );
   }
 
-  /// R1D7 voice input mic button for the input bar.
+  /// R1D7 voice input mic button — enters VoiceInputBar.
+  ///
+  /// Now backed by speech_to_text (Apple Speech on iOS, Google
+  /// SpeechRecognizer on Android) with onDevice: true to honor the
+  /// "your voice stays on this device" promise. VoiceInputBar's
+  /// onUnsupported callback fires if the device/locale can't do on-device
+  /// recognition, in which case we drop the user back to the text bar with
+  /// a one-time "voice isn't supported here" SnackBar.
+  ///
+  /// Hidden on web — Web Speech API silently uses Google Cloud and would
+  /// break the on-device privacy promise, so Phase 1 deliberately excludes
+  /// web. Returning SizedBox.shrink() also collapses the leading SizedBox
+  /// gap next to the text field so the input bar layout stays clean.
   Widget _buildVoiceMicButton() {
+    if (kIsWeb) return const SizedBox.shrink();
     return Semantics(
       button: true,
       label: 'Start voice input',
       child: GestureDetector(
         onTap: () {
+          HapticFeedback.lightImpact();
           setState(() {
             _voiceInputActive = true;
             _voiceTranscript = '';
@@ -1357,6 +1339,31 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             size: 22,
           ),
         ),
+      ),
+    );
+  }
+
+  /// Handler for VoiceInputBar's onUnsupported callback. Bails out of voice
+  /// mode and surfaces a single, honest SnackBar so the user understands why
+  /// nothing happened. Avoids the "advertise broken feature" trap.
+  void _onVoiceUnsupported() {
+    if (!mounted) return;
+    setState(() {
+      _voiceInputActive = false;
+      _voiceTranscript = '';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          "Voice input isn't supported on this device · please type",
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+        backgroundColor: GQColors.ink2,
       ),
     );
   }

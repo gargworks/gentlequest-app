@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart';
+import '../services/firebase_service.dart';
 import '../theme/gq_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,23 +24,37 @@ import '../theme/gq_tokens.dart';
 
 /// Show the soft crisis sheet over the current route.
 /// Returns the user's choice as a [CrisisSheetChoice].
+///
+/// Fires `crisis_intervention_sheet_shown` analytics on open and
+/// `crisis_intervention_choice` (with the user's selection) on close. These
+/// events are what tell us, post-launch, whether the crisis flow is being
+/// reached for real users and which paths they actually take.
 Future<CrisisSheetChoice?> showCrisisInterventionSheet(
   BuildContext context, {
   RiskLevel risk = RiskLevel.medium,
-}) {
-  return showModalBottomSheet<CrisisSheetChoice>(
+  String source = 'unspecified',
+}) async {
+  FirebaseService().logEvent('crisis_intervention_sheet_shown', {
+    'risk': risk.toString().split('.').last,
+    'source': source,
+  });
+  final choice = await showModalBottomSheet<CrisisSheetChoice>(
     context: context,
     isDismissible: false,
     enableDrag: false,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: GQColors.ink.withAlpha(153), // 0.6 opacity
-    transitionAnimationController: AnimationController(
-      vsync: Navigator.of(context),
-      duration: GQDurations.crisisSheetSlide,
-    ),
     builder: (ctx) => CrisisInterventionSheet(risk: risk),
   );
+  if (choice != null) {
+    FirebaseService().logEvent('crisis_intervention_choice', {
+      'choice': choice.toString().split('.').last,
+      'risk': risk.toString().split('.').last,
+      'source': source,
+    });
+  }
+  return choice;
 }
 
 enum CrisisSheetChoice { call988, text741741, keepChatting, ventingOptOut }
@@ -1186,13 +1201,30 @@ class _EmojiChoice extends StatelessWidget {
 Future<void> _launchUri(BuildContext context, Uri uri, {String? label}) async {
   // Cache messenger before any async gap.
   final messenger = ScaffoldMessenger.maybeOf(context);
+  // Track which scheme the user invoked from crisis surfaces so we know
+  // (a) whether the platform allowed the launch and (b) which resource
+  // they tried. Powers the post-launch dashboard for the crisis flow.
+  FirebaseService().logEvent('crisis_resource_launch_attempt', {
+    'scheme': uri.scheme,
+    'label': label ?? 'unspecified',
+  });
   try {
     final launched = await canLaunchUrl(uri) &&
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (launched) return;
+    if (launched) {
+      FirebaseService().logEvent('crisis_resource_launch_success', {
+        'scheme': uri.scheme,
+        'label': label ?? 'unspecified',
+      });
+      return;
+    }
   } catch (_) {
     // fall through to clipboard fallback
   }
+  FirebaseService().logEvent('crisis_resource_launch_fallback_clipboard', {
+    'scheme': uri.scheme,
+    'label': label ?? 'unspecified',
+  });
 
   if (uri.scheme == 'tel') {
     final number = uri.path;

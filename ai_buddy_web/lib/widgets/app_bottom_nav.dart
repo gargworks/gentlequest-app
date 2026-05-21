@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../config/feature_flags.dart';
 
 /// App-wide bottom navigation used across Talk, Mood, Quest screens
 /// Ensures consistent look and navigation behavior.

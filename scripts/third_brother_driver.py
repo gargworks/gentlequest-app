@@ -27,13 +27,55 @@ import subprocess
 import sys
 import os
 import time
+
+# Force unbuffered stdout so streaming (tail -f) works in background mode
+if not sys.stdout.line_buffering:
+    sys.stdout.reconfigure(line_buffering=True)
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 # ── Global flags ─────────────────────────────────────────────
 VERBOSE = False  # Set by --verbose; logs every Ollama call's input/output
+_PREV_RUNTIME_CTX: dict = {}  # Set after each task; read by Phase C + D (Batcomputer)
+_LAST_DCAS_REPLAYED: list = []  # Populated by ring_distill_replay; read by run_driver
+
+# ── Phase 0.5 sovereignty consult (TB axis) ──────────────────
+# Mirror of the endpoint-side gate (PR #219). The driver runs autonomously
+# (sparring/compound/cron/audit), so without this primitive any driver-fired
+# turn that touches sovereign content (TB internals, family architecture,
+# identity sparring) leaks into shadow_log + DPO archive unconditionally.
+#
+# Each task carries a `sovereignty` field (`public|guarded|sovereign`); when
+# `sovereign`, every corpus-write site short-circuits — no shadow_log entry,
+# no DPO/SFT pair, no verdict, no scorecard. Default `guarded` (more
+# conservative than the endpoint's `public` default) because the driver
+# isn't an interactive surface — user can't classify each turn at write
+# time.
+#
+# Override per invocation via --sovereignty flag or TB_DRIVER_SOVEREIGNTY
+# env var. Override per task via the `sovereignty` field on the task dict.
+_VALID_SOVEREIGNTY = {"public", "guarded", "sovereign"}
+_DRIVER_DEFAULT_SOVEREIGNTY = (
+    os.environ.get("TB_DRIVER_SOVEREIGNTY", "guarded").lower()
+)
+if _DRIVER_DEFAULT_SOVEREIGNTY not in _VALID_SOVEREIGNTY:
+    _DRIVER_DEFAULT_SOVEREIGNTY = "guarded"
+
+
+def _should_write_corpus(task_or_sov) -> bool:
+    """True if the task/sovereignty allows corpus writes.
+
+    Accepts either a task dict (reads `task.get('sovereignty')`) or a
+    sovereignty string directly. Missing/None → DRIVER default. Any value
+    other than `'sovereign'` permits writes; `'sovereign'` short-circuits.
+    """
+    if isinstance(task_or_sov, dict):
+        sov = task_or_sov.get("sovereignty") or _DRIVER_DEFAULT_SOVEREIGNTY
+    else:
+        sov = task_or_sov or _DRIVER_DEFAULT_SOVEREIGNTY
+    return str(sov).lower() != "sovereign"
 
 # Ensure scripts/ is importable for driver_config
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -442,73 +484,6 @@ def _file_matches_scope(filepath: str, scope: List[str]) -> bool:
     return False
 
 
-def _build_verification_evidence(preflight: Optional[Dict],
-                                  ground_result: Optional[Dict] = None) -> str:
-    """Build verification evidence string from all available sources.
-
-    Combines GT40 preflight (plan-level ## Verification commands) and GROUND
-    execution verification (tier-based checks) into a single evidence block
-    for TB review. Returns "" if neither source has results.
-    """
-    sections = []
-
-    # Source 1: GT40 preflight (runs if plan has ## Verification section)
-    if preflight and preflight.get("results"):
-        ev_lines = ["GT40 Preflight:"]
-        for r in preflight["results"]:
-            if r.get("skipped") or r.get("passed") is None:
-                continue
-            status = "PASS" if r["passed"] else "FAIL"
-            ev_lines.append(f"  [{status}] {r['command'][:80]}")
-        overall = "ALL PASS" if preflight["passed"] else "FAILURES DETECTED"
-        ev_lines.append(f"  Result: {overall} "
-                        f"({preflight['passed_count']} passed, "
-                        f"{preflight['failed_count']} failed)")
-        sections.append("\n".join(ev_lines))
-
-    # Source 2: GROUND execution verification (runs for all tasks)
-    if ground_result and ground_result.get("signals"):
-        ev_lines = ["GROUND Execution Verification:"]
-        for sig in ground_result["signals"][:10]:
-            status = "PASS" if sig.get("passed") else "FAIL"
-            target = sig.get("file", sig.get("module", ""))
-            check = sig.get("check", "?")
-            err = f" — {sig['error']}" if sig.get("error") else ""
-            ev_lines.append(f"  [{status}] Tier {sig.get('tier', '?')}: {check} {target}{err}")
-        overall = "PASS" if ground_result.get("verified") else "FAIL"
-        ev_lines.append(f"  Result: {overall} "
-                        f"(tiers_passed={ground_result.get('tiers_passed', 0)}, "
-                        f"tiers_failed={ground_result.get('tiers_failed', 0)})")
-        sections.append("\n".join(ev_lines))
-
-    return "\n".join(sections)
-
-
-def _extract_plan_file_paths(plan_text: str) -> List[str]:
-    """Extract concrete file paths from plan text for scoped diffs.
-
-    Tries **File:**/**Files:** inline patterns first, then backtick-quoted
-    paths inside ## Changes sections. Returns only non-glob paths.
-    """
-    paths = []
-    # Primary: **File:** or **Files:** inline references
-    for p in re.findall(r'\*\*Files?:\*\*\s*`?([\w./\-]+\.\w+)`?', plan_text):
-        if p not in paths:
-            paths.append(p)
-    # Secondary: ## Changes section with backtick-quoted paths
-    if not paths:
-        changes_match = re.search(
-            r"## Changes[^\n]*\n((?:(?!^## ).*\n?)*)",
-            plan_text, re.MULTILINE)
-        if changes_match:
-            for line in changes_match.group(1).strip().splitlines():
-                tbl = re.search(r'`([\w./\-]+\.\w+)`', line)
-                if tbl and tbl.group(1) not in paths:
-                    paths.append(tbl.group(1))
-    # Filter out anything that still looks like a glob
-    return [p for p in paths if not any(c in p for c in "*?[")]
-
-
 # Nucleus infrastructure writes — ambient, not task output
 _INFRA_PREFIXES = (
     ".brain/", "nucleus-mcp", "mcp-server-nucleus/scripts/sync_public_repo",
@@ -840,18 +815,6 @@ def classify_task(task: Dict, config: Dict) -> Dict:
             "scout_turns": 0,
         }
 
-    # Compound audit tasks: always investigate with scout — need concrete findings
-    if task.get("source") == "compound_audit":
-        return {
-            "type": "investigate",
-            "needs_scout": True,
-            "max_turns": task.get("max_turns", 25),
-            "tools": v3.get("executor_tools_debug",
-                            "Bash,Read,Edit,Write,Glob,Grep,Agent"),
-            "confidence": 1.0,
-            "scout_turns": v3.get("scout_max_turns", 12),
-        }
-
     text = f"{task.get('title', '')} {task.get('description', '')}".lower()
     words = set(text.split())
 
@@ -1004,67 +967,59 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
 def _ollama_generate(prompt: str, model: str, timeout: int = 60,
                      num_predict: int = -1, temperature: float = 0.7,
-                     max_retries: int = 2, retry_backoff: float = 2.0) -> tuple:
+                     stop: list = None) -> tuple:
     """Call Ollama via HTTP API (not CLI subprocess). Returns (response_text, duration_ms).
 
     Uses the same pattern proven in tb_sparring.py. HTTP API is faster than
     subprocess (no process fork) and doesn't include model loading in timeout.
-    Retries on failure with exponential backoff.
+
+    stop: optional list of literal stop sequences forwarded to Ollama options.stop.
     """
     import urllib.request
+
+    options = {"num_predict": num_predict, "temperature": temperature}
+    if stop:
+        options["stop"] = list(stop)
 
     payload = json.dumps({
         "model": model,
         "prompt": prompt,
         "stream": False,
-        "options": {"num_predict": num_predict, "temperature": temperature},
+        "options": options,
     }).encode()
 
+    req = urllib.request.Request(
+        OLLAMA_API_URL,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+
     t0 = time.time()
-    for attempt in range(1, max_retries + 2):
-        req = urllib.request.Request(
-            OLLAMA_API_URL,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode())
-                duration_ms = int((time.time() - t0) * 1000)
-                text = data.get("response", "").strip()
-                # Strip qwen3 chain-of-thought — closed or unclosed
-                think_end = text.find("</think>")
-                if think_end >= 0:
-                    text = text[think_end + 8:].strip()
-                elif text.startswith("<think>"):
-                    text = text[7:].strip()
-                return text, duration_ms
-        except Exception as e:
-            elapsed = int((time.time() - t0) * 1000)
-            if attempt <= max_retries:
-                backoff = retry_backoff ** (attempt - 1)
-                print(f"[OLLAMA] Attempt {attempt} failed ({type(e).__name__}), "
-                      f"retrying in {backoff:.0f}s...")
-                time.sleep(backoff)
-            else:
-                print(f"[OLLAMA] Error after {elapsed}ms ({max_retries} retries "
-                      f"exhausted): {type(e).__name__}: {e}")
-                return None, elapsed
-    return None, int((time.time() - t0) * 1000)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+            duration_ms = int((time.time() - t0) * 1000)
+            text = data.get("response", "").strip()
+            # Strip qwen3 chain-of-thought — closed or unclosed
+            think_end = text.find("</think>")
+            if think_end >= 0:
+                text = text[think_end + 8:].strip()
+            elif text.startswith("<think>"):
+                text = text[7:].strip()
+            return text, duration_ms
+    except Exception as e:
+        duration_ms = int((time.time() - t0) * 1000)
+        print(f"[OLLAMA] Error after {duration_ms}ms: {type(e).__name__}: {e}")
+        return None, duration_ms
 
 
-def _ollama_warmup(model: str, max_attempts: int = 2):
+def _ollama_warmup(model: str):
     """Send a trivial prompt to force model loading before real work."""
-    for attempt in range(1, max_attempts + 1):
-        text, ms = _ollama_generate("Reply OK", model, timeout=30, num_predict=5,
-                                     max_retries=1)
-        if text:
-            print(f"[OLLAMA] Model {model} warmed up ({ms}ms)")
-            return
-        if attempt < max_attempts:
-            print(f"[OLLAMA] Warmup attempt {attempt} failed, retrying in 3s...")
-            time.sleep(3)
-    print(f"[OLLAMA] Warmup failed after {max_attempts} attempts")
+    text, ms = _ollama_generate("Reply OK", model, timeout=30, num_predict=5)
+    if text:
+        print(f"[OLLAMA] Model {model} warmed up ({ms}ms)")
+    else:
+        print(f"[OLLAMA] Warmup failed — cold starts may cause timeouts")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1170,14 +1125,31 @@ Your instruction must include:
 
 Write the instruction now:"""
 
+    # Inject task run history so TB knows past attempts
     task_id = task.get("id", "")
+    task_history = _gather_task_run_history(task_id)
+    if task_history:
+        ollama_prompt += f"\n\nTask Run History:\n{task_history}"
+
+    # Inject runtime context from previous task (Batcomputer)
+    runtime_text = _format_runtime_context(_PREV_RUNTIME_CTX, config)
+    if runtime_text:
+        ollama_prompt += f"\n\n{runtime_text}"
+
     print(f"[TB] Generating enriched prompt via {tb_model}...")
 
     response_text, duration_ms = _ollama_generate(
-        ollama_prompt, tb_model, timeout=timeout, num_predict=-1)
+        ollama_prompt, tb_model, timeout=600, num_predict=-1)
 
-    log_ollama_call("TB", tb_model, ollama_prompt, response_text or "",
-                    0 if response_text else -1, duration_ms, "", task_id)
+    # Phase 0.5 sov-consult: skip audit-trail + interaction-log writes for
+    # sovereign tasks. TB still generates the enriched prompt — the answer
+    # gets returned — but no .brain/driver/* trace is left.
+    if _should_write_corpus(task):
+        log_ollama_call("TB", tb_model, ollama_prompt, response_text or "",
+                        0 if response_text else -1, duration_ms, "", task_id)
+
+        _log_tb_interaction(task_id, "C", ollama_prompt, response_text or "",
+                            duration_ms=duration_ms)
 
     if not response_text:
         print(f"[TB] Ollama failed after {duration_ms}ms, falling back to template")
@@ -1198,80 +1170,6 @@ Write the instruction now:"""
 
 SPARRING_DPO_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_dpo.jsonl"
 SPARRING_SFT_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "inbox" / "sparring_sft.jsonl"
-LEVER_LEDGER_PATH = BRAIN_PATH / "ledger" / "events.jsonl"
-
-
-def _lever_gate_scan(git_diff: str,
-                     ledger_path: Optional[Path] = None,
-                     window: int = 100) -> Dict[str, Any]:
-    """Fail-closed scan of recent ledger events against a diff.
-
-    Returns a dict ``{"matches": [...], "status": "clean"|"found"|"unknown"}``.
-
-    ``status`` is the key the gate trusts:
-      - ``clean``   — ledger readable, no findings touch diff files
-      - ``found``   — ledger readable, one or more findings touch diff files
-      - ``unknown`` — ledger unreadable/parse-error/missing. The gate MUST
-                     force DEEPEN on unknown, never silently ACCEPT
-                     (substrate posture: fail-closed on read errors).
-
-    ``matches`` is always a list; on ``unknown`` it is empty.
-    """
-    path = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
-    if not git_diff:
-        return {"matches": [], "status": "clean"}
-    if not path.exists():
-        return {"matches": [], "status": "clean"}
-
-    diff_files = set()
-    for line in git_diff.splitlines():
-        if line.startswith("+++ b/"):
-            diff_files.add(line[6:].strip())
-        elif line.startswith("diff --git a/") and " b/" in line:
-            diff_files.add(line.split(" b/", 1)[1].strip())
-    if not diff_files:
-        return {"matches": [], "status": "clean"}
-
-    try:
-        raw_lines = path.read_text(encoding="utf-8").strip().splitlines()
-    except (OSError, UnicodeDecodeError) as e:
-        print(f"[LEVER_GATE] ledger unreadable — forcing DEEPEN: {e}")
-        return {"matches": [], "status": "unknown", "reason": f"read_error: {e}"}
-
-    matches: List[Dict] = []
-    corrupt = 0
-    for line in raw_lines[-window:]:
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            corrupt += 1
-            continue
-        etype = event.get("type", "")
-        if not (etype.startswith("lever.") and etype.endswith(".observation")):
-            continue
-        if event.get("outcome") != "found":
-            continue
-        findings = event.get("detail", {}).get("findings", [])
-        finding_text = "\n".join(findings) if isinstance(findings, list) else str(findings)
-        if any(f in finding_text for f in diff_files):
-            matches.append(event)
-    status = "found" if matches else "clean"
-    result: Dict[str, Any] = {"matches": matches, "status": status}
-    if corrupt:
-        result["corrupt_lines"] = corrupt
-    return result
-
-
-def _find_lever_findings_in_diff(git_diff: str,
-                                 ledger_path: Optional[Path] = None,
-                                 window: int = 100) -> List[Dict]:
-    """Backward-compat wrapper — returns only the matches list.
-
-    Phase D scoring uses this to dock reviews that ACCEPT over flagged
-    files. For the fail-closed gate, use ``_lever_gate_scan`` instead so
-    ``unknown`` (ledger unreadable) can force DEEPEN.
-    """
-    return _lever_gate_scan(git_diff, ledger_path, window)["matches"]
 
 
 def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
@@ -1352,337 +1250,14 @@ def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
         return None
 
 
-def _emit_plan_audit_spawner_event(ledger_path: Path, outcome: str,
-                                    detail: Dict) -> None:
-    """Emit one contract-conformant ``lever.plan_audit_spawner.observation``.
-
-    Uses ``LedgerEvent.for_lever_observation`` so the event type is always
-    ``lever.plan_audit_spawner.observation`` (the helper hardcodes the
-    ``.observation`` suffix). Never raises — ledger write failures are
-    absorbed so the spawner path never breaks session startup.
-    """
-    try:
-        from scripts.levers.base import LedgerEvent, LedgerSchemaError
-    except ImportError as e:
-        print(f"[PLAN_AUDIT_SPAWNER] LedgerEvent import failed: {e}")
-        return
-    try:
-        event = LedgerEvent.for_lever_observation(
-            lever_name="plan_audit_spawner",
-            observation={"outcome": outcome, "detail": detail},
-        )
-        ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(ledger_path, "a", encoding="utf-8") as f:
-            f.write(event.to_jsonl() + "\n")
-    except (OSError, LedgerSchemaError) as e:
-        print(f"[PLAN_AUDIT_SPAWNER] ledger publish failed (non-fatal): {e}")
-
-
-# Wave 8 — dispatch policy for plan_audit spawner.
-#
-# Re-audit buckets fall through to the default ``audit-plan-<stem>`` task
-# (re-running TB's --audit-plans is the right fix).
-#
-# Non-re-audit buckets look up BUCKET_SPAWN_POLICY to decide the task
-# type. Wave 9 will append ``unverifiable`` and ``drift_detected`` entries
-# (the latter with ``task_kwargs={"force": True}`` so the dispatcher adds
-# --audit-force to the instruction).
-_REAUDIT_BUCKETS = frozenset({
-    "never_audited",
-    "stale",
-    "needs_deepen",
-    "deepen_exhausted",
-    "failed_audit",
-})
-
-BUCKET_SPAWN_POLICY: Dict[str, Dict[str, Any]] = {
-    "verified_no_evidence": {
-        "task_type": "add-verification",
-        "task_kwargs": {},
-    },
-    # Wave 9 — lever can never auto-grade this plan; structural fix is
-    # to add `## Files Modified` / `## Verification`. Same shape as
-    # verified_no_evidence.
-    "unverifiable": {
-        "task_type": "add-verification",
-        "task_kwargs": {},
-    },
-    # Wave 9 — a referenced file was edited after the audit. Re-auditing
-    # is the right fix, but TB auto-skips ACCEPT verdicts; force=True so
-    # the dispatcher emits the `--audit-force` hint in the description.
-    "drift_detected": {
-        "task_type": "audit-plan",
-        "task_kwargs": {"force": True},
-    },
-}
-
-
-def _spawn_plan_audit_fix_tasks(
-    tasks_path: Optional[Path] = None,
-    ledger_path: Optional[Path] = None,
-) -> List[str]:
-    """Wave 7+8 — convert plan_audit findings into TB task bank entries.
-
-    Reads the most recent ``lever.plan_audit.observation`` from the
-    ledger. For each plan in ``detail.top_rot``, dispatches through
-    ``BUCKET_SPAWN_POLICY`` and ``_REAUDIT_BUCKETS`` to decide the task
-    shape, unless a pending/in_progress task with the same id already
-    exists (dedupe). Plans that vanished from disk between the lever
-    fire and this call are skipped (orphan guard).
-
-    Bucket → task-type map (Waves 8+9):
-
-      verified_no_evidence, unverifiable → add-verification-<stem>
-        (plan-edit task, NOT re-audit: re-running --audit-plans on a
-        plan without parseable `## Files Modified` / `## Verification`
-        just produces another quality=none verdict; the structural
-        fix is to add those sections).
-      drift_detected → audit-plan-<stem>  (re-audit with force=True:
-        a referenced file changed after the audit; force the dispatcher
-        to emit --audit-force so TB doesn't auto-skip the ACCEPT verdict).
-      never_audited, stale, needs_deepen, deepen_exhausted, failed_audit
-        → audit-plan-<stem>  (default re-audit task).
-      deepen_exhausted also gets ' --audit-force REQUIRED' in the
-        description (TB auto-skips otherwise).
-
-    Emission policy (silent-unless-action-or-degraded, to avoid ledger
-    flood on frequent session inits):
-
-      N > 0 tasks created  → outcome=found,  detail={created_count,
-                              deduped_count, plan_names, skipped_orphans}
-      tasks.json unreadable → outcome=skipped, detail={stage: tasks_json_read,
-                              error}, returns []
-      ledger unreadable     → outcome=skipped, detail={stage: ledger_read,
-                              error}, returns []
-      no observation / all  → SILENT (no event emitted)
-      deduped / no top_rot
-
-    Returns list of newly-created task ids (empty on no-op or failure).
-    """
-    tpath = tasks_path if tasks_path is not None else TASKS_PATH
-    lpath = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
-
-    # 1. Read ledger tail for most-recent plan_audit observation
-    try:
-        lines = lpath.read_text(encoding="utf-8").splitlines() if lpath.exists() else []
-    except (OSError, UnicodeDecodeError) as e:
-        _emit_plan_audit_spawner_event(
-            lpath, "skipped",
-            {"stage": "ledger_read", "error": str(e)},
-        )
-        return []
-
-    obs_detail: Optional[Dict] = None
-    for line in reversed(lines):
-        if not line.strip():
-            continue
-        try:
-            raw = json.loads(line)
-        except (json.JSONDecodeError, ValueError):
-            continue
-        if not isinstance(raw, dict):
-            continue
-        if (raw.get("type") == "lever.plan_audit.observation"
-                and raw.get("outcome") == "found"):
-            d = raw.get("detail")
-            if isinstance(d, dict):
-                obs_detail = d
-                break
-
-    if obs_detail is None:
-        return []
-    top_rot = obs_detail.get("top_rot") or []
-    if not isinstance(top_rot, list) or not top_rot:
-        return []
-
-    # 2. Read existing tasks for dedupe
-    try:
-        if tpath.exists():
-            data = json.loads(tpath.read_text(encoding="utf-8"))
-        else:
-            data = {"tasks": []}
-    except (OSError, json.JSONDecodeError) as e:
-        _emit_plan_audit_spawner_event(
-            lpath, "skipped",
-            {"stage": "tasks_json_read", "error": str(e)},
-        )
-        return []
-
-    if not isinstance(data, dict):
-        _emit_plan_audit_spawner_event(
-            lpath, "skipped",
-            {"stage": "tasks_json_read", "error": "expected object"},
-        )
-        return []
-    tasks = data.get("tasks") or []
-    if not isinstance(tasks, list):
-        tasks = []
-    existing_open_ids = {
-        t.get("id") for t in tasks
-        if isinstance(t, dict) and t.get("status") in ("pending", "in_progress")
-    }
-
-    # 3. Build one task per rotting plan (skip deduped + orphan plans)
-    claude_plans = Path.home() / ".claude" / "plans"
-    brain_plans = PROJECT_ROOT / ".brain" / "plans"
-    created_ids: List[str] = []
-    created_plan_names: List[str] = []
-    deduped: List[str] = []
-    skipped_orphans: List[str] = []
-
-    for plan in top_rot:
-        if not isinstance(plan, dict):
-            continue
-        name = plan.get("name")
-        if not isinstance(name, str) or not name:
-            continue
-        stem = name[:-3] if name.endswith(".md") else name
-        bucket = plan.get("bucket", "?")
-
-        # R13: dispatch by bucket. BUCKET_SPAWN_POLICY wins if the bucket
-        # has custom task semantics; otherwise re-audit buckets fall
-        # through to the default audit-plan task. Unknown buckets are
-        # skipped silently (shouldn't reach here — lever only puts
-        # rotting buckets in top_rot).
-        policy = BUCKET_SPAWN_POLICY.get(bucket)
-        if policy is not None:
-            task_type = policy["task_type"]
-            task_kwargs = policy.get("task_kwargs", {}) or {}
-        elif bucket in _REAUDIT_BUCKETS:
-            task_type = "audit-plan"
-            task_kwargs = {}
-        else:
-            continue
-
-        task_id = f"{task_type}-{stem}"
-
-        if task_id in existing_open_ids:
-            deduped.append(name)
-            continue
-
-        plan_on_disk: Optional[Path] = None
-        for candidate in (claude_plans / name, brain_plans / name):
-            if candidate.exists():
-                plan_on_disk = candidate
-                break
-        if plan_on_disk is None:
-            skipped_orphans.append(name)
-            continue
-
-        now_iso = datetime.now(timezone.utc).isoformat()
-
-        if task_type == "audit-plan":
-            force_flag = (
-                task_kwargs.get("force", False) or bucket == "deepen_exhausted"
-            )
-            force_hint = (
-                " --audit-force is REQUIRED: TB auto-skips this verdict."
-                if force_flag
-                else ""
-            )
-            title = f"audit plan {name}"[:80]
-            description = (
-                f"plan_audit lever flagged {name} as bucket="
-                f"{bucket} (age {plan.get('age_days', '?')}d). "
-                f"Verify plan claims against code + write verdict to "
-                f".brain/audit/results.json via: python3 "
-                f"scripts/third_brother_driver.py --audit-plans 1 "
-                f"(newest-first; use --audit-skip K to reach this plan)."
-                f"{force_hint}"
-            )
-        elif task_type == "add-verification":
-            title = f"add verification to {name}"[:80]
-            description = (
-                f"plan_audit lever flagged {name} as bucket={bucket} "
-                f"(age {plan.get('age_days', '?')}d). Plan was ACCEPTed "
-                f"without executed verification commands (quality=none "
-                f"or missing). Edit the plan to add a `## Files Modified` "
-                f"or `## Verification` section listing concrete "
-                f"assertions (ran pytest X, checked Y) so a future "
-                f"--audit-plans fire can grade evidence. Plan-edit only; "
-                f"no code changes expected."
-            )
-        else:
-            continue
-
-        new_task = {
-            "id": task_id,
-            "title": title,
-            "description": description,
-            "scope": [str(plan_on_disk)],
-            "priority": 1,
-            "status": "pending",
-            "assigned_to": "tb",
-            "created_at": now_iso,
-            "source": "plan_audit_spawner",
-            "plan_name": name,
-            "plan_bucket": bucket,
-        }
-        tasks.append(new_task)
-        created_ids.append(task_id)
-        created_plan_names.append(name)
-
-    # 4. Persist + emit only if we actually added tasks
-    if created_ids:
-        data["tasks"] = tasks
-        data["schema_version"] = data.get("schema_version", 1)
-        data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        try:
-            tpath.write_text(json.dumps(data, indent=2))
-        except OSError as e:
-            _emit_plan_audit_spawner_event(
-                lpath, "skipped",
-                {"stage": "tasks_json_write", "error": str(e)},
-            )
-            return []
-        _emit_plan_audit_spawner_event(
-            lpath, "found",
-            {
-                "created_count": len(created_ids),
-                "deduped_count": len(deduped),
-                "plan_names": created_plan_names,
-                "skipped_orphans": skipped_orphans,
-            },
-        )
-    # else: silent no-op — no emission, avoids ledger flood on session inits
-
-    return created_ids
-
-
-def _publish_tb_review_decided(task: Dict, review_result: Dict,
-                               lever_gate_status: Optional[str] = None) -> None:
-    """Emit one ``tb.review.decided`` event to the substrate ledger.
-
-    TB becomes a peer on the shared substrate: its verdicts are visible to
-    every other lever and consumer (Brazen Bull replay, MCP resources,
-    future training curriculum). Never raises — publishing failure must
-    not break the review path.
-    """
-    try:
-        LEVER_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
-        event = {
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "type": "tb.review.decided",
-            "task_id": task.get("id", ""),
-            "verdict": review_result.get("verdict"),
-            "original_verdict": review_result.get("original_verdict",
-                                                  review_result.get("verdict")),
-            "confidence": review_result.get("confidence"),
-            "lever_gate_fired": bool(review_result.get("lever_gate_fired")),
-            "lever_gate_status": lever_gate_status,
-        }
-        with open(LEVER_LEDGER_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(event) + "\n")
-    except Exception as e:
-        print(f"[REVIEW] publish tb.review.decided failed (non-fatal): {e}")
-
-
 def _spar_phase_cd(task: Dict, executor_result: Dict, review: Dict, config: Dict):
     """Score TB's Phase C prompt and Phase D review — produce DPO pairs from real work.
 
     This runs inline during branch mode. Every task TB works on
     becomes training data regardless of outcome.
     """
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult: sovereign tasks emit no DPO/SFT.
     try:
         # Get TB's prompt from the executor result (if it was stored)
         tb_prompt_used = executor_result.get("tb_prompt", "")
@@ -1806,140 +1381,113 @@ Reply with ONLY this JSON:
         print(f"[SPARRING] Phase C scored {score}/5 — "
               f"{'DPO pair' if score < 4 else 'positive SFT'} saved")
 
-        # ── Phase D: Review quality sparring ──
-        # Score TB's review verdict — does it catch real issues or rubber-stamp?
+        # ── Phase D: Review quality — outcome-correlated scoring ──
+        # Score TB's verdict by what actually happened (final verdict after deepen
+        # chain + GROUND verification), not by a second Claude opinion.
+        review_score = None
         if config.get("training_capture_review_dpo", True) and review.get("verdict"):
+            tb_verdict = review["verdict"]
+            final_verdict = executor_result.get("final_verdict", tb_verdict)
+            verification_passed = (executor_result.get("verification") or {}).get("verified")
+
+            # Rubric:
+            #   ESCALATE                                 → 5 (right by definition)
+            #   DEEPEN → final ESCALATE/DEEPEN_EXHAUSTED  → 5 (Claude couldn't satisfy)
+            #   DEEPEN → final ACCEPT after retry        → 5 (push produced better output)
+            #   DEEPEN → (ambiguous)                      → 3
+            #   ACCEPT & verification_passed is True     → 4
+            #   ACCEPT & verification_passed is False    → 1 (rubber-stamped broken fix)
+            #   ACCEPT & verification_passed is None     → 3
+            verdict_correct = None
+            if tb_verdict == "ESCALATE":
+                review_score = 5
+                verdict_correct = True
+            elif tb_verdict == "DEEPEN":
+                if final_verdict in ("ESCALATE", "DEEPEN_EXHAUSTED", "ACCEPT"):
+                    review_score = 5
+                    verdict_correct = True
+                else:
+                    review_score = 3
+            elif tb_verdict == "ACCEPT":
+                if verification_passed is False:
+                    review_score = 1
+                    verdict_correct = False
+                elif verification_passed is True:
+                    review_score = 4
+                    verdict_correct = True
+                else:
+                    review_score = 3
+            else:
+                review_score = 3
+
             tb_review_text = (f"VERDICT: {review.get('verdict', '?')}\n"
                               f"REASON: {review.get('reason', '')}\n"
                               f"NOTES: {review.get('deepen_notes', '')}")
+            review_sys = ("You are Third Brother, reviewing work done by Claude Code. "
+                          "Respond with VERDICT, REASON, and NOTES.")
+            review_user = (f"Task: {task_desc[:300]}\n"
+                           f"Executor result: {str(executor_result.get('result', ''))[:300]}\n"
+                           f"Git diff: {git_diff[:300]}")
 
-            review_eval_prompt = f"""Score Third Brother's REVIEW quality. DO NOT read any files.
+            # High-signal DPO: only when TB was actually wrong (score <= 2).
+            if review_score <= 2:
+                review_dpo = {
+                    "prompt": [
+                        {"role": "system", "content": review_sys},
+                        {"role": "user", "content": review_user},
+                    ],
+                    "chosen": [{"role": "assistant",
+                                "content": "VERDICT: DEEPEN\nREASON: verification failed; "
+                                           "prior ACCEPT was premature.\nNOTES: re-examine "
+                                           "the diff against the task's verification criteria."}],
+                    "rejected": [{"role": "assistant", "content": tb_review_text}],
+                    "metadata": {
+                        "source": "tb_review_outcome",
+                        "task_id": task.get("id", ""),
+                        "review_score": review_score,
+                        "verdict_correct": verdict_correct,
+                        "tb_verdict": tb_verdict,
+                        "final_verdict": final_verdict,
+                        "verification_passed": verification_passed,
+                        "category": "review_quality",
+                        "ts": datetime.now().isoformat(),
+                    },
+                }
+                with open(SPARRING_DPO_PATH, "a") as f:
+                    f.write(json.dumps(review_dpo) + "\n")
 
-TASK: {task_desc[:500]}
+            # SFT entry for positive cases (score >= 4).
+            if review_score >= 4:
+                review_sft = {
+                    "messages": [
+                        {"role": "system", "content": review_sys},
+                        {"role": "user", "content": review_user},
+                        {"role": "assistant", "content": tb_review_text[:1500]},
+                    ],
+                    "metadata": {
+                        "source": "tb_review_outcome",
+                        "task_id": task.get("id", ""),
+                        "original_score": review_score,
+                        "category": "review_quality",
+                        "quality": "gold",
+                        "tb_verdict": tb_verdict,
+                        "final_verdict": final_verdict,
+                        "verification_passed": verification_passed,
+                        "ts": datetime.now().isoformat(),
+                    },
+                }
+                with open(SPARRING_SFT_PATH, "a") as f:
+                    f.write(json.dumps(review_sft) + "\n")
 
-EXECUTOR RESULT: {str(executor_result.get('result', ''))[:500]}
+            print(f"[SPARRING] Phase D scored {review_score}/5 "
+                  f"(outcome-correlated, tb={tb_verdict}, final={final_verdict}, "
+                  f"verify={verification_passed})")
 
-GIT DIFF: {git_diff[:500]}
-
-TB REVIEW: {tb_review_text}
-{_cal_block}
-Was the review correct? Did TB catch real issues or rubber-stamp?
-Reply with ONLY this JSON:
-{{"review_score": 1-5, "verdict_correct": true, "should_be": "ACCEPT/DEEPEN/ESCALATE", "reason": "one sentence", "better_review": "VERDICT: ...\\nREASON: ...\\nNOTES: ..."}}"""
-
-            review_eval_result = subprocess.run(
-                ["claude", "-p", review_eval_prompt,
-                 "--output-format", "text",
-                 "--max-turns", "1",
-                 "--allowedTools", ""],
-                capture_output=True, text=True, timeout=90,
-            )
-
-            if review_eval_result.returncode == 0 and review_eval_result.stdout.strip():
-                raw_d = review_eval_result.stdout.strip()
-                idx_d = raw_d.find('{')
-                if idx_d >= 0:
-                    brace_d = 0
-                    for i_d in range(idx_d, len(raw_d)):
-                        if raw_d[i_d] == '{':
-                            brace_d += 1
-                        elif raw_d[i_d] == '}':
-                            brace_d -= 1
-                            if brace_d == 0:
-                                try:
-                                    rd = json.loads(raw_d[idx_d:i_d + 1])
-                                except json.JSONDecodeError:
-                                    rd = None
-                                break
-                    else:
-                        rd = None
-
-                    if rd:
-                        review_score = rd.get("review_score", 0)
-                        better_review = rd.get("better_review", "")
-                        verdict_correct = rd.get("verdict_correct")
-
-                        # ── Compounding: dock ACCEPT that rubber-stamps lever findings ──
-                        # If the ledger already flagged issues on files in this diff and
-                        # TB said ACCEPT anyway, that's the rubber-stamp failure mode.
-                        # Cap the review score so the DPO pair captures the miss.
-                        lever_dock_count = 0
-                        lever_dock_types: List[str] = []
-                        if (config.get("lever_dock_enabled", True)
-                                and review.get("verdict") == "ACCEPT"):
-                            lever_matches = _find_lever_findings_in_diff(
-                                git_diff,
-                                window=config.get("lever_lookback_window", 100),
-                            )
-                            if lever_matches:
-                                lever_dock_count = len(lever_matches)
-                                lever_dock_types = sorted({
-                                    m.get("lever", "?") for m in lever_matches
-                                })
-                                original_review_score = review_score
-                                review_score = min(review_score, 2)
-                                verdict_correct = False
-                                print(f"[SPARRING] Phase D dock — ACCEPT over "
-                                      f"{lever_dock_count} lever finding(s) "
-                                      f"({','.join(lever_dock_types)}): "
-                                      f"review_score {original_review_score} → {review_score}")
-
-                        review_sys = ("You are Third Brother, reviewing work done by Claude Code. "
-                                      "Respond with VERDICT, REASON, and NOTES.")
-                        review_user = (f"Task: {task_desc[:300]}\n"
-                                       f"Executor result: {str(executor_result.get('result', ''))[:300]}\n"
-                                       f"Git diff: {git_diff[:300]}")
-
-                        if review_score < 4 and better_review:
-                            # DPO pair: TB's review rejected, Claude's correction chosen
-                            review_dpo = {
-                                "prompt": [
-                                    {"role": "system", "content": review_sys},
-                                    {"role": "user", "content": review_user},
-                                ],
-                                "chosen": [{"role": "assistant", "content": better_review}],
-                                "rejected": [{"role": "assistant", "content": tb_review_text}],
-                                "metadata": {
-                                    "source": "tb_review_sparring",
-                                    "task_id": task.get("id", ""),
-                                    "review_score": review_score,
-                                    "verdict_correct": verdict_correct,
-                                    "category": "review_quality",
-                                    "lever_dock_count": lever_dock_count,
-                                    "lever_dock_types": lever_dock_types,
-                                    "ts": datetime.now().isoformat(),
-                                }
-                            }
-                            with open(SPARRING_DPO_PATH, "a") as f:
-                                f.write(json.dumps(review_dpo) + "\n")
-
-                        # SFT entry for review quality
-                        best_review = better_review if (review_score < 4 and better_review) else tb_review_text
-                        review_sft = {
-                            "messages": [
-                                {"role": "system", "content": review_sys},
-                                {"role": "user", "content": review_user},
-                                {"role": "assistant", "content": best_review[:1500]},
-                            ],
-                            "metadata": {
-                                "source": "tb_review_sparring",
-                                "task_id": task.get("id", ""),
-                                "original_score": review_score,
-                                "category": "review_quality",
-                                "quality": "gold" if review_score >= 4 else "silver",
-                                "lever_dock_count": lever_dock_count,
-                                "lever_dock_types": lever_dock_types,
-                                "ts": datetime.now().isoformat(),
-                            }
-                        }
-                        with open(SPARRING_SFT_PATH, "a") as f:
-                            f.write(json.dumps(review_sft) + "\n")
-
-                        print(f"[SPARRING] Phase D review scored {review_score}/5 — "
-                              f"{'DPO pair' if review_score < 4 else 'positive SFT'} saved")
+        return {"phase_c_score": score, "phase_d_score": review_score}
 
     except Exception as e:
         print(f"[SPARRING] Error (non-fatal): {e}")
+        return None
 
 
 SPARRING_TASK_BANK_PATH = Path(__file__).resolve().parent.parent / ".brain" / "training" / "sparring_task_bank.json"
@@ -1977,6 +1525,8 @@ def _capture_execution_dpo(task: Dict, response: Dict, git_diff_text: str, confi
     """
     if not config.get("training_capture_execution_dpo", True):
         return
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult.
     try:
         tb_prompt = response.get("tb_prompt", "")
         result_text = response.get("result", "")
@@ -2036,6 +1586,8 @@ def _capture_deepen_dpo(task: Dict, pre_result: str, post_result: str,
     Pre-deepen output (rejected) vs post-deepen output (chosen).
     The deepen_notes ARE the preference signal.
     """
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult.
     try:
         if not pre_result or not post_result:
             return
@@ -2071,6 +1623,8 @@ def _capture_outcome_sft(task: Dict, response: Dict, outcome: str, config: Dict)
     """Capture D: outcome SFT entry — fires for ALL outcomes including failures."""
     if not config.get("training_capture_outcome_sft", True):
         return
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult.
     try:
         instruction = response.get("message", response.get("tb_prompt", ""))
         result_text = response.get("result", "")
@@ -2110,8 +1664,16 @@ def _capture_outcome_sft(task: Dict, response: Dict, outcome: str, config: Dict)
         print(f"[TRAINING] Capture D error (non-fatal): {e}")
 
 
-def _log_hard_negative(task: Dict, failure_mode: str, notes: str):
-    """Log failed tasks as hard negatives in the sparring task bank."""
+def _log_hard_negative(task: Dict, failure_mode: str, notes: str,
+                       attributed_to: str = "executor"):
+    """Log failed tasks as hard negatives in the sparring task bank.
+
+    attributed_to: "tb_review" (deepen exhausted), "ground" (verification failed),
+    "executor" (scope violation, crash, etc.). Lets TB see which of its own outputs
+    produced the hard negative.
+    """
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult.
     try:
         entry = {
             "task": f"{task.get('description', '')}\n\nPrevious failure: {notes[:300]}",
@@ -2119,6 +1681,7 @@ def _log_hard_negative(task: Dict, failure_mode: str, notes: str):
             "source": "hard_negative",
             "original_task_id": task.get("id", ""),
             "failure_mode": failure_mode,
+            "attributed_to": attributed_to,
             "added_at": datetime.now().isoformat(),
         }
         with open(SPARRING_TASK_BANK_PATH, "r") as f:
@@ -2126,7 +1689,8 @@ def _log_hard_negative(task: Dict, failure_mode: str, notes: str):
         bank.append(entry)
         with open(SPARRING_TASK_BANK_PATH, "w") as f:
             json.dump(bank, f, indent=2)
-        print(f"[TRAINING] Hard negative added to task bank: {failure_mode}")
+        print(f"[TRAINING] Hard negative added to task bank: {failure_mode} "
+              f"(source={attributed_to})")
     except Exception as e:
         print(f"[TRAINING] Hard negative log error (non-fatal): {e}")
 
@@ -2140,11 +1704,16 @@ REVIEW_LOG_PATH = DRIVER_DIR / "review_log.jsonl"
 
 def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
                      config: Dict, pre_snapshot: set = None,
-                     verification_evidence: str = "") -> tuple:
+                     pre_head: str = "") -> tuple:
     """Inline follow-up on same session after DEEPEN verdict.
 
     Instead of re-queuing (losing context), immediately sends review feedback
     to the same Claude session and re-reviews the result.
+
+    Args:
+        pre_head: Git HEAD SHA from before the original task execution.
+                  Used to detect committed changes (Claude often commits
+                  during sessions, making unstaged/staged diffs empty).
 
     Returns (response_dict, review_dict).
     """
@@ -2192,39 +1761,25 @@ def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
     # Re-capture git diff for the follow-up review (check unstaged + staged + committed)
     git_diff_text = ""
     try:
-        for diff_cmd in [
-            ["git", "diff", "--stat"],
-            ["git", "diff", "--cached", "--stat"],
-        ]:
+        # Unstaged changes
+        diff_result = subprocess.run(
+            ["git", "diff", "--stat"], capture_output=True, text=True,
+            timeout=10, cwd=str(PROJECT_ROOT))
+        git_diff_text = diff_result.stdout[:3000]
+        # Staged changes
+        if not git_diff_text.strip():
             diff_result = subprocess.run(
-                diff_cmd, capture_output=True, text=True, timeout=10, cwd=str(PROJECT_ROOT))
-            if diff_result.stdout.strip():
-                git_diff_text = diff_result.stdout[:3000]
-                break
+                ["git", "diff", "--cached", "--stat"], capture_output=True, text=True,
+                timeout=10, cwd=str(PROJECT_ROOT))
+            git_diff_text = diff_result.stdout[:3000]
+        # Changes committed during session (Claude Code often commits)
+        if not git_diff_text.strip() and pre_head:
+            diff_result = subprocess.run(
+                ["git", "log", "--stat", "--format=", f"{pre_head}..HEAD"],
+                capture_output=True, text=True, timeout=10, cwd=str(PROJECT_ROOT))
+            git_diff_text = diff_result.stdout[:3000]
     except Exception:
         pass
-
-    # Scope the diff for audit tasks
-    if task.get("source") == "plan_audit":
-        scope_files = [p for p in task.get("scope", [])
-                       if not any(c in p for c in "*?[")]
-        # Fallback: extract concrete paths from plan text when scope is all globs
-        if not scope_files and task.get("_plan_text"):
-            scope_files = _extract_plan_file_paths(task["_plan_text"])
-        if scope_files:
-            try:
-                for diff_cmd in [
-                    ["git", "diff", "--"] + scope_files,
-                    ["git", "diff", "--cached", "--"] + scope_files,
-                ]:
-                    scoped = subprocess.run(
-                        diff_cmd, capture_output=True, text=True,
-                        timeout=10, cwd=str(PROJECT_ROOT))
-                    if scoped.stdout.strip():
-                        git_diff_text = scoped.stdout[:3000]
-                        break
-            except Exception:
-                pass
 
     # Filter out pre-existing dirty files (same as main execution path)
     if pre_snapshot:
@@ -2232,20 +1787,17 @@ def deepen_follow_up(task: Dict, review_notes: str, session_id: str,
 
     # Re-review the follow-up result
     review = tb_review_output(task, response, git_diff_text, config,
-                              plan_text=task.get("_plan_text", "")[:3000],
-                              verification_evidence=verification_evidence)
+                              plan_text=task.get("_plan_text", "")[:3000])
     return (response, review)
 
 
 def tb_review_output(task: Dict, executor_result: Dict,
                      git_diff: str, config: Dict,
-                     plan_text: str = "",
-                     verification_evidence: str = "") -> Dict:
+                     plan_text: str = "") -> Dict:
     """Call TB via Ollama to review executor output.
 
     Args:
         plan_text: If provided, TB checks diff alignment against the plan.
-        verification_evidence: GT40 preflight results for audit tasks.
 
     Returns:
         {"verdict": "ACCEPT|DEEPEN|ESCALATE",
@@ -2280,21 +1832,22 @@ Executor Output (last 1500 chars):
 
 Git Diff (last 2000 chars):
 {git_diff[-2000:] if git_diff else '(no changes detected)'}
-{"" if not verification_evidence else chr(10) + "Verification Evidence (GT40 independent checks):" + chr(10) + verification_evidence + chr(10)}
+
 Review the work and respond with EXACTLY one of:
 ACCEPT - The task is done correctly. Changes match the task requirements.
 DEEPEN - The task is partially done or needs more work. Explain what is missing.
 ESCALATE - Something is wrong or risky. Needs human review.
 
 IMPORTANT: If the git diff shows files modified OUTSIDE the allowed file scope, you MUST ESCALATE.
-If the executor claims work was "already done" and the diff shows no relevant code changes:
-- If verification evidence shows ALL PASS, the work pre-existed. Evaluate based on verification results.
-- If there is NO verification evidence or verification FAILED, DEEPEN.
+If the executor claims work was "already done" but the diff shows no relevant code changes, DEEPEN.
 
 Format your response as:
 VERDICT: [ACCEPT/DEEPEN/ESCALATE]
+CITATION: [For ACCEPT only: quote 1-2 lines from the git diff above that directly implement the task. Prefix each line with > and copy verbatim. Leave empty for DEEPEN/ESCALATE.]
 REASON: [one sentence]
 NOTES: [if DEEPEN, what additional work is needed]
+
+SHOW-YOUR-WORK RULE: ACCEPT requires a non-empty CITATION that appears verbatim in the diff above. If you cannot cite a specific diff line that implements the task, return DEEPEN instead. Do not invent citations.
 
 Respond now:"""
 
@@ -2308,19 +1861,33 @@ ADDITIONAL CHECK: Verify the diff implements what the plan describes.
 If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
 
     task_id = task.get("id", "")
+
+    # Inject task run history so TB knows past attempts
+    task_history = _gather_task_run_history(task_id)
+    if task_history:
+        review_prompt += (f"\n\nTask Run History:\n{task_history}\n"
+            "If this task has failed before for a specific reason, "
+            "check whether THAT issue is now fixed before re-judging.")
+
+    # Inject runtime context from previous task (Batcomputer)
+    runtime_text = _format_runtime_context(_PREV_RUNTIME_CTX, config)
+    if runtime_text:
+        review_prompt += f"\n\n{runtime_text}"
+
     print(f"[REVIEW] Reviewing {task_id or '?'} via {tb_model}...")
 
     try:
         output, duration_ms = _ollama_generate(
-            review_prompt, tb_model, timeout=timeout, num_predict=-1)
+            review_prompt, tb_model, timeout=600, num_predict=-1)
 
-        log_ollama_call("REVIEW", tb_model, review_prompt, output or "",
-                        0 if output else -1, duration_ms, "", task_id)
+        # Phase 0.5 sov-consult: skip audit-trail write for sovereign tasks.
+        if _should_write_corpus(task):
+            log_ollama_call("REVIEW", tb_model, review_prompt, output or "",
+                            0 if output else -1, duration_ms, "", task_id)
 
         if not output:
-            print(f"[REVIEW] Ollama failed after {duration_ms}ms, defaulting to DEEPEN")
-            return {"verdict": "DEEPEN", "reason": "ollama_unreachable", "confidence": 0.0,
-                    "deepen_notes": "TB could not reach Ollama — re-review required"}
+            print(f"[REVIEW] Ollama failed after {duration_ms}ms, defaulting to ACCEPT")
+            return {"verdict": "ACCEPT", "reason": "ollama error", "confidence": 0.5}
 
         # Parse verdict from TB's response — structured parsing with fallbacks
         verdict = None
@@ -2389,39 +1956,53 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
                 reason = line.split(":", 1)[1].strip()
                 break
 
+        # ── Show-your-work contract (idea #60): ACCEPT requires a diff citation ──
+        citation = ""
+        for line in output.split("\n"):
+            if line.strip().upper().startswith("CITATION:"):
+                citation = line.split(":", 1)[1].strip().lstrip(">").strip().strip('"\'')
+                break
+
+        syw_enabled = v3.get("show_your_work_enabled", True)
+        syw_min_diff_chars = v3.get("show_your_work_min_diff_chars", 100)
+        syw_min_citation_chars = v3.get("show_your_work_min_citation_chars", 15)
+        original_verdict = verdict
+        syw_downgrade = False
+        if (syw_enabled and verdict == "ACCEPT"
+                and len(git_diff or "") >= syw_min_diff_chars):
+            if len(citation) < syw_min_citation_chars:
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    "Show-your-work contract: ACCEPT requires citing diff line(s) "
+                    f"that implement the task. Got citation={citation!r}."
+                )
+                syw_downgrade = True
+            elif citation not in (git_diff or ""):
+                verdict = "DEEPEN"
+                deepen_notes = (
+                    f"Show-your-work contract: CITATION {citation[:80]!r} "
+                    "not found verbatim in diff."
+                )
+                syw_downgrade = True
+
         # ── Lever gate (day-0 runtime compounding, no LLM required) ──
         # If the ledger flags findings on files in this diff, ACCEPT is a
         # rubber-stamp. Force DEEPEN at runtime and spawn a fix task so the
         # system builds its own backlog. Works without a local model.
-        #
-        # Fail-closed: if the ledger is unreadable, DEEPEN anyway — a silent
-        # ACCEPT on unknown ledger state is the worst failure mode.
-        original_verdict = verdict
-        # Top-level kill switches take precedence over v3 defaults.
-        lever_substrate_enabled = config.get("lever_substrate_enabled", True)
-        lever_gate_enabled = (
-            lever_substrate_enabled
-            and config.get("lever_gate_enabled", v3.get("lever_gate_enabled", True))
-        )
+        lever_gate_enabled = v3.get("lever_gate_enabled", True)
         lever_gate_matches: List[Dict] = []
         lever_gate_spawned_task_id: Optional[str] = None
-        lever_gate_status: Optional[str] = None
         if lever_gate_enabled and verdict == "ACCEPT":
-            gate_scan = _lever_gate_scan(
+            lever_gate_matches = _find_lever_findings_in_diff(
                 git_diff, window=v3.get("lever_gate_window", 100),
             )
-            lever_gate_status = gate_scan.get("status")
-            lever_gate_matches = gate_scan.get("matches", [])
-            if lever_gate_status == "unknown":
-                verdict = "DEEPEN"
-                deepen_notes = (
-                    "Lever gate: ledger unreadable (fail-closed). "
-                    f"Reason: {gate_scan.get('reason', 'unknown')}. "
-                    "ACCEPT downgraded to DEEPEN until substrate is inspectable."
-                )
-            elif lever_gate_matches:
+            if lever_gate_matches:
                 lever_names = sorted({m.get("lever", "?") for m in lever_gate_matches})
                 verdict = "DEEPEN"
+                if original_verdict == "ACCEPT" and not syw_downgrade:
+                    # Only set original_verdict if we weren't already tracking
+                    # a show-your-work downgrade from the same starting point.
+                    pass
                 deepen_notes = (
                     f"Lever gate: {len(lever_gate_matches)} finding(s) on diff files "
                     f"from {','.join(lever_names)}. Fix the findings or address them "
@@ -2439,20 +2020,19 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
         }
         if deepen_notes:
             review_result["deepen_notes"] = deepen_notes
-        if lever_gate_status:
-            review_result["lever_gate_status"] = lever_gate_status
-        if lever_gate_matches or lever_gate_status == "unknown":
+        if syw_downgrade:
+            review_result["syw_downgraded"] = True
+            review_result["original_verdict"] = original_verdict
+            review_result["citation_attempted"] = citation[:200]
+        if lever_gate_matches:
             review_result["lever_gate_fired"] = True
             review_result["original_verdict"] = original_verdict
             review_result["lever_gate_count"] = len(lever_gate_matches)
-            if lever_gate_matches:
-                review_result["lever_gate_types"] = sorted({
-                    m.get("lever", "?") for m in lever_gate_matches
-                })
+            review_result["lever_gate_types"] = sorted({
+                m.get("lever", "?") for m in lever_gate_matches
+            })
             if lever_gate_spawned_task_id:
                 review_result["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
-
-        _publish_tb_review_decided(task, review_result, lever_gate_status)
 
         print(f"[REVIEW] {task.get('id', '?')}: {verdict} (confidence: {confidence}, "
               f"parse: {parse_method}) — {reason[:80]}")
@@ -2472,23 +2052,31 @@ If the diff diverges significantly from the plan, DEEPEN or ESCALATE."""
             "reviewer_model": tb_model,
             "duration_ms": duration_ms,
         }
-        if lever_gate_matches or lever_gate_status == "unknown":
+        if syw_downgrade:
+            log_entry["syw_downgraded"] = True
+            log_entry["original_verdict"] = original_verdict
+        if lever_gate_matches:
             log_entry["lever_gate_fired"] = True
             log_entry["lever_gate_count"] = len(lever_gate_matches)
             log_entry["original_verdict"] = original_verdict
-            if lever_gate_status:
-                log_entry["lever_gate_status"] = lever_gate_status
             if lever_gate_spawned_task_id:
                 log_entry["lever_gate_spawned_task_id"] = lever_gate_spawned_task_id
-        with open(REVIEW_LOG_PATH, "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
+        # Phase 0.5 sov-consult: skip review_log + interaction-log writes for
+        # sovereign tasks. The verdict still flows back to run_driver via
+        # `review_result` — operational decisions (commit / escalate / deepen)
+        # work as normal; only the audit trail skips.
+        if _should_write_corpus(task):
+            with open(REVIEW_LOG_PATH, "a") as f:
+                f.write(json.dumps(log_entry) + "\n")
+
+            _log_tb_interaction(task.get("id", ""), "D", review_prompt, output or "",
+                                verdict=verdict, duration_ms=duration_ms)
 
         return review_result
 
     except Exception as e:
-        print(f"[REVIEW] Error: {e}, defaulting to DEEPEN")
-        return {"verdict": "DEEPEN", "reason": f"review_error: {e}", "confidence": 0.0,
-                "deepen_notes": f"TB review crashed: {e} — re-review required"}
+        print(f"[REVIEW] Error: {e}, defaulting to ACCEPT")
+        return {"verdict": "ACCEPT", "reason": f"error: {e}", "confidence": 0.5}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2521,6 +2109,32 @@ def log_ollama_call(caller: str, model: str, prompt: str, response: str,
         print(f"[VERBOSE][{caller}] ── end ──")
     try:
         with open(OLLAMA_LOG_PATH, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+
+TB_INTERACTIONS_LOG = DRIVER_DIR / "tb_interactions.jsonl"
+
+
+def _log_tb_interaction(task_id: str, phase: str, prompt: str, response: str,
+                        verdict: str = "", duration_ms: int = 0):
+    """Always-on full TB prompt/response log — analysable post-run."""
+    entry = {
+        "ts": datetime.now().isoformat(),
+        "task_id": task_id,
+        "phase": phase,  # "C" (prompt writer) or "D" (reviewer)
+        "prompt": prompt,
+        "response": response,
+        "verdict": verdict,
+        "duration_ms": duration_ms,
+        "prompt_words": len(prompt.split()),
+        "response_words": len(response.split()),
+        "batcomputer_enabled": bool(_PREV_RUNTIME_CTX),
+    }
+    try:
+        TB_INTERACTIONS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(TB_INTERACTIONS_LOG, "a") as f:
             f.write(json.dumps(entry) + "\n")
     except Exception:
         pass
@@ -2678,6 +2292,8 @@ def log_shadow_raft(task: Dict, instruction: str, response: str,
 
     v3: includes task_type, scout_used fields when classification is provided.
     """
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult: shadow_log skipped for sovereign tasks.
     # ── Validate required fields ──
     task_id = task.get("id", "")
     if not task_id:
@@ -2845,6 +2461,365 @@ def load_verification_stats(window_size: int = 50) -> dict:
     }
 
 
+# ═══════════════════════════════════════════════════════════════
+# TB ORCHESTRATION — Board Reading + Decision Making
+# ═══════════════════════════════════════════════════════════════
+
+
+def _tb_read_board() -> Dict:
+    """Gather system state for TB orchestration decisions."""
+    board = {}
+
+    # CSR from flywheel
+    try:
+        from mcp_server_nucleus.flywheel import Flywheel
+        csr_state = Flywheel(BRAIN_PATH).csr()
+        board["csr_ratio"] = csr_state.get("ratio", 0)
+        board["csr_total"] = csr_state.get("claims_total", 0)
+        failures = [c for c in csr_state.get("recent_claims", []) if not c.get("survived")]
+        modes = {}
+        for f in failures:
+            mode = f.get("step", "unknown").split(":")[0]
+            modes[mode] = modes.get(mode, 0) + 1
+        board["csr_failure_modes"] = modes
+    except Exception:
+        board["csr_ratio"] = None
+
+    # Task states
+    tasks = load_tasks()
+    board["tasks_committed"] = [t["id"] for t in tasks if t.get("status") == "committed"]
+    board["tasks_blocked"] = [
+        {"id": t["id"], "reason": t.get("failure_reason", t.get("blocked_reason", ""))}
+        for t in tasks if t.get("status") == "blocked"
+    ]
+    board["tasks_failed"] = [
+        {"id": t["id"], "reason": t.get("failure_reason", "")}
+        for t in tasks if t.get("status") == "failed"
+    ]
+
+    # Recent runs
+    runs = load_runs()[-20:]
+    board["recent_runs"] = [
+        {"task_id": r.get("task_id"), "outcome": r.get("outcome"),
+         "failure_reason": r.get("failure_reason", "")[:150]}
+        for r in runs
+    ]
+
+    # Verification stats
+    board["verification"] = load_verification_stats(50)
+
+    # Hard negatives in sparring bank
+    if SPARRING_TASK_BANK_PATH.exists():
+        try:
+            with open(SPARRING_TASK_BANK_PATH) as f:
+                bank = json.load(f)
+            hard_negs = [e for e in bank if e.get("source") == "hard_negative"]
+            board["hard_negative_count"] = len(hard_negs)
+            hn_modes = {}
+            for e in hard_negs:
+                m = e.get("failure_mode", "unknown")
+                hn_modes[m] = hn_modes.get(m, 0) + 1
+            board["hard_negative_modes"] = hn_modes
+        except Exception:
+            board["hard_negative_count"] = 0
+    else:
+        board["hard_negative_count"] = 0
+
+    return board
+
+
+def _format_board_for_tb(board: Dict) -> str:
+    """Format board dict into a text block for TB's Ollama prompt."""
+    lines = []
+
+    # CSR
+    csr = board.get("csr_ratio")
+    if csr is not None:
+        lines.append(f"CSR: {csr:.3f} ({board.get('csr_total', '?')} claims)")
+        modes = board.get("csr_failure_modes", {})
+        if modes:
+            top = sorted(modes.items(), key=lambda x: -x[1])[:5]
+            lines.append("CSR failure modes: " + ", ".join(f"{m} ({c}x)" for m, c in top))
+    else:
+        lines.append("CSR: unavailable")
+
+    # Tasks
+    committed = board.get("tasks_committed", [])
+    blocked = board.get("tasks_blocked", [])
+    failed = board.get("tasks_failed", [])
+    lines.append(f"\nTasks: {len(committed)} committed, {len(blocked)} blocked, {len(failed)} failed")
+    for t in blocked[:5]:
+        lines.append(f"  BLOCKED {t['id']}: {t.get('reason', '?')[:100]}")
+    for t in failed[:5]:
+        lines.append(f"  FAILED {t['id']}: {t.get('reason', '?')[:100]}")
+
+    # Verification
+    v = board.get("verification", {})
+    if v.get("total", 0) > 0:
+        lines.append(f"\nVerification: {v['accuracy']:.0%} ({v['verified_true']}/{v['total']})")
+
+    # Hard negatives
+    hn = board.get("hard_negative_count", 0)
+    if hn > 0:
+        lines.append(f"\nHard negatives: {hn}")
+        hn_modes = board.get("hard_negative_modes", {})
+        if hn_modes:
+            top = sorted(hn_modes.items(), key=lambda x: -x[1])[:5]
+            lines.append("Failure modes: " + ", ".join(f"{m} ({c}x)" for m, c in top))
+
+    # Recent runs
+    runs = board.get("recent_runs", [])
+    if runs:
+        outcomes = {}
+        for r in runs:
+            o = r.get("outcome", "unknown")
+            outcomes[o] = outcomes.get(o, 0) + 1
+        lines.append(f"\nLast {len(runs)} runs: " +
+                     ", ".join(f"{o}={c}" for o, c in outcomes.items()))
+
+    return "\n".join(lines)
+
+
+def _gather_task_run_history(task_id: str) -> str:
+    """Build per-task run history for Phase C/D injection."""
+    if not task_id:
+        return ""
+    sections = []
+    runs = load_runs()
+    task_runs = [r for r in runs if r.get("task_id") == task_id]
+    if task_runs:
+        sections.append(f"TASK HISTORY ({task_id}):")
+        for i, r in enumerate(task_runs[-5:], 1):
+            ts = r.get("ts", "?")[:10]
+            outcome = r.get("outcome", "?")
+            reason = r.get("failure_reason", "")[:100]
+            sections.append(f"  Run {i} ({ts}): {outcome}" +
+                            (f" — {reason}" if reason else ""))
+
+    # Check hard negatives for this task
+    if SPARRING_TASK_BANK_PATH.exists():
+        try:
+            with open(SPARRING_TASK_BANK_PATH) as f:
+                bank = json.load(f)
+            hn = [e for e in bank if e.get("source") == "hard_negative"
+                  and e.get("task_id") == task_id]
+            if hn:
+                modes = [e.get("failure_mode", "?") for e in hn]
+                sections.append(f"  Hard negatives: {', '.join(modes)}")
+        except Exception:
+            pass
+
+    return "\n".join(sections)
+
+
+def _format_runtime_context(prev_ctx: dict, config: Optional[Dict] = None) -> str:
+    """Format previous task's runtime context for TB's Phase C/D prompts (Batcomputer).
+
+    If config has v3_features.batcomputer_enabled=False, returns "" (A/B off).
+    """
+    if config and not config.get("v3_features", {}).get("batcomputer_enabled", True):
+        return ""
+    if not prev_ctx:
+        return ""
+    lines = ["RUNTIME CONTEXT (previous task):"]
+
+    scores = prev_ctx.get("tb_scores", {})
+    if scores:
+        c = scores.get("phase_c_score", "?")
+        d = scores.get("phase_d_score", "?")
+        lines.append(f"  Your scores: Phase C={c}/5, Phase D={d}/5")
+
+    trust = prev_ctx.get("trust_change")
+    if trust:
+        lines.append(f"  Trust: {trust}")
+    elif prev_ctx.get("trust_phase"):
+        lines.append(f"  Trust: P{prev_ctx['trust_phase']}")
+
+    turns = prev_ctx.get("session_turns", 0)
+    pressure = prev_ctx.get("session_pressure_pct", 0)
+    if turns:
+        lines.append(f"  Session: {turns} turns, {pressure}% pressure")
+
+    v = prev_ctx.get("verification", {})
+    if v and v.get("tiers_failed"):
+        lines.append(f"  Verification FAILED: tiers {v['tiers_failed']}")
+        for sig in v.get("signals", []):
+            if not sig.get("passed"):
+                lines.append(f"    {sig.get('check', '?')} FAIL {sig.get('file', '')}")
+
+    cls = prev_ctx.get("classification", {})
+    if cls:
+        lines.append(f"  Prev task: type={cls.get('type', '?')}, scout={cls.get('needs_scout', False)}")
+
+    dcas = prev_ctx.get("dcas_replayed", [])
+    if dcas:
+        lines.append(f"  DCAs replayed: {len(dcas)}")
+        for d in dcas[:3]:
+            decision = d.get("decision", "") if isinstance(d, dict) else str(d)
+            lines.append(f"    - {decision[:80]}")
+
+    captures = prev_ctx.get("training_captures", {})
+    if captures and any(captures.values()):
+        active = [f"{k}={v}" for k, v in captures.items() if v]
+        lines.append(f"  Training captured (prev task): {', '.join(active)}")
+
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def tb_orchestrate(board: Dict, config: Dict) -> Dict:
+    """Call TB via Ollama to make an orchestration decision.
+
+    Returns {"action": "compound|retry_stuck|skip",
+             "targets": [...], "reason": str, "confidence": float}
+    """
+    v3 = config.get("v3_features", {})
+    tb_model = os.environ.get("TB_MODEL") or v3.get("tb_model", "third-brother:latest")
+
+    board_text = _format_board_for_tb(board)
+
+    prompt = f"""You are Third Brother, the principal. Read the board and decide what to do.
+
+BOARD STATE:
+{board_text}
+
+Pick ONE action:
+
+compound — Run compound mode to train on hard negatives and improve the system.
+retry_stuck — Reset blocked/failed tasks for re-attempt. You must list which task IDs.
+skip — Nothing to do right now.
+
+Decision rules:
+- Many hard negatives (>10) means compound is needed.
+- Blocked tasks whose failure reason matches a fixed issue should be retried.
+- If CSR is stable and nothing is stuck, skip.
+
+Write your answer as three lines:
+ACTION: compound
+TARGETS: all
+REASON: 272 hard negatives need to be addressed via compound training."""
+
+    print("[ORCHESTRATE] TB reading the board...")
+    output, duration_ms = _ollama_generate(prompt, tb_model, timeout=600, num_predict=-1)
+
+    # Phase 0.5 sov-consult: orchestration decisions are TB-content too.
+    # When orchestrating sovereign work, the prompt + response can leak.
+    # Gate by config-level sovereignty (orchestrate doesn't see a task dict).
+    if _should_write_corpus(config.get("sovereignty")):
+        log_ollama_call("ORCHESTRATE", tb_model, prompt, output or "",
+                        0 if output else -1, duration_ms)
+
+    if not output:
+        print(f"[ORCHESTRATE] Ollama failed after {duration_ms}ms")
+        # Deterministic fallback: decide based on board state
+        return _tb_fallback_decision(board)
+
+    # Parse response
+    action = None
+    targets = []
+    reason = output[:200]
+
+    for line in output.split("\n"):
+        stripped = line.strip()
+        upper = stripped.upper()
+        if upper.startswith("ACTION:"):
+            token = stripped.split(":", 1)[1].strip().split()[0].lower()
+            # Strip punctuation from token
+            token = token.rstrip(".,;:")
+            if token in ("compound", "retry_stuck", "skip"):
+                action = token
+        elif upper.startswith("TARGETS:"):
+            raw = stripped.split(":", 1)[1].strip()
+            if raw.lower() not in ("all", "-", "none", "n/a"):
+                targets = [t.strip() for t in raw.split(",")
+                           if t.strip() and not t.strip().startswith("[")]
+        elif upper.startswith("REASON:"):
+            reason = stripped.split(":", 1)[1].strip()
+
+    # If TB couldn't decide, fall back to deterministic logic
+    if not action:
+        print("[ORCHESTRATE] TB response unparseable, falling back to board heuristics")
+        return _tb_fallback_decision(board)
+
+    result = {"action": action, "targets": targets, "reason": reason,
+              "confidence": 0.8}
+    print(f"[ORCHESTRATE] Decision: {action} (targets={targets[:5]}, "
+          f"confidence=0.8)")
+    print(f"[ORCHESTRATE] Reason: {reason[:200]}")
+    return result
+
+
+def _tb_fallback_decision(board: Dict) -> Dict:
+    """Deterministic fallback when TB can't decide. Uses board heuristics."""
+    hard_negs = board.get("hard_negative_count", 0)
+    blocked = board.get("tasks_blocked", [])
+    failed = board.get("tasks_failed", [])
+
+    if hard_negs >= 10:
+        reason = f"{hard_negs} hard negatives — compound needed"
+        print(f"[ORCHESTRATE] Fallback: compound ({reason})")
+        return {"action": "compound", "targets": [], "reason": reason,
+                "confidence": 0.6}
+
+    if blocked or failed:
+        ids = [t["id"] for t in blocked + failed]
+        reason = f"{len(ids)} stuck task(s) — retrying"
+        print(f"[ORCHESTRATE] Fallback: retry_stuck ({reason})")
+        return {"action": "retry_stuck", "targets": ids, "reason": reason,
+                "confidence": 0.6}
+
+    print("[ORCHESTRATE] Fallback: skip (nothing actionable)")
+    return {"action": "skip", "targets": [], "reason": "board is clean",
+            "confidence": 0.6}
+
+
+def _reset_stuck_tasks(task_ids: List[str]):
+    """Reset blocked/failed tasks to committed for re-attempt."""
+    tasks = load_tasks()
+    reset_count = 0
+    for t in tasks:
+        if t["id"] in task_ids and t.get("status") in ("blocked", "failed"):
+            old_status = t["status"]
+            t["status"] = "committed"
+            print(f"[ORCHESTRATE] Reset {t['id']}: was {old_status}")
+            reset_count += 1
+    if reset_count > 0:
+        save_tasks(tasks)
+    return reset_count
+
+
+def _auto_unstick_after_compound(board_pre: Dict, board_post: Dict) -> int:
+    """After compound mode, reset stuck tasks whose failure modes were addressed.
+
+    Deterministic check — compares hard negative mode counts before/after.
+    If a failure mode count decreased, tasks stuck on that mode get re-committed.
+    """
+    pre_modes = board_pre.get("hard_negative_modes", {})
+    post_modes = board_post.get("hard_negative_modes", {})
+
+    # Find modes that decreased (compound addressed them)
+    addressed_modes = set()
+    for mode, pre_count in pre_modes.items():
+        post_count = post_modes.get(mode, 0)
+        if post_count < pre_count:
+            addressed_modes.add(mode)
+
+    if not addressed_modes:
+        return 0
+
+    print(f"[ORCHESTRATE] Addressed failure modes: {', '.join(addressed_modes)}")
+
+    # Find stuck tasks whose failure reason matches addressed modes
+    stuck_ids = []
+    for t in board_post.get("tasks_blocked", []) + board_post.get("tasks_failed", []):
+        reason = t.get("reason", "").lower()
+        if any(mode.lower() in reason for mode in addressed_modes):
+            stuck_ids.append(t["id"])
+
+    if stuck_ids:
+        _reset_stuck_tasks(stuck_ids)
+    return len(stuck_ids)
+
+
 def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
     """Evaluate trust ladder and return (current_phase, new_phase, reason).
 
@@ -2867,6 +2842,11 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
     if not runs:
         return current_phase, current_phase, "no runs yet"
 
+    # Non-actionable outcomes (infrastructure issues, NOT task failures).
+    # MUST be excluded from acceptance_ratio numerator AND denominator — counting
+    # skipped tasks as failures kept trust ladder pinned at Phase 1.
+    _NON_ACTIONABLE = {"session_exhausted", "timeout", "session_busy", "completed_no_pr"}
+
     # ── DEMOTION checks (always evaluated first) ──
 
     critical_alerts = [a for a in alerts if a.get("severity") == "CRITICAL"]
@@ -2874,8 +2854,9 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
         return current_phase, 1, f"CRITICAL trigger: {critical_alerts[-1].get('rule', '?')}"
 
     consec_fail_limit = thresholds.get("demotion_consecutive_failures", 3)
-    if len(runs) >= consec_fail_limit:
-        recent = runs[-consec_fail_limit:]
+    actionable_runs = [r for r in runs if r.get("outcome") not in _NON_ACTIONABLE]
+    if len(actionable_runs) >= consec_fail_limit:
+        recent = actionable_runs[-consec_fail_limit:]
         if all(r.get("outcome") in ("blocked", "error") for r in recent):
             new_phase = max(1, current_phase - 1)
             if new_phase != current_phase:
@@ -2891,8 +2872,6 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
             f"({_vstats['verified_false']}/{_vstats['total']} failures)")
 
     # ── PROMOTION checks ──
-    # Non-actionable outcomes (infrastructure issues, not task failures)
-    _NON_ACTIONABLE = {"session_exhausted", "timeout", "session_busy", "completed_no_pr"}
 
     if current_phase == 1:
         cfg = thresholds.get("phase_1_to_2", {})
@@ -2900,12 +2879,14 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
         unedited_ratio = cfg.get("unedited_ratio", 0.75)
         if len(runs) >= min_runs:
             recent = runs[-min_runs:]
+            # acceptance_ratio fix: drop skipped tasks from BOTH sides of the ratio.
             actionable = [r for r in recent if r.get("outcome") not in _NON_ACTIONABLE]
-            completed = sum(1 for r in actionable if r.get("outcome") == "completed")
-            denom = len(actionable) or 1
-            ratio = completed / denom
-            if ratio >= unedited_ratio:
-                return current_phase, 2, f"Phase 1->2: {completed}/{denom} ({ratio:.0%} >= {unedited_ratio:.0%})"
+            if actionable:
+                completed = sum(1 for r in actionable if r.get("outcome") == "completed")
+                denom = len(actionable)
+                ratio = completed / denom
+                if ratio >= unedited_ratio:
+                    return current_phase, 2, f"Phase 1->2: {completed}/{denom} ({ratio:.0%} >= {unedited_ratio:.0%})"
 
     elif current_phase == 2:
         cfg = thresholds.get("phase_2_to_3", {})
@@ -2913,16 +2894,18 @@ def evaluate_trust_ladder(config: Dict) -> Tuple[int, int, str]:
         acceptance_ratio = cfg.get("acceptance_ratio", 0.70)
         if len(runs) >= min_runs:
             recent = runs[-min_runs:]
+            # acceptance_ratio fix: drop skipped tasks from BOTH sides of the ratio.
             actionable = [r for r in recent if r.get("outcome") not in _NON_ACTIONABLE]
-            accepted = sum(1 for r in actionable if r.get("outcome") == "completed")
-            denom = len(actionable) or 1
-            ratio = accepted / denom
-            if ratio >= acceptance_ratio:
-                # Gate: verification accuracy must be >= 80% for Phase 2->3
-                if _vstats["total"] >= 5 and _vstats["accuracy"] < 0.80:
-                    pass  # block promotion — verification accuracy too low
-                else:
-                    return current_phase, 3, f"Phase 2->3: {accepted}/{denom} ({ratio:.0%} >= {acceptance_ratio:.0%}), verify={_vstats['accuracy']:.0%}"
+            if actionable:
+                accepted = sum(1 for r in actionable if r.get("outcome") == "completed")
+                denom = len(actionable)
+                ratio = accepted / denom
+                if ratio >= acceptance_ratio:
+                    # Gate: verification accuracy must be >= 80% for Phase 2->3
+                    if _vstats["total"] >= 5 and _vstats["accuracy"] < 0.80:
+                        pass  # block promotion — verification accuracy too low
+                    else:
+                        return current_phase, 3, f"Phase 2->3: {accepted}/{denom} ({ratio:.0%} >= {acceptance_ratio:.0%}), verify={_vstats['accuracy']:.0%}"
 
     elif current_phase == 3:
         cfg = thresholds.get("phase_3_to_4", {})
@@ -3073,132 +3056,12 @@ def _check_degradation(pre: Dict, post: Dict) -> List[str]:
     return degraded
 
 
-def _reverify_stale_claims(config: Dict) -> Dict:
-    """Re-verify stale failed CSR claims where the underlying issue may be fixed.
-
-    Not retroactive rewriting — appends new survived claims for issues
-    that now pass verification. Returns summary of corrections.
-
-    Correlation: each claim's step (format "phase:task_id") is matched against
-    compound attempted_signals (success outcome) or audit results (ACCEPT for
-    the specific plan). Does NOT credit a survived claim just because any
-    unrelated plan passed.
-    """
-    try:
-        from mcp_server_nucleus.flywheel import Flywheel
-        fw = Flywheel(BRAIN_PATH)
-        csr_data = fw.csr()
-    except Exception as e:
-        return {"error": str(e), "corrections": 0}
-
-    corrections = 0
-    seen_steps = set()
-
-    # Load external evidence once (not per-claim)
-    audit_results = {}
-    audit_path = BRAIN_PATH / "audit" / "results.json"
-    if audit_path.exists():
-        try:
-            audit_results = json.loads(audit_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    compound_signals = {}
-    signals_path = BRAIN_PATH / "compound" / "attempted_signals.json"
-    if signals_path.exists():
-        try:
-            compound_signals = json.loads(signals_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    for claim in csr_data.get("recent_claims", []):
-        if claim.get("survived"):
-            continue
-        reason = claim.get("reason", "")
-        step = claim.get("step", "")
-
-        # Only re-verify claims with known fixable failure modes
-        if not any(mode in reason for mode in
-                   ("deepen_exhausted", "escalate_after_deepen")):
-            continue
-
-        # Deduplicate — only one correction per unique step
-        if step in seen_steps:
-            continue
-        seen_steps.add(step)
-
-        # Extract task identifier from step (format: "phase_name:task_id")
-        claim_task_id = step.split(":", 1)[-1] if ":" in step else step
-
-        # Evidence 1: Compound signal was attempted and succeeded
-        signal_entry = compound_signals.get(claim_task_id, {})
-        outcomes = signal_entry.get("outcomes", [])
-        has_success = any(o.get("outcome") == "success" for o in outcomes)
-
-        # Evidence 2: A *matching* plan in audit results now has ACCEPT
-        # (must correlate — claim_task_id substring of plan_name)
-        matched_plan = None
-        for plan_name, result in audit_results.items():
-            if result.get("verdict") == "ACCEPT" and claim_task_id in plan_name:
-                matched_plan = plan_name
-                break
-
-        if has_success or matched_plan:
-            fw.record_survived(
-                phase="csr_recalculation",
-                step=f"reverify:{step}"
-            )
-            corrections += 1
-            evidence = ("compound_success" if has_success
-                        else f"audit_accept:{matched_plan}")
-            print(f"[CSR-RECALC] Corrected: {step} (evidence: {evidence})")
-        else:
-            print(f"[CSR-RECALC] Skipped: {step} (no matching evidence)")
-
-    new_csr = fw.csr().get("ratio", 0)
-    return {"corrections": corrections, "new_csr": new_csr}
-
-
-def _record_compound_attempt(task_id: str, outcome: str):
-    """Track compound signal attempt to prevent infinite re-queueing."""
-    attempted_path = BRAIN_PATH / "compound" / "attempted_signals.json"
-    attempted = {}
-    if attempted_path.exists():
-        try:
-            attempted = json.loads(attempted_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-    entry = attempted.get(task_id, {"attempts": 0, "outcomes": []})
-    entry["attempts"] += 1
-    entry["outcomes"].append({"outcome": outcome, "at": datetime.now().isoformat()})
-    attempted[task_id] = entry
-    attempted_path.parent.mkdir(parents=True, exist_ok=True)
-    attempted_path.write_text(json.dumps(attempted, indent=2))
-
-
 def _analyze_compound_signals() -> List[Dict]:
     """Mine CSR failures, verification failures, hard negatives, and audit gaps for compound tasks."""
     tasks = []
 
-    # Load attempted signals to prevent infinite re-queueing
-    attempted_path = BRAIN_PATH / "compound" / "attempted_signals.json"
-    attempted = {}
-    if attempted_path.exists():
-        try:
-            attempted = json.loads(attempted_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    def _should_skip(task_id: str) -> bool:
-        entry = attempted.get(task_id, {})
-        if entry.get("attempts", 0) >= 2:
-            print(f"[COMPOUND] Skipping {task_id}: already attempted {entry['attempts']}x")
-            return True
-        return False
-
-    # Signal 1: Recurring CSR failure modes — with evidence
+    # Signal 1: Recurring CSR failure modes
     failure_modes = {}
-    failure_reasons = {}  # mode -> [full reason strings]
     try:
         from mcp_server_nucleus.flywheel import Flywheel
         csr_data = Flywheel(BRAIN_PATH).csr()
@@ -3206,9 +3069,6 @@ def _analyze_compound_signals() -> List[Dict]:
             if not claim.get("survived") and claim.get("reason"):
                 mode = claim["reason"].split(":")[0].strip()
                 failure_modes[mode] = failure_modes.get(mode, 0) + 1
-                if mode not in failure_reasons:
-                    failure_reasons[mode] = []
-                failure_reasons[mode].append(claim["reason"][:200])
     except Exception:
         pass
 
@@ -3216,36 +3076,18 @@ def _analyze_compound_signals() -> List[Dict]:
     if repeated:
         top = sorted(repeated.items(), key=lambda x: -x[1])[:3]
         modes_str = ", ".join(f"{m} ({c}x)" for m, c in top)
-        task_id = f"compound-csr-{top[0][0][:20]}"
-        if not _should_skip(task_id):
-            # Collect sample reasons for evidence
-            sample_reasons = failure_reasons.get(top[0][0], [])[:3]
-            evidence = "\n".join(f"  - {r}" for r in sample_reasons)
-            tasks.append({
-                "id": task_id,
-                "title": f"Fix recurring CSR failure: {top[0][0]}",
-                "description": (
-                    f"Recurring failure modes in CSR: {modes_str}.\n\n"
-                    f"## Evidence (sample claim reasons):\n{evidence}\n\n"
-                    f"## Root cause analysis:\n"
-                    f"Trace the failure path in scripts/third_brother_driver.py. "
-                    f"The reason strings above indicate what TB saw. Find why the "
-                    f"executor produces output that triggers these verdicts.\n\n"
-                    f"## Steps:\n"
-                    f"1. Read the failure reasons above\n"
-                    f"2. Find the code path that produces these outcomes\n"
-                    f"3. Fix the root cause (not symptoms)\n"
-                    f"4. Verify the fixed path no longer triggers the failure mode"
-                ),
-                "scope": ["scripts/**", "mcp-server-nucleus/**"],
-                "priority": 1, "status": "committed", "source": "compound_audit",
-                "max_turns": 25,
-                "verification_criteria": f"CSR failure mode '{top[0][0]}' should not recur",
-            })
+        tasks.append({
+            "id": f"compound-csr-{top[0][0][:20]}",
+            "title": f"Fix recurring CSR failure: {top[0][0]}",
+            "description": f"Recurring failure modes in CSR: {modes_str}. "
+                           f"Investigate root cause and fix the underlying issue.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 1, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
 
-    # Signal 2: Verification failures — with sample log entries
+    # Signal 2: Verification failures (tiers that keep failing)
     tier_failures = {}
-    tier_samples = {}  # tier -> [sample entries]
     if VERIFICATION_LOG_PATH.exists():
         for line in VERIFICATION_LOG_PATH.read_text().strip().split('\n')[-50:]:
             if line.strip():
@@ -3253,119 +3095,61 @@ def _analyze_compound_signals() -> List[Dict]:
                     e = json.loads(line)
                     for tier in e.get("tiers_failed", []):
                         tier_failures[tier] = tier_failures.get(tier, 0) + 1
-                        if tier not in tier_samples:
-                            tier_samples[tier] = []
-                        tier_samples[tier].append(e)
                 except (json.JSONDecodeError, KeyError):
                     pass
 
     repeated_tiers = {t: c for t, c in tier_failures.items() if c >= 3}
     if repeated_tiers:
         top_tier = max(repeated_tiers, key=repeated_tiers.get)
-        task_id = f"compound-verify-tier{top_tier}"
-        if not _should_skip(task_id):
-            # Build sample info from tier entries
-            sample_lines = []
-            for s in tier_samples.get(top_tier, [])[-3:]:
-                task_name = s.get("task_id", "?")
-                cmds = s.get("failed_commands", s.get("commands_run", []))
-                sample_lines.append(f"  - Task {task_name}: {str(cmds)[:150]}")
-            sample_info = "\n".join(sample_lines) if sample_lines else "  (no details)"
-            tasks.append({
-                "id": task_id,
-                "title": f"Fix verification gap: tier {top_tier} "
-                         f"({repeated_tiers[top_tier]}x failures)",
-                "description": (
-                    f"Verification tier {top_tier} has failed "
-                    f"{repeated_tiers[top_tier]} times in the last 50 verifications.\n\n"
-                    f"## Evidence (sample failures):\n{sample_info}\n\n"
-                    f"## Root cause analysis:\n"
-                    f"Check tier {top_tier} verification logic in "
-                    f"scripts/third_brother_driver.py. Determine whether the tier "
-                    f"checks are broken or the code under test is failing.\n\n"
-                    f"## Steps:\n"
-                    f"1. Read the sample failures above\n"
-                    f"2. Find the verification tier {top_tier} implementation\n"
-                    f"3. Determine if the checks need fixing or the code does\n"
-                    f"4. Fix and verify tier {top_tier} passes on next run"
-                ),
-                "scope": ["scripts/**", "mcp-server-nucleus/**"],
-                "priority": 1, "status": "committed", "source": "compound_audit",
-                "max_turns": 25,
-                "verification_criteria": f"Tier {top_tier} passes in next verification run",
-            })
+        tasks.append({
+            "id": f"compound-verify-tier{top_tier}",
+            "title": f"Fix verification gap: tier {top_tier} ({repeated_tiers[top_tier]}x failures)",
+            "description": f"Verification tier {top_tier} has failed {repeated_tiers[top_tier]} times "
+                           f"in the last 50 verifications. Investigate and fix.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 1, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
 
-    # Signal 3: Hard negatives — with sample failure modes
-    hard_neg_samples = []
+    # Signal 3: Hard negatives in sparring bank
     hard_neg_count = 0
     if SPARRING_TASK_BANK_PATH.exists():
         try:
             with open(SPARRING_TASK_BANK_PATH) as f:
                 bank = json.load(f)
-            hard_negs = [t for t in bank if t.get("source") == "hard_negative"]
-            hard_neg_count = len(hard_negs)
-            hard_neg_samples = hard_negs[:5]
+            hard_neg_count = sum(1 for t in bank if t.get("source") == "hard_negative")
         except (json.JSONDecodeError, OSError):
             pass
 
     if hard_neg_count >= 3:
-        task_id = "compound-hard-negatives"
-        if not _should_skip(task_id):
-            sample_info = "\n".join(
-                f"  - {t.get('failure_mode', '?')}: {t.get('task', '')[:100]}"
-                for t in hard_neg_samples
-            )
-            tasks.append({
-                "id": task_id,
-                "title": f"Address {hard_neg_count} accumulated hard negatives",
-                "description": (
-                    f"{hard_neg_count} hard negatives in sparring bank.\n\n"
-                    f"## Evidence (sample failures):\n{sample_info}\n\n"
-                    f"## Action:\n"
-                    f"Run curriculum_refresh to promote pending DPO pairs whose "
-                    f"step has since survived. Report count of pending→ready promotions."
-                ),
-                "scope": ["scripts/**", "mcp-server-nucleus/**"],
-                "priority": 2, "status": "committed", "source": "compound_audit",
-                "max_turns": 25,
-                "verification_criteria": "curriculum_refresh runs without error, "
-                                         "reports promotion count",
-            })
+        tasks.append({
+            "id": "compound-hard-negatives",
+            "title": f"Address {hard_neg_count} accumulated hard negatives",
+            "description": f"{hard_neg_count} hard negatives in sparring bank — "
+                           f"these represent systematic weaknesses. Review patterns and fix root causes.",
+            "scope": ["scripts/**", "mcp-server-nucleus/**"],
+            "priority": 2, "status": "committed", "source": "compound_audit",
+            "max_turns": 25,
+        })
 
-    # Signal 4: Audit results — with plan names and verdict reasons
+    # Signal 4: Audit results — plans that failed verification
     audit_path = BRAIN_PATH / "audit" / "results.json"
     if audit_path.exists():
         try:
             audit_results = json.loads(audit_path.read_text())
-            incomplete = {k: v for k, v in audit_results.items()
-                          if v.get("verdict") not in ("ACCEPT", "ABANDONED")}
+            incomplete = {k: v for k, v in audit_results.items() if v.get("verdict") != "ACCEPT"}
             if incomplete:
-                task_id = "compound-audit-gaps"
-                if not _should_skip(task_id):
-                    gap_details = []
-                    for k, v in list(incomplete.items())[:3]:
-                        gap_details.append(
-                            f"  - {k}: verdict={v.get('verdict', '?')}, "
-                            f"session={v.get('session_id', '?')[:12]}")
-                    gap_evidence = "\n".join(gap_details)
-                    tasks.append({
-                        "id": task_id,
-                        "title": f"Close {len(incomplete)} audit gap(s)",
-                        "description": (
-                            f"Plans that failed audit verification:\n\n"
-                            f"## Evidence:\n{gap_evidence}\n\n"
-                            f"## Action:\n"
-                            f"For each plan: determine if the implementation is "
-                            f"missing, the design is flawed, or the plan is superseded. "
-                            f"Fix or mark as ABANDONED."
-                        ),
-                        "scope": ["scripts/**", "mcp-server-nucleus/**",
-                                  "backend/**", ".brain/**"],
-                        "priority": 1, "status": "committed",
-                        "source": "compound_audit", "max_turns": 25,
-                        "verification_criteria": "All listed plans have ACCEPT or "
-                                                 "ABANDONED verdict after re-audit",
-                    })
+                names = ", ".join(list(incomplete.keys())[:3])
+                tasks.append({
+                    "id": "compound-audit-gaps",
+                    "title": f"Close {len(incomplete)} audit gap(s)",
+                    "description": f"Plans that failed audit verification: {names}. "
+                                   f"The system cannot do what was planned. "
+                                   f"Investigate: missing implementation, design flaw, or superseded plan?",
+                    "scope": ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"],
+                    "priority": 1, "status": "committed", "source": "compound_audit",
+                    "max_turns": 25,
+                })
         except (json.JSONDecodeError, OSError):
             pass
 
@@ -3832,8 +3616,11 @@ def ring_retrain_check(completed_count: int):
         pass  # Silent — Drive may not be mounted
 
 
-def ring_distill_replay(task: Dict) -> str:
-    """RING 3+: Inject high-confidence DCAs from previous distillation."""
+def ring_distill_replay(task: Dict) -> Tuple[str, List[Dict]]:
+    """RING 3+: Inject high-confidence DCAs from previous distillation.
+
+    Returns (injected_text, replayed_atoms_for_runtime_ctx).
+    """
     try:
         from mcp_server_nucleus.replay import ReplayEngine
         engine = ReplayEngine(BRAIN_PATH)
@@ -3846,10 +3633,11 @@ def ring_distill_replay(task: Dict) -> str:
                 for a in filtered:
                     decision = (a.get("decision", "") if isinstance(a, dict) else str(a))[:200]
                     lines.append(f"- {decision}")
-                return "\n## Prior Decisions (high confidence)\n" + "\n".join(lines) + "\n"
+                return ("\n## Prior Decisions (high confidence)\n" + "\n".join(lines) + "\n",
+                        filtered)
     except Exception as e:
         print(f"[RING 3+] Replay: skip ({e.__class__.__name__})")
-    return ""
+    return "", []
 
 
 EXPERIMENTS_PATH = BRAIN_PATH / "experiments" / "experiments.json"
@@ -4082,7 +3870,9 @@ def _build_task_context(task: Dict, config: Dict,
         print(f"[DRIVER] Context error: {e}. Continuing without RAG.")
 
     engrams = ring_engram_lookup(task)
-    dcas = ring_distill_replay(task)
+    dcas, dcas_replayed = ring_distill_replay(task)
+    global _LAST_DCAS_REPLAYED
+    _LAST_DCAS_REPLAYED = dcas_replayed
 
     if session_task_count > 0 and config.get("delta_context_after_first", True):
         enriched_context = (context or "(no RAG context available)") + engrams + dcas
@@ -4546,6 +4336,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
     session_exhaustion_count = 0
     MAX_SESSION_ROTATIONS = 5  # safety: don't rotate infinitely
     driver_start_time = datetime.now()
+    global _PREV_RUNTIME_CTX
 
     # ── Restore session ID from persisted state ──
     if not session_id and STATE_PATH.exists():
@@ -4631,9 +4422,16 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             continue
 
         task_id = task["id"]
+        # Phase 0.5 sov-consult: stamp sovereignty on every task before
+        # execution. Per-task sovereignty (from task bank) wins; otherwise
+        # fall to driver-level default (--sovereignty CLI / env / "guarded").
+        task.setdefault(
+            "sovereignty",
+            config.get("sovereignty") or _DRIVER_DEFAULT_SOVEREIGNTY,
+        )
         print(f"\n[DRIVER] ═══════════════════════════════════════════")
         print(f"[DRIVER] Task: {task['title']} ({task_id})")
-        print(f"[DRIVER] Priority: {task.get('priority', '?')} | Scope: {', '.join(task.get('scope', ['**']))}")
+        print(f"[DRIVER] Priority: {task.get('priority', '?')} | Scope: {', '.join(task.get('scope', ['**']))} | Sovereignty: {task['sovereignty']}")
 
         # ── RING 5: Commitment scoring (pre-flight) ──
         ring_commitment_score(task)
@@ -4711,6 +4509,17 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                                     session_task_count=tasks_on_current_session)
             handoff_summary = ""  # consumed
 
+            # ── Batcomputer: start accumulating runtime context ──
+            _runtime_ctx = {
+                "classification": response.get("classification", {}),
+                "session_turns": response.get("context_metrics", {}).get("turns", 0),
+                "session_pressure_pct": response.get("context_metrics", {}).get("pressure_pct", 0),
+                "dcas_replayed": [
+                    {"decision": (a.get("decision", "") if isinstance(a, dict) else str(a))[:100]}
+                    for a in _LAST_DCAS_REPLAYED
+                ],
+            }
+
             # Auto-capture session ID from first Claude call (for branch mode)
             if not session_id and response.get("session_id"):
                 session_id = response["session_id"]
@@ -4743,36 +4552,6 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
             except Exception:
                 pass
 
-            # Scope the diff for audit tasks — give TB only plan-relevant changes
-            if task.get("source") == "plan_audit":
-                scope_files = [p for p in task.get("scope", [])
-                               if not any(c in p for c in "*?[")]
-                # Fallback: extract concrete paths from plan text when scope is all globs
-                if not scope_files and task.get("_plan_text"):
-                    scope_files = _extract_plan_file_paths(task["_plan_text"])
-                if scope_files:
-                    try:
-                        for diff_cmd in [
-                            ["git", "diff", "--"] + scope_files,
-                            ["git", "diff", "--cached", "--"] + scope_files,
-                        ]:
-                            scoped = subprocess.run(
-                                diff_cmd, capture_output=True, text=True,
-                                timeout=10, cwd=str(PROJECT_ROOT))
-                            if scoped.stdout.strip():
-                                git_diff_text = scoped.stdout[:3000]
-                                break
-                        # Also check committed changes
-                        if not git_diff_text.strip() and _pre_head:
-                            scoped = subprocess.run(
-                                ["git", "diff", f"{_pre_head}..HEAD", "--"] + scope_files,
-                                capture_output=True, text=True, timeout=10,
-                                cwd=str(PROJECT_ROOT))
-                            if scoped.stdout.strip():
-                                git_diff_text = scoped.stdout[:3000]
-                    except Exception:
-                        pass  # fall through to full-tree diff
-
             # ── Execution verification (Frontier 1: GROUND — deterministic, no LLM) ──
             verification_result = None
             if config.get("execution_verification_enabled", True):
@@ -4793,17 +4572,23 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                         err = f" — {sig['error']}" if sig.get("error") else ""
                         print(f"[VERIFY]   Tier {sig.get('tier', '?')}: "
                               f"{sig.get('check', '?')} {status} {target}{err}")
-                    # Log every verification run (audit trail)
-                    _vlog = {"task_id": task.get("id", ""), **_v,
-                             "ts": datetime.now().isoformat()}
-                    with open(VERIFICATION_LOG_PATH, "a") as _vf:
-                        _vf.write(json.dumps(_vlog, default=str) + "\n")
+                    # Log every verification run (audit trail).
+                    # Phase 0.5 sov-consult: skip when task is sovereign.
+                    if _should_write_corpus(task):
+                        _vlog = {"task_id": task.get("id", ""), **_v,
+                                 "ts": datetime.now().isoformat()}
+                        with open(VERIFICATION_LOG_PATH, "a") as _vf:
+                            _vf.write(json.dumps(_vlog, default=str) + "\n")
                     if not _v["verified"]:
                         _log_hard_negative(task, "verification_failed",
                             f"Tiers failed: {_v['tiers_failed']}, "
-                            f"signals: {json.dumps(_v['signals'][:5], default=str)}")
-                        # Calibration DPO (Frontier 3: COMPOUND signal)
-                        if config.get("calibration_dpo_enabled", True):
+                            f"signals: {json.dumps(_v['signals'][:5], default=str)}",
+                            attributed_to="ground")
+                        # Calibration DPO (Frontier 3: COMPOUND signal).
+                        # _log_hard_negative already gates on sovereignty;
+                        # the calibration DPO needs its own check.
+                        if (config.get("calibration_dpo_enabled", True)
+                                and _should_write_corpus(task)):
                             cal_dpo = build_calibration_dpo(task, response, _v)
                             if cal_dpo:
                                 with open(SPARRING_DPO_PATH, "a") as _f:
@@ -4831,6 +4616,16 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                             print("[VERIFY] Escalation written to human_verdicts.jsonl")
                 except Exception as e:
                     print(f"[VERIFY] Error (non-fatal): {e}")
+
+            # Batcomputer: capture verification breakdown
+            if verification_result:
+                _runtime_ctx["verification"] = {
+                    "tiers_passed": verification_result.get("tiers_passed", []),
+                    "tiers_failed": verification_result.get("tiers_failed", []),
+                    "signals": [{"tier": s.get("tier"), "check": s.get("check"),
+                                 "passed": s.get("passed"), "file": s.get("file", "")}
+                                for s in verification_result.get("signals", [])[:5]],
+                }
 
             # ── Programmatic scope check (hard gate — no LLM judgment) ──
             # Filter out files that were already dirty before task execution
@@ -4864,15 +4659,10 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
 
                 try:
                     audit_plan_text = ""
-                    verification_evidence = ""
-                    if task.get("source") == "plan_audit":
-                        if task.get("_plan_text"):
-                            audit_plan_text = task["_plan_text"][:3000]
-                        verification_evidence = _build_verification_evidence(
-                            task.get("_gt40_preflight"), verification_result)
+                    if task.get("source") == "plan_audit" and task.get("_plan_text"):
+                        audit_plan_text = task["_plan_text"][:3000]
                     review = tb_review_output(task, response, git_diff_text, config,
-                                              plan_text=audit_plan_text,
-                                              verification_evidence=verification_evidence)
+                                              plan_text=audit_plan_text)
                     # Reviewer answering is the survived event; downstream verdict
                     # (ACCEPT/DEEPEN/ESCALATE) is captured separately in CSR via the
                     # outcome path below.
@@ -4901,7 +4691,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     pre_result = response.get("result", "")
                     response, review = deepen_follow_up(
                         task, deepen_notes, session_id, config, pre_snapshot,
-                        verification_evidence=verification_evidence)
+                        pre_head=_pre_head)
                     response["tb_review"] = review
                     # Capture B: DEEPEN DPO pair
                     if config.get("training_capture_enabled", True):
@@ -4913,27 +4703,13 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                     _review_action = "deepen"
                     task["description"] += (f"\n\n## Review Notes "
                                             f"(deepen x{deepen_count})\n{deepen_notes}")
-                    update_task_status(task_id, "committed")
-                    print(f"[REVIEW] DEEPEN: exhausted {max_chain} inline retries, re-queuing")
-                    _log_hard_negative(task, "deepen_exhausted", deepen_notes)
+                    update_task_status(task_id, "blocked")
+                    task["blocked_reason"] = f"deepen_exhausted: {deepen_notes[:200]}"
+                    print(f"[REVIEW] DEEPEN: exhausted {max_chain} inline retries, blocked")
+                    _log_hard_negative(task, "deepen_exhausted", deepen_notes,
+                                       attributed_to="tb_review")
                     _fw_file_ticket("task_outcome", task_id,
                                     f"deepen_exhausted: {deepen_notes[:200]}", config)
-                    # Audit tasks: record DEEPEN_EXHAUSTED so auto-skip works
-                    if task.get("source") == "plan_audit" and task.get("_plan_path"):
-                        _record_audit_result(
-                            plan_filename=Path(task["_plan_path"]).name,
-                            plan_mtime=os.path.getmtime(task["_plan_path"]),
-                            verdict="DEEPEN_EXHAUSTED",
-                            turns=response.get("num_turns", 0),
-                            duration_s=response.get("duration_seconds", 0),
-                            session_id=session_id,
-                            plan_source=task.get("_plan_source"),
-                        )
-                        _log_structured_outcome(
-                            task, "DEEPEN_EXHAUSTED", review,
-                            duration_s=response.get("duration_seconds", 0),
-                            turns=response.get("num_turns", 0),
-                        )
                 elif review["verdict"] == "ESCALATE":
                     _review_action = "escalate"
                     if not task_id.startswith("sparring-"):
@@ -4941,7 +4717,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                                   review.get("reason", ""), "WARNING")
                     update_task_status(task_id, "blocked")
                     print(f"[REVIEW] ESCALATE after deepen: {task_id} blocked")
-                    _log_hard_negative(task, "escalated_after_deepen", review.get("reason", ""))
+                    _log_hard_negative(task, "escalated_after_deepen", review.get("reason", ""),
+                                       attributed_to="tb_review")
                     _fw_file_ticket("task_outcome", task_id,
                                     f"escalate_after_deepen: {review.get('reason', '')[:200]}", config)
             elif review["verdict"] == "ESCALATE":
@@ -4951,14 +4728,31 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                               review.get("reason", ""), "WARNING")
                 update_task_status(task_id, "blocked")
                 print(f"[REVIEW] ESCALATE: {task_id} blocked for human review")
-                _log_hard_negative(task, "escalated", review.get("reason", ""))
+                _log_hard_negative(task, "escalated", review.get("reason", ""),
+                                   attributed_to="tb_review")
                 _fw_file_ticket("task_outcome", task_id,
                                 f"escalate: {review.get('reason', '')[:200]}", config)
+
+            # Thread final_verdict so Phase D outcome scorer can see terminal state
+            response["final_verdict"] = (
+                "DEEPEN_EXHAUSTED"
+                if review["verdict"] == "DEEPEN" and _review_action == "deepen"
+                else review["verdict"]
+            )
 
             # ── Sparring: score Phase C+D output for training data ──
             if config.get("training_capture_enabled", True):
                 response["git_diff"] = git_diff_text  # pass diff to eval
-                _spar_phase_cd(task, response, review, config)
+                _spar_result = _spar_phase_cd(task, response, review, config)
+                if _spar_result:
+                    _runtime_ctx["tb_scores"] = _spar_result
+
+            # Batcomputer: capture training attribution (which source produced hard negs)
+            _runtime_ctx["training_captures"] = {
+                "tb_review": 1 if _review_action in ("deepen", "escalate") else 0,
+                "ground": 1 if verification_result and not verification_result.get("verified") else 0,
+                "executor": 1 if scope_violations else 0,
+            }
 
             # ── Capture A: execution-grounded DPO (ACCEPT only) ──
             if not _review_action and config.get("training_capture_enabled", True):
@@ -5018,6 +4812,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
 
         # Handle review actions outside the lock
         if _review_action:
+            # Batcomputer: still publish partial context for next task
+            _PREV_RUNTIME_CTX = _runtime_ctx
             ring_depth_pop()
             continue
 
@@ -5168,7 +4964,8 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 session_id=session_id,
                 verification=car_result,
                 verification_quality=quality,
-                plan_source=task.get("_plan_source"),
+                plan_source=task.get("plan_source", ""),
+                plan_kind=task.get("plan_kind", ""),
             )
 
             _log_structured_outcome(
@@ -5176,6 +4973,7 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
                 verification_result=car_result,
                 verification_quality=quality,
                 duration_s=duration, turns=turns,
+                executor_result=response,
             )
 
         log_shadow_raft(
@@ -5228,7 +5026,14 @@ def run_driver(session_id: str, mode: str = "supervised", dry_run: bool = False,
         fire_task_webhook(task, outcome, duration, turns, config)
 
         if not task_id.startswith("sparring-"):
-            apply_trust_ladder(config)
+            _old_trust = config.get("trust_ladder", {}).get("current_phase", 1)
+            _new_trust = apply_trust_ladder(config)
+            _runtime_ctx["trust_phase"] = _new_trust
+            if _old_trust != _new_trust:
+                _runtime_ctx["trust_change"] = f"P{_old_trust}->P{_new_trust}"
+
+        # Batcomputer: publish runtime context for next task's Phase C/D
+        _PREV_RUNTIME_CTX = _runtime_ctx
 
         print(f"[DRIVER] Task {task_id}: {outcome} ({duration}s, {turns} turns)")
         print(f"[DRIVER] ═══════════════════════════════════════════\n")
@@ -5370,15 +5175,6 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
     """
     import random
 
-    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
-    try:
-        _created = _spawn_plan_audit_fix_tasks()
-        if _created:
-            print(f"[SPARRING] plan_audit spawner created {len(_created)} task(s): "
-                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
-    except Exception as _e:
-        print(f"[SPARRING] plan_audit spawner non-fatal: {_e}")
-
     if not SPARRING_TASK_BANK_PATH.exists():
         print(f"[SPARRING] Task bank not found: {SPARRING_TASK_BANK_PATH}")
         return
@@ -5435,7 +5231,7 @@ def run_sparring_mode(rounds: int, session_id: str, branch: str):
 
 def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
                          session_id, verification=None, verification_quality=None,
-                         plan_source=None):
+                         plan_source="", plan_kind=""):
     """Persist audit verdict so future runs auto-skip verified plans."""
     audit_dir = BRAIN_PATH / "audit"
     audit_dir.mkdir(parents=True, exist_ok=True)
@@ -5456,6 +5252,10 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
         "duration_s": round(duration_s),
         "session_id": session_id[:16] if session_id else "",
     }
+    if plan_source:
+        entry["plan_source"] = plan_source
+    if plan_kind:
+        entry["plan_kind"] = plan_kind
     if verification:
         entry["verification"] = {
             "passed": verification["passed"],
@@ -5466,8 +5266,6 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
         }
     if verification_quality:
         entry["verification_quality"] = verification_quality
-    if plan_source:
-        entry["plan_source"] = plan_source
     results[plan_filename] = entry
     tmp_path = results_path.with_suffix(".json.tmp")
     tmp_path.write_text(json.dumps(results, indent=2) + "\n")
@@ -5478,15 +5276,38 @@ def _record_audit_result(plan_filename, plan_mtime, verdict, turns, duration_s,
 STRUCTURED_OUTCOME_LOG = DRIVER_DIR / "structured_outcomes.jsonl"
 
 
+def _extract_closeness(executor_result: Dict) -> Dict:
+    """Parse DONE/MISSING/PARTIAL counts from structured audit executor output.
+
+    Used as a quality signal — a plan that's 80% implemented is more valuable
+    to retry than one that's 0% implemented.
+    """
+    text = str(executor_result.get("result", "")).upper()
+    done = text.count("DONE")
+    missing = text.count("MISSING")
+    partial = text.count("PARTIAL")
+    total = done + missing + partial
+    return {
+        "done": done, "missing": missing, "partial": partial,
+        "ratio": round(done / total, 2) if total > 0 else 0,
+        "total_checks": total,
+    }
+
+
 def _log_structured_outcome(task: Dict, verdict: str, review: Dict = None,
                             verification_result: Dict = None,
                             verification_quality: str = "none",
-                            duration_s: int = 0, turns: int = 0):
+                            duration_s: int = 0, turns: int = 0,
+                            executor_result: Dict = None):
     """Log structured audit outcome for process learning. Append-only JSONL."""
+    if not _should_write_corpus(task):
+        return  # Phase 0.5 sov-consult.
     entry = {
         "ts": datetime.now().isoformat(timespec="seconds"),
         "task_id": task.get("id", ""),
         "plan": Path(task.get("_plan_path", "")).name if task.get("_plan_path") else "",
+        "plan_source": task.get("plan_source", ""),
+        "plan_kind": task.get("plan_kind", ""),
         "complexity_level": task.get("_complexity", {}).get("level", "unknown"),
         "template_used": ("structured" if task.get("_complexity", {}).get("level")
                           in ("medium", "complex") else "freeform"),
@@ -5501,6 +5322,8 @@ def _log_structured_outcome(task: Dict, verdict: str, review: Dict = None,
         "duration_s": round(duration_s),
         "structure_version": "v2-phased",
     }
+    if executor_result:
+        entry["closeness"] = _extract_closeness(executor_result)
     STRUCTURED_OUTCOME_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(STRUCTURED_OUTCOME_LOG, "a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -5559,7 +5382,7 @@ def cmd_audit_stats():
 # GT40 — Script-level independent verification (the Car verifies)
 # ═══════════════════════════════════════════════════════════════
 
-_RECURSION_GUARDS = {"--audit-plans", "--compound-audit", "--sparring", "--compound"}
+_RECURSION_GUARDS = {"--audit-plans", "--compound-audit", "--sparring", "--compound", "--tb-loop"}
 
 def _parse_verification_commands(verify_text: str) -> List[Dict]:
     """Extract runnable shell commands from plan verification markdown.
@@ -5615,16 +5438,24 @@ def _compute_verification_quality(result: Dict) -> str:
 
 
 def _auto_verification_commands(plan_text: str) -> List[Dict]:
-    """Derive deterministic checks from ## Files Modified / ## Affected Files.
-
-    Path extraction delegates to scripts.levers._plan_parser
-    (Wave 9 — shared with the plan_audit drift/unverifiable buckets).
-    Command construction stays here: TB-specific shape, not the lever's
-    concern.
-    """
-    from scripts.levers._plan_parser import extract_modified_files
-    cmds: List[Dict] = []
-    for path in extract_modified_files(plan_text):
+    """Derive deterministic checks from ## Files Modified / ## Affected Files. No LLM writes these."""
+    cmds = []
+    files_match = re.search(
+        r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)", plan_text, re.MULTILINE)
+    if not files_match:
+        return cmds
+    for line in files_match.group(1).splitlines():
+        # Handle bullet lists (- `path`) first
+        path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
+        # Fall back to extracting backtick-wrapped path from table rows (| `path` | ... |)
+        if not path or not re.match(r"[\w./\-]+\.\w+", path):
+            tbl = re.search(r"`([\w./\-]+\.\w+)`", line)
+            if tbl:
+                path = tbl.group(1)
+            else:
+                continue
+        if not re.match(r"[\w./\-]+\.\w+", path):
+            continue
         cmds.append({"command": f"test -f {path}", "skipped": False,
                      "kind": "assertion", "auto_generated": True})
         if path.endswith(".py") and not path.startswith("tests/"):
@@ -5727,6 +5558,83 @@ def _print_verification_report(result: Dict):
     print(f"{'=' * 50}\n")
 
 
+PLAN_SOURCES = [
+    (Path.home() / ".claude" / "plans", "claude", "*.md"),
+    (Path.home() / ".windsurf" / "plans", "windsurf", "*.md"),
+    (BRAIN_PATH / "plans", "brain", "*.md"),
+    (Path.home() / ".gemini" / "antigravity" / "brain", "antigravity",
+     "*/implementation_plan_*.md"),
+]
+
+
+def _classify_plan_file(plan_path: Path, plan_text: str) -> Dict:
+    """Classify a plan file as plan/status_report/megaplan/implementation_plan.
+
+    Returns {"kind": str, "actionable": bool}.
+    """
+    name = plan_path.name.lower()
+    text_lower = plan_text.lower()
+
+    if any(k in name for k in ("status", "closeout", "close_out", "complete")):
+        return {"kind": "status_report", "actionable": False}
+    if text_lower.count("successfully") + text_lower.count("completed") > 5:
+        return {"kind": "status_report", "actionable": False}
+
+    line_count = plan_text.count("\n")
+    if "megaplan" in name or line_count > 500:
+        return {"kind": "megaplan", "actionable": True}
+
+    if name.startswith("implementation_plan_") or name.startswith("design_thinking_"):
+        return {"kind": "implementation_plan", "actionable": True}
+
+    return {"kind": "plan", "actionable": True}
+
+
+def _find_github_issues(label: str = "nucleus-bug", limit: int = 5) -> List[Dict]:
+    """Scan GitHub for open issues (optional task source). Requires `gh` CLI.
+
+    Returns empty list if gh is unavailable. P7 skeleton — not wired into
+    orchestrator yet.
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "issue", "list", "--label", label, "--limit", str(limit),
+             "--state", "open", "--json", "number,title,body,url"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout)
+    except (FileNotFoundError, subprocess.TimeoutExpired, json.JSONDecodeError, Exception):
+        pass
+    return []
+
+
+def _triage_priority(plan_path: Path, prev_results: Dict) -> int:
+    """Return triage priority for a plan. Lower = higher priority.
+
+    0 = un-audited (never tried)
+    1 = DEEPEN_EXHAUSTED (retry failed audit)
+    2 = ACCEPT but plan file changed since audit (re-verify)
+    3 = ABANDONED or stable ACCEPT (skip unless --audit-force)
+    """
+    result = prev_results.get(plan_path.name)
+    if not result:
+        return 0
+    verdict = result.get("verdict")
+    if verdict == "DEEPEN_EXHAUSTED":
+        return 1
+    if verdict == "ACCEPT":
+        try:
+            plan_mtime = plan_path.stat().st_mtime
+            audit_mtime_str = result.get("plan_mtime", "2020-01-01")
+            audit_mtime = datetime.fromisoformat(audit_mtime_str).timestamp()
+            if plan_mtime > audit_mtime:
+                return 2
+        except (ValueError, OSError):
+            pass
+    return 3
+
+
 def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int = 0, force: bool = False):
     """Accountability loop: walk plans newest-to-oldest, verify + implement each.
 
@@ -5739,108 +5647,102 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
 
     Usage: python3 scripts/third_brother_driver.py --audit-plans 3
     """
-    # Scan both plan directories — Claude Code plans + .brain plans
-    plan_dirs = [
-        Path.home() / ".claude" / "plans",
-        BRAIN_PATH / "plans",
-    ]
+    # P1: Scan all 4 IDE ecosystems for plans (Claude + Windsurf + brain + Antigravity)
     seen_names = set()
-    all_plan_files = []
-    for pdir in plan_dirs:
+    all_plan_files = []  # list of (plan_path, source_tag) tuples
+    source_counts = {}
+    for pdir, source_tag, pattern in PLAN_SOURCES:
         if not pdir.exists():
             continue
-        for p in pdir.glob("*.md"):
+        count = 0
+        for p in pdir.glob(pattern):
             if p.name not in seen_names:
                 seen_names.add(p.name)
-                all_plan_files.append(p)
+                all_plan_files.append((p, source_tag))
+                count += 1
+        if count > 0:
+            source_counts[source_tag] = count
     if not all_plan_files:
         print("[AUDIT] No plan files found in any plan directory.")
         return
 
+    print(f"[AUDIT] Plan sources: {', '.join(f'{k} ({v})' for k, v in source_counts.items())}")
+
+    # P2: Classify — filter out status reports and other non-actionable files
+    actionable = []
+    non_actionable_count = 0
+    for p, source in all_plan_files:
+        try:
+            plan_text = p.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        kind = _classify_plan_file(p, plan_text)
+        if not kind["actionable"]:
+            non_actionable_count += 1
+            continue
+        actionable.append((p, source, kind["kind"], plan_text))
+    if non_actionable_count > 0:
+        print(f"[AUDIT] Skipping {non_actionable_count} non-actionable files (status reports, etc.)")
+
+    if not actionable:
+        print("[AUDIT] No actionable plans after classification.")
+        return
+
     # Sort newest first across all sources
-    plan_files = sorted(all_plan_files, key=lambda p: p.stat().st_mtime, reverse=True)
-    sources = {str(d): sum(1 for p in plan_files if str(p.parent) == str(d)) for d in plan_dirs if d.exists()}
-    print(f"[AUDIT] Plan sources: {', '.join(f'{k} ({v})' for k, v in sources.items())}")
+    actionable.sort(key=lambda x: x[0].stat().st_mtime, reverse=True)
 
-    # Auto-skip plans already verified or abandoned (unless --audit-force)
+    # Load previous audit results
+    audit_results_path = BRAIN_PATH / "audit" / "results.json"
+    prev_results = {}
+    if audit_results_path.exists():
+        try:
+            prev_results = json.loads(audit_results_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            prev_results = {}
+
+    # P4: Triage — un-audited first, then failed, then stale ACCEPT
     if not force:
-        audit_results_path = BRAIN_PATH / "audit" / "results.json"
-        prev_results = {}
-        if audit_results_path.exists():
-            try:
-                prev_results = json.loads(audit_results_path.read_text())
-            except (json.JSONDecodeError, OSError):
-                prev_results = {}
-
-        unverified = []
-        skipped_names = []
-        for p in plan_files:
-            result = prev_results.get(p.name)
-            if result and result.get("verdict") in ("ACCEPT", "ABANDONED", "DEEPEN_EXHAUSTED"):
-                plan_mtime = datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds")
-                if plan_mtime <= result.get("plan_mtime", ""):
-                    skipped_names.append(p.name)
-                    continue
-            unverified.append(p)
-
-        if skipped_names:
-            print(f"[AUDIT] Auto-skipped {len(skipped_names)} verified/abandoned/deepen-exhausted plans: {', '.join(skipped_names[:5])}")
+        triaged = [(p, s, k, t, _triage_priority(p, prev_results))
+                   for p, s, k, t in actionable]
+        # Sort by (priority asc, mtime desc)
+        triaged.sort(key=lambda x: (x[4], -x[0].stat().st_mtime))
+        # Exclude priority 3 (nothing to do)
+        unverified = [(p, s, k, t) for p, s, k, t, pri in triaged if pri < 3]
+        skipped_count = sum(1 for _, _, _, _, pri in triaged if pri >= 3)
+        if skipped_count > 0:
+            print(f"[AUDIT] Auto-skipped {skipped_count} verified/abandoned plans")
     else:
-        unverified = list(plan_files)
+        unverified = actionable
         print("[AUDIT] Force mode: re-auditing all plans")
 
     plans_to_audit = unverified[skip:skip + max_plans]
-    print(f"[AUDIT] Found {len(plan_files)} plans, auditing {len(plans_to_audit)} (newest first)")
-    for i, p in enumerate(plans_to_audit):
-        print(f"  {i}: {p.name}")
+    print(f"[AUDIT] Found {len(actionable)} actionable plans, auditing {len(plans_to_audit)} "
+          f"(un-audited first)")
+    for i, (p, source, kind, _) in enumerate(plans_to_audit):
+        print(f"  {i}: [{source}:{kind}] {p.name}")
 
     # Read each plan and create audit tasks
     existing_tasks = load_tasks()
     audit_ids = []
 
-    for i, plan_path in enumerate(plans_to_audit):
+    for i, (plan_path, plan_source, plan_kind, plan_text) in enumerate(plans_to_audit):
         task_id = f"audit-{i:03d}"
         audit_ids.append(task_id)
-
-        plan_text = plan_path.read_text()
 
         # Extract title from first markdown heading
         title_match = re.search(r"^#\s+(?:Plan:\s*)?(.+)$", plan_text, re.MULTILINE)
         plan_title = title_match.group(1).strip() if title_match else plan_path.stem
 
-        # Extract file scope — handle both bullet lists and table formats
-        scope = []
-        files_match = re.search(
-            r"## (?:Files Modified|Affected Files)\s*\n((?:(?!^## ).*\n?)*)",
-            plan_text, re.MULTILINE)
+        # Extract "Files Modified" section for scope
+        scope = ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"]
+        files_match = re.search(r"## Files Modified\s*\n((?:- .+\n?)+)", plan_text)
         if files_match:
-            for line in files_match.group(1).strip().splitlines():
-                path = re.sub(r"^[-*]\s*`?|`?\s*[—|].*$|`", "", line).strip()
-                if not path or not re.match(r"[\w./\-]+\.\w+", path):
-                    tbl = re.search(r"`([\w./\-]+\.\w+)`", line)
-                    if tbl:
-                        path = tbl.group(1)
-                    else:
-                        continue
-                if re.match(r"[\w./\-]+\.\w+", path):
+            file_lines = files_match.group(1).strip().splitlines()
+            scope = []
+            for line in file_lines:
+                path = re.sub(r"^-\s*`?|`?\s*—.*$", "", line).strip()
+                if path:
                     scope.append(path)
-        # Secondary: look for **File:**/**Files:** patterns common in plan bodies
-        if not scope:
-            file_refs = re.findall(
-                r'\*\*Files?:\*\*\s*`?([\w./\-]+\.\w+)`?', plan_text)
-            scope.extend(f for f in file_refs if f not in scope)
-        # Tertiary: ## Changes section with backtick-quoted paths
-        if not scope:
-            changes_match = re.search(
-                r"## Changes[^\n]*\n((?:(?!^## ).*\n?)*)",
-                plan_text, re.MULTILINE)
-            if changes_match:
-                for line in changes_match.group(1).strip().splitlines():
-                    tbl = re.search(r'`([\w./\-]+\.\w+)`', line)
-                    if tbl and tbl.group(1) not in scope:
-                        scope.append(tbl.group(1))
-        if not scope:
-            scope = ["scripts/**", "mcp-server-nucleus/**", "backend/**", ".brain/**"]
 
         # Extract "Verification" section for live-fire step
         verify_match = re.search(
@@ -5861,8 +5763,6 @@ def run_plan_audit_mode(max_plans: int, session_id: str, branch: str, skip: int 
                 failed = [r for r in preflight["results"] if r.get("passed") is False]
                 print(f"[GT40-PREFLIGHT] {plan_path.name}: {len(failed)} FAIL "
                       f"— Claude will attempt fixes")
-
-        preflight_result = preflight if verify_steps else None
 
         # Classify complexity → route to freeform or structured template
         complexity = _classify_plan_complexity(plan_text, scope)
@@ -5913,9 +5813,6 @@ run the plan's verification commands after you complete (GT40 verification).
                 complexity_expansion=expansion,
             )
 
-        # Track plan source for audit results
-        plan_source = "claude" if ".claude" in str(plan_path) else "brain"
-
         task = {
             "id": task_id,
             "title": f"Audit: {plan_title[:60]}",
@@ -5924,13 +5821,13 @@ run the plan's verification commands after you complete (GT40 verification).
             "priority": 1,
             "status": "committed",
             "source": "plan_audit",
+            "plan_source": plan_source,
+            "plan_kind": plan_kind,
             "max_turns": complexity["recommended_turns"],
             "_complexity": complexity,
             "_plan_path": str(plan_path),
-            "_plan_source": plan_source,
             "_verify_text": verify_steps,
             "_plan_text": plan_text,
-            "_gt40_preflight": preflight_result,
         }
         existing_tasks.append(task)
 
@@ -5944,8 +5841,33 @@ run the plan's verification commands after you complete (GT40 verification).
         STATE_PATH.write_text(json.dumps(prev))
         print("[AUDIT] Cleared stale session state — starting fresh")
 
+    # P3: Loop 1 guardrails — scorecard + git tag + degradation rollback
+    try:
+        pre_scorecard = _snapshot_scorecard()
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        git("tag", f"audit-pre-{ts}")
+        print(f"[AUDIT] Checkpoint: audit-pre-{ts}")
+    except Exception as e:
+        print(f"[AUDIT] Checkpoint setup failed (non-fatal): {e}")
+        pre_scorecard = None
+        ts = ""
+
     try:
         run_driver("", mode="autonomous", branch=branch, max_tasks=len(audit_ids))
+
+        # Post-run degradation check
+        if pre_scorecard:
+            try:
+                post_scorecard = _snapshot_scorecard()
+                degraded = _check_degradation(pre_scorecard, post_scorecard)
+                if degraded:
+                    print(f"[AUDIT] DEGRADATION: {', '.join(degraded)}")
+                    print(f"[AUDIT] Rolling back to audit-pre-{ts}")
+                    git("checkout", f"audit-pre-{ts}", "--", ".")
+                else:
+                    print("[AUDIT] Scorecard: no degradation")
+            except Exception as e:
+                print(f"[AUDIT] Post-check failed (non-fatal): {e}")
     finally:
         # Clean up audit tasks from tasks.json
         tasks = load_tasks()
@@ -6020,18 +5942,9 @@ def run_compound_audit_mode(max_tasks: int, branch: str):
             _fw_file_ticket("compound_audit", task["id"],
                             f"compound_degradation: {', '.join(degraded)}", load_config())
             rolled_back.append(task["id"])
-            _record_compound_attempt(task["id"], "rolled_back")
         else:
             compounded.append(task["id"])
-            _record_compound_attempt(task["id"], "success")
             print(f"[COMPOUND-AUDIT] {task['id']}: OK")
-
-    # Phase 4: Re-verify stale CSR claims
-    print("\n[COMPOUND-AUDIT] Re-verifying stale CSR claims...")
-    recalc = _reverify_stale_claims(load_config())
-    if recalc.get("corrections", 0) > 0:
-        print(f"[COMPOUND-AUDIT] CSR recalculation: {recalc['corrections']} claims "
-              f"corrected, new CSR: {recalc['new_csr']:.3f}")
 
     # Final scorecard
     final_scorecard = _snapshot_scorecard()
@@ -6054,16 +5967,6 @@ def run_compound_mode(branch: str, sparring_rounds: int = 5):
     print("  COMPOUND MODE — Work = Training")
     print("  real tasks → sparring → export")
     print("=" * 60)
-
-    # Wave 7 — spawn audit-plan tasks from most recent plan_audit lever fire.
-    # Silent no-op unless there are rotting plans with no pending task yet.
-    try:
-        _created = _spawn_plan_audit_fix_tasks()
-        if _created:
-            print(f"[COMPOUND] plan_audit spawner created {len(_created)} task(s): "
-                  f"{_created[:3]}{'…' if len(_created) > 3 else ''}")
-    except Exception as _e:
-        print(f"[COMPOUND] plan_audit spawner non-fatal: {_e}")
 
     # Pre-flight: verify Ollama + TB model are running (needed for training captures)
     config = load_config()
@@ -6125,6 +6028,75 @@ def run_compound_mode(branch: str, sparring_rounds: int = 5):
     print("=" * 60)
 
 
+def run_tb_loop(max_iterations: int, branch: str):
+    """TB-orchestrated loop: read board → decide → execute → repeat.
+
+    TB sees the full system state and decides what to do next:
+    compound (train on failures), retry_stuck (re-attempt failed tasks),
+    or skip (nothing actionable).
+
+    Usage: python3 scripts/third_brother_driver.py --tb-loop 3
+    """
+    config = load_config()
+    branch_name = ensure_tb_branch(branch)
+
+    # Warmup TB model
+    v3 = config.get("v3_features", {})
+    tb_model = os.environ.get("TB_MODEL") or v3.get("tb_model", "third-brother:latest")
+    _ollama_warmup(tb_model)
+
+    print("=" * 60)
+    print("  TB ORCHESTRATION LOOP")
+    print(f"  Max iterations: {max_iterations}")
+    print(f"  Branch: {branch_name}")
+    print("=" * 60)
+
+    iterations_run = 0
+    for i in range(max_iterations):
+        iterations_run = i + 1
+        print(f"\n[TB-LOOP] Iteration {i+1}/{max_iterations}")
+
+        # 1. Read the board
+        board = _tb_read_board()
+        print(f"[TB-LOOP] Board: CSR={board.get('csr_ratio', '?')}, "
+              f"blocked={len(board.get('tasks_blocked', []))}, "
+              f"failed={len(board.get('tasks_failed', []))}, "
+              f"hard_negs={board.get('hard_negative_count', 0)}")
+
+        # 2. TB decides
+        decision = tb_orchestrate(board, config)
+
+        if decision["action"] == "skip":
+            print("[TB-LOOP] TB says nothing actionable — stopping")
+            break
+
+        # 3. Execute
+        board_pre = board
+        if decision["action"] == "compound":
+            run_compound_mode(branch_name)
+            board_post = _tb_read_board()
+            unstuck = _auto_unstick_after_compound(board_pre, board_post)
+            if unstuck > 0:
+                print(f"[TB-LOOP] Auto-unstuck {unstuck} task(s)")
+
+        elif decision["action"] == "retry_stuck":
+            targets = decision.get("targets", [])
+            if targets:
+                reset = _reset_stuck_tasks(targets)
+                if reset > 0:
+                    run_driver("", mode="autonomous", branch=branch_name,
+                               max_tasks=len(targets))
+            else:
+                print("[TB-LOOP] retry_stuck with no targets — skipping")
+
+        # 4. Post-iteration check
+        board_post = _tb_read_board()
+        print(f"[TB-LOOP] Post: CSR={board_post.get('csr_ratio', '?')}, "
+              f"blocked={len(board_post.get('tasks_blocked', []))}")
+
+    print(f"\n[TB-LOOP] Complete after {iterations_run} iteration(s)")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Third Brother Autonomous Driver v2 — Session Resume Architecture"
@@ -6140,6 +6112,16 @@ def main():
     parser.add_argument("--export-training", action="store_true", help="Export training data now")
     parser.add_argument("--validate-shadow-log", action="store_true",
                         help="Scan shadow_log.jsonl and report corrupt/incomplete entries")
+    parser.add_argument("--sovereignty",
+                        choices=["public", "guarded", "sovereign"],
+                        default=None,
+                        help="Phase 0.5 sov-consult: corpus-write gate for all "
+                             "tasks this run. sovereign = NO writes (no "
+                             "shadow_log/DPO/SFT/verdict/audit). guarded = "
+                             "writes proceed (default if unset). public = "
+                             "writes proceed. Override per-task via task "
+                             "bank's `sovereignty` field. Env: "
+                             "TB_DRIVER_SOVEREIGNTY (same values).")
     parser.add_argument("--sparring", nargs="?", const=10, type=int,
                         help="Run N sparring rounds from task bank (default: 10)")
     parser.add_argument("--compound", nargs="?", const=5, type=int,
@@ -6156,12 +6138,21 @@ def main():
                         help="Show structured audit statistics")
     parser.add_argument("--compound-audit", nargs="?", const=3, type=int,
                         help="Compound audit: measure -> close gaps -> verify (default: 3 tasks)")
+    parser.add_argument("--tb-loop", nargs="?", const=3, type=int,
+                        help="TB-orchestrated loop: read board → decide → execute → repeat (default: 3 iterations)")
     parser.add_argument("--verbose", action="store_true",
                         help="Log every Ollama call's input and output to stdout")
     args = parser.parse_args()
 
-    global VERBOSE
+    global VERBOSE, _DRIVER_DEFAULT_SOVEREIGNTY
     VERBOSE = args.verbose
+    if args.sovereignty:
+        _DRIVER_DEFAULT_SOVEREIGNTY = args.sovereignty
+        print(f"[DRIVER] Phase 0.5 sov-consult: default sovereignty = "
+              f"{_DRIVER_DEFAULT_SOVEREIGNTY} (per --sovereignty)")
+    elif _DRIVER_DEFAULT_SOVEREIGNTY != "guarded":
+        print(f"[DRIVER] Phase 0.5 sov-consult: default sovereignty = "
+              f"{_DRIVER_DEFAULT_SOVEREIGNTY} (per env TB_DRIVER_SOVEREIGNTY)")
 
     # Ensure driver directory exists
     DRIVER_DIR.mkdir(parents=True, exist_ok=True)
@@ -6196,6 +6187,9 @@ def main():
                 turns=0, duration_s=0, session_id="",
             )
         print(f"[AUDIT] Marked {len(args.audit_abandon)} plan(s) as ABANDONED")
+    elif args.tb_loop is not None:
+        branch = args.branch or "tb/orchestrate"
+        run_tb_loop(args.tb_loop, branch)
     elif args.compound_audit is not None:
         branch = args.branch or "tb/compound-audit"
         run_compound_audit_mode(args.compound_audit, branch)
@@ -6226,3 +6220,461 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ─── Lever-gate runtime — appended to fix broken test_lever_compounding.py imports ───
+# Source: tb/plan-audit lines 1166-1616 (file-extracted from preserve_tag)
+# Defines: LEVER_LEDGER_PATH, _lever_gate_scan, _find_lever_findings_in_diff,
+#          _emit_plan_audit_spawner_event, _REAUDIT_BUCKETS, BUCKET_SPAWN_POLICY,
+#          _spawn_plan_audit_fix_tasks
+LEVER_LEDGER_PATH = BRAIN_PATH / "ledger" / "events.jsonl"
+
+
+def _lever_gate_scan(git_diff: str,
+                     ledger_path: Optional[Path] = None,
+                     window: int = 100) -> Dict[str, Any]:
+    """Fail-closed scan of recent ledger events against a diff.
+
+    Returns a dict ``{"matches": [...], "status": "clean"|"found"|"unknown"}``.
+
+    ``status`` is the key the gate trusts:
+      - ``clean``   — ledger readable, no findings touch diff files
+      - ``found``   — ledger readable, one or more findings touch diff files
+      - ``unknown`` — ledger unreadable/parse-error/missing. The gate MUST
+                     force DEEPEN on unknown, never silently ACCEPT
+                     (substrate posture: fail-closed on read errors).
+
+    ``matches`` is always a list; on ``unknown`` it is empty.
+    """
+    path = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+    if not git_diff:
+        return {"matches": [], "status": "clean"}
+    if not path.exists():
+        return {"matches": [], "status": "clean"}
+
+    diff_files = set()
+    for line in git_diff.splitlines():
+        if line.startswith("+++ b/"):
+            diff_files.add(line[6:].strip())
+        elif line.startswith("diff --git a/") and " b/" in line:
+            diff_files.add(line.split(" b/", 1)[1].strip())
+    if not diff_files:
+        return {"matches": [], "status": "clean"}
+
+    try:
+        raw_lines = path.read_text(encoding="utf-8").strip().splitlines()
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"[LEVER_GATE] ledger unreadable — forcing DEEPEN: {e}")
+        return {"matches": [], "status": "unknown", "reason": f"read_error: {e}"}
+
+    matches: List[Dict] = []
+    corrupt = 0
+    for line in raw_lines[-window:]:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            corrupt += 1
+            continue
+        etype = event.get("type", "")
+        if not (etype.startswith("lever.") and etype.endswith(".observation")):
+            continue
+        if event.get("outcome") != "found":
+            continue
+        findings = event.get("detail", {}).get("findings", [])
+        finding_text = "\n".join(findings) if isinstance(findings, list) else str(findings)
+        if any(f in finding_text for f in diff_files):
+            matches.append(event)
+    status = "found" if matches else "clean"
+    result: Dict[str, Any] = {"matches": matches, "status": status}
+    if corrupt:
+        result["corrupt_lines"] = corrupt
+    return result
+
+
+def _find_lever_findings_in_diff(git_diff: str,
+                                 ledger_path: Optional[Path] = None,
+                                 window: int = 100) -> List[Dict]:
+    """Backward-compat wrapper — returns only the matches list.
+
+    Phase D scoring uses this to dock reviews that ACCEPT over flagged
+    files. For the fail-closed gate, use ``_lever_gate_scan`` instead so
+    ``unknown`` (ledger unreadable) can force DEEPEN.
+    """
+    return _lever_gate_scan(git_diff, ledger_path, window)["matches"]
+
+
+def _spawn_lever_fix_task(parent_task: Dict, lever_matches: List[Dict],
+                          tasks_path: Optional[Path] = None) -> Optional[str]:
+    """Spawn a fix task for lever findings. Day-0 compounding — no LLM.
+
+    Dedupes: if a pending lever-fix task with the same lever set + file set
+    already exists, returns None and does not create a new one.
+
+    Returns the new task id (or existing deduped id), or None on failure.
+    """
+    path = tasks_path if tasks_path is not None else TASKS_PATH
+    try:
+        lever_names = sorted({m.get("lever", "?") for m in lever_matches})
+        affected_files: set = set()
+        finding_samples: List[str] = []
+        file_exts = (".py", ".js", ".ts", ".tsx", ".yaml", ".yml",
+                     ".md", ".json", ".sh", ".toml")
+        for m in lever_matches:
+            findings = m.get("detail", {}).get("findings", [])
+            if isinstance(findings, list):
+                for f in findings[:3]:
+                    finding_samples.append(f)
+                    # Parse tokens and file:line:col forms; collect path-like bits.
+                    for token in str(f).split():
+                        token = token.rstrip(",.)")
+                        for candidate in [token] + token.split(":"):
+                            if "/" in candidate and candidate.endswith(file_exts):
+                                affected_files.add(candidate)
+                                break
+
+        dedup_key = f"{','.join(lever_names)}|{','.join(sorted(affected_files))}"
+
+        if path.exists():
+            data = json.loads(path.read_text())
+        else:
+            data = {"tasks": []}
+        tasks = data.get("tasks", [])
+
+        for t in tasks:
+            if (t.get("source") == "lever_gate"
+                    and t.get("status") in ("pending", "in_progress")
+                    and t.get("lever_gate_dedup_key") == dedup_key):
+                return t.get("id")
+
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        new_id = f"lever-fix-{'-'.join(lever_names)}-{ts}"
+        description_lines = [
+            f"Lever gate spawned this task from {len(lever_matches)} finding(s).",
+            f"Levers: {', '.join(lever_names)}",
+            f"Parent task: {parent_task.get('id', '?')}",
+            "",
+            "Sample findings:",
+        ] + [f"  - {f}" for f in finding_samples[:8]]
+        scope = sorted(affected_files) if affected_files else parent_task.get("scope", ["**"])
+
+        new_task = {
+            "id": new_id,
+            "title": f"Fix {','.join(lever_names)} findings in {parent_task.get('id', '?')}",
+            "description": "\n".join(description_lines),
+            "scope": scope,
+            "priority": "high",
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": datetime.now().isoformat(),
+            "source": "lever_gate",
+            "lever_gate_dedup_key": dedup_key,
+            "lever_gate_parent_task_id": parent_task.get("id", ""),
+        }
+        tasks.append(new_task)
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now().isoformat()
+        path.write_text(json.dumps(data, indent=2))
+        return new_id
+    except Exception as e:
+        print(f"[LEVER_GATE] task spawn failed (non-fatal): {e}")
+        return None
+
+
+def _emit_plan_audit_spawner_event(ledger_path: Path, outcome: str,
+                                    detail: Dict) -> None:
+    """Emit one contract-conformant ``lever.plan_audit_spawner.observation``.
+
+    Uses ``LedgerEvent.for_lever_observation`` so the event type is always
+    ``lever.plan_audit_spawner.observation`` (the helper hardcodes the
+    ``.observation`` suffix). Never raises — ledger write failures are
+    absorbed so the spawner path never breaks session startup.
+    """
+    try:
+        from scripts.levers.base import LedgerEvent, LedgerSchemaError
+    except ImportError as e:
+        print(f"[PLAN_AUDIT_SPAWNER] LedgerEvent import failed: {e}")
+        return
+    try:
+        event = LedgerEvent.for_lever_observation(
+            lever_name="plan_audit_spawner",
+            observation={"outcome": outcome, "detail": detail},
+        )
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(ledger_path, "a", encoding="utf-8") as f:
+            f.write(event.to_jsonl() + "\n")
+    except (OSError, LedgerSchemaError) as e:
+        print(f"[PLAN_AUDIT_SPAWNER] ledger publish failed (non-fatal): {e}")
+
+
+# Wave 8 — dispatch policy for plan_audit spawner.
+#
+# Re-audit buckets fall through to the default ``audit-plan-<stem>`` task
+# (re-running TB's --audit-plans is the right fix).
+#
+# Non-re-audit buckets look up BUCKET_SPAWN_POLICY to decide the task
+# type. Wave 9 will append ``unverifiable`` and ``drift_detected`` entries
+# (the latter with ``task_kwargs={"force": True}`` so the dispatcher adds
+# --audit-force to the instruction).
+_REAUDIT_BUCKETS = frozenset({
+    "never_audited",
+    "stale",
+    "needs_deepen",
+    "deepen_exhausted",
+    "failed_audit",
+})
+
+BUCKET_SPAWN_POLICY: Dict[str, Dict[str, Any]] = {
+    "verified_no_evidence": {
+        "task_type": "add-verification",
+        "task_kwargs": {},
+    },
+    # Wave 9 — lever can never auto-grade this plan; structural fix is
+    # to add `## Files Modified` / `## Verification`. Same shape as
+    # verified_no_evidence.
+    "unverifiable": {
+        "task_type": "add-verification",
+        "task_kwargs": {},
+    },
+    # Wave 9 — a referenced file was edited after the audit. Re-auditing
+    # is the right fix, but TB auto-skips ACCEPT verdicts; force=True so
+    # the dispatcher emits the `--audit-force` hint in the description.
+    "drift_detected": {
+        "task_type": "audit-plan",
+        "task_kwargs": {"force": True},
+    },
+}
+
+
+def _spawn_plan_audit_fix_tasks(
+    tasks_path: Optional[Path] = None,
+    ledger_path: Optional[Path] = None,
+) -> List[str]:
+    """Wave 7+8 — convert plan_audit findings into TB task bank entries.
+
+    Reads the most recent ``lever.plan_audit.observation`` from the
+    ledger. For each plan in ``detail.top_rot``, dispatches through
+    ``BUCKET_SPAWN_POLICY`` and ``_REAUDIT_BUCKETS`` to decide the task
+    shape, unless a pending/in_progress task with the same id already
+    exists (dedupe). Plans that vanished from disk between the lever
+    fire and this call are skipped (orphan guard).
+
+    Bucket → task-type map (Waves 8+9):
+
+      verified_no_evidence, unverifiable → add-verification-<stem>
+        (plan-edit task, NOT re-audit: re-running --audit-plans on a
+        plan without parseable `## Files Modified` / `## Verification`
+        just produces another quality=none verdict; the structural
+        fix is to add those sections).
+      drift_detected → audit-plan-<stem>  (re-audit with force=True:
+        a referenced file changed after the audit; force the dispatcher
+        to emit --audit-force so TB doesn't auto-skip the ACCEPT verdict).
+      never_audited, stale, needs_deepen, deepen_exhausted, failed_audit
+        → audit-plan-<stem>  (default re-audit task).
+      deepen_exhausted also gets ' --audit-force REQUIRED' in the
+        description (TB auto-skips otherwise).
+
+    Emission policy (silent-unless-action-or-degraded, to avoid ledger
+    flood on frequent session inits):
+
+      N > 0 tasks created  → outcome=found,  detail={created_count,
+                              deduped_count, plan_names, skipped_orphans}
+      tasks.json unreadable → outcome=skipped, detail={stage: tasks_json_read,
+                              error}, returns []
+      ledger unreadable     → outcome=skipped, detail={stage: ledger_read,
+                              error}, returns []
+      no observation / all  → SILENT (no event emitted)
+      deduped / no top_rot
+
+    Returns list of newly-created task ids (empty on no-op or failure).
+    """
+    tpath = tasks_path if tasks_path is not None else TASKS_PATH
+    lpath = ledger_path if ledger_path is not None else LEVER_LEDGER_PATH
+
+    # 1. Read ledger tail for most-recent plan_audit observation
+    try:
+        lines = lpath.read_text(encoding="utf-8").splitlines() if lpath.exists() else []
+    except (OSError, UnicodeDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "ledger_read", "error": str(e)},
+        )
+        return []
+
+    obs_detail: Optional[Dict] = None
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        if (raw.get("type") == "lever.plan_audit.observation"
+                and raw.get("outcome") == "found"):
+            d = raw.get("detail")
+            if isinstance(d, dict):
+                obs_detail = d
+                break
+
+    if obs_detail is None:
+        return []
+    top_rot = obs_detail.get("top_rot") or []
+    if not isinstance(top_rot, list) or not top_rot:
+        return []
+
+    # 2. Read existing tasks for dedupe
+    try:
+        if tpath.exists():
+            data = json.loads(tpath.read_text(encoding="utf-8"))
+        else:
+            data = {"tasks": []}
+    except (OSError, json.JSONDecodeError) as e:
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": str(e)},
+        )
+        return []
+
+    if not isinstance(data, dict):
+        _emit_plan_audit_spawner_event(
+            lpath, "skipped",
+            {"stage": "tasks_json_read", "error": "expected object"},
+        )
+        return []
+    tasks = data.get("tasks") or []
+    if not isinstance(tasks, list):
+        tasks = []
+    existing_open_ids = {
+        t.get("id") for t in tasks
+        if isinstance(t, dict) and t.get("status") in ("pending", "in_progress")
+    }
+
+    # 3. Build one task per rotting plan (skip deduped + orphan plans)
+    claude_plans = Path.home() / ".claude" / "plans"
+    brain_plans = PROJECT_ROOT / ".brain" / "plans"
+    created_ids: List[str] = []
+    created_plan_names: List[str] = []
+    deduped: List[str] = []
+    skipped_orphans: List[str] = []
+
+    for plan in top_rot:
+        if not isinstance(plan, dict):
+            continue
+        name = plan.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        stem = name[:-3] if name.endswith(".md") else name
+        bucket = plan.get("bucket", "?")
+
+        # R13: dispatch by bucket. BUCKET_SPAWN_POLICY wins if the bucket
+        # has custom task semantics; otherwise re-audit buckets fall
+        # through to the default audit-plan task. Unknown buckets are
+        # skipped silently (shouldn't reach here — lever only puts
+        # rotting buckets in top_rot).
+        policy = BUCKET_SPAWN_POLICY.get(bucket)
+        if policy is not None:
+            task_type = policy["task_type"]
+            task_kwargs = policy.get("task_kwargs", {}) or {}
+        elif bucket in _REAUDIT_BUCKETS:
+            task_type = "audit-plan"
+            task_kwargs = {}
+        else:
+            continue
+
+        task_id = f"{task_type}-{stem}"
+
+        if task_id in existing_open_ids:
+            deduped.append(name)
+            continue
+
+        plan_on_disk: Optional[Path] = None
+        for candidate in (claude_plans / name, brain_plans / name):
+            if candidate.exists():
+                plan_on_disk = candidate
+                break
+        if plan_on_disk is None:
+            skipped_orphans.append(name)
+            continue
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        if task_type == "audit-plan":
+            force_flag = (
+                task_kwargs.get("force", False) or bucket == "deepen_exhausted"
+            )
+            force_hint = (
+                " --audit-force is REQUIRED: TB auto-skips this verdict."
+                if force_flag
+                else ""
+            )
+            title = f"audit plan {name}"[:80]
+            description = (
+                f"plan_audit lever flagged {name} as bucket="
+                f"{bucket} (age {plan.get('age_days', '?')}d). "
+                f"Verify plan claims against code + write verdict to "
+                f".brain/audit/results.json via: python3 "
+                f"scripts/third_brother_driver.py --audit-plans 1 "
+                f"(newest-first; use --audit-skip K to reach this plan)."
+                f"{force_hint}"
+            )
+        elif task_type == "add-verification":
+            title = f"add verification to {name}"[:80]
+            description = (
+                f"plan_audit lever flagged {name} as bucket={bucket} "
+                f"(age {plan.get('age_days', '?')}d). Plan was ACCEPTed "
+                f"without executed verification commands (quality=none "
+                f"or missing). Edit the plan to add a `## Files Modified` "
+                f"or `## Verification` section listing concrete "
+                f"assertions (ran pytest X, checked Y) so a future "
+                f"--audit-plans fire can grade evidence. Plan-edit only; "
+                f"no code changes expected."
+            )
+        else:
+            continue
+
+        new_task = {
+            "id": task_id,
+            "title": title,
+            "description": description,
+            "scope": [str(plan_on_disk)],
+            "priority": 1,
+            "status": "pending",
+            "assigned_to": "tb",
+            "created_at": now_iso,
+            "source": "plan_audit_spawner",
+            "plan_name": name,
+            "plan_bucket": bucket,
+        }
+        tasks.append(new_task)
+        created_ids.append(task_id)
+        created_plan_names.append(name)
+
+    # 4. Persist + emit only if we actually added tasks
+    if created_ids:
+        data["tasks"] = tasks
+        data["schema_version"] = data.get("schema_version", 1)
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        try:
+            tpath.write_text(json.dumps(data, indent=2))
+        except OSError as e:
+            _emit_plan_audit_spawner_event(
+                lpath, "skipped",
+                {"stage": "tasks_json_write", "error": str(e)},
+            )
+            return []
+        _emit_plan_audit_spawner_event(
+            lpath, "found",
+            {
+                "created_count": len(created_ids),
+                "deduped_count": len(deduped),
+                "plan_names": created_plan_names,
+                "skipped_orphans": skipped_orphans,
+            },
+        )
+    # else: silent no-op — no emission, avoids ledger flood on session inits
+
+    return created_ids
+
+

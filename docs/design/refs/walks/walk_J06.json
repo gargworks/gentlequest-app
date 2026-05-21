@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "tier": "J06",
+  "design_id": "GentleQuest_Quest_Flow",
+  "description": "Quest tab: list → quest card tap → preview → Start → in-progress → fill field → Mark done",
+  "bypass_compliance": true,
+  "steps": [
+    {"action": "wait", "duration_ms": 3000},
+    {"action": "tap", "x": 213, "y": 820, "note": "Tap Quest tab (3rd tab, x≈213)"},
+    {"action": "wait", "duration_ms": 500},
+    {"action": "screenshot", "screen_name": "01_quest_list", "note": "Quest list: in-progress card, filter chips, 2-col grid"},
+    {"action": "tap", "x": 98, "y": 460, "note": "Tap first quest grid card → _goToPreview()"},
+    {"action": "wait", "duration_ms": 300},
+    {"action": "screenshot", "screen_name": "02_quest_preview", "note": "Preview: title, description, skip note, day-by-day timeline, Start quest CTA"},
+    {"action": "tap", "x": 196, "y": 720, "note": "Tap 'Start quest' → onStart → _goToInProgress()"},
+    {"action": "wait", "duration_ms": 300},
+    {"action": "screenshot", "screen_name": "03_quest_in_progress", "note": "In-progress view: title, progress ring, day prompt, text fields"},
+    {"action": "tap", "x": 196, "y": 450, "note": "Tap first text field"},
+    {"action": "type", "text": "Good coffee this morning"},
+    {"action": "screenshot", "screen_name": "04_field_filled"},
+    {"action": "tap", "x": 196, "y": 700, "note": "Tap 'Mark today done' (enabled when ≥1 field filled)"},
+    {"action": "wait", "duration_ms": 800},
+    {"action": "screenshot", "screen_name": "05_quest_confirmed", "note": "'Nice. See you tomorrow.' confirmation; returns to list"}
+  ]
+}
