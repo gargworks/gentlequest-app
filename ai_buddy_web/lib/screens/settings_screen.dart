@@ -5,9 +5,11 @@ import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
 import '../widgets/crisis_resources.dart' show showCrisisInterventionSheet;
 import '../widgets/safety_legal_sheet.dart';
+import './auth/login_screen.dart';
 import './legal/legal_screen.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
+import '../services/auth_service.dart';
 import '../theme/gq_tokens.dart';
 
 // ─── Settings Screen — R1D20 ─────────────────────────────────────────────────
@@ -109,6 +111,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _openLoginScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+    // Refresh visible state — user may have signed in via deep link
+    // while the LoginScreen was on top.
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _handleSignOut() async {
+    await AuthService.instance.signOut();
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Signed out · your local history stays on this device.'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> _handleSendFeedback() async {
@@ -213,9 +237,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ── View A: Settings home ─────────────────────────────────────────────────
 
   Widget _buildDefaultView() {
+    final authService = AuthService.instance;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
       children: [
+        // ACCOUNT — opt-in passwordless sign-in for cross-device sync.
+        _SectionLabel(label: 'ACCOUNT'),
+        _SettingsCard(
+          children: [
+            if (authService.isSignedIn)
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.check_circle_outline,
+                    size: 14, color: GQColors.primaryDk),
+                title: 'Signed in',
+                subtitle: authService.email ?? '',
+                trailing: TextButton(
+                  onPressed: _handleSignOut,
+                  child: const Text(
+                    'Sign out',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: GQColors.ink2,
+                    ),
+                  ),
+                ),
+              )
+            else
+              _SettingsRow(
+                iconBg: GQColors.primarySoft,
+                iconWidget: const Icon(Icons.sync_outlined,
+                    size: 14, color: GQColors.primaryDk),
+                title: 'Sign in to sync across devices',
+                subtitle:
+                    'Passwordless · anonymous use stays supported',
+                trailing: const _Chevron(),
+                onTap: _openLoginScreen,
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
         // YOUR DATA
         _SectionLabel(label: 'YOUR DATA'),
         _SettingsCard(
