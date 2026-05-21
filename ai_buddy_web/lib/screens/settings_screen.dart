@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
@@ -11,7 +12,13 @@ import './legal/legal_screen.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../services/auth_service.dart';
+import '../services/notification_service_impl.dart';
 import '../theme/gq_tokens.dart';
+
+// ─── Notification preference keys (SharedPreferences) ───────────────────────
+const String _kNotifDailyReminderKey = 'notif_daily_reminder_v1';
+const String _kNotifStreakNudgeKey = 'notif_streak_nudge_v1';
+const String _kNotifWorriedCheckInKey = 'notif_worried_checkin_v1';
 
 // ─── Settings Screen — R1D20 ─────────────────────────────────────────────────
 //
@@ -52,10 +59,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ignore: unused_field
   bool _analyticsEnabled = false;
 
-  // Notification toggles
-  bool _dailyReminderOn = true;
+  // Notification toggles — hydrated from SharedPreferences in
+  // [_loadNotificationPrefs]; in-memory defaults are intentionally false so
+  // a fresh install never claims a feature is on before the user opts in.
+  bool _dailyReminderOn = false;
   bool _streakNudgeOn = false;
-  bool _worriedCheckInOn = true;
+  bool _worriedCheckInOn = false;
 
   // Crisis check-in lock: per design, locked-on after a heavy moment (P13).
   // In production this would come from a local crisis-flag store.
@@ -67,6 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadConsent();
+    _loadNotificationPrefs();
     _validateAuthSession();
   }
 
@@ -99,6 +109,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _loadingConsent = false;
       });
     }
+  }
+
+  // ── Notification preferences (R1D20 audit fix) ─────────────────────────
+  //
+  // Pre-fix the NOTIFICATIONS toggles were in-memory bools that never
+  // reached NotificationService. Flipping them did literally nothing on
+  // device. Now: state is persisted in SharedPreferences and every change
+  // calls into NotificationService to (un)schedule the real push.
+
+  Future<void> _loadNotificationPrefs() async {
+    if (kIsWeb) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _dailyReminderOn = prefs.getBool(_kNotifDailyReminderKey) ?? false;
+      _streakNudgeOn = prefs.getBool(_kNotifStreakNudgeKey) ?? false;
+      _worriedCheckInOn = prefs.getBool(_kNotifWorriedCheckInKey) ?? false;
+    });
+    // Mirror persisted state to the scheduler so the toggle reflects truth
+    // even if the app was killed before. Streak nudge state is just kept in
+    // the service's in-memory flag for now (no scheduler yet).
+    NotificationService.setStreakNudgeEnabled(_streakNudgeOn);
+  }
+
+  Future<void> _onDailyReminderChanged(bool v) async {
+    setState(() => _dailyReminderOn = v);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kNotifDailyReminderKey, v);
+
+    if (v) {
+      final granted = await NotificationService.requestPermissions();
+      if (!granted) {
+        // Permission denied — revert the toggle so UI matches reality.
+        if (!mounted) return;
+        setState(() => _dailyReminderOn = false);
+        await prefs.setBool(_kNotifDailyReminderKey, false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Notifications permission denied. Enable in system settings.',
+              style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontWeight: FontWeight.w600),
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+      // Default to 8:00 PM local; detail screen can later override.
+      final now = DateTime.now();
+      final at = DateTime(now.year, now.month, now.day, 20, 0);
+      await NotificationService.scheduleGentleDailyCheckin(
+        enabled: true,
+        scheduledTime: at,
+      );
+    } else {
+      await NotificationService.cancelGentleDailyCheckin();
+    }
+  }
+
+  Future<void> _onStreakNudgeChanged(bool v) async {
+    setState(() => _streakNudgeOn = v);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kNotifStreakNudgeKey, v);
+
+    if (v) {
+      final granted = await NotificationService.requestPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        setState(() => _streakNudgeOn = false);
+        await prefs.setBool(_kNotifStreakNudgeKey, false);
+        return;
+      }
+    }
+    // Flip the in-service opt-in flag; actual scheduleStreakNudge fires
+    // from the streak engine when consecutive-day count crosses 3.
+    NotificationService.setStreakNudgeEnabled(v);
+    // TODO(scheduler): wire dedicated scheduleStreakNudge/cancel when the
+    // streak engine ships a fire-on-toggle entry point.
+  }
+
+  Future<void> _onWorriedCheckInChanged(bool v) async {
+    setState(() => _worriedCheckInOn = v);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kNotifWorriedCheckInKey, v);
+
+    if (v) {
+      final granted = await NotificationService.requestPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        setState(() => _worriedCheckInOn = false);
+        await prefs.setBool(_kNotifWorriedCheckInKey, false);
+        return;
+      }
+    }
+    // TODO(scheduler): wire when NotificationService.worried_checkin opt-in
+    // surface ships. Worried follow-ups are mood-event-driven
+    // (scheduleMoodLowFollowup) rather than toggle-driven, so for now we
+    // only persist the user's consent state.
   }
 
   // ignore: unused_element
@@ -365,9 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: '8:00 PM · all 7 days',
                 trailing: _GQToggle(
                   value: _dailyReminderOn,
-                  onChanged: (v) {
-                    setState(() => _dailyReminderOn = v);
-                  },
+                  onChanged: _onDailyReminderChanged,
                 ),
                 onTap: _openNotificationDetail,
               ),
@@ -379,7 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: 'Off — only celebrate, never shame',
                 trailing: _GQToggle(
                   value: _streakNudgeOn,
-                  onChanged: (v) => setState(() => _streakNudgeOn = v),
+                  onChanged: _onStreakNudgeChanged,
                 ),
               ),
               _SettingsRow(
@@ -390,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: 'One message after a heavy day · always optional',
                 trailing: _GQToggle(
                   value: _worriedCheckInOn,
-                  onChanged: (v) => setState(() => _worriedCheckInOn = v),
+                  onChanged: _onWorriedCheckInChanged,
                 ),
               ),
             ],
@@ -1395,9 +1505,30 @@ class _NotificationDetailScreenState
 
           const SizedBox(height: 18),
 
-          // Test notification button
+          // Test notification button — fires a real local notification so
+          // the user sees exactly what the OS surface looks like.
           _TestNotificationBtn(
-            onTap: () {
+            onTap: () async {
+              // Ask once if needed; tests are useless without permission.
+              final granted = await NotificationService.requestPermissions();
+              if (!granted) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Notifications permission denied. Enable in system settings.',
+                      style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                return;
+              }
+              await NotificationService.sendTestNotification();
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Test notification sent.',

@@ -23,6 +23,8 @@
 //
 // Out of scope: R1D1 modifications, backend persistence, theme refactors.
 
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -744,10 +746,39 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
       widget.onGoToSettings!();
       return;
     }
-    // Fall back to app-settings URI on iOS / Android.
-    final uri = Uri.parse('app-settings:');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    // Platform-gated fallback. The `app-settings:` URI is iOS-only — on
+    // Android Chrome's canLaunchUrl returns false (dead button) and on web
+    // there is no concept of a per-app settings deep-link. Show a SnackBar
+    // pointing the user at the right place per surface.
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (kIsWeb) {
+      messenger?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Open your browser\'s site settings to change permissions',
+          ),
+        ),
+      );
+      return;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final uri = Uri.parse('app-settings:');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+      return;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // No `app_settings` package wired yet — surface a SnackBar with the
+      // manual path. We can swap this for a real deep-link in a follow-up.
+      messenger?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Open Settings → Apps → GentleQuest → Notifications to change permissions',
+          ),
+        ),
+      );
+      return;
     }
   }
 

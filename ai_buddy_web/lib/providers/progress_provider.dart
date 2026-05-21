@@ -39,15 +39,12 @@ class ProgressProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      // TODO: Implement progress loading
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      _error = null;
-    } catch (e) {
-      _error = 'Couldn\'t load your progress right now.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    // Honest failure: progress loading is not implemented yet. In-memory XP
+    // counters (updateFromQuests/updateLifetimeXp/addXp) remain valid; this
+    // method previously masquerade-d as a successful API fetch.
+    _error = 'Progress sync coming soon';
+    _isLoading = false;
+    notifyListeners();
+    throw UnimplementedError('ProgressProvider.loadProgress is not yet implemented');
   }
 }

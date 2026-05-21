@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
@@ -9,10 +12,23 @@ import 'settings_screen.dart';
 // Implements GentleQuest Profile screen per GentleQuest_Profile.html.
 // Views:
 //   A · Profile home  — About you + How Alex talks + Safety plan hero card
-//   B · Safety plan builder step 3 of 5 — Two people I can call
+//   B · Safety plan builder — 5 steps, content varies per step:
+//        Step 1: Warning signs (3 fields)
+//        Step 2: Coping strategies (3 fields)
+//        Step 3: Two people I can call (2 contact cards)
+//        Step 4: Places I feel safe (3 fields)
+//        Step 5: Why this is worth it (1 large field)
 //
-// Safety plan data is stored encrypted on device (flutter_secure_storage)
-// and is never synced. [Backend follow-up: integrate flutter_secure_storage]
+// Profile + safety-plan data persisted via SharedPreferences (this tier).
+// secure_storage migration is a separate follow-up.
+
+// SharedPreferences key constants (centralised so reads + writes stay in sync).
+const String _kProfileNickname = 'profile_nickname_v1';
+const String _kProfilePronoun = 'profile_pronoun_v1';
+const String _kProfileAvatar = 'profile_avatar_v1';
+const String _kProfileTone = 'profile_tone_v1';
+const String _kProfileVoiceNotes = 'profile_voice_notes_v1';
+const String _kSafetyPlanFilled = 'safety_plan_filled_v1';
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
@@ -26,6 +42,17 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showBuilder = false;
   int _builderStep = 0;
+  // Bump this key to force _ProfileHome to remount on plan-completion so it
+  // re-reads the `safety_plan_filled_v1` flag and flips its card state.
+  int _homeRefreshKey = 0;
+
+  void _onBuilderComplete() {
+    setState(() {
+      _showBuilder = false;
+      _builderStep = 0;
+      _homeRefreshKey++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +63,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               stepIdx: _builderStep,
               onClose: () => setState(() { _showBuilder = false; _builderStep = 0; }),
               onNext: () => setState(() => _builderStep++),
+              onCompleted: _onBuilderComplete,
             )
           : _ProfileHome(
+              key: ValueKey('profile_home_$_homeRefreshKey'),
               onBuildPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
               onEditPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
             ),
@@ -52,6 +81,7 @@ class _ProfileHome extends StatefulWidget {
   final VoidCallback onEditPlan;
 
   const _ProfileHome({
+    super.key,
     required this.onBuildPlan,
     required this.onEditPlan,
   });
@@ -61,15 +91,21 @@ class _ProfileHome extends StatefulWidget {
 }
 
 class _ProfileHomeState extends State<_ProfileHome> {
-  // Form state — no persistence in this tier (backend follow-up)
+  // Form state — defaults shown until SharedPreferences load completes.
+  // `_loaded` gates the nickname TextField rebuild via controller text-sync.
   String _nickname = '';
   int _pronounIndex = -1; // -1 = none selected
   int _avatarIndex = 2;
   int _toneIndex = 0; // 0=Warm, 1=Direct, 2=Quiet
   bool _voiceNotes = false;
+  bool _planFilled = false; // hydrated from prefs on init
 
-  // Safety plan state — empty in this tier (read from secure storage TBD)
-  final bool _planFilled = false; // empty until user completes builder
+  // Debounce per-key so rapid edits coalesce into one disk write.
+  final Map<String, Timer> _debouncers = {};
+
+  // Nickname has a controller so we can sync prefs → field after async load
+  // without disturbing the user's cursor mid-type.
+  final TextEditingController _nicknameCtrl = TextEditingController();
 
   static const _pronouns = ['he/him', 'she/her', 'they/them', 'custom', 'prefer not'];
   static const _avatarGradients = [
@@ -81,6 +117,59 @@ class _ProfileHomeState extends State<_ProfileHome> {
     [Color(0xFFC8E1E8), Color(0xFF7FB3C2)],
   ];
   static const _tones = ['Warm', 'Direct', 'Quiet'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromPrefs();
+  }
+
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _nickname = prefs.getString(_kProfileNickname) ?? '';
+      _pronounIndex = prefs.getInt(_kProfilePronoun) ?? -1;
+      _avatarIndex = prefs.getInt(_kProfileAvatar) ?? 2;
+      _toneIndex = prefs.getInt(_kProfileTone) ?? 0;
+      _voiceNotes = prefs.getBool(_kProfileVoiceNotes) ?? false;
+      _planFilled = prefs.getBool(_kSafetyPlanFilled) ?? false;
+      // Sync nickname controller without clobbering an active edit.
+      if (_nicknameCtrl.text != _nickname) {
+        _nicknameCtrl.text = _nickname;
+        _nicknameCtrl.selection = TextSelection.collapsed(offset: _nickname.length);
+      }
+    });
+  }
+
+  // 500ms debounced write — same key resets timer, so only the last value lands.
+  // Type-mapping: bool→setBool, int→setInt, String→setString. Other types are
+  // dropped with an assert so callers catch unsupported writes during dev.
+  void _persistProfile<T>(String key, T value) {
+    _debouncers[key]?.cancel();
+    _debouncers[key] = Timer(const Duration(milliseconds: 500), () async {
+      final prefs = await SharedPreferences.getInstance();
+      if (value is bool) {
+        await prefs.setBool(key, value);
+      } else if (value is int) {
+        await prefs.setInt(key, value);
+      } else if (value is String) {
+        await prefs.setString(key, value);
+      } else {
+        assert(false, '_persistProfile: unsupported type ${value.runtimeType} for key $key');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final t in _debouncers.values) {
+      t.cancel();
+    }
+    _debouncers.clear();
+    _nicknameCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,14 +192,23 @@ class _ProfileHomeState extends State<_ProfileHome> {
                 // ── ABOUT YOU ────────────────────────────────────────────────
                 const _SectionLabel('ABOUT YOU'),
                 AboutYouCard(
-                  nickname: _nickname,
+                  nicknameController: _nicknameCtrl,
                   pronounIndex: _pronounIndex,
                   avatarIndex: _avatarIndex,
                   pronouns: _pronouns,
                   avatarGradients: _avatarGradients,
-                  onNicknameChanged: (v) => setState(() => _nickname = v),
-                  onPronounSelected: (i) => setState(() => _pronounIndex = i),
-                  onAvatarSelected: (i) => setState(() => _avatarIndex = i),
+                  onNicknameChanged: (v) {
+                    setState(() => _nickname = v);
+                    _persistProfile<String>(_kProfileNickname, v);
+                  },
+                  onPronounSelected: (i) {
+                    setState(() => _pronounIndex = i);
+                    _persistProfile<int>(_kProfilePronoun, i);
+                  },
+                  onAvatarSelected: (i) {
+                    setState(() => _avatarIndex = i);
+                    _persistProfile<int>(_kProfileAvatar, i);
+                  },
                 ),
 
                 // ── HOW ALEX TALKS TO YOU ─────────────────────────────────
@@ -120,8 +218,14 @@ class _ProfileHomeState extends State<_ProfileHome> {
                   toneIndex: _toneIndex,
                   tones: _tones,
                   voiceNotes: _voiceNotes,
-                  onToneSelected: (i) => setState(() => _toneIndex = i),
-                  onVoiceNotesToggled: (v) => setState(() => _voiceNotes = v),
+                  onToneSelected: (i) {
+                    setState(() => _toneIndex = i);
+                    _persistProfile<int>(_kProfileTone, i);
+                  },
+                  onVoiceNotesToggled: (v) {
+                    setState(() => _voiceNotes = v);
+                    _persistProfile<bool>(_kProfileVoiceNotes, v);
+                  },
                 ),
 
                 // ── YOUR SAFETY PLAN ──────────────────────────────────────
@@ -164,7 +268,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
 // ─── AboutYouCard ─────────────────────────────────────────────────────────────
 
 class AboutYouCard extends StatelessWidget {
-  final String nickname;
+  final TextEditingController nicknameController;
   final int pronounIndex;
   final int avatarIndex;
   final List<String> pronouns;
@@ -175,7 +279,7 @@ class AboutYouCard extends StatelessWidget {
 
   const AboutYouCard({
     super.key,
-    required this.nickname,
+    required this.nicknameController,
     required this.pronounIndex,
     required this.avatarIndex,
     required this.pronouns,
@@ -195,6 +299,7 @@ class AboutYouCard extends StatelessWidget {
           const _Eyebrow('NICKNAME · ALEX CALLS YOU'),
           const SizedBox(height: 6),
           TextField(
+            controller: nicknameController,
             onChanged: onNicknameChanged,
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
@@ -843,18 +948,23 @@ class _ContactRow extends StatelessWidget {
   }
 }
 
-// ─── View B · Safety plan builder step 3 ─────────────────────────────────────
+// ─── View B · Safety plan builder (5 steps, distinct content per step) ─────
 
 class SafetyPlanBuilderStep extends StatefulWidget {
   final int stepIdx;
   final VoidCallback? onClose;
   final VoidCallback? onNext;
+  // Fired when the user finishes step 5 (Save & continue on the final step).
+  // ProfileScreen uses this to flip the safety_plan_filled_v1 flag refresh
+  // and pop back to the home view.
+  final VoidCallback? onCompleted;
 
   const SafetyPlanBuilderStep({
     super.key,
     required this.stepIdx,
     this.onClose,
     this.onNext,
+    this.onCompleted,
   });
 
   @override
@@ -862,35 +972,317 @@ class SafetyPlanBuilderStep extends StatefulWidget {
 }
 
 class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
-  // Contact 1 — pre-filled per HTML mockup
-  // Builder Contact-1 fields — were prefilled "Mum / Family / 555 · 0149"
-  // as if defaults, so every user who tapped Build saw Mum in their first
-  // contact slot. Now empty; hint text in the TextFields tells the user
-  // what to enter.
+  // Step 0 — Warning signs (3 free-text fields)
+  final List<TextEditingController> _warningCtrls =
+      List.generate(3, (_) => TextEditingController());
+
+  // Step 1 — Coping strategies (3 free-text fields)
+  final List<TextEditingController> _copingCtrls =
+      List.generate(3, (_) => TextEditingController());
+
+  // Step 2 — Two people I can call (existing contact cards)
   final _c1NameCtrl = TextEditingController();
   final _c1RelCtrl = TextEditingController();
   final _c1PhoneCtrl = TextEditingController();
   bool _c1Fav = true;
-
-  // Contact 2 — empty
   final _c2NameCtrl = TextEditingController();
   final _c2RelCtrl = TextEditingController();
   final _c2PhoneCtrl = TextEditingController();
   bool _c2Fav = false;
 
+  // Step 3 — Places I feel safe (3 free-text fields)
+  final List<TextEditingController> _placeCtrls =
+      List.generate(3, (_) => TextEditingController());
+
+  // Step 4 — Why this is worth it (1 large field)
+  final TextEditingController _meaningCtrl = TextEditingController();
+
+  // Per-key debouncers for disk writes — keep cadence consistent with profile
+  // form (500ms) so quick typing doesn't thrash SharedPreferences.
+  final Map<String, Timer> _debouncers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStepData();
+  }
+
+  Future<void> _loadStepData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      for (var i = 0; i < 3; i++) {
+        _warningCtrls[i].text = prefs.getString('safety_plan_step0_warning_${i}_v1') ?? '';
+        _copingCtrls[i].text = prefs.getString('safety_plan_step1_coping_${i}_v1') ?? '';
+        _placeCtrls[i].text = prefs.getString('safety_plan_step3_place_${i}_v1') ?? '';
+      }
+      _c1NameCtrl.text = prefs.getString('safety_plan_step2_contact_1_name_v1') ?? '';
+      _c1RelCtrl.text = prefs.getString('safety_plan_step2_contact_1_rel_v1') ?? '';
+      _c1PhoneCtrl.text = prefs.getString('safety_plan_step2_contact_1_phone_v1') ?? '';
+      _c2NameCtrl.text = prefs.getString('safety_plan_step2_contact_2_name_v1') ?? '';
+      _c2RelCtrl.text = prefs.getString('safety_plan_step2_contact_2_rel_v1') ?? '';
+      _c2PhoneCtrl.text = prefs.getString('safety_plan_step2_contact_2_phone_v1') ?? '';
+      _meaningCtrl.text = prefs.getString('safety_plan_step4_meaning_v1') ?? '';
+    });
+  }
+
+  void _persistString(String key, String value) {
+    _debouncers[key]?.cancel();
+    _debouncers[key] = Timer(const Duration(milliseconds: 500), () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, value);
+    });
+  }
+
+  Future<void> _markPlanFilled() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kSafetyPlanFilled, true);
+  }
+
   @override
   void dispose() {
+    for (final t in _debouncers.values) {
+      t.cancel();
+    }
+    _debouncers.clear();
+    for (final c in _warningCtrls) {
+      c.dispose();
+    }
+    for (final c in _copingCtrls) {
+      c.dispose();
+    }
+    for (final c in _placeCtrls) {
+      c.dispose();
+    }
     _c1NameCtrl.dispose();
     _c1RelCtrl.dispose();
     _c1PhoneCtrl.dispose();
     _c2NameCtrl.dispose();
     _c2RelCtrl.dispose();
     _c2PhoneCtrl.dispose();
+    _meaningCtrl.dispose();
     super.dispose();
+  }
+
+  // Per-step header metadata — eyebrow tag + headline + intro paragraph.
+  ({String eyebrow, String title, String intro}) _stepHeader(int idx) {
+    switch (idx) {
+      case 0:
+        return (
+          eyebrow: 'STEP 1 OF 5',
+          title: 'My warning signs.',
+          intro:
+              "What's the early signal that the heavy is coming? Naming it helps you catch it sooner.",
+        );
+      case 1:
+        return (
+          eyebrow: 'STEP 2 OF 5',
+          title: 'Things that actually help me.',
+          intro:
+              "Small moves that have worked before — even if just a little. We'll surface these when you need them.",
+        );
+      case 2:
+        return (
+          eyebrow: 'STEP 3 OF 5',
+          title: 'Two people I can call.',
+          intro:
+              'When the heavy hits, having names ready helps. These stay on your phone — they never leave it.',
+        );
+      case 3:
+        return (
+          eyebrow: 'STEP 4 OF 5',
+          title: 'Places I feel safe.',
+          intro:
+              'Spots — physical or in your head — where the volume turns down. List the ones that work.',
+        );
+      case 4:
+        return (
+          eyebrow: 'STEP 5 OF 5',
+          title: "Why this is worth it.",
+          intro:
+              'The reason you keep going. Write it for the version of you who needs to hear it later.',
+        );
+      default:
+        return (eyebrow: '', title: '', intro: '');
+    }
+  }
+
+  // Render the per-step body. Switch keeps the file scrollable without
+  // splintering into 5 tiny widgets — each branch is short.
+  Widget _buildStepBody(int idx) {
+    switch (idx) {
+      case 0:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Eyebrow('WHEN I NOTICE… ${i + 1}'),
+                    const SizedBox(height: 8),
+                    _ContactTextField(
+                      controller: _warningCtrls[i],
+                      hint: i == 0
+                          ? 'e.g. I stop replying to friends'
+                          : i == 1
+                              ? 'e.g. sleep slips past 3am'
+                              : 'e.g. I skip meals',
+                      onChanged: (v) => _persistString(
+                          'safety_plan_step0_warning_${i}_v1', v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      case 1:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Eyebrow('WHAT HELPS ME ${i + 1}'),
+                    const SizedBox(height: 8),
+                    _ContactTextField(
+                      controller: _copingCtrls[i],
+                      hint: i == 0
+                          ? 'e.g. walk to the park'
+                          : i == 1
+                              ? 'e.g. cold water on my face'
+                              : 'e.g. message my sister',
+                      onChanged: (v) => _persistString(
+                          'safety_plan_step1_coping_${i}_v1', v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      case 2:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ContactCard(
+              label: 'PERSON ONE',
+              nameCtrl: _c1NameCtrl,
+              relCtrl: _c1RelCtrl,
+              phoneCtrl: _c1PhoneCtrl,
+              favorite: _c1Fav,
+              onFavoriteToggled: (v) => setState(() => _c1Fav = v),
+              onNameChanged: (v) => _persistString('safety_plan_step2_contact_1_name_v1', v),
+              onRelChanged: (v) => _persistString('safety_plan_step2_contact_1_rel_v1', v),
+              onPhoneChanged: (v) => _persistString('safety_plan_step2_contact_1_phone_v1', v),
+            ),
+            const SizedBox(height: 10),
+            ContactCard(
+              label: 'PERSON TWO',
+              nameCtrl: _c2NameCtrl,
+              relCtrl: _c2RelCtrl,
+              phoneCtrl: _c2PhoneCtrl,
+              favorite: _c2Fav,
+              onFavoriteToggled: (v) => setState(() => _c2Fav = v),
+              onNameChanged: (v) => _persistString('safety_plan_step2_contact_2_name_v1', v),
+              onRelChanged: (v) => _persistString('safety_plan_step2_contact_2_rel_v1', v),
+              onPhoneChanged: (v) => _persistString('safety_plan_step2_contact_2_phone_v1', v),
+            ),
+            const SizedBox(height: 14),
+            const NoOneSkipBlock(),
+          ],
+        );
+      case 3:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Eyebrow('PLACE ${i + 1}'),
+                    const SizedBox(height: 8),
+                    _ContactTextField(
+                      controller: _placeCtrls[i],
+                      hint: i == 0
+                          ? 'e.g. the bench at Roundwood Park'
+                          : i == 1
+                              ? 'e.g. my room with the blinds down'
+                              : 'e.g. the library on Tuesday afternoons',
+                      onChanged: (v) => _persistString(
+                          'safety_plan_step3_place_${i}_v1', v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      case 4:
+        return _Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow("THIS IS WHAT I'M HOLDING ON TO…"),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _meaningCtrl,
+                minLines: 6,
+                maxLines: 10,
+                onChanged: (v) => _persistString('safety_plan_step4_meaning_v1', v),
+                style: const TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: GQColors.ink,
+                  height: 1.5,
+                ),
+                decoration: InputDecoration(
+                  hintText:
+                      "Write to a future you who needs to remember. People, projects, small joys — anything.",
+                  hintStyle: const TextStyle(
+                    fontFamily: GQTypography.bodyFamily,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: GQColors.ink3,
+                  ),
+                  filled: true,
+                  fillColor: GQColors.softBg,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: const BorderSide(color: GQColors.hair),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: const BorderSide(color: GQColors.hair),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: const BorderSide(color: GQColors.primary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final header = _stepHeader(widget.stepIdx);
+    final isFinalStep = widget.stepIdx >= 4;
     return Column(
       children: [
         // Nav bar
@@ -906,9 +1298,9 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Step header
-                const Text(
-                  'STEP 3 OF 5',
-                  style: TextStyle(
+                Text(
+                  header.eyebrow,
+                  style: const TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
@@ -917,9 +1309,9 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Two people I can call.',
-                  style: TextStyle(
+                Text(
+                  header.title,
+                  style: const TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
@@ -930,8 +1322,8 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'When the heavy hits, having names ready helps. These stay on your phone — they never leave it.',
-                  style: TextStyle(
+                  header.intro,
+                  style: const TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -940,31 +1332,9 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                   ),
                 ),
 
-                // Contact 1
+                // Step body (varies by stepIdx)
                 const SizedBox(height: 14),
-                ContactCard(
-                  label: 'PERSON ONE',
-                  nameCtrl: _c1NameCtrl,
-                  relCtrl: _c1RelCtrl,
-                  phoneCtrl: _c1PhoneCtrl,
-                  favorite: _c1Fav,
-                  onFavoriteToggled: (v) => setState(() => _c1Fav = v),
-                ),
-
-                // Contact 2
-                const SizedBox(height: 10),
-                ContactCard(
-                  label: 'PERSON TWO',
-                  nameCtrl: _c2NameCtrl,
-                  relCtrl: _c2RelCtrl,
-                  phoneCtrl: _c2PhoneCtrl,
-                  favorite: _c2Fav,
-                  onFavoriteToggled: (v) => setState(() => _c2Fav = v),
-                ),
-
-                // No-one skip block
-                const SizedBox(height: 14),
-                NoOneSkipBlock(),
+                _buildStepBody(widget.stepIdx),
 
                 // Action row
                 const SizedBox(height: 18),
@@ -977,8 +1347,22 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _PrimaryButton(
-                        label: 'Save & continue',
-                        onTap: widget.onNext ?? widget.onClose ?? () => Navigator.maybePop(context),
+                        label: isFinalStep ? 'Save plan' : 'Save & continue',
+                        onTap: () async {
+                          if (isFinalStep) {
+                            // Final step: persist filled flag + return to home.
+                            await _markPlanFilled();
+                            if (!context.mounted) return;
+                            final completed = widget.onCompleted;
+                            if (completed != null) {
+                              completed();
+                            } else {
+                              Navigator.maybePop(context);
+                            }
+                          } else {
+                            (widget.onNext ?? widget.onClose ?? () => Navigator.maybePop(context))();
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -1019,6 +1403,12 @@ class ContactCard extends StatelessWidget {
   final TextEditingController phoneCtrl;
   final bool favorite;
   final ValueChanged<bool> onFavoriteToggled;
+  // Optional onChanged hooks — present in builder mode so each keystroke
+  // routes through SharedPreferences debouncer. Stateless display callers
+  // can omit them.
+  final ValueChanged<String>? onNameChanged;
+  final ValueChanged<String>? onRelChanged;
+  final ValueChanged<String>? onPhoneChanged;
 
   const ContactCard({
     super.key,
@@ -1028,6 +1418,9 @@ class ContactCard extends StatelessWidget {
     required this.phoneCtrl,
     required this.favorite,
     required this.onFavoriteToggled,
+    this.onNameChanged,
+    this.onRelChanged,
+    this.onPhoneChanged,
   });
 
   @override
@@ -1052,16 +1445,16 @@ class ContactCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _ContactTextField(controller: nameCtrl, hint: 'Name'),
+          _ContactTextField(controller: nameCtrl, hint: 'Name', onChanged: onNameChanged),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                child: _ContactTextField(controller: relCtrl, hint: 'Relationship'),
+                child: _ContactTextField(controller: relCtrl, hint: 'Relationship', onChanged: onRelChanged),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _ContactTextField(controller: phoneCtrl, hint: 'Phone'),
+                child: _ContactTextField(controller: phoneCtrl, hint: 'Phone', onChanged: onPhoneChanged),
               ),
             ],
           ),
@@ -1587,13 +1980,19 @@ class _SafetyButton extends StatelessWidget {
 class _ContactTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
+  final ValueChanged<String>? onChanged;
 
-  const _ContactTextField({required this.controller, required this.hint});
+  const _ContactTextField({
+    required this.controller,
+    required this.hint,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      onChanged: onChanged,
       style: const TextStyle(
         fontFamily: GQTypography.bodyFamily,
         fontSize: 13,

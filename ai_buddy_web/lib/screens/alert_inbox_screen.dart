@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/counselor_alert.dart';
+import '../services/firebase_service.dart';
 import '../widgets/alert_item.dart';
 
 class AlertInboxScreen extends StatefulWidget {
@@ -114,7 +115,7 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
   Future<void> _acknowledgeAlert(int alertId) async {
     try {
       final url = '${widget.apiBaseUrl}/api/alerts/$alertId/acknowledge';
-      await http.post(Uri.parse(url),
+      final response = await http.post(Uri.parse(url),
           headers: {"Content-Type": "application/json"},
           body: json.encode({
             "counselor_id": "current_counselor", // Placeholder
@@ -122,10 +123,49 @@ class _AlertInboxScreenState extends State<AlertInboxScreen>
             "action_taken": "review_pending"
           }));
       if (!mounted) return;
-      Navigator.pop(context); // Close dialog
-      _fetchAlerts(); // Refresh list
+      if (response.statusCode == 200) {
+        Navigator.pop(context); // Close dialog
+        _fetchAlerts(); // Refresh list
+      } else {
+        // Server returned non-200: audit record NOT updated. Surface to counselor.
+        debugPrint(
+            "Acknowledge POST failed: status=${response.statusCode} body=${response.body}");
+        // Fire-and-forget analytics so ops can detect a pattern.
+        // ignore: discarded_futures
+        FirebaseService().logEvent('crisis_alert_ack_failed', {
+          'alert_id': alertId,
+          'status_code': response.statusCode,
+          'reason': 'non_200_response',
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "Couldn't acknowledge — try again. The audit record was NOT updated."),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 6),
+          ),
+        );
+        // Do NOT close the dialog or refresh the list.
+      }
     } catch (e) {
       debugPrint("Error acknowledging: $e");
+      // Fire-and-forget analytics so ops can detect a pattern.
+      // ignore: discarded_futures
+      FirebaseService().logEvent('crisis_alert_ack_failed', {
+        'alert_id': alertId,
+        'reason': 'exception',
+        'error': e.toString(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              "Couldn't acknowledge — try again. The audit record was NOT updated."),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 6),
+        ),
+      );
+      // Do NOT close the dialog or refresh the list.
     }
   }
 

@@ -12,15 +12,11 @@ class TaskProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      // TODO: Implement task loading
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      _error = null;
-    } catch (e) {
-      _error = 'Couldn\'t load tasks right now.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    // Honest failure: task loading is not implemented yet. Surface the error
+    // state to the UI rather than silently reporting success.
+    _error = 'Tasks coming soon';
+    _isLoading = false;
+    notifyListeners();
+    throw UnimplementedError('TaskProvider is not yet implemented');
   }
 }

@@ -163,10 +163,15 @@ class NotificationService {
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // iOS (Darwin) init
+    //
+    // Deferred permission ask (R1D20 audit fix): we no longer prompt at app
+    // launch. Settings → NOTIFICATIONS toggles are the explicit opt-in point;
+    // they call [requestPermissions] once the user actually flips a switch.
+    // This protects opt-in rate by giving the prompt context.
     const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     final InitializationSettings initSettings = InitializationSettings(
@@ -188,7 +193,8 @@ class NotificationService {
       tz.initializeTimeZones();
     } catch (_) {}
 
-    // Create all Android channels explicitly
+    // Create all Android channels explicitly. Permission ask is deferred to
+    // [requestPermissions] (called when user flips a NOTIFICATIONS toggle).
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final androidImpl = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
@@ -198,8 +204,6 @@ class NotificationService {
         await androidImpl.createNotificationChannel(_channelCrisisFollowup);
         await androidImpl.createNotificationChannel(_channelWeeklyReview);
         await androidImpl.createNotificationChannel(_channelStreakNudge);
-        // Android 13+ runtime permission
-        await androidImpl.requestNotificationsPermission();
       }
     }
 
@@ -271,6 +275,83 @@ class NotificationService {
 
   static Future<void> _ensureInited() async {
     if (!_inited) await init();
+  }
+
+  // ── Permission ask (deferred from init) ─────────────────────────────────
+
+  /// Explicitly request notification permissions on iOS + Android.
+  ///
+  /// Call this when the user opts into a notification category (e.g. flips
+  /// the Daily check-in toggle on in Settings). Returns true if permission
+  /// was granted (or already granted), false otherwise.
+  ///
+  /// On web this is a no-op and returns false.
+  static Future<bool> requestPermissions() async {
+    if (kIsWeb) return false;
+    await _ensureInited();
+
+    bool granted = true;
+
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      final iosImpl = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (iosImpl != null) {
+        final ok = await iosImpl.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        granted = granted && (ok ?? false);
+      }
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImpl != null) {
+        final ok = await androidImpl.requestNotificationsPermission();
+        granted = granted && (ok ?? false);
+      }
+    }
+
+    debugPrint('NotificationService: requestPermissions → $granted');
+    return granted;
+  }
+
+  // ── Ergonomic helpers (cancel + test) ───────────────────────────────────
+
+  /// Cancel any pending daily check-in notification.
+  /// Convenience wrapper used by Settings when the user flips the toggle off.
+  static Future<void> cancelGentleDailyCheckin() async {
+    if (kIsWeb) return;
+    await _ensureInited();
+    await _plugin.cancel(_dailyCheckinId);
+    debugPrint('NotificationService: daily check-in cancelled.');
+  }
+
+  /// Fire a single immediate notification used by the "Send a test
+  /// notification" button on the Notifications detail screen.
+  ///
+  /// Bypasses rate-limit + quiet-hours guards by design — this is a manual
+  /// user-initiated test, not a scheduled push.
+  static Future<void> sendTestNotification() async {
+    if (kIsWeb) return;
+    await _ensureInited();
+
+    final details = NotificationDetails(
+      android: _androidDetails(channel: _channelDailyCheckin),
+      iOS: _iosDefault,
+    );
+
+    await _plugin.show(
+      _dailyCheckinId,
+      'Test from GentleQuest',
+      'If you see this, notifications are working.',
+      details,
+      payload: 'gq://settings?source=push_test',
+    );
+    debugPrint('NotificationService: test notification fired.');
   }
 
   static AndroidNotificationDetails _androidDetails({
