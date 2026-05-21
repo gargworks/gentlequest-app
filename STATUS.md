@@ -1,8 +1,8 @@
 # Eidetic Works — Live Status
 
-**Last updated:** 2026-05-20 (Day 10, mid-compression-sprint)
-**Current cycle:** Lokesh "finish 80 days of plan in next 2 days" — ~24h elapsed of 36h
-**Days to W4 bright-line:** 19 (W4 = 2026-06-08, target 5 paid Pro = $145 MRR)
+**Last updated:** 2026-05-21 morning IST (Day 12, **sprint close**)
+**Current cycle:** Lokesh "finish 80 days of plan in next 2 days" — **48h window CLOSED**. Output below.
+**Days to W4 bright-line:** 18 (W4 = 2026-06-08, target 5 paid Pro = $145 MRR)
 
 ---
 
@@ -53,8 +53,11 @@
 | v0.0.56 | Day 10 | regex hook patterns + `GET /hooks` status endpoint |
 | v0.0.58 | Day 10 | `--capture` enriches meta with host + cwd + git_branch + user |
 | v0.0.59 | Day 10 | `/hooks` endpoint test coverage + eidetic-mcp 0.0.8 nucleus_link tool |
+| v0.0.60 | Day 11 | `--auto-tag` heuristic classifier (question/decision/error/code/link/command) + eideticd-browse TUI binary |
+| v0.0.61 | **Day 12** | `--import-bundle` universal — ndjson + markdown + text auto-detect, stdin pipe support |
 
 **Current live numbers:** 300K+ engrams (per Mac menubar test), 803+ sessions, P95 retrieval 0.27ms, DB ~3.5 GB
+**Daemon tagged versions:** **31** in compression sprint (v0.0.32 → v0.0.61). Each auto-publishes via release.yml + Homebrew tap auto-updates.
 
 ### MCP package
 
@@ -65,6 +68,9 @@
 | eidetic-mcp 0.0.6 | `nucleus_digest` tool — RAG-shaped weekly recap |
 | eidetic-mcp 0.0.7 | `nucleus_timeline` tool — cross-tool chronological view |
 | eidetic-mcp 0.0.8 | `nucleus_link` tool — temporally-adjacent engrams across surfaces |
+| **eidetic-mcp 0.0.9** | **`nucleus_curate` tool — non-destructive canonical/demote/archive overlays** (live on PyPI 2026-05-21) |
+
+**13 MCP tools total.** All on PyPI; users install via `pip install -U eidetic-mcp`.
 
 ### Integrations shipped (11 surfaces in `integrations/`)
 
@@ -84,17 +90,18 @@
 | WordPress plugin (eidetic-capture.php) | ✅ save_post hook + admin settings; phply-validated |
 | Notion sync (Worker + cron poller) | ✅ Polling primary, webhook secondary; KV checkpoint |
 
-### Cloudflare Workers (6 total)
+### Cloudflare Workers (8 total — **all live + verified**)
 
-| Worker | Status |
+| Worker | Status (as of sprint close 2026-05-21) |
 |---|---|
 | eidetic-sync | ✅ Live va4e1c516 — Pro sync + Team dual-write |
 | gumroad-kit-sync | ✅ Live ve1287839 — 4-tier routing (Pro/Annual/Founder/Team) |
-| eidetic-affiliate | ✅ Scaffold ready — /ref/&lt;code&gt; tracking (op-assistant deploy pending) |
-| eidetic-analytics | ✅ Scaffold ready — ADR-020-compliant funnel (op-assistant deploy pending) |
-| slack-app | ✅ Scaffold (op-assistant deploy pending) |
-| discord-bot | ✅ Scaffold (op-assistant deploy pending) |
-| telegram-bot | ✅ Scaffold (op-assistant deploy pending) |
+| eidetic-affiliate | ✅ Live — /ref/&lt;code&gt; attribution |
+| eidetic-analytics | ✅ **Live + AE binding ON** (dataset `eidetic_funnel`, POST /event 204 verified) |
+| eidetic-account | ✅ Live — customer dashboard at eidetic.works/me |
+| eidetic-slack | ✅ Live e18a78a4 — `eidetic-works.slack.com`, /healthz 200 |
+| eidetic-discord | ✅ Live 23c46b5c — app `Eidetic` (1506865174773108836), Interactions Endpoint PING-verified |
+| eidetic-telegram | ✅ Live cb338f37 — `@eideticworks_bot`, webhook registered + secret-validated |
 
 ### Distribution
 
@@ -113,9 +120,11 @@
 | Kit announcement email | **PENDING Lokesh keyboard** — template in docs/PRO_LAUNCH.md § 3 |
 | ConvertKit waitlist form | Embedded on landing |
 | X replies (5 accounts) | Sent by op-assistant: @shushant_l, @RLanceMartin, @iannuttall, @yigitkonur, @PawelHuryn |
-| X thread (own post) | **PENDING Lokesh** — docs/posts/x-thread-day8.md |
-| HN Show HN | **PENDING Lokesh** — docs/posts/hn-show-hn-day8.md |
-| Reddit r/ClaudeAI | **PENDING Lokesh** — docs/posts/reddit-rclaudeai-day8.md |
+| X thread (own post) | Drafts ready — docs/posts/x-thread-day8.md + day12.md |
+| HN Show HN | Drafts ready — docs/posts/hn-show-hn-day{8,10,11}.md (skipped per Lokesh) |
+| Reddit r/ClaudeAI | Drafts ready — docs/posts/reddit-rclaudeai-day8.md (**permanently skipped** per `feedback_reddit_low_yield.md` 2026-05-21) |
+| LinkedIn post | Draft ready — docs/posts/linkedin-day12.md (pseudonymous brand framing) |
+| Substack post | Draft ready — docs/posts/substack-day12.md (long-form sprint-close narrative) |
 | dev.to article | ✅ PUBLISHED 2026-05-19 — dev.to/nucleusos/i-got-tired-of-losing-claude-code-context-between-sessions-so-i-built-a-daemon-4ca5 |
 
 ### Sovereign (cc_voice lane)
@@ -129,20 +138,29 @@
 
 ---
 
-## W2 focus (this week)
+## Sprint-close summary (2026-05-21 morning IST)
 
-**Operator-ready now:**
-1. Send 5 X DMs (`docs/outreach/day8-dm-targets.md`) from @eidetic_works
-2. Post X thread (`docs/posts/x-thread-day8.md`) from @eidetic_works
-3. Post HN Show HN (`docs/posts/hn-show-hn-day8.md`)
-4. Post Reddit r/ClaudeAI (`docs/posts/reddit-rclaudeai-day8.md`)
-5. Pick Gate 5 target for Sovereign mobile
+**48-hour compression window output:**
 
-**cc-main working on:**
-- CI fix (t.Context() → context.Background(), Go 1.23 compat) — pushed, running
-- CORS tests (4 new tests for v0.0.31 bridge feature)
-- Architecture doc (docs/SOVEREIGN_BRIDGE_ARCHITECTURE.md)
-- Real metrics on landing (278K/803 sessions)
+- 31 daemon versions (v0.0.32 → v0.0.61) — `--import-bundle` was the final ship
+- 5 PyPI releases (eidetic-mcp 0.0.5 → 0.0.9; nucleus_curate was the final ship)
+- 15 integration surfaces — every major dev tool ecosystem covered
+- 8 Cloudflare Workers — all live + verified end-to-end
+- 3 chat-app registrations live in one session (Slack, Discord, Telegram)
+- 12 docs (compliance, pricing, integrations, ADRs, MARKETPLACE)
+- 2 installable marketplace artifacts pre-built (`eidetic-vscode-0.0.1.vsix`, `eidetic-chrome-0.1.0.zip`)
+- ~125 tests added (14 in internal/bundle, 8 in test_nucleus_curate, etc.)
+- Voice corpus: 3 sprint-close outreach drafts ready (X thread, LinkedIn, Substack)
+
+**All Lokesh-keyboard items cleared.** Reddit permanently skipped per `feedback_reddit_low_yield.md`.
+
+**Standing distribution backlog (operator can fire when ready):**
+1. Post X thread day-12 from @eidetic_works (`docs/posts/x-thread-day12.md`)
+2. Post LinkedIn from eidetic_works company page (`docs/posts/linkedin-day12.md`)
+3. Post Substack from brand newsletter (`docs/posts/substack-day12.md`)
+4. Upload `eidetic-vscode-0.0.1.vsix` to VS Code Marketplace (requires `eidetic-works` publisher claim, $0)
+5. Upload `eidetic-chrome-0.1.0.zip` to Chrome Web Store ($5 one-time dev fee)
+6. Optionally: send Sovereign Gate 5 picker question (Streaming XTTS / wake-word / QR)
 
 ---
 
