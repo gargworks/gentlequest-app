@@ -81,6 +81,10 @@ dependencies:
   # promise verbatim from the design HTML. Falls back to "type instead" on
   # devices/languages where on-device isn't supported.
   speech_to_text: ^7.0.0
+
+  # App version + build for honest Settings footer (was hardcoded
+  # "Version 1.2.2 · build 26032321" until 2026-05-21).
+  package_info_plus: ^8.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -106,7 +106,9 @@ def test_verify_single_use(client):
     client.post("/api/auth/verify", json={"token": raw})
     r2 = client.post("/api/auth/verify", json={"token": raw})
     assert r2.status_code == 400
-    assert "used" in r2.get_json()["error"].lower()
+    # Audit fix 2026-05-21: generic message — no longer distinguishes
+    # invalid / used / expired (closes a timing-leak oracle).
+    assert "invalid or expired" in r2.get_json()["error"].lower()
 
 
 def test_verify_rejects_unknown_token(client):
