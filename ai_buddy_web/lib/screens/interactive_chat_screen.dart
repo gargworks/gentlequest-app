@@ -659,9 +659,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   _messageController.text = transcript;
                                 }
                               });
-                              if (transcript.isNotEmpty) {
-                                _sendMessage();
-                              }
+                              // R1D7 Phase 1: surface the transcript in the
+                              // text field for explicit user review before
+                              // sending. Anxious users want a confirmation
+                              // step — auto-send (ChatGPT Voice Mode style)
+                              // is a Phase 3 conversational-mode behavior,
+                              // not Phase 1.
                             },
                             onCancel: () {
                               setState(() {
@@ -669,6 +672,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                 _voiceTranscript = '';
                               });
                             },
+                            onUnsupported: _onVoiceUnsupported,
                           );
                         }
 
@@ -1292,33 +1296,25 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     );
   }
 
-  /// R1D7 voice input mic button for the input bar.
+  /// R1D7 voice input mic button — enters VoiceInputBar.
   ///
-  /// VoiceInputBar is UI-only — speech_to_text is not yet wired, so opening
-  /// it sends the user into a recording UI that always produces an empty
-  /// transcript. Until the backend ships, surface a "coming soon" SnackBar
-  /// instead of advertising a feature that doesn't work.
+  /// Now backed by speech_to_text (Apple Speech on iOS, Google
+  /// SpeechRecognizer on Android) with onDevice: true to honor the
+  /// "your voice stays on this device" promise. VoiceInputBar's
+  /// onUnsupported callback fires if the device/locale can't do on-device
+  /// recognition, in which case we drop the user back to the text bar with
+  /// a one-time "voice isn't supported here" SnackBar.
   Widget _buildVoiceMicButton() {
     return Semantics(
       button: true,
-      label: 'Voice input — coming soon',
+      label: 'Start voice input',
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Voice input is coming soon · for now, please type',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(GQRadii.card),
-              ),
-              backgroundColor: GQColors.ink2,
-            ),
-          );
+          setState(() {
+            _voiceInputActive = true;
+            _voiceTranscript = '';
+          });
         },
         child: Container(
           width: 44,
@@ -1333,6 +1329,31 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             size: 22,
           ),
         ),
+      ),
+    );
+  }
+
+  /// Handler for VoiceInputBar's onUnsupported callback. Bails out of voice
+  /// mode and surfaces a single, honest SnackBar so the user understands why
+  /// nothing happened. Avoids the "advertise broken feature" trap.
+  void _onVoiceUnsupported() {
+    if (!mounted) return;
+    setState(() {
+      _voiceInputActive = false;
+      _voiceTranscript = '';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          "Voice input isn't supported on this device · please type",
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+        backgroundColor: GQColors.ink2,
       ),
     );
   }

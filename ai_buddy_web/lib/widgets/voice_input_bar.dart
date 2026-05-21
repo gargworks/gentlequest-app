@@ -1,12 +1,18 @@
+import 'dart:async';
 import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 import '../theme/gq_tokens.dart';
 
 /// VoiceInputBar — State D (R1D7 Chat Active States)
 ///
 /// Replaces the standard ChatInputBar in-place during voice recording.
-/// UI affordance only — actual speech_to_text transcription is a backend stub.
-/// Includes 16-bar waveform visualizer (WaveformVisualizer).
+/// Now actually transcribes via the on-device speech_to_text package
+/// (Apple Speech on iOS, SpeechRecognizer on Android). Cloud fallback is
+/// disabled per the verbatim "your voice is staying on this device" promise.
 ///
 /// Design source: GentleQuest_Chat_Active_States.html — Mockup D.
 /// Copy verbatim:
@@ -15,22 +21,33 @@ import '../theme/gq_tokens.dart';
 ///   "your voice is staying on this device"
 ///
 /// Callbacks:
-///   onStop   — user taps Stop; caller receives any transcribed text stub
-///   onCancel — user taps Cancel; discards audio + transcript
+///   onStop        — user taps Stop; caller receives final transcript text
+///   onCancel      — user taps Cancel; discards audio + transcript
+///   onUnsupported — fires once if on-device speech recognition is not
+///                   available (permission denied, language unsupported,
+///                   platform unsupported). Caller should swap to a
+///                   "Voice input isn't supported here — please type" hint.
 ///
-/// Cap: 60s — auto-calls onStop after 60 seconds.
+/// Cap: 60s — auto-stops after 60 seconds.
 class VoiceInputBar extends StatefulWidget {
   const VoiceInputBar({
     super.key,
     required this.onStop,
     required this.onCancel,
+    this.onUnsupported,
     this.liveTranscript = '',
   });
 
   final void Function(String transcript) onStop;
   final VoidCallback onCancel;
 
-  /// Live transcript text (stub — caller updates as speech_to_text produces text).
+  /// Optional callback invoked when speech_to_text fails to initialize on
+  /// this device (permission denied, no on-device recognizer, etc.). Caller
+  /// is expected to dismiss the voice bar and show a graceful fallback hint.
+  final VoidCallback? onUnsupported;
+
+  /// Live transcript text — kept for API back-compat. Internal state takes
+  /// precedence once recognition starts.
   final String liveTranscript;
 
   @override
@@ -64,23 +81,88 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   ];
   // Bar heights (from HTML — as fraction of container height)
   static const _barHeights = [
-    0.30, 0.55, 0.80, 0.45, 0.95, 0.60, 0.35, 0.75,
+    0.30, 0.55, 0.80, 0.45, 0.95, 0.60, 0.30, 0.75,
     0.50, 0.90, 0.40, 0.65, 0.30, 0.80, 0.55, 0.70,
   ];
+
+  // speech_to_text engine + live transcript state
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  String _transcript = '';
+  bool _engineReady = false;
 
   @override
   void initState() {
     super.initState();
+    _transcript = widget.liveTranscript;
     // Auto-stop at 60s cap
     _elapsedCtrl.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _onStop();
       }
     });
+    // Boot the speech engine and start listening. Failures here surface to
+    // the caller via onUnsupported so the input bar can swap to a fallback.
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final available = await _speech.initialize(
+        onStatus: (status) {
+          if (kDebugMode) debugPrint('[voice] status=$status');
+          // 'done' / 'notListening' after a natural pause → finalize.
+          if (status == 'done' || status == 'notListening') {
+            if (mounted && _speech.isAvailable && !_speech.isListening) {
+              // If we got a transcript, propagate it via onStop; otherwise
+              // leave the user to tap Stop manually.
+              if (_transcript.trim().isNotEmpty) {
+                _onStop();
+              }
+            }
+          }
+        },
+        onError: (err) {
+          if (kDebugMode) debugPrint('[voice] error=${err.errorMsg}');
+          // Permission-denied / no-recognizer / network failures all land here.
+          // Treat as unsupported and bail out so the caller can fall back.
+          if (mounted) widget.onUnsupported?.call();
+        },
+      );
+      if (!available) {
+        widget.onUnsupported?.call();
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _engineReady = true);
+      await _speech.listen(
+        onResult: (result) {
+          if (!mounted) return;
+          setState(() => _transcript = result.recognizedWords);
+        },
+        // Force on-device recognition to honor the verbatim privacy promise.
+        // Devices that don't support on-device for the user's locale will
+        // surface via onError → onUnsupported above.
+        listenOptions: stt.SpeechListenOptions(
+          onDevice: true,
+          partialResults: true,
+          listenMode: stt.ListenMode.dictation,
+          cancelOnError: true,
+          listenFor: const Duration(seconds: 60),
+          pauseFor: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[voice] init exception: $e');
+      if (mounted) widget.onUnsupported?.call();
+    }
   }
 
   @override
   void dispose() {
+    // Stop any in-flight recognition before tearing down controllers.
+    if (_speech.isListening) {
+      _speech.cancel();
+    }
     _waveCtrl.dispose();
     _ringCtrl.dispose();
     _elapsedCtrl.dispose();
@@ -88,7 +170,17 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   void _onStop() {
-    widget.onStop(widget.liveTranscript);
+    if (_speech.isListening) {
+      _speech.stop();
+    }
+    widget.onStop(_transcript);
+  }
+
+  void _onCancel() {
+    if (_speech.isListening) {
+      _speech.cancel();
+    }
+    widget.onCancel();
   }
 
   String _formatElapsed() {
@@ -117,7 +209,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                   button: true,
                   label: 'Cancel voice input',
                   child: GestureDetector(
-                    onTap: widget.onCancel,
+                    onTap: _onCancel,
                     child: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Text(
@@ -199,9 +291,9 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                   // Live transcript text
                   Expanded(
                     child: Text(
-                      widget.liveTranscript.isNotEmpty
-                          ? widget.liveTranscript
-                          : 'Listening…',
+                      _transcript.isNotEmpty
+                          ? _transcript
+                          : (_engineReady ? 'Listening…' : 'Starting…'),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

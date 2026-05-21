@@ -274,8 +274,10 @@ test/screenshots/
 test/all_results.json
 test/chat_latency_results.json
 
-# Duplicate app directory (if exists)
-app/
+# Duplicate app directory (if exists) — leading slash so we only ignore
+# the duplicate at repo root, not legitimate `app/` subdirs like the
+# Flutter Android module's `android/app/`.
+/app/
 
 # One-off test scripts at root
 test_autonomic_blocker.sh
