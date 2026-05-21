@@ -1304,7 +1304,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// onUnsupported callback fires if the device/locale can't do on-device
   /// recognition, in which case we drop the user back to the text bar with
   /// a one-time "voice isn't supported here" SnackBar.
+  ///
+  /// Hidden on web — Web Speech API silently uses Google Cloud and would
+  /// break the on-device privacy promise, so Phase 1 deliberately excludes
+  /// web. Returning SizedBox.shrink() also collapses the leading SizedBox
+  /// gap next to the text field so the input bar layout stays clean.
   Widget _buildVoiceMicButton() {
+    if (kIsWeb) return const SizedBox.shrink();
     return Semantics(
       button: true,
       label: 'Start voice input',
