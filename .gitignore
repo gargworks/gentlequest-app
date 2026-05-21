@@ -284,8 +284,10 @@ test_autonomic_blocker.sh
 test_genai.js
 test_nucleus_engram.sh
 
-# One-off test directory (not tests/)
-test/
+# One-off test directory (not tests/) — leading slash so we only ignore
+# the root-level `test/` scratch dir, not legitimate `test/` subdirs like
+# `ai_buddy_web/test/` (Flutter's standard test location).
+/test/
 
 # Lock files
 mcp-server-nucleus/test_metadata.lock

@@ -124,7 +124,25 @@ Users in these states see a "Right now in [state]" screen with local crisis reso
 
 ## Children
 
-GentleQuest is for users 18 and older. We verify age at first launch. Users under 18 are offered a dignity path with external resources. We do not knowingly store any data from users under 18.
+GentleQuest is built for high-school-aged users and adults. The minimum age we serve depends on local law:
+
+- **13+** in the United States (COPPA), United Kingdom (ICO digital age of consent), Australia, Canada, New Zealand, and most EU member states that have adopted the default GDPR-K Article 8 floor.
+- **16+** in EU member states that elected a higher digital-consent age under GDPR-K (currently Germany, France, Italy, Netherlands, Ireland, Luxembourg, Hungary, Lithuania, Poland, Romania, Slovakia, Cyprus, Croatia, Greece).
+- **18+** in India (Digital Personal Data Protection Act 2023) and any jurisdiction not listed above without a verified parental-consent flow.
+
+We verify age at first launch and gate access to the regional minimum. Users under their region's minimum are offered a dignity path with external resources. We do not knowingly store any data from users below their region's minimum.
+
+## Accounts and cross-device sync
+
+Sign-in is optional. Anonymous use is fully supported and is the default.
+
+When you choose to sign in:
+
+- We collect your email address. It is used only to send the one-time passwordless sign-in link and to identify your account on future sign-ins.
+- A 32-byte random token is sent in the sign-in link. The server stores only its SHA-256 hash; the raw token is never persisted. Tokens expire 15 minutes after issue and can be used once.
+- After verification, your existing journal entries on this device are uploaded to the server so they're available when you sign in on another device.
+- The data we store under your account is the same data we store under an anonymous session — chat messages, mood entries, journal entries, assessment results. Signing in does not unlock any new data category; it just lets you reach your data from multiple devices.
+- When you sign out, the device returns to using a fresh anonymous session. Your server-side data stays bound to your email and can be reattached by signing back in.
 
 ---
 

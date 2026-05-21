@@ -160,12 +160,35 @@ enum _Store {
   appStore,
   playStore;
 
-  String get url => switch (this) {
-        _Store.appStore =>
-          'https://apps.apple.com/app/gentlequest/id0000000000',
-        _Store.playStore =>
-          'https://play.google.com/store/apps/details?id=com.gentlequest.app',
-      };
+  /// Store landing URL.
+  ///
+  /// App Store: Apple's `/app/<slug>/id<numericId>` deep link is the
+  /// preferred form, but we don't have the published numeric id until
+  /// the app is approved + live in App Store Connect. Until then we
+  /// use the search URL as a graceful fallback — it lands users on a
+  /// real, useful page rather than a 404.
+  ///
+  /// Play Store: `details?id=<bundleId>` works pre-publish (Play
+  /// returns "not available" for unpublished bundles, which is
+  /// acceptable) so we use the bundle id directly.
+  ///
+  /// Override via env at build time:
+  ///   --dart-define=APP_STORE_URL=https://apps.apple.com/app/...
+  ///   --dart-define=PLAY_STORE_URL=https://play.google.com/store/apps/details?id=...
+  String get url {
+    const appStoreOverride =
+        String.fromEnvironment('APP_STORE_URL', defaultValue: '');
+    const playStoreOverride =
+        String.fromEnvironment('PLAY_STORE_URL', defaultValue: '');
+    return switch (this) {
+      _Store.appStore => appStoreOverride.isNotEmpty
+          ? appStoreOverride
+          : 'https://apps.apple.com/search?term=GentleQuest',
+      _Store.playStore => playStoreOverride.isNotEmpty
+          ? playStoreOverride
+          : 'https://play.google.com/store/apps/details?id=com.gentlequest.app',
+    };
+  }
 }
 
 class _StoreButton extends StatelessWidget {

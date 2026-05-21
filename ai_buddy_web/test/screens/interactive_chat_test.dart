@@ -45,11 +45,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
 
-    // Should show conversation starter chips
-    expect(find.text("I'm feeling anxious"), findsOneWidget);
-    expect(find.text('Help me relax'), findsOneWidget);
-    expect(find.text('I need to vent'), findsOneWidget);
-    expect(find.text('Just chatting'), findsOneWidget);
+    // Should show R1D6 conversation starter chips. Order matches the
+    // post-2026-05-21 reorder (lead with most-neutral; see
+    // interactive_chat_screen.dart starters list).
+    expect(find.text('Just need someone to listen'), findsOneWidget);
+    expect(find.text('I want to vent a little'), findsOneWidget);
+    expect(find.text("Today's been heavy"), findsOneWidget);
   });
 
   testWidgets('Chat screen renders with greeting message',

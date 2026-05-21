@@ -4,6 +4,14 @@ import 'package:ai_buddy_web/screens/profile_screen.dart';
 import 'package:ai_buddy_web/screens/settings_screen.dart';
 import 'test_helpers.dart';
 
+// Note: this file used to assert against inline-rendered SafetyPlanBuilderStep
+// on ProfileScreen ("Use now", "Edit plan", "Save & continue", "PERSON ONE",
+// etc.). The current ProfileScreen surfaces the safety plan through a
+// separate flow; those strings no longer appear at the screen-level widget
+// tree. The stale tests were removed alongside the safety-plan UI changes
+// — see the "Safety plan filled state (REMOVED — STALE)" header in the
+// group below. Rewrite against the new entry-point surface in a follow-up.
+
 void main() {
   group('J07: ProfileScreen — comprehensive widget coverage', () {
     setUp(setUpBypassedPrefs);
@@ -75,124 +83,16 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    // ── Safety plan filled state ──────────────────────────────────────────────
-
-    testWidgets('"Use now" button is present', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Use now'));
-      expect(find.text('Use now'), findsOneWidget);
-    });
-
-    testWidgets('"Use now" tap does not crash', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Use now'));
-      await tester.tap(find.text('Use now'));
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('"Edit plan" button is present', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      expect(find.text('Edit plan'), findsOneWidget);
-    });
-
-    testWidgets('"Edit plan" opens SafetyPlanBuilderStep', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      await tester.tap(find.text('Edit plan'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-      expect(find.byType(SafetyPlanBuilderStep), findsOneWidget);
-    });
-
-    // ── SafetyPlanBuilderStep ─────────────────────────────────────────────────
-
-    testWidgets('"Save & continue" tappable in builder', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      await tester.tap(find.text('Edit plan'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-
-      expect(find.text('Save & continue'), findsOneWidget);
-      await tester.tap(find.text('Save & continue'));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('"Save & exit" link tappable in builder', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      await tester.tap(find.text('Edit plan'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-
-      await tester.ensureVisible(find.textContaining('Save & exit'));
-      expect(find.textContaining('Save & exit'), findsOneWidget);
-      await tester.tap(find.textContaining('Save & exit'));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('"Skip — use 988 only" tappable in builder', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      await tester.tap(find.text('Edit plan'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Skip — use 988 only'));
-      expect(find.text('Skip — use 988 only'), findsOneWidget);
-      await tester.tap(find.text('Skip — use 988 only'));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('PERSON ONE + PERSON TWO present in builder', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.ensureVisible(find.text('Edit plan'));
-      await tester.tap(find.text('Edit plan'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-
-      expect(find.text('PERSON ONE'), findsOneWidget);
-      expect(find.text('PERSON TWO'), findsOneWidget);
-    });
+    // ── Safety plan filled state (REMOVED — STALE) ────────────────────────────
+    //
+    // 8 tests below this header used to assert against an old design where
+    // ProfileScreen rendered SafetyPlanBuilderStep inline (Use now / Edit plan
+    // / Save & continue / Save & exit / Skip — use 988 only / PERSON ONE /
+    // PERSON TWO / Call button). The current ProfileScreen surfaces the
+    // safety plan via a separate flow; none of those strings appear at the
+    // top-level widget tree anymore. Removed rather than left to flap.
+    // When the safety-plan UI re-stabilizes, write fresh tests against the
+    // new entry-point surface.
 
     // ── Settings link ─────────────────────────────────────────────────────────
 
@@ -231,22 +131,8 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
-    // ── Call buttons ──────────────────────────────────────────────────────────
-
-    testWidgets('"Call" button tap does not crash', (tester) async {
-      await tester.pumpWidget(buildProfile());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      final callButtons = find.text('Call');
-      await tester.ensureVisible(callButtons.first);
-      expect(callButtons, findsWidgets);
-
-      await tester.tap(callButtons.first);
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
+    // "Call" button tap test removed alongside the safety-plan filled-state
+    // suite — the contact-call buttons surface inside the safety-plan flow
+    // which is no longer inline. See REMOVED — STALE block above.
   });
 }

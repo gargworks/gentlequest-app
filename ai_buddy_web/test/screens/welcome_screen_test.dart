@@ -1,43 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_buddy_web/screens/welcome_screen.dart';
 
+// Most assertions in this file were written against an older WelcomeScreen
+// (Meet Alex heading / Get Started button / three value propositions) that
+// was superseded by the R1D1 onboarding redesign before 2026-05-21. The
+// current WelcomeScreen is driven by docs/design/refs/htmls/
+// GentleQuest_Onboarding_R1D1.html and doesn't surface any of those
+// strings. The render/has-been-seen assertions still hold and are kept;
+// rewrite the structural tests against the R1D1 surface in a follow-up.
 void main() {
   group('WelcomeScreen', () {
-    testWidgets('renders Meet Alex heading', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-
-      await tester.pumpWidget(
-        const MaterialApp(home: WelcomeScreen()),
-      );
-
-      expect(find.text('Meet Alex'), findsOneWidget);
-      expect(find.text('Your wellness companion'), findsOneWidget);
-    });
-
-    testWidgets('shows three value propositions', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-
-      await tester.pumpWidget(
-        const MaterialApp(home: WelcomeScreen()),
-      );
-
-      expect(find.text('Someone to talk to, anytime'), findsOneWidget);
-      expect(find.text('Your conversations stay private'), findsOneWidget);
-      expect(find.text('No judgment, just support'), findsOneWidget);
-    });
-
-    testWidgets('shows Get Started button', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-
-      await tester.pumpWidget(
-        const MaterialApp(home: WelcomeScreen()),
-      );
-
-      expect(find.text('Get Started'), findsOneWidget);
-    });
-
     testWidgets('hasBeenSeen returns false initially',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});

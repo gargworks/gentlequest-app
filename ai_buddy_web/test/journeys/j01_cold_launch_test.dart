@@ -26,7 +26,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pump(const Duration(milliseconds: 800));
 
-      expect(find.text('Are you 18 or older?'), findsOneWidget);
+      expect(find.text('Are you 13 or older?'), findsOneWidget);
       expect(find.text('Not yet'), findsOneWidget);
       expect(find.text('Yes, I am'), findsOneWidget);
     });

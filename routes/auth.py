@@ -77,34 +77,248 @@ def _build_magic_link(raw_token: str) -> str:
 
 
 def _send_magic_link_email(email: str, raw_token: str) -> None:
-    """Dev: log to stdout. Prod: swap for SendGrid/Resend/Postmark.
+    """Send the magic-link email via the configured backend.
 
-    Kept intentionally tiny — production wiring is configuration, not
-    code: read EMAIL_BACKEND + EMAIL_API_KEY, fork on backend, send.
-    Until that's wired we want the dev experience to be obvious so
-    nobody silently fails the flow during QA.
+    Env var routing:
+      EMAIL_BACKEND=resend   + RESEND_API_KEY      → Resend HTTP API
+      EMAIL_BACKEND=sendgrid + SENDGRID_API_KEY    → SendGrid v3 API
+      EMAIL_BACKEND=postmark + POSTMARK_TOKEN      → Postmark email API
+      (anything else, incl. unset)                 → stdout (dev)
+
+    Optional env vars (all backends):
+      EMAIL_FROM           default 'GentleQuest <hello@gentlequest.app>'
+      EMAIL_REPLY_TO       (omitted if unset)
+
+    Returns silently on success or failure — caller already handles the
+    info-leak constraint (response is 202 regardless). Failures are
+    logged + emitted to stdout as a last-resort fallback so a single
+    misconfigured deploy doesn't silently brick every sign-in.
     """
     link = _build_magic_link(raw_token)
-    backend = os.environ.get("EMAIL_BACKEND", "stdout").lower()
+    backend = os.environ.get("EMAIL_BACKEND", "stdout").lower().strip()
+
     if backend in ("", "stdout", "console", "dev"):
-        # Print to whatever stream `flask run` is writing to. Dev only.
-        msg = (
-            "\n────────────────────────────────────────────────\n"
-            f"[auth] magic link for {email}:\n  {link}\n"
-            "(expires in 15 minutes · single use)\n"
-            "────────────────────────────────────────────────\n"
-        )
-        print(msg, flush=True)
-        logger.info("magic_link.sent_stdout email=%s", email)
+        _print_magic_link_dev(email, link)
         return
-    # FUTURE WORK: wire SendGrid / Resend / Postmark here. The backend
-    # env var is the switch; keep this function the single integration
-    # point so the route code never knows about the provider.
-    logger.warning(
-        "magic_link.unsupported_backend backend=%s falling_back_to_stdout",
-        backend,
+
+    subject, html, text = _render_magic_link_email(link)
+    from_addr = os.environ.get(
+        "EMAIL_FROM", "GentleQuest <hello@gentlequest.app>"
     )
-    print(f"[auth] magic link for {email}: {link}", flush=True)
+    reply_to = os.environ.get("EMAIL_REPLY_TO")
+
+    try:
+        if backend == "resend":
+            _send_via_resend(
+                from_addr=from_addr,
+                to=email,
+                subject=subject,
+                html=html,
+                text=text,
+                reply_to=reply_to,
+            )
+        elif backend == "sendgrid":
+            _send_via_sendgrid(
+                from_addr=from_addr,
+                to=email,
+                subject=subject,
+                html=html,
+                text=text,
+                reply_to=reply_to,
+            )
+        elif backend == "postmark":
+            _send_via_postmark(
+                from_addr=from_addr,
+                to=email,
+                subject=subject,
+                html=html,
+                text=text,
+                reply_to=reply_to,
+            )
+        else:
+            logger.warning(
+                "magic_link.unsupported_backend backend=%s falling_back_to_stdout",
+                backend,
+            )
+            _print_magic_link_dev(email, link)
+            return
+        logger.info("magic_link.sent backend=%s email=%s", backend, email)
+    except Exception:  # noqa: BLE001
+        # Don't break the auth flow on email infra failure — log loudly,
+        # print to stdout so the QA / on-call can recover the link
+        # manually. Caller still responds 202 to avoid leaking info.
+        logger.exception(
+            "magic_link.send_failed backend=%s email=%s", backend, email
+        )
+        _print_magic_link_dev(email, link, prefix="[auth FALLBACK]")
+
+
+def _print_magic_link_dev(email: str, link: str, prefix: str = "[auth]") -> None:
+    """Pretty-print the magic link to stdout for dev / fallback recovery."""
+    msg = (
+        "\n────────────────────────────────────────────────\n"
+        f"{prefix} magic link for {email}:\n  {link}\n"
+        "(expires in 15 minutes · single use)\n"
+        "────────────────────────────────────────────────\n"
+    )
+    print(msg, flush=True)
+
+
+def _render_magic_link_email(link: str) -> tuple[str, str, str]:
+    """Returns (subject, html, plain_text) for the magic-link email.
+
+    Copy intentionally short + warm — matches the in-app "wellness
+    companion" tone, not a transactional bank-style email.
+    """
+    subject = "Your sign-in link for GentleQuest"
+    safe_link = link  # Already URL-safe; embed as-is in plain HTML.
+    html = (
+        '<!doctype html><html><body style="font-family:-apple-system,'
+        'Segoe UI,sans-serif;max-width:520px;margin:32px auto;color:#1f1b3a;'
+        'line-height:1.5;">'
+        '<h2 style="font-weight:800;letter-spacing:-0.3px;">'
+        "Hey — let's get you signed in.</h2>"
+        '<p style="font-size:15px;">Tap the button below to finish '
+        "signing in. It only works once and expires in 15 minutes.</p>"
+        f'<p style="margin:24px 0;"><a href="{safe_link}" '
+        'style="background:#5853eb;color:#fff;padding:12px 22px;'
+        'border-radius:999px;text-decoration:none;font-weight:700;'
+        f'display:inline-block;">Sign in to GentleQuest</a></p>'
+        f'<p style="font-size:12px;color:#6b6890;">'
+        "If the button doesn't work, copy and paste this link:<br>"
+        f'<span style="word-break:break-all;">{safe_link}</span></p>'
+        '<p style="font-size:12px;color:#6b6890;margin-top:32px;">'
+        "If you didn't request this, you can ignore the email — no "
+        "account changes have been made.</p>"
+        "</body></html>"
+    )
+    text = (
+        "Hey — let's get you signed in.\n\n"
+        f"Sign in to GentleQuest: {link}\n\n"
+        "This link works once and expires in 15 minutes.\n\n"
+        "If you didn't request this, ignore this email — "
+        "no account changes have been made."
+    )
+    return subject, html, text
+
+
+def _send_via_resend(*, from_addr, to, subject, html, text, reply_to):
+    """POST https://api.resend.com/emails — minimal HTTP integration.
+
+    Resend was picked as the default modern provider: simple JSON API,
+    free tier covers QA/onboarding, easy DNS setup. Swap providers by
+    flipping EMAIL_BACKEND env var; no code change here required.
+    """
+    import json
+    import urllib.request
+
+    api_key = os.environ.get("RESEND_API_KEY")
+    if not api_key:
+        raise RuntimeError("RESEND_API_KEY not set")
+    payload = {
+        "from": from_addr,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }
+    if reply_to:
+        payload["reply_to"] = reply_to
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        if resp.status >= 300:
+            raise RuntimeError(
+                f"resend non-2xx status={resp.status} body={resp.read()[:200]!r}"
+            )
+
+
+def _send_via_sendgrid(*, from_addr, to, subject, html, text, reply_to):
+    """POST https://api.sendgrid.com/v3/mail/send — minimal v3 integration."""
+    import json
+    import urllib.request
+
+    api_key = os.environ.get("SENDGRID_API_KEY")
+    if not api_key:
+        raise RuntimeError("SENDGRID_API_KEY not set")
+    # Parse "Name <addr@host>" or bare addr; SendGrid wants structured form.
+    from_struct = _parse_email_addr(from_addr)
+    payload = {
+        "personalizations": [{"to": [{"email": to}]}],
+        "from": from_struct,
+        "subject": subject,
+        "content": [
+            {"type": "text/plain", "value": text},
+            {"type": "text/html", "value": html},
+        ],
+    }
+    if reply_to:
+        payload["reply_to"] = _parse_email_addr(reply_to)
+    req = urllib.request.Request(
+        "https://api.sendgrid.com/v3/mail/send",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        if resp.status >= 300:
+            raise RuntimeError(
+                f"sendgrid non-2xx status={resp.status} body={resp.read()[:200]!r}"
+            )
+
+
+def _send_via_postmark(*, from_addr, to, subject, html, text, reply_to):
+    """POST https://api.postmarkapp.com/email — uses X-Postmark-Server-Token."""
+    import json
+    import urllib.request
+
+    token = os.environ.get("POSTMARK_TOKEN")
+    if not token:
+        raise RuntimeError("POSTMARK_TOKEN not set")
+    payload = {
+        "From": from_addr,
+        "To": to,
+        "Subject": subject,
+        "HtmlBody": html,
+        "TextBody": text,
+        "MessageStream": os.environ.get("POSTMARK_STREAM", "outbound"),
+    }
+    if reply_to:
+        payload["ReplyTo"] = reply_to
+    req = urllib.request.Request(
+        "https://api.postmarkapp.com/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "X-Postmark-Server-Token": token,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        if resp.status >= 300:
+            raise RuntimeError(
+                f"postmark non-2xx status={resp.status} body={resp.read()[:200]!r}"
+            )
+
+
+def _parse_email_addr(s: str) -> dict:
+    """Convert 'Name <addr@host>' or 'addr@host' to {name, email}."""
+    s = s.strip()
+    if "<" in s and s.endswith(">"):
+        name, _, rest = s.partition("<")
+        return {"email": rest[:-1].strip(), "name": name.strip()}
+    return {"email": s}
 
 
 # ─── Routes ─────────────────────────────────────────────────────────
