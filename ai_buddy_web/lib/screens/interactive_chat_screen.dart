@@ -72,11 +72,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   static const _prefsLegalAckV1 = 'legal_ack_v1';
   // Global in-flight guard to prevent duplicate Safety & Legal sheet
   static bool _legalSheetShowing = false;
-  // Chat disclaimer cadence: show small top notice for first few sessions
-  static const _prefsDisclaimerSeenCount = 'chat_disclaimer_seen_count_v1';
-  static const _maxDisclaimerSessions = 3;
-  int _disclaimerSeenCount = 0;
-  bool _showTopDisclaimer = false;
+  // (Removed) Chat disclaimer cadence — replaced by ChatGPT-style footer
+  // chip that's always visible below the input bar. The old
+  // chat_disclaimer_seen_count_v1 SharedPreferences key is left alone so
+  // users who already saw the old banner aren't affected on upgrade.
 
   Future<void> _ensureLegalAck() async {
     try {
@@ -95,36 +94,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Safety & Legal ack check failed: $e');
-    }
-  }
-
-  Future<void> _loadDisclaimerPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final seen = prefs.getInt(_prefsDisclaimerSeenCount) ?? 0;
-      if (!mounted) return;
-      setState(() {
-        _disclaimerSeenCount = seen;
-        _showTopDisclaimer = seen < _maxDisclaimerSessions;
-      });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Disclaimer prefs read failed: $e');
-    }
-  }
-
-  Future<void> _dismissTopDisclaimer({bool increment = true}) async {
-    if (mounted) {
-      setState(() => _showTopDisclaimer = false);
-    }
-    if (!increment) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final next = (_disclaimerSeenCount + 1).clamp(0, _maxDisclaimerSessions);
-      await prefs.setInt(_prefsDisclaimerSeenCount, next);
-      if (!mounted) return;
-      setState(() => _disclaimerSeenCount = next);
-    } catch (e) {
-      if (kDebugMode) debugPrint('Disclaimer prefs write failed: $e');
     }
   }
 
@@ -366,8 +335,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _scrollToBottom();
       // One-time Safety & Legal acknowledgment
       _ensureLegalAck();
-      // Load disclaimer cadence and decide whether to show top notice
-      _loadDisclaimerPrefs();
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
@@ -561,52 +528,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   height: 8.h,
                   color: appTheme.colorFFF3F4,
                 ),
-                // Ephemeral top disclaimer (first few sessions only)
-                Builder(builder: (ctx) {
-                  final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
-                  if (!_showTopDisclaimer || isKb) {
-                    return const SizedBox.shrink();
-                  }
-                  return Semantics(
-                    label: 'Wellness disclaimer',
-                    child: Container(
-                      width: double.infinity,
-                      color: Colors.amber.shade50,
-                      padding: EdgeInsets.fromLTRB(12.h, 8.h, 4.h, 8.h),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.info_outline,
-                              size: 18.0, color: Colors.black54),
-                          SizedBox(width: 8.h),
-                          Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                style: const TextStyle(
-                                    fontSize: 12.0,
-                                    color: Colors.black87,
-                                    height: 1.2),
-                                children: const [
-                                  TextSpan(
-                                      text:
-                                          'Not medical care. For crisis, call local emergency.'),
-                                ],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Dismiss',
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () =>
-                                _dismissTopDisclaimer(increment: true),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                // Disclaimer moved to a ChatGPT-style footer below the input
+                // bar (see end of Column). Was an amber dismissible banner
+                // above the greeting — created an "are you in danger?" framing
+                // at the exact moment we're trying to build trust with the
+                // user. Footer position keeps the compliance copy visible on
+                // every screen without competing with first-touch warmth.
                 // Chat Messages
                 Expanded(
                   child: Consumer<ChatProvider>(
@@ -845,6 +772,36 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     ),
                   ),
                 ),
+                // ChatGPT-style persistent footer disclaimer. Verbatim
+                // compliance copy preserved; placement moved here so it's
+                // always visible without competing with the first-touch
+                // greeting. Hidden when keyboard is up to free vertical
+                // space for typing.
+                Builder(builder: (ctx) {
+                  final isKb = MediaQuery.viewInsetsOf(ctx).bottom > 0;
+                  if (isKb) return const SizedBox.shrink();
+                  return Semantics(
+                    label: 'Wellness disclaimer',
+                    child: Container(
+                      width: double.infinity,
+                      color: appTheme.whiteCustom,
+                      padding: EdgeInsets.fromLTRB(12.h, 0, 12.h, 6.h),
+                      child: const Text(
+                        // Verbatim compliance copy.
+                        'Not medical care. For crisis, call local emergency.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.0,
+                          color: Color(0xFF8C8AA0),
+                          height: 1.3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                }),
               ],
             ),
           ],
