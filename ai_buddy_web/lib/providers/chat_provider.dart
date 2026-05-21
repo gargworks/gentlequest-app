@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
@@ -105,7 +106,21 @@ class ChatProvider extends ChangeNotifier {
       _updateGreetingWithContext();
     }
     _loadChatHistory();
+
+    // Refresh chat history whenever the device's session-binding changes
+    // (sign-in adopts the user's canonical session_id; sign-out generates
+    // a fresh anonymous one). Without this the user would see the prior
+    // session's messages until they pop & re-mount the screen.
+    _authSessionSub = AuthService.instance.onSessionChanged.listen((_) {
+      _messages.clear();
+      _isOptimisticGreeting = false;
+      _hasShownGreeting = false;
+      notifyListeners();
+      _loadChatHistory();
+    });
   }
+
+  StreamSubscription<void>? _authSessionSub;
 
   Future<void> _updateGreetingWithContext() async {
     final contextualGreeting = await _getGreetingWithContext();
@@ -504,6 +519,7 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _authSessionSub?.cancel();
     for (final sub in _subscriptions) {
       sub.cancel();
     }

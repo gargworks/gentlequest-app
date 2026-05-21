@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +36,21 @@ class AuthService {
   int? _userId;
   String? _email;
   bool _hydrated = false;
+
+  /// Broadcasts when the device's session-binding changes: post-verify
+  /// (signed in, canonical adopted) and post-signOut (anonymous, fresh
+  /// session). Providers that show server-backed lists (chat history,
+  /// mood entries, journal) subscribe so they refetch instead of
+  /// silently showing stale data from the previous session.
+  ///
+  /// Broadcast stream so multiple providers can listen independently.
+  final StreamController<void> _sessionChanged =
+      StreamController<void>.broadcast();
+  Stream<void> get onSessionChanged => _sessionChanged.stream;
+
+  void _emitSessionChanged() {
+    if (!_sessionChanged.isClosed) _sessionChanged.add(null);
+  }
 
   /// Returns true if the current X-Session-ID has a user account bound.
   /// `hydrate()` should be called once on app start so this returns the
@@ -104,6 +121,10 @@ class AuthService {
       // confirming the sign-in.
       // ignore: unawaited_futures
       JournalStorage.migrateLocalToServer();
+      // Notify subscribers so server-backed providers (ChatProvider,
+      // MoodProvider) refetch their lists under the new canonical
+      // session id.
+      _emitSessionChanged();
       return AuthIdentity(id: id, email: emailValue);
     } on DioException catch (e) {
       final body = e.response?.data;
@@ -131,6 +152,15 @@ class AuthService {
     // Reset the journal migration flag so the next sign-in (possibly a
     // different user on this device) re-runs the local→server push.
     await JournalStorage.resetMigrationFlag();
+    // Privacy: drop the previous user's canonical session_id so subsequent
+    // API calls don't keep hitting their server-side data. Replace with a
+    // fresh anonymous session id so anonymous use post-sign-out works
+    // immediately. The previous user's server-side data is still bound to
+    // their account — signing back in re-adopts the canonical session.
+    await SessionManager.regenerateAnonymousSessionId();
+    // Notify subscribers so any open chat / mood views clear their
+    // server-backed state and re-pull under the new anonymous session.
+    _emitSessionChanged();
   }
 
   Future<Map<String, dynamic>> _sessionHeaders() async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
@@ -75,11 +76,51 @@ class SessionManager {
   /// Clears the cached session id (both memory and storage).
   static Future<void> clear() async {
     _sessionId = null;
+    _inflight = null;
     try {
       await KvStorage.delete(_sessionKey);
     } catch (e) {
       if (kDebugMode) debugPrint('SessionManager: clear error: $e');
     }
+  }
+
+  /// Generate a fresh anonymous session id and adopt it. Called on sign-out
+  /// so the device stops carrying the previous user's canonical session
+  /// (which was bound to their server-side data). Without this, anonymous
+  /// use post-sign-out — or a different user signing in on the same device
+  /// — would briefly hit the previous user's rows.
+  ///
+  /// Generates locally via UUID-v4-ish syntax and persists immediately;
+  /// the next API call will get a fresh server row on /api/get_or_create_session
+  /// at the X-Session-ID provided.
+  static Future<void> regenerateAnonymousSessionId() async {
+    final fresh = _localUuidV4();
+    _sessionId = fresh;
+    _inflight = null;
+    try {
+      await KvStorage.write(_sessionKey, fresh);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SessionManager: regenerate write error: $e');
+      }
+    }
+  }
+
+  /// Pseudo-UUIDv4 without pulling in a uuid package — good enough as a
+  /// device-local opaque identifier. Backend treats X-Session-ID as an
+  /// opaque token, not a verified UUID, except in session_helpers which
+  /// validates UUID shape and falls back to its own uuid4 on mismatch.
+  static String _localUuidV4() {
+    final r = math.Random.secure();
+    int n() => r.nextInt(0xFFFFFFFF);
+    final hex = StringBuffer();
+    for (var i = 0; i < 4; i++) {
+      hex.write(n().toRadixString(16).padLeft(8, '0'));
+    }
+    final s = hex.toString();
+    return '${s.substring(0, 8)}-${s.substring(8, 12)}-4${s.substring(13, 16)}-'
+        '${(8 + r.nextInt(4)).toRadixString(16)}${s.substring(17, 20)}-'
+        '${s.substring(20, 32)}';
   }
 
   /// Replace the device's session id with a canonical one returned by the
