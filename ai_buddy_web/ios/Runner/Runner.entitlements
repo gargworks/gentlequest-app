@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/propertylist-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Associated Domains — preserved + merged with v1.3.0 universal-link wiring.
+         The applinks:* entries claim ownership of the domain so the OS routes
+         https URLs to GentleQuest instead of opening the browser (or letting a
+         malicious app intercept the gentlequest:// custom scheme). -->
     <key>com.apple.developer.associated-domains</key>
     <array>
         <string>applinks:gentlequest.app</string>
