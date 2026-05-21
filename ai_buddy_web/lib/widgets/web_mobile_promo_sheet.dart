@@ -1,0 +1,185 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../services/firebase_service.dart';
+import '../theme/gq_tokens.dart';
+
+/// One-time bottom sheet shown on web after compliance passes, offering the
+/// mobile app for users who'd prefer the native experience.
+///
+/// Was a hard "Mobile App Required" block at the compliance step. That cost
+/// the entire web acquisition surface. Now it's a non-blocking promo — user
+/// can install the mobile app via store links OR just keep using the web
+/// build. Shown once per device (tracked via SharedPreferences) so we don't
+/// nag.
+///
+/// FUTURE WORK — login continuity: today the web and mobile builds use
+/// independent anonymous session IDs, so installing the mobile app means
+/// the user starts over. Wire a passwordless login (email magic link or
+/// passkey) and surface a "Continue your conversation on mobile" call-to-
+/// action here once accounts exist.
+class WebMobilePromoSheet extends StatelessWidget {
+  const WebMobilePromoSheet({super.key});
+
+  static const String _prefsKey = 'web_mobile_promo_shown_v1';
+
+  /// Shows the sheet at most once per device. No-op on non-web platforms.
+  /// Safe to call from a post-frame callback on chat screen first mount.
+  static Future<void> maybeShow(BuildContext context) async {
+    if (!kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_prefsKey) ?? false) return;
+      if (!context.mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        builder: (ctx) => const WebMobilePromoSheet(),
+      );
+      await prefs.setBool(_prefsKey, true);
+      FirebaseService().logEvent('web_mobile_promo_shown');
+    } catch (_) {
+      // Non-fatal — sheet won't render if prefs fail; user keeps using web.
+    }
+  }
+
+  Future<void> _openStore(BuildContext context, _Store store) async {
+    FirebaseService().logEvent('web_mobile_promo_click', {
+      'store': store.name,
+    });
+    final uri = Uri.parse(store.url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      // Silent — user can copy the link from the visible button text
+      // if launch fails (rare on browsers with popup blockers).
+    }
+    if (context.mounted) Navigator.of(context).maybePop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.mobile_friendly,
+                size: 56, color: GQColors.primary),
+            const SizedBox(height: 16),
+            const Text(
+              'Try GentleQuest on your phone',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: GQTypography.displayFamily,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: GQColors.ink,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'The mobile app adds voice input, daily check-in '
+              'reminders, and works offline. Your conversation here '
+              'stays in your browser either way.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: GQColors.ink2,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _StoreButton(
+              label: 'Get it on the App Store',
+              icon: Icons.apple,
+              onTap: () => _openStore(context, _Store.appStore),
+            ),
+            const SizedBox(height: 10),
+            _StoreButton(
+              label: 'Get it on Google Play',
+              icon: Icons.shop,
+              onTap: () => _openStore(context, _Store.playStore),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              child: const Text(
+                'Continue on web',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: GQColors.ink2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _Store {
+  appStore,
+  playStore;
+
+  String get url => switch (this) {
+        _Store.appStore =>
+          'https://apps.apple.com/app/gentlequest/id0000000000',
+        _Store.playStore =>
+          'https://play.google.com/store/apps/details?id=com.gentlequest.app',
+      };
+}
+
+class _StoreButton extends StatelessWidget {
+  const _StoreButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: GQColors.primary,
+      borderRadius: BorderRadius.circular(GQRadii.button),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(GQRadii.button),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: Colors.white),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

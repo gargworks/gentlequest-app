@@ -1053,6 +1053,16 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     );
   }
 
+  // Retained because the ComplianceStatus.conversionRequired enum value
+  // still exists for backwards compatibility, but no compliance code path
+  // returns it as of 2026-05-21 — web is now first-class. If we ever
+  // re-introduce a terminal "your platform can't be served" state, this
+  // is the screen that renders it.
+  //
+  // Was a hard "Mobile App Required" block. Replaced with a soft message
+  // pointing at the optional mobile-app promo sheet (which fires on chat
+  // screen first mount on web). If someone *does* land here, give them a
+  // useful action instead of a dead end.
   Widget _buildConversionScreen() {
     return Scaffold(
       body: Padding(
@@ -1060,24 +1070,29 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.mobile_friendly, size: 80, color: Color(0xFF667EEA)),
+            const Icon(Icons.refresh,
+                size: 80, color: Color(0xFF667EEA)),
             const SizedBox(height: 24),
             Text(
-              "Mobile App Required",
+              "Something went sideways",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             const Text(
-              "To ensure privacy and regulatory compliance, GentleQuest is currently available only on our mobile app.",
+              "We couldn't finish setting up your session. Please check your connection and try again.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 48),
-            const Text(
-              "Please download GentleQuest from the App Store or Google Play Store.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.w500),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _checkStatus,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF667EEA),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Try again", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

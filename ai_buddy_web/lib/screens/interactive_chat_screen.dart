@@ -30,6 +30,7 @@ import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
+import '../widgets/web_mobile_promo_sheet.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
 // R1D6 — QuestsEngine for streak badge (read-only).
@@ -335,6 +336,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _scrollToBottom();
       // One-time Safety & Legal acknowledgment
       _ensureLegalAck();
+      // On web only: offer the mobile app once per device. Non-blocking
+      // — user can install OR continue on web (web is now first-class).
+      WebMobilePromoSheet.maybeShow(context);
     });
     _inputFocus.addListener(() {
       if (!mounted) return;

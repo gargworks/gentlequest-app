@@ -21,7 +21,11 @@ enum ComplianceStatus {
   blockedRegion,
   blockedAge,
   error,
-  conversionRequired, // v3.1: Web users must use Mobile App
+  // Retained for backwards compatibility with anything that switches on
+  // this enum, but no compliance path returns it anymore (was the web →
+  // mobile-only hard bounce, removed 2026-05-21). If we ever need a true
+  // "your platform can't be served" terminal state again, re-wire here.
+  conversionRequired,
 }
 
 /// Block reason for analytics and future unlock logic
@@ -181,32 +185,38 @@ class ComplianceService {
 
     await FirebaseService().logEvent('compliance_check_started');
 
-    // 1. Age Check (must be 18+)
+    // 1. Age Check (per-region minimum age; see minAgeForRegion())
     final ageVerified = await isAgeVerified();
     if (!ageVerified) {
       await _logBlockEvent('age_verification_required', null);
       return ComplianceStatus.ageVerificationRequired;
     }
 
-    // 2. Web platform - BLOCKED (v3.1 Hardening: Close browser loophole)
-    // Web cannot reliably verify GPS without backend GeoIP.
-    // Force users to Mobile App for geofence compliance.
-    if (kIsWeb) {
-      await _logBlockEvent('web_platform_conversion', null);
-      return ComplianceStatus.conversionRequired;
-    }
-
-    // 3. Check if location already verified (ONE-TIME check)
+    // 2. Check if location already verified (ONE-TIME check)
     if (await _isLocationAlreadyVerified()) {
-      // Check stored region against blocklists
       return await _checkStoredRegion();
     }
 
-    // 4. Server-IP region check (PRIMARY — Phase 1 hardening)
+    // 3. Server-IP region check (PRIMARY).
+    //
+    // Web platform note: was previously hard-bounced here to a "use mobile
+    // app" conversion screen on the assumption that browsers couldn't
+    // verify region. That cost us the entire web acquisition surface for
+    // no real safety win — the IP-region check below runs against our
+    // own backend and is platform-agnostic, so it works fine on web.
+    // The mobile-app upsell now happens as a non-blocking promo sheet on
+    // the chat screen instead of as a compliance gate (see
+    // WebMobilePromoSheet in widgets/web_mobile_promo_sheet.dart).
     final ipResult = await _verifyViaIpRegion();
     if (ipResult != null) return ipResult;
 
-    // 5. GPS fallback (only if IP unreachable)
+    // 4. GPS fallback (only if IP unreachable).
+    //
+    // On web the geolocator plugin uses the browser's navigator.geolocation
+    // API, which prompts for permission and can resolve country/region with
+    // varying accuracy. If both IP AND GPS fail on web, _verifyAndStoreLocation
+    // returns ComplianceStatus.locationPermissionRequired or .error — the
+    // user can retry. We no longer force a conversionRequired bounce.
     return await _verifyAndStoreLocation();
   }
 
