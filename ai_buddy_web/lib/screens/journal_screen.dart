@@ -209,6 +209,7 @@ class JournalStorage {
       // Push oldest first so server timeline reads in the same order.
       final reversed = local.reversed.toList();
       final replaced = <JournalEntry>[];
+      bool everyEntryMigrated = true;
       for (final entry in reversed) {
         // Skip rows that already look server-assigned (uuid-shaped id).
         if (entry.id.length == 36 && entry.id.contains('-')) {
@@ -236,11 +237,19 @@ class JournalStorage {
           if (kDebugMode) {
             debugPrint('JournalStorage.migrate: skip $e (entry stays local)');
           }
+          // Local copy retained; will retry next sign-in.
           replaced.insert(0, entry);
+          everyEntryMigrated = false;
         }
       }
       await _saveLocal(replaced);
-      await prefs.setBool(_kMigratedKey, true);
+      // Only mark migrated when EVERY non-uuid entry made it to the server.
+      // Otherwise leave the flag false so the next sign-in retries the
+      // still-local rows. Was previously set unconditionally → orphaned
+      // entries forever.
+      if (everyEntryMigrated) {
+        await prefs.setBool(_kMigratedKey, true);
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('JournalStorage.migrate top-level failure: $e');
@@ -419,8 +428,27 @@ class _JournalScreenState extends State<JournalScreen> {
   }
 
   Future<void> _deleteEntry(String id) async {
-    setState(() => _entries.removeWhere((e) => e.id == id));
-    await JournalStorage.remove(id);
+    // Optimistic remove for instant UI feedback. On server-side failure
+    // for a signed-in user, the row would reappear on next load() merge —
+    // catch that here, restore the entry locally, and tell the user so
+    // they can retry rather than silently drift between local + server.
+    final idx = _entries.indexWhere((e) => e.id == id);
+    if (idx < 0) return;
+    final saved = _entries[idx];
+    setState(() => _entries.removeAt(idx));
+    try {
+      await JournalStorage.remove(id);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _entries.insert(idx, saved));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't delete just now — try again in a moment."),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _openEditor({String? prefill}) async {

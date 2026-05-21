@@ -11,6 +11,13 @@ class DeepLinkService {
 
   late AppLinks _appLinks;
 
+  /// In-flight + already-consumed auth tokens. Magic-link clicks on cold-
+  /// start fire both `getInitialLink()` AND `uriLinkStream`, so without
+  /// de-dup the same token is verified twice — the second verify hits the
+  /// backend's single-use guard and surfaces a scary "Sign-in failed"
+  /// SnackBar right after the success one.
+  final Set<String> _consumedTokens = {};
+
   Future<void> initialize() async {
     _appLinks = AppLinks();
 
@@ -88,6 +95,11 @@ class DeepLinkService {
   }
 
   Future<void> _handleAuthVerify(String rawToken) async {
+    // Cold-start fires getInitialLink + uriLinkStream for the same URL;
+    // single-use tokens fail on the second verify. Skip if already
+    // consumed this session.
+    if (_consumedTokens.contains(rawToken)) return;
+    _consumedTokens.add(rawToken);
     final context = AppRoutes.navigatorKey.currentContext;
     try {
       final identity = await AuthService.instance.verifyToken(rawToken);

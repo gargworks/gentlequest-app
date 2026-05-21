@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
+import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -366,25 +368,40 @@ class _WelcomeContent extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // Already with us? Sign in (P2 — optional path visible)
-                          RichText(
-                            text: TextSpan(
-                              style: TextStyle(
-                                fontFamily: GQTypography.bodyFamily,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: GQColors.ink3,
-                              ),
-                              children: [
-                                const TextSpan(text: 'Already with us? '),
-                                TextSpan(
-                                  text: 'Sign in',
-                                  style: TextStyle(
-                                    color: GQColors.primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                          // "Already with us? Sign in" — wires to the
+                          // passwordless magic-link LoginScreen. Was an
+                          // inert RichText (looked tappable, did nothing)
+                          // until 2026-05-21.
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
                                 ),
-                              ],
+                              );
+                            },
+                            child: RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontFamily: GQTypography.bodyFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: GQColors.ink3,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Already with us? '),
+                                  TextSpan(
+                                    text: 'Sign in',
+                                    style: TextStyle(
+                                      color: GQColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: GQColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -409,6 +426,14 @@ class _WelcomeContent extends StatelessWidget {
 //                "Not yet" / "Yes, I am"
 //                "YOUR ANSWER STAYS ON THIS DEVICE"
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Look up the region-appropriate minimum age. Region was set by the
+/// compliance flow's IP-region check; on first launch (before the user
+/// reaches compliance) it's null → the universal 13 floor applies.
+Future<int> _resolveMinAge() async {
+  final region = await ComplianceService().getStoredRegion();
+  return ComplianceService.minAgeForRegion(region);
+}
 
 class _AgeModal extends StatelessWidget {
   const _AgeModal({
@@ -486,17 +511,26 @@ class _AgeModal extends StatelessWidget {
               const SizedBox(height: 10),
               // Sub-heading — was "Are you 18 or older?" verbatim. Age gate
               // lowered to 13+ on 2026-05-21 per app's original high-school
-              // objective; copy updated to match.
-              Text(
-                'Are you 13 or older?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: GQTypography.bodyFamily,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                  color: GQColors.ink,
-                ),
+              // objective. Now consults ComplianceService.minAgeForRegion
+              // so a user in Germany (GDPR-K-16) is asked "Are you 16 or
+              // older?" not 13. Region is hydrated by the compliance flow;
+              // if it's not yet known (first launch), we default to 13.
+              FutureBuilder<int>(
+                future: _resolveMinAge(),
+                builder: (ctx, snap) {
+                  final age = snap.data ?? 13;
+                  return Text(
+                    'Are you $age or older?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                      color: GQColors.ink,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 28),
               // Two equal-weight buttons.

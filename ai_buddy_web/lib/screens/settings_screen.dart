@@ -66,6 +66,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadConsent();
+    _validateAuthSession();
+  }
+
+  /// Hit /api/auth/me to verify the cached "signed in" state still matches
+  /// the server. If the server revoked the session (account deleted from
+  /// another device, server rotation, expired binding), the cached email
+  /// would otherwise show as "Signed in · stale@..." forever.
+  /// Fire-and-forget; failure means no network → keep showing cached state.
+  Future<void> _validateAuthSession() async {
+    if (!AuthService.instance.isSignedIn) return;
+    try {
+      final resp = await _api.get('/api/auth/me');
+      if (resp == null) return;
+      final user = (resp is Map<String, dynamic>) ? resp['user'] : null;
+      if (user == null) {
+        // Server says we're anonymous; client cache says signed in. Server wins.
+        await AuthService.instance.signOut();
+        if (mounted) setState(() {});
+      }
+    } catch (_) {
+      // Network error — leave cached state alone; user can keep using offline.
+    }
   }
 
   Future<void> _loadConsent() async {

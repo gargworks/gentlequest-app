@@ -584,7 +584,21 @@ class _SafetyPlanFilled extends StatelessWidget {
                     Expanded(
                       child: _SafetyButton(
                         label: 'Use now',
-                        onTap: () => showCrisisInterventionSheet(context),
+                        // "Use now" on the safety-plan card should surface
+                        // the USER'S OWN safety plan, not the generic
+                        // AI-detected crisis sheet. Until SafetyPlanRecall
+                        // ships, fall back to the crisis sheet but flag
+                        // the source so the choice is logged separately
+                        // for analytics.
+                        // FUTURE WORK: replace with
+                        //   showSafetyPlanRecallSheet(context, contacts: ..., steps: ...)
+                        // once the safety-plan builder actually persists
+                        // contacts + plan steps (see _SafetyPlanFilled
+                        // hardcoded sample data).
+                        onTap: () => showCrisisInterventionSheet(
+                          context,
+                          source: 'safety_plan_use_now',
+                        ),
                         style: _SafetyButtonStyle.solid,
                       ),
                     ),
