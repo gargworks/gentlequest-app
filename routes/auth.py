@@ -230,6 +230,10 @@ def _send_via_resend(*, from_addr, to, subject, html, text, reply_to):
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            # Resend sits behind Cloudflare, which 403s the default
+            # `Python-urllib/3.x` User-Agent (error 1010 — browser
+            # signature ban). A plain UA gets through.
+            "User-Agent": "GentleQuest-Backend/1.0",
         },
         method="POST",
     )
@@ -267,6 +271,7 @@ def _send_via_sendgrid(*, from_addr, to, subject, html, text, reply_to):
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            "User-Agent": "GentleQuest-Backend/1.0",
         },
         method="POST",
     )
@@ -302,6 +307,7 @@ def _send_via_postmark(*, from_addr, to, subject, html, text, reply_to):
             "X-Postmark-Server-Token": token,
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": "GentleQuest-Backend/1.0",
         },
         method="POST",
     )
