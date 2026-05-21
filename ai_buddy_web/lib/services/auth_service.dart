@@ -71,6 +71,12 @@ class AuthService {
   /// user identity. Persists to SharedPreferences on success so future
   /// app cold-starts know who's logged in.
   ///
+  /// Phase 1.5 cross-device sync: the verify response includes the user's
+  /// CANONICAL session_id. The verifying device adopts that id via
+  /// SessionManager.adoptCanonicalSessionId, so multiple devices signed
+  /// into the same account hit the same server-side data (chat history,
+  /// mood, assessments) without a device_sessions junction table.
+  ///
   /// Throws [AuthException] on a 4xx with the backend's error message,
   /// or [DioException] on network failures.
   Future<AuthIdentity> verifyToken(String rawToken) async {
@@ -84,6 +90,10 @@ class AuthService {
       final user = data['user'] as Map<String, dynamic>;
       final id = user['id'] as int;
       final emailValue = user['email'] as String;
+      final canonical = data['session_id'] as String?;
+      if (canonical != null && canonical.isNotEmpty) {
+        await SessionManager.adoptCanonicalSessionId(canonical);
+      }
       await _persist(id: id, email: emailValue);
       return AuthIdentity(id: id, email: emailValue);
     } on DioException catch (e) {

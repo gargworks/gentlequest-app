@@ -82,6 +82,27 @@ class SessionManager {
     }
   }
 
+  /// Replace the device's session id with a canonical one returned by the
+  /// server (e.g. after passwordless sign-in via AuthService.verifyToken).
+  /// All subsequent API calls will carry the new id, so multiple devices
+  /// signed into the same account hit the same server-side rows without a
+  /// device_sessions junction table.
+  ///
+  /// Invalidates the in-flight session-create future so any pending callers
+  /// pick up the new id instead of the device's old anonymous one.
+  static Future<void> adoptCanonicalSessionId(String canonical) async {
+    if (canonical.trim().isEmpty) return;
+    _sessionId = canonical;
+    _inflight = null;
+    try {
+      await KvStorage.write(_sessionKey, canonical);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SessionManager: adoptCanonical write error: $e');
+      }
+    }
+  }
+
   static String _fallbackSessionId() =>
       DateTime.now().millisecondsSinceEpoch.toString();
 }

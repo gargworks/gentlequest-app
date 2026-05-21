@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../screens/auth/login_screen.dart';
+import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../theme/gq_tokens.dart';
 
@@ -15,11 +17,10 @@ import '../theme/gq_tokens.dart';
 /// build. Shown once per device (tracked via SharedPreferences) so we don't
 /// nag.
 ///
-/// FUTURE WORK — login continuity: today the web and mobile builds use
-/// independent anonymous session IDs, so installing the mobile app means
-/// the user starts over. Wire a passwordless login (email magic link or
-/// passkey) and surface a "Continue your conversation on mobile" call-to-
-/// action here once accounts exist.
+/// Updated 2026-05-21: passwordless sign-in now ships (see AuthService,
+/// /api/auth/*). If the user signs in here on web, then installs the
+/// mobile app and verifies the same email, the mobile device adopts the
+/// canonical session_id and the conversation history follows.
 class WebMobilePromoSheet extends StatelessWidget {
   const WebMobilePromoSheet({super.key});
 
@@ -63,8 +64,17 @@ class WebMobilePromoSheet extends StatelessWidget {
     if (context.mounted) Navigator.of(context).maybePop();
   }
 
+  Future<void> _openSignIn(BuildContext context) async {
+    FirebaseService().logEvent('web_mobile_promo_signin_click');
+    Navigator.of(context).maybePop();
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final alreadySignedIn = AuthService.instance.isSignedIn;
     return SafeArea(
       top: false,
       child: Padding(
@@ -77,7 +87,7 @@ class WebMobilePromoSheet extends StatelessWidget {
                 size: 56, color: GQColors.primary),
             const SizedBox(height: 16),
             const Text(
-              'Try GentleQuest on your phone',
+              'Continue on your phone',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: GQTypography.displayFamily,
@@ -88,28 +98,44 @@ class WebMobilePromoSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'The mobile app adds voice input, daily check-in '
-              'reminders, and works offline. Your conversation here '
-              'stays in your browser either way.',
+            Text(
+              alreadySignedIn
+                  ? 'Install the mobile app and sign in with the same '
+                      'email to pick this conversation back up. Voice '
+                      'input and daily check-in reminders work natively '
+                      'on mobile too.'
+                  : 'Install the mobile app, then sign in with your '
+                      'email to keep this conversation. Voice input '
+                      'and daily check-in reminders work natively on '
+                      'mobile. Anonymous use stays supported.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: GQColors.ink2,
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
+            if (!alreadySignedIn) ...[
+              _StoreButton(
+                label: 'Sign in to sync first',
+                icon: Icons.mail_outline,
+                onTap: () => _openSignIn(context),
+              ),
+              const SizedBox(height: 10),
+            ],
             _StoreButton(
               label: 'Get it on the App Store',
               icon: Icons.apple,
               onTap: () => _openStore(context, _Store.appStore),
+              outlined: true,
             ),
             const SizedBox(height: 10),
             _StoreButton(
               label: 'Get it on Google Play',
               icon: Icons.shop,
               onTap: () => _openStore(context, _Store.playStore),
+              outlined: true,
             ),
             const SizedBox(height: 16),
             TextButton(
@@ -147,16 +173,23 @@ class _StoreButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.outlined = false,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
 
+  /// Outlined variant — primary tint on a soft surface, used for the
+  /// secondary store buttons when the sign-in CTA is the dominant action.
+  final bool outlined;
+
   @override
   Widget build(BuildContext context) {
+    final bg = outlined ? GQColors.primarySoft : GQColors.primary;
+    final fg = outlined ? GQColors.primary : Colors.white;
     return Material(
-      color: GQColors.primary,
+      color: bg,
       borderRadius: BorderRadius.circular(GQRadii.button),
       child: InkWell(
         onTap: onTap,
@@ -166,14 +199,14 @@ class _StoreButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 20, color: Colors.white),
+              Icon(icon, size: 20, color: fg),
               const SizedBox(width: 10),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: fg,
                 ),
               ),
             ],

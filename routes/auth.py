@@ -182,23 +182,27 @@ def verify_magic_link():
     if user is None or user.deleted_at is not None:
         return jsonify({"error": "account no longer active"}), 400
 
-    # Bind this device's session to the user account. The verifying device
-    # is the one that received the magic-link email and completed the auth,
-    # so we always re-bind to it — Phase 1 picks last-bound-device wins.
-    # Proper multi-device sync (one user_id → many device session_ids) is
-    # Phase 2 and lives in a separate device_sessions table; until then,
-    # signing in on a second device "moves" the account to that device.
-    # Any device that wants to re-attach just signs in again with the
-    # same email.
-    current_session_id = _get_or_create_session()
-    user.session_id = current_session_id
+    # Phase 1.5 cross-device sync: instead of overwriting user.session_id
+    # on each verify (last-device-wins, kicks the previous device out), we
+    # treat user.session_id as the user's CANONICAL server-side session.
+    # The verifying device adopts that canonical id for all subsequent
+    # API calls. Result: every device signed into the same account hits
+    # the same server-side rows (chat history, mood entries, assessments)
+    # without needing a separate device_sessions junction table.
+    #
+    # If user.session_id is somehow null (data inconsistency from earlier
+    # rows), fall back to binding the current device's session.
+    _get_or_create_session()  # ensures the device's anon session exists
+    if user.session_id is None:
+        user.session_id = _get_or_create_session()
+    canonical_session_id = user.session_id
     token.used_at = datetime.utcnow()
     db.session.commit()
 
     return jsonify(
         {
             "user": {"id": user.id, "email": user.email},
-            "session_id": current_session_id,
+            "session_id": canonical_session_id,
         }
     ), 200
 
