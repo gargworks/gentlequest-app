@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
+import '../widgets/crisis_resources.dart' show showCrisisInterventionSheet;
 import '../widgets/safety_legal_sheet.dart';
 import './legal/legal_screen.dart';
 import '../services/api_service.dart';
@@ -395,6 +398,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+
+        // Debug-only: lets us QA the crisis sheet end-to-end without
+        // engineering fake risk state. Hidden in release builds.
+        if (kDebugMode) ...[
+          const SizedBox(height: 14),
+          _SectionLabel(label: 'DEBUG'),
+          _SettingsCard(
+            children: [
+              _SettingsRow(
+                iconBg: GQColors.accentSoft,
+                iconWidget: const Icon(Icons.bug_report_outlined,
+                    size: 14, color: GQColors.coral),
+                title: 'Test crisis intervention sheet',
+                subtitle: 'Opens the sheet without triggering real risk',
+                trailing: const _Chevron(),
+                onTap: () => showCrisisInterventionSheet(
+                  context,
+                  risk: RiskLevel.medium,
+                  source: 'settings_debug',
+                ),
+              ),
+            ],
+          ),
+        ],
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 14),
