@@ -20,11 +20,17 @@
 //   ADMIN_SECRET — Bearer token guarding /stats. Set via `wrangler secret put`.
 
 const ALLOWED_EVENTS  = new Set([
+  // Product funnel events.
   "landing_view",
   "install_sh_fetch",
   "mcp_ping",
   "purchase",
   "dashboard_open",
+  // Growth / distribution-automation events (growth-scheduler Worker).
+  "growth_enqueue",
+  "growth_posted",
+  "growth_error",
+  "growth_digest_error",
 ]);
 const ALLOWED_SURFACE = new Set(["macos", "linux", "windows"]);
 const ALLOWED_TIER    = new Set(["pro", "annual", "founder", "team"]);
@@ -224,6 +230,96 @@ async function handleStats(request, env, url) {
   });
 }
 
+// GET /funnel?days=N — admin-only Bearer auth. Returns stage-by-stage
+// conversion drop-off: each step's count + the ratio to the previous step.
+// Also includes growth-channel events (enqueued / posted / errors) so the
+// publisher health is visible alongside conversion health in one query.
+async function handleFunnel(request, env, url) {
+  const auth = request.headers.get("authorization") || "";
+  const expected = env.ADMIN_SECRET ? `Bearer ${env.ADMIN_SECRET}` : null;
+  if (!expected || auth !== expected) {
+    return jsonResponse({ error: "unauthorized" }, 401);
+  }
+  if (!env.ANALYTICS_ACCOUNT_ID || !env.ANALYTICS_API_TOKEN || !env.ANALYTICS) {
+    return jsonResponse({ error: "analytics not yet provisioned" }, 503);
+  }
+
+  const daysParam = parseInt(url.searchParams.get("days") || "7", 10);
+  const days = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= 90 ? daysParam : 7;
+
+  const dataset = env.ANALYTICS_DATASET || "eidetic_funnel";
+  const sql =
+    `SELECT blob1 AS event, SUM(_sample_interval) AS count ` +
+    `FROM ${dataset} ` +
+    `WHERE timestamp > NOW() - INTERVAL '${days}' DAY ` +
+    `GROUP BY event ` +
+    `FORMAT JSON`;
+
+  let counts = {};
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${env.ANALYTICS_ACCOUNT_ID}/analytics_engine/sql`,
+      {
+        method:  "POST",
+        headers: {
+          "Authorization": `Bearer ${env.ANALYTICS_API_TOKEN}`,
+          "Content-Type":  "text/plain",
+        },
+        body: sql,
+      },
+    );
+    if (!res.ok) {
+      return jsonResponse({ error: "analytics query failed", status: res.status }, 502);
+    }
+    const json = await res.json();
+    for (const row of (json.data || [])) {
+      counts[row.event] = Number(row.count) || 0;
+    }
+  } catch (err) {
+    return jsonResponse({ error: "analytics query error", detail: err && err.message }, 502);
+  }
+
+  // Funnel stages in declared order. ratio_from_prev shows how many of the
+  // previous stage's visitors made it to this one (0..1 or null when prev=0).
+  const stages = [
+    { name: "landing_view",     count: counts.landing_view     || 0 },
+    { name: "install_sh_fetch", count: counts.install_sh_fetch || 0 },
+    { name: "mcp_ping",         count: counts.mcp_ping         || 0 },
+    { name: "dashboard_open",   count: counts.dashboard_open   || 0 },
+    { name: "purchase",         count: counts.purchase         || 0 },
+  ];
+  for (let i = 0; i < stages.length; i++) {
+    if (i === 0) {
+      stages[i].ratio_from_prev = null;
+      stages[i].ratio_from_top = 1;
+    } else {
+      const prev = stages[i - 1].count;
+      const top  = stages[0].count;
+      stages[i].ratio_from_prev = prev > 0 ? Number((stages[i].count / prev).toFixed(4)) : null;
+      stages[i].ratio_from_top  = top  > 0 ? Number((stages[i].count / top ).toFixed(4)) : null;
+    }
+  }
+
+  // Growth-channel side metrics for distribution publisher visibility.
+  const growth = {
+    enqueued:     counts.growth_enqueue       || 0,
+    posted:       counts.growth_posted        || 0,
+    errors:       counts.growth_error         || 0,
+    digest_error: counts.growth_digest_error  || 0,
+    publish_success_ratio:
+      ((counts.growth_posted || 0) + (counts.growth_error || 0)) > 0
+        ? Number(((counts.growth_posted || 0) / ((counts.growth_posted || 0) + (counts.growth_error || 0))).toFixed(4))
+        : null,
+  };
+
+  return jsonResponse({
+    days,
+    stages,
+    growth,
+    raw_counts: counts,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -243,6 +339,10 @@ export default {
 
     if (url.pathname === "/stats" && request.method === "GET") {
       return handleStats(request, env, url);
+    }
+
+    if (url.pathname === "/funnel" && request.method === "GET") {
+      return handleFunnel(request, env, url);
     }
 
     if (url.pathname === "/" || url.pathname === "/health") {
