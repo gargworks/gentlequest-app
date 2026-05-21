@@ -201,14 +201,18 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
     HapticFeedback.lightImpact();
     // Every exercise in _kExercises has a scaffold mapping; ids without
     // one are kept out of the catalog (see the FUTURE WORK block above
-    // _kExercises) so we never need a "coming soon" fallback at the tap
-    // surface. Assertion-style — if a new id ever lands here without a
-    // mapping, fail fast in debug rather than silently no-op'ing.
+    // _kExercises). Assert in debug for fast-feedback during development;
+    // log + bail in release so a future-added unmapped id doesn't crash
+    // the app on the user.
     final scaffoldType = _exerciseScaffoldType(exercise);
     assert(scaffoldType != null,
         'Exercise ${exercise.id} has no scaffold mapping; '
         'add to _exerciseScaffoldType() or remove from _kExercises.');
-    ExerciseScaffoldScreen.show(context, scaffoldType!);
+    if (scaffoldType == null) {
+      debugPrint('[resource_library] no scaffold for ${exercise.id}; skipping tap');
+      return;
+    }
+    ExerciseScaffoldScreen.show(context, scaffoldType);
   }
 
   ExerciseType? _exerciseScaffoldType(_Exercise exercise) {
