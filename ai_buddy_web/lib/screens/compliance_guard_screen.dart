@@ -149,8 +149,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     }
   }
 
-  Future<void> _handleAgeVerification(bool isOver18) async {
-    if (!isOver18) {
+  Future<void> _handleAgeVerification(bool meetsMinAge) async {
+    if (!meetsMinAge) {
       setState(() {
         _status = ComplianceStatus.blockedAge;
       });
@@ -284,9 +284,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
       case ComplianceStatus.conversionRequired:
         return _buildConversionScreen();
       case ComplianceStatus.blockedAge:
+        final minAge = ComplianceService.minAgeForRegion(_storedRegion);
         return _buildBlockedScreen(
-          "Age Requirement",
-          "GentleQuest is designed for adults (18+). We cannot provide services to minors at this time due to regulatory restrictions.",
+          "Come back when you're $minAge",
+          "GentleQuest needs you to be $minAge or older in your region. We'll be here for you when the time comes — until then, please talk to a parent, school counselor, or a trusted adult if things feel heavy.",
         );
       case ComplianceStatus.blockedRegion:
         return _buildBlockedScreen(
@@ -952,6 +953,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildAgeGate() {
+    // Region is set after the IP/GPS step in the compliance flow. On the
+    // very first launch _storedRegion may be null — in that case use the
+    // universal floor (13) since unknown-region falls through to the
+    // permissive default per minAgeForRegion.
+    final minAge = ComplianceService.minAgeForRegion(_storedRegion);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -967,10 +973,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            const Text(
-              "GentleQuest is built for adults. We need to confirm you're 18 or older before you continue.",
+            Text(
+              // Copy was "built for adults · 18+" — softened so the
+              // high-school target audience doesn't bounce on first touch.
+              "GentleQuest is here for you. We just need to confirm you're $minAge or older to continue.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black87),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
             ),
             const SizedBox(height: 48),
             ElevatedButton(
@@ -980,12 +988,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
-              child: const Text("I am 18 or older", style: TextStyle(fontSize: 18)),
+              child: Text("I am $minAge or older", style: const TextStyle(fontSize: 18)),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => _handleAgeVerification(false),
-              child: const Text("I am under 18", style: TextStyle(fontSize: 16, color: Colors.grey)),
+              child: Text("I am under $minAge", style: const TextStyle(fontSize: 16, color: Colors.grey)),
             ),
           ],
         ),

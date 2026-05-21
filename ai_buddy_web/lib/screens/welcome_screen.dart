@@ -484,9 +484,11 @@ class _AgeModal extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              // Sub-heading — verbatim.
+              // Sub-heading — was "Are you 18 or older?" verbatim. Age gate
+              // lowered to 13+ on 2026-05-21 per app's original high-school
+              // objective; copy updated to match.
               Text(
-                'Are you 18 or older?',
+                'Are you 13 or older?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
@@ -551,7 +553,7 @@ class _AgeModal extends StatelessWidget {
               Text(
                 // VERBATIM: HTML — "We're built for adults…"
                 "We’re built for adults — that’s how we keep things safe.\n"
-                "If you’re under 18, here’s where to find support tailored for you →",
+                "If you’re under 13, here’s where to find support tailored for you →",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
@@ -767,9 +769,12 @@ class _Under18Screen extends StatelessWidget {
                             color: GQColors.ink,
                           ),
                           children: [
-                            // VERBATIM: HTML — "Come back when you're 18 — we'll be here."
+                            // Age gate lowered to 13+ on 2026-05-21 per
+                            // app's original "high school students"
+                            // objective; copy reworded from verbatim HTML
+                            // "Come back when you're 18 — we'll be here."
                             const TextSpan(
-                                text: 'Come back when you’re 18 — '),
+                                text: 'Come back when you’re 13 — '),
                             TextSpan(
                               text: 'we’ll be here.',
                               style: TextStyle(

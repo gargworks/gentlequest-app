@@ -35,10 +35,71 @@ class ComplianceService {
   // ============================================
   // PREFERENCE KEYS
   // ============================================
+  // Legacy key — kept as-is so existing 18+ verifications stay valid.
+  // Naming is a misnomer now (post-2026-05-21 the threshold is 13+ for
+  // most regions, see minAgeForRegion); the *bool value* just means
+  // "user attested to be of acceptable age for their region".
   static const String _kAgeVerifiedKey = 'compliance_age_verified_18_plus';
   static const String _kLocationVerifiedKey = 'compliance_location_verified';
   static const String _kVerifiedRegionKey = 'compliance_verified_region';
   static const String _kVerificationTimestampKey = 'compliance_verification_timestamp';
+
+  // ============================================
+  // AGE-GATE THRESHOLDS BY REGION
+  // ============================================
+  // Lowered from blanket 18+ on 2026-05-21 — original app objective was
+  // high-school students. The new floor is 13 (US COPPA / UK ICO digital
+  // age of consent) wherever local law allows, stepping up to 16 or 18
+  // for jurisdictions that mandate it. Default for unknown regions is the
+  // GLOBAL universal threshold (currently 13) — review with counsel
+  // before shipping to a market not already covered here.
+  //
+  // ⚠ LEGAL-REVIEW-NEEDED before public scale:
+  //   - India (DPDP 2023): article 9 effectively requires 18+ for
+  //     digital service consent unless verifiable parental consent flow
+  //     is built. We mark India 18+ below but parental-consent flow is
+  //     out of scope for Phase 1.
+  //   - EU member states that chose >13 under GDPR-K (DE/FR/IT/NL/IE/
+  //     LU/HU/LT/PL/RO/SK/CY/HR/EL): 16+.
+  //   - Australia: no specific minimum but eSafety Commissioner
+  //     guidance suggests 13+; treated as 13 here.
+  static const int _kMinAgeUniversal = 13;
+
+  /// Region-appropriate minimum age (years) before a user can use the app.
+  /// Region is the ISO 3166-1 alpha-2 code stored at `_kVerifiedRegionKey`
+  /// after the GPS / IP geolocation step. Returns the universal floor
+  /// (13) for unknown / unset regions so we err on the inclusive side per
+  /// the "lowest possible age basis compliance" direction; tighten later
+  /// once legal-review covers more markets.
+  static int minAgeForRegion(String? region) {
+    if (region == null || region.isEmpty) return _kMinAgeUniversal;
+    final r = region.toUpperCase();
+    // 18+ jurisdictions (digital-service consent age without parental flow)
+    if (const {'IN', 'INDIA'}.contains(r)) return 18;
+    // 16+ — EU member states that picked >13 under GDPR-K Article 8.
+    if (const {
+      'DE', 'GERMANY',
+      'FR', 'FRANCE',
+      'IT', 'ITALY',
+      'NL', 'NETHERLANDS',
+      'IE', 'IRELAND',
+      'LU', 'LUXEMBOURG',
+      'HU', 'HUNGARY',
+      'LT', 'LITHUANIA',
+      'PL', 'POLAND',
+      'RO', 'ROMANIA',
+      'SK', 'SLOVAKIA',
+      'CY', 'CYPRUS',
+      'HR', 'CROATIA',
+      'GR', 'GREECE', 'EL',
+    }.contains(r)) {
+      return 16;
+    }
+    // Everywhere else — 13 (US COPPA cutoff, UK ICO, most of EU, Australia,
+    // Canada, NZ). The hard-ban / pending-compliance state lists below
+    // (Illinois, Utah, Washington) still gate independently of age.
+    return _kMinAgeUniversal;
+  }
 
   // ============================================
   // 🔴 HARD BAN STATES (Permanent GPS Block)
