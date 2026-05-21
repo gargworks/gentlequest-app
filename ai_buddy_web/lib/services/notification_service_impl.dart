@@ -1,8 +1,18 @@
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+// ─── SharedPreferences keys (mirror settings_screen.dart) ──────────────────
+// These keys MUST stay in sync with the constants defined in
+// lib/screens/settings_screen.dart — the settings toggle persists state under
+// these keys and the schedulers below read the same keys before firing. If
+// they ever drift, toggling off in Settings would not actually suppress the
+// push. Source of truth is settings_screen.dart.
+const String _kPrefsStreakNudgeKey = 'notif_streak_nudge_v1';
+const String _kPrefsWorriedCheckinKey = 'notif_worried_checkin_v1';
 
 // ─── Notification IDs ──────────────────────────────────────────────────────
 // Each category gets a stable, distinct integer ID.  IDs must never collide.
@@ -687,12 +697,31 @@ class NotificationService {
 
   /// Schedule a streak nudge notification at [scheduledTime].
   ///
-  /// Only fires if [setStreakNudgeEnabled] has been called with true AND
-  /// [consecutiveDays] ≥ 3.  Suppressed if [heavyDayLogged] is true.
+  /// Wire-up site: call from [QuestsEngine.markComplete] (or any per-day
+  /// accounting touch point) after the daily-mood-log streak is updated. The
+  /// engine passes the current streak length and the desired fire time
+  /// (typically today 19:00 local — "haven't logged by 7 PM, here's a nudge").
+  ///
+  /// Gates (all must pass; any miss = early-return no-op):
+  ///   1. Web platform → no-op (push not supported on web).
+  ///   2. SharedPreferences `notif_streak_nudge_v1` → must be true. This is
+  ///      the persistent Settings toggle from settings_screen.dart. Reading
+  ///      it here means the engine doesn't need to know about prefs.
+  ///   3. In-service `_streakNudgeEnabled` → must be true. Settings flips this
+  ///      synchronously via [setStreakNudgeEnabled] when the toggle changes;
+  ///      it acts as a kill-switch for the rest of the session even before
+  ///      the prefs round-trip completes.
+  ///   4. [consecutiveDays] ≥ 3 → no streak worth protecting yet.
+  ///   5. [heavyDayLogged] = false → never push streak-shame after a heavy day.
+  ///   6. [_withinRateLimit] → respect the 1-per-4h / 2-per-day global cap.
+  ///
+  /// On every call (even if the gates fail) any prior pending streak nudge
+  /// (id [_streakNudgeId]) is cancelled first — this way the engine can fire
+  /// after each mood log and trust that "logged today" → "no stale 7 PM nudge".
   ///
   /// Copy verbatim from GentleQuest_Push_Notifications.html category 3:
-  ///   Title: "5 days in a row."
-  ///   Body:  "Quiet wins."
+  ///   Title (dynamic): "$consecutiveDays days in a row."
+  ///   Body:            "Quiet wins."
   ///
   /// Source: GentleQuest_Push_Notifications.html — streakNudge category.
   static Future<void> scheduleStreakNudge({
@@ -703,9 +732,34 @@ class NotificationService {
     if (kIsWeb) return;
     await _ensureInited();
 
+    // Always cancel any prior pending nudge — if the engine fires this after
+    // a fresh mood log, the previous "you forgot" nudge for today is moot.
+    // We do this BEFORE the gate checks so toggling off mid-day clears state
+    // even when the schedule call short-circuits below.
+    await _plugin.cancel(_streakNudgeId);
+
+    // Gate 1: SharedPreferences key. If the user toggled OFF in Settings,
+    // honour that even if the in-service flag is stale (e.g. Settings updated
+    // prefs but the engine still holds a true _streakNudgeEnabled in memory).
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefsEnabled = prefs.getBool(_kPrefsStreakNudgeKey) ?? false;
+      if (!prefsEnabled) {
+        debugPrint(
+            'NotificationService: streak nudge skipped — prefs opt-in false.');
+        return;
+      }
+    } catch (e) {
+      // SharedPreferences read failure shouldn't surface as a crash; treat as
+      // "no opt-in" (fail-closed for user-affecting push).
+      debugPrint(
+          'NotificationService: streak nudge skipped — prefs read failed: $e');
+      return;
+    }
+
     if (!_streakNudgeEnabled) {
       debugPrint(
-          'NotificationService: streak nudge skipped — opt-in not granted.');
+          'NotificationService: streak nudge skipped — in-service flag false.');
       return;
     }
     // Minimum 3+ consecutive days before nudging
@@ -732,7 +786,6 @@ class NotificationService {
       iOS: _iosDefault,
     );
 
-    await _plugin.cancel(_streakNudgeId);
     await _plugin.zonedSchedule(
       _streakNudgeId,
       // Title uses the actual streak count, not the hardcoded "5"
@@ -749,6 +802,125 @@ class NotificationService {
     _recordNonCrisisPush();
     debugPrint(
         'NotificationService: streak nudge scheduled at $tzTarget ($consecutiveDays-day streak)');
+  }
+
+  /// Cancel any pending streak nudge.
+  ///
+  /// Called by Settings when the user flips the toggle OFF, or by the engine
+  /// after a successful mood log clears today's "you forgot" risk window.
+  /// Safe to call even when no nudge is scheduled (no-op).
+  static Future<void> cancelStreakNudge() async {
+    if (kIsWeb) return;
+    await _ensureInited();
+    await _plugin.cancel(_streakNudgeId);
+    debugPrint('NotificationService: streak nudge cancelled.');
+  }
+
+  // ── Worried check-in (mood-event-driven) ────────────────────────────────
+
+  /// Schedule a 24-hour worried check-in after a low-mood log.
+  ///
+  /// Wire-up site: call from mood_provider.dart::addMoodEntry when
+  /// moodLevel <= 2 (Sad or worse). Owned by the mood-provider lane — this
+  /// scheduler exposes a clean API only.
+  ///
+  /// Behaviour:
+  ///   • If prefs key `notif_worried_checkin_v1` is false → cancel any
+  ///     pending check-in and return (user opted out).
+  ///   • If [latestMoodLevel] > 2 → cancel any pending check-in and return
+  ///     (the user's mood recovered; the worried follow-up is moot).
+  ///   • Otherwise → cancel any prior pending check-in, then schedule a fresh
+  ///     one for [entryTime] + 24 h. Replaces any prior pending check-in
+  ///     atomically (cancel-then-schedule), so back-to-back low logs collapse
+  ///     to one follow-up 24 h after the most recent log.
+  ///
+  /// Copy verbatim from GentleQuest_Push_Notifications.html category 2:
+  ///   Title: "Just checking in"
+  ///   Body:  "Yesterday felt heavy. Here when you're ready — no need to explain."
+  ///
+  /// NOTE: The spec brief used title "Just checking in 💜" and body "How are
+  /// you doing today?" — we deliberately keep the HTML-source-of-truth copy
+  /// instead. Any copy change must be traced back to the HTML.
+  ///
+  /// Source: GentleQuest_Push_Notifications.html — worriedCheckin category.
+  static Future<void> scheduleWorriedCheckin({
+    required int latestMoodLevel,
+    required DateTime entryTime,
+  }) async {
+    if (kIsWeb) return;
+    await _ensureInited();
+
+    // Read opt-in state first — if the user toggled OFF in Settings, honour
+    // that and cancel any pending check-in we may have queued earlier.
+    bool prefsEnabled = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      prefsEnabled = prefs.getBool(_kPrefsWorriedCheckinKey) ?? false;
+    } catch (e) {
+      debugPrint(
+          'NotificationService: worried check-in prefs read failed: $e');
+      prefsEnabled = false; // fail-closed
+    }
+
+    if (!prefsEnabled) {
+      await _plugin.cancel(_worriedCheckinId);
+      debugPrint(
+          'NotificationService: worried check-in skipped — prefs opt-in false.');
+      return;
+    }
+
+    // Mood recovered? Cancel any pending check-in and exit. Threshold matches
+    // the spec brief: mood <= 2 (Sad or worse) qualifies; anything above is
+    // the recovery / no-op path.
+    if (latestMoodLevel > 2) {
+      await _plugin.cancel(_worriedCheckinId);
+      debugPrint(
+          'NotificationService: worried check-in cancelled — mood $latestMoodLevel > 2 (recovered).');
+      return;
+    }
+
+    if (!_withinRateLimit()) {
+      debugPrint(
+          'NotificationService: worried check-in skipped — rate limit.');
+      return;
+    }
+
+    // 24 h after the entry. If that lands in strict quiet hours
+    // (22:00–08:00), push to 08:00 the next morning but cap at 36 h total to
+    // match scheduleMoodLowFollowup's existing window.
+    DateTime target = entryTime.add(const Duration(hours: 24));
+    if (_isInQuietHours(target, strictMode: true)) {
+      final next = DateTime(target.year, target.month, target.day + 1, 8, 0);
+      final maxTarget = entryTime.add(const Duration(hours: 36));
+      target = next.isBefore(maxTarget) ? next : maxTarget;
+      debugPrint(
+          'NotificationService: worried check-in rescheduled out of quiet hours → $target');
+    }
+
+    final tzTarget = tz.TZDateTime.from(target, tz.local);
+
+    final details = NotificationDetails(
+      android: _androidDetails(channel: _channelWorriedCheckin),
+      iOS: _iosDefault,
+    );
+
+    // Replace any prior pending check-in atomically (cancel-then-schedule).
+    await _plugin.cancel(_worriedCheckinId);
+    await _plugin.zonedSchedule(
+      _worriedCheckinId,
+      _worriedCheckinTitle,
+      _worriedCheckinBody,
+      tzTarget,
+      details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'gq://chat?source=push_worried',
+    );
+
+    _recordNonCrisisPush();
+    debugPrint(
+        'NotificationService: worried check-in scheduled at $tzTarget (mood=$latestMoodLevel)');
   }
 
   // ── Legacy API (unchanged — backward compat) ────────────────────────────

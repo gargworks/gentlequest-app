@@ -81,4 +81,17 @@ class NotificationService {
   }) async {
     // no-op on web
   }
+
+  /// No-op on web. See notification_service_impl.dart for full implementation.
+  static Future<void> cancelStreakNudge() async {
+    // no-op on web
+  }
+
+  /// No-op on web. See notification_service_impl.dart for full implementation.
+  static Future<void> scheduleWorriedCheckin({
+    required int latestMoodLevel,
+    required DateTime entryTime,
+  }) async {
+    // no-op on web
+  }
 }

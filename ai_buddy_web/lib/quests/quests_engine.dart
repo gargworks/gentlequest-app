@@ -12,6 +12,12 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Platform-routed NotificationService (web stub on web, native impl elsewhere).
+// We use this to schedule a streak nudge after a successful mood-log
+// completion; the service itself owns prefs/opt-in gating, quiet-hours, and
+// the 3-day minimum, so this engine only needs to pass the current streak.
+import '../services/notification_service.dart';
+
 /// Tags allowed for quests
 enum QuestTag { task, tip, resource, reminder, checkin, progress }
 
@@ -440,6 +446,47 @@ class QuestsEngine {
         '[QuestsEngine] markComplete questId=$questId completes=${_telemetry[questId]['completes']}',
       );
     }
+
+    // Daily-mood-log accounting just landed: re-schedule the streak nudge.
+    // The notification service owns the opt-in / quiet-hours / 3-day-min
+    // gates, so we always call it and let it decide whether to fire. The
+    // nudge fires at the next 19:00 local that's still in the future: since
+    // we just completed today, that's tomorrow 19:00 in the common case (or
+    // today 19:00 if completion happened before 7 PM and another log might
+    // still happen tonight — the scheduler's idempotent cancel-then-schedule
+    // makes either case safe).
+    await _maybeScheduleStreakNudge();
+  }
+
+  /// Compute the current daily streak and ask NotificationService to schedule
+  /// (or skip / cancel) tomorrow's streak nudge. Safe to call after any
+  /// completion-touching method. Errors swallowed so engine work isn't
+  /// derailed by a notification platform hiccup or missing widget binding
+  /// (e.g. in pure-Dart tests).
+  Future<void> _maybeScheduleStreakNudge() async {
+    try {
+      final streak = computeDailyStreak();
+      final fireAt = _nextSevenPm(_now());
+      await NotificationService.scheduleStreakNudge(
+        consecutiveDays: streak,
+        scheduledTime: fireAt,
+      );
+    } catch (e) {
+      // Notification scheduling is best-effort. If the platform isn't ready
+      // (e.g. pure-Dart unit tests without widget bindings), log and move on
+      // instead of failing the surrounding completion flow.
+      if (kDebugMode && _debugVerbose) {
+        debugPrint('[QuestsEngine] streak nudge schedule failed: $e');
+      }
+    }
+  }
+
+  /// Return the next 19:00 local that's strictly in the future. If [from] is
+  /// before 19:00 today, returns today 19:00; otherwise tomorrow 19:00.
+  DateTime _nextSevenPm(DateTime from) {
+    final today7pm = DateTime(from.year, from.month, from.day, 19, 0);
+    if (today7pm.isAfter(from)) return today7pm;
+    return today7pm.add(const Duration(days: 1));
   }
 
   /// Undo today's completion, used by UI 'Undo' actions.

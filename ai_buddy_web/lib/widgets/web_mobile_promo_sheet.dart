@@ -28,21 +28,32 @@ class WebMobilePromoSheet extends StatelessWidget {
 
   /// Shows the sheet at most once per device. No-op on non-web platforms.
   /// Safe to call from a post-frame callback on chat screen first mount.
+  ///
+  /// Conversion-ramp policy: we only persist the "seen" flag on EXPLICIT
+  /// dismiss (the "Continue on web" / store-link / sign-in buttons pop with
+  /// `result == true`). Outside-tap barrier dismiss resolves to `null` and
+  /// is treated as accidental — the sheet will re-show on next launch so we
+  /// don't burn the only conversion impression on a stray tap.
   static Future<void> maybeShow(BuildContext context) async {
     if (!kIsWeb) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.getBool(_prefsKey) ?? false) return;
       if (!context.mounted) return;
-      await showModalBottomSheet<void>(
+      final result = await showModalBottomSheet<bool>(
         context: context,
         showDragHandle: true,
         isScrollControlled: true,
+        isDismissible: true, // outside-tap allowed but not treated as informed
         backgroundColor: Colors.white,
         builder: (ctx) => const WebMobilePromoSheet(),
       );
-      await prefs.setBool(_prefsKey, true);
-      FirebaseService().logEvent('web_mobile_promo_shown');
+      FirebaseService().logEvent('web_mobile_promo_shown', {
+        'dismissed_explicitly': result == true,
+      });
+      if (result == true) {
+        await prefs.setBool(_prefsKey, true);
+      }
     } catch (_) {
       // Non-fatal — sheet won't render if prefs fail; user keeps using web.
     }
@@ -61,12 +72,12 @@ class WebMobilePromoSheet extends StatelessWidget {
       // Silent — user can copy the link from the visible button text
       // if launch fails (rare on browsers with popup blockers).
     }
-    if (context.mounted) Navigator.of(context).maybePop();
+    if (context.mounted) Navigator.of(context).maybePop(true);
   }
 
   Future<void> _openSignIn(BuildContext context) async {
     FirebaseService().logEvent('web_mobile_promo_signin_click');
-    Navigator.of(context).maybePop();
+    Navigator.of(context).maybePop(true);
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
@@ -139,7 +150,10 @@ class WebMobilePromoSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => Navigator.of(context).maybePop(),
+              // Explicit "I've seen this, don't show again" — pop with `true`
+              // so maybeShow() persists the seen flag. Outside-tap dismiss
+              // returns null and re-shows on next launch.
+              onPressed: () => Navigator.of(context).maybePop(true),
               child: const Text(
                 'Continue on web',
                 style: TextStyle(

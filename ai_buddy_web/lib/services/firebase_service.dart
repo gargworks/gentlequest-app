@@ -126,27 +126,38 @@ class FirebaseService {
         parameters: typedParams,
       );
     } catch (e) {
-      debugPrint('Analytics event failed: $e');
+      debugPrint('[firebase] logEvent($name) failed: $e');
     }
   }
 
   Future<void> logScreenView(String screenName) async {
     if (!_initialized) return;
-
-    await _analytics.logScreenView(
-      screenName: screenName,
-      screenClass: screenName,
-    );
+    try {
+      await _analytics.logScreenView(
+        screenName: screenName,
+        screenClass: screenName,
+      );
+    } catch (e) {
+      debugPrint('[firebase] logScreenView failed: $e');
+    }
   }
 
   Future<void> setUserId(String? userId) async {
     if (!_initialized) return;
-    await _analytics.setUserId(id: userId);
+    try {
+      await _analytics.setUserId(id: userId);
+    } catch (e) {
+      debugPrint('[firebase] setUserId failed: $e');
+    }
   }
 
   Future<void> setUserProperty(String name, String? value) async {
     if (!_initialized) return;
-    await _analytics.setUserProperty(name: name, value: value);
+    try {
+      await _analytics.setUserProperty(name: name, value: value);
+    } catch (e) {
+      debugPrint('[firebase] setUserProperty failed: $e');
+    }
   }
 
   // Crashlytics (mobile only - no-op on web)
@@ -156,17 +167,29 @@ class FirebaseService {
     bool fatal = false,
   }) async {
     if (!_initialized || _crashlytics == null) return;
-    await _crashlytics!.recordError(exception, stack, fatal: fatal);
+    try {
+      await _crashlytics!.recordError(exception, stack, fatal: fatal);
+    } catch (e) {
+      debugPrint('[firebase] recordError failed: $e');
+    }
   }
 
   Future<void> log(String message) async {
     if (!_initialized || _crashlytics == null) return;
-    _crashlytics!.log(message);
+    try {
+      _crashlytics!.log(message);
+    } catch (e) {
+      debugPrint('[firebase] log failed: $e');
+    }
   }
 
   Future<void> setCustomKey(String key, dynamic value) async {
     if (!_initialized || _crashlytics == null) return;
-    _crashlytics!.setCustomKey(key, value);
+    try {
+      _crashlytics!.setCustomKey(key, value);
+    } catch (e) {
+      debugPrint('[firebase] setCustomKey failed: $e');
+    }
   }
 
   // Common events for mental health app

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
 import '../models/interactive_exercise.dart';
 import '../navigation/home_tab_deeplink.dart';
+import '../services/notification_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'exercises/breathing_exercise_widget.dart';
 
@@ -17,14 +18,30 @@ import 'exercises/breathing_exercise_widget.dart';
 ///   • no-streak-shame (#11) → no metrics shown
 ///   • optional>required     → all CTAs are optional, skip always present
 ///   • save-exit-always      → "Skip for now" always visible
-void showMoodLowReflectionSheet(BuildContext context) {
+///
+/// [latestMoodLevel] (1–2 range expected) is forwarded to
+/// [NotificationService.scheduleWorriedCheckin] when the sheet completes,
+/// so the user receives a follow-up "worried check-in" notification.
+/// Default is `null`, in which case the check-in is skipped — useful for
+/// tests and any caller that doesn't have the level handy.
+///
+/// TODO(wiring): callers in `mood_tracker.dart` should pass
+/// `latestMoodLevel: moodLevel` when invoking this. As of 2026-05-21 the
+/// existing call site at `mood_tracker.dart:746` does not pass it; without
+/// the parameter the worried check-in won't schedule. Update that call to
+/// `showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);` once
+/// the mood_tracker.dart owner approves.
+void showMoodLowReflectionSheet(
+  BuildContext context, {
+  int? latestMoodLevel,
+}) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     // useRootNavigator so it floats above the mood dialog that was just popped
     useRootNavigator: true,
-    builder: (_) => const _ReflectionSheet(),
+    builder: (_) => _ReflectionSheet(latestMoodLevel: latestMoodLevel),
   );
 }
 
@@ -62,7 +79,12 @@ BreathingExercise _buildBoxBreathing() => BreathingExercise(
 // ─── Sheet widget ─────────────────────────────────────────────────────────────
 
 class _ReflectionSheet extends StatefulWidget {
-  const _ReflectionSheet();
+  const _ReflectionSheet({this.latestMoodLevel});
+
+  /// Mood level that triggered this sheet (1–2 expected). Forwarded to the
+  /// notification service when the sheet completes so we can schedule a
+  /// follow-up worried check-in. `null` skips scheduling.
+  final int? latestMoodLevel;
 
   @override
   State<_ReflectionSheet> createState() => _ReflectionSheetState();
@@ -72,6 +94,7 @@ class _ReflectionSheetState extends State<_ReflectionSheet>
     with SingleTickerProviderStateMixin {
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fadeAnim;
+  late final DateTime _entryTime;
 
   // State: null = showing CTAs, 'breathing' = showing inline breathing widget
   String? _activeView;
@@ -80,9 +103,14 @@ class _ReflectionSheetState extends State<_ReflectionSheet>
   Timer? _autoTimer;
   bool _fadingOut = false;
 
+  // Schedule-on-complete guard so the worried check-in fires exactly once
+  // even if multiple dismiss paths race (e.g. autoTimer + manual pop).
+  bool _scheduledWorriedCheckin = false;
+
   @override
   void initState() {
     super.initState();
+    _entryTime = DateTime.now();
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: GQDurations.fade,
@@ -98,8 +126,32 @@ class _ReflectionSheetState extends State<_ReflectionSheet>
     super.dispose();
   }
 
+  /// Schedule a worried check-in notification on sheet completion.
+  /// Idempotent — guards against duplicate fires on racing dismiss paths.
+  /// No-op when [latestMoodLevel] wasn't supplied (e.g. tests, legacy
+  /// callers — see TODO in [showMoodLowReflectionSheet]).
+  Future<void> _maybeScheduleWorriedCheckin() async {
+    if (_scheduledWorriedCheckin) return;
+    final level = widget.latestMoodLevel;
+    if (level == null) return;
+    _scheduledWorriedCheckin = true;
+    try {
+      await NotificationService.scheduleWorriedCheckin(
+        latestMoodLevel: level,
+        entryTime: _entryTime,
+      );
+    } catch (e) {
+      // Non-fatal — sheet completes regardless. Notification service
+      // failures (permission denied, plugin missing on web, etc.) shouldn't
+      // bubble up. Surface for dev visibility.
+      debugPrint('[mood_low_sheet] scheduleWorriedCheckin failed: $e');
+    }
+  }
+
   void _dismiss() {
     if (!mounted) return;
+    // Fire-and-forget — don't block the pop on async scheduling.
+    _maybeScheduleWorriedCheckin();
     Navigator.of(context).pop();
   }
 

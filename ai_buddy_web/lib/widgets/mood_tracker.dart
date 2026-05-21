@@ -743,7 +743,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             if (moodLevel <= 2) {
-              showMoodLowReflectionSheet(context);
+              showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);
             } else if (moodLevel == 5) {
               // streakDays already computed above with fresh provider state.
               showMoodGreatReflectionSheet(context, streakDays: streakDays!);

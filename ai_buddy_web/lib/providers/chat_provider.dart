@@ -396,9 +396,18 @@ class ChatProvider extends ChangeNotifier {
                 ...(event['exercise'] as Map<String, dynamic>),
               });
             } catch (e) {
-              if (kDebugMode) {
-                debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
-              }
+              // Don't crash — degrade gracefully (chat bubble renders, just
+              // without the exercise card). But surface the failure so we
+              // can see malformed Gemini payloads in dev + analytics.
+              debugPrint('🧩 [SSE meta] Error parsing exercise: $e');
+              final exerciseMap = event['exercise'];
+              final rawKeys = exerciseMap is Map
+                  ? exerciseMap.keys.join(',')
+                  : '<not-a-map>';
+              FirebaseService().logEvent('sse_exercise_parse_failed', {
+                'error': e.toString(),
+                'raw_keys': rawKeys,
+              });
             }
           }
 
