@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ai_buddy_web/screens/chat_screen.dart';
+import 'package:ai_buddy_web/theme/gq_tokens.dart';
 import 'package:ai_buddy_web/widgets/mood_tracker.dart';
 import 'package:ai_buddy_web/widgets/self_assessment_screen.dart';
 import 'package:ai_buddy_web/widgets/task_list_screen.dart';
@@ -46,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
         ],
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFFE94057),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: GQColors.coral,
+        unselectedItemColor: GQColors.ink3,
       ),
     );
   }

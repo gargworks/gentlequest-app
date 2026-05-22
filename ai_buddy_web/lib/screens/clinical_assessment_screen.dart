@@ -1366,16 +1366,16 @@ class _ResultRevealScreen extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFFB33636),
+                                color: GQColors.coral,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Color(0xFFB33636),
+                                decorationColor: GQColors.coral,
                                 height: 1.4,
                               ),
                             ),
                             SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_rounded,
-                              color: Color(0xFFB33636),
+                              color: GQColors.coral,
                               size: 14,
                             ),
                           ],
@@ -1444,9 +1444,9 @@ class _SeverityBandViz extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                   gradient: const LinearGradient(
                     colors: [
-                      Color(0xFFBFD3FF),
-                      Color(0xFFC9B7F0),
-                      Color(0xFFC49AD9),
+                      GQColors.moodOkay,
+                      GQColors.moodOkay,
+                      GQColors.moodRough,
                       Color(0xFFE89A95),
                       Color(0xFFD87C7C),
                     ],
@@ -1903,7 +1903,7 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
           _BridgeOptionCard(
             iconEmoji: '🤍',
             iconBg: GQColors.coral.withAlpha(46),
-            iconColor: const Color(0xFFB33636),
+            iconColor: GQColors.coral,
             title: 'Just having a heavy moment', // verbatim from HTML
             subtitle: 'Continue. We\'ll check in tomorrow.',
             style: _BridgeCardStyle.coral,
@@ -1930,7 +1930,7 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
                 children: [
                   const Icon(
                     Icons.phone_rounded,
-                    color: Color(0xFFB33636),
+                    color: GQColors.coral,
                     size: 16,
                   ),
                   const SizedBox(width: 6),
@@ -1940,7 +1940,7 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFFB33636),
+                      color: GQColors.coral,
                     ),
                   ),
                 ],
