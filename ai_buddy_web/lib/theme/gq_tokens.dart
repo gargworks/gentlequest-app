@@ -89,6 +89,18 @@ class GQColors {
   /// Source: GentleQuest_Offline_States.html --gq-amber-soft: #FBF1DC (R1D12)
   static const amberSoft = Color(0xFFFBF1DC);
 
+  /// Coral dark — pressed/dark coral, on-light text accent.
+  /// Source: agent ruling 2026-05-22 (compliance_guard L360/L683/L1460 sweep).
+  static const coralDk = Color(0xFFE0494C);
+
+  /// Success soft tint — pale green background for "safe / passed" surfaces.
+  /// Source: agent ruling 2026-05-22 (compliance_guard L695/L698 sweep).
+  static const successSoft = Color(0xFFE8F4EE);
+
+  /// Success ink — green foreground for success copy / icons.
+  /// Source: agent ruling 2026-05-22 (compliance_guard L696/L699/L873 sweep).
+  static const successInk = Color(0xFF3F8B6A);
+
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
   /// Warm peach tint — start of crisis gradient / icon halos.
