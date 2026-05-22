@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+
+import '../models/message.dart' show RiskLevel;
 import '../services/api_service.dart';
+import '../services/analytics_service.dart' show logAnalyticsEvent;
+import '../theme/gq_tokens.dart';
+import 'crisis_resources.dart';
+import 'q9_crisis_bridge_sheet.dart';
 
 /// Clinical assessment widget for PHQ-9 (depression) and GAD-7 (anxiety) screening.
 class ClinicalAssessmentWidget extends StatefulWidget {
@@ -77,7 +83,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please answer all questions before submitting.'),
-          backgroundColor: Colors.orange,
+          backgroundColor: GQColors.amber,
         ),
       );
       return;
@@ -103,7 +109,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: GQColors.coral,
           ),
         );
       }
@@ -114,6 +120,45 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
     setState(() {
       _responses[_currentQuestionIndex] = value;
     });
+  }
+
+  /// True when the user is about to advance/submit from PHQ-9 Q9
+  /// with a score of >= 1. The bridge sheet fires once at this gate
+  /// per R1D8 Chunk 7 spec.
+  bool get _isQ9TriggerArmed =>
+      widget.assessmentType == 'phq9' &&
+      _currentQuestionIndex == 8 &&
+      _responses.length > 8 &&
+      _responses[8] >= 1;
+
+  /// Shows the Q9 soft bridge if armed; returns whether the caller may
+  /// continue with the underlying submit/next path. Returning false
+  /// means the bridge already handled the flow (e.g. talk-now opens
+  /// crisis support and submits).
+  Future<bool> _maybeShowQ9Bridge() async {
+    if (!_isQ9TriggerArmed) return true;
+    await logAnalyticsEvent('phq9_q9_bridge_shown',
+        metadata: {'score': _responses[8]});
+    if (!mounted) return false;
+    final action = await Q9CrisisBridgeSheet.show(context);
+    if (!mounted) return false;
+    await logAnalyticsEvent('phq9_q9_bridge_choice',
+        metadata: {'action': action?.name ?? 'dismissed'});
+    if (!mounted) return false;
+    switch (action) {
+      case Q9BridgeAction.talkNow:
+        // Submit before any pop so the honest Q9 answer is preserved
+        // in the user's record even though the assessment paused.
+        await _submitAssessment();
+        return false;
+      case Q9BridgeAction.heavyMoment:
+        await logAnalyticsEvent('q9_heavy_moment_flagged');
+        // TODO(feat/q9-followup-notification): schedule 24h check-in
+        return true;
+      case Q9BridgeAction.keepGoing:
+      case null:
+        return true;
+    }
   }
 
   void _nextQuestion() {
@@ -131,17 +176,17 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
   Color _getSeverityColor(String severity) {
     switch (severity) {
       case 'minimal':
-        return Colors.green;
+        return GQColors.moodGreat;
       case 'mild':
-        return Colors.lightGreen;
+        return GQColors.moodGood;
       case 'moderate':
-        return Colors.orange;
+        return GQColors.amber;
       case 'moderately_severe':
-        return Colors.deepOrange;
+        return GQColors.coral;
       case 'severe':
-        return Colors.red;
+        return GQColors.coral;
       default:
-        return Colors.grey;
+        return GQColors.ink3;
     }
   }
 
@@ -165,7 +210,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 48, color: GQColors.coral),
             const SizedBox(height: 16),
             Text('Error: $_errorMessage'),
             const SizedBox(height: 16),
@@ -206,20 +251,20 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           const SizedBox(height: 8),
           Text(
             _assessmentDescription,
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: const TextStyle(color: GQColors.ink3, fontSize: 14),
           ),
           const SizedBox(height: 16),
 
           // Progress indicator
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: GQColors.hair,
             color: Theme.of(context).primaryColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            style: const TextStyle(color: GQColors.ink3, fontSize: 12),
           ),
           const SizedBox(height: 24),
 
@@ -227,8 +272,8 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(12),
+              color: GQColors.primarySoft,
+              borderRadius: BorderRadius.circular(GQRadii.card),
             ),
             child: Text(
               question['text'] ?? '',
@@ -251,11 +296,11 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                      : Colors.grey[100],
+                      : GQColors.softBg,
                   border: Border.all(
                     color: isSelected
                         ? Theme.of(context).primaryColor
-                        : Colors.grey[300]!,
+                        : GQColors.hair,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -273,7 +318,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).primaryColor
-                              : Colors.grey,
+                              : GQColors.ink3,
                           width: 2,
                         ),
                       ),
@@ -315,7 +360,15 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: selectedValue >= 0
-                      ? (isLastQuestion ? _submitAssessment : _nextQuestion)
+                      ? () async {
+                          final canContinue = await _maybeShowQ9Bridge();
+                          if (!canContinue) return;
+                          if (isLastQuestion) {
+                            _submitAssessment();
+                          } else {
+                            _nextQuestion();
+                          }
+                        }
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
@@ -417,7 +470,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: GQColors.softBg,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -426,26 +479,55 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
             ),
           ),
 
-          // Follow-up warning
+          // Follow-up warmth — coral (Principle #1: never red),
+          // CrisisResourcesWidget surfaces 988 + region-local lines.
           if (requiresFollowUp) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red),
+                color: GQColors.coral.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(GQRadii.card),
+                border: Border.all(
+                  color: GQColors.coral.withValues(alpha: 0.22),
+                ),
               ),
-              child: const Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.warning, color: Colors.red),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'If you\'re having thoughts of self-harm, please reach out to a crisis helpline or trusted person.',
-                      style: TextStyle(color: Colors.red),
+                  Row(
+                    children: const [
+                      Icon(Icons.favorite_border,
+                          color: GQColors.coral, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        "WE'RE HERE",
+                        style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: GQColors.coral,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "If it's heavy right now, you don't have to be alone with it.",
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 14.5,
+                      color: GQColors.ink,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  // requiresFollowUp implies clinical-screen Q9 >= 1 or
+                  // PHQ-9 severity ≥ moderate; treat as 'high' so the
+                  // inline legacy crisis card surfaces 988 + local lines.
+                  const CrisisResourcesWidget(riskLevel: RiskLevel.high),
                 ],
               ),
             ),
