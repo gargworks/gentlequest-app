@@ -555,6 +555,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _SettingsCard(
           children: [
             _SettingsRow(
+              // IMG-TINT: lavender-soft icon-bg tint (agent ruling 2026-05-22 keep raw)
               iconBg: const Color(0xFFF4F0FA),
               iconWidget: const Icon(Icons.info_outline,
                   size: 14, color: GQColors.primaryDk),
@@ -997,7 +998,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
               width: 44,
               height: 5,
               decoration: BoxDecoration(
-                  color: const Color(0xFFE5E2EE),
+                  color: GQColors.hair,
                   borderRadius: BorderRadius.circular(100)),
             ),
           ),
@@ -1108,6 +1109,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
+              // IMG-TINT: pink-soft icon-bg tint (agent ruling 2026-05-22 keep raw)
               color: const Color(0xFFFBF1F4),
               border: Border.all(color: GQColors.coral, width: 1.5),
               borderRadius: BorderRadius.circular(14),
@@ -1125,7 +1127,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                 hintText: 'DELETE',
                 hintStyle: TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFFCCCCCC),
+                    color: GQColors.hair,
                     letterSpacing: 1.0),
               ),
               autocorrect: false,
