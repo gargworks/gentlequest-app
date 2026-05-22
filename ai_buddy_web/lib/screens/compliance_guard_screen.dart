@@ -966,7 +966,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.verified_user_outlined, size: 80, color: Color(0xFF667EEA)),
+            const Icon(Icons.verified_user_outlined, size: 80, color: GQColors.primary),
             const SizedBox(height: 24),
             Text(
               "One quick check",
@@ -985,7 +985,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: () => _handleAgeVerification(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF667EEA),
+                backgroundColor: GQColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
@@ -994,7 +994,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => _handleAgeVerification(false),
-              child: Text("I am under $minAge", style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              child: Text("I am under $minAge", style: const TextStyle(fontSize: 16, color: GQColors.ink3)),
             ),
           ],
         ),
@@ -1010,7 +1010,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.location_on_outlined, size: 80, color: Color(0xFFFF6B6B)),
+            const Icon(Icons.location_on_outlined, size: 80, color: GQColors.coral),
             const SizedBox(height: 24),
             Text(
               "Regional Verification",
@@ -1027,13 +1027,13 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const Text(
               "We perform a one-time check. We do not track you.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: GQColors.ink3),
             ),
             const SizedBox(height: 48),
             ElevatedButton(
               onPressed: _requestLocation,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B6B),
+                backgroundColor: GQColors.coral,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
@@ -1045,7 +1045,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 child: Text(
                   "Please enable Location Services in your device settings to proceed.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: GQColors.coral),
                 ),
               ),
           ],
@@ -1072,7 +1072,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.refresh,
-                size: 80, color: Color(0xFF667EEA)),
+                size: 80, color: GQColors.primary),
             const SizedBox(height: 24),
             Text(
               "Something went sideways",
@@ -1089,7 +1089,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: _checkStatus,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF667EEA),
+                backgroundColor: GQColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                 foregroundColor: Colors.white,
               ),
@@ -1317,7 +1317,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 const Text(
                   "Blocked users retain full rights to their data.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: GQColors.ink3),
                 ),
               ],
 
@@ -1352,7 +1352,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 60, color: Colors.orange),
+            const Icon(Icons.error_outline, size: 60, color: GQColors.amber),
             const SizedBox(height: 16),
             const Text("Verification Failed", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -1364,7 +1364,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: _checkStatus,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF667EEA),
+                backgroundColor: GQColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               ),
@@ -1376,14 +1376,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               child: const Text(
                 "Having trouble? We can verify your region another way",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF667EEA)),
+                style: TextStyle(color: GQColors.primaryDk),
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               "Alternative verification uses your internet connection instead of GPS.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: GQColors.ink3),
             ),
           ],
         ),
