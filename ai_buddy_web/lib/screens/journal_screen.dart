@@ -578,6 +578,7 @@ class _JournalEmptyState extends StatelessWidget {
               "What's worth remembering?",
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontFamily: GQTypography.journalSerif,
                 fontSize: 26,
                 fontWeight: FontWeight.w600,
                 color: GQColors.ink,
@@ -996,8 +997,8 @@ class _StarterChip extends StatelessWidget {
               child: Text(
                 text,
                 style: const TextStyle(
-                  fontFamily: GQTypography.bodyFamily,
-                  fontSize: 15,
+                  fontFamily: GQTypography.handwritten,
+                  fontSize: 17,
                   fontWeight: FontWeight.w500,
                   color: GQColors.ink,
                   letterSpacing: 0.2,
@@ -1391,6 +1392,7 @@ class _JournalEntryCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
+                      fontFamily: GQTypography.journalSerif,
                       fontSize: 13.5,
                       color: GQColors.ink,
                       height: 1.4,
@@ -1621,12 +1623,13 @@ class _JournalEntryView extends StatelessWidget {
                 ),
               ),
 
-            // Entry body
+            // Entry body — R1D14 serif intimacy (Fraunces)
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 8, 22, 16),
               child: Text(
                 entry.body,
                 style: const TextStyle(
+                  fontFamily: GQTypography.journalSerif,
                   fontSize: 17,
                   height: 1.7,
                   color: GQColors.ink,
