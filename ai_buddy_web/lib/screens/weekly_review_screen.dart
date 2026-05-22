@@ -1135,7 +1135,7 @@ class _CrisisLineRow extends StatelessWidget {
               color: Colors.white,
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFFC44A4A).withValues(alpha: 0.18),
+                color: GQColors.dangerInk.withValues(alpha: 0.18),
               ),
             ),
             child: const Icon(Icons.phone_outlined,

@@ -438,7 +438,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconWidget: const Icon(Icons.delete_outline,
                   size: 14, color: GQColors.coral),
               title: 'Delete my account',
-              titleColor: const Color(0xFFC44A4A),
+              titleColor: GQColors.dangerInk,
               subtitle: 'Permanently removes everything',
               trailing: const _Chevron(),
               onTap: _openDeleteSheet,
@@ -685,7 +685,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // DELETE APP DATA — destructive at the bottom (P13)
         _SectionLabel(
           label: 'DELETE APP DATA',
-          color: const Color(0xFFC44A4A),
+          color: GQColors.dangerInk,
         ),
         _EraseLocalDataBtn(
           onTap: () => _showEraseLocalDataDialog(context),
@@ -733,7 +733,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconWidget: const Icon(Icons.delete_outline,
                   size: 14, color: GQColors.coral),
               title: 'Delete my account',
-              titleColor: const Color(0xFFC44A4A),
+              titleColor: GQColors.dangerInk,
               trailing: const _Chevron(),
               onTap: _openDeleteSheet,
             ),
@@ -1016,7 +1016,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.warning_amber_outlined,
-                size: 26, color: Color(0xFFC44A4A)),
+                size: 26, color: GQColors.dangerInk),
           ),
           const SizedBox(height: 12),
 

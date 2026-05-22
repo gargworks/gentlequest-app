@@ -1921,9 +1921,9 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEBEB), // rgba(196,74,74,0.08) approx
+                color: GQColors.dangerSoft,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x33C44A4A)),
+                border: Border.all(color: GQColors.dangerInk.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
