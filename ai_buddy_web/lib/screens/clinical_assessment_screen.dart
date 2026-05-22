@@ -1812,6 +1812,7 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
+                  // IMG-TINT: gradient stop paired with accentSoft (agent ruling 2026-05-22 keep raw)
                   colors: [Color(0xFFFFF1E5), GQColors.accentSoft],
                 ),
               ),

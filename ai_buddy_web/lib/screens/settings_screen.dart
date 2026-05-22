@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _openNotificationDetail,
               ),
               _SettingsRow(
-                iconBg: const Color(0xFFFFF1E5),
+                iconBg: GQColors.warmSoft,
                 iconWidget: const Text('🔥',
                     style: TextStyle(fontSize: 14)),
                 title: 'Streak gentle nudge',
@@ -771,7 +771,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: _GQToggle(value: false, onChanged: null),
                 ),
                 _SettingsRow(
-                  iconBg: const Color(0xFFFFF1E5),
+                  iconBg: GQColors.warmSoft,
                   iconWidget: const Text('🔥', style: TextStyle(fontSize: 14)),
                   title: 'Streak gentle nudge',
                   trailing: _GQToggle(value: false, onChanged: null),
@@ -1011,6 +1011,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
+                // IMG-TINT: gradient stop paired with accentSoft (agent ruling 2026-05-22 keep raw)
                 colors: [GQColors.accentSoft, Color(0xFFFFF1E5)],
               ),
               shape: BoxShape.circle,
@@ -1420,7 +1421,7 @@ class _NotificationDetailScreenState
           _SettingsCard(
             children: [
               _SettingsRow(
-                iconBg: const Color(0xFFFFF1E5),
+                iconBg: GQColors.warmSoft,
                 iconWidget:
                     const Text('🔥', style: TextStyle(fontSize: 14)),
                 title: 'Streak gentle nudge',

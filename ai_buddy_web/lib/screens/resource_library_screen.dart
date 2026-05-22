@@ -96,7 +96,7 @@ const List<_Exercise> _kExercises = [
     durationLabel: '3 min',
     categoryLabel: 'grounding',
     category: _ExerciseCategory.grounding,
-    tileBackground: Color(0xFFFFF1E5),
+    tileBackground: GQColors.warmSoft,
     isRecent: true,
   ),
   _Exercise(

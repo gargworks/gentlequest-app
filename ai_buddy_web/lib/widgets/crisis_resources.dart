@@ -731,7 +731,7 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                   emoji: '🌱',
                   label: 'Better',
                   labelColor: const Color(0xFF9A6049),
-                  bg: const Color(0xFFFFF1E5),
+                  bg: GQColors.warmSoft,
                   borderColor: GQColors.moodCoralPeach.withAlpha(64),
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.better),

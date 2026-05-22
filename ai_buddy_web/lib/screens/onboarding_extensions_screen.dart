@@ -259,7 +259,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 const SizedBox(height: 8),
                 _NotifPreviewRow(
                   icon: Icons.local_fire_department_rounded,
-                  iconBg: const Color(0xFFFFF1E5),
+                  iconBg: GQColors.warmSoft,
                   iconColor: const Color(0xFFFF8C42),
                   label: 'Streak gentle nudge',
                   sublabel: 'Off by default — no streak shame',

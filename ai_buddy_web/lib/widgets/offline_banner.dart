@@ -282,7 +282,7 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       const SizedBox(height: 10),
                       _OfflineCapabilityCard(
                         emoji: '🌬️',
-                        emojiBackground: const Color(0xFFFFF1E5),
+                        emojiBackground: GQColors.warmSoft,
                         title: 'Try a breathing exercise',
                         subtitle: 'All exercises run on your phone',
                       ),
