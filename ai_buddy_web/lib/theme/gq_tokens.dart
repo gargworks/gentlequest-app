@@ -206,4 +206,15 @@ class GQTypography {
   /// Inter at heavier weight (FontWeight.w700+) is the cross-platform proxy
   /// until a portable rounded typeface (e.g. Nunito, Poppins) is evaluated.
   static const displayFamily = 'Inter';
+
+  /// Reflective serif — R1D14 Journal entry bodies + reflective surfaces.
+  /// Do NOT adopt globally; serif on input fields hurts legibility while typing.
+  /// Scoped to: _JournalEntryView body, _JournalEntryCard preview, empty-state headline.
+  /// Source: GentleQuest_Journal.html (R1D14) "warmth of notebook".
+  static const journalSerif = 'Fraunces';
+
+  /// Handwritten encouraging copy — R1D14 chip starters + scribble accents.
+  /// Scoped to: _StarterChips labels, _NotebookScribble Text.
+  /// Source: GentleQuest_Journal.html (R1D14) "Today, what worked was…" starters.
+  static const handwritten = 'Caveat';
 }

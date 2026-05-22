@@ -114,6 +114,7 @@ flutter:
     - assets/icons/
     - assets/images/reference/
     - assets/legal/
+    - assets/fonts/OFL.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -149,6 +150,18 @@ flutter:
           weight: 500
         - asset: assets/fonts/InterBold.ttf
           weight: 700
+    # R1D14 Journal — variable fonts; Flutter resolves the weight axis at render time.
+    # Fraunces = static reflective text (entry bodies, empty-state headline).
+    # Caveat = encouraging prompts (chip starters, scribble accents).
+    # Single .ttf per family — variable axes covered, smaller bundle than static instances.
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces/Fraunces.ttf
+        - asset: assets/fonts/Fraunces/Fraunces-Italic.ttf
+          style: italic
+    - family: Caveat
+      fonts:
+        - asset: assets/fonts/Caveat/Caveat.ttf
 
 # Launcher icons configuration
 flutter_launcher_icons:
