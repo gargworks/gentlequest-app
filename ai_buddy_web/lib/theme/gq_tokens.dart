@@ -101,6 +101,11 @@ class GQColors {
   /// Source: agent ruling 2026-05-22 (compliance_guard L696/L699/L873 sweep).
   static const successInk = Color(0xFF3F8B6A);
 
+  /// Leaf ink — olive green for nature/eco/illustration surfaces.
+  /// Used across mood illustrations, quest visuals, safety/eco affordances,
+  /// offline states. 7-site / 5-file recurrence promoted to token 2026-05-22.
+  static const leafInk = Color(0xFF5C7A48);
+
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
   /// Warm peach tint — start of crisis gradient / icon halos.
