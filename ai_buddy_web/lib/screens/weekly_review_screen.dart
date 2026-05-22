@@ -15,8 +15,11 @@
 //   The WeekState.heavy flag is also server-decided (crisisFlag from this week).
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
+import 'journal_screen.dart' show JournalEntry, openJournalEntry;
 
 // ─── Data models ─────────────────────────────────────────────────────────────
 
@@ -642,13 +645,45 @@ class _Chip extends StatelessWidget {
 // ─── Standout moment card ─────────────────────────────────────────────────────
 
 class _StandoutMomentCard extends StatelessWidget {
-  const _StandoutMomentCard({required this.quote, required this.attribution});
+  const _StandoutMomentCard({
+    required this.quote,
+    required this.attribution,
+    this.onTap,
+  });
+
   final String quote;
   final String attribution;
 
+  /// Optional tap handler — when set, the card wraps in InkWell+Material
+  /// so it ripples on press. The stub call sites (stubFull/stubLight/
+  /// stubHeavy in WeeklyReviewData) don't pass onTap; behavior is
+  /// identical to the pre-Chunk-5 card for those paths.
+  final VoidCallback? onTap;
+
+  /// Static factory: derive a tap-to-open standout card from a
+  /// JournalEntry. Quote is wrapped in matching curly-quotes; attribution
+  /// reads "— YOU, MONDAY" (day-of-week uppercased).
+  ///
+  /// The factory does NOT call JournalStorage.standoutMoments() itself
+  /// — that happens at the wire-up site (deferred Chunk 5b). The factory
+  /// just constructs the card with derived strings from whichever entry
+  /// the wire-up surfaces.
+  // ignore: unused_element
+  factory _StandoutMomentCard.fromJournal({
+    required BuildContext context,
+    required JournalEntry entry,
+  }) {
+    return _StandoutMomentCard(
+      quote: '"${entry.body}"',
+      attribution:
+          '— YOU, ${DateFormat('EEEE').format(entry.createdAt).toUpperCase()}',
+      onTap: () => openJournalEntry(context, entry),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFF6FBF2),
@@ -698,6 +733,15 @@ class _StandoutMomentCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+    if (onTap == null) return card;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(GQRadii.card),
+        child: card,
       ),
     );
   }
