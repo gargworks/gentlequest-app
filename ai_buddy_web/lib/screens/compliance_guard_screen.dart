@@ -309,7 +309,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
 
   Widget _buildCrisisOverride() {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF1F1), // soft coral atmosphere per HTML
+      backgroundColor: const Color(0xFFFFF1F1), // IMG-TINT: soft coral atmosphere per HTML (agent ruling 2026-05-22 keep raw)
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -339,6 +339,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
+                          // IMG-TINT: atmospheric coral gradient (agent ruling 2026-05-22 keep raw)
                           colors: [Color(0xFFFFD9D9), Color(0xFFFFE8E8)],
                         ),
                         border: Border.all(
@@ -357,7 +358,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   },
                   child: const Icon(
                     Icons.favorite_rounded,
-                    color: Color(0xFFE0494C), // gq-accent-dk
+                    color: GQColors.coralDk,
                     size: 32,
                   ),
                 ),
@@ -612,6 +613,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
+                      // IMG-TINT: second stop pairs primarySoft into a softer periwinkle (agent ruling 2026-05-22 keep raw)
                       colors: [GQColors.primarySoft, Color(0xFFE0E5FB)],
                     ),
                     border: Border.all(
@@ -680,7 +682,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 iconColor: GQColors.coral,
                 tagText: 'CALL',
                 tagBg: GQColors.accentSoft,
-                tagColor: const Color(0xFFB73E3E),
+                tagColor: GQColors.coralDk,
                 title: '988 Lifeline',
                 subtitle: 'Dial 988 · works on any phone, 24/7',
                 onTap: () => _launchUri(
@@ -692,11 +694,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 10),
               _UniversalResourceCard(
                 icon: Icons.language_rounded,
-                iconBgColor: const Color(0xFFE8F4EE),
-                iconColor: const Color(0xFF3F8B6A),
+                iconBgColor: GQColors.successSoft,
+                iconColor: GQColors.successInk,
                 tagText: 'WEB',
-                tagBg: const Color(0xFFE8F4EE),
-                tagColor: const Color(0xFF3F8B6A),
+                tagBg: GQColors.successSoft,
+                tagColor: GQColors.successInk,
                 title: 'IASP Resources',
                 subtitle: 'Find a local hotline anywhere in the world',
                 onTap: () => _launchUri(
@@ -870,7 +872,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.check_circle_outline_rounded,
-                          color: Color(0xFF3F8B6A), size: 13),
+                          color: GQColors.successInk, size: 13),
                       SizedBox(width: 6),
                       Text(
                         'Your email is encrypted at rest',
@@ -1122,6 +1124,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
+                    // IMG-TINT: gold→coral header gradient (agent ruling 2026-05-22 keep raw — first stop is decorative gold accent)
                     colors: [Color(0xFFFFD085), GQColors.coral],
                   ),
                   borderRadius: BorderRadius.vertical(
@@ -1457,7 +1460,7 @@ class _LifelineCard988 extends StatelessWidget {
                         ),
                         SizedBox(width: 6),
                         _TagPill(label: 'CALL', bg: GQColors.accentSoft,
-                            fg: Color(0xFFB73E3E)),
+                            fg: GQColors.coralDk),
                       ],
                     ),
                     SizedBox(height: 2),
