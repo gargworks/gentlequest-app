@@ -173,9 +173,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               opacity: _backdropFade,
               child: GestureDetector(
                 onTap: () {}, // prevent pass-through
-                child: const ColoredBox(
-                  color: Color(0x52281C3A), // rgba(31,27,58,0.32) approx
-                  child: SizedBox.expand(),
+                child: ColoredBox(
+                  // Tokenized — was Color(0x52281C3A) raw hex. GQColors.ink at 0.32α
+                  // matches the prior rgba(31,27,58,0.32) backdrop intent.
+                  color: GQColors.ink.withValues(alpha: 0.32),
+                  child: const SizedBox.expand(),
                 ),
               ),
             ),
@@ -230,6 +232,8 @@ class _WelcomeContent extends StatelessWidget {
               left: -60,
               child: _AmbientBlob(
                 size: 260,
+                // IMG-TINT: hero-illustration ambient blob; intentional pastel
+                // outside the mood palette. Keep as raw hex.
                 color: const Color(0xFFD9DEFC),
                 opacity: dimmed ? 0.35 : 0.70,
               ),
@@ -239,6 +243,8 @@ class _WelcomeContent extends StatelessWidget {
               right: -90,
               child: _AmbientBlob(
                 size: 240,
+                // IMG-TINT: hero-illustration ambient blob; intentional pastel
+                // outside the mood palette. Keep as raw hex.
                 color: const Color(0xFFFFD9D9),
                 opacity: dimmed ? 0.35 : 0.70,
               ),
@@ -473,7 +479,8 @@ class _AgeModal extends StatelessWidget {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E2EE),
+                  // Tokenized — was Color(0xFFE5E2EE) raw hex, used as divider.
+                  color: GQColors.hair,
                   borderRadius: BorderRadius.circular(100),
                 ),
               ),
