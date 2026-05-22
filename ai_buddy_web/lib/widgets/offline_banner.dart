@@ -289,7 +289,7 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       const SizedBox(height: 10),
                       _OfflineCapabilityCard(
                         icon: Icons.shield_outlined,
-                        iconColor: const Color(0xFF5C7A48),
+                        iconColor: GQColors.leafInk,
                         iconBackground: const Color(0xFFF0F5EC),
                         title: 'Open my safety plan',
                         subtitle: 'Always available · encrypted on device',

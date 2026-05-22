@@ -1873,7 +1873,7 @@ class _Q9CrisisBridgeSheetState extends State<_Q9CrisisBridgeSheet>
           _BridgeOptionCard(
             iconEmoji: '✓',
             iconBg: GQColors.moodGreat.withAlpha(46),
-            iconColor: const Color(0xFF5C7A48),
+            iconColor: GQColors.leafInk,
             title: "I'm safe — let's continue the check-in", // verbatim from HTML
             subtitle: 'Returns to the assessment, no judgement',
             style: _BridgeCardStyle.green,

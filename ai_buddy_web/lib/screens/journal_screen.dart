@@ -943,12 +943,12 @@ class _LeafPainter extends CustomPainter {
       ..color = GQColors.moodGreat.withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
     final strokePaint = Paint()
-      ..color = const Color(0xFF5C7A48)
+      ..color = GQColors.leafInk
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
       ..strokeJoin = StrokeJoin.round;
     final linePaint = Paint()
-      ..color = const Color(0xFF5C7A48)
+      ..color = GQColors.leafInk
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;

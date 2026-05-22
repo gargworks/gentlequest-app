@@ -120,7 +120,7 @@ class Q9CrisisBridgeSheet extends StatelessWidget {
               _BridgeOption(
                 icon: Icons.check_rounded,
                 iconBg: GQColors.moodGreat.withValues(alpha: 0.15),
-                iconFg: const Color(0xFF5C7A48),
+                iconFg: GQColors.leafInk,
                 title: "I'm safe — let's continue the check-in",
                 sub: 'Returns to the assessment, no judgement',
                 onTap: () => Navigator.of(context).pop(Q9BridgeAction.keepGoing),

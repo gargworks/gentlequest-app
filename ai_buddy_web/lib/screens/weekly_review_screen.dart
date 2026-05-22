@@ -695,7 +695,7 @@ class _StandoutMomentCard extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.eco_outlined, size: 14, color: Color(0xFF5C7A48)),
+              Icon(Icons.eco_outlined, size: 14, color: GQColors.leafInk),
               SizedBox(width: 6),
               Text(
                 'ONE THING WORTH REMEMBERING',
@@ -703,7 +703,7 @@ class _StandoutMomentCard extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF5C7A48),
+                  color: GQColors.leafInk,
                   letterSpacing: 1.1,
                 ),
               ),
