@@ -303,7 +303,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   Text(
                     'If you are in immediate danger, call your local emergency number.',
                     style: theme.textTheme.bodySmall
-                        ?.copyWith(color: Colors.black54),
+                        ?.copyWith(color: GQColors.ink2),
                   ),
                   const SizedBox(height: 12),
                   const CrisisResourcesWidget(riskLevel: RiskLevel.high),
@@ -763,7 +763,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                             hintText: hintText,
                                             hintStyle: TextStyle(
                                               fontSize: 16.0,
-                                              color: Colors.grey[600],
+                                              color: GQColors.ink3,
                                             ),
                                             border: InputBorder.none,
                                             contentPadding:
@@ -774,7 +774,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                           ),
                                           style: const TextStyle(
                                             fontSize: 16.0,
-                                            color: Colors.black87,
+                                            color: GQColors.ink,
                                           ),
                                           onSubmitted: (_) {
                                             _sendMessage();
@@ -849,7 +849,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11.0,
-                          color: Color(0xFF8C8AA0),
+                          color: GQColors.ink3,
                           height: 1.3,
                           fontWeight: FontWeight.w500,
                         ),
@@ -949,11 +949,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: message.isUser
-                      ? Colors.green.shade100
+                      ? GQColors.successSoft
                       : appTheme.whiteCustom,
                   borderRadius: BorderRadius.circular(16.h),
                   boxShadow: [
                     BoxShadow(
+                      // standard ink-shadow alpha (agent ruling 2026-05-22 keep raw)
                       color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4.h,
                       offset: Offset(0, 2.h),
@@ -1007,17 +1008,17 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 10.h, vertical: 6.h),
                                   decoration: BoxDecoration(
-                                    color: Colors.blueGrey.shade50,
+                                    color: GQColors.primarySoft,
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                        color: Colors.blueGrey.shade200),
+                                        color: GQColors.hair),
                                   ),
                                   child: const Text(
                                     'More…',
                                     style: TextStyle(
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87),
+                                        color: GQColors.ink),
                                   ),
                                 ),
                               ),
@@ -1031,7 +1032,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           'These resources are informational and not a substitute for professional care. If you\'re in immediate danger, call your local emergency number.',
                           style: TextStyle(
                             fontSize: 11.0,
-                            color: Colors.black54,
+                            color: GQColors.ink2,
                             height: 1.3,
                           ),
                         ),
@@ -1194,7 +1195,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.w400,
-                    color: Colors.grey.shade600,
+                    color: GQColors.ink3,
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -1204,7 +1205,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 11.0,
                     fontWeight: FontWeight.w400,
-                    color: Colors.grey.shade400,
+                    color: GQColors.ink3,
                   ),
                 ),
               ],
@@ -1293,10 +1294,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
   Widget _buildChip(String label, VoidCallback onTap) {
     return Material(
-      color: Colors.grey.shade50,
+      color: GQColors.softBg,
       shape: StadiumBorder(
         side: BorderSide(
-          color: Colors.grey.shade200,
+          color: GQColors.hair,
           width: 1.0,
         ),
       ),
@@ -1310,7 +1311,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             style: TextStyle(
               fontSize: 13.0,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: GQColors.ink3,
             ),
           ),
         ),
@@ -1615,9 +1616,9 @@ class _CrisisChip extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 8.h),
             decoration: BoxDecoration(
-              color: Colors.blueGrey.shade50,
+              color: GQColors.primarySoft,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.blueGrey.shade200),
+              border: Border.all(color: GQColors.hair),
             ),
             child: Center(
               child: Text(
@@ -1626,7 +1627,7 @@ class _CrisisChip extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87),
+                    color: GQColors.ink),
               ),
             ),
           ),
@@ -1655,6 +1656,7 @@ class _TypingDotsState extends State<_TypingDots>
 
   @override
   Widget build(BuildContext context) {
+    // shimmer base — Material default expected (agent ruling 2026-05-22 keep raw)
     final baseColor = Colors.grey.shade500;
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
     if (reduceMotion) {
