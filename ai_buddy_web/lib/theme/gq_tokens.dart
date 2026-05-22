@@ -106,6 +106,21 @@ class GQColors {
   /// offline states. 7-site / 5-file recurrence promoted to token 2026-05-22.
   static const leafInk = Color(0xFF5C7A48);
 
+  /// Danger ink — destructive-action emphasis (delete account, privacy clear).
+  /// Deliberately outside the coral palette: "coral never red" is a decorative
+  /// principle; destructive copy is the one place deep red-adjacent is warranted.
+  /// 5-site / 2-file recurrence promoted to token 2026-05-22.
+  static const dangerInk = Color(0xFFC44A4A);
+
+  /// Danger soft — pale red background paired with dangerInk for destructive cards.
+  /// Source: rgba(196,74,74,0.08) approx (clinical_assessment L1924).
+  static const dangerSoft = Color(0xFFFFEBEB);
+
+  /// Warm soft — peach-cream tint for icon backgrounds and warm gradient stops.
+  /// 12-site / 8-file recurrence (8 active surfaces + 4 legacy dhiwise) promoted
+  /// to token 2026-05-22. Sibling of accentSoft/primarySoft/successSoft.
+  static const warmSoft = Color(0xFFFFF1E5);
+
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
   /// Warm peach tint — start of crisis gradient / icon halos.
