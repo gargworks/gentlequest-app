@@ -688,7 +688,7 @@ class _StandoutMomentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF6FBF2),
         borderRadius: BorderRadius.circular(GQRadii.card),
-        border: Border.all(color: const Color(0xFF9CC487).withValues(alpha: 0.3)),
+        border: Border.all(color: GQColors.moodGreat.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

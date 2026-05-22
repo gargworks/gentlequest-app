@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
+import '../theme/gq_tokens.dart';
 
 class StartupScreen extends StatefulWidget {
   final VoidCallback onBackendReady;
@@ -58,7 +60,7 @@ class _StartupScreenState extends State<StartupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: GQColors.softBg,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -70,13 +72,13 @@ class _StartupScreenState extends State<StartupScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
+                  color: GQColors.primarySoft,
                   borderRadius: BorderRadius.circular(60),
                 ),
                 child: Icon(
                   Icons.psychology,
                   size: 60,
-                  color: Colors.blue[700],
+                  color: GQColors.primaryDk,
                 ),
               ),
 
@@ -87,7 +89,7 @@ class _StartupScreenState extends State<StartupScreen> {
                 'GentleQuest',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: GQColors.ink,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -98,7 +100,7 @@ class _StartupScreenState extends State<StartupScreen> {
                 'Your AI companion for mental wellness',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                ).textTheme.bodyLarge?.copyWith(color: GQColors.ink3),
                 textAlign: TextAlign.center,
               ),
 
@@ -133,7 +135,7 @@ class _StartupScreenState extends State<StartupScreen> {
                                 ? Icons.check_circle
                                 : Icons.error,
                             color:
-                                _isBackendHealthy ? Colors.green : Colors.red,
+                                _isBackendHealthy ? GQColors.moodGreat : GQColors.coral,
                             size: 40,
                           ),
 
@@ -145,8 +147,8 @@ class _StartupScreenState extends State<StartupScreen> {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _isBackendHealthy
-                                ? Colors.green[700]
-                                : Colors.red[700],
+                                ? GQColors.moodGreat
+                                : GQColors.coral,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -156,7 +158,7 @@ class _StartupScreenState extends State<StartupScreen> {
                       Text(
                         _errorDetails,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                              color: GQColors.ink3,
                             ),
                         textAlign: TextAlign.center,
                       ),
@@ -169,7 +171,7 @@ class _StartupScreenState extends State<StartupScreen> {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry Connection'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
+                          backgroundColor: GQColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -189,9 +191,9 @@ class _StartupScreenState extends State<StartupScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
+                    color: GQColors.amberSoft,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange[200]!),
+                    border: Border.all(color: GQColors.amber),
                   ),
                   child: Column(
                     children: [
@@ -199,7 +201,7 @@ class _StartupScreenState extends State<StartupScreen> {
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Colors.orange[700],
+                            color: GQColors.amber,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -207,7 +209,7 @@ class _StartupScreenState extends State<StartupScreen> {
                             'Troubleshooting',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Colors.orange[700],
+                              color: GQColors.amber,
                             ),
                           ),
                         ],
@@ -220,7 +222,7 @@ class _StartupScreenState extends State<StartupScreen> {
                         '4. Try refreshing the page',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.orange[700],
+                          color: GQColors.amber,
                         ),
                       ),
                     ],

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../theme/gq_tokens.dart';
 import '../widgets/app_back_button.dart';
 
 class QuestPreviewScreen extends StatelessWidget {
@@ -34,7 +36,7 @@ class QuestPreviewScreen extends StatelessWidget {
               description: 'Complete your daily mood check-in',
               progress: 0.3,
               icon: Icons.check_circle,
-              color: Colors.blue,
+              color: GQColors.primary,
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
@@ -43,7 +45,7 @@ class QuestPreviewScreen extends StatelessWidget {
               description: 'Meditate for 5 minutes',
               progress: 0.7,
               icon: Icons.self_improvement,
-              color: Colors.green,
+              color: GQColors.moodGreat,
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
@@ -52,7 +54,7 @@ class QuestPreviewScreen extends StatelessWidget {
               description: 'Write 3 things you\'re grateful for',
               progress: 0.0,
               icon: Icons.book,
-              color: Colors.orange,
+              color: GQColors.moodGood,
             ),
           ],
         ),
@@ -103,9 +105,9 @@ class QuestPreviewScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: GQColors.ink3,
                         ),
                       ),
                     ],
@@ -138,7 +140,7 @@ class QuestPreviewScreen extends StatelessWidget {
               const SizedBox(height: 12),
               LinearProgressIndicator(
                 value: progress,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: GQColors.hair,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
                 minHeight: 8,
                 borderRadius: BorderRadius.circular(4),
@@ -146,9 +148,9 @@ class QuestPreviewScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${(progress * 100).toInt()}% complete',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: GQColors.ink3,
                 ),
               ),
             ],
