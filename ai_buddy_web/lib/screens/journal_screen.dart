@@ -190,6 +190,41 @@ class JournalStorage {
     return entries;
   }
 
+  /// Returns up to [limit] entries from [window] that read as "standout
+  /// moments" — the kind worth resurfacing on Weekly Review's standout
+  /// card.
+  ///
+  /// Selection rules (P10 — pattern surfacing without diagnosing):
+  ///   • Mood in {great, good} only. Resurface what worked, never what
+  ///     hurt. R1D15 voice rules forbid re-surfacing heavy entries.
+  ///   • Body length ≥ 40 chars — filters out micro-entries that don't
+  ///     re-read as memorable.
+  ///   • Ranked recent-first within the window. No recency curve.
+  ///
+  /// Returns an empty list (not null) when no entries qualify. Runs
+  /// purely in-memory against load() — no network call, no analytics
+  /// event fired (data minimization).
+  ///
+  /// Static rather than instance because JournalStorage is all-static;
+  /// see JournalStorageReader contract doc in lib/services/.
+  static Future<List<JournalEntry>> standoutMoments({
+    required DateTimeRange window,
+    int limit = 3,
+  }) async {
+    final entries = await load();
+    final qualifying = entries.where((e) {
+      if (e.createdAt.isBefore(window.start)) return false;
+      if (e.createdAt.isAfter(window.end)) return false;
+      if (e.mood != JournalMood.great && e.mood != JournalMood.good) {
+        return false;
+      }
+      if (e.body.trim().length < 40) return false;
+      return true;
+    }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return qualifying.take(limit).toList();
+  }
+
   /// One-time migration: push every local-only entry to the server.
   /// Called right after a successful magic-link verify so the user's
   /// pre-login journal entries follow them across devices.
@@ -299,6 +334,34 @@ class JournalStorage {
     out.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return out;
   }
+}
+
+/// Public entry point for callers outside Journal (e.g. Weekly Review's
+/// standout-card tap-target) to open a specific entry's reader view.
+/// Keeps [_JournalEntryView] private while exposing a clean route in.
+///
+/// [onDelete] defaults to JournalStorage.remove(entry.id) then pop —
+/// preserves the "delete from anywhere" semantic so the in-view trash
+/// icon remains functional when opened via Weekly Review tap.
+Future<void> openJournalEntry(
+  BuildContext context,
+  JournalEntry entry, {
+  VoidCallback? onDelete,
+}) {
+  return Navigator.of(context).push(MaterialPageRoute(
+    builder: (ctx) => Scaffold(
+      body: SafeArea(
+        child: _JournalEntryView(
+          entry: entry,
+          onDelete: onDelete ??
+              () async {
+                await JournalStorage.remove(entry.id);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              },
+        ),
+      ),
+    ),
+  ));
 }
 
 class JournalEntry {
