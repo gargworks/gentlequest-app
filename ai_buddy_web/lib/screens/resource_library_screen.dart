@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../theme/gq_tokens.dart';
-import '../screens/chat_screen.dart';
+import '../navigation/home_tab_deeplink.dart';
 import '../screens/exercise_scaffold_screen.dart';
+import '../theme/gq_tokens.dart';
+import '../widgets/app_bottom_nav.dart' show AppTab;
 import '../widgets/exercise_card_scaffold.dart';
 
 // resource_library_screen.dart — Tier R1D17
@@ -235,13 +236,25 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
   }
 
   void _onAskAlex() {
-    // Deep-link to chat with library context.
-    // TODO(R1D17-followup): ChatScreen needs an optional initialMessage param
-    // so this can prefill "I'm looking for an exercise to " + cursor.
+    // Deep-link to the modern Talk tab (InteractiveChatScreen) instead of
+    // pushing the legacy `screens/chat_screen.dart` ChatScreen on top of
+    // Library. The legacy ChatScreen is a bare Column with no Scaffold/
+    // Material ancestor — its TextField throws a runtime "No Material
+    // widget found" error, surfaced as a red error widget at the bottom of
+    // the chat. Captured during sim QC 2026-05-23 (Lokesh).
+    //
+    // Library is pushed on top of HomeShell via ProfileNavSheet, so
+    // homeTabDeepLink.request() correctly unwinds back to HomeShell and
+    // switches to the Talk tab, surfacing the modern InteractiveChatScreen
+    // (R1D3 first-turn warmth + R1D7 inline crisis banner + status avatar).
+    //
+    // TODO(R1D17-followup): pass a library-context message hint so the
+    // chat surface can render "I'm looking for an exercise to ..." as a
+    // starter chip on entry. Requires plumbing through HomeShell into
+    // InteractiveChatScreen — out of scope for this fix.
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ChatScreen()),
-    );
+    Navigator.of(context).maybePop();
+    homeTabDeepLink.request(AppTab.talk);
   }
 
   @override
