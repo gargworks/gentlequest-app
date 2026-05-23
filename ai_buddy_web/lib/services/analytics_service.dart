@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
 import '../config/api_config.dart';
+import 'firebase_service.dart' show kAnonymityModeKey;
 import 'session_manager.dart';
 
 const String _analyticsConsentKey = 'analytics_consent';
@@ -30,6 +31,11 @@ String _newRequestId() {
 Future<bool> _isAnalyticsEnabled() async {
   try {
     final prefs = await SharedPreferences.getInstance();
+    // Anonymity mode wins over consent: when on, every analytics event is
+    // suppressed regardless of prior consent state. Matches the FirebaseService
+    // gate at logEvent/logScreenView so both surfaces (Firebase + backend
+    // /api/analytics/log) honor the same single source of truth.
+    if (prefs.getBool(kAnonymityModeKey) ?? false) return false;
     return prefs.getBool(_analyticsConsentKey) ?? false;
   } catch (_) {
     return false;

@@ -12,6 +12,7 @@ import './legal/legal_screen.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../services/auth_service.dart';
+import '../services/firebase_service.dart' show FirebaseService, kAnonymityModeKey;
 import '../services/notification_service_impl.dart';
 import '../theme/gq_tokens.dart';
 
@@ -33,11 +34,17 @@ const String _kNotifWorriedCheckInKey = 'notif_worried_checkin_v1';
 //
 // Backend wiring TODOs (flagged per foreman brief):
 //   • Data export: POST /api/user/export — triggers email; UI only here.
-//   • Delete account server flow: DELETE /api/user — UI + 2-step confirm only;
-//     actual server call left as TODO below (see _handleDeleteAccount).
-//   • Anonymity mode: all FirebaseAnalytics.log* calls should become no-ops
-//     when _anonymityOn is true — currently only sets a local flag; analytics
-//     service integration is a follow-up.
+//   • Delete account server flow: DELETE /api/user not yet implemented.
+//     UI surfaces an honest snackbar with privacy@gentlequest.app fallback
+//     (see _DeleteAccountSheet._handleDeleteForever) so the user is NOT
+//     told "account deleted" when nothing happened — that would be a GDPR
+//     / CCPA "right to erasure" lie. Backend deletion endpoint is v1.4 work.
+//   • Anonymity mode: WIRED — _toggleAnonymity calls
+//     FirebaseService.setAnonymityMode(value) which sets a persisted
+//     SharedPreferences flag (kAnonymityModeKey). Both FirebaseService
+//     (Firebase Analytics) AND logAnalyticsEvent (backend /api/analytics/log)
+//     honor that flag and become no-ops while it's true. setUserId is also
+//     cleared when toggling ON.
 //   • Notification time/day prefs: stored locally only; push-token server sync
 //     is a follow-up.
 
@@ -77,7 +84,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadConsent();
     _loadNotificationPrefs();
+    _loadAnonymityState();
     _validateAuthSession();
+  }
+
+  /// Hydrate the Anonymity toggle from SharedPreferences so the UI matches
+  /// the persisted state on screen entry. Keeps the local in-memory flag
+  /// in sync with the source of truth that FirebaseService + analytics_service
+  /// both consult.
+  Future<void> _loadAnonymityState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final on = prefs.getBool(kAnonymityModeKey) ?? false;
+      if (mounted && on != _anonymityOn) setState(() => _anonymityOn = on);
+    } catch (_) {
+      // No-op: leave default (false). Persisted state will sync on next toggle.
+    }
   }
 
   /// Hit /api/auth/me to verify the cached "signed in" state still matches
@@ -226,10 +248,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _toggleAnonymity(bool value) {
+  Future<void> _toggleAnonymity(bool value) async {
     setState(() => _anonymityOn = value);
-    // TODO(backend): when anonymityOn=true, release push token + suppress
-    // all FirebaseAnalytics.log* calls (see eng notes in GentleQuest_Settings.html).
+    // Persist + apply across analytics surfaces. setAnonymityMode writes the
+    // SharedPreferences flag (kAnonymityModeKey) that both FirebaseService
+    // logEvent/logScreenView/setUserId/setUserProperty AND the backend
+    // logAnalyticsEvent path check on every call, so the "Analytics paused"
+    // copy below is now true rather than aspirational. Push-token release on
+    // anonymity-on is a separate follow-up (notification service integration).
+    await FirebaseService().setAnonymityMode(value);
+    if (!mounted) return;
     final msg = value
         ? 'Anonymity is on. Analytics paused.'
         : 'Anonymity is off. Analytics resumed.';

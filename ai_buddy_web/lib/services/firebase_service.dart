@@ -2,6 +2,13 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// SharedPreferences key for the anonymity-mode flag. When true, all analytics
+/// + crashlytics calls in [FirebaseService] become no-ops, and the currently
+/// set Firebase user-id is cleared. Mirrored in [analytics_service.dart] so
+/// the backend analytics endpoint is also suppressed.
+const String kAnonymityModeKey = 'anonymity_mode_v1';
 
 late final FirebaseOptions firebaseOptions;
 
@@ -14,7 +21,45 @@ class FirebaseService {
   FirebaseCrashlytics? _crashlytics; // Nullable - not available on web
   bool _initialized = false;
 
+  /// In-memory cache of the anonymity-mode flag. Hydrated from
+  /// SharedPreferences at [initialize], updated via [setAnonymityMode].
+  /// When true: every event/screen-view/user-id/property setter is a no-op.
+  bool _anonymityOn = false;
+
   FirebaseAnalytics get analytics => _analytics;
+
+  /// True if anonymity mode is currently active (analytics suspended).
+  bool get isAnonymityOn => _anonymityOn;
+
+  /// Toggle anonymity mode. Persists to SharedPreferences and, when turning
+  /// ON, clears the currently-set Firebase user-id so no further events can
+  /// be back-tied to the prior anonymous-but-stable user-id. Settings UI
+  /// must call this whenever the user flips the Anonymity toggle.
+  Future<void> setAnonymityMode(bool value) async {
+    _anonymityOn = value;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kAnonymityModeKey, value);
+    } catch (e) {
+      debugPrint('[firebase] persist anonymity flag failed: $e');
+    }
+    if (value && _initialized) {
+      try {
+        await _analytics.setUserId(id: null);
+      } catch (e) {
+        debugPrint('[firebase] clear userId on anonymity-on failed: $e');
+      }
+    }
+  }
+
+  Future<void> _loadAnonymityMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _anonymityOn = prefs.getBool(kAnonymityModeKey) ?? false;
+    } catch (_) {
+      _anonymityOn = false;
+    }
+  }
 
   Future<void> setFirebaseOptions() async {
     firebaseOptions = FirebaseOptions(
@@ -95,6 +140,11 @@ class FirebaseService {
 
       _initialized = true;
 
+      // Hydrate anonymity flag BEFORE logging app_open so the gate respects
+      // the user's prior choice on cold boot. setUserId on the next event is
+      // also gated by this flag (no userId leak post-anonymity-on).
+      await _loadAnonymityMode();
+
       // Log app open
       await logEvent('app_open');
     } catch (e) {
@@ -105,7 +155,7 @@ class FirebaseService {
 
   // Analytics Events
   Future<void> logEvent(String name, [Map<String, dynamic>? parameters]) async {
-    if (!_initialized) return;
+    if (!_initialized || _anonymityOn) return;
 
     try {
       Map<String, Object>? typedParams;
@@ -131,7 +181,7 @@ class FirebaseService {
   }
 
   Future<void> logScreenView(String screenName) async {
-    if (!_initialized) return;
+    if (!_initialized || _anonymityOn) return;
     try {
       await _analytics.logScreenView(
         screenName: screenName,
@@ -143,7 +193,7 @@ class FirebaseService {
   }
 
   Future<void> setUserId(String? userId) async {
-    if (!_initialized) return;
+    if (!_initialized || _anonymityOn) return;
     try {
       await _analytics.setUserId(id: userId);
     } catch (e) {
@@ -152,7 +202,7 @@ class FirebaseService {
   }
 
   Future<void> setUserProperty(String name, String? value) async {
-    if (!_initialized) return;
+    if (!_initialized || _anonymityOn) return;
     try {
       await _analytics.setUserProperty(name: name, value: value);
     } catch (e) {
