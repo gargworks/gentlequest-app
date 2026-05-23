@@ -583,27 +583,89 @@ class SafetyPlanCard extends StatelessWidget {
   }
 }
 
-class _SafetyPlanFilled extends StatelessWidget {
+class _SafetyPlanFilled extends StatefulWidget {
   final VoidCallback onEdit;
   const _SafetyPlanFilled({required this.onEdit});
 
-  // Safety-plan contacts. Was a static const list of fake personas
-  // ('Mum', 'Dr. Jordan', '988') shipping in release builds — the user
-  // who'd actually built a plan saw fake contacts as if they entered
-  // them. Now only the universal crisis line is hardcoded; user-supplied
-  // contacts will populate from secure storage once SafetyPlanBuilderStep
-  // actually persists data (currently stub — see _planFilled = false).
-  // Until then, "filled" state shows only the 988 fallback so the card
-  // doesn't lie about the user's own contacts.
-  static const _contacts = [
-    SafetyContact(
-      initial: '988',
-      name: 'Crisis line',
-      detail: 'Free, 24/7, confidential',
-      isCrisis: true,
-      phone: '988',
-    ),
-  ];
+  @override
+  State<_SafetyPlanFilled> createState() => _SafetyPlanFilledState();
+}
+
+class _SafetyPlanFilledState extends State<_SafetyPlanFilled> {
+  // Universal crisis line — always shown so the contact list never
+  // lies-by-omission even if the user skipped the contact step in the
+  // builder. Per P6 ("crisis never blocks"), 988 stays present.
+  static const _crisisContact = SafetyContact(
+    initial: '988',
+    name: 'Crisis line',
+    detail: 'Free, 24/7, confidential',
+    isCrisis: true,
+    phone: '988',
+  );
+
+  /// Contacts list rendered in the filled-state card.
+  /// Hydrated on initState from the SharedPreferences keys that
+  /// SafetyPlanBuilderStep writes in Step 2
+  /// (`safety_plan_step2_contact_{1,2}_{name,rel,phone}_v1`).
+  /// Fallback is crisis-line-only — never empty.
+  List<SafetyContact> _contacts = const [_crisisContact];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final c1Name = (prefs.getString('safety_plan_step2_contact_1_name_v1') ?? '').trim();
+      final c1Rel = (prefs.getString('safety_plan_step2_contact_1_rel_v1') ?? '').trim();
+      final c1Phone = (prefs.getString('safety_plan_step2_contact_1_phone_v1') ?? '').trim();
+      final c2Name = (prefs.getString('safety_plan_step2_contact_2_name_v1') ?? '').trim();
+      final c2Rel = (prefs.getString('safety_plan_step2_contact_2_rel_v1') ?? '').trim();
+      final c2Phone = (prefs.getString('safety_plan_step2_contact_2_phone_v1') ?? '').trim();
+
+      final list = <SafetyContact>[];
+      if (c1Name.isNotEmpty || c1Phone.isNotEmpty) {
+        list.add(SafetyContact(
+          initial: c1Name.isNotEmpty
+              ? c1Name.characters.first.toUpperCase()
+              : '?',
+          name: c1Name.isNotEmpty ? c1Name : 'Contact 1',
+          detail: c1Rel.isNotEmpty
+              ? c1Rel
+              : (c1Phone.isNotEmpty ? c1Phone : ''),
+          isCrisis: false,
+          phone: c1Phone,
+        ));
+      }
+      if (c2Name.isNotEmpty || c2Phone.isNotEmpty) {
+        list.add(SafetyContact(
+          initial: c2Name.isNotEmpty
+              ? c2Name.characters.first.toUpperCase()
+              : '?',
+          name: c2Name.isNotEmpty ? c2Name : 'Contact 2',
+          detail: c2Rel.isNotEmpty
+              ? c2Rel
+              : (c2Phone.isNotEmpty ? c2Phone : ''),
+          isCrisis: false,
+          phone: c2Phone,
+        ));
+      }
+      // Always append the universal crisis line so the card never
+      // lies-by-omission even when user contacts ARE present.
+      list.add(_crisisContact);
+
+      if (mounted) setState(() => _contacts = list);
+    } catch (e) {
+      debugPrint('[safety_plan_filled] load contacts failed: $e');
+      // Keep the crisis-only fallback — never leave the user without 988.
+    }
+  }
+
+  /// Forward to the widget-supplied edit callback (unchanged API).
+  VoidCallback get onEdit => widget.onEdit;
 
   @override
   Widget build(BuildContext context) {
