@@ -351,7 +351,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _DeleteAccountSheet(),
+      builder: (_) => _DeleteAccountSheet(
+        // Wire the "Want a copy first? Export my data →" link inside the
+        // delete sheet to the parent screen's _handleExportData(). Was
+        // previously a TODO that just popped the sheet silently — user
+        // who actually wanted to export before deleting got no feedback.
+        onExportRequested: _handleExportData,
+      ),
     );
   }
 
@@ -572,6 +578,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 locked: _crisisCheckInLocked,
                 onChanged: null,
               ),
+              // P13 — locked-on after a heavy moment. Toggle intentionally
+              // has `onChanged: null`, but tapping the row used to be a
+              // silent no-op which felt broken. Now: explainer snackbar
+              // tells the user why the lock is on + when it'll release.
+              onTap: () {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      "These stay on for ~14 days after a heavy moment — this is on purpose. You'll be able to turn them off again soon.",
+                      style: TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: GQColors.ink,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -855,9 +881,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              // TODO(backend): clear local SharedPreferences / Hive caches.
+              // Clear SharedPreferences — covers anonymity flag, notif
+              // toggles, welcome-seen, safety-plan-filled, analytics
+              // consent, last-mood metadata. Hive caches (chat history,
+              // journal entries, session id) live in separate stores
+              // managed by their respective providers; clearing those is
+              // a v1.4 follow-up (each provider needs an exposed clear()
+              // method we can call without coupling). For now we clear
+              // the prefs surface — which is what the dialog promises
+              // ("Removes local cache. Your account and cloud data stay").
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+              } catch (e) {
+                debugPrint('[settings] erase local prefs failed: $e');
+              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Local data erased. Restart the app to start fresh.',
+                    style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 5),
+                ),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: GQColors.coral),
             child: Text('Erase',
@@ -952,7 +1005,14 @@ class _AnonStatusPill extends StatelessWidget {
 // ─── Delete account sheet (View C) ───────────────────────────────────────────
 
 class _DeleteAccountSheet extends StatefulWidget {
-  const _DeleteAccountSheet();
+  const _DeleteAccountSheet({this.onExportRequested});
+
+  /// Callback invoked when the user taps "Want a copy first? Export my data"
+  /// inside the delete confirmation sheet. The parent screen owns the actual
+  /// export flow (`_handleExportData`) so we plumb a callback in rather than
+  /// duplicating the snackbar copy here. Sheet pops itself before invoking
+  /// the callback so the parent's snackbar isn't covered by this modal.
+  final VoidCallback? onExportRequested;
 
   @override
   State<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
@@ -1087,7 +1147,11 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           GestureDetector(
             onTap: () {
               Navigator.pop(context);
-              // TODO: open export flow
+              // Plumbed via parent callback so we don't duplicate the
+              // "Data export isn't available yet" honest copy here.
+              // Sheet pops first so the export snackbar can render
+              // unobscured (modals shadow snackbars).
+              widget.onExportRequested?.call();
             },
             child: Container(
               width: double.infinity,

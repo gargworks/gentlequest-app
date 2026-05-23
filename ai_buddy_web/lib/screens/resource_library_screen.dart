@@ -24,11 +24,18 @@ import '../widgets/exercise_card_scaffold.dart';
 // While Anonymity Mode is ON, recommender falls back to .default — no mood read.
 // (Anonymity mode is not yet wired; always falls back to .recentMoodHeavy for v1.)
 //
-// ExerciseCardScaffold fullscreen tap destination is NOT yet implemented (R1D16 pending).
-// Card taps are wired but show a TODO snackbar until R1D16 lands.
+// ExerciseCardScaffold fullscreen tap IS wired through _exerciseScaffoldType()
+// for the in-catalog exercise ids (breath_478 / box_breathing /
+// grounding_54321 / body_scan / prog_relax). Cards without a scaffold mapping
+// silently bail out in release builds; debug asserts catch unmapped ids
+// during development. The earlier "TODO snackbar" copy in this comment was
+// stale — the code shipped with proper routing as of R1D17.
 //
-// "Ask Alex" deep link opens ChatScreen. Library context pre-fill is stubbed
-// (ChatScreen does not yet accept an initial-message parameter; flagged in PR).
+// "Ask Alex" deep-links to the Talk tab (HomeShell.AppTab.talk) via
+// homeTabDeepLink.request() — see _onAskAlex below. Library-context
+// pre-fill ("I'm looking for an exercise to ...") is the remaining
+// R1D17-followup TODO once HomeShell/InteractiveChatScreen accept an
+// initialMessage hint.
 
 // ─── Data model ──────────────────────────────────────────────────────────────
 
