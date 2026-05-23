@@ -1,5 +1,5 @@
 """
-Static pages: landing, app, clinical dashboard, health check, privacy, terms, assetlinks.
+Static pages: landing, app, clinical dashboard, health check, privacy, terms.
 Extracted from app.py monolith.
 """
 
@@ -66,20 +66,6 @@ def landing_page():
 def serve_app():
     """Serve the Flutter web app or fallback page (explicit route)."""
     return _serve_app_logic()
-
-
-@static_bp.route("/.well-known/assetlinks.json")
-@limiter.exempt
-def assetlinks():
-    """Serve assetlinks.json for Android App Links verification"""
-    try:
-        return send_from_directory(
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), ".well-known"),
-            "assetlinks.json",
-            mimetype="application/json",
-        )
-    except FileNotFoundError:
-        return jsonify({"error": "Asset links file not found"}), 404
 
 
 @static_bp.route("/insights")

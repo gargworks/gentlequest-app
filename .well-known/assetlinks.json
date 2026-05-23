@@ -1,9 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.gentlequest.www",
-    "sha256_cert_fingerprints":
-    ["32:4E:83:98:B3:AC:85:C8:FF:FE:EB:91:2F:D2:1F:A2:65:99:32:18:51:AE:0C:C2:34:80:CD:74:33:A5:77:59"]
-  }
-}]
