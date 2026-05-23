@@ -4132,6 +4132,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 color: colorFor(q),
                 progress: progress,
                 xp: q.xpReward,
+                // Discover/Explore tap = self-report toggle (no content
+                // runs). Use honest "I did this" label so users don't think
+                // tapping starts quest content (that's Today tab's job via
+                // RecommendationCardWidget + _openTimerSheet). Calling it
+                // "Start" while it just flipped done-state was a misleading
+                // affordance that let users accumulate completion credit
+                // without engaging — caught during sim QC 2026-05-23.
+                actionLabel: 'I did this',
                 onTap: () {
                   try {
                     logAnalyticsEvent('quest_start', metadata: {

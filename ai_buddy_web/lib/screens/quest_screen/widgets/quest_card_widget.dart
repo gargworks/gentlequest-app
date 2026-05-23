@@ -8,6 +8,18 @@ class QuestCardWidget extends StatelessWidget {
   final VoidCallback onTap;
   final double? progress;
 
+  /// Optional override for the action button label. When provided, replaces
+  /// the default "Start" label shown when [progress] is null. Callers whose
+  /// `onTap` wires to a self-report mark-complete (i.e. tapping just toggles
+  /// completion without opening any quest content) should pass `'I did this'`
+  /// here — calling the affordance "Start" while the tap just flips the
+  /// done-state is a misleading affordance that lets users accumulate
+  /// completion credit without engaging with any actual quest content.
+  /// Discover/Explore tab callers in `wellness_dashboard_screen.dart` use
+  /// this; Today tab uses `RecommendationCardWidget` (separate widget) which
+  /// has its own timer-sheet flow.
+  final String? actionLabel;
+
   const QuestCardWidget({
     super.key,
     required this.title,
@@ -17,6 +29,7 @@ class QuestCardWidget extends StatelessWidget {
     required this.onTap,
     this.progress,
     this.xp,
+    this.actionLabel,
   });
 
   final int? xp;
@@ -110,7 +123,7 @@ class QuestCardWidget extends StatelessWidget {
                   child: Text(
                     (p != null && p >= 1.0)
                         ? 'Done'
-                        : (p != null ? 'Continue' : 'Start'),
+                        : (p != null ? 'Continue' : (actionLabel ?? 'Start')),
                   ),
                 ),
               ],
