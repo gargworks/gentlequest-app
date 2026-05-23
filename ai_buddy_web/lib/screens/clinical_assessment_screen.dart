@@ -1191,7 +1191,7 @@ class _ResultRevealScreen extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFFEEF0FE),
+                            GQColors.primarySoft,
                             Color(0xFFF8F1FA),
                             Color(0xFFFAEEEC),
                           ],
