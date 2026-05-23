@@ -157,8 +157,11 @@ class _ReflectionSheetState extends State<_ReflectionSheet>
 
   void _goToChat() {
     _dismiss();
-    // Deep-link to Talk tab via the existing ValueNotifier pattern
-    homeTabDeepLink.value = AppTab.talk;
+    // Deep-link to Talk tab. Uses .request() (not .value=) because the bus
+    // is a custom ChangeNotifier that always fires — required when the user
+    // happens to already be on Talk per the bus state, since a plain
+    // ValueNotifier suppresses same-value writes and the listener never ran.
+    homeTabDeepLink.request(AppTab.talk);
   }
 
   void _startBreathing() {

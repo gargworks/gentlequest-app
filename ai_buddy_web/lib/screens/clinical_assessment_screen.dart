@@ -440,7 +440,7 @@ class _AssessmentFlowScreenState extends State<_AssessmentFlowScreen>
           // just popped to nowhere, leaving the user stranded at the
           // most fragile post-disclosure moment.
           Navigator.of(context).pop();
-          homeTabDeepLink.value = AppTab.talk;
+          homeTabDeepLink.request(AppTab.talk);
         },
       );
     }

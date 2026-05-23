@@ -15,7 +15,10 @@ import '../../../providers/quest_provider.dart';
 import '../../../providers/progress_provider.dart';
 import '../../../models/quest.dart' as model;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../navigation/home_tab_deeplink.dart';
 import '../../../navigation/route_observer.dart';
+import '../../../screens/journal_screen.dart' show JournalScreen;
+import '../../../screens/resource_library_screen.dart' show ResourceLibraryScreen;
 import '../../../widgets/keyboard_dismissible_scaffold.dart';
 import '../../../widgets/app_bottom_nav.dart';
 import '../../../widgets/app_back_button.dart';
@@ -2178,7 +2181,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             child: ElevatedButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                Navigator.pushNamed(context, '/journal');
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const JournalScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: GQColors.coral,
@@ -2200,7 +2204,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                Navigator.pushNamed(context, '/journal');
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const JournalScreen()));
               },
               child: const Text(
                 "Tomorrow's me will thank you →",
@@ -2825,21 +2830,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               iconBg: const Color(0xFFFFF1E5),
               iconColor: const Color(0xFFC2522F),
               label: 'Browse exercises',
-              onTap: () => Navigator.pushNamed(context, '/exercises'),
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ResourceLibraryScreen())),
             ),
             _QuickLane(
               icon: Icons.favorite_border,
               iconBg: GQColors.accentSoft,
               iconColor: GQColors.coral,
               label: 'Log mood',
-              onTap: () => Navigator.pushNamed(context, '/home'),
+              onTap: () => homeTabDeepLink.request(AppTab.mood),
             ),
             _QuickLane(
               icon: Icons.chat_bubble_outline,
               iconBg: GQColors.primarySoft,
               iconColor: GQColors.primary,
               label: 'Talk to Alex',
-              onTap: () => Navigator.pushNamed(context, '/chat'),
+              onTap: () => homeTabDeepLink.request(AppTab.talk),
             ),
           ]
         : [
@@ -2848,21 +2854,22 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
               iconBg: GQColors.primarySoft,
               iconColor: GQColors.primary,
               label: 'Talk to Alex',
-              onTap: () => Navigator.pushNamed(context, '/chat'),
+              onTap: () => homeTabDeepLink.request(AppTab.talk),
             ),
             _QuickLane(
               icon: Icons.favorite_border,
               iconBg: GQColors.accentSoft,
               iconColor: GQColors.coral,
               label: 'Log mood',
-              onTap: () => Navigator.pushNamed(context, '/home'),
+              onTap: () => homeTabDeepLink.request(AppTab.mood),
             ),
             _QuickLane(
               icon: Icons.self_improvement_outlined,
               iconBg: const Color(0xFFFFF1E5),
               iconColor: const Color(0xFFC2522F),
               label: 'Exercises',
-              onTap: () => Navigator.pushNamed(context, '/exercises'),
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ResourceLibraryScreen())),
             ),
           ];
 

@@ -422,7 +422,7 @@ void showMoodNeutralToast(BuildContext context) {
       },
       onChatTap: () {
         entry.remove();
-        homeTabDeepLink.value = AppTab.talk;
+        homeTabDeepLink.request(AppTab.talk);
       },
     ),
   );

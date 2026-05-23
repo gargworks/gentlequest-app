@@ -68,7 +68,7 @@ void _handleNotificationPayload(String? payload) {
   if (payload == 'open_quest' || payload == 'open_today') {
     // Immediately signal HomeShell to switch to Quest tab if it's mounted
     try {
-      homeTabDeepLink.value = AppTab.quest;
+      homeTabDeepLink.request(AppTab.quest);
     } catch (_) {}
 
     final nav = rootNavigatorKey.currentState;
@@ -84,7 +84,7 @@ void _handleNotificationPayload(String? payload) {
   }
   if (payload == 'open_mood') {
     try {
-      homeTabDeepLink.value = AppTab.mood;
+      homeTabDeepLink.request(AppTab.mood);
     } catch (_) {}
     final nav = rootNavigatorKey.currentState;
     if (nav == null) {
@@ -97,7 +97,7 @@ void _handleNotificationPayload(String? payload) {
   }
   if (payload == 'open_talk') {
     try {
-      homeTabDeepLink.value = AppTab.talk;
+      homeTabDeepLink.request(AppTab.talk);
     } catch (_) {}
     final nav = rootNavigatorKey.currentState;
     if (nav == null) {

@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart';
+import '../screens/profile_screen.dart' show ProfileScreen;
 import '../services/firebase_service.dart';
 import '../theme/gq_tokens.dart';
 
@@ -497,8 +498,9 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
                           button: true,
                           label: 'I have a safety plan I want to use',
                           child: GestureDetector(
-                            onTap: () =>
-                                Navigator.of(context).pushNamed('/safety-plan'),
+                            onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const ProfileScreen())),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 13),
