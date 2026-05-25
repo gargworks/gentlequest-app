@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GentleQuest — Launch Screen (export)</title>
+<style>
+  :root {
+    --gq-primary:        #667EEA;
+    --gq-primary-light:  #EEF0FE;
+    --gq-primary-mid:    #B5C2F3;
+    --gq-primary-mid2:   #8FA1ED;
+    --gq-primary-dk:     #4F63C9;
+    --gq-ink:            #1F1B3A;
+    --gq-bg-top:         #F8F7FF;
+    --gq-bg-bot:         #EEF0FE;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--gq-bg-top); }
+
+  .launch {
+    width: 390px; height: 844px;
+    position: relative; overflow: hidden;
+    background: linear-gradient(180deg,
+      var(--gq-bg-top) 0%,
+      var(--gq-bg-top) 38%,
+      var(--gq-bg-bot) 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded',
+                 'SF Pro Display', system-ui, sans-serif;
+  }
+
+  .ambient {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, calc(-50% + 80px));
+    width: 540px; height: 540px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle,
+      rgba(102,126,234,0.45) 0%,
+      rgba(102,126,234,0.20) 28%,
+      rgba(102,126,234,0.07) 55%,
+      transparent 72%);
+    filter: blur(14px);
+  }
+
+  .underglow {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, calc(-50% + 140px));
+    width: 280px; height: 56px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(ellipse,
+      rgba(79,99,201,0.20) 0%,
+      rgba(79,99,201,0.07) 50%,
+      transparent 80%);
+    filter: blur(8px);
+  }
+
+  .hero {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
+    padding: 0 32px;
+    transform: translateY(-40px);
+    z-index: 2;
+  }
+
+  .wordmark {
+    font-size: 56px;
+    font-weight: 600;
+    color: var(--gq-ink);
+    letter-spacing: -0.6px;
+    line-height: 1;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded',
+                 system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .breath {
+    margin-top: 64px;
+    width: 200px; height: 200px;
+    position: relative;
+  }
+  .breath svg { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="launch">
+  <div class="ambient"></div>
+  <div class="underglow"></div>
+  <div class="hero">
+    <h1 class="wordmark">GentleQuest</h1>
+    <div class="breath" aria-hidden="true">
+      <svg viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="orbCore" cx="42%" cy="38%" r="62%">
+            <stop offset="0%"  stop-color="#667EEA"/>
+            <stop offset="55%" stop-color="#4F63C9"/>
+            <stop offset="100%" stop-color="#1F1B3A"/>
+          </radialGradient>
+        </defs>
+        <circle cx="100" cy="100" r="90"  fill="none" stroke="#B5C2F3" stroke-width="1.5" opacity="0.55"/>
+        <circle cx="100" cy="100" r="70"  fill="none" stroke="#8FA1ED" stroke-width="1.5" opacity="0.75"/>
+        <circle cx="100" cy="100" r="50"  fill="none" stroke="#4F63C9" stroke-width="1.5" opacity="0.95"/>
+        <circle cx="100" cy="100" r="22"  fill="url(#orbCore)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+</body>
+</html>

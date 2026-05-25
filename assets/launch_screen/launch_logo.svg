@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GentleQuest launch logo — centered asset for iOS storyboard + Android launch_background.
+  Background is provided by the platform (storyboard backgroundColor / launch_background.xml drawable).
+  Source asset is 600×720 @3x; @2x = 400×480; @1x = 200×240.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="720" viewBox="0 0 600 720">
+  <defs>
+    <radialGradient id="centerOrb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="1.0"/>
+      <stop offset="70%" stop-color="#059669" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#065F46" stop-opacity="0.9"/>
+    </radialGradient>
+  </defs>
+
+  <text x="300" y="240" text-anchor="middle"
+        font-family="-apple-system, 'SF Pro Rounded', 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="68" font-weight="600" fill="#065F46" letter-spacing="-1.2">
+    GentleQuest
+  </text>
+
+  <g transform="translate(300, 480)">
+    <circle r="148" fill="none" stroke="#A7F3D0" stroke-width="2" opacity="0.45"/>
+    <circle r="108" fill="none" stroke="#6EE7B7" stroke-width="2.5" opacity="0.65"/>
+    <circle r="68"  fill="none" stroke="#34D399" stroke-width="3"   opacity="0.85"/>
+    <circle r="34"  fill="url(#centerOrb)"/>
+  </g>
+</svg>
