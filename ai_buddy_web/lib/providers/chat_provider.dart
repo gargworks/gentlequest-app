@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
+import '../services/voice_notes_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -351,6 +352,11 @@ class ChatProvider extends ChangeNotifier {
     if (_isTyping) _isTyping = false;
     notifyListeners();
 
+    // Voice notes — speaks the full reply if the user has the Profile
+    // toggle ON. Fire-and-forget; the service short-circuits on pref miss
+    // and on platform init failure. Audit §7.
+    unawaited(VoiceNotesService.instance.maybeSpeak(full));
+
     // Track exercise offers for analytics
     if (aiMessage.exercise != null) {
       FirebaseService().logEvent('intervention_offered', {
@@ -453,6 +459,12 @@ class ChatProvider extends ChangeNotifier {
         } else if (type == 'done') {
           if (_isTyping) _isTyping = false;
           notifyListeners();
+          // Speak the completed streamed reply if voice-notes is on.
+          // Audit §7. No-op when pref is false / on web stub.
+          final spoken = streaming?.content;
+          if (spoken != null && spoken.trim().isNotEmpty) {
+            unawaited(VoiceNotesService.instance.maybeSpeak(spoken));
+          }
           handle.close();
         } else if (type == 'error') {
           handle.close();

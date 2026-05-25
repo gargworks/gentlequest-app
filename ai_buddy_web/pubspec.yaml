@@ -82,6 +82,11 @@ dependencies:
   # devices/languages where on-device isn't supported.
   speech_to_text: ^7.0.0
 
+  # Text-to-speech for the Profile "Voice notes" toggle (audit §7). Uses
+  # platform TTS engines (AVSpeechSynthesizer on iOS, Android TextToSpeech).
+  # No network round-trip; no audio leaves the device.
+  flutter_tts: ^4.0.2
+
   # App version + build for honest Settings footer (was hardcoded
   # "Version 1.2.2 · build 26032321" until 2026-05-21).
   package_info_plus: ^8.0.0
