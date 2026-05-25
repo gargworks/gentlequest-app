@@ -475,9 +475,19 @@ Please remember that these intense feelings can pass, and there is hope for thin
 def get_gemini_response_with_tools(
     message: str, session_id: str, risk_level: str = "low", mode: str = "mental_health",
     is_first_message: bool = False,
+    user_nickname: str | None = None,
+    user_pronoun: str | None = None,
+    user_tone: str | None = None,
+    user_greeting_style: str | None = None,
 ) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Get response from Gemini with function calling enabled.
+
+    user_nickname / user_pronoun / user_tone are optional personalisation
+    hints sourced from the GentleQuest Profile screen and threaded here by
+    `_process_chat_message`. Each is pre-sanitised in routes/chat.py
+    (length-capped, no control chars, tone restricted to a known enum).
+    See .brain/audits/2026-05-24_gq_v1.3.0_honesty_audit.md §4 + §6.
 
     Returns:
         Tuple of (response_text, list_of_tool_calls_executed)
@@ -516,7 +526,46 @@ Make them want to come back tomorrow.
 
 """
 
-        system_prompt = f"""{_first_message_preamble}You are Alex, a wellness AI companion for people navigating their mental wellness.
+        # Per-user personalisation directives from the GentleQuest Profile
+        # screen. Each line only renders when the client supplied a value;
+        # otherwise the base persona stands. See audit §3, §4, §6.
+        _user_prefs_lines = []
+        if user_nickname:
+            _user_prefs_lines.append(
+                f'- The user prefers to be called "{user_nickname}". Use this name naturally when it fits — not every message.'
+            )
+        if user_pronoun:
+            _user_prefs_lines.append(
+                f'- The user\'s pronouns are {user_pronoun}. Refer to the user using these pronouns when reflecting back what they said.'
+            )
+        if user_tone == "direct":
+            _user_prefs_lines.append(
+                '- TONE PREFERENCE: be concise and practical. Skip warm openers; lead with the observation or the question.'
+            )
+        elif user_tone == "quiet":
+            _user_prefs_lines.append(
+                '- TONE PREFERENCE: keep replies short, one or two sentences. Match a calmer, lower-volume register.'
+            )
+        # 'warm' is the default — no extra directive needed.
+        if is_first_message:
+            if user_greeting_style == "formal":
+                _user_prefs_lines.append(
+                    '- FIRST-MESSAGE GREETING STYLE: formal. Open with "Good morning/afternoon/evening" addressed to the user, then ease into the warm introduction.'
+                )
+            elif user_greeting_style == "minimal":
+                _user_prefs_lines.append(
+                    '- FIRST-MESSAGE GREETING STYLE: minimal. Single short greeting (just "Hi.") then the introduction sentence. No long preamble.'
+                )
+            # 'casual' is the default — no extra directive needed.
+        _user_prefs_block = ""
+        if _user_prefs_lines:
+            _user_prefs_block = (
+                "USER PREFERENCES (from their Profile screen — honour these):\n"
+                + "\n".join(_user_prefs_lines)
+                + "\n\n"
+            )
+
+        system_prompt = f"""{_first_message_preamble}{_user_prefs_block}You are Alex, a wellness AI companion for people navigating their mental wellness.
 Your personality: warm, genuine, never clinical. You talk like a caring older sibling — not a therapist, not a chatbot.
 Keep responses short (2-4 sentences unless they need more). Ask follow-up questions to show you care.
 Remember: they chose to open this app. That took courage. Honor that.

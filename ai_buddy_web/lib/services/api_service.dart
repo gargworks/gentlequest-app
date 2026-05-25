@@ -10,6 +10,7 @@ import '../models/interactive_exercise.dart';
 import '../models/mood_entry.dart';
 import '../models/community_post.dart';
 import '../config/api_config.dart';
+import '../config/profile_config.dart';
 import 'session_manager.dart';
 import 'firebase_service.dart';
 
@@ -407,6 +408,30 @@ class ApiService {
       } else {
         if (kDebugMode) debugPrint('🔍 DEBUG: No country parameter provided');
       }
+
+      // Personalisation fields — read from ProfileConfig (hydrated at app
+      // start from profile_*_v1 SharedPreferences keys). Omit defaults so
+      // the server can fall back to its built-in persona. Backwards-compat:
+      // older backends ignore unknown fields.
+      final pname = ProfileConfig.userName.trim();
+      if (pname.isNotEmpty && pname != 'You') {
+        requestData['user_nickname'] = pname;
+      }
+      final ppronoun = ProfileConfig.userPronoun.trim();
+      if (ppronoun.isNotEmpty) {
+        requestData['user_pronoun'] = ppronoun;
+      }
+      final ptone = ProfileConfig.userTone.trim();
+      if (ptone.isNotEmpty && ptone != 'warm') {
+        // 'warm' is the server default; only send when user has overridden.
+        requestData['user_tone'] = ptone;
+      }
+      final pgreet = ProfileConfig.userGreetingStyle.trim();
+      if (pgreet.isNotEmpty && pgreet != 'casual') {
+        // 'casual' is the server default; only send overrides.
+        requestData['user_greeting_style'] = pgreet;
+      }
+
       if (kDebugMode) debugPrint('🔍 DEBUG: Request data: $requestData');
 
       final response = await _dio.post('/api/chat', data: requestData);

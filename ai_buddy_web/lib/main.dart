@@ -27,7 +27,10 @@ import 'widgets/app_bottom_nav.dart' show AppTab;
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
 import 'services/deep_link_service.dart';
+import 'services/pref_migrator.dart';
+import 'config/profile_config.dart';
 import 'screens/legal/legal_screen.dart';
+import 'widgets/branded_splash.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/services/app_rating_service.dart';
@@ -168,6 +171,27 @@ Future<void> main() async {
     debugPrint('AuthService hydrate error: $e');
   }
 
+  // Migrate legacy onboarding pref keys onto canonical scheduler keys +
+  // re-arm notification schedulers from persisted opt-in state. Without
+  // this, users who toggled ON in a prior session can have a phantom
+  // toggle (pref says enabled, no schedule actually pending). See
+  // .brain/audits/2026-05-24_gq_v1.3.0_honesty_audit.md §1+§2.
+  try {
+    await PrefMigrator.run();
+  } catch (e) {
+    debugPrint('PrefMigrator error: $e');
+  }
+
+  // Hydrate ProfileConfig (nickname / pronoun / avatar / tone) from the
+  // profile_*_v1 SharedPreferences keys. Previously these were written by
+  // profile_screen but never read into the static globals chat reads, so
+  // setting nickname/avatar/tone did nothing downstream. See audit §3–§6.
+  try {
+    await ProfileConfig.hydrateFromPrefs();
+  } catch (e) {
+    debugPrint('ProfileConfig hydrate error: $e');
+  }
+
   // Initialize deep link handling (app links / universal links)
   try {
     await DeepLinkService().initialize();
@@ -275,8 +299,12 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkWelcome() async {
-    final seen = await WelcomeScreen.hasBeenSeen();
+    final results = await Future.wait<dynamic>([
+      WelcomeScreen.hasBeenSeen(),
+      Future<void>.delayed(const Duration(milliseconds: 1100)),
+    ]);
     if (!mounted) return;
+    final seen = results[0] as bool;
     setState(() {
       _showWelcome = !seen;
       _resolved = true;
@@ -286,7 +314,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_resolved) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const BrandedSplash();
     }
     return _showWelcome ? const WelcomeScreen() : const ComplianceGuardScreen();
   }

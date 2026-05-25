@@ -140,10 +140,24 @@ def _apply_layer_2_safety(
 
 # ── Main chat message processing ──────────────────────────────────
 
-def _process_chat_message(message: str, session_id: str, is_first_message: bool = False) -> Tuple[str, str, List[Dict]]:
+def _process_chat_message(
+    message: str,
+    session_id: str,
+    is_first_message: bool = False,
+    user_nickname: str | None = None,
+    user_pronoun: str | None = None,
+    user_tone: str | None = None,
+    user_greeting_style: str | None = None,
+) -> Tuple[str, str, List[Dict]]:
     """Process chat message with AI provider and crisis detection.
 
     When using Gemini, this enables function calling for wellness tools.
+
+    user_nickname / user_pronoun / user_tone are optional personalisation
+    fields sent by the GentleQuest Flutter client (see audit §4 + §6 in
+    `.brain/audits/2026-05-24_gq_v1.3.0_honesty_audit.md`). They are
+    pre-sanitised in routes/chat.py and threaded through to the Gemini
+    system-prompt builder.
 
     Returns:
         Tuple of (ai_response, risk_level, tool_calls)
@@ -182,7 +196,14 @@ def _process_chat_message(message: str, session_id: str, is_first_message: bool 
             from providers.gemini import get_gemini_response_with_tools
 
             ai_response, tool_calls = get_gemini_response_with_tools(
-                message, session_id, risk_level, is_first_message=is_first_message,
+                message,
+                session_id,
+                risk_level,
+                is_first_message=is_first_message,
+                user_nickname=user_nickname,
+                user_pronoun=user_pronoun,
+                user_tone=user_tone,
+                user_greeting_style=user_greeting_style,
             )
 
             # Guardrail Layer 2: Output Safety Verification (sync, tight timeout).

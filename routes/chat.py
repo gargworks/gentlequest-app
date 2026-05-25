@@ -66,12 +66,45 @@ def chat():
         # Get country from request
         country = get_country_from_request(request)
 
+        # Optional personalisation fields sent by the Flutter client
+        # (ai_buddy_web/lib/services/api_service.dart). Hardened: trim,
+        # length-cap, and reject anything with newlines or control chars
+        # before letting it into the system prompt. Unknown values fall
+        # back to None so the persona builder uses defaults.
+        def _sanitise_pref(raw: object, max_len: int = 32) -> str | None:
+            if not isinstance(raw, str):
+                return None
+            cleaned = raw.strip()
+            if not cleaned:
+                return None
+            # Reject control chars / newlines so a malformed pref can't
+            # break the system prompt construction.
+            if any(ord(c) < 0x20 for c in cleaned):
+                return None
+            return cleaned[:max_len]
+
+        user_nickname = _sanitise_pref(data.get("user_nickname"), max_len=32)
+        user_pronoun = _sanitise_pref(data.get("user_pronoun"), max_len=16)
+        user_tone_raw = _sanitise_pref(data.get("user_tone"), max_len=8)
+        # Tone is a whitelisted enum; reject anything else.
+        user_tone = user_tone_raw if user_tone_raw in ("warm", "direct", "quiet") else None
+        user_greet_raw = _sanitise_pref(data.get("user_greeting_style"), max_len=8)
+        user_greeting_style = (
+            user_greet_raw if user_greet_raw in ("casual", "formal", "minimal") else None
+        )
+
         _t1 = time.monotonic()
         # Process message with AI provider.
         # When _is_first_message is None (DB lookup failed), skip first-time greeting
         # behavior rather than fall through to True.
         ai_response, risk_level, tool_calls = _process_chat_message(
-            user_message, session_id, is_first_message=bool(_is_first_message)
+            user_message,
+            session_id,
+            is_first_message=bool(_is_first_message),
+            user_nickname=user_nickname,
+            user_pronoun=user_pronoun,
+            user_tone=user_tone,
+            user_greeting_style=user_greeting_style,
         )
         _t2 = time.monotonic()
 
