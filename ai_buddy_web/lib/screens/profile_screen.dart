@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_tokens.dart';
-import '../widgets/crisis_resources.dart';
+import '../widgets/safety_plan_recall_sheet.dart';
 import 'settings_screen.dart';
 import '../config/profile_config.dart';
 
@@ -836,21 +836,14 @@ class _SafetyPlanFilledState extends State<_SafetyPlanFilled> {
                     Expanded(
                       child: _SafetyButton(
                         label: 'Use now',
-                        // "Use now" on the safety-plan card should surface
-                        // the USER'S OWN safety plan, not the generic
-                        // AI-detected crisis sheet. Until SafetyPlanRecall
-                        // ships, fall back to the crisis sheet but flag
-                        // the source so the choice is logged separately
-                        // for analytics.
-                        // FUTURE WORK: replace with
-                        //   showSafetyPlanRecallSheet(context, contacts: ..., steps: ...)
-                        // once the safety-plan builder actually persists
-                        // contacts + plan steps (see _SafetyPlanFilled
-                        // hardcoded sample data).
-                        onTap: () => showCrisisInterventionSheet(
-                          context,
-                          source: 'safety_plan_use_now',
-                        ),
+                        // Surfaces the user's OWN persisted safety plan
+                        // (warning signs, coping steps, contacts, safe
+                        // places, meaning) — not the generic AI crisis
+                        // sheet. The crisis sheet remains reachable via
+                        // the footer of SafetyPlanRecallSheet for
+                        // immediate-danger escalation.
+                        // See .brain/audits/2026-05-24_gq_v1.3.0_honesty_audit.md §8.
+                        onTap: () => showSafetyPlanRecallSheet(context),
                         style: _SafetyButtonStyle.solid,
                       ),
                     ),
