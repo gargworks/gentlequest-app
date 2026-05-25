@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
 import 'settings_screen.dart';
+import '../config/profile_config.dart';
 
 // profile_screen.dart — Tier 3.6 R1D19
 //
@@ -97,6 +98,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
   int _pronounIndex = -1; // -1 = none selected
   int _avatarIndex = 2;
   int _toneIndex = 0; // 0=Warm, 1=Direct, 2=Quiet
+  int _greetingStyleIndex = 0;
   bool _voiceNotes = false;
   bool _planFilled = false; // hydrated from prefs on init
 
@@ -117,6 +119,11 @@ class _ProfileHomeState extends State<_ProfileHome> {
     [Color(0xFFC8E1E8), Color(0xFF7FB3C2)],
   ];
   static const _tones = ['Warm', 'Direct', 'Quiet'];
+  static const _greetingStyles = [
+    ('Casual', '"Hey friend"'),
+    ('Formal', '"Good evening"'),
+    ('Minimal', '"Hi."')
+  ];
 
   @override
   void initState() {
@@ -132,6 +139,7 @@ class _ProfileHomeState extends State<_ProfileHome> {
       _pronounIndex = prefs.getInt(_kProfilePronoun) ?? -1;
       _avatarIndex = prefs.getInt(_kProfileAvatar) ?? 2;
       _toneIndex = prefs.getInt(_kProfileTone) ?? 0;
+      _greetingStyleIndex = prefs.getInt('profile_greeting_style_v1') ?? 0;
       _voiceNotes = prefs.getBool(_kProfileVoiceNotes) ?? false;
       _planFilled = prefs.getBool(_kSafetyPlanFilled) ?? false;
       // Sync nickname controller without clobbering an active edit.
@@ -218,13 +226,21 @@ class _ProfileHomeState extends State<_ProfileHome> {
                   toneIndex: _toneIndex,
                   tones: _tones,
                   voiceNotes: _voiceNotes,
+                  greetingStyleIndex: _greetingStyleIndex,
+                  greetingStyles: _greetingStyles,
                   onToneSelected: (i) {
                     setState(() => _toneIndex = i);
                     _persistProfile<int>(_kProfileTone, i);
+                    ProfileConfig.setToneIndex(i);
                   },
                   onVoiceNotesToggled: (v) {
                     setState(() => _voiceNotes = v);
                     _persistProfile<bool>(_kProfileVoiceNotes, v);
+                  },
+                  onGreetingStyleSelected: (i) {
+                    setState(() => _greetingStyleIndex = i);
+                    _persistProfile<int>('profile_greeting_style_v1', i);
+                    ProfileConfig.setGreetingStyleIndex(i);
                   },
                 ),
 
@@ -403,16 +419,22 @@ class VoiceCard extends StatelessWidget {
   final int toneIndex;
   final List<String> tones;
   final bool voiceNotes;
+  final int greetingStyleIndex;
+  final List<(String, String)> greetingStyles;
   final ValueChanged<int> onToneSelected;
   final ValueChanged<bool> onVoiceNotesToggled;
+  final ValueChanged<int> onGreetingStyleSelected;
 
   const VoiceCard({
     super.key,
     required this.toneIndex,
     required this.tones,
     required this.voiceNotes,
+    required this.greetingStyleIndex,
+    required this.greetingStyles,
     required this.onToneSelected,
     required this.onVoiceNotesToggled,
+    required this.onGreetingStyleSelected,
   });
 
   @override
@@ -470,49 +492,101 @@ class VoiceCard extends StatelessWidget {
             ),
           ),
 
-          // Greeting style dropdown (static display)
+          // Greeting style dropdown — popup menu over a tappable row.
+          // Audit §10: previously a static display; now persists
+          // profile_greeting_style_v1 and feeds the chat system prompt.
           const SizedBox(height: 14),
           const _Eyebrow('GREETING STYLE'),
           const SizedBox(height: 6),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: GQColors.softBg,
-              borderRadius: BorderRadius.circular(11),
-              border: Border.all(color: GQColors.hair),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          PopupMenuButton<int>(
+            initialValue: greetingStyleIndex,
+            onSelected: onGreetingStyleSelected,
+            itemBuilder: (ctx) => [
+              for (var i = 0; i < greetingStyles.length; i++)
+                PopupMenuItem<int>(
+                  value: i,
+                  child: Row(
                     children: [
-                      Text(
-                        'Casual',
-                        style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: GQColors.ink,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              greetingStyles[i].$1,
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: GQColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              greetingStyles[i].$2,
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: GQColors.ink3,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '"Hey friend"',
-                        style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: GQColors.ink3,
-                        ),
-                      ),
+                      if (i == greetingStyleIndex)
+                        const Icon(Icons.check_rounded,
+                            color: GQColors.primary, size: 18),
                     ],
                   ),
                 ),
-                const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: GQColors.ink2, size: 20),
-              ],
+            ],
+            color: Colors.white,
+            elevation: 12,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            offset: const Offset(0, 50),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: GQColors.softBg,
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: GQColors.hair),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          greetingStyles[greetingStyleIndex].$1,
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: GQColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          greetingStyles[greetingStyleIndex].$2,
+                          style: TextStyle(
+                            fontFamily: GQTypography.bodyFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: GQColors.ink3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: GQColors.ink2, size: 20),
+                ],
+              ),
             ),
           ),
 
