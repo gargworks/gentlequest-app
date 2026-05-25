@@ -15,7 +15,9 @@
 //   The WeekState.heavy flag is also server-decided (crisisFlag from this week).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
@@ -803,17 +805,98 @@ class _ObservationCard extends StatelessWidget {
   }
 }
 
+// ─── Share with therapist — mailto helper ─────────────────────────────────────
+
+/// Builds a text-only summary of the week suitable for an email body.
+/// PNG chart attachment is the future-work piece (needs share_plus + a
+/// RepaintBoundary screenshot pipeline); the text summary is the honest
+/// minimum so the "Share with my therapist" button does what it says.
+String _buildShareEmailBody(WeeklyReviewData data) {
+  final lines = <String>[
+    'Hi,',
+    '',
+    'Sharing my GentleQuest weekly review (${data.weekLabel}).',
+    '',
+    'Mood logs this week (${data.logCount} of 7 days):',
+  ];
+  for (final d in data.days) {
+    final idx = d.moodIndex;
+    final mood = idx == null ? '—' : '${idx + 1}/5';
+    final annot = d.annotation != null ? ' (${d.annotation})' : '';
+    final today = d.isToday ? ' [today]' : '';
+    lines.add('  ${d.label}: $mood$annot$today');
+  }
+  if (data.observationText != null) {
+    lines
+      ..add('')
+      ..add(data.observationText!);
+  }
+  if (data.patternHint != null) {
+    lines
+      ..add('')
+      ..add(data.patternHint!);
+  }
+  if (data.standoutQuote != null) {
+    lines
+      ..add('')
+      ..add('Standout moment:')
+      ..add(data.standoutQuote!);
+    if (data.standoutAttribution != null) {
+      lines.add(data.standoutAttribution!);
+    }
+  }
+  if (data.nextWeekChips.isNotEmpty) {
+    lines
+      ..add('')
+      ..add('Focus for next week:');
+    for (final chip in data.nextWeekChips) {
+      lines.add('  • $chip');
+    }
+  }
+  lines
+    ..add('')
+    ..add('— Sent from GentleQuest');
+  return lines.join('\n');
+}
+
+Future<void> _launchShareEmail(
+    BuildContext context, WeeklyReviewData data) async {
+  final body = _buildShareEmailBody(data);
+  final subject = 'GentleQuest weekly check-in — ${data.weekLabel}';
+  // Uri's queryParameters URL-encodes values (incl. \n → %0A), which mail
+  // clients decode into line breaks.
+  final uri = Uri(
+    scheme: 'mailto',
+    queryParameters: {'subject': subject, 'body': body},
+  );
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+  } catch (_) {
+    // fall through to clipboard fallback
+  }
+  await Clipboard.setData(ClipboardData(text: '$subject\n\n$body'));
+  messenger.showSnackBar(
+    const SnackBar(
+      content: Text('No email app found. Summary copied to clipboard.'),
+    ),
+  );
+}
+
 // ─── Share with therapist button ──────────────────────────────────────────────
 
 class _ShareWithTherapistBtn extends StatelessWidget {
-  const _ShareWithTherapistBtn();
+  const _ShareWithTherapistBtn({required this.data});
+
+  final WeeklyReviewData data;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // TODO(backend): open mailto with chart PNG — backend_weekly_review_share_missing
-      },
+      onTap: () => _launchShareEmail(context, data),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 11),
@@ -898,7 +981,7 @@ class _FullWeekBody extends StatelessWidget {
         const SizedBox(height: 14),
         NextWeekPromptCard(chips: data.nextWeekChips),
         const SizedBox(height: 12),
-        const _ShareWithTherapistBtn(),
+        _ShareWithTherapistBtn(data: data),
       ],
     );
   }
@@ -940,7 +1023,7 @@ class _LightWeekBody extends StatelessWidget {
         const SizedBox(height: 14),
         NextWeekPromptCard(chips: data.nextWeekChips, emphasizeRest: true),
         const SizedBox(height: 12),
-        const _ShareWithTherapistBtn(),
+        _ShareWithTherapistBtn(data: data),
       ],
     );
   }
@@ -996,9 +1079,7 @@ class _HeavyWeekBody extends StatelessWidget {
         const SizedBox(height: 12),
         Center(
           child: GestureDetector(
-            onTap: () {
-              // TODO(backend): backend_weekly_review_share_missing
-            },
+            onTap: () => _launchShareEmail(context, data),
             child: const Text(
               'Save this week to share with my therapist',
               style: TextStyle(

@@ -222,16 +222,42 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) return;
     setState(() => _isSubmittingEmail = true);
-    // TODO(backend): POST email to /api/compliance/notify-me
-    // Stub: 300ms crossfade to confirmation after simulated submit.
-    await Future<void>.delayed(GQDurations.notifyConfirmCrossfade);
+
+    // Honesty audit §9: there is no /api/compliance/notify-me backend.
+    // The earlier 300ms stub showed a "we'll email you once" confirmation
+    // and then silently dropped the email. The honest minimum is to open
+    // the user's mail app pre-filled to the operator inbox, so when they
+    // tap send the request actually lands somewhere. Form is gated to
+    // region-block only (isRegionBlock=true), so under-13 users never
+    // see this surface.
+    final region = (_storedRegion ?? 'unknown region').trim();
+    final subject = 'GentleQuest notify-me — $region';
+    final body =
+        'Please notify me when GentleQuest becomes available in $region.\n\n'
+        'My email: $email\n'
+        'Region (from device): $region\n\n'
+        '— Sent from GentleQuest compliance gate';
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'hi@eidetic.works',
+      queryParameters: {'subject': subject, 'body': body},
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('compliance_notify_email: launchUrl failed — $e');
+    }
+
     if (!mounted) return;
     setState(() {
       _isSubmittingEmail = false;
       _ext = _ExtensionState.notifyOk;
     });
     _notifyConfirmCtrl.forward();
-    _envelopePulseCtrl.forward(); // single pulse (not repeat)
+    _envelopePulseCtrl.forward();
   }
 
   void _dismissNotifyConfirmation() {
@@ -831,15 +857,15 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         color: GQColors.ink2,
                       ),
                       children: [
-                        TextSpan(text: "We'll email you "),
+                        TextSpan(text: "Your request opened in your mail app — "),
                         TextSpan(
-                          text: 'once',
+                          text: 'tap send',
                           style: TextStyle(
                               fontWeight: FontWeight.w800, color: GQColors.ink),
                         ),
                         TextSpan(
                             text:
-                                ' — when GentleQuest is available in Illinois.\nNo marketing, no follow-ups.'),
+                                ' to deliver it.\nWe\'ll reply once when GentleQuest opens here.\nNo marketing, no follow-ups.'),
                       ],
                     ),
                   ),
