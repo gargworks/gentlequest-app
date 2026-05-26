@@ -60,7 +60,7 @@ android {
 
     defaultConfig {
         applicationId appId
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion 35
         
         // Dynamic versioning with early validation
