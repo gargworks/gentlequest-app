@@ -694,7 +694,7 @@ DO NOT mention crisis hotlines - system handles that separately. Specifically ne
         
         # Use native SDK directly for minimal overhead (DualEngineLLM adds ~10s)
         _pt3 = _time.monotonic()
-        _model_name = "gemini-3.1-flash-lite-preview"
+        _model_name = "gemini-2.5-flash"
         try:
             # OPT-2: Try cached model first (saves ~100-200ms on warm requests)
             model = _get_cached_model(key_idx, _model_name, system_prompt,
