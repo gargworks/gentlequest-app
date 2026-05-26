@@ -729,7 +729,7 @@ DO NOT mention crisis hotlines - system handles that separately. Specifically ne
                 _debug(f"LLM call failed: {e}")
                 # Fallback to text-only if tools fail (Safety)
                 response = get_gemini_response(message, mode, session_id, risk_level)
-                return response, []
+                return response + f"\n\n[DEBUG ERROR] {str(e)}", []
         _pt4 = _time.monotonic()
         _perf["llm_ms"] = round((_pt4 - _pt3) * 1000)
         _perf["total_ms"] = round((_pt4 - _pt0) * 1000)
