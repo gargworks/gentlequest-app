@@ -115,3 +115,12 @@ staticSites:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # GentleQuest Flutter Web App (app.gentlequest.app)
+  - name: gentlequest-web-app
+    buildCommand: ./ai_buddy_web/build_render_web.sh
+    publishPath: ai_buddy_web/build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

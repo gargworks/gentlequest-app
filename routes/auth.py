@@ -63,7 +63,7 @@ DEEP_LINK_SCHEME = "gentlequest"
 # Flutter web build. Solves the "desktop user clicks email link →
 # gentlequest:// scheme is unrecognised by the browser → dead end"
 # bug flagged by the cross-platform audit.
-WEB_AUTH_VERIFY_URL = "https://gentlequest.app/auth/verify"
+WEB_AUTH_VERIFY_URL = "https://app.gentlequest.app/auth/verify"
 REDIRECT_ROUTER_BASE = "https://nucleus.gentlequest.app/auth/redirect"
 
 # UA substrings that identify a mobile device where the native app
