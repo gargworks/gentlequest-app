@@ -59,7 +59,6 @@ def _get_environment_config(environment: str) -> Dict[str, Any]:
                 "https://gentlequest.app",
                 "https://www.gentlequest.app",
                 "https://app.gentlequest.app",
-                "https://nucleus.gentlequest.app",
             ],
         },
     }

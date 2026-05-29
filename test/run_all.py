@@ -14,7 +14,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime
 
-BASE = "https://nucleus.gentlequest.app"
+BASE = "https://app.gentlequest.app"
 RESULTS = []
 
 

@@ -6,7 +6,7 @@ class ApiConfig {
 
   // Production (Render)
   static const String productionUrl =
-      'https://nucleus.gentlequest.app';
+      'https://app.gentlequest.app';
 
   // Get the appropriate URL based on environment
   static String get baseUrl {

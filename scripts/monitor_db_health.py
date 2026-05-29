@@ -10,7 +10,7 @@ import json
 import urllib.request
 from datetime import datetime
 from mcp_server_nucleus.runtime.secrets import get_telegram_token, get_telegram_chat_id
-BACKEND_URL = os.getenv("BACKEND_URL", "https://nucleus.gentlequest.app")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://app.gentlequest.app")
 
 def check_db_health() -> dict:
     """Check database health via backend API."""

@@ -11,7 +11,7 @@ import json
 import urllib.request
 from datetime import datetime, timezone
 from mcp_server_nucleus.runtime.secrets import get_telegram_token, get_telegram_chat_id
-DOMAINS = ["nucleus.gentlequest.app", "app.gentlequest.app"]  # hud.gentlequest.app DNS not configured
+DOMAINS = ["app.gentlequest.app"]  # hud.gentlequest.app DNS not configured; nucleus.gentlequest.app retired 2026-05-29
 WARN_DAYS = 30
 
 def check_cert(hostname: str, port: int = 443) -> dict:

@@ -167,7 +167,7 @@ echo "📦 Production Backend:"
 echo "---------------------"
 
 check_requirement "Backend deployed" \
-    "curl -s https://nucleus.gentlequest.app/api/health | grep -E -q 'healthy|green'" \
+    "curl -s https://app.gentlequest.app/api/health | grep -E -q 'healthy|green'" \
     "Deploy backend to production"
 
 check_requirement "Environment variables set" \

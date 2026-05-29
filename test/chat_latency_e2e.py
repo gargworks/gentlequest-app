@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-BASE_URL = "https://nucleus.gentlequest.app"
+BASE_URL = "https://app.gentlequest.app"
 API_URL = f"{BASE_URL}/api/chat"
 SCREENSHOTS_DIR = Path("test/screenshots/latency")
 RESULTS_FILE = Path("test/chat_latency_results.json")

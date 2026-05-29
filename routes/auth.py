@@ -64,7 +64,7 @@ DEEP_LINK_SCHEME = "gentlequest"
 # gentlequest:// scheme is unrecognised by the browser → dead end"
 # bug flagged by the cross-platform audit.
 WEB_AUTH_VERIFY_URL = "https://app.gentlequest.app/auth/verify"
-REDIRECT_ROUTER_BASE = "https://nucleus.gentlequest.app/auth/redirect"
+REDIRECT_ROUTER_BASE = "https://app.gentlequest.app/auth/redirect"
 
 # UA substrings that identify a mobile device where the native app
 # (with the gentlequest:// scheme registered) is likely installed.
