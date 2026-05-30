@@ -824,6 +824,29 @@ class ApiService {
     });
   }
 
+  /// Request a user data export (JSON bundle emailed to user)
+  Future<void> exportUserData() async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      await _dio.post('/api/user/export', data: {'session_id': _sessionId});
+    });
+  }
+
+  /// Permanently delete the user's account and all associated data
+  Future<void> deleteUserData() async {
+    return _retryOperation(() async {
+      await _getSessionId();
+      await _dio.delete('/api/user', data: {'session_id': _sessionId});
+    });
+  }
+
+  /// Schedule a follow-up 24h check-in (Q9 heavy moment)
+  Future<void> scheduleFollowUp() async {
+    return _retryOperation(() async {
+      await _dio.post('/api/crisis/follow-up');
+    });
+  }
+
   /// Dispose resources
   void dispose() {
     _dio.close();

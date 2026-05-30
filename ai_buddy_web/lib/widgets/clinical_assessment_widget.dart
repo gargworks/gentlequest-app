@@ -153,7 +153,14 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
         return false;
       case Q9BridgeAction.heavyMoment:
         await logAnalyticsEvent('q9_heavy_moment_flagged');
-        // TODO(feat/q9-followup-notification): schedule 24h check-in
+        
+        // Schedule 24h check-in with the backend
+        try {
+          await _apiService.scheduleFollowUp();
+        } catch (e) {
+          debugPrint('Failed to schedule follow-up: $e');
+        }
+        
         return true;
       case Q9BridgeAction.keepGoing:
       case null:

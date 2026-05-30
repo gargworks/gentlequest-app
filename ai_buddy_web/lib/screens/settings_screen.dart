@@ -211,8 +211,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Flip the in-service opt-in flag; actual scheduleStreakNudge fires
     // from the streak engine when consecutive-day count crosses 3.
     NotificationService.setStreakNudgeEnabled(v);
-    // TODO(scheduler): wire dedicated scheduleStreakNudge/cancel when the
-    // streak engine ships a fire-on-toggle entry point.
+    if (!v) {
+      await NotificationService.cancelStreakNudge();
+    }
   }
 
   Future<void> _onWorriedCheckInChanged(bool v) async {
@@ -228,11 +229,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await prefs.setBool(_kNotifWorriedCheckInKey, false);
         return;
       }
+    } else {
+      await NotificationService.cancelWorriedCheckin();
     }
-    // TODO(scheduler): wire when NotificationService.worried_checkin opt-in
-    // surface ships. Worried follow-ups are mood-event-driven
-    // (scheduleMoodLowFollowup) rather than toggle-driven, so for now we
-    // only persist the user's consent state.
+    // Worried follow-ups are mood-event-driven (scheduleWorriedCheckin)
+    // rather than toggle-driven, so when toggling off we cancel any pending
+    // and when toggling on we just persist the user's consent state (which we did).
   }
 
   // ignore: unused_element
@@ -326,24 +328,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleExportData() async {
-    // Backend POST /api/user/export isn't built yet. Was previously
-    // telling the user "Export requested — a JSON copy will be sent to
-    // your email" while no request actually fired (audit caught GDPR
-    // portability lie). Honest copy until backend ships.
     if (!mounted) return;
+    
+    // Show loading state or immediate feedback
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          "Data export isn't available yet — we'll let you know when it ships.",
-          style: TextStyle(
-              fontFamily: GQTypography.bodyFamily,
-              fontWeight: FontWeight.w600),
-        ),
+        content: Text('Requesting data export...'),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: GQColors.ink,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 2),
       ),
     );
+
+    try {
+      await ApiService().exportUserData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Export requested! A JSON copy of your data will be sent to your email shortly.",
+            style: TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontWeight: FontWeight.w600),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 6),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to request export: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _openDeleteSheet() {
@@ -1041,24 +1062,37 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
   Future<void> _handleDeleteForever() async {
     if (!_confirmed || _deleting) return;
     setState(() => _deleting = true);
-    // Backend DELETE /api/user isn't built yet. Was previously telling the
-    // user "Account deletion requested" while NOTHING actually deleted —
-    // hard GDPR / CCPA "right to erasure" lie. Honest copy until backend
-    // ships, AND we explicitly do NOT mark _confirmed=false so the user
-    // sees nothing happened (no false success indicator).
-    if (mounted) {
-      Navigator.pop(context);
+
+    try {
+      // 1. Send delete request to backend
+      await ApiService().deleteUserData();
+      
+      // 2. Clear local auth state
+      await AuthService.instance.signOut();
+      
+      if (!mounted) return;
+      
+      // 3. Navigate back to login
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Account deletion isn't available yet — email privacy@gentlequest.app to request manual erasure.",
-            style: TextStyle(
-                fontFamily: GQTypography.bodyFamily,
-                fontWeight: FontWeight.w600),
-          ),
+          content: Text('Your account has been deleted.'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: GQColors.ink,
-          duration: Duration(seconds: 6),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _deleting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete account: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
         ),
       );
     }

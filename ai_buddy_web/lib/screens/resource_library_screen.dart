@@ -218,6 +218,15 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
         'add to _exerciseScaffoldType() or remove from _kExercises.');
     if (scaffoldType == null) {
       debugPrint('[resource_library] no scaffold for ${exercise.id}; skipping tap');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${exercise.name} is coming soon!'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
     ExerciseScaffoldScreen.show(context, scaffoldType);
