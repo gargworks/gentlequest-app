@@ -12,6 +12,7 @@
 # used by most CI pipelines. Stable + maintained.
 FROM ghcr.io/cirruslabs/flutter:stable AS flutter-build
 
+USER root
 WORKDIR /flutter-app
 
 # Copy dependency manifests first — this layer is cached unless
