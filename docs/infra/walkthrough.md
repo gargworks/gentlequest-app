@@ -9,7 +9,7 @@ Successfully resolved critical production issues affecting `gentlequest-backend`
 - **Issue**: `FATAL: password authentication failed for user 'gentlequest'`.
 - **Fix**: Reset Cloud SQL user password to match the `gentlequest-backend` environment variable.
 - **Verification**:
-  - Command: `curl https://nucleus.gentlequest.app/api/health`
+  - Command: `curl https://app.gentlequest.app/api/health`
   - Result: `{"database": "healthy", ...}` (Confirmed healthy connection).
 
 ### 2. Frontend Proxy Configuration
@@ -34,6 +34,6 @@ Successfully resolved critical production issues affecting `gentlequest-backend`
 
 | Service | Status | URL |
 |:---|:---|:---|
-| `gentlequest-backend` | ✅ Active (Auth Fixed) | `https://nucleus.gentlequest.app` |
+| `gentlequest-backend` | ✅ Active (Auth Fixed) | `https://app.gentlequest.app` |
 | `nucleus-hud` | ✅ Active (Proxy Fixed) | `https://nucleus-hud-999376128638.us-central1.run.app` |
 | `nucleus-sovereign` | ✅ Active | `https://nucleus-sovereign-999376128638.us-central1.run.app` |

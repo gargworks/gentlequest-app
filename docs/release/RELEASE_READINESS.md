@@ -71,11 +71,11 @@ work that landed across commits `5c186254 … 7eb11e20`.
 3. Set `APP_STORE_URL` and `PLAY_STORE_URL` via dart-define at build
    time when the App Store ID is approved.
 4. Deploy `release/v1.3.0` to backend.
-5. Curl-smoke: `curl https://nucleus.gentlequest.app/api/auth/me` →
+5. Curl-smoke: `curl https://app.gentlequest.app/api/auth/me` →
    should return `{"user": null}` with 200.
 6. Curl-smoke: `curl -X POST -H 'Content-Type: application/json'
    -d '{"email":"you@yourdomain"}'
-   https://nucleus.gentlequest.app/api/auth/magic-link` → 202.
+   https://app.gentlequest.app/api/auth/magic-link` → 202.
    Check your inbox for the magic link.
 7. From a phone build, tap the deep link → should land in app
    signed in. Settings → ACCOUNT card now shows your email.

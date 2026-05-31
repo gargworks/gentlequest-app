@@ -30,7 +30,7 @@ This document describes the security hardening measures implemented for the Nucl
 ### Domains Monitored
 | Domain | Certificate Provider | Expiry |
 |--------|---------------------|--------|
-| nucleus.gentlequest.app | Google Managed | Apr 14, 2026 |
+| app.gentlequest.app | Google Managed | Apr 14, 2026 |
 | hud.gentlequest.app | Google Managed | Auto-renewed |
 | app.gentlequest.app | Google Managed | Auto-renewed |
 

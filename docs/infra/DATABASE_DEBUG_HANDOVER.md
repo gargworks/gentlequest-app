@@ -26,7 +26,7 @@ Flutter Web → Nginx → Gunicorn/Flask → Cloud SQL PostgreSQL
 | **Database User** | `gentlequest` |
 | **Expected Password** | `gentlequest2026` |
 | **Cloud Run Service** | `gentlequest-backend` |
-| **Public URL** | `https://nucleus.gentlequest.app` |
+| **Public URL** | `https://app.gentlequest.app` |
 
 ---
 
@@ -80,7 +80,7 @@ postgresql://gentlequest:gentlequest2026@/gentlequest?host=/cloudsql/gen-lang-cl
 
 ### Step 1: Verify Health Endpoint
 ```bash
-curl https://nucleus.gentlequest.app/api/health
+curl https://app.gentlequest.app/api/health
 ```
 
 **Expected:** `{"status": "healthy", "database": "healthy"}`
@@ -153,13 +153,13 @@ gcloud run services update gentlequest-backend \
 ### Step 7: Verify Recovery
 ```bash
 # Check health
-curl https://nucleus.gentlequest.app/api/health
+curl https://app.gentlequest.app/api/health
 
 # Check memory
-curl https://nucleus.gentlequest.app/api/memory/status
+curl https://app.gentlequest.app/api/memory/status
 
 # Check chat
-curl -X POST https://nucleus.gentlequest.app/api/chat \
+curl -X POST https://app.gentlequest.app/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}'
 ```
@@ -170,7 +170,7 @@ curl -X POST https://nucleus.gentlequest.app/api/chat \
 
 | Action | Command |
 |:-------|:--------|
-| Check health | `curl https://nucleus.gentlequest.app/api/health` |
+| Check health | `curl https://app.gentlequest.app/api/health` |
 | View logs | `gcloud run services logs read gentlequest-backend --region us-central1` |
 | List env vars | `gcloud run services describe gentlequest-backend --region us-central1 --format='yaml(spec.template.spec.containers[0].env)'` |
 | Reset SQL password | `gcloud sql users set-password gentlequest --instance=gentlequest-db --password=gentlequest2026` |
@@ -293,15 +293,15 @@ Run after **any** deployment or configuration change:
 
 ```bash
 # 1. Health check
-curl -s https://nucleus.gentlequest.app/api/health | jq .
+curl -s https://app.gentlequest.app/api/health | jq .
 # Expected: {"status": "healthy", "database": "healthy"}
 
 # 2. Memory system
-curl -s https://nucleus.gentlequest.app/api/memory/status | jq .
+curl -s https://app.gentlequest.app/api/memory/status | jq .
 # Expected: {"status": "active", "tables_initialized": true}
 
 # 3. Chat endpoint (basic)
-curl -s -X POST https://nucleus.gentlequest.app/api/chat \
+curl -s -X POST https://app.gentlequest.app/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}' | jq '.response | length'
 # Expected: > 0 (non-empty response)
@@ -397,13 +397,13 @@ gcloud run services describe gentlequest-backend --region us-central1 \
   ```
 - **Files:** `cloudbuild.yaml`, `tools/nucleus-hud/next.config.ts`
 
-#### TASK-002: Verify SSL Certificate for `nucleus.gentlequest.app`
+#### TASK-002: Verify SSL Certificate for `app.gentlequest.app`
 - **Status:** OPEN (task.md:857)
 - **Description:** Google Managed Certificate for the custom domain needs verification.
 - **Why It Matters:** Without active SSL, users will see browser warnings.
 - **Commands:**
   ```bash
-  gcloud run domain-mappings describe --domain=nucleus.gentlequest.app --region=us-central1
+  gcloud run domain-mappings describe --domain=app.gentlequest.app --region=us-central1
   ```
 - **Expected:** Status = `ACTIVE`, Certificate = `PROVISIONED`
 
@@ -569,7 +569,7 @@ gcloud run services describe gentlequest-backend --region us-central1 \
 gcloud builds submit --config=cloudbuild.yaml
 
 # Verify health
-curl https://nucleus.gentlequest.app/api/health
+curl https://app.gentlequest.app/api/health
 ```
 
 ### Backout (Rollback to Previous Revision)

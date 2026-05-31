@@ -59,8 +59,8 @@ The custom-scheme intent-filters stay in place as fallback for users on devices 
 
 1. **Backend documents reachable.** After setting env vars and redeploying:
    ```bash
-   curl -sv https://nucleus.gentlequest.app/.well-known/apple-app-site-association
-   curl -sv https://nucleus.gentlequest.app/.well-known/assetlinks.json
+   curl -sv https://app.gentlequest.app/.well-known/apple-app-site-association
+   curl -sv https://app.gentlequest.app/.well-known/assetlinks.json
    ```
    Both should return 200 with `Content-Type: application/json` and the configured values. If either returns 503 with `{"error":"universal_links_not_configured"}`, the env vars aren't set on that environment.
 

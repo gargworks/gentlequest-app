@@ -19,7 +19,7 @@ def _build_health_note(db_down: bool, ai_available: bool):
     notes = []
     if db_down and ai_available:
         notes.append("Chat works without DB; history/analytics need DB")
-    db_expires = os.environ.get("DB_EXPIRES_AT", "2026-05-11T07:42:55Z")
+    db_expires = os.environ.get("DB_EXPIRES_AT")
     if db_expires:
         try:
             expires_dt = datetime.fromisoformat(db_expires.replace("Z", "+00:00"))

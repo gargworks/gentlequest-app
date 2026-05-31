@@ -8,8 +8,8 @@
 ## Week 1: Critical Path
 
 ### Day 1-2: Verification
-- [ ] **1.** `curl https://nucleus.gentlequest.app/api/health` → Confirm `{"database": "healthy"}`
-- [ ] **2.** `gcloud run domain-mappings describe --domain=nucleus.gentlequest.app --region=us-central1` → Confirm SSL = ACTIVE
+- [ ] **1.** `curl https://app.gentlequest.app/api/health` → Confirm `{"database": "healthy"}`
+- [ ] **2.** `gcloud run domain-mappings describe --domain=app.gentlequest.app --region=us-central1` → Confirm SSL = ACTIVE
 - [ ] **3.** `gcloud run services logs read gentlequest-backend --region us-central1 --limit 50 | grep -i "password"` → Confirm 0 auth failures
 
 ### Day 3-4: Frontend Completion
@@ -34,8 +34,8 @@
 - [ ] **12.** `gcloud run services update gentlequest-backend --region us-central1 --min-instances=1` → Enable min instance
 
 ### Day 13-14: Final Validation
-- [ ] **13.** `curl -s https://nucleus.gentlequest.app/api/memory/status | jq .` → Confirm `tables_initialized: true`
-- [ ] **14.** `curl -s -X POST https://nucleus.gentlequest.app/api/chat -H "Content-Type: application/json" -d '{"message":"hello"}' | jq '.response | length'` → Confirm > 0
+- [ ] **13.** `curl -s https://app.gentlequest.app/api/memory/status | jq .` → Confirm `tables_initialized: true`
+- [ ] **14.** `curl -s -X POST https://app.gentlequest.app/api/chat -H "Content-Type: application/json" -d '{"message":"hello"}' | jq '.response | length'` → Confirm > 0
 - [ ] **15.** `git diff cloudbuild.yaml` → Verify no secrets in pending commits
 - [ ] **16.** Commit all changes with message: "chore: Infrastructure hardening complete"
 
