@@ -228,7 +228,7 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
           pageTransitionsTheme: const PageTransitionsTheme(
-            builders: <TargetPlatform, PageTransitionsBuilder>{
+            builders: {
               TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
               TargetPlatform.android: CupertinoPageTransitionsBuilder(),
               TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
