@@ -340,6 +340,15 @@ class NotificationService {
     debugPrint('NotificationService: daily check-in cancelled.');
   }
 
+  /// Cancel any pending worried-follow-up check-in notification.
+  /// Convenience wrapper used by Settings when the user flips the toggle off.
+  static Future<void> cancelWorriedCheckin() async {
+    if (kIsWeb) return;
+    await _ensureInited();
+    await _plugin.cancel(_worriedCheckinId);
+    debugPrint('NotificationService: worried check-in cancelled.');
+  }
+
   /// Fire a single immediate notification used by the "Send a test
   /// notification" button on the Notifications detail screen.
   ///
