@@ -67,42 +67,16 @@ class ComplianceService {
   //     LU/HU/LT/PL/RO/SK/CY/HR/EL): 16+.
   //   - Australia: no specific minimum but eSafety Commissioner
   //     guidance suggests 13+; treated as 13 here.
-  static const int _kMinAgeUniversal = 13;
+  // v1.3.0: operator decision — 18+ everywhere to match privacy policy and
+  // avoid COPPA / GDPR-K / minor-data regulatory complexity.
+  static const int _kMinAgeUniversal = 18;
 
-  /// Region-appropriate minimum age (years) before a user can use the app.
-  /// Region is the ISO 3166-1 alpha-2 code stored at `_kVerifiedRegionKey`
-  /// after the GPS / IP geolocation step. Returns the universal floor
-  /// (13) for unknown / unset regions so we err on the inclusive side per
-  /// the "lowest possible age basis compliance" direction; tighten later
-  /// once legal-review covers more markets.
+  /// Minimum age (years) before a user can use the app.
+  /// v1.3.0 operator decision: 18+ everywhere — matches privacy policy,
+  /// avoids COPPA / GDPR-K / minor-data regulatory complexity.
+  /// Region-differentiation deferred to v1.4.0 pending legal review.
   static int minAgeForRegion(String? region) {
-    if (region == null || region.isEmpty) return _kMinAgeUniversal;
-    final r = region.toUpperCase();
-    // 18+ jurisdictions (digital-service consent age without parental flow)
-    if (const {'IN', 'INDIA'}.contains(r)) return 18;
-    // 16+ — EU member states that picked >13 under GDPR-K Article 8.
-    if (const {
-      'DE', 'GERMANY',
-      'FR', 'FRANCE',
-      'IT', 'ITALY',
-      'NL', 'NETHERLANDS',
-      'IE', 'IRELAND',
-      'LU', 'LUXEMBOURG',
-      'HU', 'HUNGARY',
-      'LT', 'LITHUANIA',
-      'PL', 'POLAND',
-      'RO', 'ROMANIA',
-      'SK', 'SLOVAKIA',
-      'CY', 'CYPRUS',
-      'HR', 'CROATIA',
-      'GR', 'GREECE', 'EL',
-    }.contains(r)) {
-      return 16;
-    }
-    // Everywhere else — 13 (US COPPA cutoff, UK ICO, most of EU, Australia,
-    // Canada, NZ). The hard-ban / pending-compliance state lists below
-    // (Illinois, Utah, Washington) still gate independently of age.
-    return _kMinAgeUniversal;
+    return _kMinAgeUniversal; // 18 everywhere
   }
 
   // ============================================
