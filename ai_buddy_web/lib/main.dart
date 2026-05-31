@@ -227,7 +227,7 @@ class MyApp extends StatelessWidget {
             secondary: const Color(0xFFFF6B6B),
           ),
           useMaterial3: true,
-          pageTransitionsTheme: const PageTransitionsTheme(
+          pageTransitionsTheme: PageTransitionsTheme(
             builders: {
               TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
               TargetPlatform.android: CupertinoPageTransitionsBuilder(),
