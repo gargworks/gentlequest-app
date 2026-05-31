@@ -26,11 +26,22 @@ dist/
 .vscode/
 .idea/
 
-# Flutter (Specifics)
+# Flutter — narrow exclusions only.
+# Wholesale `ai_buddy_web/` was here previously; that blocked the
+# multi-stage Dockerfile's Stage 1 from accessing pubspec/lib/web/assets.
+# Keep heavy build artifacts + platform-specific dirs out, let source in.
 ai_buddy_web/.dart_tool/
 ai_buddy_web/build/
 ai_buddy_web/.pub/
 ai_buddy_web/.packages
+ai_buddy_web/android/
+ai_buddy_web/ios/
+ai_buddy_web/macos/
+ai_buddy_web/linux/
+ai_buddy_web/windows/
+ai_buddy_web/test/
+ai_buddy_web/integration_test/
+ai_buddy_web/coverage/
 
 # Large Data (Optional - Keep this if you have large local datasets)
 data/
@@ -45,8 +56,7 @@ data/
 logs/
 *.log
 
-# Huge Directories (Irrelevant to Swarm)
-ai_buddy_web/
+# Huge Directories (Irrelevant to GentleQuest backend)
 landing-page/
 test_env/
 scheduler_env/
@@ -62,4 +72,3 @@ tools/registry.json
 **/venv
 **/__pycache__
 **/.DS_Store
-
