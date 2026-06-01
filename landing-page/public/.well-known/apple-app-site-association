@@ -8,6 +8,14 @@
         ],
         "components": [
           {
+            "/": "/privacy",
+            "exclude": true
+          },
+          {
+            "/": "/terms",
+            "exclude": true
+          },
+          {
             "/": "/*"
           }
         ]
