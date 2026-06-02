@@ -207,6 +207,21 @@ jobs:
           echo "Verifying alias exists and key password works..."
           keytool -list -keystore "$STORE_FILE" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null 2>&1 || { echo "::error::Alias '$KEY_ALIAS' not found or key password incorrect"; exit 1; }
 
+      - name: Strip integration_test from release pubspec
+        working-directory: ai_buddy_web
+        run: |
+          set -e
+          # integration_test is a Flutter dev_dependency. Its Android plugin still gets
+          # written into GeneratedPluginRegistrant.java, but the JAR isn't on the release
+          # classpath, causing 'error: package dev.flutter.plugins.integration_test does not exist'.
+          # Workaround: strip integration_test block from pubspec before pub get.
+          # Workspace is ephemeral; this modification doesn't escape this run.
+          if grep -qE '^  integration_test:' pubspec.yaml; then
+            sed -i.bak -E '/^  integration_test:$/,/^    sdk: flutter$/d' pubspec.yaml
+            rm -f pubspec.yaml.bak
+            echo "Stripped integration_test from pubspec.yaml for release build."
+          fi
+
       - name: Install Flutter deps
         working-directory: ai_buddy_web
         run: flutter pub get
