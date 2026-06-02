@@ -51,7 +51,27 @@ If either doesn't match, **stop** — artifact corrupted. Re-fire antigravity to
 
 ## ☐ Step 4 — Android upload via Play Console (~10 min, but see Step 4-PRE first)
 
-### ⚠ Step 4-PRE — Resolve Play Console upload-key mismatch (BLOCKING)
+### ✅ Step 4-PRE — RESOLVED (Upload Key Reset approved, activates 2026-06-04 05:07 UTC)
+
+**Status (2026-06-02 06:48 UTC):**
+- Reset request submitted via cc_gq + Chrome MCP at 2026-06-02 05:00 UTC
+- Google approved immediately, sent confirmation email
+- **New upload key activates: 2026-06-04 at 05:07 UTC** (48h security cool-down)
+- Until activation, Play Console rejects ALL new AAB/APK uploads
+- After activation, gentlequest-upload-v2.jks-signed AABs accepted
+
+**Once activated (Jun 4 05:07 UTC):** fire `Android Release (AAB)` workflow on amha — should upload AAB to Play Internal Track as draft.
+
+```bash
+gh workflow run "Android Release (AAB)" --repo eidetic-works/ai-mental-health-assistant --ref main \
+  -f upload=true -f track=internal -f status=draft
+```
+
+Historical pre-reset context (kept below for posterity):
+
+---
+
+### Step 4-PRE (historical) — Resolve Play Console upload-key mismatch (BLOCKING)
 
 **Empirical from GHA run [26797741207](https://github.com/eidetic-works/ai-mental-health-assistant/actions/runs/26797741207) (2026-06-02 04:20 UTC):**
 
