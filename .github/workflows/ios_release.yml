@@ -566,12 +566,52 @@ jobs:
             }
             asv_resp = req("appStoreVersions", token, :post, create_body)
             if asv_resp['errors']
-              puts "❌ Failed to create App Store Version:"
-              asv_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
-              exit 1
+              first_err = asv_resp['errors'].first
+              detail = first_err['detail'] || ''
+              # Apple only allows ONE pre-submission App Store Version at a time.
+              # If there's an existing version in PREPARE_FOR_SUBMISSION / DEVELOPER_REJECTED /
+              # REJECTED state, RENAME it to our target version string instead of creating new.
+              # This preserves all pre-filled metadata (description, screenshots, etc.).
+              if detail.include?('cannot create a new version') || detail.include?('current state')
+                puts "ℹ️ Pre-existing pre-submission version blocks creation. Searching for renameable version..."
+                all_versions = req("appStoreVersions?filter[app]=#{app_id}", token)
+                renameable_states = %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED]
+                rename_target = (all_versions['data'] || []).find { |v| renameable_states.include?(v['attributes']['appStoreState']) }
+                if rename_target.nil?
+                  puts "❌ Could not create new version AND no pre-submission version available to rename:"
+                  asv_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+                  puts "All current versions:"
+                  (all_versions['data'] || []).each do |v|
+                    puts "  - #{v['attributes']['versionString']}: #{v['attributes']['appStoreState']}"
+                  end
+                  exit 1
+                end
+                old_vs = rename_target['attributes']['versionString']
+                old_state = rename_target['attributes']['appStoreState']
+                puts "🔁 Renaming App Store Version #{rename_target['id']} (#{old_vs}, state=#{old_state}) → #{version_string}"
+                rename_resp = req("appStoreVersions/#{rename_target['id']}", token, :patch, {
+                  data: {
+                    type: 'appStoreVersions',
+                    id: rename_target['id'],
+                    attributes: { versionString: version_string }
+                  }
+                })
+                if rename_resp && rename_resp['errors']
+                  puts "❌ Rename failed:"
+                  rename_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+                  exit 1
+                end
+                asv_id = rename_target['id']
+                puts "✓ Renamed in place (preserved metadata): #{asv_id}"
+              else
+                puts "❌ Failed to create App Store Version:"
+                asv_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+                exit 1
+              end
+            else
+              asv_id = asv_resp['data']['id']
+              puts "✓ Created App Store Version #{asv_id}"
             end
-            asv_id = asv_resp['data']['id']
-            puts "✓ Created App Store Version #{asv_id}"
           end
 
           # 4c. Link build to App Store Version
