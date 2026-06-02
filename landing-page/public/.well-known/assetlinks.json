@@ -3,7 +3,9 @@
   "target": {
     "namespace": "android_app",
     "package_name": "app.gentlequest.www",
-    "sha256_cert_fingerprints":
-    ["63:A5:FC:BD:15:A6:1B:30:AA:17:11:FF:36:A8:74:4E:93:75:EF:07:3E:20:FD:1F:EC:99:57:F3:C0:3E:B3:E4"]
+    "sha256_cert_fingerprints": [
+      "10:9D:28:63:CE:04:38:F0:FA:3B:42:49:36:90:70:47:FA:32:9C:32:63:D4:AB:B6:A9:13:45:0C:A1:83:28:E0",
+      "63:A5:FC:BD:15:A6:1B:30:AA:17:11:FF:36:A8:74:4E:93:75:EF:07:3E:20:FD:1F:EC:99:57:F3:C0:3E:B3:E4"
+    ]
   }
 }]
