@@ -509,19 +509,17 @@ jobs:
             exit 0
           end
 
-          # Resolve the user-facing version string (CFBundleShortVersionString, e.g. "1.3.0")
-          # via the build's preReleaseVersion relationship. build['attributes']['version']
-          # is the build NUMBER (CFBundleVersion), not the version string.
-          pr_version_id = build['relationships'] &&
-                          build['relationships']['preReleaseVersion'] &&
-                          build['relationships']['preReleaseVersion']['data'] &&
-                          build['relationships']['preReleaseVersion']['data']['id']
-          unless pr_version_id
-            puts "❌ Could not resolve preReleaseVersion id for build #{build_id}. Aborting submission."
+          # Resolve the user-facing version string (CFBundleShortVersionString, e.g. "1.3.0").
+          # build['attributes']['version'] is the build NUMBER, not the version string.
+          # ASC list responses don't populate relationship .data; fetch the related
+          # preReleaseVersion resource directly via /builds/{id}/preReleaseVersion.
+          prv_resp = req("builds/#{build_id}/preReleaseVersion", token)
+          if prv_resp.nil? || prv_resp['data'].nil? || prv_resp['data']['attributes'].nil?
+            puts "❌ Could not resolve preReleaseVersion for build #{build_id}. Aborting submission."
+            puts "   prv_resp=#{prv_resp.inspect}"
             exit 1
           end
-          pr_resp = req("preReleaseVersions/#{pr_version_id}", token)
-          version_string = pr_resp['data']['attributes']['version']
+          version_string = prv_resp['data']['attributes']['version']
           puts ""
           puts "🚀 SUBMIT_FOR_REVIEW=true. Target version: #{version_string} (build #{build['attributes']['version']})"
 
