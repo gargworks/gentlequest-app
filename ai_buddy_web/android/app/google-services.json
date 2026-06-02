@@ -1,45 +1,79 @@
 {
   "project_info": {
-    "project_number": "680543456536",
-    "project_id": "gentlequest-prod",
-    "storage_bucket": "gentlequest-prod.firebasestorage.app"
+    "project_number": "315814630048",
+    "project_id": "gentlequestapp",
+    "storage_bucket": "gentlequestapp.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:680543456536:android:8a936dd819aaa2442e626d",
+        "mobilesdk_app_id": "1:315814630048:android:2e7d7a2af5602ce50befc5",
         "android_client_info": {
           "package_name": "app.gentlequest.www"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "315814630048-rj6idhb8jivkl0bcubojd1ct1d8nuaf3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDGll4cXz-4vpEudVC5Yp7K_b9OMG0XttQ"
+          "current_key": "AIzaSyBOPyj-8kRhFUAdLDuRT9Q6oTlNFak6KRc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "315814630048-rj6idhb8jivkl0bcubojd1ct1d8nuaf3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "315814630048-epd7c59mpo940fb3s1vruodnlcn8t01f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gentlequest.app"
+              }
+            }
+          ]
         }
       }
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:680543456536:android:992bb2eb81d877d12e626d",
+        "mobilesdk_app_id": "1:315814630048:android:631e33d405cfd4cd0befc5",
         "android_client_info": {
           "package_name": "app.gentlequest.www.dev"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "315814630048-rj6idhb8jivkl0bcubojd1ct1d8nuaf3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDGll4cXz-4vpEudVC5Yp7K_b9OMG0XttQ"
+          "current_key": "AIzaSyBOPyj-8kRhFUAdLDuRT9Q6oTlNFak6KRc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "315814630048-rj6idhb8jivkl0bcubojd1ct1d8nuaf3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "315814630048-epd7c59mpo940fb3s1vruodnlcn8t01f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gentlequest.app"
+              }
+            }
+          ]
         }
       }
     }

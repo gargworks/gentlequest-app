@@ -3,7 +3,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:ai_buddy_web/firebase_options.dart';
 /// SharedPreferences key for the anonymity-mode flag. When true, all analytics
 /// + crashlytics calls in [FirebaseService] become no-ops, and the currently
 /// set Firebase user-id is cleared. Mirrored in [analytics_service.dart] so
@@ -62,14 +62,7 @@ class FirebaseService {
   }
 
   Future<void> setFirebaseOptions() async {
-    firebaseOptions = FirebaseOptions(
-      apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
-      appId: String.fromEnvironment('FIREBASE_APP_ID', defaultValue: ''),
-      messagingSenderId: String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID',
-          defaultValue: ''),
-      projectId:
-          String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: ''),
-    );
+    firebaseOptions = DefaultFirebaseOptions.currentPlatform;
   }
 
   Future<void> initialize() async {
