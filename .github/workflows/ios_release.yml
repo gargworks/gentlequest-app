@@ -121,7 +121,7 @@ on:
 jobs:
   build_ios:
     name: Build iOS (IPA or App)
-    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-26-arm64' }}
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-26' }}
     env:
       # Flutter location
       FLUTTER_VERSION: '3.32.8'
@@ -371,7 +371,7 @@ jobs:
     name: Upload to TestFlight
     if: ${{ (inputs.upload || github.event.inputs.upload) == 'true' }}
     needs: build_ios
-    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-26-arm64' }}
+    runs-on: ${{ (inputs.runner_type || github.event.inputs.runner_type) == 'self_hosted' && 'self-hosted' || 'macos-26' }}
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     steps:
       - name: Download IPA artifact
@@ -494,7 +494,7 @@ jobs:
           end
           EOF
 
-          # Check if ruby-jwt is available, if not install it (macos-26-arm64 has gem)
+          # Check if ruby-jwt is available, if not install it (macos-26 has gem)
           if ! gem list -i jwt > /dev/null 2>&1; then
             echo "Installing ruby-jwt..."
             sudo gem install jwt -n /usr/local/bin --no-document
