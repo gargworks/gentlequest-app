@@ -106,6 +106,7 @@ jobs:
       sentry_project: ${{ fromJson(needs.parse-inputs.outputs.sentry).project_ios }}
       sentry_release: ${{ fromJson(needs.parse-inputs.outputs.sentry).release }}
       crashlytics_upload: ${{ fromJson(needs.parse-inputs.outputs.ios).crashlytics_upload || 'false' }}
+      submit_for_review: ${{ fromJson(needs.parse-inputs.outputs.ios).submit_for_review || 'false' }}
       runner_type: ${{ inputs.runner_type }}
 
   release_notify:

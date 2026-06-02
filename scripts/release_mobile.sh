@@ -97,9 +97,14 @@ ANDROID_JSON=$(printf '{"app_id":"%s","package_name":"%s","track":"%s","status":
     "$ANDROID_APP_ID" "$ANDROID_APP_ID" "$TRACK" "$STATUS" "$UPLOAD")
 
 # iOS Params
-# Note: Production track for iOS usually implies TestFlight (export_method: app-store) until manual promotion
-IOS_JSON=$(printf '{"bundle_id":"%s","scheme":"Runner","export_method":"app-store","upload":"%s","preflight":"false"}' \
-    "$IOS_BUNDLE_ID" "$UPLOAD")
+# For 'public' track, also submit to App Store Review after TestFlight upload.
+# 'internal' / 'dry-run' stay TestFlight-only.
+IOS_SUBMIT_FOR_REVIEW="false"
+if [ "$TRACK" == "production" ]; then
+    IOS_SUBMIT_FOR_REVIEW="true"
+fi
+IOS_JSON=$(printf '{"bundle_id":"%s","scheme":"Runner","export_method":"app-store","upload":"%s","preflight":"false","submit_for_review":"%s"}' \
+    "$IOS_BUNDLE_ID" "$UPLOAD" "$IOS_SUBMIT_FOR_REVIEW")
 
 echo "⏳ Triggering GitHub Action..."
 

@@ -55,6 +55,10 @@ on:
         description: "Upload dSYMs to Firebase Crashlytics?"
         required: false
         default: "false"
+      submit_for_review:
+        description: "After TestFlight upload, submit the build to App Store Review?"
+        required: false
+        default: "false"
       runner_type:
         description: "Where to run the build"
         required: false
@@ -110,6 +114,10 @@ on:
         type: string
         default: ""
       crashlytics_upload:
+        required: false
+        type: string
+        default: "false"
+      submit_for_review:
         required: false
         type: string
         default: "false"
@@ -387,6 +395,7 @@ jobs:
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           RELEASE_NOTES: ${{ inputs.release_notes || github.event.inputs.release_notes }}
           BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
+          SUBMIT_FOR_REVIEW: ${{ inputs.submit_for_review || github.event.inputs.submit_for_review }}
         run: |
           set -e
           if [ ! -f dist/*.ipa ]; then echo "No IPA found; skipping upload"; exit 0; fi
@@ -481,17 +490,98 @@ jobs:
           locs = req("builds/#{build_id}/betaBuildLocalizations", token)
           if locs['data']&.any?
             loc_id = locs['data'].first['id']
-            req("betaBuildLocalizations/#{loc_id}", token, :patch, { 
-              data: { 
-                id: loc_id, 
-                type: 'betaBuildLocalizations', 
-                attributes: { whatsNew: notes } 
-              } 
+            req("betaBuildLocalizations/#{loc_id}", token, :patch, {
+              data: {
+                id: loc_id,
+                type: 'betaBuildLocalizations',
+                attributes: { whatsNew: notes }
+              }
             })
             puts "✅ Release notes updated."
           else
             puts "ℹ️ No localization found for build yet. Skipping notes."
           end
+
+          # 4. (Optional) Submit to App Store Review
+          submit_for_review = ENV['SUBMIT_FOR_REVIEW'] == 'true'
+          unless submit_for_review
+            puts "ℹ️ SUBMIT_FOR_REVIEW=false. TestFlight upload complete; App Store submission skipped."
+            exit 0
+          end
+
+          version_string = build['attributes']['version']
+          puts ""
+          puts "🚀 SUBMIT_FOR_REVIEW=true. Target version: #{version_string}"
+
+          # 4a. Find or create App Store Version
+          asv_resp = req("appStoreVersions?filter[app]=#{app_id}&filter[versionString]=#{version_string}", token)
+          asv = asv_resp['data']&.first
+
+          if asv
+            asv_id = asv['id']
+            asv_state = asv['attributes']['appStoreState']
+            puts "✓ Found App Store Version #{asv_id} (#{version_string}), state=#{asv_state}"
+            terminal_states = %w[WAITING_FOR_REVIEW IN_REVIEW PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE READY_FOR_SALE PROCESSING_FOR_APP_STORE PREPARE_FOR_SUBMISSION]
+            if %w[WAITING_FOR_REVIEW IN_REVIEW].include?(asv_state)
+              puts "ℹ️ Version already submitted for review (state=#{asv_state}). Nothing to do."
+              exit 0
+            end
+            if %w[PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE READY_FOR_SALE].include?(asv_state)
+              puts "ℹ️ Version already approved/live (state=#{asv_state}). Nothing to do."
+              exit 0
+            end
+          else
+            puts "🆕 Creating new App Store Version #{version_string}..."
+            create_body = {
+              data: {
+                type: 'appStoreVersions',
+                attributes: { platform: 'IOS', versionString: version_string },
+                relationships: { app: { data: { type: 'apps', id: app_id } } }
+              }
+            }
+            asv_resp = req("appStoreVersions", token, :post, create_body)
+            if asv_resp['errors']
+              puts "❌ Failed to create App Store Version:"
+              asv_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+              exit 1
+            end
+            asv_id = asv_resp['data']['id']
+            puts "✓ Created App Store Version #{asv_id}"
+          end
+
+          # 4b. Link build to App Store Version
+          puts "🔗 Linking build #{build_id} to App Store Version #{asv_id}..."
+          link_resp = req("appStoreVersions/#{asv_id}/relationships/build", token, :patch, {
+            data: { type: 'builds', id: build_id }
+          })
+          if link_resp && link_resp['errors']
+            puts "❌ Failed to link build:"
+            link_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+            exit 1
+          end
+          puts "✓ Build linked"
+
+          # 4c. Submit for review
+          puts "📤 Submitting for App Store Review..."
+          submission_body = {
+            data: {
+              type: 'appStoreVersionSubmissions',
+              relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: asv_id } } }
+            }
+          }
+          sub_resp = req("appStoreVersionSubmissions", token, :post, submission_body)
+          if sub_resp && sub_resp['errors']
+            puts "❌ Submission failed:"
+            sub_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+            puts ""
+            puts "Common causes (fix in App Store Connect Web UI then re-fire workflow):"
+            puts "  - Missing required metadata: description, keywords, screenshots, support URL, age rating"
+            puts "  - App Privacy details not filled (Privacy Practices section)"
+            puts "  - Export compliance not declared (ITSAppUsesNonExemptEncryption already in Info.plist)"
+            exit 1
+          end
+          puts "✅ Submitted to App Store Review! Apple typically reviews in ~24-48 hours."
+          puts "   Track: https://appstoreconnect.apple.com/apps/#{app_id}/distribution"
           EOF
 
           # Check if ruby-jwt is available, if not install it (macos-26 has gem)
