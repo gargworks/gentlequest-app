@@ -526,7 +526,7 @@ jobs:
           # 4a. (Defensive cleanup) Delete any malformed App Store Version whose versionString
           # equals a numeric build number (artifact of the 2026-06-02 cc_gq bug where we used
           # build.attributes.version instead of preReleaseVersion.attributes.version).
-          stale_resp = req("appStoreVersions?filter[app]=#{app_id}", token)
+          stale_resp = req("apps/#{app_id}/appStoreVersions?limit=200", token)
           (stale_resp['data'] || []).each do |v|
             vs = v['attributes']['versionString']
             state = v['attributes']['appStoreState']
@@ -540,7 +540,7 @@ jobs:
           end
 
           # 4b. Find or create the correct App Store Version
-          asv_resp = req("appStoreVersions?filter[app]=#{app_id}&filter[versionString]=#{version_string}", token)
+          asv_resp = req("apps/#{app_id}/appStoreVersions?filter[versionString]=#{version_string}&limit=200", token)
           asv = asv_resp['data']&.first
 
           if asv
@@ -574,15 +574,16 @@ jobs:
               # This preserves all pre-filled metadata (description, screenshots, etc.).
               if detail.include?('cannot create a new version') || detail.include?('current state')
                 puts "ℹ️ Pre-existing pre-submission version blocks creation. Searching for renameable version..."
-                all_versions = req("appStoreVersions?filter[app]=#{app_id}", token)
-                renameable_states = %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED]
+                all_versions = req("apps/#{app_id}/appStoreVersions?limit=200", token)
+                renameable_states = %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED INVALID_BINARY]
+                puts "[diag] all_versions raw response: #{all_versions.inspect[0, 800]}"
                 rename_target = (all_versions['data'] || []).find { |v| renameable_states.include?(v['attributes']['appStoreState']) }
                 if rename_target.nil?
-                  puts "❌ Could not create new version AND no pre-submission version available to rename:"
+                  puts "❌ Could not create new version AND no renameable version found in renameable_states:"
                   asv_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
-                  puts "All current versions:"
+                  puts "All current versions (#{(all_versions['data'] || []).length} total):"
                   (all_versions['data'] || []).each do |v|
-                    puts "  - #{v['attributes']['versionString']}: #{v['attributes']['appStoreState']}"
+                    puts "  - id=#{v['id']} versionString=#{v['attributes']['versionString']} state=#{v['attributes']['appStoreState']} platform=#{v['attributes']['platform']}"
                   end
                   exit 1
                 end
