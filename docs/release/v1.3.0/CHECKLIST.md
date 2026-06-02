@@ -130,6 +130,44 @@ All 3 paths should show the keystore + password files at mode 600. 1Password ent
 
 ---
 
+## ⚠ Known iOS GHA Limitation — Provisioning Profile Regeneration Required
+
+**Symptom:** Firing `iOS Release (IPA)` workflow on amha fails with:
+
+```
+Error (Xcode): Provisioning profile "GentleQuest-AppStore-Prod" doesn't include
+the com.apple.developer.associated-domains entitlement.
+```
+
+**Root cause:** The `IOS_MOBILEPROVISION_BASE64` secret on amha (dated 2025-12-30) was created before the Universal Links / AASA work added Associated Domains entitlement to `Runner.entitlements`. The Apple-issued profile is frozen at creation time — it does NOT auto-update when entitlements change in the project.
+
+**Operator-only fix (~5 min):**
+
+1. https://developer.apple.com/account/resources/profiles/list — log in with Apple ID
+2. Find profile `GentleQuest-AppStore-Prod` → click → **Edit**
+3. Enable capability: **Associated Domains** (toggle ON)
+4. Save → **Download** the new `.mobileprovision` file
+5. Convert to base64:
+   ```bash
+   base64 -i ~/Downloads/GentleQuest-AppStore-Prod.mobileprovision -o /tmp/mp.b64
+   ```
+6. Update GHA secret:
+   ```bash
+   gh secret set IOS_MOBILEPROVISION_BASE64 --repo eidetic-works/ai-mental-health-assistant < /tmp/mp.b64
+   rm /tmp/mp.b64
+   ```
+7. Re-fire workflow:
+   ```bash
+   gh workflow run "iOS Release (IPA)" --repo eidetic-works/ai-mental-health-assistant --ref main \
+     -f bundle_id=com.gentlequest.app -f upload=true -f environment=beta
+   ```
+
+**Alternative — bypass GHA entirely for v1.3.0:**
+
+The locally-staged IPA at `~/.gemini/antigravity/scratch/gentlequest-v130-build/ios.ipa` (57.8 MB, SHA `7643a09b...`) was built via local automatic-signing which generates entitlement-current profiles on-the-fly. Upload via Transporter app (Step 4 above) takes ~5 min and bypasses the stale-profile issue. Use GHA fix above only if you want future iOS releases automated.
+
+---
+
 ## See also
 
 - `docs/release/v1.3.0/RELEASE_OPS.md` — comprehensive runbook with recovery procedures
