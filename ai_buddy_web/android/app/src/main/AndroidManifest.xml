@@ -2,16 +2,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Android 13+ notifications permission (runtime permission is requested in code) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Coarse only: compliance_service uses LocationAccuracy.low for state-level region gating. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- R1D7 voice input — speech_to_text needs mic; SpeechRecognizer also
          needs RECOGNIZE_SPEECH on some OEM builds. The package's setup docs
          require this queries block too so SpeechRecognizer can resolve the
          on-device recognizer service. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"

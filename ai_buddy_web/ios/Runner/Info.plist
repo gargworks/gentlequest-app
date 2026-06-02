@@ -69,16 +69,9 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>GentleQuest requires your location to ensure ongoing compliance with regional AI safety and mental health regulations.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>GentleQuest requires your location to ensure ongoing compliance with regional AI safety and mental health regulations.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Allow GentleQuest to connect to the Dart VM on your local network during development.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dartobservatory._tcp</string>
-	</array>
+	<!-- Dev-only Dart VM / Bonjour keys removed for App Store compliance (audit BLOCKER #7).
+	     Re-add locally ONLY for wireless (non-USB) debugging — do not ship:
+	       NSLocalNetworkUsageDescription + NSBonjourServices (_dartobservatory._tcp) -->
 	<!-- Firebase: Disable auto-initialization to prevent SIGABRT double-init crash.
 	     Firebase will be initialized from Dart code only (FirebaseService.initialize).
 	     This fixes the crash: +[FIRApp addAppToAppDictionary:] duplicate app exception -->
@@ -92,5 +85,8 @@
 	<string>GentleQuest needs the microphone so you can speak instead of type when that feels easier.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Speech is recognized on this device — your voice stays here. Used so you can talk to Alex without typing.</string>
+	<!-- Export compliance: app uses only standard/exempt encryption (HTTPS). -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
