@@ -1,0 +1,107 @@
+name: ASC Status (Read-Only Query)
+
+# Read-only diagnostic. Fires the same ASC API Key/Issuer the iOS Release
+# workflow uses, dumps current state for an app:
+#   - All App Store Versions (versionString + appStoreState + platform)
+#   - Active reviewSubmissions + items
+#   - Latest 5 builds per processingState
+# No state changes. Safe to run anytime.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: "iOS bundle identifier"
+        required: false
+        default: "com.gentlequest.app"
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query ASC
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          BUNDLE_ID: ${{ inputs.bundle_id || github.event.inputs.bundle_id }}
+        run: |
+          set -e
+          if [ -z "$APP_STORE_CONNECT_API_KEY" ] || [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ]; then
+            echo "::error::App Store Connect API credentials missing."
+            exit 1
+          fi
+
+          # Install ruby-jwt if needed
+          if ! gem list -i jwt > /dev/null 2>&1; then
+            sudo gem install jwt -n /usr/local/bin --no-document
+          fi
+
+          cat << 'EOF' > asc_status.rb
+          require 'jwt'
+          require 'net/http'
+          require 'json'
+          require 'time'
+
+          key_id = ENV['APP_STORE_CONNECT_API_KEY_ID']
+          issuer_id = ENV['APP_STORE_CONNECT_API_ISSUER_ID']
+          private_key = ENV['APP_STORE_CONNECT_API_KEY'].gsub("\\n", "\n")
+          bundle_id = ENV['BUNDLE_ID']
+
+          payload = { iss: issuer_id, exp: Time.now.to_i + 20 * 60, aud: 'appstoreconnect-v1' }
+          header = { kid: key_id }
+          token = JWT.encode(payload, OpenSSL::PKey::EC.new(private_key), 'ES256', header)
+
+          def req(path, token)
+            uri = URI("https://api.appstoreconnect.apple.com/v1/#{path}")
+            http = Net::HTTP.new(uri.host, uri.port); http.use_ssl = true
+            request = Net::HTTP::Get.new(uri)
+            request['Authorization'] = "Bearer #{token}"
+            response = http.request(request)
+            JSON.parse(response.body) rescue nil
+          end
+
+          puts "=" * 70
+          puts "ASC STATUS for #{bundle_id} (#{Time.now.utc.iso8601})"
+          puts "=" * 70
+
+          apps = req("apps?filter[bundleId]=#{bundle_id}", token)
+          app = apps['data']&.first
+          unless app
+            puts "❌ App not found"
+            exit 1
+          end
+          app_id = app['id']
+          puts "App ID: #{app_id}"
+          puts ""
+
+          puts "## App Store Versions"
+          versions = req("apps/#{app_id}/appStoreVersions?limit=20", token)
+          (versions['data'] || []).each do |v|
+            a = v['attributes']
+            puts "  #{a['versionString'].ljust(10)} #{a['platform'].ljust(5)} state=#{a['appStoreState'].ljust(28)} createdDate=#{a['createdDate']}"
+          end
+          puts ""
+
+          puts "## Active reviewSubmissions"
+          submissions = req("reviewSubmissions?filter[app]=#{app_id}&limit=20", token)
+          (submissions['data'] || []).each do |s|
+            a = s['attributes']
+            puts "  id=#{s['id']} state=#{a['state']} platform=#{a['platform']} submittedDate=#{a['submittedDate'] || '-'}"
+            items_resp = req("reviewSubmissions/#{s['id']}/items?limit=10", token)
+            (items_resp && items_resp['data'] || []).each do |item|
+              ia = item['attributes']
+              puts "    item id=#{item['id']} state=#{ia['state']} removed=#{ia['removed']}"
+            end
+          end
+          puts ""
+
+          puts "## Latest 10 builds"
+          builds = req("apps/#{app_id}/builds?sort=-uploadedDate&limit=10", token)
+          (builds['data'] || []).each do |b|
+            a = b['attributes']
+            puts "  build=#{a['version'].ljust(8)} state=#{a['processingState'].ljust(18)} uploaded=#{a['uploadedDate']} expired=#{a['expired']}"
+          end
+          EOF
+
+          ruby asc_status.rb
