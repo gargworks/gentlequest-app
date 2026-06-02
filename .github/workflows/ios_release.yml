@@ -627,6 +627,36 @@ jobs:
           end
           puts "✓ Build linked"
 
+          # 4c.5. PATCH whatsNew on the auto-created primary localization (en-US preferred).
+          # Apple auto-creates an appStoreVersionLocalizations row when a new appStoreVersion
+          # is created; metadata (description, keywords, supportUrl) is inherited from the
+          # previous READY_FOR_SALE version. But whatsNew is per-version-specific and MUST
+          # be set explicitly, or the review submission item-add fails with
+          # "is not in valid state. This resource cannot be reviewed."
+          puts "📝 Setting whatsNew on App Store Version primary localization..."
+          locs_resp = req("appStoreVersions/#{asv_id}/appStoreVersionLocalizations", token)
+          loc_data = locs_resp && locs_resp['data'] || []
+          primary_loc = loc_data.find { |l| l['attributes']['locale'] == 'en-US' } || loc_data.first
+          if primary_loc.nil?
+            puts "⚠️ No localization found on App Store Version #{asv_id}. Apple usually auto-creates one; check ASC UI if review submission fails."
+          elsif notes && !notes.strip.empty?
+            patch_resp = req("appStoreVersionLocalizations/#{primary_loc['id']}", token, :patch, {
+              data: {
+                type: 'appStoreVersionLocalizations',
+                id: primary_loc['id'],
+                attributes: { whatsNew: notes }
+              }
+            })
+            if patch_resp && patch_resp['errors']
+              puts "⚠️ Couldn't set whatsNew on localization (continuing — may cause submission to fail):"
+              patch_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+            else
+              puts "✓ whatsNew set on locale=#{primary_loc['attributes']['locale']} (#{notes.bytesize} bytes)"
+            end
+          else
+            puts "ℹ️ RELEASE_NOTES env was empty. whatsNew NOT updated (existing value preserved)."
+          end
+
           # 4d. Submit via new reviewSubmissions API.
           # Legacy appStoreVersionSubmissions.CREATE was deprecated by Apple — current flow:
           #   POST /v1/reviewSubmissions       (create submission container)

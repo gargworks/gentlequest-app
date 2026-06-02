@@ -75,6 +75,20 @@ if [ -n "$2" ]; then
     NOTES="$2"
 fi
 
+# Auto-derive release notes from filesystem when no $2 provided.
+# Convention: app_store_assets/v<pubspec-version>/RELEASE_NOTES.md
+# (use scripts/bump_version.sh to create the stub when bumping pubspec.)
+if [ -z "$NOTES" ] && [ -f "ai_buddy_web/pubspec.yaml" ]; then
+    PUBSPEC_VERSION=$(grep -E '^version:' ai_buddy_web/pubspec.yaml | head -1 | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
+    NOTES_FILE="app_store_assets/v${PUBSPEC_VERSION}/RELEASE_NOTES.md"
+    if [ -f "$NOTES_FILE" ]; then
+        NOTES=$(cat "$NOTES_FILE")
+        echo -e "${GREEN}📝 Auto-loaded release notes from ${NOTES_FILE} (${#NOTES} chars)${NC}"
+    else
+        echo -e "${YELLOW}⚠️  No release notes provided and ${NOTES_FILE} not found. whatsNew will not be updated.${NC}"
+    fi
+fi
+
 # Constants
 ANDROID_APP_ID="app.gentlequest.www"
 IOS_BUNDLE_ID="com.gentlequest.app"
