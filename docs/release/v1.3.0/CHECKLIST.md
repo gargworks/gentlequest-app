@@ -49,7 +49,49 @@ If either doesn't match, **stop** — artifact corrupted. Re-fire antigravity to
 
 ---
 
-## ☐ Step 4 — Android upload via Play Console (~10 min)
+## ☐ Step 4 — Android upload via Play Console (~10 min, but see Step 4-PRE first)
+
+### ⚠ Step 4-PRE — Resolve Play Console upload-key mismatch (BLOCKING)
+
+**Empirical from GHA run [26797741207](https://github.com/eidetic-works/ai-mental-health-assistant/actions/runs/26797741207) (2026-06-02 04:20 UTC):**
+
+```
+The Android App Bundle was signed with the wrong key.
+Found:    SHA1: 53:3E:6E:E8:51:10:D2:08:D0:25:AA:96:EC:0E:2E:CF:D3:B9:6C:FD  (new keystore, gentlequest-upload-v2.jks)
+Expected: SHA1: BA:4A:0A:4F:9B:EA:D3:1A:8B:AC:FD:4D:F1:26:96:15:2F:51:5F:E9  (LOST original keystore)
+```
+
+Root cause: the original keystore (pre-rotation) was registered as the upload key for `app.gentlequest.www` in Play Console. The original keystore password was lost (forcing the rotation that produced gentlequest-upload-v2.jks). Play Console still expects the lost key. **This blocks BOTH GHA upload AND manual Play Console upload of the staged AAB.**
+
+**Resolution — pick ONE of A, B, C based on whether app is published:**
+
+#### A. If app `app.gentlequest.www` has NEVER been published on Play Console (DRAFT or empty listing)
+
+This is fastest path (~5 min operator-side):
+
+1. Play Console → All apps → click `GentleQuest` (or whatever the entry is named)
+2. Settings → Advanced settings → "Delete app" (yes, fully delete the draft listing)
+3. Re-create the app with the same name + package name `app.gentlequest.www`
+4. When prompted for upload key, choose "Use Play App Signing" + upload `docs/release/v1.3.0/gentlequest-upload-v2.cer` as the upload certificate (the .cer in this repo is the public cert for the new keystore)
+5. Continue to Step 4 (proceed with the AAB upload as documented)
+
+#### B. If app HAS been published (TestFlight equivalent — internal track / closed testing released)
+
+Must request upload key reset via Play Console support (24-48h Google turnaround):
+
+1. Play Console → App integrity → "Request upload key reset"
+2. Fill the form: reason = "Original upload key lost; new keystore generated 2026-06-01"
+3. Upload `docs/release/v1.3.0/gentlequest-upload-v2.cer` as the new public certificate
+4. Wait for Google email confirmation (typically 24-48h, can be up to 7 days)
+5. After approval, continue to Step 4 with the staged AAB
+
+#### C. Change the applicationId (last resort — public bundle ID changes)
+
+If neither A nor B is viable. Updates `applicationId` from `app.gentlequest.www` to a fresh string (e.g., `app.gentlequest.gq`). Requires assetlinks.json rotation + Render redeploy + new Play Console listing. Loses any preconfigured store-listing metadata. Fire cc_gq to drive if needed.
+
+---
+
+### ☐ Step 4 — Actual Play Console upload (after Step 4-PRE resolves)
 
 1. Open https://play.google.com/console (sign in with Google account)
 2. GentleQuest → Production → Create new release
