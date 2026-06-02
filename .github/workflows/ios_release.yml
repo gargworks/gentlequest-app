@@ -509,11 +509,39 @@ jobs:
             exit 0
           end
 
-          version_string = build['attributes']['version']
+          # Resolve the user-facing version string (CFBundleShortVersionString, e.g. "1.3.0")
+          # via the build's preReleaseVersion relationship. build['attributes']['version']
+          # is the build NUMBER (CFBundleVersion), not the version string.
+          pr_version_id = build['relationships'] &&
+                          build['relationships']['preReleaseVersion'] &&
+                          build['relationships']['preReleaseVersion']['data'] &&
+                          build['relationships']['preReleaseVersion']['data']['id']
+          unless pr_version_id
+            puts "❌ Could not resolve preReleaseVersion id for build #{build_id}. Aborting submission."
+            exit 1
+          end
+          pr_resp = req("preReleaseVersions/#{pr_version_id}", token)
+          version_string = pr_resp['data']['attributes']['version']
           puts ""
-          puts "🚀 SUBMIT_FOR_REVIEW=true. Target version: #{version_string}"
+          puts "🚀 SUBMIT_FOR_REVIEW=true. Target version: #{version_string} (build #{build['attributes']['version']})"
 
-          # 4a. Find or create App Store Version
+          # 4a. (Defensive cleanup) Delete any malformed App Store Version whose versionString
+          # equals a numeric build number (artifact of the 2026-06-02 cc_gq bug where we used
+          # build.attributes.version instead of preReleaseVersion.attributes.version).
+          stale_resp = req("appStoreVersions?filter[app]=#{app_id}", token)
+          (stale_resp['data'] || []).each do |v|
+            vs = v['attributes']['versionString']
+            state = v['attributes']['appStoreState']
+            next unless vs =~ /^\d+$/  # purely numeric => likely a build number leak
+            next if %w[READY_FOR_SALE PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE WAITING_FOR_REVIEW IN_REVIEW].include?(state)
+            puts "🧹 Deleting malformed App Store Version #{v['id']} (versionString=#{vs}, state=#{state})..."
+            uri = URI("https://api.appstoreconnect.apple.com/v1/appStoreVersions/#{v['id']}")
+            http = Net::HTTP.new(uri.host, uri.port); http.use_ssl = true
+            del = Net::HTTP::Delete.new(uri); del['Authorization'] = "Bearer #{token}"
+            http.request(del)
+          end
+
+          # 4b. Find or create the correct App Store Version
           asv_resp = req("appStoreVersions?filter[app]=#{app_id}&filter[versionString]=#{version_string}", token)
           asv = asv_resp['data']&.first
 
@@ -521,13 +549,12 @@ jobs:
             asv_id = asv['id']
             asv_state = asv['attributes']['appStoreState']
             puts "✓ Found App Store Version #{asv_id} (#{version_string}), state=#{asv_state}"
-            terminal_states = %w[WAITING_FOR_REVIEW IN_REVIEW PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE READY_FOR_SALE PROCESSING_FOR_APP_STORE PREPARE_FOR_SUBMISSION]
             if %w[WAITING_FOR_REVIEW IN_REVIEW].include?(asv_state)
-              puts "ℹ️ Version already submitted for review (state=#{asv_state}). Nothing to do."
+              puts "ℹ️ Version already submitted for review. Nothing to do."
               exit 0
             end
             if %w[PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE READY_FOR_SALE].include?(asv_state)
-              puts "ℹ️ Version already approved/live (state=#{asv_state}). Nothing to do."
+              puts "ℹ️ Version already approved/live. Nothing to do."
               exit 0
             end
           else
@@ -549,7 +576,7 @@ jobs:
             puts "✓ Created App Store Version #{asv_id}"
           end
 
-          # 4b. Link build to App Store Version
+          # 4c. Link build to App Store Version
           puts "🔗 Linking build #{build_id} to App Store Version #{asv_id}..."
           link_resp = req("appStoreVersions/#{asv_id}/relationships/build", token, :patch, {
             data: { type: 'builds', id: build_id }
@@ -561,18 +588,51 @@ jobs:
           end
           puts "✓ Build linked"
 
-          # 4c. Submit for review
-          puts "📤 Submitting for App Store Review..."
-          submission_body = {
+          # 4d. Submit via new reviewSubmissions API.
+          # Legacy appStoreVersionSubmissions.CREATE was deprecated by Apple — current flow:
+          #   POST /v1/reviewSubmissions       (create submission container)
+          #   POST /v1/reviewSubmissionItems   (add app store version to submission)
+          #   PATCH /v1/reviewSubmissions/{id} (set submitted: true → actually submits)
+          puts "📤 Creating review submission (new reviewSubmissions API)..."
+          rs_resp = req("reviewSubmissions", token, :post, {
             data: {
-              type: 'appStoreVersionSubmissions',
-              relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: asv_id } } }
+              type: 'reviewSubmissions',
+              attributes: { platform: 'IOS' },
+              relationships: { app: { data: { type: 'apps', id: app_id } } }
             }
-          }
-          sub_resp = req("appStoreVersionSubmissions", token, :post, submission_body)
-          if sub_resp && sub_resp['errors']
-            puts "❌ Submission failed:"
-            sub_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+          })
+          if rs_resp && rs_resp['errors']
+            puts "❌ Failed to create review submission:"
+            rs_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+            exit 1
+          end
+          rs_id = rs_resp['data']['id']
+          puts "✓ Review submission #{rs_id} created"
+
+          puts "📎 Adding App Store Version #{asv_id} as submission item..."
+          rsi_resp = req("reviewSubmissionItems", token, :post, {
+            data: {
+              type: 'reviewSubmissionItems',
+              relationships: {
+                reviewSubmission: { data: { type: 'reviewSubmissions', id: rs_id } },
+                appStoreVersion: { data: { type: 'appStoreVersions', id: asv_id } }
+              }
+            }
+          })
+          if rsi_resp && rsi_resp['errors']
+            puts "❌ Failed to add submission item:"
+            rsi_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
+            exit 1
+          end
+          puts "✓ Submission item added"
+
+          puts "📤 Submitting (PATCH submitted=true)..."
+          submit_resp = req("reviewSubmissions/#{rs_id}", token, :patch, {
+            data: { type: 'reviewSubmissions', id: rs_id, attributes: { submitted: true } }
+          })
+          if submit_resp && submit_resp['errors']
+            puts "❌ Submit failed:"
+            submit_resp['errors'].each { |e| puts "  - #{e['title']}: #{e['detail']}" }
             puts ""
             puts "Common causes (fix in App Store Connect Web UI then re-fire workflow):"
             puts "  - Missing required metadata: description, keywords, screenshots, support URL, age rating"
