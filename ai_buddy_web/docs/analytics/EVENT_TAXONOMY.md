@@ -8,10 +8,10 @@
 
 ## PII Findings (Items Requiring Review Before Next Release)
 
-> [!CAUTION]
-> **HIGH — `auth_magic_link_verified` logs `user_id` to Firebase Analytics.**  
+> [!NOTE]
+> **FIXED (commit 2058e048) — `auth_magic_link_verified` previously logged `user_id` to Firebase Analytics.**  
 > File: `lib/services/deep_link_service.dart:169`  
-> The `user_id` field is the internal identity UUID assigned by the backend. While not a name/email, it IS a persistent identifier that could link events across sessions — contradicting the privacy claim "no personal data". **Action required:** scrub or replace with a session-scoped hash before v1.3.2.
+> The `user_id` field has been replaced with `auth_success: true`. No persistent identifier is logged.
 
 > [!WARNING]
 > **LOW — `leopard_access_granted` logs `code` to Firebase Analytics.**  
@@ -31,7 +31,7 @@
 |---|---|---|
 | `app_open` | Firebase | `firebase_service.dart:142` |
 | `auth_magic_link_requested` | Firebase | `auth/login_screen.dart:65` |
-| `auth_magic_link_verified` | Firebase | `deep_link_service.dart:169` ⚠️ PII |
+| `auth_magic_link_verified` | Firebase | `deep_link_service.dart:169` ✅ fixed |
 | `auth_magic_link_verify_failed` | Firebase | `deep_link_service.dart:182` |
 | `chat_message` | Firebase | `firebase_service.dart:247` |
 | `chat_session_started` | Firebase | `chat_provider.dart:234` |
@@ -92,8 +92,8 @@
 - **Fired from:** `lib/services/deep_link_service.dart:169`
 - **When:** User clicks the magic link from email and token validation succeeds
 - **Metadata params:**
-  - `user_id` (string, internal UUID — **HIGH PII CONCERN** — persistent cross-session identifier)
-- **PII risk:** HIGH — see PII findings section above
+  - `auth_success` (bool, always `true` — non-PII) — **Note:** previously logged `user_id` (persistent identifier); replaced with `auth_success: true` in commit `2058e048`
+- **PII risk:** NONE (post-fix)
 - **Anonymity gate:** YES
 - **Used by:** Sign-in success rate metric
 
@@ -216,9 +216,9 @@
   - `lib/services/deep_link_service.dart:101` (native `_handleDeepLink` path)
 - **When:** App receives a deep link (native or web)
 - **Metadata params:**
-  - `url` (string, the full deep link URL — **contains auth token on `:73` path if url is logged before token scrub**)
+  - `url` (string, path only — query params stripped before logging. **Note:** previously logged full URL including auth token; fixed in commit `2058e048` by calling `uri.replace(queryParameters: {}).toString()`)
   - `surface` (string, 'web' — only on `:73` path)
-- **PII risk:** LOW-MEDIUM — **`url` on the `:73` path is logged as `uri.toString()` which includes the full URL with auth token in query param. Auth tokens are single-use server-side but should not be logged to Firebase Analytics.** Action: scrub query params from URL before logging.
+- **PII risk:** NONE (post-fix)
 - **Anonymity gate:** YES
 - **Used by:** Deep link funnel debugging
 
