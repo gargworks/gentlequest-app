@@ -7,6 +7,7 @@ import '../models/message.dart' show RiskLevel;
 import '../widgets/app_back_button.dart';
 import '../widgets/crisis_resources.dart' show showCrisisInterventionSheet;
 import '../widgets/safety_legal_sheet.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import './auth/login_screen.dart';
 import './legal/legal_screen.dart';
 import '../services/api_service.dart';
@@ -727,6 +728,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   source: 'settings_debug',
                 ),
               ),
+              if (!kIsWeb)
+                _SettingsRow(
+                  iconBg: GQColors.accentSoft,
+                  iconWidget: const Icon(Icons.bolt_outlined,
+                      size: 14, color: GQColors.coral),
+                  title: 'Test fatal crash',
+                  subtitle: 'Force a fatal crash to test Crashlytics',
+                  trailing: const _Chevron(),
+                  onTap: () {
+                    FirebaseCrashlytics.instance.crash();
+                  },
+                ),
             ],
           ),
         ],
