@@ -71,7 +71,9 @@ class DeepLinkService {
         return;
       }
       FirebaseService().logEvent('deep_link_opened', {
-        'url': uri.toString(),
+        // Strip query parameters before logging to avoid capturing auth tokens
+        // in Firebase Analytics. Auth tokens appear in ?token= param on this path.
+        'url': uri.replace(queryParameters: {}).toString(),
         'surface': 'web',
       });
       _handleAuthVerify(token);
@@ -167,7 +169,9 @@ class DeepLinkService {
     try {
       final identity = await AuthService.instance.verifyToken(rawToken);
       FirebaseService().logEvent('auth_magic_link_verified', {
-        'user_id': identity.id,
+        // Do NOT log user_id — it is a persistent identifier that would
+        // contradict our "no personal data" privacy claim. Log success only.
+        'auth_success': true,
       });
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
