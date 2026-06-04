@@ -19,6 +19,8 @@ import '../../../navigation/home_tab_deeplink.dart';
 import '../../../navigation/route_observer.dart';
 import '../../../screens/journal_screen.dart' show JournalScreen;
 import '../../../screens/resource_library_screen.dart' show ResourceLibraryScreen;
+import '../../../screens/exercise_scaffold_screen.dart' show ExerciseScaffoldScreen;
+import '../../../widgets/exercise_card_scaffold.dart' show ExerciseType;
 import '../../../widgets/keyboard_dismissible_scaffold.dart';
 import '../../../widgets/app_bottom_nav.dart';
 import '../../../widgets/app_back_button.dart';
@@ -509,6 +511,37 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (questId == null) return null;
     final q = context.read<QuestProvider>().getQuestById(questId);
     return q?.description;
+  }
+
+  /// Map a quest (by title/subtitle text) to a launchable [ExerciseType].
+  /// Returns null for quests without an interactive scaffold (calm music,
+  /// articles, generic tips). For matched quests, RESOURCE/TIP card tap
+  /// launches the actual exercise widget instead of being a self-report
+  /// toggle — fixes v1.3.0 bug where "5-4-3-2-1 Grounding" card only
+  /// flipped a checkbox.
+  ExerciseType? _exerciseTypeForQuest(String? questId) {
+    if (questId == null) return null;
+    final q = context.read<QuestProvider>().getQuestById(questId);
+    if (q == null) return null;
+    final blob = '${q.title} ${q.description}'.toLowerCase();
+    if (blob.contains('5-4-3-2-1') ||
+        blob.contains('54321') ||
+        blob.contains('grounding')) {
+      return ExerciseType.grounding;
+    }
+    if (blob.contains('4-7-8') ||
+        blob.contains('478') ||
+        blob.contains('box breathing') ||
+        blob.contains('breathing')) {
+      return ExerciseType.breathing;
+    }
+    if (blob.contains('body scan') ||
+        blob.contains('body_scan') ||
+        blob.contains('progressive relax') ||
+        blob.contains('prog_relax')) {
+      return ExerciseType.bodyScan;
+    }
+    return null;
   }
 
   // Keys to compute positions for XP chip animation
@@ -3167,6 +3200,28 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     final qId = int.tryParse(questIdStr);
                     if (qId == null) return;
 
+                    // v1.3.2: if this quest is an interactive exercise
+                    // (grounding / breathing / body scan), launch the
+                    // exercise widget instead of just toggling done.
+                    final exType = _exerciseTypeForQuest(questIdStr);
+                    if (exType != null && !resDone) {
+                      await ExerciseScaffoldScreen.show(context, exType);
+                      if (!mounted) return;
+                      try {
+                        await questProvider.updateQuestProgress(qId, 100);
+                        if (mounted) {
+                          _showCheckRipple(_resCardKey);
+                          _randomizeConfetti();
+                          _confettiController.play();
+                          await _refreshToday();
+                          await _refreshExplore();
+                          _showCompletionSnackBar(
+                              qId, 'Done! You showed up for yourself today 💪');
+                        }
+                      } catch (_) {}
+                      return;
+                    }
+
                     if (!resDone) {
                       // Mark as completed (optimistic 100% progress)
                       try {
@@ -3224,6 +3279,26 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
                     final qId = int.tryParse(questIdStr);
                     if (qId == null) return;
+
+                    // v1.3.2: launch exercise widget if this tip maps to one
+                    final exType = _exerciseTypeForQuest(questIdStr);
+                    if (exType != null && !tipDone) {
+                      await ExerciseScaffoldScreen.show(context, exType);
+                      if (!mounted) return;
+                      try {
+                        await questProvider.updateQuestProgress(qId, 100);
+                        if (mounted) {
+                          _showCheckRipple(_tipCardKey);
+                          _randomizeConfetti();
+                          _confettiController.play();
+                          await _refreshToday();
+                          await _refreshExplore();
+                          _showCompletionSnackBar(
+                              qId, 'Done! You showed up for yourself today 💪');
+                        }
+                      } catch (_) {}
+                      return;
+                    }
 
                     if (!tipDone) {
                       try {
@@ -4132,15 +4207,19 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 color: colorFor(q),
                 progress: progress,
                 xp: q.xpReward,
-                // Discover/Explore tap = self-report toggle (no content
-                // runs). Use honest "I did this" label so users don't think
-                // tapping starts quest content (that's Today tab's job via
-                // RecommendationCardWidget + _openTimerSheet). Calling it
-                // "Start" while it just flipped done-state was a misleading
-                // affordance that let users accumulate completion credit
-                // without engaging — caught during sim QC 2026-05-23.
-                actionLabel: 'I did this',
-                onTap: () {
+                // v1.3.2: Quest cards now route to the exercise scaffold
+                // when the quest title/subtitle maps to an interactive
+                // exercise (grounding / breathing / body scan). For
+                // non-exercise quests (calm music, articles, generic
+                // tips), tap remains a self-report toggle. Label is
+                // "Start" for exercises, "I did this" for self-report —
+                // the affordance matches the behavior. Replaces the
+                // v1.3.0 design where every Explore card was a silent
+                // self-report toggle that visually mimicked a launcher.
+                actionLabel: _exerciseTypeForQuest(q.id.toString()) != null
+                    ? 'Start'
+                    : 'I did this',
+                onTap: () async {
                   try {
                     logAnalyticsEvent('quest_start', metadata: {
                       'quest_id': q.id,
@@ -4151,7 +4230,16 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       'ui': 'explore',
                     });
                   } catch (_) {}
-                  // Toggle logic for Explore tab
+
+                  // v1.3.2: launch the exercise widget on tap if mapped
+                  final exType = _exerciseTypeForQuest(q.id.toString());
+                  if (exType != null && !q.isCompleted) {
+                    await ExerciseScaffoldScreen.show(context, exType);
+                    if (mounted) _handleExploreComplete(q.id.toString());
+                    return;
+                  }
+
+                  // Toggle logic for non-exercise Explore cards
                   if (q.isCompleted) {
                     // Undo
                     final qId = q.id;
@@ -4167,7 +4255,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       }
                     } catch (_) {}
                   } else {
-                    // Complete
+                    // Complete (self-report)
                     _handleExploreComplete(q.id.toString());
                   }
                 },

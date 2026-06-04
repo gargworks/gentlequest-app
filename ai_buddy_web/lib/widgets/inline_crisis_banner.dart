@@ -145,11 +145,15 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    // "I'm okay, keep going" — white pill with coral border
+                    // v1.3.2: "Thanks, I have support" replaces the
+                    // v1.3.0 "I'm okay, keep going" which read as
+                    // dismissive at a high-stakes moment. New copy
+                    // signals that the user has an active support
+                    // network without sounding like deflection.
                     Expanded(
                       child: Semantics(
                         button: true,
-                        label: "I'm okay, keep going",
+                        label: "Thanks, I have support",
                         child: GestureDetector(
                           onTap: widget.onImOkay,
                           child: Container(
@@ -162,8 +166,7 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                             ),
                             child: const Center(
                               child: Text(
-                                // Verbatim from HTML
-                                "I'm okay, keep going",
+                                "Thanks, I have support",
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w800,

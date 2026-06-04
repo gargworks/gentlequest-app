@@ -36,58 +36,61 @@ class _BrandedSplashState extends State<BrandedSplash>
   Widget build(BuildContext context) {
     const wordmarkColor = Color(0xFF1F1B3A);
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8F7FF), Color(0xFFF8F7FF), Color(0xFFEEF0FE)],
-            stops: [0.0, 0.38, 1.0],
+      body: SizedBox.expand(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFF8F7FF), Color(0xFFF8F7FF), Color(0xFFEEF0FE)],
+              stops: [0.0, 0.38, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fade,
-            child: AnimatedBuilder(
-              animation: _breath,
-              builder: (context, _) {
-                final t = Curves.easeInOut.transform(_breath.value);
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fade,
+              child: AnimatedBuilder(
+                animation: _breath,
+                builder: (context, _) {
+                  final t = Curves.easeInOut.transform(_breath.value);
+                  return Stack(
+                    fit: StackFit.expand,
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
                         painter: _AmbientGlowPainter(progress: t),
                       ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'GentleQuest',
-                            style: TextStyle(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w600,
-                              color: wordmarkColor,
-                              letterSpacing: -0.6,
-                            ),
+                      Center(
+                        child: Transform.translate(
+                          offset: const Offset(0, -40),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'GentleQuest',
+                                style: TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w600,
+                                  color: wordmarkColor,
+                                  letterSpacing: -0.6,
+                                ),
+                              ),
+                              const SizedBox(height: 56),
+                              SizedBox(
+                                width: 200,
+                                height: 200,
+                                child: CustomPaint(
+                                  painter: _BreathCirclePainter(progress: t),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 56),
-                          SizedBox(
-                            width: 200,
-                            height: 200,
-                            child: CustomPaint(
-                              painter: _BreathCirclePainter(progress: t),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
