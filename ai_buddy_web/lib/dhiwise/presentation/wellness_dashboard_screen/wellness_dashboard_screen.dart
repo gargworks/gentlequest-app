@@ -748,23 +748,52 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Choose IDs from today's items to back the 4 static cards.
   // Choose IDs from backend quests to back the 4 static cards.
+  //
+  // v1.3.3 fix: dedup-aware. Previous logic fell back to quests[2] for both
+  // RESOURCE and TIP slots when the backend returned only 3 quests, which
+  // surfaced the same exercise twice on the My Quest tab (operator caught
+  // "5-4-3-2-1 Grounding" rendered as both RESOURCE + TIP on iOS v1.3.0
+  // prod dogfood 2026-06-03). Now each slot pulls a UNIQUE quest_id —
+  // when the pool is exhausted, the slot stays null and the per-slot
+  // fallback title ("Calm music" / "One tiny step") shows instead.
   void _computeDisplayedQuestIds() {
     final quests = context.read<QuestProvider>().quests;
     if (quests.isEmpty) return;
 
-    // Mapping logic: distribute available quests to slots
-    if (quests.isNotEmpty) {
-      _qTask1Id = quests[0].id.toString();
-      _qTask2Id =
-          quests.length > 1 ? quests[1].id.toString() : quests[0].id.toString();
-      _qResId =
-          quests.length > 2 ? quests[2].id.toString() : quests[0].id.toString();
-      _qTipId = quests.length > 3
-          ? quests[3].id.toString()
-          : (quests.length > 2
-              ? quests[2].id.toString()
-              : quests[0].id.toString());
+    final used = <String>{};
+    String? pick(int preferredIdx) {
+      // Prefer the indexed slot if available + unused.
+      if (preferredIdx < quests.length) {
+        final candidate = quests[preferredIdx].id.toString();
+        if (!used.contains(candidate)) {
+          used.add(candidate);
+          return candidate;
+        }
+      }
+      // Otherwise scan for any unused quest.
+      for (final q in quests) {
+        final id = q.id.toString();
+        if (!used.contains(id)) {
+          used.add(id);
+          return id;
+        }
+      }
+      // Pool exhausted — leave null so per-slot fallback title shows.
+      return null;
     }
+
+    _qTask1Id = pick(0);
+    _qTask2Id = pick(1);
+    _qResId = pick(2);
+    _qTipId = pick(3);
+    assert(
+      [_qTask1Id, _qTask2Id, _qResId, _qTipId]
+              .where((id) => id != null)
+              .toSet()
+              .length ==
+          [_qTask1Id, _qTask2Id, _qResId, _qTipId].where((id) => id != null).length,
+      'Dashboard quest slots must hold distinct quest_ids',
+    );
   }
 // } removed extra brace
 

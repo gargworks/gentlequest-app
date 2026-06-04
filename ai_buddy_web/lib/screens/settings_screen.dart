@@ -186,12 +186,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Default to 8:00 PM local; detail screen can later override.
       final now = DateTime.now();
       final at = DateTime(now.year, now.month, now.day, 20, 0);
-      await NotificationService.scheduleGentleDailyCheckin(
-        enabled: true,
-        scheduledTime: at,
-      );
+      try {
+        await NotificationService.scheduleGentleDailyCheckin(
+          enabled: true,
+          scheduledTime: at,
+        );
+      } catch (_) {
+        // Scheduling failed (OS quirk, channel error, etc.) — revert the
+        // toggle so the visible state matches reality and prompt the user.
+        if (!mounted) return;
+        setState(() => _dailyReminderOn = false);
+        await prefs.setBool(_kNotifDailyReminderKey, false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Couldn't schedule notification — check permissions in Settings",
+              style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontWeight: FontWeight.w600),
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } else {
-      await NotificationService.cancelGentleDailyCheckin();
+      try {
+        await NotificationService.cancelGentleDailyCheckin();
+      } catch (_) {
+        // Cancel failure is non-fatal — preference is already off; swallow.
+      }
     }
   }
 
@@ -211,9 +236,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     // Flip the in-service opt-in flag; actual scheduleStreakNudge fires
     // from the streak engine when consecutive-day count crosses 3.
-    NotificationService.setStreakNudgeEnabled(v);
-    if (!v) {
-      await NotificationService.cancelStreakNudge();
+    try {
+      NotificationService.setStreakNudgeEnabled(v);
+      if (!v) {
+        await NotificationService.cancelStreakNudge();
+      }
+    } catch (_) {
+      // Notification channel error / permission revoked OOB — revert visible
+      // toggle so it matches reality and tell the user.
+      if (!mounted) return;
+      setState(() => _streakNudgeOn = !v);
+      await prefs.setBool(_kNotifStreakNudgeKey, !v);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't update streak nudge — check notification permissions in Settings",
+            style: TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontWeight: FontWeight.w600),
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -231,7 +277,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
     } else {
-      await NotificationService.cancelWorriedCheckin();
+      try {
+        await NotificationService.cancelWorriedCheckin();
+      } catch (_) {
+        // Cancel failure is non-fatal — preference is already off; swallow
+        // but tell the user something didn't fully tear down.
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Worried check-in turned off, but couldn't cancel pending one — check notification permissions if it still fires",
+              style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontWeight: FontWeight.w600),
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     }
     // Worried follow-ups are mood-event-driven (scheduleWorriedCheckin)
     // rather than toggle-driven, so when toggling off we cancel any pending
