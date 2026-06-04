@@ -368,6 +368,22 @@ Chrome MCP is the second-line tool when (a) the field isn't in ASC API, or (b) t
 
 ## 7. Known gotchas
 
+### 7.0 Play Console "no deobfuscation file" warning is unactionable
+
+Play console flags `"There is no deobfuscation file associated with this App Bundle"` on every Android submission because:
+- `ai_buddy_web/android/app/build.gradle` has `minifyEnabled false` for both `debug` and `release`
+- No `--obfuscate` Dart flag in any build script (no Dart-side obfuscation)
+- `proguard-rules.pro` exists but unused (R8 disabled)
+
+Without R8/proguard, there's no `mapping.txt` to upload to Firebase Crashlytics — stack traces are already unobfuscated. The warning is informational only.
+
+Enabling R8 (`minifyEnabled true`) would:
+- Shrink APK ~20-30%
+- Add Crashlytics deobfuscation requirement (auto-uploaded by Google Services plugin)
+- Risk crashes from over-aggressive code stripping; needs `proguard-rules.pro` rules verified for Firebase + Sentry + Flutter pods
+
+Defer until a release has explicit "shrink APK" or "improve stack readability" intent.
+
 ### 7.1 Spaces in SSD path break CocoaPods Ruby
 
 If `Podfile` resolves under `/Volumes/Samsung SSD 990 PRO 2TB Media/...`, `pod install` warns:

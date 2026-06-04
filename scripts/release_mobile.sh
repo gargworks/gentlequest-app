@@ -120,6 +120,22 @@ fi
 IOS_JSON=$(printf '{"bundle_id":"%s","scheme":"Runner","export_method":"app-store","upload":"%s","preflight":"false","submit_for_review":"%s"}' \
     "$IOS_BUNDLE_ID" "$UPLOAD" "$IOS_SUBMIT_FOR_REVIEW")
 
+# iOS pre-flight: warn if flutterfire CLI is missing.
+# Without it, the Xcode build phase 'flutterfire upload-crashlytics-symbols'
+# silent-skips on the local machine and crashes will land in Firebase
+# Crashlytics with obfuscated hex stack traces. Catch fresh-machine setups
+# before they ship a un-symbolicated build.
+if ! command -v flutterfire >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠  flutterfire CLI not found in PATH.${NC}"
+    echo "   If this run produces an iOS artifact, dSYMs will NOT be uploaded"
+    echo "   and Firebase Crashlytics will show obfuscated stack traces."
+    echo "   Fix:  dart pub global activate flutterfire_cli"
+    echo "         firebase login"
+    echo "         flutterfire configure --project=gentlequestapp --platforms=ios,android,web --yes"
+    echo "   See docs/release/MANUAL_RELEASE_PLAYBOOK.md §7.2 for retro upload."
+    echo ""
+fi
+
 echo "⏳ Triggering GitHub Action..."
 
 gh workflow run release_one_button.yml \
@@ -130,4 +146,45 @@ gh workflow run release_one_button.yml \
   -f ios_params="$IOS_JSON"
 
 echo -e "${GREEN}✅ Triggered successfully!${NC}"
+
+# GHA billing-exhaustion detection (added 2026-06-04 after billing-cap-hit
+# silently killed the Android v1.3.0 cron-fire). Poll the workflow conclusion
+# for ~25 seconds. If the run fails before then, it's the billing-exhaustion
+# signature (sub-30s failure on a freshly dispatched workflow); surface the
+# manual fallback path so the operator doesn't waste time waiting.
+echo ""
+echo "🔎 Watching workflow for early failure (billing-exhaustion check, ~25s)..."
+sleep 5
+RUN_ID=$(gh run list --workflow=release_one_button.yml --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+sleep 20
+CONCLUSION=$(gh run view "$RUN_ID" --json conclusion --jq '.conclusion' 2>/dev/null || echo "")
+
+if [ "$CONCLUSION" = "failure" ]; then
+    cat <<EOF
+
+${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}
+${RED}⚠  GHA workflow failed in <25s. Billing-exhaustion signature.${NC}
+${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}
+
+Pivot to LOCAL BUILD per docs/release/MANUAL_RELEASE_PLAYBOOK.md:
+
+  iOS:
+    cd ai_buddy_web && flutter build ipa --release
+    xcrun altool --upload-app --type ios \\
+      --file build/ios/ipa/ai_buddy_web.ipa \\
+      --apiKey \$ASC_KEY_ID \\
+      --apiIssuer \$(cat ~/.appstoreconnect/issuer_id.txt) --verbose
+    # then: python3 scripts/asc_submit_for_review.py
+    #         --app-id 6756537464 --version-id <NEW_VERSION_ID>
+
+  Android:
+    cd ai_buddy_web && flutter build appbundle --release
+    # AAB at build/app/outputs/bundle/release/app-release.aab
+    # manual drag-drop to Play Console (operator-action) OR fastlane supply
+
+EOF
+    exit 2
+fi
+
+echo -e "${GREEN}✅ Workflow not in early-failure state (conclusion=${CONCLUSION:-pending}).${NC}"
 echo "👉 Monitor progress: gh run watch"
