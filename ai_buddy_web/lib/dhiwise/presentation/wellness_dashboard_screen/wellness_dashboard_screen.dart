@@ -147,16 +147,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
   // Quests state handled by QuestProvider
   Set<String> _exploreCompletedToday = {};
 
-  int _baseSteps = 2; // total tasks today
-  int _baseXp = 20; // base example XP shown initially
   bool _reminderOn = true; // UI-only reminder toggle (default ON)
   TimeOfDay _reminderTime = const TimeOfDay(hour: 19, minute: 0);
-  // Level-up UX state
-  int _lastLevelShown = -1;
-  double _prevLevelProgress = 0.0;
-  int _prevLifetimeXpForAnim = -1;
-  bool _levelUpFlash = false;
-  Timer? _levelUpTimer;
 
   // Reminder UI anchors (safe even if not attached)
   final GlobalKey _reminderToggleKey = GlobalKey();
@@ -164,7 +156,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
   // Reminder scheduler
   Timer? _reminderTimer;
-  DateTime? _reminderTargetAt;
 
   // DEBUG QA hooks removed post-verification
 
@@ -227,7 +218,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     'Activity',
     'Learning',
   ]; // Curated categories aligned with Quest types
-  final Map<String, GlobalKey> _exploreCardKeys = <String, GlobalKey>{};
   // Track which Explore quests we've logged an impression for (to avoid duplicates)
   final Set<String> _impressedExplore = <String>{};
 
@@ -827,10 +817,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     _microTimer?.cancel();
     _midnightTimer?.cancel();
     _reminderTimer?.cancel();
-    // Cancel level-up flash timer
-    try {
-      _levelUpTimer?.cancel();
-    } catch (_) {}
     // Remove lifecycle observer
     try {
       WidgetsBinding.instance.removeObserver(this);
@@ -907,7 +893,6 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
     if (!target.isAfter(now)) {
       target = target.add(const Duration(days: 1));
     }
-    _reminderTargetAt = target;
     final delay = target.difference(now);
     // Clamp delay to reasonable bounds (>=1s, <= 2 days)
     final Duration clamped =
