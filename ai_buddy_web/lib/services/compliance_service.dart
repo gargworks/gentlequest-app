@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/services/api_service.dart';
+import 'package:ai_buddy_web/services/play_age_signals_service.dart';
 
 /// Compliance Status for the Pragmatic Defense v3.0 Strategy
 /// 
@@ -47,6 +48,29 @@ class ComplianceService {
   static const String _kLocationVerifiedKey = 'compliance_location_verified';
   static const String _kVerifiedRegionKey = 'compliance_verified_region';
   static const String _kVerificationTimestampKey = 'compliance_verification_timestamp';
+
+  // ============================================
+  // v1.4.0 — VERIFIED AGE-SIGNAL CACHE (Phase B)
+  // ============================================
+  // Regions that mandate a verified age signal (in addition to self-attestation).
+  // Texas SB 2420 (signed 2026-06-02, enforcement window mid-Jun → mid-Jul 2026)
+  // requires platforms to consult an age-signal API where available; the
+  // self-attestation alone is no longer sufficient for users in these regions.
+  // Add new regions here as legislation lands; keep this set ASCII region names
+  // matching whatever `_kVerifiedRegionKey` stores (placemark.administrativeArea
+  // from reverse-geocode → full name like "Texas"; IP-region check → backend
+  // string).
+  static const Set<String> _kRegionsRequiringVerifiedSignal = {
+    'Texas',
+    'TX',
+  };
+
+  // Cache keys for the most-recent Play Age Signals result. We re-query at
+  // most once per 24h to avoid hammering the SDK on every cold start; the
+  // signal itself is a high-latency network call on Android.
+  static const String _kAgeSignalStatusKey = 'compliance_age_signal_status_v1';
+  static const String _kAgeSignalCachedAtKey = 'compliance_age_signal_cached_at_v1';
+  static const Duration _kAgeSignalCacheTtl = Duration(hours: 24);
 
   // ============================================
   // AGE-GATE THRESHOLDS BY REGION
@@ -134,16 +158,163 @@ class ComplianceService {
   // PUBLIC API
   // ============================================
 
-  /// Check if age is already verified (18+)
+  /// Check if the user has cleared the age gate for their region.
+  ///
+  /// Returns true iff EITHER:
+  ///   (a) The user is in a region that does NOT require a verified signal
+  ///       AND the self-attestation flag (`_kAgeVerifiedKey`) is set, OR
+  ///   (b) The user is in a region that DOES require a verified signal AND
+  ///       the cached Play Age Signals result is `verifiedOver`, OR
+  ///   (c) The user is in a region that DOES require a verified signal but
+  ///       the signal is `unverified` / `unavailable` — we fall back to the
+  ///       self-attestation flag so the app remains usable when the SDK is
+  ///       not yet GA (Phase A scaffold returns `unavailable` deterministically).
+  ///
+  /// Returns false (blocks the user) when the cached signal is
+  /// `verifiedUnder` — that case is the terminal-block path handled by
+  /// `AgeVerificationBlockedScreen` (Phase C).
   Future<bool> isAgeVerified() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kAgeVerifiedKey) ?? false;
+    final selfAttested = prefs.getBool(_kAgeVerifiedKey) ?? false;
+
+    if (!await requiresVerifiedSignal()) {
+      return selfAttested;
+    }
+
+    final cached = _readCachedAgeSignal(prefs);
+    switch (cached) {
+      case AgeSignalStatus.verifiedOver:
+        return true;
+      case AgeSignalStatus.verifiedUnder:
+        return false;
+      case AgeSignalStatus.unverified:
+      case AgeSignalStatus.unavailable:
+      case null:
+        // Signal is missing or inconclusive — fall back to self-attestation
+        // so we don't block the entire Texas user-base while the Play Age
+        // Signals SDK is still rolling out (per directive: "fall back to
+        // self-attestation when unavailable").
+        return selfAttested;
+    }
   }
 
-  /// Set age verification status
+  /// Set age verification status (self-attestation flag).
   Future<void> setAgeVerified(bool verified) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kAgeVerifiedKey, verified);
+  }
+
+  /// True when the stored region mandates a verified age signal (e.g. Texas
+  /// SB 2420). Returns false on non-Android platforms — the Play Age Signals
+  /// API is Android-only, so iOS / Web users continue to rely on
+  /// self-attestation regardless of region. Returns false when no region is
+  /// stored yet (the compliance flow hasn't run).
+  static Future<bool> requiresVerifiedSignal() async {
+    if (!_isAndroidPlatform()) return false;
+    final region = await _resolveRegionForSignalCheck();
+    if (region == null || region.isEmpty) return false;
+    return _kRegionsRequiringVerifiedSignal.contains(region) ||
+        _kRegionsRequiringVerifiedSignal.contains(region.toUpperCase());
+  }
+
+  /// Returns the most-recent Play Age Signals verdict for the user, querying
+  /// the platform channel at most once per [_kAgeSignalCacheTtl]. The result
+  /// is persisted in SharedPreferences and reused on cold start.
+  ///
+  /// Callers MUST first check [requiresVerifiedSignal] — calling this on
+  /// regions that don't require the signal still works (it will simply
+  /// invoke and cache) but wastes a Play Services round-trip. On non-Android
+  /// platforms `PlayAgeSignalsService.fetchAgeSignal` short-circuits to
+  /// `unavailable` so this method is safe to call from any platform.
+  static Future<AgeSignalStatus> fetchAndCacheAgeSignal({
+    int requiredAge = 18,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt(_kAgeSignalCachedAtKey) ?? 0;
+    final ageMs = DateTime.now().millisecondsSinceEpoch - cachedAt;
+    final cached = _readCachedAgeSignal(prefs);
+    if (cached != null &&
+        cachedAt > 0 &&
+        ageMs < _kAgeSignalCacheTtl.inMilliseconds) {
+      return cached;
+    }
+
+    final status =
+        await PlayAgeSignalsService.fetchAgeSignal(requiredAge: requiredAge);
+    await prefs.setString(_kAgeSignalStatusKey, status.name);
+    await prefs.setInt(
+      _kAgeSignalCachedAtKey,
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    return status;
+  }
+
+  // ── Phase B test seams ───────────────────────────────────────────────────
+  // Tests inject a region without touching geocoding / SharedPreferences-
+  // backed location flow; the production path resolves region via
+  // `getStoredRegion()` below. Setting these to non-null in test code lets
+  // unit tests drive `requiresVerifiedSignal()` deterministically.
+  @visibleForTesting
+  static String? debugRegionOverride;
+
+  @visibleForTesting
+  static bool? debugIsAndroidOverride;
+
+  /// Wipe the verified-signal cache so the next call re-invokes the API.
+  /// Test-only: production never needs to invalidate (24h TTL handles it).
+  @visibleForTesting
+  static Future<void> debugClearAgeSignalCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kAgeSignalStatusKey);
+    await prefs.remove(_kAgeSignalCachedAtKey);
+  }
+
+  /// Test-only: forcibly seed the cache with a given status + timestamp.
+  /// Real callers should use `fetchAndCacheAgeSignal` which manages both.
+  @visibleForTesting
+  static Future<void> debugSeedAgeSignalCache({
+    required AgeSignalStatus status,
+    DateTime? cachedAt,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kAgeSignalStatusKey, status.name);
+    await prefs.setInt(
+      _kAgeSignalCachedAtKey,
+      (cachedAt ?? DateTime.now()).millisecondsSinceEpoch,
+    );
+  }
+
+  // ── Region resolution ────────────────────────────────────────────────────
+  // We deliberately reuse the existing `_kVerifiedRegionKey` written by the
+  // GPS/IP compliance flow rather than introducing a NEW reverse-geocode call
+  // site (per Phase B directive: "do NOT add a NEW geocode call site"). This
+  // means `requiresVerifiedSignal` only fires AFTER the user has cleared the
+  // location-verification step — which is consistent with the Phase C splash
+  // gate ordering (welcome → compliance → age-signal gate runs late in boot).
+  //
+  // Trade-off documented in the PR body: on the very first cold-start, the
+  // age-signal check is a no-op (no stored region yet) and the user proceeds
+  // to the existing compliance flow normally. The verified-signal gate only
+  // engages on the SECOND boot once region is cached.
+  static Future<String?> _resolveRegionForSignalCheck() async {
+    if (debugRegionOverride != null) return debugRegionOverride;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kVerifiedRegionKey);
+  }
+
+  static bool _isAndroidPlatform() {
+    if (debugIsAndroidOverride != null) return debugIsAndroidOverride!;
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android;
+  }
+
+  static AgeSignalStatus? _readCachedAgeSignal(SharedPreferences prefs) {
+    final raw = prefs.getString(_kAgeSignalStatusKey);
+    if (raw == null) return null;
+    for (final status in AgeSignalStatus.values) {
+      if (status.name == raw) return status;
+    }
+    return null;
   }
 
   // Debug-only bypass for dogfood/sim testing. kDebugMode-gated; cannot ship to prod.

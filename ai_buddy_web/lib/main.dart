@@ -37,22 +37,8 @@ import 'package:ai_buddy_web/services/app_rating_service.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/screens/age_verification_blocked_screen.dart';
+import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:ai_buddy_web/services/play_age_signals_service.dart';
-
-// ─── v1.4.0 Phase C — verified-signal shim ───────────────────────────────────
-// Phase B (sibling PR, not yet merged on this branch's base) will add:
-//   ComplianceService.requiresVerifiedSignal()   → bool, Texas-only initially
-//   ComplianceService.fetchAndCacheAgeSignal()   → AgeSignalStatus, 24h cache
-//
-// Until Phase B lands, the shims below let Phase C compile and behave as a
-// no-op (`requiresVerifiedSignal` → false short-circuits the gate). Replace
-// both call sites with `ComplianceService.<method>()` once Phase B is merged.
-//
-// TODO Phase B: replace with ComplianceService.requiresVerifiedSignal()
-Future<bool> _phaseCRequiresVerifiedSignalShim() async => false;
-// TODO Phase B: replace with ComplianceService.fetchAndCacheAgeSignal()
-Future<AgeSignalStatus> _phaseCFetchAndCacheAgeSignalShim() async =>
-    PlayAgeSignalsService.fetchAgeSignal();
 
 // Root navigator key to support global routing from notification taps
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -333,11 +319,10 @@ class _SplashScreenState extends State<SplashScreen> {
     bool ageBlocked = false;
     if (seen) {
       try {
-        // TODO Phase B: swap _phaseCRequiresVerifiedSignalShim → ComplianceService.requiresVerifiedSignal()
-        final requiresVerified = await _phaseCRequiresVerifiedSignalShim();
+        final requiresVerified =
+            await ComplianceService.requiresVerifiedSignal();
         if (requiresVerified) {
-          // TODO Phase B: swap _phaseCFetchAndCacheAgeSignalShim → ComplianceService.fetchAndCacheAgeSignal()
-          final signal = await _phaseCFetchAndCacheAgeSignalShim();
+          final signal = await ComplianceService.fetchAndCacheAgeSignal();
           if (signal == AgeSignalStatus.verifiedUnder) {
             ageBlocked = true;
           }
