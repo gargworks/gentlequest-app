@@ -36,6 +36,23 @@ import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/services/app_rating_service.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
+import 'package:ai_buddy_web/screens/age_verification_blocked_screen.dart';
+import 'package:ai_buddy_web/services/play_age_signals_service.dart';
+
+// ─── v1.4.0 Phase C — verified-signal shim ───────────────────────────────────
+// Phase B (sibling PR, not yet merged on this branch's base) will add:
+//   ComplianceService.requiresVerifiedSignal()   → bool, Texas-only initially
+//   ComplianceService.fetchAndCacheAgeSignal()   → AgeSignalStatus, 24h cache
+//
+// Until Phase B lands, the shims below let Phase C compile and behave as a
+// no-op (`requiresVerifiedSignal` → false short-circuits the gate). Replace
+// both call sites with `ComplianceService.<method>()` once Phase B is merged.
+//
+// TODO Phase B: replace with ComplianceService.requiresVerifiedSignal()
+Future<bool> _phaseCRequiresVerifiedSignalShim() async => false;
+// TODO Phase B: replace with ComplianceService.fetchAndCacheAgeSignal()
+Future<AgeSignalStatus> _phaseCFetchAndCacheAgeSignalShim() async =>
+    PlayAgeSignalsService.fetchAgeSignal();
 
 // Root navigator key to support global routing from notification taps
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -291,6 +308,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool _resolved = false;
   bool _showWelcome = false;
+  // v1.4.0 Phase C — terminal block when device returns verifiedUnder in a
+  // region that requires a verified signal (Texas SB 2420 today).
+  bool _ageBlocked = false;
 
   @override
   void initState() {
@@ -305,8 +325,32 @@ class _SplashScreenState extends State<SplashScreen> {
     ]);
     if (!mounted) return;
     final seen = results[0] as bool;
+
+    // v1.4.0 Phase C — verified-signal gate. Only runs once welcome is past
+    // and only in regions that require a verified signal (Phase B decides).
+    // Wrapped in try/catch so a misbehaving Phase B implementation can never
+    // brick boot; we fall through to the existing compliance flow on error.
+    bool ageBlocked = false;
+    if (seen) {
+      try {
+        // TODO Phase B: swap _phaseCRequiresVerifiedSignalShim → ComplianceService.requiresVerifiedSignal()
+        final requiresVerified = await _phaseCRequiresVerifiedSignalShim();
+        if (requiresVerified) {
+          // TODO Phase B: swap _phaseCFetchAndCacheAgeSignalShim → ComplianceService.fetchAndCacheAgeSignal()
+          final signal = await _phaseCFetchAndCacheAgeSignalShim();
+          if (signal == AgeSignalStatus.verifiedUnder) {
+            ageBlocked = true;
+          }
+        }
+      } catch (e) {
+        debugPrint('[SplashScreen] age-signal gate threw, falling through: $e');
+      }
+    }
+
+    if (!mounted) return;
     setState(() {
       _showWelcome = !seen;
+      _ageBlocked = ageBlocked;
       _resolved = true;
     });
   }
@@ -315,6 +359,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     if (!_resolved) {
       return const BrandedSplash();
+    }
+    if (_ageBlocked) {
+      return const AgeVerificationBlockedScreen();
     }
     return _showWelcome ? const WelcomeScreen() : const ComplianceGuardScreen();
   }
