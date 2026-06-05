@@ -125,10 +125,15 @@ dependencies {
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
     // Kotlin stdlib is provided by the Kotlin Gradle plugin; avoid pinning a version here
 
-    // Play Age Signals API v0.0.3 — Texas SB 2420 compliance (Phase A scaffold; not yet wired).
-    // TODO: pin to GA when published; currently alpha-track per
+    // Play Age Signals API v0.0.3 — Texas SB 2420 compliance.
+    // Real Google Maven coordinates verified 2026-06-04 against
+    // https://dl.google.com/dl/android/maven2/com/google/android/play/group-index.xml
+    // (published versions: 0.0.1-beta01, 0.0.1-beta02, 0.0.1, 0.0.2, 0.0.3).
+    // Note: artifact id is `age-signals` (NOT `play-services-age-signals`), and
+    // the spec doc's earlier `play-services-age-signals` name was speculative.
+    // TODO: re-pin to GA when published; track per
     // docs/integration/PLAY_AGE_SIGNALS_v0_0_3.md.
-    implementation 'com.google.android.play:play-services-age-signals:1.0.0-alpha01'
+    implementation 'com.google.android.play:age-signals:0.0.3'
 }
 
 flutter {
