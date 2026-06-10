@@ -17,6 +17,10 @@ import 'package:url_launcher/url_launcher.dart'; // Added for Data Export & App 
 import 'package:ai_buddy_web/services/crisis_keyword_detector.dart';
 import 'package:ai_buddy_web/services/mdm_detection_service.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'compliance/compliance_widgets.dart';
+
+// No re-exports: every symbol extracted to compliance/compliance_widgets.dart
+// was private pre-split, so no external consumer can depend on them.
 
 // ─── R1D11 overlay state ──────────────────────────────────────────────────────
 // Tracks which R1D11 extension state (if any) is active on top of the base
@@ -426,7 +430,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 label: 'Call 988 — free, confidential, available 24/7',
                 child: GestureDetector(
                   onTap: () =>
-                      _launchUri(context, Uri.parse('tel:988'), label: 'Call 988'),
+                      launchUri(context, Uri.parse('tel:988'), label: 'Call 988'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     decoration: BoxDecoration(
@@ -472,7 +476,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       button: true,
                       label: 'Text 988',
                       child: GestureDetector(
-                        onTap: () => _launchUri(
+                        onTap: () => launchUri(
                             context, Uri.parse('sms:988'), label: 'Text 988'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -508,7 +512,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       button: true,
                       label: 'Chat online at 988lifeline.org',
                       child: GestureDetector(
-                        onTap: () => _launchUri(
+                        onTap: () => launchUri(
                           context,
                           Uri.parse('https://988lifeline.org/chat'),
                           label: 'Chat online',
@@ -570,26 +574,26 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 16),
 
               // Regional resource cards (verbatim labels per spec)
-              _RegionalResourceCard(
+              RegionalResourceCard(
                 icon: Icons.message_rounded,
                 iconBgColor: GQColors.primarySoft,
                 iconColor: GQColors.primary,
                 title: 'Crisis Text Line',
                 subtitle: 'Text HOME to 741741',
-                onTap: () => _launchUri(
+                onTap: () => launchUri(
                   context,
                   Uri.parse('sms:741741?body=HOME'),
                   label: 'Crisis Text Line',
                 ),
               ),
               const SizedBox(height: 8),
-              _RegionalResourceCard(
+              RegionalResourceCard(
                 icon: Icons.favorite_outlined,
                 iconBgColor: GQColors.primarySoft,
                 iconColor: GQColors.primary,
                 title: 'NAMI Illinois',
                 subtitle: 'Helpline · 800-950-6264',
-                onTap: () => _launchUri(
+                onTap: () => launchUri(
                   context,
                   Uri.parse('tel:8009506264'),
                   label: 'NAMI Illinois',
@@ -599,7 +603,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 20),
 
               // Collapsible block reason — verbatim transition text (State A)
-              _BlockReasonDisclosure(
+              BlockReasonDisclosure(
                 summaryText:
                     "When you're ready, here's why GentleQuest isn't available in your state",
                 bodyText:
@@ -686,7 +690,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
 
               // Universal resource list — SMS / Call / Web (no native deeplinks
               // that MDM would block)
-              _UniversalResourceCard(
+              UniversalResourceCard(
                 icon: Icons.message_rounded,
                 iconBgColor: GQColors.primarySoft,
                 iconColor: GQColors.primary,
@@ -695,14 +699,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 tagColor: GQColors.primaryDk,
                 title: 'Crisis Text Line',
                 subtitle: 'Text HOME to 741741 · works on any phone',
-                onTap: () => _launchUri(
+                onTap: () => launchUri(
                   context,
                   Uri.parse('sms:741741?body=HOME'),
                   label: 'Crisis Text Line',
                 ),
               ),
               const SizedBox(height: 10),
-              _UniversalResourceCard(
+              UniversalResourceCard(
                 icon: Icons.phone_rounded,
                 iconBgColor: GQColors.accentSoft,
                 iconColor: GQColors.coral,
@@ -711,14 +715,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 tagColor: GQColors.coralDk,
                 title: '988 Lifeline',
                 subtitle: 'Dial 988 · works on any phone, 24/7',
-                onTap: () => _launchUri(
+                onTap: () => launchUri(
                   context,
                   Uri.parse('tel:988'),
                   label: '988 Lifeline',
                 ),
               ),
               const SizedBox(height: 10),
-              _UniversalResourceCard(
+              UniversalResourceCard(
                 icon: Icons.language_rounded,
                 iconBgColor: GQColors.successSoft,
                 iconColor: GQColors.successInk,
@@ -727,7 +731,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 tagColor: GQColors.successInk,
                 title: 'IASP Resources',
                 subtitle: 'Find a local hotline anywhere in the world',
-                onTap: () => _launchUri(
+                onTap: () => launchUri(
                   context,
                   Uri.parse('https://www.iasp.info/resources/Crisis_Centres/'),
                   label: 'IASP Resources',
@@ -742,7 +746,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   button: true,
                   label: 'Or use GentleQuest on your personal device',
                   child: GestureDetector(
-                    onTap: () => _launchUri(
+                    onTap: () => launchUri(
                       context,
                       Uri.parse('https://gentlequest.app/get'),
                       label: 'GentleQuest personal device',
@@ -1254,8 +1258,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 const SizedBox(height: 16),
 
                 // 988 Lifeline — P6: always present on blocked-region path
-                _LifelineCard988(
-                  onTap: () => _launchUri(
+                LifelineCard988(
+                  onTap: () => launchUri(
                     context,
                     Uri.parse('tel:988'),
                     label: '988 Lifeline',
@@ -1264,13 +1268,13 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 const SizedBox(height: 8),
 
                 // Crisis Text Line
-                _RegionalResourceCard(
+                RegionalResourceCard(
                   icon: Icons.message_rounded,
                   iconBgColor: GQColors.primarySoft,
                   iconColor: GQColors.primary,
                   title: 'Crisis Text Line',
                   subtitle: 'Text HOME to 741741',
-                  onTap: () => _launchUri(
+                  onTap: () => launchUri(
                     context,
                     Uri.parse('sms:741741?body=HOME'),
                     label: 'Crisis Text Line',
@@ -1279,13 +1283,13 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 const SizedBox(height: 8),
 
                 // NAMI — label uses regionName where available
-                _RegionalResourceCard(
+                RegionalResourceCard(
                   icon: Icons.favorite_outlined,
                   iconBgColor: GQColors.primarySoft,
                   iconColor: GQColors.primary,
                   title: 'NAMI $regionName',
                   subtitle: 'Helpline · 800-950-6264',
-                  onTap: () => _launchUri(
+                  onTap: () => launchUri(
                     context,
                     Uri.parse('tel:8009506264'),
                     label: 'NAMI $regionName',
@@ -1359,8 +1363,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _LifelineCard988(
-                  onTap: () => _launchUri(
+                LifelineCard988(
+                  onTap: () => launchUri(
                     context,
                     Uri.parse('tel:988'),
                     label: '988 Lifeline',
@@ -1421,451 +1425,3 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Private shared widgets (file-scoped; not exported)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Shared 988 Lifeline card — used in both blocked-region (R1D10) and MDM
-/// surfaces. Keeps P6 (crisis never blocks) consistent across all paths.
-class _LifelineCard988 extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _LifelineCard988({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '988 Lifeline — Dial 988 — free, confidential, 24/7',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(GQRadii.card),
-            border: Border.all(color: GQColors.hair),
-            boxShadow: [
-              BoxShadow(
-                color: GQColors.ink.withValues(alpha: 0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: GQColors.accentSoft,
-                ),
-                child: const Icon(
-                  Icons.phone_rounded,
-                  color: GQColors.coral,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '988 Lifeline',
-                          style: TextStyle(
-                            fontFamily: GQTypography.bodyFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        _TagPill(label: 'CALL', bg: GQColors.accentSoft,
-                            fg: GQColors.coralDk),
-                      ],
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Dial 988 · free, confidential, 24/7',
-                      style: TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                        color: GQColors.ink3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink3, size: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tiny pill label used inside resource cards.
-class _TagPill extends StatelessWidget {
-  final String label;
-  final Color bg;
-  final Color fg;
-
-  const _TagPill({required this.label, required this.bg, required this.fg});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: GQTypography.bodyFamily,
-          fontSize: 9.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.3,
-          color: fg,
-        ),
-      ),
-    );
-  }
-}
-
-/// Resource card row used in State A (regional list).
-class _RegionalResourceCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _RegionalResourceCard({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '$title — $subtitle',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: GQColors.hair),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: iconBgColor,
-                ),
-                child: Icon(icon, color: iconColor, size: 16),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: GQColors.ink,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: GQColors.ink3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink3, size: 14),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Resource card row used in State B (universal list — no deeplinks blocked by MDM).
-class _UniversalResourceCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String tagText;
-  final Color tagBg;
-  final Color tagColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _UniversalResourceCard({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.tagText,
-    required this.tagBg,
-    required this.tagColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '$title — $subtitle',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(GQRadii.card),
-            border: Border.all(color: GQColors.hair),
-            boxShadow: [
-              BoxShadow(
-                color: GQColors.ink.withAlpha(13),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: iconBgColor,
-                ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontFamily: GQTypography.bodyFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: tagBg,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(
-                            tagText,
-                            style: TextStyle(
-                              fontFamily: GQTypography.bodyFamily,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.3,
-                              color: tagColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                        color: GQColors.ink3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink3, size: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Collapsible block-reason disclosure — State A only.
-/// collapsed by default (urgent help is the focus).
-class _BlockReasonDisclosure extends StatefulWidget {
-  final String summaryText;
-  final String bodyText;
-  final VoidCallback? onDismiss;
-
-  const _BlockReasonDisclosure({
-    required this.summaryText,
-    required this.bodyText,
-    this.onDismiss,
-  });
-
-  @override
-  State<_BlockReasonDisclosure> createState() =>
-      _BlockReasonDisclosureState();
-}
-
-class _BlockReasonDisclosureState extends State<_BlockReasonDisclosure> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Summary row (tap to expand)
-        Semantics(
-          button: true,
-          label: widget.summaryText,
-          child: GestureDetector(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 13),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(140),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: GQColors.hair,
-                    style: BorderStyle.solid),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.summaryText,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        height: 1.4,
-                        color: GQColors.ink2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    _expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: GQColors.ink3,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        if (_expanded) ...[
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              widget.bodyText,
-              style: const TextStyle(
-                fontFamily: GQTypography.bodyFamily,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.6,
-                color: GQColors.ink3,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// URL launcher (same pattern as crisis_resources.dart)
-// ─────────────────────────────────────────────────────────────────────────────
-
-Future<void> _launchUri(BuildContext context, Uri uri,
-    {String? label}) async {
-  final messenger = ScaffoldMessenger.maybeOf(context);
-  try {
-    final launched = await canLaunchUrl(uri) &&
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (launched) return;
-  } catch (_) {
-    // fall through to clipboard fallback
-  }
-
-  if (uri.scheme == 'tel') {
-    final number = uri.path;
-    if (messenger != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Phone number: $number')),
-      );
-    }
-    return;
-  }
-  if (uri.scheme == 'sms') {
-    final number = uri.path;
-    if (messenger != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Text: $number')),
-      );
-    }
-    return;
-  }
-  final urlStr = uri.toString();
-  if (messenger != null) {
-    messenger.showSnackBar(SnackBar(content: Text('Link: $urlStr')));
-  }
-}
