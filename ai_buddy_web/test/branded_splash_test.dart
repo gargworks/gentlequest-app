@@ -9,10 +9,12 @@ void main() {
     expect(find.text('GentleQuest'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
 
-    final container = tester.widget<Container>(
-      find.descendant(of: find.byType(Scaffold), matching: find.byType(Container)).first,
+    // Assert the brand gradient, not the wrapper widget type — the splash
+    // background has already drifted Container -> DecoratedBox once.
+    final decorated = tester.widget<DecoratedBox>(
+      find.descendant(of: find.byType(Scaffold), matching: find.byType(DecoratedBox)).first,
     );
-    final deco = container.decoration as BoxDecoration;
+    final deco = decorated.decoration as BoxDecoration;
     final gradient = deco.gradient as LinearGradient;
     expect(gradient.colors.first, const Color(0xFFF8F7FF));
     expect(gradient.colors.last, const Color(0xFFEEF0FE));
