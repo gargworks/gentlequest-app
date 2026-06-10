@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+import '../../theme/gq_tokens.dart';
+import 'assessment_models.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Question card (Mockup A)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class AssessmentQuestionCard extends StatelessWidget {
+  final int qIdx;
+  final int total;
+  final String questionText;
+  final bool whyWeAskExpanded;
+  final VoidCallback onToggleWhyWeAsk;
+
+  const AssessmentQuestionCard({
+    super.key,
+    required this.qIdx,
+    required this.total,
+    required this.questionText,
+    required this.whyWeAskExpanded,
+    required this.onToggleWhyWeAsk,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF4F5FE), Color(0xFFFAF1F1)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: GQColors.hair),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "QUESTION 4 OF 9" — verbatim eyebrow
+          Text(
+            'QUESTION ${qIdx + 1} OF $total',
+            style: const TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: GQColors.ink3,
+              letterSpacing: 0.7,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Question text
+          Text(
+            questionText,
+            style: const TextStyle(
+              fontFamily: GQTypography.displayFamily,
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              color: GQColors.ink,
+              letterSpacing: -0.5,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // "Why we ask" expandable — verbatim label
+          GestureDetector(
+            onTap: onToggleWhyWeAsk,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: GQColors.primary.withAlpha(26), // 0.10
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Why we ask', // verbatim from HTML
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: GQColors.primaryDk,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: whyWeAskExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 260),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: GQColors.primaryDk,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable body — 260ms per spec
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 260),
+            crossFadeState: whyWeAskExpanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                'PHQ-9 and GAD-7 are validated screening tools used by clinicians worldwide. '
+                'We use them to help you notice patterns — not to label you. '
+                'Your answers are private and never shared.',
+                style: const TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: GQColors.ink2,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Likert vertical pills (Mockup A)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class LikertSelector extends StatelessWidget {
+  final int? selected;
+  final void Function(int) onSelect;
+
+  const LikertSelector({super.key, required this.selected, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(kLikertLabels.length, (i) {
+        final isSelected = selected == i;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 9),
+          child: _LikertPill(
+            index: i,
+            label: kLikertLabels[i], // verbatim
+            isSelected: isSelected,
+            onTap: () => onSelect(i),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _LikertPill extends StatelessWidget {
+  final int index;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LikertPill({
+    required this.index,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: const Cubic(0.22, 0.94, 0.32, 1),
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? GQColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? GQColors.primary : GQColors.hair,
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: GQColors.primary.withAlpha(140),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                    spreadRadius: -12,
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Score number
+            SizedBox(
+              width: 14,
+              child: Text(
+                '$index',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected
+                      ? Colors.white.withAlpha(179)
+                      : GQColors.ink3,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Label — verbatim
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: GQTypography.bodyFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : GQColors.ink,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+            // Check ring
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? Colors.white : Colors.transparent,
+                border: Border.all(
+                  color: isSelected ? Colors.white : GQColors.ink.withAlpha(41),
+                  width: 1.5,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: GQColors.primaryDk,
+                      size: 14,
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
