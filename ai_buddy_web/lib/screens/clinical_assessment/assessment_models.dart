@@ -7,7 +7,9 @@ enum AssessmentScale { phq9, gad7 }
 enum AssessmentSeverity { minimal, mild, moderate, moderateSevere, severe }
 
 extension AssessmentScaleX on AssessmentScale {
-  String get title => this == AssessmentScale.phq9 ? 'PHQ-9 Check-in' : 'GAD-7 Check-in';
+  String get title => this == AssessmentScale.phq9
+      ? 'Depression Check-in (PHQ-9)'
+      : 'Anxiety Check-in (GAD-7)';
   String get subtitle => this == AssessmentScale.phq9
       ? 'Depression screener · clinical-grade · ~2 min'
       : 'Anxiety screener · clinical-grade · ~2 min';

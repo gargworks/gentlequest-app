@@ -333,14 +333,15 @@ class ResultRevealScreen extends StatelessWidget {
 
                     const SizedBox(height: 14),
 
-                    // Disclaimer — verbatim from HTML
-                    const Center(
+                    // Disclaimer — uses scaleLabel so GAD-7 results don't
+                    // misattribute the disclaimer to PHQ-9.
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
-                          'PHQ-9 is a clinical screening tool, not a diagnostic instrument.',
+                          '$scaleLabel is a clinical screening tool, not a diagnostic instrument.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,

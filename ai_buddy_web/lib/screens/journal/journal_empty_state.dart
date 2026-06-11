@@ -80,7 +80,7 @@ class JournalEmptyState extends StatelessWidget {
 
             // Headline + sub
             const Text(
-              "What's worth remembering?",
+              "Your journal starts here.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: GQTypography.journalSerif,

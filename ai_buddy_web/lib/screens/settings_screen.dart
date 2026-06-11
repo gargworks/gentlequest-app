@@ -406,7 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Show loading state or immediate feedback
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Requesting data export...'),
+        content: Text('Sending export to your email…'),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
       ),
