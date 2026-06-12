@@ -53,8 +53,8 @@ class AssessmentNavBar extends StatelessWidget {
           Expanded(
             child: _AssessmentProgressBar(filled: filled, total: total),
           ),
-          const SizedBox(width: 8),
-          NavCloseButton(onTap: onClose),
+          const SizedBox(width: 4),
+          NavSaveExitButton(onTap: onClose),
         ],
       ),
     );
@@ -87,26 +87,32 @@ class NavBackButton extends StatelessWidget {
   }
 }
 
-class NavCloseButton extends StatelessWidget {
+/// Top-right "Save & exit" text button in the assessment nav bar.
+/// Replaces the ambiguous × icon so the affordance is visible above-the-fold
+/// (UC-CA3 fix — synthetic QA 2026-06-12: users couldn't see the exit path).
+/// NOTE: progress is held in memory only for this session; cross-restart
+/// persistence is a follow-up (backend_assessment_storage_missing).
+class NavSaveExitButton extends StatelessWidget {
   final VoidCallback onTap;
-  const NavCloseButton({super.key, required this.onTap});
+  const NavSaveExitButton({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: GQColors.hair),
-        ),
-        child: const Icon(
-          Icons.close_rounded,
-          color: GQColors.ink,
-          size: 16,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Text(
+          'Save & exit',
+          style: TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: GQColors.primary,
+            decoration: TextDecoration.underline,
+            decorationColor: GQColors.primary,
+          ),
         ),
       ),
     );

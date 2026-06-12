@@ -121,7 +121,7 @@ class ResultRevealScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  NavCloseButton(onTap: onClose),
+                  NavSaveExitButton(onTap: onClose),
                 ],
               ),
             ),

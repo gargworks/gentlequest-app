@@ -202,7 +202,7 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
     messenger.showSnackBar(
       SnackBar(
         content: const Text(
-          'Progress saved · resume anytime from the Mood tab',
+          'Progress saved ✓',
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         behavior: SnackBarBehavior.floating,
