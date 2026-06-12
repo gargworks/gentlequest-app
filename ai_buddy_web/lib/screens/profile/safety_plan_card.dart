@@ -417,6 +417,18 @@ class _ContactRow extends StatelessWidget {
               }
               final uri = Uri.parse('tel:$phone');
               if (await canLaunchUrl(uri)) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        contact.name.isNotEmpty
+                            ? 'Calling ${contact.name}…'
+                            : 'Calling…',
+                      ),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
                 await launchUrl(uri);
               } else if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
