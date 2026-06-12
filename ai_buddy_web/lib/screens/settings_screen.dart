@@ -759,6 +759,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         const SizedBox(height: 14),
 
+        // ERASE LOCAL DATA — above Legal so it's discoverable before
+        // the user reaches the bottom coral button (UC-S1 fix).
+        SectionLabel(label: 'YOUR DEVICE DATA'),
+        SettingsCard(
+          children: [
+            SettingsRow(
+              iconBg: GQColors.accentSoft,
+              iconWidget: const Icon(Icons.delete_sweep_outlined,
+                  size: 14, color: GQColors.coral),
+              title: 'Erase all my data',
+              titleColor: GQColors.dangerInk,
+              subtitle:
+                  'Clears your journal, mood entries, and check-ins from this device',
+              subtitleColor: Colors.redAccent,
+              trailing: const Chevron(),
+              onTap: () => _showEraseLocalDataDialog(context),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
         // LEGAL
         SectionLabel(label: 'LEGAL'),
         SettingsCard(
@@ -973,6 +995,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: GQColors.ink2),
           ),
         ),
+
+        // ERASE LOCAL DATA — visible in anonymity mode too (UC-S1 fix).
+        SectionLabel(label: 'YOUR DEVICE DATA'),
+        SettingsCard(
+          children: [
+            SettingsRow(
+              iconBg: GQColors.accentSoft,
+              iconWidget: const Icon(Icons.delete_sweep_outlined,
+                  size: 14, color: GQColors.coral),
+              title: 'Erase all my data',
+              titleColor: GQColors.dangerInk,
+              subtitle:
+                  'Clears your journal, mood entries, and check-ins from this device',
+              subtitleColor: Colors.redAccent,
+              trailing: const Chevron(),
+              onTap: () => _showEraseLocalDataDialog(context),
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -983,13 +1025,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Erase local data?',
+        title: Text('Erase all local data?',
             style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontWeight: FontWeight.w800,
                 color: GQColors.ink)),
         content: Text(
-            'This removes the local cache only. Your account and cloud data stay.',
+            'This deletes your journal, moods, and check-ins from this device. It can\'t be undone.',
             style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 color: GQColors.ink2)),
@@ -1020,7 +1062,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    'Local data erased. Restart the app to start fresh.',
+                    'Local data erased ✓',
                     style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontWeight: FontWeight.w600),
