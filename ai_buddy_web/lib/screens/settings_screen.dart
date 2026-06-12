@@ -597,18 +597,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SectionLabel(label: 'NOTIFICATIONS'),
           SettingsCard(
             children: [
-              SettingsRow(
-                iconBg: GQColors.primarySoft,
-                iconWidget: const Icon(Icons.notifications_outlined,
-                    size: 14, color: GQColors.primaryDk),
-                title: 'Daily check-in reminder',
-                subtitle: '8:00 PM · all 7 days',
-                trailing: GQToggle(
-                  value: _dailyReminderOn,
-                  onChanged: _onDailyReminderChanged,
+              if (authService.isSignedIn)
+                SettingsRow(
+                  iconBg: GQColors.primarySoft,
+                  iconWidget: const Icon(Icons.notifications_outlined,
+                      size: 14, color: GQColors.primaryDk),
+                  title: 'Daily check-in reminder',
+                  subtitle: '8:00 PM · all 7 days',
+                  trailing: GQToggle(
+                    value: _dailyReminderOn,
+                    onChanged: _onDailyReminderChanged,
+                  ),
+                  onTap: _openNotificationDetail,
+                )
+              else
+                SettingsRow(
+                  iconBg: GQColors.primarySoft,
+                  iconWidget: const Icon(Icons.notifications_outlined,
+                      size: 14, color: GQColors.primaryDk),
+                  title: 'Daily check-in reminder',
+                  subtitle: 'Create a free account to unlock reminders',
+                  subtitleColor: GQColors.primaryDk,
+                  trailing: const Chevron(),
+                  onTap: _openLoginScreen,
                 ),
-                onTap: _openNotificationDetail,
-              ),
               SettingsRow(
                 iconBg: GQColors.warmSoft,
                 iconWidget: const Text('🔥',
