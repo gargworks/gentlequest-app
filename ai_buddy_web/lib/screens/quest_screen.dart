@@ -174,7 +174,34 @@ class _QuestScreenState extends State<QuestScreen> {
 
   void _markTodayDone() {
     setState(() => _todayDone = true);
-    Future.delayed(const Duration(milliseconds: 600), _goToList);
+    // Show a "Quest done!" toast immediately so the completion moment is
+    // unambiguous — synth-QA UC-Q3: the in-progress entry fields resembled a
+    // journal screen and the 600 ms confirmation window was too brief to
+    // distinguish. Extended to 1 500 ms + snackbar = clear completion signal.
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Quest done! Nice work.',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        backgroundColor: GQColors.primary,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(milliseconds: 1400),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GQRadii.card),
+        ),
+      ),
+    );
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) _goToList();
+    });
   }
 
   void _tellAlex(BuildContext ctx) {
