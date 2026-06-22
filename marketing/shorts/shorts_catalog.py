@@ -171,6 +171,84 @@ CATALOG = {
             {"kind": "card",  "caption": "not a diagnosis.\na starting point.",                            "dur": 4, "size": 64},
         ],
     },
+
+    # ── v13: weekly mood review — patterns, not streaks ──
+    "v13_weekly_review": {
+        "out": str(OUT_DIR / "gq_short_v13_weekly.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "a week\nof moods",                                              "dur": 4, "size": 80},
+            {"kind": "phone", "src": "M1_mood_tab.png",        "caption": "you logged a few moods",       "dur": 5},
+            {"kind": "phone", "src": "M5_weekly_review_row.png", "caption": "at the end of the week",    "dur": 6},
+            {"kind": "phone", "src": "M5b_after_scroll.png",   "caption": "patterns, not streaks",       "dur": 6},
+            {"kind": "phone", "src": "M3_low_mood_reflection.png", "caption": "trends, not guilt",       "dur": 5},
+            {"kind": "card",  "caption": "no streak to break.\njust a picture of your week.",            "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v14: journaling with chips — low friction ──
+    "v14_journal_chips": {
+        "out": str(OUT_DIR / "gq_short_v14_journal_chips.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "journaling\nwithout pressure",                                 "dur": 4, "size": 76},
+            {"kind": "phone", "src": "J1_journal_empty.png",  "caption": "blank page",                    "dur": 4},
+            {"kind": "phone", "src": "J2_chip_prefill.png",   "caption": "or tap a chip to start",        "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",   "caption": "write a line. or a paragraph.", "dur": 6},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png", "caption": "anonymous. private.",        "dur": 5},
+            {"kind": "card",  "caption": "no AI reads it.\nno prompts. just yours.",                      "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v15: breathing exercise — 90 seconds ──
+    "v15_breathing": {
+        "out": str(OUT_DIR / "gq_short_v15_breathing.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "90 seconds.\nbreathe.",                                         "dur": 4, "size": 84},
+            {"kind": "phone", "src": "RL1_library_all.png",     "caption": "open the library",             "dur": 4},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "box breathing",                "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "in. hold. out. hold.",         "dur": 7},
+            {"kind": "phone", "src": "RL4_exercise.png",        "caption": "four counts each",             "dur": 5},
+            {"kind": "card",  "caption": "that is it.\nyou are breathing.",                               "dur": 4, "size": 68},
+        ],
+    },
+
+    # ── v16: compliance guard — 18+ only ──
+    "v16_compliance_guard": {
+        "out": str(OUT_DIR / "gq_short_v16_compliance.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "this app is\n18+ only",                                        "dur": 4, "size": 80},
+            {"kind": "phone", "src": "W1_welcome_hero.png",    "caption": "open it",                       "dur": 4},
+            {"kind": "phone", "src": "W2_age_modal.png",       "caption": "age check",                     "dur": 5},
+            {"kind": "phone", "src": "W4_under18_screen.png",  "caption": "under 18? here is what helps",   "dur": 7},
+            {"kind": "phone", "src": "C1_compliance_guard.png", "caption": "we mean it",                   "dur": 5},
+            {"kind": "card",  "caption": "not for kids.\nnot a toy.",                                     "dur": 5, "size": 70},
+        ],
+    },
+
+    # ── v17: safety contacts — people you trust ──
+    "v17_safety_contacts": {
+        "out": str(OUT_DIR / "gq_short_v17_contacts.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "who do you\ncall?",                                            "dur": 4, "size": 80},
+            {"kind": "phone", "src": "P1_profile_top.png",      "caption": "open your profile",            "dur": 4},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "safety plan",                  "dur": 5},
+            {"kind": "phone", "src": "P4_safety_contacts.png",  "caption": "add people you trust",         "dur": 6},
+            {"kind": "phone", "src": "P5_safety_contacts.png",  "caption": "one tap to call",              "dur": 6},
+            {"kind": "card",  "caption": "fill it now.\nfind it later.",                                  "dur": 5, "size": 68},
+        ],
+    },
+
+    # ── v18: not a therapist — honest framing ──
+    "v18_honest_framing": {
+        "out": str(OUT_DIR / "gq_short_v18_honest.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "we are not\na therapist",                                      "dur": 4, "size": 80},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "we are a quiet chat",           "dur": 5},
+            {"kind": "phone", "src": "I7_overflow_open.png",   "caption": "real disclosures happen here",  "dur": 5},
+            {"kind": "phone", "src": "I7b_safety_legal_sheet.png", "caption": "and we take that seriously", "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "safety plan. crisis lines.",   "dur": 6},
+            {"kind": "card",  "caption": "not a replacement.\na bridge.",                                 "dur": 4, "size": 64},
+        ],
+    },
 }
 
 
