@@ -93,6 +93,84 @@ CATALOG = {
             {"kind": "card",  "caption": "iOS + Android · 18+ · free",                                    "dur": 3, "size": 64},
         ],
     },
+
+    # ── v7: journaling — private notes, no AI reading ──
+    "v7_journal_private": {
+        "out": str(OUT_DIR / "gq_short_v7_journal.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "a journal\nthat is just yours",                                 "dur": 4, "size": 80},
+            {"kind": "phone", "src": "J1_journal_empty.png",  "caption": "blank page. no prompts.",       "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",   "caption": "write whatever",                "dur": 6},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png", "caption": "anonymous mode",             "dur": 5},
+            {"kind": "phone", "src": "S2_export_snackbar.png",  "caption": "export anytime. leave anytime.", "dur": 6},
+            {"kind": "card",  "caption": "we do not read it.\nno AI summarizes it.",                      "dur": 4, "size": 64},
+        ],
+    },
+
+    # ── v8: privacy-first — your data, your control ──
+    "v8_privacy_first": {
+        "out": str(OUT_DIR / "gq_short_v8_privacy.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "your data\nis yours",                                           "dur": 4, "size": 84},
+            {"kind": "phone", "src": "S1_settings_top.png",      "caption": "settings",                    "dur": 5},
+            {"kind": "phone", "src": "S2_export_snackbar.png",   "caption": "export everything",           "dur": 5},
+            {"kind": "phone", "src": "S3_delete_account_sheet.png", "caption": "delete everything",       "dur": 6},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png",  "caption": "or go anonymous",            "dur": 5},
+            {"kind": "card",  "caption": "no account needed.\nno tracking. no ads.",                      "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v9: grounding exercise — 5-4-3-2-1 technique ──
+    "v9_grounding_54321": {
+        "out": str(OUT_DIR / "gq_short_v9_grounding.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "anxious?\ntry this.",                                           "dur": 4, "size": 80},
+            {"kind": "phone", "src": "RL1_library_all.png",     "caption": "open the library",             "dur": 5},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "grounding exercise",           "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "5 things you see",             "dur": 5},
+            {"kind": "phone", "src": "RL4_exercise.png",        "caption": "4 you can touch",              "dur": 5},
+            {"kind": "card",  "caption": "60 seconds.\nback to now.",                                     "dur": 5, "size": 70},
+        ],
+    },
+
+    # ── v10: not social media — curated community, no doomscroll ──
+    "v10_not_social_media": {
+        "out": str(OUT_DIR / "gq_short_v10_community.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "this is not\nsocial media",                                     "dur": 4, "size": 80},
+            {"kind": "phone", "src": "X1d_community.png",      "caption": "a community tab",               "dur": 5},
+            {"kind": "phone", "src": "X_community_tab.png",    "caption": "curated. slow.",                "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "no likes. no follower count.",  "dur": 5},
+            {"kind": "phone", "src": "M2c_mood_submitted.png", "caption": "just you and your mood",        "dur": 6},
+            {"kind": "card",  "caption": "no feed to scroll.\nno algorithm to fight.",                    "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v11: first 30 seconds — onboarding ──
+    "v11_first_30_seconds": {
+        "out": str(OUT_DIR / "gq_short_v11_onboarding.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "first 30 seconds\nin the app",                                  "dur": 4, "size": 76},
+            {"kind": "phone", "src": "W1_welcome_hero.png",    "caption": "open it",                       "dur": 5},
+            {"kind": "phone", "src": "W2_age_modal.png",       "caption": "18+ check",                     "dur": 4},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "say hi",                        "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",      "caption": "log your mood",                 "dur": 6},
+            {"kind": "card",  "caption": "that is it.\nyou are in.",                                       "dur": 5, "size": 72},
+        ],
+    },
+
+    # ── v12: clinical screening — real PHQ-9, not just chat ──
+    "v12_clinical_screening": {
+        "out": str(OUT_DIR / "gq_short_v12_screening.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "real screening.\nnot just chat.",                               "dur": 4, "size": 76},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "clinical check-in",   "dur": 5},
+            {"kind": "phone", "src": "CA2_phq9_q1.png",       "caption": "PHQ-9. validated.",               "dur": 6},
+            {"kind": "phone", "src": "CA4_result_reveal.png",  "caption": "honest results",                 "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan if needed",   "dur": 5},
+            {"kind": "card",  "caption": "not a diagnosis.\na starting point.",                            "dur": 4, "size": 64},
+        ],
+    },
 }
 
 
@@ -115,9 +193,11 @@ def main() -> None:
         names = sys.argv[1:]
     else:
         names = list(CATALOG.keys())
-    # Skip v1 by default (already shipped) — pass explicitly to re-render.
+    # Skip already-shipped/scheduled by default (v1-v6) — pass explicitly to re-render.
+    SHIPPED = {"v1_what_it_is", "v2_safety_plan", "v3_mood_no_streaks",
+               "v4_tiny_quests", "v5_not_an_ai_therapist", "v6_free_beta"}
     if len(sys.argv) == 1:
-        names = [n for n in names if n != "v1_what_it_is"]
+        names = [n for n in names if n not in SHIPPED]
 
     results = []
     for n in names:

@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BAKE = ROOT / "bake_caption.py"
-SCREENSHOTS = Path("/Users/lokeshgarg/ai-mvp-backend/docs/design/refs/screenshots/oracle-run-2026-06-10")
+SCREENSHOTS = Path(__file__).resolve().parents[2] / "docs/design/refs/screenshots/walk-2026-05-19"
 
 W, H = 1080, 1920
 FPS = 30

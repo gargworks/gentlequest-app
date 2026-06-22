@@ -96,3 +96,87 @@ Feedback welcome — comments here, or via the app.
 **studio.youtube.com:** Comments tab on the video → open your comment → ⋮ menu → Pin.
 
 YT doesn't allow pre-pinning on scheduled videos, so this has to happen after each fires. If you want, set a quick recurring 10:05 IST reminder on Tue/Fri so you don't miss it — or I can build a small launchd job that just dumps the right text block to your clipboard on the publish day so it's one paste away.
+
+---
+
+## v7 — journal that is just yours (unscheduled)
+
+```
+A journal that is just yours. No AI reads it. No prompts. Just a blank page.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+Free. 18+. No ads.
+```
+
+---
+
+## v8 — your data is yours (unscheduled)
+
+```
+Export everything. Delete everything. Or go anonymous. Your call.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+No account needed. No tracking. No ads.
+```
+
+---
+
+## v9 — grounding 5-4-3-2-1 (unscheduled)
+
+```
+Anxious? Try the 5-4-3-2-1 grounding exercise. 60 seconds, back to now.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+Free. 18+.
+```
+
+---
+
+## v10 — not social media (unscheduled)
+
+```
+No feed. No likes. No follower count. No algorithm. Just you and your mood.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+Free. 18+. No ads.
+```
+
+---
+
+## v11 — first 30 seconds (unscheduled)
+
+```
+First 30 seconds in the app: open, 18+ check, say hi, log your mood. That is it.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+Free. 18+.
+```
+
+---
+
+## v12 — clinical screening (unscheduled)
+
+```
+Real PHQ-9 screening, not just chat. Honest results, and a safety plan if needed.
+
+iOS — https://apps.apple.com/app/gentlequest/id6756537464
+Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+Web — https://gentlequest.app
+
+Not a diagnosis. A starting point. Free. 18+.
+```
