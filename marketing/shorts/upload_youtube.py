@@ -30,7 +30,10 @@ CLIENT_SECRET = Path("/Users/lokeshgarg/Downloads/client_secret_680543456536-pss
 TOKEN_FILE = Path(__file__).resolve().parent / "youtube_token.json"
 SHORTS_DIR = Path(__file__).resolve().parent / "out" / "final"
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube",
+]
 
 # Video metadata — title, description, tags per short
 VIDEO_META = {
