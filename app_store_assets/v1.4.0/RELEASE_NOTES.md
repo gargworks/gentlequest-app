@@ -1,7 +1,7 @@
 v1.4.0 — Stronger age safety + smoother check-ins. Same gentle GentleQuest.
 
 What's new:
-• Stronger under-18 safety: integrated with Google Play's Age Signals so the under-18 path renders dignity-first content (988 Lifeline + "tell a trusted adult") instead of just exiting the app. Texas SB 2420 ready.
+• Stronger under-18 safety: when someone indicates they're under 18, GentleQuest now renders a dignity-first support screen (988 Lifeline + "tell a trusted adult") instead of just closing the app.
 • "Depression Check-in" and "Anxiety Check-in" — the screening cards now lead with plain language; the PHQ-9 / GAD-7 acronyms stay in parentheses for transparency.
 • Fixed: the GAD-7 result screen used to show a "PHQ-9 is a clinical screening tool" disclaimer. It now matches the screening you actually completed.
 • Friendlier journal empty state: "Your journal starts here." replaces a heading that read like a prompt mid-flow.
