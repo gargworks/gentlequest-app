@@ -98,12 +98,14 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
         // Prevent double invocation from concurrent mounts/renders
         if (_legalSheetShowing) return;
         _legalSheetShowing = true;
+        // Save flag BEFORE showing sheet — prevents re-show if widget is
+        // recreated (tab switch) before the post-sheet setBool completes.
+        await prefs.setBool(_prefsLegalAckV1, true);
         try {
           await showSafetyLegalSheet(context, requireAcknowledge: true);
         } finally {
           _legalSheetShowing = false;
         }
-        await prefs.setBool(_prefsLegalAckV1, true);
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Safety & Legal ack check failed: $e');
