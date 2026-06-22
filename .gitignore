@@ -32,7 +32,8 @@ ai_buddy_web_backup/
 .pub-cache/
 .pub/
 # Exclude all build directories except web
-ai_buddy_web/build/
+# (no trailing slash — also catches symlink-to-SSD case)
+ai_buddy_web/build
 !ai_buddy_web/build/web/
 !ai_buddy_web/build/web/**
 .metadata
