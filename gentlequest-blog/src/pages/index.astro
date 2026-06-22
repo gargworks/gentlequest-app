@@ -2,7 +2,14 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { getCollection } from 'astro:content';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const recentPosts = posts.slice(0, 4);
 ---
 
 <!doctype html>
@@ -13,37 +20,132 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 	<body>
 		<Header />
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+			<section class="hero">
+				<h1>Progress, not pressure.</h1>
+				<p class="tagline">
+					A gentle AI mood tracker for anxiety, stress, and burnout. No streaks. No guilt. Just small steps at your pace.
+				</p>
+				<div class="cta-row">
+					<a href="https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/id6756537464" class="cta-btn">Download for iOS</a>
+					<a href="https://play.google.com/store/apps/details?id=app.gentlequest.www" class="cta-btn">Get it on Google Play</a>
+				</div>
+			</section>
+
+			<section class="recent-posts">
+				<h2>Recent posts</h2>
+				{recentPosts.length > 0 ? (
+					<ul>
+						{recentPosts.map((post) => (
+							<li>
+								<a href={`/blog/${post.id}/`}>
+									<h4 class="title">{post.data.title}</h4>
+									<p class="date"><FormattedDate date={post.data.pubDate} /></p>
+									<p class="desc">{post.data.description}</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				) : (
+					<p class="empty">Posts coming soon.</p>
+				)}
+				{posts.length > 4 && (
+					<a href="/blog" class="see-all">See all posts →</a>
+				)}
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.hero {
+		text-align: center;
+		padding: 4rem 1rem 3rem;
+	}
+	.hero h1 {
+		font-size: clamp(2rem, 5vw, 3.5rem);
+		margin: 0 0 1rem;
+		line-height: 1.1;
+	}
+	.tagline {
+		font-size: 1.2rem;
+		color: rgb(var(--gray));
+		max-width: 600px;
+		margin: 0 auto 2rem;
+		line-height: 1.5;
+	}
+	.cta-row {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+	.cta-btn {
+		display: inline-block;
+		padding: 0.8rem 1.6rem;
+		background: rgb(var(--accent));
+		color: white;
+		text-decoration: none;
+		border-radius: 8px;
+		font-weight: 600;
+		transition: opacity 0.2s;
+	}
+	.cta-btn:hover {
+		opacity: 0.9;
+	}
+	.recent-posts {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem 1rem 4rem;
+	}
+	.recent-posts h2 {
+		margin-bottom: 1.5rem;
+	}
+	.recent-posts ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.recent-posts li a {
+		text-decoration: none;
+		display: block;
+		padding: 1rem;
+		border-radius: 8px;
+		transition: background 0.2s;
+	}
+	.recent-posts li a:hover {
+		background: rgb(var(--gray-light));
+	}
+	.recent-posts .title {
+		margin: 0 0 0.25rem;
+		color: rgb(var(--black));
+		font-size: 1.25rem;
+	}
+	.recent-posts .date {
+		margin: 0 0 0.5rem;
+		color: rgb(var(--gray));
+		font-size: 0.9rem;
+	}
+	.recent-posts .desc {
+		margin: 0;
+		color: rgb(var(--gray));
+		font-size: 0.95rem;
+		line-height: 1.5;
+	}
+	.see-all {
+		display: block;
+		margin-top: 2rem;
+		text-align: center;
+		text-decoration: none;
+		color: rgb(var(--accent));
+		font-weight: 600;
+	}
+	.empty {
+		color: rgb(var(--gray));
+		text-align: center;
+		padding: 2rem;
+	}
+</style>
