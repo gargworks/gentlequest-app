@@ -143,6 +143,11 @@ demos/**/*_frames/
 demos/**/captions/
 demos/**/production/
 
+# YT Shorts render outputs (scripts + pin-kit are tracked; mp4s + tmp are large/regenerable)
+marketing/shorts/out/*.mp4
+marketing/shorts/out/_tmp/
+marketing/shorts/.DS_Store
+
 # Test output artifacts
 test_output/
 
