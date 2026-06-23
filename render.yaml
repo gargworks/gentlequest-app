@@ -88,6 +88,7 @@ staticSites:
       - key: NODE_VERSION
         value: 20.11.0
     routes:
+      # Everything falls back to the SPA (static files like /blog/* are served directly by Render)
       - type: rewrite
         source: /*
         destination: /index.html

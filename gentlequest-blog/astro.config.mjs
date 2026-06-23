@@ -6,6 +6,7 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://blog.gentlequest.app',
+	site: 'https://gentlequest.app',
+	base: '/blog',
 	integrations: [mdx(), sitemap()],
 });
