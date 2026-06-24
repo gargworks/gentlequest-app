@@ -377,3 +377,119 @@ def true_metric():
     except Exception as e:
         current_app.logger.error(f"True metric error: {e}")
         return jsonify({"error": "Failed to compute metric"}), 500
+
+
+@analytics_bp.route("/api/metrics/funnel", methods=["GET"])
+def funnel_metrics():
+    """Full acquisition funnel: web visits → installs → app opens → first chat.
+
+    Stage 1: Web visits (GA4 web stream — starts collecting after GA4 tag deployed)
+    Stage 2: App installs (GA4 newUsers = first_open, iOS + Android)
+    Stage 3: App opens (GA4 app_open events)
+    Stage 4: First chat sent (backend DB, test sessions excluded)
+
+    GA4 data is cached for 1 hour to avoid API rate limits.
+    """
+    import tempfile
+    from datetime import timedelta
+
+    try:
+        # --- Stage 4: First chat (from DB, always fresh) ---
+        blocked = _load_blocklist()
+        all_chat_sessions = db.session.query(Message.session_id).filter(
+            Message.is_user == True
+        ).distinct().all()
+        first_chat_count = sum(1 for (sid,) in all_chat_sessions if sid not in blocked)
+
+        # --- Stages 1-3: GA4 data (cached) ---
+        cache_path = os.path.join(tempfile.gettempdir(), "gq_funnel_cache.json")
+        cache_valid = False
+        ga4_data = None
+
+        if os.path.exists(cache_path):
+            cache_age = datetime.utcnow().timestamp() - os.path.getmtime(cache_path)
+            if cache_age < 3600:  # 1 hour cache
+                with open(cache_path) as f:
+                    ga4_data = json.load(f)
+                cache_valid = True
+
+        if not cache_valid:
+            try:
+                from google.oauth2 import service_account
+                from google.analytics.data_v1beta import BetaAnalyticsDataClient
+                from google.analytics.data_v1beta.types import (
+                    RunReportRequest, DateRange, Dimension, Metric
+                )
+
+                sa_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                       "secret", "gentlequest-prod-sa.json")
+                if os.path.exists(sa_path):
+                    creds = service_account.Credentials.from_service_account_file(
+                        sa_path, scopes=["https://www.googleapis.com/auth/analytics.readonly"]
+                    )
+                    client = BetaAnalyticsDataClient(credentials=creds)
+
+                    # Installs (newUsers) by platform — last 90 days
+                    req = RunReportRequest(
+                        property="properties/516568186",
+                        date_ranges=[DateRange(start_date="90daysAgo", end_date="today")],
+                        dimensions=[Dimension(name="platform")],
+                        metrics=[Metric(name="newUsers"), Metric(name="activeUsers")],
+                    )
+                    resp = client.run_report(request=req)
+                    installs_90d = {}
+                    active_90d = {}
+                    for row in resp.rows:
+                        platform = row.dimension_values[0].value
+                        installs_90d[platform] = int(row.metric_values[0].value)
+                        active_90d[platform] = int(row.metric_values[1].value)
+
+                    # App opens (last 90 days)
+                    req2 = RunReportRequest(
+                        property="properties/516568186",
+                        date_ranges=[DateRange(start_date="90daysAgo", end_date="today")],
+                        dimensions=[Dimension(name="eventName")],
+                        metrics=[Metric(name="eventCount")],
+                    )
+                    resp2 = client.run_report(request=req2)
+                    app_opens_90d = 0
+                    for row in resp2.rows:
+                        if row.dimension_values[0].value == "app_open":
+                            app_opens_90d = int(row.metric_values[0].value)
+
+                    ga4_data = {
+                        "installs_90d": installs_90d,
+                        "active_90d": active_90d,
+                        "app_opens_90d": app_opens_90d,
+                        "web_visits_90d": None,  # Web stream just created, no data yet
+                    }
+                    with open(cache_path, "w") as f:
+                        json.dump(ga4_data, f, indent=2)
+            except Exception as ga4_err:
+                current_app.logger.warning(f"GA4 fetch failed: {ga4_err}")
+                ga4_data = {
+                    "installs_90d": {},
+                    "active_90d": {},
+                    "app_opens_90d": 0,
+                    "web_visits_90d": None,
+                    "error": str(ga4_err),
+                }
+
+        return jsonify({
+            "funnel": {
+                "stage_1_web_visits": ga4_data.get("web_visits_90d") if ga4_data else None,
+                "stage_2_installs": ga4_data.get("installs_90d", {}) if ga4_data else {},
+                "stage_3_app_opens": ga4_data.get("app_opens_90d", 0) if ga4_data else 0,
+                "stage_4_first_chat": first_chat_count,
+            },
+            "period": "last_90_days",
+            "active_users_90d": ga4_data.get("active_90d", {}) if ga4_data else {},
+            "blocked_test_sessions": len(blocked),
+            "ga4_property": "516568186",
+            "cached": cache_valid,
+            "timestamp": datetime.utcnow().isoformat(),
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Funnel metrics error: {e}")
+        return jsonify({"error": "Failed to fetch funnel metrics"}), 500
