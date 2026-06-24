@@ -69,6 +69,8 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
 	<!-- Dev-only Dart VM / Bonjour keys removed for App Store compliance (audit BLOCKER #7).
 	     Re-add locally ONLY for wireless (non-USB) debugging — do not ship:
 	       NSLocalNetworkUsageDescription + NSBonjourServices (_dartobservatory._tcp) -->
