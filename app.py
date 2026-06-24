@@ -233,4 +233,12 @@ if __name__ == "__main__":
         except Exception as e:
             app.logger.error(f"Database initialization error: {e}")
 
+    # Start daily funnel snapshot scheduler (self-snapshotting backend)
+    try:
+        from scheduler.funnel_scheduler import start_funnel_scheduler
+        start_funnel_scheduler(app)
+        app.logger.info("Funnel snapshot scheduler started")
+    except Exception as e:
+        app.logger.warning(f"Funnel scheduler failed to start: {e}")
+
     app.run(host="0.0.0.0", port=app.config.get("PORT", 5055), debug=False)
