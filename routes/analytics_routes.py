@@ -3,16 +3,29 @@ Analytics, intervention outcome, admin purge, and retention config endpoints.
 Extracted from app.py monolith.
 """
 
+import json
+import os
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from flask import Blueprint, current_app, g, jsonify, request
 
 from extensions import limiter
-from models import AnalyticsEvent, db
+from models import AnalyticsEvent, Message, db
 
 analytics_bp = Blueprint("analytics", __name__)
+
+
+def _load_blocklist():
+    """Load test/internal session IDs to exclude from the true metric."""
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "test_session_blocklist.json")
+    try:
+        with open(path) as f:
+            data = json.load(f)
+            return set(data.get("blocked_session_ids", []))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return set()
 
 
 @analytics_bp.route("/api/analytics/log", methods=["POST"])
@@ -299,3 +312,68 @@ def function_calling_analytics():
     except Exception as e:
         current_app.logger.error(f"Function calling analytics error: {e}")
         return jsonify({"error": "Failed to fetch function calling stats"}), 500
+
+
+@analytics_bp.route("/api/metrics/true", methods=["GET"])
+def true_metric():
+    """The one metric that matters: unique sessions that sent their first chat message.
+
+    Excludes all session IDs in config/test_session_blocklist.json (test/internal noise).
+    No auth, no PII — just a count.
+    """
+    try:
+        blocked = _load_blocklist()
+
+        # All-time unique sessions with ≥1 user message, excluding blocklist
+        all_sessions = db.session.query(Message.session_id).filter(
+            Message.is_user == True
+        ).distinct().all()
+        all_count = sum(1 for (sid,) in all_sessions if sid not in blocked)
+
+        # Today (UTC midnight boundary)
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_sessions = db.session.query(Message.session_id).filter(
+            Message.is_user == True,
+            Message.timestamp >= today_start
+        ).distinct().all()
+        today_count = sum(1 for (sid,) in today_sessions if sid not in blocked)
+
+        # Yesterday
+        yesterday_start = today_start - timedelta(days=1)
+        yesterday_sessions = db.session.query(Message.session_id).filter(
+            Message.is_user == True,
+            Message.timestamp >= yesterday_start,
+            Message.timestamp < today_start
+        ).distinct().all()
+        yesterday_count = sum(1 for (sid,) in yesterday_sessions if sid not in blocked)
+
+        # Last 7 days trend (unique per day)
+        trend = []
+        for i in range(6, -1, -1):
+            day_start = today_start - timedelta(days=i)
+            day_end = day_start + timedelta(days=1)
+            day_sessions = db.session.query(Message.session_id).filter(
+                Message.is_user == True,
+                Message.timestamp >= day_start,
+                Message.timestamp < day_end
+            ).distinct().all()
+            day_count = sum(1 for (sid,) in day_sessions if sid not in blocked)
+            trend.append({"date": day_start.strftime("%Y-%m-%d"), "count": day_count})
+
+        # Blocked count (for transparency)
+        blocked_count = sum(1 for (sid,) in all_sessions if sid in blocked)
+
+        return jsonify({
+            "metric": "first_chat_sent",
+            "description": "Unique sessions that sent their first chat message (test sessions excluded)",
+            "all_time": all_count,
+            "today": today_count,
+            "yesterday": yesterday_count,
+            "trend_7d": trend,
+            "blocked_sessions": blocked_count,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"True metric error: {e}")
+        return jsonify({"error": "Failed to compute metric"}), 500

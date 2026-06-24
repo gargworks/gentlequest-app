@@ -1,0 +1,12 @@
+{
+  "_comment": "Session IDs excluded from the true metric (test/internal sessions). Add new test session IDs here.",
+  "blocked_session_ids": [
+    "59233216-2706-459a-9be9-ef098852f046",
+    "3e20ed81-cc95-4468-a4b4-b764396f236d",
+    "4f3f8e70-28a7-47b4-b25a-bf2dadd28d9d",
+    "b2ca6616-ac83-4c9b-b179-e1ef673e950e",
+    "6daecc5c-b290-489f-88ca-e8bcf682d687",
+    "461c18e0-122f-4fd7-8436-1a2666203975",
+    "30455ab2-5799-4798-9501-58e58bde96d7"
+  ]
+}
