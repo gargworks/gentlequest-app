@@ -596,3 +596,16 @@ def funnel_history():
     except Exception as e:
         current_app.logger.error(f"Funnel history error: {e}")
         return jsonify({"error": "Failed to fetch funnel history"}), 500
+
+
+@analytics_bp.route("/metrics", methods=["GET"])
+def metrics_dashboard():
+    """Human-readable funnel dashboard. Auto-refreshes every hour."""
+    try:
+        repo_root = os.path.dirname(os.path.dirname(__file__))
+        template_path = os.path.join(repo_root, "templates", "metrics_dashboard.html")
+        with open(template_path) as f:
+            return f.read(), 200, {"Content-Type": "text/html"}
+    except Exception as e:
+        current_app.logger.error(f"Dashboard error: {e}")
+        return jsonify({"error": "Dashboard unavailable"}), 500

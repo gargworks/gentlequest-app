@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GentleQuest Funnel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 32px;
+        }
+        .funnel-stages {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+        .stage {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: #141414;
+            border-radius: 12px;
+            border: 1px solid #222;
+            transition: border-color 0.2s;
+        }
+        .stage:hover { border-color: #333; }
+        .stage-number {
+            font-size: 11px;
+            color: #666;
+            width: 24px;
+            text-align: right;
+        }
+        .stage-name {
+            font-size: 15px;
+            flex: 1;
+        }
+        .stage-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .stage-detail {
+            font-size: 12px;
+            color: #888;
+            margin-left: 8px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            padding: 16px 20px;
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-sub {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .chart-container {
+            background: #141414;
+            border-radius: 12px;
+            border: 1px solid #222;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #ccc;
+        }
+        canvas {
+            width: 100% !important;
+            height: 200px !important;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+        }
+        .filter-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #1a3a1a;
+            color: #4a4;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .loading { opacity: 0.5; }
+        .error {
+            padding: 16px;
+            background: #2a1414;
+            border: 1px solid #5a2222;
+            border-radius: 8px;
+            color: #e88;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GentleQuest Funnel <span class="filter-badge">real devices only</span></h1>
+        <p class="subtitle" id="subtitle">Loading...</p>
+
+        <div id="error" style="display:none" class="error"></div>
+
+        <div class="funnel-stages" id="funnel"></div>
+
+        <div class="stats-grid" id="stats"></div>
+
+        <div class="chart-container">
+            <div class="chart-title">Installs trend (last 30 snapshots)</div>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="footer">
+            <span id="last-fetch">—</span>
+            <span>Auto-refresh: 1 hour</span>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin + '/api/metrics/funnel';
+        const HISTORY = window.location.origin + '/api/metrics/funnel/history?limit=30';
+
+        async function fetchAll() {
+            const [funnelResp, historyResp] = await Promise.all([
+                fetch(API),
+                fetch(HISTORY)
+            ]);
+            const funnel = await funnelResp.json();
+            const history = await historyResp.json();
+            return { funnel, history };
+        }
+
+        function render(data) {
+            const { funnel, history } = data;
+
+            // Subtitle
+            document.getElementById('subtitle').textContent =
+                `Last 90 days · simulator-filtered · ${funnel.blocked_test_sessions} test sessions excluded`;
+
+            // Funnel stages
+            const stages = funnel.funnel;
+            const installs = stages.stage_2_installs || {};
+            const totalInstalls = (installs.iOS || 0) + (installs.Android || 0);
+            const webVisits = stages.stage_1_web_visits;
+
+            const funnelHtml = [
+                { num: 1, name: 'Web visits', value: webVisits === null ? '—' : webVisits, detail: 'gentlequest.app + /blog' },
+                { num: 2, name: 'App installs', value: totalInstalls, detail: `iOS ${installs.iOS||0} · Android ${installs.Android||0}` },
+                { num: 3, name: 'App opens', value: stages.stage_3_app_opens || 0, detail: 'last 90 days' },
+                { num: 4, name: 'First chat sent', value: stages.stage_4_first_chat || 0, detail: 'real users (test sessions excluded)' },
+            ].map(s => `
+                <div class="stage">
+                    <div class="stage-number">${s.num}</div>
+                    <div class="stage-name">${s.name}<span class="stage-detail">${s.detail}</span></div>
+                    <div class="stage-value">${s.value}</div>
+                </div>
+            `).join('');
+            document.getElementById('funnel').innerHTML = funnelHtml;
+
+            // Stats grid
+            const allTime = funnel.all_time || {};
+            const allInstalls = allTime.installs || {};
+            const allTotal = allTime.total_users || {};
+            const active = funnel.active_users_90d || {};
+            const allTimeTotal = (allInstalls.iOS||0) + (allInstalls.Android||0);
+            const activeTotal = (active.iOS||0) + (active.Android||0);
+
+            const statsHtml = [
+                { label: 'All-time installs', value: allTimeTotal, sub: `iOS ${allInstalls.iOS||0} · Android ${allInstalls.Android||0}` },
+                { label: 'All-time users', value: (allTotal.iOS||0)+(allTotal.Android||0), sub: `iOS ${allTotal.iOS||0} · Android ${allTotal.Android||0}` },
+                { label: 'Active (90d)', value: activeTotal, sub: `iOS ${active.iOS||0} · Android ${active.Android||0}` },
+                { label: 'Snapshots', value: history.count || 0, sub: 'in database' },
+            ].map(s => `
+                <div class="stat-card">
+                    <div class="stat-label">${s.label}</div>
+                    <div class="stat-value">${s.value}</div>
+                    <div class="stat-sub">${s.sub}</div>
+                </div>
+            `).join('');
+            document.getElementById('stats').innerHTML = statsHtml;
+
+            // Chart
+            renderChart(history);
+
+            // Footer
+            document.getElementById('last-fetch').textContent =
+                `Updated ${new Date(funnel.timestamp).toLocaleString()}`;
+        }
+
+        function renderChart(history) {
+            const canvas = document.getElementById('chart');
+            const ctx = canvas.getContext('2d');
+            const snapshots = (history.snapshots || []).reverse();
+
+            if (snapshots.length < 2) {
+                ctx.fillStyle = '#555';
+                ctx.font = '13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Not enough data yet — check back after a few daily snapshots', canvas.width/2, 100);
+                return;
+            }
+
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.offsetWidth;
+            const h = 200;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+            const chartW = w - padding.left - padding.right;
+            const chartH = h - padding.top - padding.bottom;
+
+            // Extract data
+            const points = snapshots.map(s => {
+                const d = s.data || {};
+                const inst = d.installs_90d || {};
+                return {
+                    date: (s.created_at || '').slice(0, 10),
+                    ios: inst.iOS || 0,
+                    android: inst.Android || 0,
+                    total: (inst.iOS||0) + (inst.Android||0),
+                };
+            });
+
+            const maxVal = Math.max(...points.map(p => p.total), 1);
+            const stepX = chartW / Math.max(points.length - 1, 1);
+
+            // Grid lines
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding.top + (chartH / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + chartW, y);
+                ctx.stroke();
+            }
+
+            // Y-axis labels
+            ctx.fillStyle = '#555';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const val = Math.round(maxVal - (maxVal / 4) * i);
+                const y = padding.top + (chartH / 4) * i + 3;
+                ctx.fillText(val, padding.left - 6, y);
+            }
+
+            // Total installs line
+            ctx.strokeStyle = '#4a8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = padding.left + stepX * i;
+                const y = padding.top + chartH - (p.total / maxVal) * chartH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Points
+            ctx.fillStyle = '#4a8';
+            points.forEach((p, i) => {
+                const x = padding.left + stepX * i;
+                const y = padding.top + chartH - (p.total / maxVal) * chartH;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // X-axis labels (first, middle, last)
+            ctx.fillStyle = '#555';
+            ctx.textAlign = 'center';
+            const labelIndices = [0, Math.floor(points.length/2), points.length-1];
+            labelIndices.forEach(i => {
+                if (points[i]) {
+                    const x = padding.left + stepX * i;
+                    ctx.fillText(points[i].date, x, h - 10);
+                }
+            });
+        }
+
+        async function refresh() {
+            try {
+                document.getElementById('error').style.display = 'none';
+                const data = await fetchAll();
+                render(data);
+            } catch (err) {
+                document.getElementById('error').textContent = 'Failed to load: ' + err.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        refresh();
+        // Auto-refresh every hour
+        setInterval(refresh, 3600000);
+    </script>
+</body>
+</html>
