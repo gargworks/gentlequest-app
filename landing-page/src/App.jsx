@@ -75,6 +75,7 @@ function App() {
           <nav className="gq-nav-links">
             <a href="#features">Features</a>
             <a href="#crisis">988</a>
+            <a href="/blog/">Blog</a>
             <a href="/about">About</a>
             <a href="/app">Get the app</a>
             <a href={WEB_APP_URL}>Open app</a>
@@ -196,6 +197,7 @@ function App() {
               </span>
             </div>
             <nav className="links" aria-label="Footer">
+              <a href="/blog/">Blog</a>
               <a href="/privacy">Privacy</a>
               <a href="/terms">Terms</a>
               <a href="/about">About</a>
