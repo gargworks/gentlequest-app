@@ -561,7 +561,6 @@ def funnel_metrics():
             "ga4_property": "516568186",
             "cached": cache_valid,
             "persisted_to": "funnel_snapshots table",
-            "ga4_error": ga4_data.get("error") if ga4_data else None,
             "timestamp": datetime.utcnow().isoformat(),
         }), 200
 
