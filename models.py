@@ -492,3 +492,15 @@ class BrainEvent(db.Model):
 
     def __repr__(self):
         return f"<BrainEvent type={self.event_type} emitter={self.emitter}>"
+
+
+class FunnelSnapshot(db.Model):
+    """Persisted funnel metric snapshots for historical tracking."""
+    __tablename__ = "funnel_snapshots"
+
+    id = db.Column(db.Integer, primary_key=True)
+    snapshot_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def __repr__(self):
+        return f"<FunnelSnapshot id={self.id} at={self.created_at}>"
