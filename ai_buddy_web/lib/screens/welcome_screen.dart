@@ -120,6 +120,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Future<void> _confirmAdult() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(WelcomeScreen._kSeenKey, true);
+    // Persist age verification so ComplianceGuardScreen doesn't ask again.
+    // Without this, the compliance gate shows a SECOND age prompt ("One quick
+    // check — I am 18 or older") right after the user already confirmed here,
+    // causing ~83% of users to bounce (GA4 data 2026-06-24).
+    await ComplianceService().setAgeVerified(true);
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
