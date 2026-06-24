@@ -45,6 +45,7 @@ crons = [
   "13 * * * *",          # hourly, off-peak minute for jitter
   "27 13 * * *",         # daily LinkedIn slot (~9am EST)
   "33 6 * * 0",          # Sunday weekly-digest generation
+  "0 8 * * *",           # daily 08:00 UTC — funnel snapshot
 ]
 
 # Secrets (set via `unset CLOUDFLARE_API_TOKEN && wrangler secret put <NAME>`):

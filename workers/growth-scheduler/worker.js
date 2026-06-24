@@ -411,6 +411,20 @@ export default {
         logEvent(env, "growth_digest_error");
       }
     }
+    // "0 8 * * *" — daily 08:00 UTC: persist funnel snapshot.
+    if (minute === 0 && hour === 8) {
+      try {
+        const resp = await fetch("https://gentlequest.onrender.com/api/metrics/funnel", {
+          headers: { "User-Agent": "growth-scheduler/funnel-snapshot" },
+        });
+        const body = await resp.json();
+        out.push({ funnel_snapshot: { status: resp.status, cached: body.cached, funnel: body.funnel } });
+        logEvent(env, "funnel_snapshot_persisted");
+      } catch (err) {
+        out.push({ funnel_snapshot_error: err && err.message });
+        logEvent(env, "funnel_snapshot_error");
+      }
+    }
     return out;
   },
 };
