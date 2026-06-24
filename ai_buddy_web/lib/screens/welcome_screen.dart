@@ -121,11 +121,24 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(WelcomeScreen._kSeenKey, true);
     // Persist age verification so ComplianceGuardScreen doesn't ask again.
-    // Without this, the compliance gate shows a SECOND age prompt ("One quick
-    // check — I am 18 or older") right after the user already confirmed here,
-    // causing ~83% of users to bounce (GA4 data 2026-06-24).
     await ComplianceService().setAgeVerified(true);
-    if (mounted) {
+
+    // Run the compliance check (IP region check) right here — one tap, one
+    // screen, no second compliance page. If the IP check passes (it does for
+    // 99% of users — only IL/UT/WA are blocked), go straight to the app.
+    // If it fails or blocks, THEN fall back to ComplianceGuardScreen which
+    // has the full blocked-region / error UI.
+    // (2026-06-24: 83% drop-off was caused by the double age gate. This
+    //  collapses welcome + compliance into one step.)
+    final status = await ComplianceService().checkCompliance();
+    if (!mounted) return;
+
+    if (status == ComplianceStatus.allowed) {
+      Navigator.of(context).pushReplacementNamed('/main');
+    } else {
+      // Blocked or error — show the compliance screen for the full
+      // blocked-region / error UI. ComplianceGuardScreen is kept as the
+      // fallback for these edge cases.
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: GQDurations.fade,
@@ -446,14 +459,29 @@ Future<int> _resolveMinAge() async {
   return ComplianceService.minAgeForRegion(region);
 }
 
-class _AgeModal extends StatelessWidget {
+class _AgeModal extends StatefulWidget {
   const _AgeModal({
     required this.onConfirmAdult,
     required this.onNotYet,
+    super.key,
   });
 
-  final VoidCallback onConfirmAdult;
+  final Future<void> Function() onConfirmAdult;
   final VoidCallback onNotYet;
+
+  @override
+  State<_AgeModal> createState() => _AgeModalState();
+}
+
+class _AgeModalState extends State<_AgeModal> {
+  bool _loading = false;
+
+  Future<void> _handleConfirm() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    await widget.onConfirmAdult();
+    if (mounted) setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -551,7 +579,7 @@ class _AgeModal extends StatelessWidget {
                   // "Not yet" — secondary, outlined.
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: onNotYet,
+                      onPressed: _loading ? null : widget.onNotYet,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: GQColors.ink,
                         side: const BorderSide(color: GQColors.hair, width: 1.5),
@@ -573,7 +601,7 @@ class _AgeModal extends StatelessWidget {
                   // "Yes, I am" — primary.
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: onConfirmAdult,
+                      onPressed: _loading ? null : _handleConfirm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: GQColors.primary,
                         foregroundColor: Colors.white,
@@ -581,15 +609,24 @@ class _AgeModal extends StatelessWidget {
                         shape: const StadiumBorder(),
                         elevation: 0,
                       ),
-                      child: Text(
-                        // VERBATIM: HTML screen 02
-                        'Yes, I am',
-                        style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              // VERBATIM: HTML screen 02
+                              'Yes, I am',
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                     ),
                   ),
                 ],
