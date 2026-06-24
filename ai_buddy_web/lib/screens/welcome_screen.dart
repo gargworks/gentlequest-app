@@ -463,7 +463,6 @@ class _AgeModal extends StatefulWidget {
   const _AgeModal({
     required this.onConfirmAdult,
     required this.onNotYet,
-    super.key,
   });
 
   final Future<void> Function() onConfirmAdult;
