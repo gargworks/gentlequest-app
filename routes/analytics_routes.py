@@ -461,6 +461,7 @@ def funnel_metrics():
                     RunReportRequest, DateRange, Dimension, Metric
                 )
 
+                repo_root = os.path.dirname(os.path.dirname(__file__))
                 sa_path = os.path.join(repo_root, "secret", "gentlequest-prod-sa.json")
                 if os.path.exists(sa_path):
                     creds = service_account.Credentials.from_service_account_file(
