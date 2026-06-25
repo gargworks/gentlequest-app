@@ -1196,7 +1196,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'How are you arriving today?',
+                  'How are you arriving today? Pick one below or type your own.',
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.w400,
@@ -1217,10 +1217,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             ),
           ),
           SizedBox(height: 10.h),
-          // R1D6 — named starter chips (fill input, no auto-send). Renders
-          // all 4 per the verbatim R1D6 chip set; was previously .take(3)
-          // which dropped the tonal "Quick win, please" option the design
-          // explicitly included.
+          // Starter chips — auto-send on tap to reduce friction.
+          // Was .take(3 * 2 - 1) which hid the 4th chip; now shows all 4.
+          // Was fill-input-only (2 taps); now auto-sends (1 tap).
+          // GA4 data: 6/8 users who passed compliance didn't chat — reducing
+          // taps from 2 to 1 should recover a significant portion.
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8.h, right: 16.h),
@@ -1229,16 +1230,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               children: starters
                   .expand((prompt) => [
                         _buildChip(prompt, () {
-                          // R1D6 — Fill input only; user taps send explicitly (no auto-send).
                           _messageController.text = prompt;
-                          _messageController.selection = TextSelection.fromPosition(
-                            TextPosition(offset: prompt.length),
-                          );
-                          FocusScope.of(context).requestFocus(_inputFocus);
+                          _sendMessage();
                         }),
                         SizedBox(width: 8.h),
                       ])
-                  .take(3 * 2 - 1)
+                  .take(4 * 2 - 1)
                   .toList(),
             ),
           ),
