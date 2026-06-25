@@ -1,0 +1,38 @@
+# AGENTS.md Template — Store Deployment Pointer
+
+> Copy this section into your project's AGENTS.md, CLAUDE.md, or .cursorrules
+> so any AI agent knows where to find deployment credentials and commands.
+
+## 0. Store Deployment (Read First)
+
+**All store deployment credentials and commands live in one place:**
+→ [`docs/STORE_DEPLOYMENT.md`](docs/STORE_DEPLOYMENT.md)
+
+This file contains:
+- App Store Connect API key path, issuer ID, team ID
+- Google Play service account JSON path, package name
+- Build commands (AAB + IPA)
+- Upload commands (`xcrun altool` + `fastlane supply`)
+- Version bump protocol
+- Full copy-paste release flow
+
+**Any agent deploying to stores should read that file first.**
+Do not search for credentials across the filesystem — they are
+already documented there.
+
+## Quick deploy
+
+To deploy a new version:
+1. Bump version in `pubspec.yaml`
+2. Tell the agent: "Ship version X.Y.Z to both stores"
+3. The agent reads `docs/STORE_DEPLOYMENT.md` and executes the full flow
+
+## Blog/web deployment (if applicable)
+
+If your blog/site auto-deploys on git push:
+```bash
+git add your-blog-dir/
+git commit -m "blog: description"
+git push origin main
+# Your hosting platform (Render, Vercel, Netlify) auto-deploys
+```
