@@ -111,7 +111,7 @@ If an agent can ship to both app stores, what else can it do?
 **Tweet 10:**
 
 Full blog post with the exact setup:
-→ https://gentlequest.app/blog/ai-agent-deploys-app-from-terminal/
+→ https://nucleus.sh/blog/ai-agent-deploys-app-from-terminal/
 
 Kit on Gumroad:
 → [Gumroad link]
