@@ -2,7 +2,7 @@
 title: "AI Agents Can Ship to Production: A Deployment Case Study"
 description: "How a single markdown file let an AI agent deploy a Flutter app to App Store and Google Play from terminal — no Xcode, no Play Console, no CI/CD pipeline."
 date: 2026-06-25
-author: "Lokesh Garg"
+author: "Eidetic Works"
 tags: ["AI Agents", "Deployment", "Automation", "Case Study"]
 ---
 
@@ -210,4 +210,4 @@ auto-published. I wrote the words. The agent did the rest.*
 
 *If you want the exact template to set this up for your own
 app, I packaged it as a downloadable kit:
-[Flutter Store Deployment Kit](https://lokeshgarg.gumroad.com/l/flutter-deploy)*
+[Flutter Store Deployment Kit](https://eideticworks.gumroad.com/l/flutter-deploy)*

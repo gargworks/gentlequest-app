@@ -136,4 +136,4 @@ Check that:
 
 ---
 
-*Made by Lokesh Garg — building AI agents that ship real things.*
+*Made by Eidetic Works — building AI agents that ship real things.*
