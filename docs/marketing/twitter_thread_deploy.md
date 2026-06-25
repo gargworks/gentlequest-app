@@ -111,7 +111,7 @@ If an agent can ship to both app stores, what else can it do?
 **Tweet 10:**
 
 Full blog post with the exact setup:
-→ https://nucleus.sh/blog/ai-agent-deploys-app-from-terminal/
+→ https://dev.to/nucleusos/ai-agents-can-ship-to-production-a-deployment-case-study-43ac
 
 Kit on Gumroad:
 → [Gumroad link]
