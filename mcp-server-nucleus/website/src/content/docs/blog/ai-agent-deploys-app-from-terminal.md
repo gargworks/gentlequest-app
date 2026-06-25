@@ -56,22 +56,13 @@ flutter build ipa --release
 
 ### Upload commands
 
-```bash
-# iOS → App Store Connect
-xcrun altool --upload-app -t ios \
-  -f build/ios/ipa/yourapp.ipa \
-  --apiKey XXXX \
-  --apiIssuer your-issuer-id
+The file includes the exact `xcrun altool` command for App Store
+Connect and the exact `fastlane supply` command for Google Play —
+with all flags, credential paths, and track configuration filled in.
 
-# Android → Google Play
-fastlane supply \
-  --aab build/app/outputs/bundle/release/app-release.aab \
-  --package_name com.yourapp.id \
-  --track production \
-  --json_key ~/Downloads/project-sa.json \
-  --release_status completed \
-  --skip_upload_metadata --skip_upload_images --skip_upload_screenshots
-```
+I'm not going to paste them here because they're the core of what
+makes the kit worth paying for. But the shape is simple: one CLI
+command per store, using credentials already on disk.
 
 That's it. That's the entire deployment pipeline.
 
@@ -160,15 +151,8 @@ The file has:
 I also added a pointer in `AGENTS.md` so any new agent knows
 to read the deployment file first:
 
-```markdown
-## 0. Store Deployment (Read First)
-
-All store deployment credentials and commands live in one place:
-→ docs/STORE_DEPLOYMENT.md
-
-Any agent deploying to stores should read that file first.
-Do not search for credentials across the filesystem.
-```
+The pointer file is a few lines — I include the exact template
+in the kit so you can drop it into your repo as-is.
 
 This pattern — a single readable file that any agent can
 execute — works for more than just deployment. It works for
