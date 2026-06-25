@@ -2,6 +2,22 @@
 
 **Status:** [ACTIVE] | **Version:** 1.1.0-Hardened | **Engine:** Level 5 Autonomy 
 
+## 0. STORE DEPLOYMENT (Read First)
+
+**All store deployment credentials and commands live in one place:**
+→ [`docs/STORE_DEPLOYMENT.md`](docs/STORE_DEPLOYMENT.md)
+
+This file contains:
+- App Store Connect API key path, issuer ID, team ID
+- Google Play service account JSON path, package name
+- Build commands (AAB + IPA)
+- Upload commands (`xcrun altool` + `fastlane supply`)
+- Version bump protocol
+- Full copy-paste release flow
+
+**Any agent deploying to stores should read that file first.**
+Do not search for credentials across the filesystem — they are already documented there.
+
 ## 1. MULTI-ENVIRONMENT HIERARCHY (Where to Work)
 
 To prevent context rot, use this 2025 flexible workflow:
