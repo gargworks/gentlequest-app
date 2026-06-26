@@ -11,6 +11,9 @@ import '../quests/quests_engine.dart';
 import '../theme/gq_tokens.dart';
 import 'mood_low_reflection_sheet.dart';
 import 'mood_reflection_sheet.dart';
+import '../screens/onboarding_extensions_screen.dart';
+import '../services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum ViewMode { daily, all }
 
@@ -708,6 +711,9 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       builder: (sheetCtx) => _MoodEntrySheet(
         onSave: (int moodLevel, List<_MoodContext> contexts, String? note) async {
           HapticFeedback.mediumImpact();
+          // Track if this is the user's first mood entry — used to show
+          // the notification opt-in sheet after the reflection/toast.
+          final bool isFirstEntry = moodProvider.moodEntries.isEmpty;
           // R1D5 streak-race fix: await the provider so the optimistic cache
           // update + first save have landed before we compute the streak for
           // the reflection sheet. `addMoodEntry` is `Future<void>` and only
@@ -740,18 +746,55 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           // Guard with `mounted` — the parent widget can unmount between
           // pop and post-frame (e.g. user backs out during the haptic)
           // and we'd hit "showModalBottomSheet on a defunct context".
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
+            // Show reflection sheet based on mood level
             if (moodLevel <= 2) {
-              showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);
+              await showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);
             } else if (moodLevel == 5) {
               // streakDays already computed above with fresh provider state.
-              showMoodGreatReflectionSheet(context, streakDays: streakDays!);
+              await showMoodGreatReflectionSheet(context, streakDays: streakDays!);
             } else {
               // Neutral (3–4): lightweight logged toast, auto-dismisses ~3s.
               showMoodNeutralToast(context);
+              await Future.delayed(const Duration(seconds: 3));
+            }
+            // After first mood entry, offer notification opt-in
+            if (isFirstEntry && mounted) {
+              await _maybeShowNotifOptIn(context);
             }
           });
+        },
+      ),
+    );
+  }
+
+  /// Shows the notification opt-in sheet after the first mood check-in,
+  /// if the user hasn't already enabled notifications or snoozed the prompt.
+  Future<void> _maybeShowNotifOptIn(BuildContext context) async {
+    // Check if user already snoozed the opt-in
+    final canShow = await shouldShowNotifOptIn();
+    if (!canShow || !mounted) return;
+
+    // Check if daily check-in is already enabled in prefs
+    final prefs = await SharedPreferences.getInstance();
+    final dailyEnabled = prefs.getBool('daily_checkin_enabled') ?? false;
+    if (dailyEnabled) return; // already opted in
+
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      builder: (_) => NotificationOptInSheet(
+        onEnable: (selections) async {
+          if (selections[NotifKind.dailyCheckIn] == true) {
+            final granted = await NotificationService.requestPermissions();
+            if (granted) {
+              await NotificationService.scheduleGentleDailyCheckin(enabled: true);
+            }
+          }
         },
       ),
     );

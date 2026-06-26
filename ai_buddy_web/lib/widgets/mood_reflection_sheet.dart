@@ -37,11 +37,11 @@ import '../screens/journal_screen.dart' show JournalEntry, JournalStorage;
 ///
 /// [streakDays] is the current streak / active-days count. Pass 0 to hide the
 /// streak badge.
-void showMoodGreatReflectionSheet(
+Future<void> showMoodGreatReflectionSheet(
   BuildContext context, {
   int streakDays = 0,
 }) {
-  showModalBottomSheet<void>(
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

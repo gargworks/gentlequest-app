@@ -31,11 +31,11 @@ import 'exercises/breathing_exercise_widget.dart';
 /// the parameter the worried check-in won't schedule. Update that call to
 /// `showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);` once
 /// the mood_tracker.dart owner approves.
-void showMoodLowReflectionSheet(
+Future<void> showMoodLowReflectionSheet(
   BuildContext context, {
   int? latestMoodLevel,
 }) {
-  showModalBottomSheet<void>(
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

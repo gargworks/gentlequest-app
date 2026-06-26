@@ -94,4 +94,9 @@ class NotificationService {
   }) async {
     // no-op on web
   }
+
+  /// No-op on web. Returns false (no notification permission on web).
+  static Future<bool> requestPermissions() async {
+    return false;
+  }
 }
