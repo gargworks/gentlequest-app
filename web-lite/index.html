@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>How are you, right now? — GentleQuest</title>
+  <meta name="description" content="A quiet place, whenever you need it. One-tap mood check-in. No streaks. No shame.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #5B4FBA;
+      --primary-soft: #EEEAFB;
+      --ink: #1F1B3A;
+      --ink2: #4A4470;
+      --ink3: #8B86A8;
+      --soft-bg: #F8F7FC;
+      --coral: #E8826B;
+      --hair: #E5E2EE;
+      --mood-heavy: #6B5B95;
+      --mood-low: #8B7FB8;
+      --mood-okay: #7BA68C;
+      --mood-good: #6BAA85;
+      --mood-great: #5BA876;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      background: var(--soft-bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+      padding: 0 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Header */
+    .header {
+      padding: 20px 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .logo {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--primary);
+    }
+    /* Hero */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .day-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--ink3);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .question {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+      margin-bottom: 8px;
+      line-height: 1.15;
+    }
+    .sub {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink3);
+      margin-bottom: 40px;
+    }
+    /* Mood buttons */
+    .moods {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .mood-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--hair);
+      background: white;
+      font-size: 32px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mood-btn:hover {
+      transform: scale(1.1);
+      border-color: var(--primary);
+      box-shadow: 0 4px 16px rgba(91, 79, 186, 0.15);
+    }
+    .mood-btn:active {
+      transform: scale(0.95);
+    }
+    .mood-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      transform: scale(1.15);
+    }
+    .mood-labels {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .mood-label {
+      width: 64px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--ink3);
+      letter-spacing: 0.3px;
+    }
+    /* Note input */
+    .note-section {
+      margin-bottom: 24px;
+      transition: opacity 0.3s, max-height 0.3s;
+      overflow: hidden;
+      max-height: 200px;
+    }
+    .note-section.hidden {
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+    }
+    .note-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--hair);
+      border-radius: 14px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ink);
+      background: white;
+      resize: none;
+      min-height: 60px;
+      transition: border-color 0.2s;
+    }
+    .note-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .note-input::placeholder {
+      color: var(--ink3);
+    }
+    /* Submit */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 28px;
+      background: var(--primary);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Result screen */
+    .result {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .result.show { display: flex; }
+    .result-emoji {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+    .result-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .result-body {
+      font-size: 15px;
+      color: var(--ink2);
+      max-width: 320px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .action-btn {
+      padding: 14px 20px;
+      border: 1.5px solid var(--hair);
+      border-radius: 14px;
+      background: white;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .action-btn.primary {
+      background: var(--coral);
+      color: white;
+      border-color: var(--coral);
+    }
+    .action-btn.primary:hover {
+      opacity: 0.9;
+      background: var(--coral);
+    }
+    .skip-link {
+      color: var(--ink3);
+      font-size: 14px;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    /* Crisis banner */
+    .crisis-strip {
+      background: #FFF5F3;
+      border-top: 1px solid #FFE0DB;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--ink2);
+    }
+    .crisis-strip a {
+      color: var(--coral);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    /* Loading */
+    .loading {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .submit-btn.loading .submit-text { display: none; }
+    .submit-btn.loading .loading { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Trust chips */
+    .trust {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+    .chip {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink3);
+    }
+    /* App store links */
+    .app-links {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .app-link {
+      padding: 8px 14px;
+      border: 1px solid var(--hair);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink2);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="logo">GENTLEQUEST</span>
+    </div>
+
+    <!-- Main check-in -->
+    <div class="hero" id="checkin">
+      <div class="day-label" id="dayLabel"></div>
+      <div class="question">How are you, right now?</div>
+      <div class="sub">Takes 5 seconds. Skip anything you want.</div>
+
+      <div class="moods" id="moods">
+        <button class="mood-btn" data-level="1" title="Heavy">😔</button>
+        <button class="mood-btn" data-level="2" title="Low">😕</button>
+        <button class="mood-btn" data-level="3" title="Okay">😐</button>
+        <button class="mood-btn" data-level="4" title="Good">🙂</button>
+        <button class="mood-btn" data-level="5" title="Great">😊</button>
+      </div>
+      <div class="mood-labels">
+        <span class="mood-label">Heavy</span>
+        <span class="mood-label">Low</span>
+        <span class="mood-label">Okay</span>
+        <span class="mood-label">Good</span>
+        <span class="mood-label">Great</span>
+      </div>
+
+      <div class="note-section hidden" id="noteSection">
+        <textarea class="note-input" id="noteInput" placeholder="Anything you want to remember about today? (optional)" maxlength="500"></textarea>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" disabled>
+        <span class="submit-text">Log mood</span>
+        <div class="loading"></div>
+      </button>
+
+      <div class="trust">
+        <span class="chip">🔒 Private</span>
+        <span class="chip">🙅 No streaks</span>
+        <span class="chip">☁️ No pressure</span>
+      </div>
+    </div>
+
+    <!-- Result screen -->
+    <div class="result" id="result">
+      <div class="result-emoji" id="resultEmoji">✅</div>
+      <div class="result-title" id="resultTitle">Logged.</div>
+      <div class="result-body" id="resultBody">Thanks for showing up. That's all it takes.</div>
+      <div class="result-actions" id="resultActions"></div>
+      <div class="skip-link" onclick="reset()">Log another</div>
+    </div>
+  </div>
+
+  <div class="crisis-strip">
+    If you're in crisis, call <a href="tel:988">988</a>. Free, 24/7, multilingual.
+  </div>
+
+  <script>
+    const API = 'https://gentlequest.onrender.com/api';
+    let sessionId = null;
+    let selectedMood = null;
+
+    // Day label
+    const now = new Date();
+    const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    document.getElementById('dayLabel').textContent =
+      `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}`;
+
+    // Mood selection
+    const moodBtns = document.querySelectorAll('.mood-btn');
+    const noteSection = document.getElementById('noteSection');
+    const submitBtn = document.getElementById('submitBtn');
+
+    moodBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedMood = parseInt(btn.dataset.level);
+        noteSection.classList.remove('hidden');
+        submitBtn.disabled = false;
+      });
+    });
+
+    // Submit
+    submitBtn.addEventListener('click', async () => {
+      if (!selectedMood) return;
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+
+      try {
+        // Get session
+        if (!sessionId) {
+          const sResp = await fetch(`${API}/get_or_create_session`);
+          const sData = await sResp.json();
+          sessionId = sData.session_id;
+        }
+
+        // Log mood
+        const note = document.getElementById('noteInput').value.trim();
+        await fetch(`${API}/mood_entry`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            mood_level: selectedMood,
+            note: note,
+            context_chips: []
+          })
+        });
+
+        // Also log analytics event
+        fetch(`${API}/analytics/log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'mood_checkin_web',
+            event_data: { mood_level: selectedMood, source: 'web-lite' }
+          })
+        }).catch(() => {});
+
+        showResult(selectedMood);
+      } catch (err) {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        alert('Something went wrong. Please try again.');
+      }
+    });
+
+    function showResult(level) {
+      const checkin = document.getElementById('checkin');
+      const result = document.getElementById('result');
+      const emoji = document.getElementById('resultEmoji');
+      const title = document.getElementById('resultTitle');
+      const body = document.getElementById('resultBody');
+      const actions = document.getElementById('resultActions');
+
+      checkin.style.display = 'none';
+      result.classList.add('show');
+
+      const moodEmojis = {1:'😔',2:'😕',3:'😐',4:'🙂',5:'😊'};
+
+      if (level <= 2) {
+        // Low mood
+        emoji.textContent = '🤝';
+        title.textContent = 'Thanks for sharing.';
+        body.textContent = 'Low days are part of it. Want to do something gentle?';
+        actions.innerHTML = `
+          <a class="action-btn primary" href="https://gentlequest-web.pages.dev" target="_blank">Talk to Alex</a>
+          <a class="action-btn" href="https://www.gentlequest.app/blog/" target="_blank">Read something gentle</a>
+          <a class="action-btn" href="tel:988">Call 988 if it's heavy</a>
+        `;
+      } else if (level === 5) {
+        // Great mood
+        emoji.textContent = '😊';
+        title.textContent = 'Great day.';
+        body.textContent = "Glad you're here. This is worth remembering.";
+        actions.innerHTML = `
+          <a class="action-btn" href="https://gentlequest-web.pages.dev" target="_blank">Talk to Alex</a>
+          <a class="action-btn" href="https://www.gentlequest.app/blog/" target="_blank">Read the blog</a>
+        `;
+      } else {
+        // Neutral
+        emoji.textContent = '✅';
+        title.textContent = 'Logged.';
+        body.textContent = "Thanks for showing up. That's all it takes.";
+        actions.innerHTML = `
+          <a class="action-btn" href="https://gentlequest-web.pages.dev" target="_blank">Open the full app</a>
+          <a class="action-btn" href="https://www.gentlequest.app/blog/" target="_blank">Read the blog</a>
+        `;
+      }
+    }
+
+    function reset() {
+      document.getElementById('checkin').style.display = 'flex';
+      document.getElementById('result').classList.remove('show');
+      moodBtns.forEach(b => b.classList.remove('selected'));
+      noteSection.classList.add('hidden');
+      document.getElementById('noteInput').value = '';
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = true;
+      selectedMood = null;
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '5') {
+        const btn = document.querySelector(`.mood-btn[data-level="${e.key}"]`);
+        if (btn) btn.click();
+      } else if (e.key === 'Enter' && !submitBtn.disabled) {
+        submitBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

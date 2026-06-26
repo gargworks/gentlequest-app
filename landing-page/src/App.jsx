@@ -12,7 +12,7 @@ import { createElement } from 'react';
 
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
-const WEB_APP_URL = 'https://gentlequest-web.pages.dev';
+const WEB_APP_URL = 'https://gentlequest-web-lite.pages.dev';
 
 function AppleGlyph() {
   return (
@@ -123,7 +123,7 @@ function App() {
             </a>
             <a className="gq-web-cta" href={WEB_APP_URL}>
               <ExternalLink size={14} />
-              <span>Or try the Web App</span>
+              <span>Or check in on the web — 5 seconds</span>
             </a>
           </div>
           <div className="gq-hero-meta" style={{ marginTop: 16 }}>
