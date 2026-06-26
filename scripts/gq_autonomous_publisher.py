@@ -345,8 +345,8 @@ def auto_generate_content(creds, count=10):
 
     for i in range(count):
         item_type = random.choices(
-            ["tweet", "tweet", "tweet", "linkedin", "blog", "devto"],  # Weight tweets more
-            weights=[3, 3, 3, 2, 1, 1]
+            ["tweet", "tweet", "tweet", "linkedin", "blog", "medium", "reddit", "reddit"],
+            weights=[3, 3, 3, 2, 1, 1, 1, 1]
         )[0]
 
         if item_type == "tweet":
@@ -429,6 +429,39 @@ tags: ["ADHD", "Mental Health", "Self-Care"]
                 "generated": True,
             }
             current_time += timedelta(days=7)  # Dev.to article weekly
+        elif item_type == "medium":
+            # Medium imports from the blog — find a blog post that's already live
+            blog_dir = Path("/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/blog")
+            blog_posts = sorted(blog_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not blog_posts:
+                print(f"  Medium: no blog posts to import")
+                continue
+            # Pick a random recent post (not the very latest, to avoid duplicates)
+            post_file = random.choice(blog_posts[:5]) if len(blog_posts) >= 5 else blog_posts[0]
+            slug = post_file.stem
+            blog_url = f"https://www.gentlequest.app/blog/{slug}"
+            item = {
+                "id": f"gen_medium_{int(time.time())}_{i}",
+                "channel": "medium",
+                "blog_url": blog_url,
+                "title": post_file.stem.replace("-", " ").title(),
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+            }
+            current_time += timedelta(days=3)  # Medium import every 3 days
+        elif item_type == "reddit":
+            subreddit = random.choice(list(REDDIT_SUBREDDITS.keys()))
+            item = {
+                "id": f"gen_reddit_{int(time.time())}_{i}",
+                "channel": "reddit",
+                "subreddit": subreddit,
+                "topic_keywords": REDDIT_SUBREDDITS[subreddit]["topics"],
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+            }
+            current_time += timedelta(hours=12)  # Reddit comment every 12h (2/day max)
 
         if item["id"] not in existing_ids:
             queue["items"].append(item)
@@ -591,10 +624,12 @@ def publish_to_devto(item, creds, dry_run=False):
     except Exception as e:
         return False, f"Dev.to exception: {e}"
 
-# ─── Reddit publisher (via API) ────────────────────────────────────────────
+# ─── Reddit publisher (legacy API — deprecated, Reddit locked API Nov 2025) ─
 
-def publish_to_reddit(item, creds, dry_run=False):
-    """Publish to Reddit via OAuth2 API."""
+def publish_to_reddit_api(item, creds, dry_run=False):
+    """Publish to Reddit via OAuth2 API. DEPRECATED — Reddit closed API access Nov 2025.
+    Kept for reference. Use publish_to_reddit (browser automation) instead.
+    """
     client_id = creds.get("reddit_client_id")
     client_secret = creds.get("reddit_client_secret")
     refresh_token = creds.get("reddit_refresh_token")
@@ -667,7 +702,6 @@ def publish_to_indiehackers(item, creds, dry_run=False):
     if dry_run:
         return True, f"DRY RUN: Would post to IndieHackers: {item.get('title', '')[:50]}..."
 
-    # Use Playwright if available
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -676,50 +710,330 @@ def publish_to_indiehackers(item, creds, dry_run=False):
     title = item.get("title", "")
     body = item.get("body", "")
 
-    script = f"""
-    const [page] = await Promise.all([]);
-    await page.goto('https://www.indiehackers.com/group/landing-page-feedback');
-    await page.waitForLoadState('networkidle');
+    with sync_playwright() as p:
+        context = p.chromium.launch_persistent_context(
+            str(PLAYWRIGHT_PROFILE),
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        page = context.new_page()
+        try:
+            page.goto("https://www.indiehackers.com/group/landing-page-feedback", timeout=30000)
+            page.wait_for_load_state("networkidle", timeout=15000)
 
-    // Check if logged in
-    const loginBtn = await page.$('text=Sign in');
-    if (loginBtn) {{
-        console.log('Not logged in to IndieHackers');
-        process.exit(1);
-    }}
+            if page.query_selector("text=Sign in"):
+                return False, "Not logged in to IndieHackers — run --setup-browser"
 
-    // Click "New Post"
-    await page.click('text=New Post');
-    await page.waitForSelector('input[placeholder*="Title"], textarea[placeholder*="Title"]');
+            page.click("text=New Post")
+            page.wait_for_selector('input[placeholder*="Title"], textarea[placeholder*="Title"]', timeout=10000)
+            page.fill('input[placeholder*="Title"], textarea[placeholder*="Title"]', title)
+            page.fill('textarea[placeholder*="Body"], div[contenteditable]', body)
+            page.click('button:has-text("Post")')
+            page.wait_for_load_state("networkidle", timeout=15000)
+            return True, "Posted to IndieHackers"
+        except Exception as e:
+            return False, f"IH error: {e}"
+        finally:
+            context.close()
 
-    // Fill title and body
-    await page.fill('input[placeholder*="Title"], textarea[placeholder*="Title"]', {json.dumps(title)});
-    await page.fill('textarea[placeholder*="Body"], div[contenteditable]', {json.dumps(body)});
 
-    // Submit
-    await page.click('button:has-text("Post")');
-    await page.waitForLoadState('networkidle');
-    console.log('Posted to IndieHackers');
+# ─── Medium publisher (browser automation — import from blog) ──────────────
+
+PLAYWRIGHT_PROFILE = Path.home() / ".config" / "gentlequest" / "playwright-profile"
+
+def publish_to_medium(item, creds, dry_run=False):
+    """Import a blog post to Medium via browser automation.
+
+    Uses Medium's 'Import a story' feature which:
+    - Pulls content from the blog URL
+    - Automatically sets canonical URL to the original
+    - Publishes under the @gentlequest Medium account
     """
-
-    # Write and execute the script
-    script_path = Path(__file__).parent / "_ih_post.js"
-    with open(script_path, "w") as f:
-        f.write(script)
+    if dry_run:
+        return True, f"DRY RUN: Would import to Medium: {item.get('blog_url', '')[:60]}..."
 
     try:
-        result = subprocess.run(
-            ["node", str(script_path)],
-            capture_output=True, text=True, timeout=60
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return False, "Playwright not installed — skipping Medium"
+
+    blog_url = item.get("blog_url", "")
+    if not blog_url:
+        return False, "No blog_url in item"
+
+    with sync_playwright() as p:
+        context = p.chromium.launch_persistent_context(
+            str(PLAYWRIGHT_PROFILE),
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
         )
-        if result.returncode == 0:
-            return True, "Posted to IndieHackers"
-        else:
-            return False, f"IH error: {result.stderr[:200]}"
-    except Exception as e:
-        return False, f"IH exception: {e}"
-    finally:
-        script_path.unlink(missing_ok=True)
+        page = context.new_page()
+        try:
+            # Go to Medium's new story page
+            page.goto("https://medium.com/new-story", timeout=30000)
+            page.wait_for_load_state("networkidle", timeout=15000)
+
+            # Check if logged in
+            if "m/signin" in page.url or page.query_selector('button:has-text("Sign in")'):
+                return False, "Not logged in to Medium — run --setup-browser"
+
+            # Look for "Import a story" link
+            import_link = page.query_selector('a:has-text("Import a story")')
+            if not import_link:
+                # Try the import URL directly
+                page.goto("https://medium.com/new-story/import", timeout=30000)
+                page.wait_for_load_state("networkidle", timeout=15000)
+            else:
+                import_link.click()
+                page.wait_for_load_state("networkidle", timeout=15000)
+
+            # Paste the blog URL
+            url_input = page.wait_for_selector('input[type="url"], input[placeholder*="URL"], input[placeholder*="url"]', timeout=10000)
+            url_input.fill(blog_url)
+            page.wait_for_timeout(500)
+
+            # Click import button
+            import_btn = page.query_selector('button:has-text("Import")')
+            if not import_btn:
+                import_btn = page.query_selector('button:has-text("import")')
+            if not import_btn:
+                return False, "Could not find Import button on Medium"
+
+            import_btn.click()
+
+            # Wait for import to complete (Medium fetches the content)
+            page.wait_for_timeout(5000)
+            page.wait_for_load_state("networkidle", timeout=30000)
+
+            # Click Publish
+            publish_btn = page.query_selector('button:has-text("Publish")')
+            if not publish_btn:
+                publish_btn = page.query_selector('button:has-text("Publish now")')
+            if not publish_btn:
+                # Maybe we need to confirm the import first
+                confirm_btn = page.query_selector('button:has-text("Confirm")')
+                if confirm_btn:
+                    confirm_btn.click()
+                    page.wait_for_timeout(2000)
+                    publish_btn = page.query_selector('button:has-text("Publish")')
+
+            if not publish_btn:
+                return False, "Could not find Publish button — import may have failed"
+
+            publish_btn.click()
+
+            # Handle publish dialog — confirm
+            page.wait_for_timeout(2000)
+            final_btn = page.query_selector('button:has-text("Publish now")')
+            if final_btn:
+                final_btn.click()
+
+            page.wait_for_timeout(3000)
+            medium_url = page.url
+            return True, f"Imported to Medium: {medium_url}"
+
+        except Exception as e:
+            return False, f"Medium error: {e}"
+        finally:
+            context.close()
+
+
+# ─── Reddit publisher (browser automation — value-first comments) ──────────
+
+REDDIT_SUBREDDITS = {
+    "ADHD": {"url": "r/ADHD", "topics": ["paralysis", "can't start", "overwhelm", "streaks", "burnout", "task initiation", "executive dysfunction"]},
+    "Anxiety": {"url": "r/Anxiety", "topics": ["overwhelm", "can't calm down", "panic", "racing thoughts", "night anxiety", "grounding", "breathing"]},
+    "Habits": {"url": "r/Habits", "topics": ["streaks", "habit tracking", "consistency", "guilt", "missing days", "starting over"]},
+}
+
+def generate_reddit_comment(creds, post_title, post_body, subreddit):
+    """Generate a unique, helpful Reddit comment using Gemini."""
+    prompt = f"""You are a helpful Redditor on r/{subreddit}. Someone posted:
+
+Title: {post_title}
+Body: {post_body[:500]}
+
+Write a genuinely helpful comment. Rules:
+- 2-4 sentences, conversational, empathetic
+- Share a specific technique or insight (not generic advice)
+- DO NOT mention any app, product, or link
+- DO NOT say "I built" or "I made" or "check out"
+- Be a real community member, not a marketer
+- First person perspective
+- Match the tone of r/{subreddit} — supportive, real, no toxic positivity
+- No emojis unless genuinely fitting
+
+Write ONLY the comment text, nothing else."""
+
+    text, err = call_gemini(prompt, creds, max_tokens=800)
+    if err:
+        return None, err
+
+    text = text.strip().strip('"').strip("'")
+    for prefix in ["Comment:", "Reply:", "Here's the comment:"]:
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix):].strip()
+
+    return text, None
+
+
+def publish_to_reddit(item, creds, dry_run=False):
+    """Post a value-first comment on Reddit via browser automation.
+
+    Flow:
+    1. Browse the subreddit sorted by "new"
+    2. Find a post matching the topic keyword
+    3. Generate a unique, helpful comment via Gemini
+    4. Post the comment
+    5. NO links, NO app mentions — pure community engagement
+    """
+    if dry_run:
+        return True, f"DRY RUN: Would comment on Reddit/{item.get('subreddit', '')}..."
+
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return False, "Playwright not installed — skipping Reddit"
+
+    subreddit = item.get("subreddit", "ADHD")
+    sub_info = REDDIT_SUBREDDITS.get(subreddit, REDDIT_SUBREDDITS["ADHD"])
+    topic_keywords = item.get("topic_keywords", sub_info["topics"])
+
+    with sync_playwright() as p:
+        context = p.chromium.launch_persistent_context(
+            str(PLAYWRIGHT_PROFILE),
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        page = context.new_page()
+        try:
+            # Go to subreddit sorted by new
+            page.goto(f"https://www.reddit.com/{sub_info['url']}/new/", timeout=30000)
+            page.wait_for_load_state("networkidle", timeout=15000)
+
+            # Check if logged in
+            if "login" in page.url.lower() or page.query_selector('a:has-text("Log In")'):
+                return False, "Not logged in to Reddit — run --setup-browser"
+
+            # Find posts matching topic keywords
+            posts = page.query_selector_all('article, [data-testid="post-container"], shreddit-post')
+            target_post = None
+            target_title = ""
+            target_href = ""
+
+            for post in posts[:15]:  # Check first 15 posts
+                title_el = post.query_selector('a[slot="title"], h3, [data-testid="post-title"]')
+                if not title_el:
+                    continue
+                title = title_el.inner_text().lower()
+
+                # Check if title matches any topic keyword
+                if any(kw.lower() in title for kw in topic_keywords):
+                    # Make sure it's not our own post and has no comments from us
+                    target_post = post
+                    target_title = title_el.inner_text()
+                    link_el = post.query_selector('a[slot="full-post-link"], a[href*="/comments/"]')
+                    if link_el:
+                        target_href = link_el.get_attribute("href")
+                    break
+
+            if not target_post:
+                return False, f"No matching posts found in r/{subreddit} (checked 15 posts)"
+
+            # Click into the post
+            if target_href:
+                page.goto(f"https://www.reddit.com{target_href}", timeout=30000)
+            else:
+                target_post.click()
+            page.wait_for_load_state("networkidle", timeout=15000)
+
+            # Get post body for context
+            post_body = ""
+            body_el = page.query_selector('[data-testid="post-content"], div[data-post-click="body"] .RichTextJSONRoot, shreddit-post .md')
+            if body_el:
+                post_body = body_el.inner_text()[:500]
+
+            # Generate a unique comment
+            comment_text, err = generate_reddit_comment(creds, target_title, post_body, subreddit)
+            if err or not comment_text:
+                return False, f"Comment generation failed: {err}"
+            if len(comment_text) > 1000:
+                comment_text = comment_text[:997] + "..."
+
+            # Find the comment box
+            comment_box = page.query_selector('div[contenteditable="true"][data-lexical-editor="true"], textarea[placeholder*="comment"], div[role="textbox"]')
+            if not comment_box:
+                # Try clicking "Add a comment" first
+                add_comment = page.query_selector('button:has-text("Add a comment")')
+                if add_comment:
+                    add_comment.click()
+                    page.wait_for_timeout(2000)
+                    comment_box = page.query_selector('div[contenteditable="true"], textarea[placeholder*="comment"], div[role="textbox"]')
+
+            if not comment_box:
+                return False, "Could not find comment box on Reddit"
+
+            comment_box.click()
+            page.wait_for_timeout(500)
+            comment_box.type(comment_text, delay=50)
+            page.wait_for_timeout(500)
+
+            # Find and click submit button
+            submit_btn = page.query_selector('button:has-text("Comment"), button:has-text("Reply"), button[type="submit"]')
+            if not submit_btn:
+                return False, "Could not find submit button for Reddit comment"
+
+            submit_btn.click()
+            page.wait_for_timeout(3000)
+
+            return True, f"Commented on r/{subreddit}: \"{target_title[:50]}...\""
+
+        except Exception as e:
+            return False, f"Reddit error: {e}"
+        finally:
+            context.close()
+
+
+# ─── Browser setup (one-time login) ────────────────────────────────────────
+
+def setup_browser():
+    """Open a browser for one-time login to Medium + Reddit.
+
+    The user logs in once, cookies are saved to the persistent profile,
+    and the publisher daemon uses them for headless automation.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("Playwright not installed. Run: pip3 install playwright && python3 -m playwright install chromium")
+        return
+
+    PLAYWRIGHT_PROFILE.mkdir(parents=True, exist_ok=True)
+
+    print("Opening browser for one-time login...")
+    print("1. Log in to Medium (medium.com)")
+    print("2. Log in to Reddit (reddit.com)")
+    print("3. Close the browser when done")
+    print("")
+
+    with sync_playwright() as p:
+        context = p.chromium.launch_persistent_context(
+            str(PLAYWRIGHT_PROFILE),
+            headless=False,  # Visible so user can log in
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        page = context.new_page()
+        page.goto("https://medium.com")
+
+        # Wait for user to close the browser
+        try:
+            page.wait_for_event("close", timeout=0)
+        except:
+            pass
+
+        context.close()
+
+    print("Browser profile saved. Publisher daemon can now use it for Medium + Reddit.")
 
 # ─── Main publisher logic ──────────────────────────────────────────────────
 
@@ -756,6 +1070,8 @@ def publish_item(item, creds, dry_run=False):
         return publish_to_devto(item, creds, dry_run)
     elif channel == "reddit":
         return publish_to_reddit(item, creds, dry_run)
+    elif channel == "medium":
+        return publish_to_medium(item, creds, dry_run)
     elif channel == "indiehackers":
         return publish_to_indiehackers(item, creds, dry_run)
     else:
@@ -862,11 +1178,14 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show queue status")
     parser.add_argument("--generate", action="store_true", help="Generate new content now")
     parser.add_argument("--generate-count", type=int, default=10, help="Number of items to generate")
+    parser.add_argument("--setup-browser", action="store_true", help="One-time login to Medium + Reddit (opens browser)")
     args = parser.parse_args()
 
     creds = load_credentials()
 
-    if args.status:
+    if args.setup_browser:
+        setup_browser()
+    elif args.status:
         show_status(creds)
     elif args.generate:
         count = auto_generate_content(creds, count=args.generate_count)

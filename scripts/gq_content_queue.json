@@ -340,6 +340,124 @@
       "body": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\nIt tracks \"Total Active Days\" instead of streaks. Show up today? +1 to your total. Miss a day? Total stays the same. No resets. No shame.\n\nThe Vibe: Instead of a stressful fire icon that burns out, I use a seedling that just grows.\n\nRoast me:\n1. Does \"Total Days\" actually feel better than a streak?\n2. Is \"anti-productivity\" a good angle or just confusing?\n3. Does the design look legit?\n\nLink: https://gentlequest.app\n\n(It's free on iOS and Android. Also works on web: https://gentlequest-web-lite.pages.dev)",
       "scheduled_for": "2026-06-27T15:00:00Z",
       "status": "pending"
+    },
+    {
+      "id": "medium_init_adhd-paralysis-why-you-cant-st",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/adhd-paralysis-why-you-cant-start",
+      "title": "Adhd Paralysis Why You Cant Start",
+      "scheduled_for": "2026-07-11T23:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "medium_init_iip-vs-chatgpt-stress-test",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/iip-vs-chatgpt-stress-test",
+      "title": "Iip Vs Chatgpt Stress Test",
+      "scheduled_for": "2026-07-14T23:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "medium_init_your-data-is-yours",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/your-data-is-yours",
+      "title": "Your Data Is Yours",
+      "scheduled_for": "2026-07-17T23:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_adhd_0",
+      "channel": "reddit",
+      "subreddit": "ADHD",
+      "topic_keywords": [
+        "paralysis",
+        "can't start",
+        "overwhelm",
+        "streaks",
+        "burnout",
+        "task initiation",
+        "executive dysfunction"
+      ],
+      "scheduled_for": "2026-07-12T05:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_adhd_1",
+      "channel": "reddit",
+      "subreddit": "ADHD",
+      "topic_keywords": [
+        "paralysis",
+        "can't start",
+        "overwhelm",
+        "streaks",
+        "burnout",
+        "task initiation",
+        "executive dysfunction"
+      ],
+      "scheduled_for": "2026-07-12T17:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_anxiety_0",
+      "channel": "reddit",
+      "subreddit": "Anxiety",
+      "topic_keywords": [
+        "overwhelm",
+        "can't calm down",
+        "panic",
+        "racing thoughts",
+        "night anxiety",
+        "grounding",
+        "breathing"
+      ],
+      "scheduled_for": "2026-07-13T05:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_anxiety_1",
+      "channel": "reddit",
+      "subreddit": "Anxiety",
+      "topic_keywords": [
+        "overwhelm",
+        "can't calm down",
+        "panic",
+        "racing thoughts",
+        "night anxiety",
+        "grounding",
+        "breathing"
+      ],
+      "scheduled_for": "2026-07-13T17:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_habits_0",
+      "channel": "reddit",
+      "subreddit": "Habits",
+      "topic_keywords": [
+        "streaks",
+        "habit tracking",
+        "consistency",
+        "guilt",
+        "missing days",
+        "starting over"
+      ],
+      "scheduled_for": "2026-07-14T05:00:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "reddit_init_habits_1",
+      "channel": "reddit",
+      "subreddit": "Habits",
+      "topic_keywords": [
+        "streaks",
+        "habit tracking",
+        "consistency",
+        "guilt",
+        "missing days",
+        "starting over"
+      ],
+      "scheduled_for": "2026-07-14T17:00:00Z",
+      "status": "pending"
     }
   ]
 }
