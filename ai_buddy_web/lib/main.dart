@@ -258,12 +258,12 @@ class MyApp extends StatelessWidget {
         routes: {
           '/home': (context) {
             final args = ModalRoute.of(context)?.settings.arguments;
-            final initial = (args is AppTab) ? args : AppTab.talk;
+            final initial = (args is AppTab) ? args : AppTab.mood;
             return HomeShell(initialTab: initial);
           },
           '/home/quest': (context) => HomeShell(initialTab: AppTab.quest),
           // Legacy landing route redirected to HomeShell Talk tab
-          '/main': (context) => HomeShell(initialTab: AppTab.talk),
+          '/main': (context) => HomeShell(initialTab: AppTab.mood),
           '/dhiwise-chat': (context) => const MentalHealthChatScreen(),
           '/preview-quest': (context) => const QuestPreviewScreen(),
           '/interactive-chat': (context) => const InteractiveChatScreen(),

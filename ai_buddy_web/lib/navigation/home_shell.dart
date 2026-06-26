@@ -19,7 +19,7 @@ import '../features/leopard/widgets/leopard_gate.dart';
 
 class HomeShell extends StatefulWidget {
   final AppTab initialTab;
-  const HomeShell({super.key, this.initialTab = AppTab.talk});
+  const HomeShell({super.key, this.initialTab = AppTab.mood});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
