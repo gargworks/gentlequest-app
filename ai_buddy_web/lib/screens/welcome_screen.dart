@@ -113,8 +113,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Future<void> _showAgeModal() async {
-    setState(() => _state = _WelcomeState.ageModal);
-    await _modalCtrl.forward();
+    // v1.4.5: Skip the age modal entirely — go straight to confirm+compliance.
+    // The age confirmation is now built into the Continue button text
+    // ("I'm 13 or older →"), so there's no need for a separate modal.
+    await _confirmAdult();
   }
 
   Future<void> _confirmAdult() async {
@@ -381,7 +383,7 @@ class _WelcomeContent extends StatelessWidget {
                                 shadowColor: Colors.transparent,
                               ),
                               child: Text(
-                                'Continue',
+                                "I'm 13 or older",
                                 style: TextStyle(
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 17,
@@ -389,6 +391,19 @@ class _WelcomeContent extends StatelessWidget {
                                   letterSpacing: 0.2,
                                 ),
                               ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // Legal small print — replaces the separate age modal
+                          Text(
+                            'By continuing you agree to our Terms and Privacy Policy.\nPrivate by default. No streaks. No shame.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: GQTypography.bodyFamily,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                              color: GQColors.ink3,
                             ),
                           ),
                           const SizedBox(height: 12),

@@ -305,9 +305,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkWelcome() async {
+    // v1.4.5: On web, the page load IS the splash — no artificial delay.
+    // On mobile, keep 800ms for the branded splash to feel intentional.
+    final splashDelay = kIsWeb
+        ? const Duration(milliseconds: 200)
+        : const Duration(milliseconds: 800);
     final results = await Future.wait<dynamic>([
       WelcomeScreen.hasBeenSeen(),
-      Future<void>.delayed(const Duration(milliseconds: 1100)),
+      Future<void>.delayed(splashDelay),
     ]);
     if (!mounted) return;
     final seen = results[0] as bool;
