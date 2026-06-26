@@ -67,6 +67,36 @@ VIDEO_META = {
         "description": "Real PHQ-9 screening, not just chat. Honest results, and a safety plan if needed.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nNot a diagnosis. A starting point. Free. 18+.",
         "tags": ["PHQ-9", "clinical screening", "depression test", "mental health", "gentlequest"],
     },
+    "v13_weekly": {
+        "title": "GentleQuest — weekly mood patterns",
+        "description": "See your mood patterns over the week. No judgment, just data.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+. No ads.",
+        "tags": ["mood tracking", "weekly review", "mental health", "patterns", "gentlequest"],
+    },
+    "v14_journal_chips": {
+        "title": "GentleQuest — journal with mood chips",
+        "description": "Quick journal entries with mood chips. No prompts. No pressure.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+. No ads.",
+        "tags": ["journaling", "mood tracking", "mental health app", "gentlequest"],
+    },
+    "v15_breathing": {
+        "title": "GentleQuest — 4-7-8 breathing exercise",
+        "description": "Anxious? Try 4-7-8 breathing. In 4, hold 7, out 8. The long exhale forces your heart rate down.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+.",
+        "tags": ["breathing exercise", "anxiety relief", "4-7-8 breathing", "mental health", "gentlequest"],
+    },
+    "v16_compliance": {
+        "title": "GentleQuest — age gate and safety",
+        "description": "Real age gate. Real safety. Real crisis resources.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+. No ads.",
+        "tags": ["safety", "age gate", "crisis resources", "mental health app", "gentlequest"],
+    },
+    "v17_contacts": {
+        "title": "GentleQuest — your safety contacts",
+        "description": "Add your trusted contacts. They're there when you need them.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+. No ads.",
+        "tags": ["safety contacts", "mental health", "crisis support", "gentlequest"],
+    },
+    "v18_honest": {
+        "title": "GentleQuest — the honest picture",
+        "description": "No streaks. No guilt. No fake positivity. Just a quiet place to check in.\n\niOS — https://apps.apple.com/app/gentlequest/id6756537464\nAndroid — https://play.google.com/store/apps/details?id=com.gentlequest.app\nWeb — https://gentlequest.app\n\nFree. 18+. No ads.",
+        "tags": ["mental health app", "no streaks", "no guilt", "honest", "gentlequest"],
+    },
 }
 
 
