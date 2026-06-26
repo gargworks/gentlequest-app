@@ -43,7 +43,7 @@ Here are the results.
 2. "Offline-First Sync Architecture (Rural Priority)"
 
 **Visual Proof**:
-![SilverLink Walkthrough](/assets/iip_stresstest_case1_seniorlink_1768460271524.webp)
+![SilverLink Walkthrough](/assets/iip_stresstest_case1_seniorlink_1768460271524.jpg)
 
 ---
 
@@ -60,7 +60,7 @@ Here are the results.
 **Key Insight**: IIP correctly identified **"Thermal Integrity Monitoring"** as a roadmap item because of the "blood transport" context provided in the interview.
 
 **Visual Proof**:
-![SkyDrop Walkthrough](/assets/iip_stresstest_case2_skydrop_1768460904544.webp)
+![SkyDrop Walkthrough](/assets/iip_stresstest_case2_skydrop_1768460904544.jpg)
 
 ---
 
