@@ -77,8 +77,9 @@ def memory_status():
 
 @admin_bp.route("/api/admin/analytics")
 def admin_analytics_dashboard():
-    """Render the analytics dashboard HTML page."""
-    return render_template("admin_dashboard.html")
+    """Redirect to the integrated dashboard at /metrics."""
+    from flask import redirect
+    return redirect("/metrics", code=302)
 
 
 @admin_bp.route("/api/admin/setup_pgvector", methods=["POST"])

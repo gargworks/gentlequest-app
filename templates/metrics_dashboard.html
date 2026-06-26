@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GentleQuest Funnel</title>
+    <title>GentleQuest Dashboard</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -13,22 +13,40 @@
             padding: 40px 20px;
             min-height: 100vh;
         }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 1000px; margin: 0 auto; }
         h1 {
             font-size: 24px;
             font-weight: 600;
             margin-bottom: 4px;
+        }
+        h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ccc;
+            margin-bottom: 16px;
         }
         .subtitle {
             color: #888;
             font-size: 13px;
             margin-bottom: 32px;
         }
+        .filter-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #1a3a1a;
+            color: #4a4;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        /* Funnel */
         .funnel-stages {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-bottom: 40px;
         }
         .stage {
             display: flex;
@@ -62,11 +80,18 @@
             color: #888;
             margin-left: 8px;
         }
+        .stage-bar {
+            height: 4px;
+            background: #4a8;
+            border-radius: 2px;
+            margin-top: 8px;
+            transition: width 0.5s;
+        }
+        /* Stats grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
-            margin-bottom: 40px;
         }
         .stat-card {
             padding: 16px 20px;
@@ -91,12 +116,19 @@
             color: #666;
             margin-top: 2px;
         }
+        .stat-delta {
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        .stat-delta.up { color: #4a8; }
+        .stat-delta.down { color: #e88; }
+        .stat-delta.flat { color: #666; }
+        /* Charts */
         .chart-container {
             background: #141414;
             border-radius: 12px;
             border: 1px solid #222;
             padding: 24px;
-            margin-bottom: 24px;
         }
         .chart-title {
             font-size: 14px;
@@ -108,6 +140,103 @@
             width: 100% !important;
             height: 200px !important;
         }
+        /* Two-column layout for wider screens */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 700px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+        /* Recent events */
+        .events-list {
+            background: #141414;
+            border-radius: 12px;
+            border: 1px solid #222;
+            padding: 16px 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .event-row {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 13px;
+        }
+        .event-row:last-child { border-bottom: none; }
+        .event-time {
+            color: #666;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            min-width: 140px;
+        }
+        .event-type {
+            color: #aaa;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-meta {
+            color: #555;
+            font-size: 12px;
+            margin-left: auto;
+            text-align: right;
+        }
+        /* 7-day trend bars */
+        .trend-bars {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 60px;
+            margin-top: 12px;
+        }
+        .trend-bar {
+            flex: 1;
+            background: #333;
+            border-radius: 3px 3px 0 0;
+            min-height: 2px;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .trend-bar.active { background: #4a8; }
+        .trend-bar:hover { background: #5b9; }
+        .trend-bar-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: #555;
+        }
+        /* Interventions */
+        .intervention-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .intervention-card {
+            padding: 16px 20px;
+            background: #141414;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .intervention-card .name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .intervention-card .stat {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .intervention-card .value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4a8;
+        }
+        /* Footer */
         .footer {
             margin-top: 40px;
             padding-top: 20px;
@@ -116,15 +245,6 @@
             color: #555;
             display: flex;
             justify-content: space-between;
-        }
-        .filter-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #1a3a1a;
-            color: #4a4;
-            border-radius: 4px;
-            font-size: 11px;
-            margin-left: 8px;
         }
         .loading { opacity: 0.5; }
         .error {
@@ -136,72 +256,134 @@
             font-size: 13px;
             margin-bottom: 20px;
         }
+        .empty {
+            color: #555;
+            font-size: 13px;
+            padding: 20px 0;
+        }
+        .refresh-btn {
+            padding: 6px 14px;
+            background: #222;
+            color: #ccc;
+            border: 1px solid #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .refresh-btn:hover { background: #2a2a2a; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>GentleQuest Funnel <span class="filter-badge">real devices only</span></h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h1>GentleQuest Dashboard <span class="filter-badge">real devices only</span></h1>
+            <button class="refresh-btn" onclick="refresh()">🔄 Refresh</button>
+        </div>
         <p class="subtitle" id="subtitle">Loading...</p>
 
         <div id="error" style="display:none" class="error"></div>
 
-        <div class="funnel-stages" id="funnel"></div>
+        <!-- Funnel -->
+        <div class="section">
+            <h2>Funnel (last 90 days)</h2>
+            <div class="funnel-stages" id="funnel"></div>
+        </div>
 
-        <div class="stats-grid" id="stats"></div>
+        <!-- Key stats + 7-day trend -->
+        <div class="section">
+            <h2>Key metrics</h2>
+            <div class="stats-grid" id="stats"></div>
+        </div>
 
-        <div class="chart-container">
-            <div class="chart-title">Installs trend (last 30 snapshots)</div>
-            <canvas id="chart"></canvas>
+        <!-- Charts -->
+        <div class="two-col section">
+            <div class="chart-container">
+                <div class="chart-title">Installs trend (30 snapshots)</div>
+                <canvas id="chart-installs"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">First chat sent (7-day)</div>
+                <div class="trend-bars" id="trend-bars"></div>
+                <div style="margin-top:24px;font-size:12px;color:#666;" id="trend-summary"></div>
+            </div>
+        </div>
+
+        <!-- Interventions + Recent events -->
+        <div class="two-col section">
+            <div>
+                <h2>Interventions (30 days)</h2>
+                <div class="stats-grid" id="intervention-stats" style="margin-bottom:16px;"></div>
+                <div class="intervention-grid" id="interventions-grid"></div>
+            </div>
+            <div>
+                <h2>Recent events</h2>
+                <div class="events-list" id="events-list"></div>
+            </div>
         </div>
 
         <div class="footer">
             <span id="last-fetch">—</span>
-            <span>Auto-refresh: 1 hour</span>
+            <span>Auto-refresh: 60 seconds</span>
         </div>
     </div>
 
     <script>
-        const API = window.location.origin + '/api/metrics/funnel';
-        const HISTORY = window.location.origin + '/api/metrics/funnel/history?limit=30';
+        const API = window.location.origin;
 
         async function fetchAll() {
-            const [funnelResp, historyResp] = await Promise.all([
-                fetch(API),
-                fetch(HISTORY)
+            const [funnelR, historyR, overviewR, trueR, recentR] = await Promise.all([
+                fetch(`${API}/api/metrics/funnel`),
+                fetch(`${API}/api/metrics/funnel/history?limit=30`),
+                fetch(`${API}/api/analytics/overview?days=30`),
+                fetch(`${API}/api/metrics/true`),
+                fetch(`${API}/api/analytics/recent?limit=15`),
             ]);
-            const funnel = await funnelResp.json();
-            const history = await historyResp.json();
-            return { funnel, history };
+            const funnel = await funnelR.json();
+            const history = await historyR.json();
+            const overview = await overviewR.json();
+            const trueMetrics = await trueR.json();
+            const recent = await recentR.json();
+            return { funnel, history, overview, trueMetrics, recent };
         }
 
         function render(data) {
-            const { funnel, history } = data;
+            const { funnel, history, overview, trueMetrics, recent } = data;
 
             // Subtitle
             document.getElementById('subtitle').textContent =
                 `Last 90 days · simulator-filtered · ${funnel.blocked_test_sessions} test sessions excluded`;
 
-            // Funnel stages
+            // Funnel
             const stages = funnel.funnel;
             const installs = stages.stage_2_installs || {};
             const totalInstalls = (installs.iOS || 0) + (installs.Android || 0);
             const webVisits = stages.stage_1_web_visits;
+            const appOpens = stages.stage_3_app_opens || 0;
+            const firstChat = stages.stage_4_first_chat || 0;
 
-            const funnelHtml = [
+            const funnelStages = [
                 { num: 1, name: 'Web visits', value: webVisits === null ? '—' : webVisits, detail: 'gentlequest.app + /blog' },
                 { num: 2, name: 'App installs', value: totalInstalls, detail: `iOS ${installs.iOS||0} · Android ${installs.Android||0}` },
-                { num: 3, name: 'App opens', value: stages.stage_3_app_opens || 0, detail: 'last 90 days' },
-                { num: 4, name: 'First chat sent', value: stages.stage_4_first_chat || 0, detail: 'real users (test sessions excluded)' },
-            ].map(s => `
+                { num: 3, name: 'App opens', value: appOpens, detail: 'last 90 days' },
+                { num: 4, name: 'First chat sent', value: firstChat, detail: 'real users (test excluded)' },
+            ];
+
+            const maxVal = Math.max(...funnelStages.map(s => typeof s.value === 'number' ? s.value : 0), 1);
+
+            document.getElementById('funnel').innerHTML = funnelStages.map(s => {
+                const pct = typeof s.value === 'number' ? (s.value / maxVal * 100) : 0;
+                return `
                 <div class="stage">
                     <div class="stage-number">${s.num}</div>
-                    <div class="stage-name">${s.name}<span class="stage-detail">${s.detail}</span></div>
+                    <div class="stage-name">${s.name}<span class="stage-detail">${s.detail}</span>
+                        <div class="stage-bar" style="width:${pct}%;"></div>
+                    </div>
                     <div class="stage-value">${s.value}</div>
-                </div>
-            `).join('');
-            document.getElementById('funnel').innerHTML = funnelHtml;
+                </div>`;
+            }).join('');
 
-            // Stats grid
+            // Key stats
             const allTime = funnel.all_time || {};
             const allInstalls = allTime.installs || {};
             const allTotal = allTime.total_users || {};
@@ -209,30 +391,99 @@
             const allTimeTotal = (allInstalls.iOS||0) + (allInstalls.Android||0);
             const activeTotal = (active.iOS||0) + (active.Android||0);
 
-            const statsHtml = [
+            const stats = [
                 { label: 'All-time installs', value: allTimeTotal, sub: `iOS ${allInstalls.iOS||0} · Android ${allInstalls.Android||0}` },
                 { label: 'All-time users', value: (allTotal.iOS||0)+(allTotal.Android||0), sub: `iOS ${allTotal.iOS||0} · Android ${allTotal.Android||0}` },
                 { label: 'Active (90d)', value: activeTotal, sub: `iOS ${active.iOS||0} · Android ${active.Android||0}` },
-                { label: 'Snapshots', value: history.count || 0, sub: 'in database' },
-            ].map(s => `
+                { label: 'First chat (all-time)', value: trueMetrics.all_time, sub: `${trueMetrics.yesterday} yesterday` },
+            ];
+
+            document.getElementById('stats').innerHTML = stats.map(s => `
                 <div class="stat-card">
                     <div class="stat-label">${s.label}</div>
                     <div class="stat-value">${s.value}</div>
                     <div class="stat-sub">${s.sub}</div>
                 </div>
             `).join('');
-            document.getElementById('stats').innerHTML = statsHtml;
 
-            // Chart
-            renderChart(history);
+            // 7-day trend bars
+            const trend7 = trueMetrics.trend_7d || [];
+            const maxTrend = Math.max(...trend7.map(d => d.count), 1);
+            document.getElementById('trend-bars').innerHTML = trend7.map(d => {
+                const h = (d.count / maxTrend * 100);
+                const day = d.date.slice(5);
+                return `<div class="trend-bar ${d.count > 0 ? 'active' : ''}" style="height:${Math.max(h, 3)}%;" title="${d.date}: ${d.count}">
+                    <div class="trend-bar-label">${day}</div>
+                </div>`;
+            }).join('');
+
+            const trendSum = trend7.reduce((a, d) => a + d.count, 0);
+            document.getElementById('trend-summary').textContent =
+                `${trendSum} first chats in last 7 days`;
+
+            // Interventions
+            const ov = overview.overall || {};
+            const intStats = [
+                { label: 'Total interventions', value: ov.total_interventions || 0, sub: 'last 30 days' },
+                { label: 'Completion rate', value: `${(ov.completion_rate * 100).toFixed(0)}%`, sub: `${ov.total_completed || 0} completed` },
+                { label: 'Avg mood improvement', value: (ov.avg_mood_improvement || 0).toFixed(1), sub: '1-10 scale' },
+                { label: 'Avg time spent', value: `${Math.round(ov.avg_time_spent || 0)}s`, sub: 'per exercise' },
+            ];
+            document.getElementById('intervention-stats').innerHTML = intStats.map(s => `
+                <div class="stat-card">
+                    <div class="stat-label">${s.label}</div>
+                    <div class="stat-value">${s.value}</div>
+                    <div class="stat-sub">${s.sub}</div>
+                </div>
+            `).join('');
+
+            const byType = overview.by_type || {};
+            const icons = { breathing: '🌬️', grounding: '🌿', journaling: '📝' };
+            if (Object.keys(byType).length === 0) {
+                document.getElementById('interventions-grid').innerHTML = '<div class="empty">No intervention data yet.</div>';
+            } else {
+                document.getElementById('interventions-grid').innerHTML = Object.entries(byType).map(([type, st]) => {
+                    const icon = icons[type] || '📋';
+                    const rate = (st.completion_rate * 100).toFixed(0);
+                    const mood = st.avg_mood_improvement?.toFixed(1) || 'N/A';
+                    return `
+                    <div class="intervention-card">
+                        <div class="name">${icon} ${type}</div>
+                        <div class="value">${rate}%</div>
+                        <div class="stat">completion · ${st.total_interventions || 0} total</div>
+                        <div class="stat">mood delta: ${mood}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Recent events
+            const events = recent.events || [];
+            if (events.length === 0) {
+                document.getElementById('events-list').innerHTML = '<div class="empty">No recent events.</div>';
+            } else {
+                document.getElementById('events-list').innerHTML = events.map(e => {
+                    const ts = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+                    const meta = e.metadata || {};
+                    const metaStr = Object.entries(meta).slice(0, 2).map(([k,v]) => `${k}=${v}`).join(', ');
+                    return `
+                    <div class="event-row">
+                        <span class="event-time">${ts}</span>
+                        <span class="event-type">${e.event_type}</span>
+                        <span class="event-meta">${metaStr}</span>
+                    </div>`;
+                }).join('');
+            }
+
+            // Charts
+            renderInstallsChart(history);
 
             // Footer
             document.getElementById('last-fetch').textContent =
                 `Updated ${new Date(funnel.timestamp).toLocaleString()}`;
         }
 
-        function renderChart(history) {
-            const canvas = document.getElementById('chart');
+        function renderInstallsChart(history) {
+            const canvas = document.getElementById('chart-installs');
             const ctx = canvas.getContext('2d');
             const snapshots = (history.snapshots || []).reverse();
 
@@ -240,7 +491,7 @@
                 ctx.fillStyle = '#555';
                 ctx.font = '13px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('Not enough data yet — check back after a few daily snapshots', canvas.width/2, 100);
+                ctx.fillText('Not enough snapshots yet', canvas.offsetWidth/2, 100);
                 return;
             }
 
@@ -255,7 +506,6 @@
             const chartW = w - padding.left - padding.right;
             const chartH = h - padding.top - padding.bottom;
 
-            // Extract data
             const points = snapshots.map(s => {
                 const d = s.data || {};
                 const inst = d.installs_90d || {};
@@ -270,7 +520,7 @@
             const maxVal = Math.max(...points.map(p => p.total), 1);
             const stepX = chartW / Math.max(points.length - 1, 1);
 
-            // Grid lines
+            // Grid
             ctx.strokeStyle = '#1a1a1a';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 4; i++) {
@@ -281,25 +531,45 @@
                 ctx.stroke();
             }
 
-            // Y-axis labels
+            // Y labels
             ctx.fillStyle = '#555';
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'right';
             for (let i = 0; i <= 4; i++) {
                 const val = Math.round(maxVal - (maxVal / 4) * i);
-                const y = padding.top + (chartH / 4) * i + 3;
-                ctx.fillText(val, padding.left - 6, y);
+                ctx.fillText(val, padding.left - 6, padding.top + (chartH / 4) * i + 3);
             }
 
-            // Total installs line
+            // iOS line (blue)
+            ctx.strokeStyle = '#6a9';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = padding.left + stepX * i;
+                const y = padding.top + chartH - (p.ios / maxVal) * chartH;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Android line (orange)
+            ctx.strokeStyle = '#e95';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = padding.left + stepX * i;
+                const y = padding.top + chartH - (p.android / maxVal) * chartH;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Total line (green)
             ctx.strokeStyle = '#4a8';
             ctx.lineWidth = 2;
             ctx.beginPath();
             points.forEach((p, i) => {
                 const x = padding.left + stepX * i;
                 const y = padding.top + chartH - (p.total / maxVal) * chartH;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             });
             ctx.stroke();
 
@@ -313,16 +583,21 @@
                 ctx.fill();
             });
 
-            // X-axis labels (first, middle, last)
+            // X labels
             ctx.fillStyle = '#555';
             ctx.textAlign = 'center';
-            const labelIndices = [0, Math.floor(points.length/2), points.length-1];
-            labelIndices.forEach(i => {
+            [0, Math.floor(points.length/2), points.length-1].forEach(i => {
                 if (points[i]) {
-                    const x = padding.left + stepX * i;
-                    ctx.fillText(points[i].date, x, h - 10);
+                    ctx.fillText(points[i].date, padding.left + stepX * i, h - 10);
                 }
             });
+
+            // Legend
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#6a9'; ctx.fillText('● iOS', padding.left + 10, padding.top + 12);
+            ctx.fillStyle = '#e95'; ctx.fillText('● Android', padding.left + 60, padding.top + 12);
+            ctx.fillStyle = '#4a8'; ctx.fillText('● Total', padding.left + 130, padding.top + 12);
         }
 
         async function refresh() {
@@ -337,8 +612,8 @@
         }
 
         refresh();
-        // Auto-refresh every hour
-        setInterval(refresh, 3600000);
+        // Auto-refresh every 60 seconds (was 1 hour — too slow for a live dashboard)
+        setInterval(refresh, 60000);
     </script>
 </body>
 </html>

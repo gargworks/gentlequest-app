@@ -600,7 +600,8 @@ def funnel_history():
 
 @analytics_bp.route("/metrics", methods=["GET"])
 def metrics_dashboard():
-    """Human-readable funnel dashboard. Auto-refreshes every hour."""
+    """Integrated dashboard: funnel + interventions + trends + recent events.
+    Auto-refreshes every 60 seconds."""
     try:
         repo_root = os.path.dirname(os.path.dirname(__file__))
         template_path = os.path.join(repo_root, "templates", "metrics_dashboard.html")
