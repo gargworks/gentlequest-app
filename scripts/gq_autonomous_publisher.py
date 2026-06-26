@@ -4,17 +4,19 @@
 Reads from a JSON content queue and publishes to:
   - Buffer (Twitter, LinkedIn, Instagram) — via GraphQL API
   - Dev.to — via REST API
-  - Reddit — via PRAW (OAuth2)
+  - Reddit — via OAuth2 API
   - IndieHackers — via browser automation (Playwright)
-  - Facebook — via browser automation (Playwright)
 
-Runs on launchd cron. No agent nudging needed.
-Content is pre-queued in gq_content_queue.json.
+When the queue runs low (< 5 pending items), auto-generates new content
+using Gemini 2.5 Flash. No agent nudging needed. Runs for months.
+
+Runs on launchd cron. Content is pre-queued in gq_content_queue.json.
 
 Usage:
   python3 gq_autonomous_publisher.py --once       # process queue once
   python3 gq_autonomous_publisher.py --dry-run    # show what would fire
   python3 gq_autonomous_publisher.py --status     # show queue status
+  python3 gq_autonomous_publisher.py --generate   # generate new content now
 """
 
 import argparse
@@ -23,10 +25,12 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+import random
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import urllib.request
+import urllib.parse
 
 # ─── Config ─────────────────────────────────────────────────────────────────
 
@@ -92,7 +96,348 @@ def load_credentials():
         creds["reddit_client_secret"] = os.environ.get("REDDIT_CLIENT_SECRET", "")
         creds["reddit_refresh_token"] = os.environ.get("REDDIT_REFRESH_TOKEN", "")
 
+    # Gemini — from .env file
+    env_path = Path("/Users/lokeshgarg/ai-mvp-backend/.env")
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.startswith("GEMINI_API_KEY="):
+                creds["gemini_api_key"] = line.split("=", 1)[1].strip()
+                break
+
     return creds
+
+
+# ─── Gemini content generation ─────────────────────────────────────────────
+
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+
+# Topics for content generation — rotates through these
+TWEET_TOPICS = [
+    "ADHD paralysis and task initiation",
+    "why streaks make ADHD worse (cortisol vs dopamine)",
+    "the one spoon method for starting tasks",
+    "night anxiety and 4-7-8 breathing",
+    "5-4-3-2-1 grounding for anxiety",
+    "productivity guilt and how to let it go",
+    "overwhelm and the smallest task method",
+    "body doubling for ADHD task initiation",
+    "ADHD burnout from understimulation not overstimulation",
+    "why 'just do it' doesn't work for ADHD",
+    "total active days vs streaks (dopamine vs cortisol)",
+    "leaving tasks half-started to skip initiation",
+    "rest as maintenance not laziness",
+    "the guilt voice and how to notice it",
+    "ADHD hyperfocus vs paralysis (dopamine availability)",
+    "night anxiety cortisol spike at 2am",
+    "box breathing for anxiety",
+    "tiny self-care when overwhelmed",
+    "ADHD and decision fatigue",
+    "why habit trackers cause anxiety for ADHD",
+]
+
+LINKEDIN_TOPICS = [
+    "building for neurodivergent brains first",
+    "the anti-productivity philosophy",
+    "what 82 installs taught me about product design",
+    "the overwhelm trap and why systems make it worse",
+    "ADHD paralysis in the workplace",
+    "rest as productivity maintenance",
+    "the dopamine vs cortisol framing for habit design",
+    "building a mood-first app",
+]
+
+BLOG_TOPICS = [
+    "ADHD and the guilt of not doing enough",
+    "why habit trackers make ADHD worse",
+    "the neuroscience of task initiation",
+    "how to break the ADHD paralysis freeze",
+    "night anxiety: why your brain won't shut off",
+    "the one breath method for overwhelm",
+    "why rest is not the absence of productivity",
+    "ADHD burnout: understimulation not overstimulation",
+    "the 5-4-3-2-1 grounding method explained",
+    "why total active days beat streaks for ADHD",
+]
+
+
+def call_gemini(prompt, creds, max_tokens=500):
+    """Call Gemini 2.5 Flash API."""
+    api_key = creds.get("gemini_api_key")
+    if not api_key:
+        return None, "No Gemini API key"
+
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": 0.9,
+        }
+    }).encode()
+
+    url = f"{GEMINI_ENDPOINT}?key={api_key}"
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read())
+            text = body.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            return text.strip(), None
+    except Exception as e:
+        return None, f"Gemini error: {e}"
+
+
+def generate_tweet(creds, topic=None):
+    """Generate a single tweet using Gemini."""
+    topic = topic or random.choice(TWEET_TOPICS)
+    prompt = f"""Write a tweet about {topic} for the @GentleQuest account.
+
+Rules:
+- Maximum 270 characters (leave room for link)
+- No hashtags (max 1 if essential)
+- Conversational, vulnerable, authentic tone
+- Sound like a real person, not a brand
+- End with a question or a punchy insight
+- Do NOT include links (the publisher adds them)
+- Do NOT use emoji unless it's genuinely helpful
+- Write from first person perspective ("I", "my")
+- Be specific, not generic
+
+Write ONLY the tweet text, nothing else."""
+
+    text, err = call_gemini(prompt, creds, max_tokens=1000)
+    if err:
+        return None, err
+
+    # Clean up — remove quotes, extra whitespace
+    text = text.strip().strip('"').strip("'")
+    # Remove any "Tweet:" prefix
+    for prefix in ["Tweet:", "tweet:", "Here's the tweet:", "Here is the tweet:"]:
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix):].strip()
+
+    # Truncate to 280 chars
+    if len(text) > 280:
+        text = text[:277] + "..."
+
+    return text, None
+
+
+def generate_linkedin_post(creds, topic=None):
+    """Generate a LinkedIn post using Gemini."""
+    topic = topic or random.choice(LINKEDIN_TOPICS)
+    prompt = f"""Write a LinkedIn post about {topic} for the GentleQuest app.
+
+Rules:
+- 150-300 words
+- Professional but authentic tone (not corporate)
+- Use line breaks for readability
+- Start with a hook (a question or bold statement)
+- Include 2-3 specific insights
+- End with a soft call to action
+- Include these hashtags at the end: #mentalhealth #adhd #wellness
+- Do NOT include links (the publisher adds them)
+- Write from first person perspective
+
+GentleQuest is a free mood check-in app. No streaks. No guilt. Just a quiet place to check in with yourself.
+
+Write ONLY the post text, nothing else."""
+
+    text, err = call_gemini(prompt, creds, max_tokens=2000)
+    if err:
+        return None, err
+
+    text = text.strip().strip('"').strip("'")
+    for prefix in ["Post:", "LinkedIn Post:", "Here's the post:"]:
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix):].strip()
+
+    return text, None
+
+
+def generate_blog_post(creds, topic=None):
+    """Generate a blog post using Gemini."""
+    topic = topic or random.choice(BLOG_TOPICS)
+    prompt = f"""Write a blog post about {topic} for the GentleQuest blog.
+
+Rules:
+- 800-1200 words
+- Markdown format with ## headers
+- Conversational, empathetic, vulnerable tone
+- Start with a relatable hook
+- Include 2-3 specific techniques or insights
+- Reference ADHD/anxiety/overwhelm specifically
+- End with a soft mention: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app"
+- Write from first person perspective
+- Be specific, not generic. Use concrete examples.
+
+Write ONLY the blog post markdown, nothing else. Start with the title as a ## header."""
+
+    text, err = call_gemini(prompt, creds, max_tokens=4000)
+    if err:
+        return None, err
+
+    text = text.strip().strip('"').strip("'")
+    return text, None
+
+
+def generate_devto_article(creds, topic=None):
+    """Generate a Dev.to article using Gemini."""
+    topic = topic or random.choice(BLOG_TOPICS)
+    prompt = f"""Write a Dev.to article about {topic} from a developer/building-in-public perspective.
+
+Rules:
+- 1000-1500 words
+- Markdown format with ## headers
+- Technical but accessible tone
+- Include the perspective of someone building a mental health app
+- Reference the design philosophy: no streaks, no guilt, mood-first
+- Include 2-3 specific insights about product design for neurodivergent users
+- End with: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app"
+- Tags: mentalhealth, adhd, productivity, wellness
+
+Write ONLY the article markdown, nothing else. Start with the title as a # header."""
+
+    text, err = call_gemini(prompt, creds, max_tokens=6000)
+    if err:
+        return None, err
+
+    text = text.strip().strip('"').strip("'")
+    # Extract title from first # header
+    title = ""
+    for line in text.split("\n"):
+        if line.startswith("# "):
+            title = line[2:].strip()
+            break
+
+    return {"title": title, "body_markdown": text, "tags": ["mentalhealth", "adhd", "productivity", "wellness"]}, None
+
+
+def auto_generate_content(creds, count=10):
+    """Generate new content items and add them to the queue."""
+    queue = load_queue()
+    existing_ids = {i["id"] for i in queue.get("items", [])}
+
+    # Count pending items
+    state = load_state()
+    posted_ids = set(state.get("posted_ids", []))
+    pending_count = sum(1 for i in queue.get("items", []) if i["id"] not in posted_ids and i.get("status") != "posted")
+
+    if pending_count >= 10:
+        print(f"Queue has {pending_count} pending items. No generation needed.")
+        return 0
+
+    print(f"Queue has {pending_count} pending items. Generating {count} new items...")
+
+    # Find the last scheduled date to continue from
+    last_scheduled = datetime.now(timezone.utc)
+    for item in queue.get("items", []):
+        if item.get("scheduled_for"):
+            try:
+                sched = datetime.fromisoformat(item["scheduled_for"].replace("Z", "+00:00"))
+                if sched > last_scheduled:
+                    last_scheduled = sched
+            except:
+                pass
+
+    new_items = []
+    current_time = last_scheduled + timedelta(hours=4)  # Start 4h after last scheduled
+
+    for i in range(count):
+        item_type = random.choices(
+            ["tweet", "tweet", "tweet", "linkedin", "blog", "devto"],  # Weight tweets more
+            weights=[3, 3, 3, 2, 1, 1]
+        )[0]
+
+        if item_type == "tweet":
+            text, err = generate_tweet(creds)
+            if err:
+                print(f"  Tweet generation failed: {err}")
+                continue
+            item = {
+                "id": f"gen_tweet_{int(time.time())}_{i}",
+                "channel": "buffer",
+                "target": "twitter",
+                "text": text,
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+            }
+            current_time += timedelta(hours=4)  # 4h between tweets (6 tweets/day)
+        elif item_type == "linkedin":
+            text, err = generate_linkedin_post(creds)
+            if err:
+                print(f"  LinkedIn generation failed: {err}")
+                continue
+            item = {
+                "id": f"gen_linkedin_{int(time.time())}_{i}",
+                "channel": "buffer",
+                "target": "linkedin",
+                "text": text,
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+            }
+            current_time += timedelta(hours=24)  # 1 LinkedIn post/day
+        elif item_type == "blog":
+            text, err = generate_blog_post(creds)
+            if err:
+                print(f"  Blog generation failed: {err}")
+                continue
+            # Save blog post to scheduled folder
+            slug = f"generated-{int(time.time())}-{i}"
+            blog_path = Path("/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/scheduled") / f"{slug}.md"
+            # Add frontmatter
+            pub_date = current_time.strftime("%Y-%m-%d")
+            blog_content = f"""---
+title: "{text.split(chr(10))[0].replace('# ', '').replace('## ', '')[:80]}"
+description: "{text.split(chr(10))[0].replace('# ', '').replace('## ', '')[:150]}"
+pubDate: {pub_date}
+author: "GentleQuest Team"
+tags: ["ADHD", "Mental Health", "Self-Care"]
+---
+
+{text}
+"""
+            blog_path.parent.mkdir(parents=True, exist_ok=True)
+            blog_path.write_text(blog_content)
+            item = {
+                "id": f"gen_blog_{int(time.time())}_{i}",
+                "channel": "blog",
+                "target": "blog",
+                "text": f"Blog post scheduled: {slug}",
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+                "blog_slug": slug,
+            }
+            current_time += timedelta(days=2)  # Blog post every 2 days
+        elif item_type == "devto":
+            article, err = generate_devto_article(creds)
+            if err:
+                print(f"  Dev.to generation failed: {err}")
+                continue
+            item = {
+                "id": f"gen_devto_{int(time.time())}_{i}",
+                "channel": "devto",
+                "title": article["title"],
+                "body_markdown": article["body_markdown"],
+                "tags": article["tags"],
+                "published": True,
+                "scheduled_for": current_time.isoformat().replace("+00:00", "Z"),
+                "status": "pending",
+                "generated": True,
+            }
+            current_time += timedelta(days=7)  # Dev.to article weekly
+
+        if item["id"] not in existing_ids:
+            queue["items"].append(item)
+            new_items.append(item)
+            print(f"  Generated {item_type}: {item['id']} → {item.get('scheduled_for', '?')}")
+
+    save_queue(queue)
+    print(f"\nAdded {len(new_items)} new items to queue.")
+    return len(new_items)
 
 
 # ─── Queue management ──────────────────────────────────────────────────────
@@ -417,10 +762,18 @@ def publish_item(item, creds, dry_run=False):
         return False, f"Unknown channel: {channel}"
 
 def run_once(creds, dry_run=False):
-    """Process the queue once."""
+    """Process the queue once. Auto-generates content if queue is low."""
     queue = load_queue()
     state = load_state()
     pending = get_pending_items(queue, state)
+
+    # Auto-generate if queue is running low
+    if len(pending) < 5 and not dry_run:
+        print(f"Queue running low ({len(pending)} pending). Auto-generating content...")
+        auto_generate_content(creds, count=10)
+        # Reload queue after generation
+        queue = load_queue()
+        pending = get_pending_items(queue, state)
 
     if not pending:
         print(f"No pending items. Queue has {len(queue.get('items', []))} total items.")
@@ -430,6 +783,12 @@ def run_once(creds, dry_run=False):
 
     for item in pending:
         print(f"\nProcessing: {item.get('id', '?')} → {item.get('channel')}/{item.get('target', '')}")
+
+        # Skip blog items — they're handled by the blog staggered daemon
+        if item.get("channel") == "blog":
+            state["posted_ids"].append(item.get("id"))
+            item["status"] = "posted"
+            continue
 
         success, message = publish_item(item, creds, dry_run)
 
@@ -498,15 +857,20 @@ def show_status(creds):
 
 def main():
     parser = argparse.ArgumentParser(description="GentleQuest Autonomous Publisher")
-    parser.add_argument("--once", action="store_true", help="Process queue once")
+    parser.add_argument("--once", action="store_true", help="Process queue once (auto-generates if low)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would fire without posting")
     parser.add_argument("--status", action="store_true", help="Show queue status")
+    parser.add_argument("--generate", action="store_true", help="Generate new content now")
+    parser.add_argument("--generate-count", type=int, default=10, help="Number of items to generate")
     args = parser.parse_args()
 
     creds = load_credentials()
 
     if args.status:
         show_status(creds)
+    elif args.generate:
+        count = auto_generate_content(creds, count=args.generate_count)
+        print(f"Generated {count} new items.")
     elif args.once or args.dry_run:
         run_once(creds, dry_run=args.dry_run)
     else:
