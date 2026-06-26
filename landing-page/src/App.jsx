@@ -48,8 +48,8 @@ const FEATURES = [
   },
   {
     Icon: Sparkles,
-    title: 'Warmer onboarding',
-    body: 'Three trust chips up front: private, no judgment, no pressure. Age gate as a quiet check, not a wall.',
+    title: 'One-tap mood check-in',
+    body: 'Open the app, tap once, done in 5 seconds. Low days gently offer a breathing exercise or someone to talk to. No pressure, no streaks.',
   },
   {
     Icon: BookOpen,
@@ -127,7 +127,7 @@ function App() {
             </a>
           </div>
           <div className="gq-hero-meta" style={{ marginTop: 16 }}>
-            Free · iOS · Android · v1.3.0
+            Free · iOS · Android · v1.4.3
           </div>
         </div>
 
