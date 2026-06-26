@@ -12,7 +12,7 @@ import { createElement } from 'react';
 
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
-const WEB_APP_URL = 'https://app.gentlequest.app';
+const WEB_APP_URL = 'https://gentlequest-web.pages.dev';
 
 function AppleGlyph() {
   return (
