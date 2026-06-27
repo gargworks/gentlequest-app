@@ -16,7 +16,7 @@
                ▼                                  ▼
 ┌──────────────────────┐          ┌───────────────────────────────┐
 │  gq_content_queue.json│         │  content/scheduled/*.md       │
-│  (39+ pre-written +   │         │  (staggered blog posts)       │
+│  (48 pre-written +    │         │  (staggered blog posts)       │
 │   Gemini-generated)   │         │                               │
 └──────────┬───────────┘          └──────────┬────────────────────┘
            │                                 │
@@ -29,18 +29,26 @@
 │  Fires due items      │         │  from scheduled/ to blog/     │
 │  Auto-generates if    │         │  Rebuilds Astro site          │
 │  queue < 5 pending    │         │  Deploys to CF Pages          │
-└──┬──────┬──────┬──────┘          └───────────────────────────────┘
-   │      │      │
-   ▼      ▼      ▼
+└──┬──────┬─────┬───────┘          └───────────────────────────────┘
+   │      │     │
+   ▼      ▼     ▼
 ┌──────┐┌──────┐┌──────┐
-│Buffer││Dev.to││Reddit│
-│ API  ││ API  ││ API  │
+│Buffer││Medium││Dev.to│
+│ API  ││browser││ API  │
 └──┬───┘└──────┘└──────┘
    │
    ├──→ Twitter/X (2x/day)
    ├──→ LinkedIn (1x/day)
    └──→ Instagram (available)
 ```
+
+**Channels:**
+- **Buffer API** → Twitter/X, LinkedIn, Instagram (fully automated)
+- **Medium** → browser automation, imports blog posts with canonical URL (fully automated)
+- **Dev.to** → API (needs API key — optional, lower priority)
+- **YouTube** → 12 shorts scheduled daily (fully automated)
+- **Blog** → Astro on Cloudflare Pages, daily staggered publish (fully automated)
+- **Reddit** → MANUAL only (Reddit blocks automation, high ban risk)
 
 ---
 
@@ -67,9 +75,9 @@
 | Buffer | Twitter/X | GraphQL API | macOS keychain (`buffer-personal-pipeline`) |
 | Buffer | LinkedIn | GraphQL API | Same Buffer token |
 | Buffer | Instagram | GraphQL API | Same Buffer token |
-| Dev.to | Dev.to articles | REST API | macOS keychain (`devto-api-key`) — **needs operator setup** |
-| Reddit | r/ADHD, r/Anxiety, r/Habits | OAuth2 API | macOS keychain (`reddit-client-id`) — **needs operator setup** |
-| IndieHackers | IH groups | Browser automation | Browser session — **needs operator login** |
+| Medium | @gentlequest | Browser automation (Playwright) | Persistent profile at `~/.config/gentlequest/playwright-profile/` |
+| Dev.to | Dev.to articles | REST API | macOS keychain (`devto-api-key`) — **optional, lower priority** |
+| Reddit | r/ADHD, r/Anxiety | MANUAL ONLY | Reddit blocks all automation. 5 min/day manual engagement. |
 
 ### 2. Blog Staggered Publisher
 
@@ -232,7 +240,31 @@ python3 scripts/gq_autonomous_publisher.py --generate
 
 # Generate a specific number of items
 python3 scripts/gq_autonomous_publisher.py --generate --generate-count 20
+
+# One-time browser login for Medium (already done)
+python3 scripts/gq_autonomous_publisher.py --setup-browser
 ```
+
+---
+
+## Reddit (Manual Engagement)
+
+Reddit actively blocks all browser automation (Playwright, Puppeteer) and closed API access in November 2025. Attempting automation risks account bans. Reddit is **manual only**.
+
+**Recommended cadence: 5 minutes/day**
+
+1. Open reddit.com/r/ADHD and reddit.com/r/Anxiety
+2. Sort by "New"
+3. Find posts where someone is struggling with overwhelm, task initiation, or anxiety
+4. Leave a genuine, helpful comment (no app mentions, no links)
+5. Build karma and trust over time
+
+**Rules:**
+- Never mention GentleQuest in comments
+- Never post links
+- Be a real community member
+- Share specific techniques (4-7-8 breathing, one-spoon method, etc.)
+- If someone asks about tools, then you can mention GentleQuest in a reply
 
 ---
 
@@ -264,12 +296,11 @@ All credentials are stored in macOS keychain or `.env` files. No secrets in the 
 | Service | Keychain name | Status |
 |---------|---------------|--------|
 | Buffer API | `buffer-personal-pipeline` | LIVE (verified) |
-| Dev.to API | `devto-api-key` | **Needs operator setup** |
-| Reddit client ID | `reddit-client-id` | **Needs operator setup** |
-| Reddit client secret | `reddit-client-secret` | **Needs operator setup** |
-| Reddit refresh token | `reddit-refresh-token` | **Needs operator setup** |
+| Medium | Browser profile | LIVE (verified — @gentlequest) |
+| Dev.to API | `devto-api-key` | Optional — skip unless wanted |
+| Reddit | N/A | MANUAL only — Reddit blocks automation |
 | Gemini API | `.env` file (`GEMINI_API_KEY`) | LIVE (verified) |
-| YouTube OAuth | `marketing/shorts/youtube_token.json` | **Needs re-auth** |
+| YouTube OAuth | `marketing/shorts/youtube_token.json` | LIVE (re-authed, 12 shorts uploaded) |
 
 ### Operator setup (one-time, ~15 min)
 
@@ -362,14 +393,16 @@ gentlequest/
 
 ## Content Backlog
 
-### Pre-written (39 items)
+### Pre-written (48 items)
 
 | Type | Count | Schedule |
 |------|-------|----------|
 | Tweets | 30 | June 27 - July 11 (2x/day) |
 | LinkedIn posts | 5 | June 27 - July 5 (1x/day) |
-| Dev.to articles | 3 | June 28, July 1, July 4 (1x/week) |
+| Medium imports | 3 | July 11, 14, 17 (1x/3 days) |
+| Dev.to articles | 3 | June 28, July 1, July 4 (optional) |
 | IndieHackers post | 1 | June 27 (one-time) |
+| Reddit items | 6 | SKIPPED (Reddit blocks automation) |
 
 ### Gemini-generated (ongoing)
 
@@ -379,7 +412,8 @@ When the queue drops below 5 pending items, the daemon generates 10 new items. A
 - ~60 tweets
 - ~30 LinkedIn posts
 - ~15 blog posts
-- ~4 Dev.to articles
+- ~10 Medium imports (cross-posted from blog)
+- ~4 Dev.to articles (if API key set up)
 
 All at ~$0 cost (Gemini 2.5 Flash free tier).
 
