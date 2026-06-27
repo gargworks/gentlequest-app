@@ -5,12 +5,24 @@ const today = new Date();
 <footer>
 	&copy; {today.getFullYear()} GentleQuest. All rights reserved.
 	<div class="footer-links">
-		<a href="https://gentlequest.app">App</a>
-		<a href="https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/id6756537464">iOS</a>
-		<a href="https://play.google.com/store/apps/details?id=app.gentlequest.www">Android</a>
-		<a href="https://gentlequest.app/privacy">Privacy</a>
+		<a href="https://gentlequest.app" data-track="app_link">App</a>
+		<a href="https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/id6756537464" data-track="ios_download">iOS</a>
+		<a href="https://play.google.com/store/apps/details?id=app.gentlequest.www" data-track="android_download">Android</a>
+		<a href="https://gentlequest.app/privacy" data-track="privacy">Privacy</a>
 	</div>
 </footer>
+<script>
+	document.querySelectorAll('[data-track]').forEach(link => {
+		link.addEventListener('click', () => {
+			if (typeof gtag !== 'undefined') {
+				gtag('event', link.dataset.track, {
+					'event_category': 'footer_link',
+					'event_label': link.textContent
+				});
+			}
+		});
+	});
+</script>
 <style>
 	footer {
 		padding: 2em 1em 6em 1em;

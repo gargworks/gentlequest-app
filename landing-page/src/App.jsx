@@ -8,11 +8,12 @@ import {
   ExternalLink,
   ArrowRight,
 } from 'lucide-react';
-import { createElement } from 'react';
+import { createElement, useState } from 'react';
 
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
 const WEB_APP_URL = 'https://gentlequest-web-lite.pages.dev';
+const NEWSLETTER_FORMSPREE = 'https://formspree.io/f/YOUR_FORMSPREE_ID';
 
 function AppleGlyph() {
   return (
@@ -64,6 +65,35 @@ const FEATURES = [
 ];
 
 function App() {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState(null);
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(NEWSLETTER_FORMSPREE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail, _subject: 'New newsletter signup from landing page' }),
+      });
+      if (response.ok) {
+        setNewsletterStatus('success');
+        setNewsletterEmail('');
+        // Track conversion
+        if (typeof window.gtag !== 'undefined') {
+          window.gtag('event', 'newsletter_signup', {
+            event_category: 'engagement',
+            event_label: 'landing page newsletter'
+          });
+        }
+      } else {
+        setNewsletterStatus('error');
+      }
+    } catch (err) {
+      setNewsletterStatus('error');
+    }
+  };
+
   return (
     <div>
       <header className="gq-topbar">
@@ -101,6 +131,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Download on the App Store"
+              onClick={() => { if (typeof window.gtag !== 'undefined') { window.gtag('event', 'ios_download_click', { event_category: 'app_download', event_label: 'hero iOS' }); } }}
             >
               <AppleGlyph />
               <div>
@@ -114,6 +145,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Get it on Google Play"
+              onClick={() => { if (typeof window.gtag !== 'undefined') { window.gtag('event', 'android_download_click', { event_category: 'app_download', event_label: 'hero Android' }); } }}
             >
               <PlayGlyph />
               <div>
@@ -181,6 +213,33 @@ function App() {
             We never block this. Even offline.
           </h2>
           <p className="meta">Suicide &amp; Crisis Lifeline · free · 24 / 7 · multilingual</p>
+        </div>
+      </section>
+
+      <section className="gq-newsletter-section">
+        <div className="gq-container">
+          <div className="newsletter-box">
+            <h3>Get the occasional letter</h3>
+            <p>No spam, no streaks, no pressure. One thoughtful email every few weeks about ADHD, anxiety, and building a gentler relationship with yourself.</p>
+            <form id="landing-newsletter-form" onSubmit={handleNewsletterSubmit}>
+              <input
+                type="email"
+                name="email"
+                placeholder="your@email.com"
+                required
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+              />
+              <button type="submit">Subscribe</button>
+            </form>
+            {newsletterStatus === 'success' && (
+              <p className="newsletter-success">You're in. We'll send you something good soon.</p>
+            )}
+            {newsletterStatus === 'error' && (
+              <p className="newsletter-error">Something went wrong. Try again, or email us at hi@gentlequest.app</p>
+            )}
+            <p className="privacy-note">We never share your email. Unsubscribe anytime.</p>
+          </div>
         </div>
       </section>
 
