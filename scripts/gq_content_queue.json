@@ -379,7 +379,8 @@
         "executive dysfunction"
       ],
       "scheduled_for": "2026-07-12T05:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     },
     {
       "id": "reddit_init_adhd_1",
@@ -395,7 +396,8 @@
         "executive dysfunction"
       ],
       "scheduled_for": "2026-07-12T17:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     },
     {
       "id": "reddit_init_anxiety_0",
@@ -411,7 +413,8 @@
         "breathing"
       ],
       "scheduled_for": "2026-07-13T05:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     },
     {
       "id": "reddit_init_anxiety_1",
@@ -427,7 +430,8 @@
         "breathing"
       ],
       "scheduled_for": "2026-07-13T17:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     },
     {
       "id": "reddit_init_habits_0",
@@ -442,7 +446,8 @@
         "starting over"
       ],
       "scheduled_for": "2026-07-14T05:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     },
     {
       "id": "reddit_init_habits_1",
@@ -457,7 +462,8 @@
         "starting over"
       ],
       "scheduled_for": "2026-07-14T17:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
     }
   ]
 }

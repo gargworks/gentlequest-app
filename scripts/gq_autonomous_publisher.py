@@ -345,8 +345,8 @@ def auto_generate_content(creds, count=10):
 
     for i in range(count):
         item_type = random.choices(
-            ["tweet", "tweet", "tweet", "linkedin", "blog", "medium", "reddit", "reddit"],
-            weights=[3, 3, 3, 2, 1, 1, 1, 1]
+            ["tweet", "tweet", "tweet", "linkedin", "blog", "medium", "medium"],
+            weights=[3, 3, 3, 2, 1, 1, 1]
         )[0]
 
         if item_type == "tweet":
