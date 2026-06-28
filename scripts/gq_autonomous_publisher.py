@@ -53,20 +53,20 @@ def load_credentials():
     """Load credentials from keychain + environment."""
     creds = {}
 
-    # Buffer — from keychain
+    # Buffer — from keychain (GentleQuest account, NOT personal)
     try:
         creds["buffer_token"] = subprocess.check_output(
-            ["security", "find-generic-password", "-s", "buffer-personal-pipeline", "-w"],
+            ["security", "find-generic-password", "-s", "buffer-gentlequest", "-w"],
             stderr=subprocess.DEVNULL
         ).decode().strip()
     except subprocess.CalledProcessError:
         pass
 
-    # Buffer channel IDs (fetched once, cached in state)
-    creds["buffer_org_id"] = "6a1a4298084c61eaab66f567"
-    creds["buffer_twitter_channel"] = "6a1a4446c687a22dd43f47ee"
-    creds["buffer_linkedin_channel"] = "6a1a44c9c687a22dd43f4ad3"
-    creds["buffer_instagram_channel"] = "6a1a6bbcc687a22dd43fd1cf"
+    # Buffer channel IDs — GentleQuest account (fetch dynamically from API)
+    creds["buffer_org_id"] = None  # Will be fetched from API
+    creds["buffer_twitter_channel"] = None
+    creds["buffer_linkedin_channel"] = None
+    creds["buffer_instagram_channel"] = None
 
     # Dev.to — from keychain or env
     try:
@@ -345,8 +345,8 @@ def auto_generate_content(creds, count=10):
 
     for i in range(count):
         item_type = random.choices(
-            ["tweet", "tweet", "tweet", "linkedin", "blog", "medium", "medium"],
-            weights=[3, 3, 3, 2, 1, 1, 1]
+            ["tweet", "tweet", "tweet", "tweet", "blog", "medium", "medium"],
+            weights=[3, 3, 3, 3, 1, 1, 1]
         )[0]
 
         if item_type == "tweet":
@@ -514,23 +514,105 @@ def log_action(item, status, details=""):
 
 # ─── Buffer publisher ──────────────────────────────────────────────────────
 
+def fetch_buffer_channels(token):
+    """Fetch channel IDs from Buffer GraphQL API. Returns dict mapping service name to channel ID."""
+    # First get the account + organization ID
+    account_query = """
+    query {
+        account {
+            id
+            organizations { id name }
+        }
+    }
+    """
+    payload = json.dumps({"query": account_query}).encode()
+    req = urllib.request.Request(
+        BUFFER_GRAPHQL,
+        data=payload,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    )
+
+    org_id = None
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = json.loads(resp.read())
+            orgs = body.get("data", {}).get("account", {}).get("organizations", [])
+            if orgs:
+                org_id = orgs[0].get("id")
+    except Exception as e:
+        print(f"Warning: Failed to fetch Buffer account: {e}")
+        return {}
+
+    if not org_id:
+        return {}
+
+    # Now fetch channels for this org
+    channels_query = """
+    query GetChannels($input: ChannelsInput!) {
+        channels(input: $input) {
+            id
+            service
+            type
+            name
+            displayName
+        }
+    }
+    """
+    payload2 = json.dumps({
+        "query": channels_query,
+        "variables": {"input": {"organizationId": org_id}}
+    }).encode()
+    req2 = urllib.request.Request(
+        BUFFER_GRAPHQL,
+        data=payload2,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    )
+
+    channels = {}
+    try:
+        with urllib.request.urlopen(req2, timeout=15) as resp:
+            body = json.loads(resp.read())
+            for ch in body.get("data", {}).get("channels", []):
+                ch_id = ch.get("id")
+                service = ch.get("service", "").lower()
+                if ch_id and service:
+                    channels[service] = ch_id
+                    print(f"  Buffer channel: {service} ({ch.get('displayName', '?')}) → {ch_id}")
+    except Exception as e:
+        print(f"Warning: Failed to fetch Buffer channels: {e}")
+
+    return channels
+
+
 def publish_to_buffer(item, creds, dry_run=False):
     """Publish to Buffer via GraphQL API."""
     token = creds.get("buffer_token")
     if not token:
         return False, "No Buffer token"
 
+    # Fetch channel IDs dynamically if not cached
+    if not creds.get("buffer_twitter_channel"):
+        channels = fetch_buffer_channels(token)
+        if channels:
+            creds["buffer_twitter_channel"] = channels.get("twitter") or channels.get("x")
+            creds["buffer_linkedin_channel"] = channels.get("linkedin")
+            creds["buffer_instagram_channel"] = channels.get("instagram")
+            creds["buffer_facebook_channel"] = channels.get("facebook")
+            print(f"  Fetched Buffer channels: {list(channels.keys())}")
+
     channel_map = {
-        "twitter": creds["buffer_twitter_channel"],
-        "x": creds["buffer_twitter_channel"],
-        "linkedin": creds["buffer_linkedin_channel"],
-        "instagram": creds["buffer_instagram_channel"],
+        "twitter": creds.get("buffer_twitter_channel"),
+        "x": creds.get("buffer_twitter_channel"),
+        "linkedin": creds.get("buffer_linkedin_channel"),
+        "instagram": creds.get("buffer_instagram_channel"),
+        "facebook": creds.get("buffer_facebook_channel"),
     }
 
     target = item.get("target", "twitter").lower()
     channel_id = channel_map.get(target)
     if not channel_id:
-        return False, f"No Buffer channel for target={target}"
+        available = [k for k, v in channel_map.items() if v]
+        return False, f"No Buffer channel for target={target} (available: {available})"
 
     text = item.get("text", "")
     if not text:

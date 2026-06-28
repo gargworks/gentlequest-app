@@ -14,7 +14,8 @@
       "text": "Most productivity apps make ADHD worse. They demand more: more streaks, more tracking, more guilt. I built the opposite. No streaks. No shame. Just a quiet check-in. https://gentlequest.app",
       "scheduled_for": "2026-06-26T15:45:00Z",
       "status": "posted",
-      "posted_at": "2026-06-26T15:45:15.682704+00:00"
+      "error": "Re-queued: was posted to wrong (personal) account",
+      "posted_at": "2026-06-28T05:13:58.345986+00:00"
     },
     {
       "id": "tweet_002",
@@ -22,7 +23,9 @@
       "target": "twitter",
       "text": "ADHD paralysis isn't laziness. It's your brain's \"start\" button being broken. Task initiation is an executive function, not a character trait.",
       "scheduled_for": "2026-06-27T17:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Re-queued: was posted to wrong (personal) account",
+      "posted_at": "2026-06-28T05:13:58.346757+00:00"
     },
     {
       "id": "tweet_003",
@@ -254,7 +257,8 @@
       "target": "linkedin",
       "text": "Most productivity apps make ADHD worse.\n\nThey demand more:\n\u2192 More streaks (that break if you miss one day)\n\u2192 More tracking\n\u2192 More guilt\n\nSo I built the opposite.\n\nGentleQuest is a mood check-in app with:\n\u2192 No streaks\n\u2192 No guilt notifications\n\u2192 No \"you failed\" reminders\n\nJust one question: \"How are you right now?\"\n\n5 seconds. One tap. Done.\n\nIf you're low, it gently offers options: breathing, grounding, or talking to an AI companion.\n\nFree on iOS, Android, and web.\n\nBuilding for neurodivergent brains first. Because if it works for ADHD, it works for everyone.\n\nhttps://gentlequest.app\n\n#mentalhealth #adhd #productivity #wellness",
       "scheduled_for": "2026-06-27T13:30:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
     },
     {
       "id": "linkedin_002",
@@ -262,7 +266,8 @@
       "target": "linkedin",
       "text": "ADHD paralysis isn't laziness. It's a neurological event.\n\nYour brain's task initiation system \u2014 in the prefrontal cortex \u2014 gets overwhelmed and shuts down. You know what to do. You want to do it. But the bridge between \"wanting\" and \"doing\" has a gap.\n\nThis is why \"just do it\" is useless advice for ADHD brains. Task initiation requires dopamine. ADHD brains are short on dopamine.\n\nWhat works instead:\n\u2192 External structure (body doubling, timers)\n\u2192 Dopamine scaffolding (pair tasks with rewards)\n\u2192 Remove the initiation step (leave tasks half-started)\n\u2192 Medication (for many, it provides the fuel that makes the system work)\n\nBuilt for this reality. GentleQuest doesn't require you to \"start\" anything. Just tap how you feel. That's it.\n\nhttps://gentlequest.app",
       "scheduled_for": "2026-06-29T13:30:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
     },
     {
       "id": "linkedin_003",
@@ -270,7 +275,8 @@
       "target": "linkedin",
       "text": "82 people installed my app. 1 person sent a chat.\n\nThat's not a failure. That's data.\n\nThe app was chat-first. The mood check-in was buried. So I flipped it: mood check-in became the front door. 5 seconds, one tap, done.\n\nNow the chat is an invitation, not a demand. If you log a low mood, it asks: \"Want to talk through this?\" If you say no, that's fine.\n\nThe lesson: build for the 5-second action, not the 5-minute conversation. Get people in the door first. Everything else is optional.\n\nhttps://gentlequest.app",
       "scheduled_for": "2026-07-01T13:30:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
     },
     {
       "id": "linkedin_004",
@@ -278,7 +284,8 @@
       "target": "linkedin",
       "text": "The overwhelm trap: solutions for overwhelm are themselves overwhelming.\n\n12-step morning routines. 4 colored lists. 17 daily check-ins. You're drowning and the lifeguard throws you a textbook on swimming.\n\nWhat actually works when you're overwhelmed:\n\n1. One breath. Not meditation. One breath.\n2. Name the feeling. \"I'm overwhelmed.\" Specific feelings are easier to work with than vague ones.\n3. Pick the smallest thing. Not the most important. The smallest. Something you can do in 2 minutes.\n4. Stop after one. Don't build momentum. Just acknowledge you did something.\n\nThis is the philosophy behind GentleQuest. No systems. No streaks. Just one tap to check in.\n\nhttps://gentlequest.app",
       "scheduled_for": "2026-07-03T13:30:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
     },
     {
       "id": "linkedin_005",
@@ -286,7 +293,8 @@
       "target": "linkedin",
       "text": "Productivity guilt is exhausting.\n\nYou finish work. You sit down to rest. And within 30 seconds, the voice starts: \"You should be doing more.\"\n\nHere's what I've learned:\n\n1. Guilt reduces productivity. The energy you spend feeling guilty is energy you can't spend doing things.\n2. Guilt creates avoidance. Tasks associated with guilt become emotionally heavier, not lighter.\n3. Guilt breaks rest. If rest feels like failure, you never actually rest.\n\nThe fix isn't to fight the guilt. It's to notice it. Name it. Question it.\n\n\"I should be doing more\" \u2014 according to who? According to what standard? Usually the standard is imaginary and impossible.\n\nRest without apology. Rest is not the absence of productivity. Rest is the active maintenance of the system that makes productivity possible.\n\nhttps://gentlequest.app",
       "scheduled_for": "2026-07-05T13:30:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
     },
     {
       "id": "devto_001",
@@ -339,7 +347,9 @@
       "title": "Building an \"anti-productivity\" app for my ADHD (no broken streaks)",
       "body": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\nIt tracks \"Total Active Days\" instead of streaks. Show up today? +1 to your total. Miss a day? Total stays the same. No resets. No shame.\n\nThe Vibe: Instead of a stressful fire icon that burns out, I use a seedling that just grows.\n\nRoast me:\n1. Does \"Total Days\" actually feel better than a streak?\n2. Is \"anti-productivity\" a good angle or just confusing?\n3. Does the design look legit?\n\nLink: https://gentlequest.app\n\n(It's free on iOS and Android. Also works on web: https://gentlequest-web-lite.pages.dev)",
       "scheduled_for": "2026-06-27T15:00:00Z",
-      "status": "pending"
+      "status": "posted",
+      "error": "Playwright not installed \u2014 skipping IndieHackers",
+      "posted_at": "2026-06-28T05:13:58.346813+00:00"
     },
     {
       "id": "medium_init_adhd-paralysis-why-you-cant-st",
