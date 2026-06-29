@@ -1,0 +1,33 @@
+# Deploy Kit: pt-BR — article: journal-app-private-no-ai
+
+## Source
+- **Translated file:** marketing/i18n/pt-BR/articles/journal-app-private-no-ai.md
+- **English source:** marketing/seo/articles/journal-app-private-no-ai.md — "Journal App That's Private and No AI: Your Words Stay Yours"
+- **Source article:** marketing/seo/articles/journal-app-private-no-ai.md
+
+## Target
+- **Language:** Brazilian Portuguese (pt-BR)
+- **Asset type:** SEO article (translated)
+- **Target URL:** https://gentlequest.app/pt-BR/blog/journal-app-private-no-ai (or https://gentlequest.app/blog/journal-app-private-no-ai with hreflang)
+
+## Internal links
+- iOS — https://apps.apple.com/app/gentlequest/id6756537464
+- Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
+- Web — https://gentlequest.app
+
+## Culture notes (for per-language editor)
+- "Depressão" and "ansiedade" are clinically accepted in Brazilian Portuguese; no circumlocution needed
+- Use Brazilian Portuguese (pt-BR) register exclusively — avoid European Portuguese forms (e.g., "você" not "tu" for informal, "celular" not "telemóvel")
+- Informal, warm tone is standard in BR wellness marketing; "você" is the safe second-person
+- Mental health awareness is growing in Brazil; destigmatized language is fine but keep supportive framing
+- Crisis hotline line must be swapped to CVV 188 (Brazil) before publish
+- "18+" and brand name "GentleQuest" stay in English
+
+## Publish checklist
+- [ ] Translation reviewed by native speaker
+- [ ] Culture notes addressed
+- [ ] Uploaded to CMS with hreflang tag
+- [ ] Internal links verified (iOS/Android/Web unchanged)
+- [ ] "18+" and "GentleQuest" kept as-is
+- [ ] Frontmatter target_keyword kept in English for SEO parity
+- [ ] Crisis hotline / professional-care disclaimer localized to target region
