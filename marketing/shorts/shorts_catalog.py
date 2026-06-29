@@ -880,6 +880,718 @@ CATALOG = {
             {"kind": "card",  "caption": "your data is yours.\nwe mean it.",                            "dur": 5, "size": 62},
         ],
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # W2 EXPANSION — v67 through v120
+    # Comorbidity-led (v67-v78): 6 pairs × 2 framings
+    # Population-led (v79-v90): 12 shorts
+    # Cultural-context (v91-v95): 5 shorts
+    # Comparison-anti-pattern (v96-v105): 10 shorts
+    # Story-led (v106-v110): 5 shorts
+    # Educational (v111-v120): 10 shorts
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── v67: anxiety+sleep — "can't sleep because you're anxious" (comorbidity, framing 1) ──
+    "v67_anxiety_sleep_anxious": {
+        "out": str(OUT_DIR / "gq_short_v67_anxiety_sleep.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "can't sleep\nbecause you're anxious?",                         "dur": 4, "size": 80},
+            {"kind": "card",  "caption": "the worry\nkeeps you up",                                       "dur": 4, "size": 76},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "slow your breath first",       "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "then dump the worry",          "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "come back to now",             "dur": 6},
+            {"kind": "card",  "caption": "the body settles.\nthen sleep.",                                 "dur": 5, "size": 64},
+        ],
+    },
+
+    # ── v68: anxiety+sleep — "anxiety that wakes you at 3am" (comorbidity, framing 2) ──
+    "v68_anxiety_3am": {
+        "out": str(OUT_DIR / "gq_short_v68_anxiety_3am.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "anxiety that\nwakes you at 3am",                                "dur": 4, "size": 80},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "breathe in the dark",          "dur": 7},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write the thought out",       "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the feeling",             "dur": 5},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "5 things you see",             "dur": 5},
+            {"kind": "card",  "caption": "3am passes.\nyou are safe.",                                     "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v69: depression+motivation — "no motivation? start tiny" (comorbidity, framing 1) ──
+    "v69_depression_no_motivation": {
+        "out": str(OUT_DIR / "gq_short_v69_depression_motivation.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "no motivation?",                                                "dur": 4, "size": 84},
+            {"kind": "card",  "caption": "start\ntiny.",                                                  "dur": 4, "size": 80},
+            {"kind": "phone", "src": "Q1_quest_tab.png",       "caption": "one quest. 90 seconds.",        "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",   "caption": "that's it",                     "dur": 5},
+            {"kind": "phone", "src": "M2c_mood_submitted.png", "caption": "log how you feel after",        "dur": 6},
+            {"kind": "card",  "caption": "action before\nmotivation.",                                     "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v70: depression+motivation — "depression makes everything hard" (comorbidity, framing 2) ──
+    "v70_depression_everything_hard": {
+        "out": str(OUT_DIR / "gq_short_v70_depression_hard.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "depression makes\neverything hard",                             "dur": 4, "size": 78},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log it anyway",                "dur": 5},
+            {"kind": "phone", "src": "M2c_mood_submitted.png",  "caption": "that counts",                  "dur": 5},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "one tiny thing",               "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk",                 "dur": 6},
+            {"kind": "card",  "caption": "small counts.\nyou count.",                                      "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v71: OCD+intrusive-thoughts — "the thought won't stop" (comorbidity, framing 1) ──
+    "v71_ocd_thought_wont_stop": {
+        "out": str(OUT_DIR / "gq_short_v71_ocd_wont_stop.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "the thought\nwon't stop",                                       "dur": 4, "size": 82},
+            {"kind": "card",  "caption": "it doesn't\ndefine you",                                        "dur": 4, "size": 76},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write it down",                "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "come back to now",             "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise.png",        "caption": "breathe through it",           "dur": 5},
+            {"kind": "card",  "caption": "a thought is a thought.\nnot a truth.",                          "dur": 5, "size": 60},
+        ],
+    },
+
+    # ── v72: OCD+intrusive-thoughts — "you're not a bad person for thinking it" (comorbidity, framing 2) ──
+    "v72_ocd_not_bad_person": {
+        "out": str(OUT_DIR / "gq_short_v72_ocd_not_bad.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "you're not a bad person\nfor thinking it",                      "dur": 5, "size": 74},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "say it out loud",               "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",    "caption": "write it out",                  "dur": 5},
+            {"kind": "phone", "src": "M2_mood_sheet.png",      "caption": "name the anxiety",              "dur": 5},
+            {"kind": "phone", "src": "RL2b_grounding.png",     "caption": "then ground",                   "dur": 6},
+            {"kind": "card",  "caption": "intrusive ≠ you.\nintrusive ≠ real.",                            "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v73: ADHD+overwhelm — "everything at once" (comorbidity, framing 1) ──
+    "v73_adhd_everything_at_once": {
+        "out": str(OUT_DIR / "gq_short_v73_adhd_everything.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "everything\nat once?",                                          "dur": 4, "size": 82},
+            {"kind": "card",  "caption": "your brain\nhas too many tabs",                                 "dur": 4, "size": 76},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write it all out",             "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "pick one. just one.",          "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "then breathe",                 "dur": 5},
+            {"kind": "card",  "caption": "one tab.\nthen the next.",                                       "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v74: ADHD+overwhelm — "your brain has too many tabs open" (comorbidity, framing 2) ──
+    "v74_adhd_too_many_tabs": {
+        "out": str(OUT_DIR / "gq_short_v74_adhd_tabs.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "your brain has\ntoo many tabs open",                            "dur": 5, "size": 76},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "dump every tab",               "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the overwhelm",           "dur": 5},
+            {"kind": "phone", "src": "Q1_quest_tab.png",       "caption": "close all but one",            "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",     "caption": "come back to now",             "dur": 5},
+            {"kind": "card",  "caption": "one thing.\nthen breathe.",                                      "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v75: PTSD+hypervigilance — "always on guard" (comorbidity, framing 1) ──
+    "v75_ptsd_always_on_guard": {
+        "out": str(OUT_DIR / "gq_short_v75_ptsd_on_guard.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "always\non guard?",                                             "dur": 4, "size": 84},
+            {"kind": "card",  "caption": "your body\nwon't relax",                                        "dur": 4, "size": 76},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "5 things you see",             "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "breathe slow",                 "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan is here",     "dur": 5},
+            {"kind": "card",  "caption": "you are here.\nyou are safe now.",                               "dur": 5, "size": 60},
+        ],
+    },
+
+    # ── v76: PTSD+hypervigilance — "when sounds make you jump" (comorbidity, framing 2) ──
+    "v76_ptsd_sounds_jump": {
+        "out": str(OUT_DIR / "gq_short_v76_ptsd_sounds.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "when sounds\nmake you jump",                                    "dur": 4, "size": 80},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "breathe with this",            "dur": 7},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "name what you see",            "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write where you are",          "dur": 5},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the feeling",             "dur": 5},
+            {"kind": "card",  "caption": "here. now.\nsafe.",                                              "dur": 4, "size": 64},
+        ],
+    },
+
+    # ── v77: panic+derealization — "the world feels unreal" (comorbidity, framing 1) ──
+    "v77_panic_derealization_unreal": {
+        "out": str(OUT_DIR / "gq_short_v77_panic_unreal.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "the world\nfeels unreal",                                       "dur": 4, "size": 82},
+            {"kind": "card",  "caption": "you're not\nlosing it",                                         "dur": 4, "size": 76},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "5 things you see",             "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise_open.png",   "caption": "breathe slow",                 "dur": 7},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the feeling",             "dur": 5},
+            {"kind": "card",  "caption": "it passes.\nyou come back.",                                     "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v78: panic+derealization — "you feel like you're watching yourself" (comorbidity, framing 2) ──
+    "v78_panic_watching_yourself": {
+        "out": str(OUT_DIR / "gq_short_v78_panic_watching.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "you feel like you're\nwatching yourself",                       "dur": 5, "size": 74},
+            {"kind": "phone", "src": "RL4_exercise.png",        "caption": "breathe with this",            "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "touch something real",         "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write where you are",          "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "you are here.\nit passes.",                                      "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v79: students — "exam stress and anxiety" (population-led) ──
+    "v79_students_exam_stress": {
+        "out": str(OUT_DIR / "gq_short_v79_students_exam.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "exam stress\nand anxiety",                                      "dur": 4, "size": 80},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe before you study",     "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the worry out",          "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "one tiny quest between",       "dur": 5},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "card",  "caption": "the exam doesn't\ndefine you.",                                  "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v80: new parents — "postpartum overwhelm — you're not broken" (population-led) ──
+    "v80_new_parents_postpartum": {
+        "out": str(OUT_DIR / "gq_short_v80_postpartum.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "postpartum\noverwhelm",                                         "dur": 4, "size": 80},
+            {"kind": "card",  "caption": "you're not\nbroken",                                            "dur": 4, "size": 80},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write it out at 3am",          "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 6},
+            {"kind": "card",  "caption": "ask for help.\nyou deserve it.",                                 "dur": 5, "size": 60},
+        ],
+    },
+
+    # ── v81: caregivers — "caregiver burnout is real" (population-led) ──
+    "v81_caregiver_burnout": {
+        "out": str(OUT_DIR / "gq_short_v81_caregiver.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "caregiver burnout\nis real",                                    "dur": 5, "size": 78},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log your own mood",            "dur": 5},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "90 seconds for you",           "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you carry",         "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan too",         "dur": 5},
+            {"kind": "card",  "caption": "you matter too.\nnot just them.",                                "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v82: healthcare workers — "you hold everyone else's pain" (population-led) ──
+    "v82_healthcare_workers": {
+        "out": str(OUT_DIR / "gq_short_v82_healthcare.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "you hold\neveryone else's pain",                                "dur": 5, "size": 76},
+            {"kind": "phone", "src": "M1_mood_tab.png",        "caption": "check in with yourself",        "dur": 5},
+            {"kind": "phone", "src": "RL4_exercise_open.png",  "caption": "breathe between shifts",        "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",    "caption": "write what you saw",            "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "your pain counts too.",                                          "dur": 4, "size": 64},
+        ],
+    },
+
+    # ── v83: founders/entrepreneurs — "founder mental health" (population-led) ──
+    "v83_founder_mental_health": {
+        "out": str(OUT_DIR / "gq_short_v83_founder.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "founder mental health\nthe part nobody talks about",            "dur": 5, "size": 72},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you really feel",      "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the fear",               "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe between pitches",      "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk",                 "dur": 5},
+            {"kind": "card",  "caption": "you are not\nyour startup.",                                     "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v84: shift workers — "your sleep schedule is chaos" (population-led) ──
+    "v84_shift_workers_sleep": {
+        "out": str(OUT_DIR / "gq_short_v84_shift_workers.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "your sleep schedule\nis chaos",                                 "dur": 5, "size": 76},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe before you rest",      "dur": 6},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write the day out",            "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log your mood",                "dur": 5},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "ground yourself",              "dur": 5},
+            {"kind": "card",  "caption": "your rest matters.\nwhenever it comes.",                         "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v85: chronic illness — "chronic illness and mental health" (population-led) ──
+    "v85_chronic_illness": {
+        "out": str(OUT_DIR / "gq_short_v85_chronic_illness.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "chronic illness\nand mental health",                            "dur": 5, "size": 76},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log the hard days",            "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you carry",         "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through the flare",    "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "both are real.\nboth matter.",                                    "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v86: LGBTQ+ — "queer mental health — you belong" (population-led) ──
+    "v86_lgbtq_queer_mental_health": {
+        "out": str(OUT_DIR / "gq_short_v86_lgbtq.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "queer mental health\nyou belong",                               "dur": 5, "size": 78},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write your truth",             "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk",                 "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "you are not\nalone in this.",                                    "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v87: neurodivergent adults — "neurodivergent and overwhelmed" (population-led) ──
+    "v87_neurodivergent_overwhelmed": {
+        "out": str(OUT_DIR / "gq_short_v87_neurodivergent.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "neurodivergent\nand overwhelmed",                               "dur": 5, "size": 78},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write it all out",             "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "one thing at a time",          "dur": 5},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through it",           "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log the overwhelm",            "dur": 5},
+            {"kind": "card",  "caption": "your brain is not\nbroken. just different.",                     "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v88: post-breakup — "after the breakup — what helps" (population-led) ──
+    "v88_post_breakup": {
+        "out": str(OUT_DIR / "gq_short_v88_breakup.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "after the breakup\nwhat helps",                                 "dur": 5, "size": 78},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write it all out",             "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the feeling",             "dur": 5},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through the wave",     "dur": 6},
+            {"kind": "phone", "src": "M5_weekly_review_row.png", "caption": "see the pattern",            "dur": 5},
+            {"kind": "card",  "caption": "grief isn't linear.\nneither is healing.",                      "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v89: post-bereavement — "grief doesn't have a timeline" (population-led) ──
+    "v89_post_bereavement": {
+        "out": str(OUT_DIR / "gq_short_v89_bereavement.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "grief doesn't\nhave a timeline",                                "dur": 5, "size": 78},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "write to them",                "dur": 6},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "or about them",                "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log the wave",                 "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "grief comes and goes.\nthat's okay.",                            "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v90: post-layoff — "laid off — the mental health side" (population-led) ──
+    "v90_post_layoff": {
+        "out": str(OUT_DIR / "gq_short_v90_layoff.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "laid off\nthe mental health side",                              "dur": 5, "size": 76},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the fear",               "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through it",           "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk",                 "dur": 5},
+            {"kind": "card",  "caption": "you are not\nyour job title.",                                   "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v91: South Asian families — "mental health stigma in South Asian families" (cultural-context) ──
+    "v91_south_asian_stigma": {
+        "out": str(OUT_DIR / "gq_short_v91_south_asian.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "mental health stigma\nin South Asian families",                 "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "\"what will people say?\"",                                     "dur": 4, "size": 76},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you can't say",     "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk here",            "dur": 6},
+            {"kind": "card",  "caption": "your pain is real.\neven if no one says it.",                    "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v92: Black communities — "mental health in Black communities" (cultural-context) ──
+    "v92_black_communities": {
+        "out": str(OUT_DIR / "gq_short_v92_black_communities.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "mental health in\nBlack communities",                           "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "breaking\nthe silence",                                         "dur": 4, "size": 80},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you carry",         "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "strong ≠ silent.\nyou deserve support.",                         "dur": 5, "size": 58},
+        ],
+    },
+
+    # ── v93: immigrants — "immigrant mental health — between two worlds" (cultural-context) ──
+    "v93_immigrant_two_worlds": {
+        "out": str(OUT_DIR / "gq_short_v93_immigrant.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "immigrant mental health\nbetween two worlds",                   "dur": 5, "size": 72},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the in-between",         "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log the weight",               "dur": 5},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through it",           "dur": 6},
+            {"kind": "phone", "src": "I1_chat_home.png",        "caption": "or just talk",                 "dur": 5},
+            {"kind": "card",  "caption": "you belong\nwherever you are.",                                  "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v94: men — "men's mental health — it's okay to not be okay" (cultural-context) ──
+    "v94_mens_mental_health": {
+        "out": str(OUT_DIR / "gq_short_v94_mens.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "men's mental health\nit's okay to not be okay",                 "dur": 5, "size": 72},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log how you feel",             "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you won't say",     "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe",                      "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "your safety plan",             "dur": 5},
+            {"kind": "card",  "caption": "asking for help\nis strength.",                                  "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v95: women perimenopause — "perimenopause and mental health" (cultural-context) ──
+    "v95_perimenopause": {
+        "out": str(OUT_DIR / "gq_short_v95_perimenopause.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "perimenopause and\nmental health",                              "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "the part nobody\nwarned you about",                             "dur": 4, "size": 72},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "log the swings",               "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write what you feel",          "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "breathe through it",           "dur": 6},
+            {"kind": "card",  "caption": "it's real.\nyou're not\nlosing it.",                             "dur": 5, "size": 56},
+        ],
+    },
+
+    # ── v96: comparison — "why we're not Calm" (no competitor name in captions) ──
+    "v96_not_calm": {
+        "out": str(OUT_DIR / "gq_short_v96_not_calm.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe big meditation app",                         "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "we don't sell\nsleep stories",                                  "dur": 4, "size": 76},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "we have a real safety plan",   "dur": 6},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "real screening",     "dur": 6},
+            {"kind": "phone", "src": "S3_delete_account_sheet.png", "caption": "free. no paywall.",       "dur": 5},
+            {"kind": "card",  "caption": "different goals.\ndifferent app.",                               "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v97: comparison — "why we're not Headspace" (no competitor name in captions) ──
+    "v97_not_headspace": {
+        "out": str(OUT_DIR / "gq_short_v97_not_headspace.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe cheerful meditation app",                    "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "we don't have\na mascot",                                       "dur": 4, "size": 78},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "we have a private journal",    "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png", "caption": "anonymous. free.",           "dur": 5},
+            {"kind": "card",  "caption": "no subscription.\nno streaks.",                                  "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v98: comparison — "why we're not Woebot" (no competitor name in captions) ──
+    "v98_not_woebot": {
+        "out": str(OUT_DIR / "gq_short_v98_not_woebot.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe chatbot app",                                "dur": 5, "size": 76},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "we chat too",                   "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",    "caption": "but we have a journal",         "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "real screening",     "dur": 6},
+            {"kind": "card",  "caption": "more than a bot.\nless than a therapist.",                       "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v99: comparison — "why we're not Wysa" (no competitor name in captions) ──
+    "v99_not_wysa": {
+        "out": str(OUT_DIR / "gq_short_v99_not_wysa.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe penguin chat app",                           "dur": 5, "size": 74},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "we chat too",                   "dur": 5},
+            {"kind": "phone", "src": "RL1_library_all.png",    "caption": "but we have a library",         "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "phone", "src": "S3_delete_account_sheet.png", "caption": "free. no lock-in.",       "dur": 6},
+            {"kind": "card",  "caption": "no mascot.\njust tools.",                                        "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v100: comparison — "why we're not Finch" (no competitor name in captions) ──
+    "v100_not_finch": {
+        "out": str(OUT_DIR / "gq_short_v100_not_finch.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe app with the cute bird",                     "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "we don't gamify\nyour mental health",                           "dur": 4, "size": 74},
+            {"kind": "phone", "src": "M2c_mood_submitted.png", "caption": "log mood. no pet.",             "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "real safety plan",             "dur": 6},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png", "caption": "anonymous. private.",        "dur": 5},
+            {"kind": "card",  "caption": "no virtual pet.\nno guilt.\njust you.",                          "dur": 5, "size": 56},
+        ],
+    },
+
+    # ── v101: comparison — "why we're not Daylio" (no competitor name in captions) ──
+    "v101_not_daylio": {
+        "out": str(OUT_DIR / "gq_short_v101_not_daylio.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe mood-tracking app",                          "dur": 5, "size": 74},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "we track mood too",            "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "but we have a journal",        "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "phone", "src": "RL1_library_all.png",     "caption": "and a library",                "dur": 5},
+            {"kind": "card",  "caption": "more than\na tracker.",                                          "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v102: comparison — "why we're not How We Feel" (no competitor name in captions) ──
+    "v102_not_how_we_feel": {
+        "out": str(OUT_DIR / "gq_short_v102_not_how_we_feel.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe emotion video app",                          "dur": 5, "size": 72},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "we log feelings too",          "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "but we have a journal",        "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "real screening",     "dur": 6},
+            {"kind": "card",  "caption": "more than\na mood color.",                                       "dur": 4, "size": 62},
+        ],
+    },
+
+    # ── v103: comparison — "why we're not BetterHelp" (no competitor name in captions) ──
+    "v103_not_betterhelp": {
+        "out": str(OUT_DIR / "gq_short_v103_not_betterhelp.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe therapy app",                                "dur": 5, "size": 76},
+            {"kind": "card",  "caption": "we're not\na therapist",                                        "dur": 4, "size": 80},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "we're a quiet chat",            "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "with a safety plan",           "dur": 6},
+            {"kind": "phone", "src": "S3_delete_account_sheet.png", "caption": "and free. no subscription", "dur": 6},
+            {"kind": "card",  "caption": "a bridge.\nnot a replacement.",                                  "dur": 4, "size": 60},
+        ],
+    },
+
+    # ── v104: comparison — "why we're not Talkspace" (no competitor name in captions) ──
+    "v104_not_talkspace": {
+        "out": str(OUT_DIR / "gq_short_v104_not_talkspace.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\nthe other therapy app",                          "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "we don't match you\nwith a therapist",                          "dur": 4, "size": 72},
+            {"kind": "phone", "src": "I1_chat_home.png",       "caption": "we're a quiet chat",            "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",    "caption": "with a journal",                "dur": 6},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "and a safety plan",            "dur": 5},
+            {"kind": "card",  "caption": "free. private.\nnot a substitute.",                              "dur": 5, "size": 58},
+        ],
+    },
+
+    # ── v105: comparison — "why we're not a Notion template" (no competitor name in captions) ──
+    "v105_not_notion_template": {
+        "out": str(OUT_DIR / "gq_short_v105_not_notion.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "why we're not\na free template",                                "dur": 5, "size": 76},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "templates are blank",          "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "we have a real safety plan",    "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "guided breathing",             "dur": 6},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "real screening",     "dur": 5},
+            {"kind": "card",  "caption": "a template doesn't\nhold you at 3am.",                           "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v106: story-led — "I tried 6 mental health apps" ──
+    "v106_tried_6_apps": {
+        "out": str(OUT_DIR / "gq_short_v106_tried_6_apps.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "I tried 6\nmental health apps",                                 "dur": 5, "size": 76},
+            {"kind": "card",  "caption": "most wanted\na subscription",                                   "dur": 4, "size": 76},
+            {"kind": "phone", "src": "S3_delete_account_sheet.png", "caption": "this one is free",        "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "this one has a safety plan",   "dur": 6},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "and a private journal",        "dur": 6},
+            {"kind": "card",  "caption": "so I stayed.",                                                  "dur": 5, "size": 70},
+        ],
+    },
+
+    # ── v107: story-led — "what I wish I had at 22" ──
+    "v107_wish_at_22": {
+        "out": str(OUT_DIR / "gq_short_v107_wish_at_22.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what I wish\nI had at 22",                                      "dur": 5, "size": 78},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "a safety plan",                "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "a place to write",             "dur": 6},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "a way to breathe",             "dur": 6},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "a way to check in",            "dur": 5},
+            {"kind": "card",  "caption": "it's here now.\nfree.",                                          "dur": 4, "size": 64},
+        ],
+    },
+
+    # ── v108: story-led — "the journal that saved me" ──
+    "v108_journal_saved_me": {
+        "out": str(OUT_DIR / "gq_short_v108_journal_saved.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "the journal\nthat saved me",                                    "dur": 5, "size": 78},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "blank page. no prompts.",      "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "I wrote every night",          "dur": 6},
+            {"kind": "phone", "src": "S4_anonymity_toggled.png", "caption": "no one read it",             "dur": 5},
+            {"kind": "phone", "src": "M2c_mood_submitted.png",  "caption": "but I saw the pattern",        "dur": 6},
+            {"kind": "card",  "caption": "the page held it.\nso I didn't have to.",                       "dur": 4, "size": 56},
+        ],
+    },
+
+    # ── v109: story-led — "the safety plan that wasn't buried" ──
+    "v109_safety_plan_not_buried": {
+        "out": str(OUT_DIR / "gq_short_v109_safety_plan.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "the safety plan\nthat wasn't buried",                           "dur": 5, "size": 74},
+            {"kind": "phone", "src": "P1_profile_top.png",      "caption": "one tap. profile.",            "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "there it is",                  "dur": 5},
+            {"kind": "phone", "src": "P4_safety_contacts.png",  "caption": "my people. one tap.",          "dur": 6},
+            {"kind": "phone", "src": "S8b_crisis_sheet.png",    "caption": "crisis lines. my country.",    "dur": 6},
+            {"kind": "card",  "caption": "I filled it calm.\nI found it when I wasn't.",                   "dur": 4, "size": 56},
+        ],
+    },
+
+    # ── v110: story-led — "the day I uninstalled all the other apps" ──
+    "v110_uninstalled_others": {
+        "out": str(OUT_DIR / "gq_short_v110_uninstalled.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "the day I uninstalled\nall the other apps",                     "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "too many\nnotifications",                                       "dur": 4, "size": 76},
+            {"kind": "phone", "src": "S1b_settings_notifications.png", "caption": "this one is quiet",   "dur": 5},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "one safety plan",              "dur": 6},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "one journal",                  "dur": 5},
+            {"kind": "card",  "caption": "one app.\nthat's enough.",                                       "dur": 5, "size": 62},
+        ],
+    },
+
+    # ── v111: educational — "what is PHQ-9?" ──
+    "v111_what_is_phq9": {
+        "out": str(OUT_DIR / "gq_short_v111_phq9.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nPHQ-9?",                                               "dur": 4, "size": 84},
+            {"kind": "card",  "caption": "a depression\nscreening tool",                                  "dur": 4, "size": 76},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "9 questions",        "dur": 6},
+            {"kind": "phone", "src": "CA2_phq9_q1.png",       "caption": "validated. used by doctors.",    "dur": 6},
+            {"kind": "phone", "src": "CA4_result_reveal.png",  "caption": "a score. not a label.",         "dur": 5},
+            {"kind": "card",  "caption": "not a diagnosis.\na starting point.",                            "dur": 5, "size": 58},
+        ],
+    },
+
+    # ── v112: educational — "what is GAD-7?" ──
+    "v112_what_is_gad7": {
+        "out": str(OUT_DIR / "gq_short_v112_gad7.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nGAD-7?",                                               "dur": 4, "size": 84},
+            {"kind": "card",  "caption": "an anxiety\nscreening tool",                                    "dur": 4, "size": 76},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "7 questions",        "dur": 6},
+            {"kind": "phone", "src": "CA2_phq9_q1.png",       "caption": "same format. validated.",        "dur": 5},
+            {"kind": "phone", "src": "CA4_result_reveal.png",  "caption": "a score. not a label.",         "dur": 6},
+            {"kind": "card",  "caption": "not a diagnosis.\na starting point.",                            "dur": 5, "size": 58},
+        ],
+    },
+
+    # ── v113: educational — "what is CBT?" ──
+    "v113_what_is_cbt": {
+        "out": str(OUT_DIR / "gq_short_v113_cbt.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nCBT?",                                                 "dur": 4, "size": 84},
+            {"kind": "card",  "caption": "cognitive\nbehavioral therapy",                                 "dur": 4, "size": 76},
+            {"kind": "card",  "caption": "thoughts → feelings → behaviors",                               "dur": 5, "size": 68},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the thought",            "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "then act differently",         "dur": 6},
+            {"kind": "card",  "caption": "change the thought.\nchange the loop.\nnot a diagnosis.",        "dur": 5, "size": 56},
+        ],
+    },
+
+    # ── v114: educational — "what is behavioral activation?" ──
+    "v114_what_is_behavioral_activation": {
+        "out": str(OUT_DIR / "gq_short_v114_behavioral_activation.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nbehavioral activation?",                               "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "act first.\nfeel later.",                                       "dur": 4, "size": 76},
+            {"kind": "phone", "src": "Q1_quest_tab.png",       "caption": "one tiny quest",                "dur": 5},
+            {"kind": "phone", "src": "Q2_quest_preview.png",   "caption": "90 seconds",                    "dur": 6},
+            {"kind": "phone", "src": "M2c_mood_submitted.png", "caption": "then check in",                 "dur": 5},
+            {"kind": "card",  "caption": "action before\nmotivation.\nnot a diagnosis.",                   "dur": 5, "size": 56},
+        ],
+    },
+
+    # ── v115: educational — "what is the window of tolerance?" ──
+    "v115_what_is_window_of_tolerance": {
+        "out": str(OUT_DIR / "gq_short_v115_window_tolerance.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is the\nwindow of tolerance?",                             "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "the zone where\nyou can cope",                                  "dur": 4, "size": 72},
+            {"kind": "phone", "src": "RL2_breathing.png",       "caption": "too high? breathe",            "dur": 6},
+            {"kind": "phone", "src": "Q2_quest_preview.png",    "caption": "too low? act",                 "dur": 5},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "back to the middle",           "dur": 6},
+            {"kind": "card",  "caption": "stay in the window.\nnot a diagnosis.",                          "dur": 4, "size": 58},
+        ],
+    },
+
+    # ── v116: educational — "what is the safety-plan model?" ──
+    "v116_what_is_safety_plan": {
+        "out": str(OUT_DIR / "gq_short_v116_safety_plan_model.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is the\nsafety-plan model?",                               "dur": 5, "size": 72},
+            {"kind": "card",  "caption": "a plan you fill\nwhen calm",                                    "dur": 4, "size": 72},
+            {"kind": "phone", "src": "P3_safety_plan_card.png", "caption": "warning signs",                "dur": 5},
+            {"kind": "phone", "src": "P4_safety_contacts.png",  "caption": "people to call",               "dur": 6},
+            {"kind": "phone", "src": "S8b_crisis_sheet.png",    "caption": "crisis lines",                 "dur": 6},
+            {"kind": "card",  "caption": "fill it now.\nfind it later.\nnot a diagnosis.",                 "dur": 4, "size": 54},
+        ],
+    },
+
+    # ── v117: educational — "what is psychoeducation?" ──
+    "v117_what_is_psychoeducation": {
+        "out": str(OUT_DIR / "gq_short_v117_psychoeducation.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\npsychoeducation?",                                     "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "learning about\nyour own mind",                                 "dur": 4, "size": 74},
+            {"kind": "phone", "src": "M4_clinical_assessment_entry.png", "caption": "understand the score", "dur": 6},
+            {"kind": "phone", "src": "RL1_library_all.png",    "caption": "learn the skills",              "dur": 5},
+            {"kind": "phone", "src": "J3_entry_editor.png",    "caption": "write what you learned",        "dur": 5},
+            {"kind": "card",  "caption": "knowledge is a tool.\nnot a diagnosis.",                         "dur": 5, "size": 58},
+        ],
+    },
+
+    # ── v118: educational — "what is rumination?" ──
+    "v118_what_is_rumination": {
+        "out": str(OUT_DIR / "gq_short_v118_rumination.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nrumination?",                                          "dur": 4, "size": 82},
+            {"kind": "card",  "caption": "the same thought\non loop",                                     "dur": 4, "size": 76},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write it out",                 "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",      "caption": "come back to now",             "dur": 6},
+            {"kind": "phone", "src": "RL4_exercise.png",        "caption": "breathe",                      "dur": 5},
+            {"kind": "card",  "caption": "the loop breaks\nwhen you see it.\nnot a diagnosis.",            "dur": 5, "size": 54},
+        ],
+    },
+
+    # ── v119: educational — "what is metacognition?" ──
+    "v119_what_is_metacognition": {
+        "out": str(OUT_DIR / "gq_short_v119_metacognition.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nmetacognition?",                                       "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "thinking about\nyour thinking",                                 "dur": 4, "size": 74},
+            {"kind": "phone", "src": "J3_entry_editor.png",     "caption": "write the thought",            "dur": 6},
+            {"kind": "phone", "src": "J1_journal_empty.png",    "caption": "then ask: is it true?",        "dur": 5},
+            {"kind": "phone", "src": "M2_mood_sheet.png",       "caption": "name the feeling",             "dur": 5},
+            {"kind": "card",  "caption": "see the thought.\nnot be it.\nnot a diagnosis.",                 "dur": 5, "size": 54},
+        ],
+    },
+
+    # ── v120: educational — "what is exposure therapy?" ──
+    "v120_what_is_exposure_therapy": {
+        "out": str(OUT_DIR / "gq_short_v120_exposure_therapy.mp4"),
+        "scenes": [
+            {"kind": "card",  "caption": "what is\nexposure therapy?",                                    "dur": 5, "size": 74},
+            {"kind": "card",  "caption": "facing the fear\nin small steps",                               "dur": 4, "size": 72},
+            {"kind": "phone", "src": "Q1_quest_tab.png",       "caption": "one tiny step",                 "dur": 5},
+            {"kind": "phone", "src": "Q2_quest_preview.png",   "caption": "then a bigger one",             "dur": 6},
+            {"kind": "phone", "src": "RL2b_grounding.png",     "caption": "breathe through it",            "dur": 6},
+            {"kind": "card",  "caption": "the fear shrinks.\nnot a diagnosis.",                            "dur": 4, "size": 58},
+        ],
+    },
 }
 
 
