@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Journal App With No Ads: Write Freely Without the Sell",
+  "description": "Journaling is a moment of honesty — you sit down, open a blank page, and write what's actually going on in your head. The last thing that moment needs is an ...",
+  "url": "https://gentlequest.app/articles/journal-app-no-ads",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "journal app no ads, ad-free journal app, private journal app"
+}

@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Alternative to Calm App: Quieter, Simpler, No Subscription Pressure",
+  "description": "If you're searching for an \"alternative to Calm app,\" you're not alone. Calm is one of the most popular wellness apps in the world — and for good reason. But...",
+  "url": "https://gentlequest.app/articles/alternative-to-calm",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "calm alternative, meditation app, mental health, no subscription, gentlequest"
+}

@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Journal App That's Private and No AI: Your Words Stay Yours",
+  "description": "Journaling is one of the most effective, lowest-cost mental health practices there is. But in the age of AI, many journal apps now scan, analyze, and train o...",
+  "url": "https://gentlequest.app/articles/journal-app-private-no-ai",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "journal app private no AI, private journal app, no AI journal app"
+}

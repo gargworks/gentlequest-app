@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Insomnia App With No Ads: Quiet Help for Sleepless Nights",
+  "description": "It's 2 a.m. You can't sleep. You reach for your phone, open an app meant to help you wind down — and a bright, loud ad flashes across the screen. That's the ...",
+  "url": "https://gentlequest.app/articles/insomnia-app-no-ads",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "insomnia app no ads, ad-free sleep app, sleep aid app"
+}

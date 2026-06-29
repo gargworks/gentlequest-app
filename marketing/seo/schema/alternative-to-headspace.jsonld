@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Alternative to Headspace: Simpler Mental Health Support Without the Paywall",
+  "description": "If you're searching for an \"alternative to Headspace,\" you've likely hit one of the common friction points — the subscription, the gamified streaks, the stru...",
+  "url": "https://gentlequest.app/articles/alternative-to-headspace",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "headspace alternative, meditation app, mental health, no subscription, gentlequest"
+}

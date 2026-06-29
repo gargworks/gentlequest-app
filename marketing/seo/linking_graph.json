@@ -1,0 +1,902 @@
+{
+  "5-4-3-2-1-grounding-app": [
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "anxiety-app-no-ads",
+    "breathing-exercise-app-free",
+    "panic-attack-app-free",
+    "safety-plan-app",
+    "mindfulness-app-no-ads"
+  ],
+  "adhd-app-no-subscription": [
+    "adhd-app-private-no-tracking",
+    "adhd-support-app-no-streaks",
+    "cbt-app-free",
+    "free-pss-test-online",
+    "journal-app-no-ads",
+    "mental-health-app-no-streaks",
+    "mood-tracker-no-streaks"
+  ],
+  "adhd-app-private-no-tracking": [
+    "adhd-app-no-subscription",
+    "adhd-support-app-no-streaks",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-private-no-tracking",
+    "cbt-app-free"
+  ],
+  "adhd-support-app-no-streaks": [
+    "adhd-app-no-subscription",
+    "adhd-app-private-no-tracking",
+    "cbt-app-free",
+    "free-pss-test-online",
+    "journal-app-no-ads",
+    "mental-health-app-no-streaks",
+    "mood-tracker-no-streaks"
+  ],
+  "alternative-to-balance": [
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads",
+    "mental-health-app-no-subscription"
+  ],
+  "alternative-to-bearable": [
+    "alternative-to-day-one",
+    "alternative-to-journey",
+    "alternative-to-stoic",
+    "alternative-to-balance",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-daylio"
+  ],
+  "alternative-to-betterme": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-daylio",
+    "alternative-to-finch",
+    "alternative-to-headspace"
+  ],
+  "alternative-to-calm": [
+    "alternative-to-headspace",
+    "alternative-to-balance",
+    "alternative-to-finch",
+    "alternative-to-insight-timer",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads"
+  ],
+  "alternative-to-day-one": [
+    "alternative-to-bearable",
+    "alternative-to-journey",
+    "alternative-to-stoic",
+    "alternative-to-balance",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-daylio"
+  ],
+  "alternative-to-daylio": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-finch",
+    "alternative-to-headspace"
+  ],
+  "alternative-to-finch": [
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-headspace",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads",
+    "mental-health-app-no-subscription"
+  ],
+  "alternative-to-headspace": [
+    "alternative-to-calm",
+    "alternative-to-balance",
+    "alternative-to-finch",
+    "alternative-to-insight-timer",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads"
+  ],
+  "alternative-to-how-we-feel": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-daylio",
+    "alternative-to-finch"
+  ],
+  "alternative-to-insight-timer": [
+    "alternative-to-calm",
+    "alternative-to-headspace",
+    "5-4-3-2-1-grounding-app",
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-day-one"
+  ],
+  "alternative-to-journey": [
+    "alternative-to-bearable",
+    "alternative-to-day-one",
+    "alternative-to-stoic",
+    "alternative-to-balance",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-daylio"
+  ],
+  "alternative-to-moodfit": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-daylio",
+    "alternative-to-finch"
+  ],
+  "alternative-to-sanvello": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-daylio",
+    "alternative-to-finch"
+  ],
+  "alternative-to-smiling-mind": [
+    "alternative-to-balance",
+    "alternative-to-bearable",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-day-one",
+    "alternative-to-daylio",
+    "alternative-to-finch"
+  ],
+  "alternative-to-stoic": [
+    "alternative-to-bearable",
+    "alternative-to-day-one",
+    "alternative-to-journey",
+    "alternative-to-balance",
+    "alternative-to-betterme",
+    "alternative-to-calm",
+    "alternative-to-daylio"
+  ],
+  "alternative-to-woebot": [
+    "alternative-to-wysa",
+    "mental-health-app-no-subscription",
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "free-mental-health-app-no-ads"
+  ],
+  "alternative-to-wysa": [
+    "alternative-to-woebot",
+    "mental-health-app-no-subscription",
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "free-mental-health-app-no-ads"
+  ],
+  "anger-app-private-no-tracking": [
+    "adhd-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "burnout-app-private-no-tracking",
+    "cbt-thought-record-app"
+  ],
+  "anxiety-app-no-ads": [
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "grounding-exercise-app",
+    "5-4-3-2-1-grounding-app",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "panic-attack-app-free"
+  ],
+  "anxiety-app-no-subscription-v2": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "anxiety-app-no-subscription",
+    "anxiety-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-app-free"
+  ],
+  "anxiety-app-no-subscription": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "anxiety-app-no-subscription-v2",
+    "anxiety-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-app-free"
+  ],
+  "anxiety-app-private-no-tracking": [
+    "health-anxiety-app-private-no-tracking",
+    "panic-attack-app-private-no-tracking",
+    "rumination-app-private-no-tracking",
+    "social-anxiety-app-private-no-tracking",
+    "5-4-3-2-1-grounding-app",
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking"
+  ],
+  "behavioral-activation-app": [
+    "free-phq9-test-online",
+    "cbt-app-free",
+    "depression-app-no-ads",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads"
+  ],
+  "bipolar-app-no-subscription": [
+    "bipolar-app-private-no-tracking",
+    "free-dass-21-test-online",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads",
+    "mood-tracker-no-ads",
+    "mood-tracker-no-streaks"
+  ],
+  "bipolar-app-private-no-tracking": [
+    "bipolar-app-no-subscription",
+    "free-dass-21-test-online",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads",
+    "journal-app-private-no-ai",
+    "mood-tracker-no-ads"
+  ],
+  "box-breathing-app": [
+    "breathing-exercise-app-free",
+    "grounding-exercise-app",
+    "anxiety-app-no-ads",
+    "5-4-3-2-1-grounding-app",
+    "progressive-muscle-relaxation-app",
+    "panic-attack-app-free",
+    "safety-plan-app"
+  ],
+  "breathing-exercise-app-free": [
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "progressive-muscle-relaxation-app",
+    "anxiety-app-no-ads",
+    "5-4-3-2-1-grounding-app",
+    "panic-attack-app-free",
+    "free-gad7-test-online"
+  ],
+  "burnout-app-free": [
+    "mindfulness-app-no-ads",
+    "breathing-exercise-app-free",
+    "journal-app-no-ads",
+    "perfectionism-app",
+    "self-compassion-app",
+    "cbt-app-free",
+    "cbt-thought-record-app"
+  ],
+  "burnout-app-no-subscription": [
+    "breathing-exercise-app-free",
+    "burnout-app-free",
+    "burnout-app-private-no-tracking",
+    "free-pss-test-online",
+    "journal-app-no-ads",
+    "mental-health-app-no-streaks",
+    "mindfulness-app-no-ads"
+  ],
+  "burnout-app-private-no-tracking": [
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "breathing-exercise-app-free",
+    "burnout-app-free",
+    "burnout-app-no-subscription"
+  ],
+  "cbt-app-free": [
+    "cbt-thought-record-app",
+    "thought-record-app",
+    "free-phq9-test-online",
+    "rumination-app",
+    "behavioral-activation-app",
+    "free-gad7-test-online",
+    "journal-app-no-ads"
+  ],
+  "cbt-behavioral-experiment-app": [
+    "anxiety-app-no-ads",
+    "cbt-thought-record-app",
+    "thought-record-app",
+    "cbt-app-free",
+    "free-gad7-test-online",
+    "behavioral-activation-app",
+    "box-breathing-app"
+  ],
+  "cbt-thought-record-app": [
+    "thought-record-app",
+    "journal-app-no-ads",
+    "rumination-app",
+    "self-compassion-app",
+    "cbt-app-free",
+    "anxiety-app-no-ads",
+    "free-gad7-test-online"
+  ],
+  "cptsd-support-app": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "safety-plan-app",
+    "breathing-exercise-app-free",
+    "depression-app-no-ads"
+  ],
+  "depression-app-no-ads": [
+    "free-phq9-test-online",
+    "behavioral-activation-app",
+    "journal-app-no-ads",
+    "self-compassion-app",
+    "cbt-app-free",
+    "cbt-thought-record-app",
+    "free-who5-test-online"
+  ],
+  "depression-app-no-subscription-v2": [
+    "behavioral-activation-app",
+    "cbt-app-free",
+    "cbt-thought-record-app",
+    "depression-app-no-ads",
+    "depression-app-no-subscription",
+    "depression-app-private-no-tracking",
+    "free-dass-21-test-online"
+  ],
+  "depression-app-no-subscription": [
+    "behavioral-activation-app",
+    "cbt-app-free",
+    "depression-app-no-ads",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads",
+    "mood-tracker-no-ads"
+  ],
+  "depression-app-private-no-tracking": [
+    "journal-app-private-no-ai",
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "behavioral-activation-app",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-private-no-tracking"
+  ],
+  "eating-disorder-app-no-subscription": [
+    "cbt-thought-record-app",
+    "eating-disorder-app-private",
+    "free-dass-21-test-online",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads",
+    "self-compassion-app"
+  ],
+  "eating-disorder-app-private": [
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-private-no-tracking",
+    "cbt-thought-record-app",
+    "depression-app-private-no-tracking"
+  ],
+  "free-ace-test-online": [
+    "free-pcl5-test-online",
+    "free-audit-test-online",
+    "free-cage-questionnaire-test-online",
+    "free-dass-21-test-online",
+    "free-gad7-test-online",
+    "free-isi-test-online",
+    "free-k10-test-online"
+  ],
+  "free-audit-test-online": [
+    "free-ace-test-online",
+    "free-cage-questionnaire-test-online",
+    "free-dass-21-test-online",
+    "free-gad7-test-online",
+    "free-isi-test-online",
+    "free-k10-test-online",
+    "free-pcl5-test-online"
+  ],
+  "free-cage-questionnaire-test-online": [
+    "free-ace-test-online",
+    "free-audit-test-online",
+    "free-dass-21-test-online",
+    "free-gad7-test-online",
+    "free-isi-test-online",
+    "free-k10-test-online",
+    "free-pcl5-test-online"
+  ],
+  "free-dass-21-test-online": [
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "free-k10-test-online",
+    "free-gad7-test-online",
+    "journal-app-no-ads",
+    "mood-tracker-no-ads",
+    "mood-tracker-no-streaks"
+  ],
+  "free-gad7-test-online": [
+    "anxiety-app-no-ads",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-phq9-test-online",
+    "thought-record-app",
+    "box-breathing-app",
+    "cbt-app-free"
+  ],
+  "free-isi-test-online": [
+    "free-pss-test-online",
+    "free-sss-test-online",
+    "breathing-exercise-app-free",
+    "free-ace-test-online",
+    "free-audit-test-online",
+    "free-cage-questionnaire-test-online",
+    "free-dass-21-test-online"
+  ],
+  "free-k10-test-online": [
+    "free-dass-21-test-online",
+    "free-gad7-test-online",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "cbt-app-free",
+    "mood-tracker-no-ads",
+    "mood-tracker-no-streaks"
+  ],
+  "free-mental-health-app-no-ads": [
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "mental-health-app-no-subscription"
+  ],
+  "free-pcl5-test-online": [
+    "free-ace-test-online",
+    "free-audit-test-online",
+    "free-cage-questionnaire-test-online",
+    "free-dass-21-test-online",
+    "free-gad7-test-online",
+    "free-isi-test-online",
+    "free-k10-test-online"
+  ],
+  "free-phq9-test-online": [
+    "free-who5-test-online",
+    "free-dass-21-test-online",
+    "behavioral-activation-app",
+    "cbt-app-free",
+    "depression-app-no-ads",
+    "free-gad7-test-online",
+    "journal-app-no-ads"
+  ],
+  "free-pss-test-online": [
+    "journal-app-no-ads",
+    "breathing-exercise-app-free",
+    "free-who5-test-online",
+    "mindfulness-app-no-ads",
+    "free-isi-test-online",
+    "free-sss-test-online",
+    "progressive-muscle-relaxation-app"
+  ],
+  "free-sss-test-online": [
+    "free-isi-test-online",
+    "free-pss-test-online",
+    "breathing-exercise-app-free",
+    "free-ace-test-online",
+    "free-audit-test-online",
+    "free-cage-questionnaire-test-online",
+    "free-dass-21-test-online"
+  ],
+  "free-who5-test-online": [
+    "free-phq9-test-online",
+    "journal-app-no-ads",
+    "free-dass-21-test-online",
+    "mood-tracker-no-ads",
+    "self-compassion-app",
+    "free-k10-test-online",
+    "free-pss-test-online"
+  ],
+  "grief-app-no-subscription": [
+    "free-pss-test-online",
+    "free-who5-test-online",
+    "grief-app-private",
+    "journal-app-no-ads",
+    "journal-app-private-no-ai",
+    "mindfulness-app-no-ads",
+    "self-compassion-app"
+  ],
+  "grief-app-private": [
+    "journal-app-no-ads",
+    "mindfulness-app-no-ads",
+    "self-compassion-app",
+    "free-pss-test-online",
+    "free-who5-test-online",
+    "journal-app-private-no-ai",
+    "loneliness-app-private-no-tracking"
+  ],
+  "grounding-exercise-app": [
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "cbt-thought-record-app",
+    "progressive-muscle-relaxation-app",
+    "safety-plan-app"
+  ],
+  "health-anxiety-app-no-subscription": [
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "health-anxiety-app"
+  ],
+  "health-anxiety-app-private-no-tracking": [
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app"
+  ],
+  "health-anxiety-app": [
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "health-anxiety-app-no-subscription"
+  ],
+  "insomnia-app-free": [
+    "breathing-exercise-app-free",
+    "box-breathing-app",
+    "burnout-app-free",
+    "free-isi-test-online",
+    "free-pss-test-online",
+    "free-sss-test-online",
+    "mindfulness-app-no-ads"
+  ],
+  "insomnia-app-no-ads": [
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-isi-test-online",
+    "free-pss-test-online",
+    "free-sss-test-online",
+    "insomnia-app-free",
+    "insomnia-app-no-subscription"
+  ],
+  "insomnia-app-no-subscription": [
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-isi-test-online",
+    "free-pss-test-online",
+    "free-sss-test-online",
+    "insomnia-app-free",
+    "insomnia-app-no-ads"
+  ],
+  "insomnia-app-private-no-tracking": [
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-isi-test-online",
+    "free-pss-test-online",
+    "free-sss-test-online",
+    "insomnia-app-free",
+    "insomnia-app-no-ads"
+  ],
+  "journal-app-no-ads": [
+    "self-compassion-app",
+    "cbt-thought-record-app",
+    "mindfulness-app-no-ads",
+    "thought-record-app",
+    "free-who5-test-online",
+    "free-pss-test-online",
+    "breathing-exercise-app-free"
+  ],
+  "journal-app-private-no-ai": [
+    "journal-app-no-ads",
+    "self-compassion-app",
+    "cbt-thought-record-app",
+    "free-who5-test-online",
+    "mood-tracker-no-ads",
+    "mood-tracker-no-streaks",
+    "rumination-app"
+  ],
+  "loneliness-app-private-no-tracking": [
+    "grief-app-private",
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-private-no-tracking",
+    "depression-app-private-no-tracking"
+  ],
+  "mental-health-app-18-plus": [
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads"
+  ],
+  "mental-health-app-no-streaks": [
+    "free-pss-test-online",
+    "journal-app-no-ads",
+    "adhd-app-no-subscription",
+    "adhd-app-private-no-tracking",
+    "adhd-support-app-no-streaks",
+    "alternative-to-balance",
+    "alternative-to-calm"
+  ],
+  "mental-health-app-no-subscription": [
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "free-mental-health-app-no-ads"
+  ],
+  "mindfulness-app-no-ads": [
+    "journal-app-no-ads",
+    "self-compassion-app",
+    "breathing-exercise-app-free",
+    "progressive-muscle-relaxation-app",
+    "5-4-3-2-1-grounding-app",
+    "box-breathing-app",
+    "burnout-app-free"
+  ],
+  "mood-tracker-no-ads": [
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "journal-app-no-ads",
+    "mood-tracker-no-streaks",
+    "free-dass-21-test-online",
+    "behavioral-activation-app",
+    "depression-app-no-ads"
+  ],
+  "mood-tracker-no-streaks": [
+    "journal-app-no-ads",
+    "mood-tracker-no-ads",
+    "free-dass-21-test-online",
+    "free-phq9-test-online",
+    "free-who5-test-online",
+    "free-k10-test-online",
+    "journal-app-private-no-ai"
+  ],
+  "ocd-app-no-subscription": [
+    "anxiety-app-no-ads",
+    "cbt-app-free",
+    "cbt-behavioral-experiment-app",
+    "cbt-thought-record-app",
+    "ocd-app-private-no-tracking",
+    "ocd-thoughts-app-no-ads",
+    "rumination-app"
+  ],
+  "ocd-app-private-no-tracking": [
+    "rumination-app-private-no-tracking",
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-private-no-tracking"
+  ],
+  "ocd-thoughts-app-no-ads": [
+    "cbt-thought-record-app",
+    "rumination-app",
+    "rumination-app-no-subscription",
+    "rumination-app-private-no-tracking",
+    "thought-record-app",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads"
+  ],
+  "panic-attack-app-free": [
+    "breathing-exercise-app-free",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "safety-plan-app",
+    "free-gad7-test-online"
+  ],
+  "panic-attack-app-no-ads": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "panic-attack-app-free"
+  ],
+  "panic-attack-app-no-subscription": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "panic-attack-app-free"
+  ],
+  "panic-attack-app-private-no-tracking": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "free-gad7-test-online",
+    "grounding-exercise-app"
+  ],
+  "perfectionism-app-no-subscription": [
+    "burnout-app-free",
+    "cbt-app-free",
+    "cbt-thought-record-app",
+    "journal-app-no-ads",
+    "mindfulness-app-no-ads",
+    "perfectionism-app",
+    "perfectionism-app-private-no-tracking"
+  ],
+  "perfectionism-app-private-no-tracking": [
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "burnout-app-free",
+    "burnout-app-private-no-tracking",
+    "cbt-app-free"
+  ],
+  "perfectionism-app": [
+    "cbt-thought-record-app",
+    "journal-app-no-ads",
+    "rumination-app",
+    "self-compassion-app",
+    "thought-record-app",
+    "burnout-app-free",
+    "mindfulness-app-no-ads"
+  ],
+  "private-mental-health-app": [
+    "alternative-to-balance",
+    "alternative-to-calm",
+    "alternative-to-finch",
+    "alternative-to-headspace",
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "free-mental-health-app-no-ads"
+  ],
+  "progressive-muscle-relaxation-app": [
+    "breathing-exercise-app-free",
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "mindfulness-app-no-ads",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "journal-app-no-ads"
+  ],
+  "ptsd-app-no-subscription": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "safety-plan-app",
+    "breathing-exercise-app-free",
+    "cptsd-support-app"
+  ],
+  "ptsd-app-private-no-tracking": [
+    "5-4-3-2-1-grounding-app",
+    "adhd-app-private-no-tracking",
+    "anger-app-private-no-tracking",
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking",
+    "bipolar-app-private-no-tracking",
+    "box-breathing-app"
+  ],
+  "rumination-app-no-subscription": [
+    "cbt-thought-record-app",
+    "rumination-app",
+    "rumination-app-private-no-tracking",
+    "thought-record-app",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "cbt-app-free"
+  ],
+  "rumination-app-private-no-tracking": [
+    "cbt-thought-record-app",
+    "rumination-app",
+    "rumination-app-no-subscription",
+    "thought-record-app",
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking"
+  ],
+  "rumination-app": [
+    "cbt-thought-record-app",
+    "thought-record-app",
+    "cbt-app-free",
+    "journal-app-no-ads",
+    "self-compassion-app",
+    "perfectionism-app",
+    "anxiety-app-no-ads"
+  ],
+  "safety-plan-app": [
+    "5-4-3-2-1-grounding-app",
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "grounding-exercise-app",
+    "breathing-exercise-app-free",
+    "panic-attack-app-free",
+    "cbt-app-free"
+  ],
+  "self-compassion-app": [
+    "journal-app-no-ads",
+    "cbt-thought-record-app",
+    "mindfulness-app-no-ads",
+    "thought-record-app",
+    "free-who5-test-online",
+    "rumination-app",
+    "breathing-exercise-app-free"
+  ],
+  "social-anxiety-app-no-ads": [
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "social-anxiety-app-no-subscription"
+  ],
+  "social-anxiety-app-no-subscription": [
+    "anxiety-app-no-ads",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app",
+    "journal-app-no-ads"
+  ],
+  "social-anxiety-app-private-no-tracking": [
+    "anxiety-app-no-ads",
+    "anxiety-app-private-no-tracking",
+    "box-breathing-app",
+    "breathing-exercise-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "grounding-exercise-app"
+  ],
+  "therapy-alternative-app": [
+    "alternative-to-woebot",
+    "alternative-to-wysa",
+    "behavioral-activation-app",
+    "cbt-app-free",
+    "cbt-thought-record-app",
+    "free-gad7-test-online",
+    "free-phq9-test-online"
+  ],
+  "thought-record-app": [
+    "cbt-thought-record-app",
+    "journal-app-no-ads",
+    "rumination-app",
+    "self-compassion-app",
+    "cbt-app-free",
+    "anxiety-app-no-ads",
+    "free-gad7-test-online"
+  ]
+}

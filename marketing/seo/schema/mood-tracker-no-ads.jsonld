@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Mood Tracker With No Ads: Track How You Feel Without the Interruptions",
+  "description": "Mood tracking is a simple, powerful practice — tap how you feel, notice patterns over time, learn what affects your wellbeing. It shouldn't be complicated, a...",
+  "url": "https://gentlequest.app/articles/mood-tracker-no-ads",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "mood tracker no ads, ad-free mood tracker, mental health app"
+}

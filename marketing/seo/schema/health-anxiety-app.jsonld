@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Health Anxiety App: Tools for Easing the Worry About Your Body",
+  "description": "Health anxiety is the persistent fear that something is wrong with your body — a headache becomes a tumor, a flutter becomes a heart condition, a Google sear...",
+  "url": "https://gentlequest.app/articles/health-anxiety-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "health anxiety app, health anxiety help app, mental health app"
+}

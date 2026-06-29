@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Alternative to Woebot: Less Chatbot, More Quiet Companion",
+  "description": "If you're searching for an \"alternative to Woebot,\" you've probably experienced both the appeal and the limitations of AI-driven mental health chatbots. Woeb...",
+  "url": "https://gentlequest.app/articles/alternative-to-woebot",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "woebot alternative, cbt chatbot, mental health app, journaling, gentlequest"
+}

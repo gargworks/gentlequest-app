@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Depression App With No Ads: Quiet Support Without the Sell",
+  "description": "Depression often comes with low energy, low motivation, and a sensitivity to overstimulation. The last thing that helps is an app that interrupts a gentle ex...",
+  "url": "https://gentlequest.app/articles/depression-app-no-ads",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "depression app no ads, ad-free depression app, mental health app"
+}

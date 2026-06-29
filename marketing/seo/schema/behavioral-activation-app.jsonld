@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Behavioral Activation App: Using Action to Break the Depression Loop",
+  "description": "If you've searched for a \"behavioral activation app,\" you may have encountered a frustrating paradox: you know that doing things would help you feel better, ...",
+  "url": "https://gentlequest.app/articles/behavioral-activation-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "behavioral activation, depression, cbt, activity scheduling, mental health"
+}

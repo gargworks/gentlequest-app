@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Safety Plan App: A Calm Tool for Your Hardest Moments",
+  "description": "A safety plan is a personal, written plan for getting through a crisis — the steps you'll take, the people you'll call, the things that have helped before. I...",
+  "url": "https://gentlequest.app/articles/safety-plan-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "safety plan app, crisis safety plan, mental health app"
+}

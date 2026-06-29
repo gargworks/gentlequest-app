@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Box Breathing App: How a Simple 4-4-4-4 Pattern Calms the Nervous System",
+  "description": "If you've searched for a \"box breathing app,\" you already know the technique works — you just want something that guides you through it without friction, ads...",
+  "url": "https://gentlequest.app/articles/box-breathing-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "box breathing, breathing technique, anxiety relief, nervous system, gentlequest"
+}

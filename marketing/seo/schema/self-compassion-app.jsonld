@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Self-Compassion App: Treating Yourself With the Kindness You'd Offer a Friend",
+  "description": "Self-compassion is the practice of treating yourself with the same kindness, understanding, and patience you'd offer a good friend who was struggling. It's n...",
+  "url": "https://gentlequest.app/articles/self-compassion-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "self-compassion app, self-compassion, mental health app, gentlequest"
+}

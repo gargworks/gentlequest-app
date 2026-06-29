@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Mood Tracker With No Streaks: Track How You Feel Without the Guilt",
+  "description": "Mood tracking can be genuinely useful — it reveals patterns you'd otherwise miss, connects your feelings to sleep, stress, and seasons, and gives you a recor...",
+  "url": "https://gentlequest.app/articles/mood-tracker-no-streaks",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "mood tracker no streaks, streak-free mood tracker, mental health app"
+}

@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Alternative to Finch App: Self-Care Without the Virtual Pet Pressure",
+  "description": "If you're searching for an \"alternative to Finch app,\" you've likely experienced the charm — and the fatigue — of gamified self-care. Finch turned mental hea...",
+  "url": "https://gentlequest.app/articles/alternative-to-finch",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "finch alternative, self care app, mood tracking, gamification, gentlequest"
+}

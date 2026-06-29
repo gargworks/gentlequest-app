@@ -1,0 +1,51 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Free PHQ-9 Test Online: What the Depression Screening Asks and How to Read It",
+  "description": "If you've searched for a \"free PHQ-9 test online,\" you're probably looking for a quick, honest way to check in with yourself — not a diagnosis, not a label, ...",
+  "url": "https://gentlequest.app/articles/free-phq9-test-online",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "phq-9, depression screening, mental health, self-assessment, gentlequest",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does the PHQ-9 test measure?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The PHQ-9 is a nine-item questionnaire that screens for depression and measures the severity of depressive symptoms over the past two weeks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is a concerning PHQ-9 score?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Scores of 0-4 indicate minimal depression, 5-9 mild, 10-14 moderate, 15-19 moderately severe, and 20-27 severe. A score of 10 or above typically warrants further evaluation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can the PHQ-9 diagnose depression?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, the PHQ-9 is a screening tool that measures symptom severity, not a diagnostic instrument. A qualified mental health professional must make any diagnosis."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the PHQ-9 free to take online?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, the PHQ-9 is a public-domain instrument. GentleQuest offers it free with no account required, and your results stay on your device."
+      }
+    }
+  ]
+}

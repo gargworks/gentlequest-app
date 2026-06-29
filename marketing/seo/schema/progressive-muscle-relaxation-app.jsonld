@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Progressive Muscle Relaxation App: Releasing Tension You Didn't Know You Were Holding",
+  "description": "If you've searched for a \"progressive muscle relaxation app,\" you've likely noticed that your body is holding tension your mind hasn't caught up with — tight...",
+  "url": "https://gentlequest.app/articles/progressive-muscle-relaxation-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "progressive muscle relaxation, pmr, tension relief, anxiety, sleep"
+}

@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Therapy Alternative App: Support Between Sessions, or When Therapy Isn't an Option",
+  "description": "Therapy is one of the most effective things you can do for your mental health — but it's not always accessible. Cost, waitlists, geography, stigma, and sched...",
+  "url": "https://gentlequest.app/articles/therapy-alternative-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "therapy alternative app, self-help app, mental health app"
+}

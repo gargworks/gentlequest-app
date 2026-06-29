@@ -1,0 +1,51 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Free DASS-21 Test Online: What the Depression Anxiety Stress Scale Asks and How to Read It",
+  "description": "If you've searched for a \"free DASS-21 test online,\" you're probably looking for a single tool that can help you check in on three related but distinct emoti...",
+  "url": "https://gentlequest.app/articles/free-dass-21-test-online",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "dass-21, depression anxiety stress, mental health, self-assessment, gentlequest",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does the DASS-21 measure?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The DASS-21 is a 21-item questionnaire that measures three related negative emotional states: depression, anxiety, and stress."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is the DASS-21 scored?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Each of the three subscales (depression, anxiety, stress) has seven items scored 0-3. Subscale scores are doubled and compared to cutoff ranges from normal to extremely severe."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the DASS-21 a diagnosis?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, the DASS-21 screens for symptom severity across three domains but does not diagnose any condition. Results should be discussed with a healthcare professional."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How often should I take the DASS-21?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Taking it every two to four weeks allows you to track trends in depression, anxiety, and stress over time rather than relying on a single snapshot."
+      }
+    }
+  ]
+}

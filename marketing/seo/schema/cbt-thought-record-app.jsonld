@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "CBT Thought Record App: Capturing and Challenging Distorted Thoughts",
+  "description": "A thought record is one of the core tools of cognitive behavioral therapy (CBT). It's a structured way to capture a distressing thought, examine the evidence...",
+  "url": "https://gentlequest.app/articles/cbt-thought-record-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "cbt thought record app, thought record, cbt tools, mental health app, gentlequest"
+}

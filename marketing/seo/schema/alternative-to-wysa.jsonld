@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Alternative to Wysa: On-Device Privacy Without the Chatbot Middleman",
+  "description": "If you're searching for an \"alternative to Wysa,\" you've likely experienced the strengths and limitations of AI-powered mental health chatbots. Wysa has buil...",
+  "url": "https://gentlequest.app/articles/alternative-to-wysa",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "wysa alternative, cbt chatbot, mental health app, privacy, journaling"
+}

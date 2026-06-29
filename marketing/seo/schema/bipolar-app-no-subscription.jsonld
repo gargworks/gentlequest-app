@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Bipolar App With No Subscription: Mood Tracking Without a Paywall",
+  "description": "Bipolar disorder involves significant shifts in mood, energy, and activity levels — from the highs of mania or hypomania to the lows of depression. Managing ...",
+  "url": "https://gentlequest.app/articles/bipolar-app-no-subscription",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "bipolar app no subscription, free bipolar app, no paywall mental health"
+}

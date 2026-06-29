@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Thought Record App: Capturing and Reframing Anxious Thinking Patterns",
+  "description": "If you've searched for a \"thought record app,\" you've likely encountered cognitive behavioral therapy (CBT) and want a practical way to do one of its core ex...",
+  "url": "https://gentlequest.app/articles/thought-record-app",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "thought record, cbt, cognitive restructuring, anxiety, mental health"
+}

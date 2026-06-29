@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Mental Health App With No Streaks: Support Without the Pressure",
+  "description": "Streaks — the \"don't break the chain\" mechanic borrowed from habit-tracking apps — have become ubiquitous in mental health apps. \"You've meditated 47 days in...",
+  "url": "https://gentlequest.app/articles/mental-health-app-no-streaks",
+  "author": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GentleQuest"
+  },
+  "datePublished": "2026-06-29",
+  "keywords": "mental health app no streaks, no streaks mental health, no gamification, gentlequest"
+}
