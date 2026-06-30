@@ -3,7 +3,7 @@
 # Bash 3.2 compatible (no associative arrays)
 set -eo pipefail
 
-OUT="/Users/lokeshgarg/gentlequest/marketing/deploy_kits/i18n"
+OUT="$(dirname "$0")"
 
 ARTICLES="anxiety-app-no-ads breathing-exercise-app-free cbt-app-free depression-app-no-ads free-mental-health-app-no-ads grounding-exercise-app journal-app-private-no-ai mental-health-app-no-subscription mood-tracker-no-streaks safety-plan-app"
 

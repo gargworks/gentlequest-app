@@ -2,8 +2,8 @@
 """Translation engine for i18n articles. Reads English sources, applies translations."""
 import os, re, sys
 
-BASE = "/Users/lokeshgarg/gentlequest/marketing/i18n"
-SRC = "/Users/lokeshgarg/gentlequest/marketing/seo/articles"
+BASE = "os.path.dirname(os.path.abspath(__file__))"
+SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "seo", "articles")
 
 URLS = "- iOS — https://apps.apple.com/app/gentlequest/id6756537464\n- Android — https://play.google.com/store/apps/details?id=com.gentlequest.app\n- Web — https://gentlequest.app"
 

@@ -7,7 +7,7 @@ All emails are placeholders. No real personal data is used.
 import csv
 import os
 
-OUTREACH_DIR = "/Users/lokeshgarg/gentlequest/marketing/outreach"
+OUTREACH_DIR = "os.path.dirname(os.path.abspath(__file__))"
 PITCHES_DIR = os.path.join(OUTREACH_DIR, "pitches")
 
 # ─── Platform links ───
