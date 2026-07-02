@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app
-from models import AnalyticsEvent, Message, MoodEntry, PushToken, User, UserResourcePref, UserSession, db
+from models import AnalyticsEvent, JournalEntry, Message, MoodEntry, PushToken, User, UserResourcePref, UserSession, db
 
 
 @pytest.fixture
@@ -79,6 +79,12 @@ def test_delete_cascade_removes_session_data_and_soft_deletes_user(client):
         db.session.add(AnalyticsEvent(session_id=sid, event_type="test", event_metadata={"ip_masked": "1.2.3***"}))
         db.session.add(UserResourcePref(session_id=sid, resource_id="box-breathing", is_favorite=True))
         db.session.add(PushToken(session_id=sid, token="smoke-token", platform="ios"))
+        # JournalEntry rows can no longer be written via HTTP (v1.5.0 deleted
+        # routes/journal.py) but pre-existing/model-written rows must still
+        # be swept by account deletion — write one directly to prove the
+        # cascade still reaches this table now that the model is written-to
+        # only outside the deleted API.
+        db.session.add(JournalEntry(session_id=sid, body="entry before deletion"))
         db.session.commit()
 
     response = client.delete("/api/user", headers=_headers(sid))
@@ -91,6 +97,7 @@ def test_delete_cascade_removes_session_data_and_soft_deletes_user(client):
         assert AnalyticsEvent.query.filter_by(session_id=sid).count() == 0
         assert UserResourcePref.query.filter_by(session_id=sid).count() == 0
         assert PushToken.query.filter_by(session_id=sid).count() == 0
+        assert JournalEntry.query.filter_by(session_id=sid).count() == 0
         assert db.session.get(UserSession, sid) is None
         user = User.query.filter_by(session_id=None).one()
         assert user.deleted_at is not None

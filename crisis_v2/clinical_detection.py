@@ -56,6 +56,16 @@ class ClinicalCrisisDetector:
                 r'\b(planning\s+to|going\s+to|will)\s+(kill|end|harm)\s+(myself|my\s+life)\b',
                 1.0, 'active_plan', 'Suicide plan in progress', True
             ),
+            ClinicalIndicator(
+                # Soft/inflected phrasing parity with crisis_detection.py's
+                # 2026-05-21 audit additions — the same two incidents
+                # ("want it all to stop", "thinking about ending my life")
+                # bypassed this detector's original pattern set too (neither
+                # matched `end\s+my\s+life`, which requires the base verb
+                # form, not the "-ing" inflection).
+                r'\b(ending\s+(my\s+life|it\s+all)|thinking\s+(of|about)\s+ending\s+(my\s+life|it\s+all)|want\s+(it\s+all|everything)\s+to\s+stop|make\s+it\s+all\s+stop)\b',
+                1.0, 'active_ideation', 'Active suicidal ideation — soft/inflected phrasing', True
+            ),
         ],
         'suicidal_ideation_passive': [
             ClinicalIndicator(
@@ -327,7 +337,25 @@ class ClinicalCrisisDetector:
         return score
         
     def _combine_scores(self, base: float, context: float, temporal: float, linguistic: float) -> float:
-        """Combine multiple scores with weighted average"""
+        """Combine multiple scores with weighted average.
+
+        KNOWN BUG (found during v1.5.0 M1 verification, 2026-07-02, not fixed
+        in that pass — flagged instead of silently patched because it's a
+        scoring-architecture issue, not a pattern-coverage gap, and needs
+        deliberate clinical review rather than a surgical tweak):
+        the 0.5 weight on `base` means even an unambiguous, single
+        immediate_action=True indicator (weight 1.0, e.g. "kill myself")
+        only contributes 0.5 to `total` before context/temporal/linguistic
+        top it up — usually landing in RiskLevel.LOW (0.5-1.5) rather than
+        HIGH/CRISIS, so `immediate_action_required` (gated on
+        risk_level.severity >= HIGH) stays False for textbook crisis
+        statements like "I have a gun ready to kill myself tonight".
+        Verified empirically: see tests/test_clinical_detection_flag.py.
+        Do not treat `assess_risk()`'s `risk_level` / `immediate_action_required`
+        as production-ready until this is addressed — pattern-level
+        `clinical_indicators` detection (what this file's ADHD-update fix
+        touched) is sound; the score aggregation on top of it is not.
+        """
         weights = {
             'base': 0.5,
             'context': 0.2,

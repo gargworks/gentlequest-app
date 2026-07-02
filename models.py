@@ -145,6 +145,17 @@ class MoodEntry(db.Model):
 
 
 class JournalEntry(db.Model):
+    # v1.5.0 (docs/V1_5_0_ADHD_UPDATE_SCOPE.md, Workstream 3c): routes/journal.py
+    # was deleted so the "Stays on your device. Never synced. Never shared."
+    # promise (ai_buddy_web journal_empty_state.dart) is true in code — no
+    # live /api/journal route exists anymore. This model is kept (not
+    # dropped) because routes/user_settings.py's GDPR export (/api/user/export)
+    # and account-deletion (/api/user DELETE) flows still query/delete rows
+    # here for any journal entries synced server-side before the route was
+    # removed (signed-in users only — see ai_buddy_web journal_models.dart's
+    # sign-in-gated dual-write). Drop this model only once those flows are
+    # confirmed to no longer need it (e.g. after a retention-window backfill
+    # confirms no rows remain).
     __tablename__ = "journal_entries"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
