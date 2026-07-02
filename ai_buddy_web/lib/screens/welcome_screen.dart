@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ai_buddy_web/screens/adhd_path_screen.dart';
 import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
@@ -136,7 +137,30 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     if (!mounted) return;
 
     if (status == ComplianceStatus.allowed) {
-      Navigator.of(context).pushReplacementNamed('/main');
+      // Capture the NavigatorState (not the BuildContext) before the async
+      // hasBeenSeen() gap / route replace below — this WelcomeScreenState
+      // gets disposed once we replace its route, so `context` itself isn't
+      // safe to re-resolve later from inside AdhdPathScreen's onFinished.
+      final navigator = Navigator.of(context);
+
+      // v1.5.0 ADHD Update, Workstream 2c — optional, skippable "getting to
+      // know your brain" step wired AFTER the age/compliance gates above.
+      // Shown at most once (has_seen_adhd_path_v1); returning users go
+      // straight to '/main' exactly as before.
+      final seenAdhdPath = await AdhdPathScreen.hasBeenSeen();
+      if (!mounted) return;
+
+      if (seenAdhdPath) {
+        navigator.pushReplacementNamed('/main');
+      } else {
+        navigator.pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => AdhdPathScreen(
+              onFinished: () => navigator.pushReplacementNamed('/main'),
+            ),
+          ),
+        );
+      }
     } else {
       // Blocked or error — show the compliance screen for the full
       // blocked-region / error UI. ComplianceGuardScreen is kept as the
