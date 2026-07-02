@@ -1,5 +1,6 @@
-/// Backup of color filter helpers previously used in Reminder card image.
-/// Not referenced in code; kept for future design experiments.
+/// Color filter helpers, originally used in the Reminder card image.
+/// Reused by theme/low_stim_mode.dart (v1.5.0 low-stim "quiet mode",
+/// ADR-006) to desaturate the app-wide palette — no longer dormant.
 library;
 
 /// Returns a 4x5 saturation color matrix suitable for ColorFilter.matrix.

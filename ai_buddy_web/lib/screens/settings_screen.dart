@@ -14,6 +14,7 @@ import '../services/api_service.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../services/auth_service.dart';
 import '../services/firebase_service.dart' show FirebaseService, kAnonymityModeKey;
+import '../services/low_stim_service.dart';
 import '../services/notification_service_impl.dart';
 import '../theme/gq_tokens.dart';
 
@@ -85,6 +86,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Crisis check-in lock: per design, locked-on after a heavy moment (P13).
   // In production this would come from a local crisis-flag store.
   final bool _crisisCheckInLocked = true;
+
+  // Low-stim "quiet mode" (v1.5.0 ADHD update, ADR-006). Seeded from
+  // LowStimService.enabled — already hydrated from SharedPreferences in
+  // main() before any screen mounts, so no extra async read is needed here.
+  bool _lowStimOn = LowStimService.enabled;
 
   final _api = ApiService();
 
@@ -349,6 +355,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
+  }
+
+  /// Low-stim "quiet mode" toggle (v1.5.0 ADHD update, ADR-006). Applies
+  /// instantly app-wide via LowStimService's notifier (LowStimOverlay in
+  /// main.dart), persists to SharedPreferences, and reverts the visible
+  /// switch on a persistence failure — same shape as the notification
+  /// toggle handlers above.
+  Future<void> _onLowStimChanged(bool v) async {
+    setState(() => _lowStimOn = v);
+    final ok = await LowStimService.setEnabled(v);
+    if (!ok) {
+      if (!mounted) return;
+      setState(() => _lowStimOn = !v);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't save that — quiet mode may reset next launch.",
+            style: TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontWeight: FontWeight.w600),
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    await logAnalyticsEvent('low_stim_toggled', metadata: {
+      'value': v ? 'on' : 'off',
+      'screen': 'settings',
+    });
   }
 
   Future<void> _openLoginScreen() async {
@@ -704,6 +740,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 );
               },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // APPEARANCE — v1.5.0 ADHD update (ADR-006): low-stim "quiet mode".
+        // Muted palette + reduced motion app-wide; see theme/low_stim_mode.dart.
+        SectionLabel(label: 'APPEARANCE'),
+        SettingsCard(
+          children: [
+            SettingsRow(
+              iconBg: GQColors.primarySoft,
+              iconWidget: const Icon(Icons.spa_outlined,
+                  size: 14, color: GQColors.primaryDk),
+              title: 'Low-stim quiet mode',
+              subtitle: 'Muted colors, calmer motion — easier on a loud day',
+              trailing: GQToggle(
+                key: const Key('low_stim_toggle'),
+                value: _lowStimOn,
+                onChanged: _onLowStimChanged,
+              ),
             ),
           ],
         ),

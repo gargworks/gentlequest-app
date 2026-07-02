@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/settings_screen.dart';
+import 'package:ai_buddy_web/screens/settings/settings_widgets.dart';
 import 'package:ai_buddy_web/providers/chat_provider.dart';
 import 'package:ai_buddy_web/providers/mood_provider.dart';
 import 'package:ai_buddy_web/providers/quest_provider.dart';
 import 'package:ai_buddy_web/providers/community_provider.dart';
 import 'package:ai_buddy_web/providers/progress_provider.dart';
+import 'package:ai_buddy_web/services/low_stim_service.dart';
 import 'test_helpers.dart';
 
 void main() {
   group('J08: Settings screen — comprehensive', () {
-    setUp(setUpBypassedPrefs);
+    setUp(() async {
+      await setUpBypassedPrefs();
+      // Reset the low-stim static notifier — it's shared global state across
+      // the whole test file run (see LowStimService), not per-widget state.
+      LowStimService.lowStimNotifier.value = false;
+    });
 
     Widget buildChat() {
       return MultiProvider(
@@ -172,6 +180,52 @@ void main() {
       await tester.pump();
 
       expect(find.text('Streak gentle nudge'), findsOneWidget);
+    });
+
+    // ── APPEARANCE section (v1.5.0 low-stim quiet mode, ADR-006) ──────────────
+
+    testWidgets('"APPEARANCE" section is present', (tester) async {
+      await tester.pumpWidget(buildSettings());
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(find.text('APPEARANCE'), 100.0);
+      expect(find.text('APPEARANCE'), findsOneWidget);
+    });
+
+    testWidgets('"Low-stim quiet mode" row is present, off by default',
+        (tester) async {
+      await tester.pumpWidget(buildSettings());
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(find.text('Low-stim quiet mode'), 100.0);
+      expect(find.text('Low-stim quiet mode'), findsOneWidget);
+      final toggle = tester
+          .widget<GQToggle>(find.byKey(const Key('low_stim_toggle')));
+      expect(toggle.value, isFalse);
+    });
+
+    testWidgets(
+        '"Low-stim quiet mode" toggle flips on tap and persists to prefs',
+        (tester) async {
+      await tester.pumpWidget(buildSettings());
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(find.text('Low-stim quiet mode'), 100.0);
+      await tester.tap(find.byKey(const Key('low_stim_toggle')));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      final toggle = tester
+          .widget<GQToggle>(find.byKey(const Key('low_stim_toggle')));
+      expect(toggle.value, isTrue);
+      expect(LowStimService.enabled, isTrue);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(LowStimService.kLowStimModeKey), isTrue);
     });
 
     // ── ABOUT section ──────────────────────────────────────────────────────────

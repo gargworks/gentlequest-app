@@ -28,8 +28,10 @@ import 'services/notification_service.dart';
 import 'services/auth_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/pref_migrator.dart';
+import 'services/low_stim_service.dart';
 import 'config/profile_config.dart';
 import 'screens/legal/legal_screen.dart';
+import 'theme/low_stim_mode.dart';
 import 'widgets/branded_splash.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:ai_buddy_web/services/firebase_service.dart';
@@ -202,6 +204,15 @@ Future<void> main() async {
     debugPrint('DeepLinkService initialization error: $e');
   }
 
+  // Hydrate low-stim "quiet mode" (v1.5.0 ADHD update, ADR-006) from
+  // SharedPreferences before first paint so the app-wide filter in
+  // LowStimOverlay is correct from frame one, not just after Settings loads.
+  try {
+    await LowStimService.hydrate();
+  } catch (e) {
+    debugPrint('LowStimService hydrate error: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -238,6 +249,12 @@ class MyApp extends StatelessWidget {
             },
           ),
         ),
+        // Low-stim "quiet mode" (v1.5.0 ADHD update, ADR-006): wraps every
+        // routed screen (this is MaterialApp's routing-content builder slot,
+        // above Navigator) with a saturation/motion filter that reacts
+        // instantly to LowStimService's notifier — see theme/low_stim_mode.dart.
+        builder: (context, child) =>
+            LowStimOverlay(child: child ?? const SizedBox.shrink()),
         navigatorKey: rootNavigatorKey,
         navigatorObservers: [routeObserver, AnalyticsRouteObserver()],
         // UpgradeAlert is for mobile app store version checks - skip on web
