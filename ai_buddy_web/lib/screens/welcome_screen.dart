@@ -116,7 +116,19 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Future<void> _showAgeModal() async {
     // v1.4.5: Skip the age modal entirely — go straight to confirm+compliance.
     // The age confirmation is now built into the Continue button text
-    // ("I'm 13 or older →"), so there's no need for a separate modal.
+    // ("I'm 18 or older →"), so there's no need for a separate modal.
+    //
+    // 2026-07-02 COMPLIANCE FIX: this button had drifted to read "I'm 13
+    // or older" — a leftover from a 2026-05-21 proposal to lower the age
+    // gate to 13+ that was REVERTED (see ComplianceService._kMinAgeUniversal
+    // = 18, "v1.3.0 operator decision: 18+ everywhere"). The one-tap
+    // redesign (32f2aa57) baked the stale 13+ copy into the button and, by
+    // routing straight to _confirmAdult() here, also stopped surfacing the
+    // under-18 decline path. The gate is — and per the store rating (17+/
+    // Mature) and privacy policy has always been — 18+ universal. The
+    // under-18 path is restored as a small link in _WelcomeContent
+    // (onUnder18) that jumps straight to _showUnder18() below without
+    // resurrecting the modal.
     await _confirmAdult();
   }
 
@@ -203,6 +215,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           breatheAnim: _breatheAnim,
           fadeAnims: _fadeAnims,
           onContinue: _showAgeModal,
+          onUnder18: _showUnder18,
         );
       case _WelcomeState.ageModal:
         return Stack(
@@ -212,6 +225,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               fadeAnims: _fadeAnims,
               dimmed: true,
               onContinue: _showAgeModal,
+              onUnder18: _showUnder18,
             ),
             FadeTransition(
               opacity: _backdropFade,
@@ -256,12 +270,14 @@ class _WelcomeContent extends StatelessWidget {
     required this.fadeAnims,
     this.dimmed = false,
     required this.onContinue,
+    required this.onUnder18,
   });
 
   final Animation<double> breatheAnim;
   final List<Animation<double>> fadeAnims;
   final bool dimmed;
   final VoidCallback onContinue;
+  final VoidCallback onUnder18;
 
   @override
   Widget build(BuildContext context) {
@@ -407,13 +423,38 @@ class _WelcomeContent extends StatelessWidget {
                                 shadowColor: Colors.transparent,
                               ),
                               child: Text(
-                                "I'm 13 or older",
+                                // VERBATIM (2026-07-02 fix): "18" is the
+                                // real gate — see ComplianceService
+                                // ._kMinAgeUniversal + APP_REVIEW_NOTES.md.
+                                "I'm 18 or older",
                                 style: TextStyle(
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.2,
                                 ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Under-18 decline path (2026-07-02 fix — P2
+                          // crisis-never-blocks). Low-key secondary link,
+                          // not a rebuilt modal: jumps straight to the
+                          // existing _Under18Screen dignity path via
+                          // WelcomeScreen._showUnder18().
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: dimmed ? null : onUnder18,
+                            child: Text(
+                              'Under 18? Find support made for you →',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: GQColors.ink3,
+                                decoration: TextDecoration.underline,
+                                decorationColor: GQColors.ink3,
                               ),
                             ),
                           ),
@@ -492,7 +533,10 @@ class _WelcomeContent extends StatelessWidget {
 
 /// Look up the region-appropriate minimum age. Region was set by the
 /// compliance flow's IP-region check; on first launch (before the user
-/// reaches compliance) it's null → the universal 13 floor applies.
+/// reaches compliance) it's null → the universal 18 floor applies (v1.3.0
+/// operator decision: 18+ everywhere, see ComplianceService
+/// ._kMinAgeUniversal). Region-differentiation is deferred pending legal
+/// review, so `minAgeForRegion` currently returns 18 for every region.
 Future<int> _resolveMinAge() async {
   final region = await ComplianceService().getStoredRegion();
   return ComplianceService.minAgeForRegion(region);
@@ -587,16 +631,20 @@ class _AgeModalState extends State<_AgeModal> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Sub-heading — was "Are you 18 or older?" verbatim. Age gate
-              // lowered to 13+ on 2026-05-21 per app's original high-school
-              // objective. Now consults ComplianceService.minAgeForRegion
-              // so a user in Germany (GDPR-K-16) is asked "Are you 16 or
-              // older?" not 13. Region is hydrated by the compliance flow;
-              // if it's not yet known (first launch), we default to 13.
+              // Sub-heading — verbatim "Are you 18 or older?". A
+              // 2026-05-21 proposal to lower the gate to 13+ (region-aware,
+              // stepping to 16/18 by jurisdiction) was REVERTED in v1.3.0:
+              // operator decision is 18+ everywhere, to match the store
+              // rating (17+/Mature), privacy policy, and in-app enforcement.
+              // ComplianceService.minAgeForRegion currently returns 18 for
+              // every region (region-differentiation deferred pending legal
+              // review) — this FutureBuilder consults it so the copy stays
+              // correct if that ever changes. Default while region is still
+              // unresolved (first launch, before compliance runs) is 18.
               FutureBuilder<int>(
                 future: _resolveMinAge(),
                 builder: (ctx, snap) {
-                  final age = snap.data ?? 13;
+                  final age = snap.data ?? 18;
                   return Text(
                     'Are you $age or older?',
                     textAlign: TextAlign.center,
@@ -672,9 +720,11 @@ class _AgeModalState extends State<_AgeModal> {
               const SizedBox(height: 20),
               // Microcopy (P5 — privacy visible).
               Text(
-                // VERBATIM: HTML — "We're built for adults…"
+                // VERBATIM: HTML — "We're built for adults…". "13" here was
+                // stale copy from the reverted 2026-05-21 lowered-gate
+                // proposal; the real (and always-intended) threshold is 18.
                 "We’re built for adults — that’s how we keep things safe.\n"
-                "If you’re under 13, here’s where to find support tailored for you →",
+                "If you’re under 18, here’s where to find support tailored for you →",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
@@ -890,12 +940,14 @@ class _Under18Screen extends StatelessWidget {
                             color: GQColors.ink,
                           ),
                           children: [
-                            // Age gate lowered to 13+ on 2026-05-21 per
-                            // app's original "high school students"
-                            // objective; copy reworded from verbatim HTML
-                            // "Come back when you're 18 — we'll be here."
+                            // VERBATIM: HTML — "Come back when you're 18 —
+                            // we'll be here." A 2026-05-21 proposal to lower
+                            // the gate to 13+ briefly reworded this to "13";
+                            // that proposal was REVERTED (v1.3.0 operator
+                            // decision: 18+ everywhere) and this restores
+                            // the original verbatim copy.
                             const TextSpan(
-                                text: 'Come back when you’re 13 — '),
+                                text: 'Come back when you’re 18 — '),
                             TextSpan(
                               text: 'we’ll be here.',
                               style: TextStyle(
