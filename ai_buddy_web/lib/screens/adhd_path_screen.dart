@@ -20,7 +20,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../services/firebase_service.dart';
+import '../services/low_stim_service.dart';
 import '../theme/gq_tokens.dart';
 
 /// Persisted, non-diagnostic "what tends to help" preference flags written
@@ -115,6 +117,40 @@ class _AdhdPathScreenState extends State<AdhdPathScreen> {
     setState(() => _step = _Step.suggestions);
   }
 
+  /// Tapped from the low-stim suggestion card on Screen 4. Wires the card to
+  /// the *real* LowStimService — the same call path as the Settings
+  /// "Low-stim quiet mode" toggle (settings_screen.dart _onLowStimChanged):
+  /// flip the shared notifier + persist, revert-on-failure, gentle snackbar
+  /// confirmation, then log the same `low_stim_toggled` analytics event the
+  /// Settings toggle fires, with a `screen` source param so the two entry
+  /// points stay distinguishable in the data.
+  Future<void> _onLowStimCardTap() async {
+    final next = !LowStimService.enabled;
+    HapticFeedback.selectionClick();
+    final ok = await LowStimService.setEnabled(next);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? (next ? 'Quiet mode is on.' : 'Quiet mode is off.')
+              : "Couldn't save that — quiet mode may reset next launch.",
+          style: const TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ok ? GQColors.ink : null,
+        duration: Duration(seconds: ok ? 2 : 3),
+      ),
+    );
+    await logAnalyticsEvent('low_stim_toggled', metadata: {
+      'value': next ? 'on' : 'off',
+      'screen': 'onboarding_adhd_path',
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +198,7 @@ class _AdhdPathScreenState extends State<AdhdPathScreen> {
       case _Step.suggestions:
         return _SuggestionsContent(
           key: const ValueKey('adhd_path_suggestions'),
+          onLowStimTap: _onLowStimCardTap,
           onContinue: () async {
             await _markSeen();
             if (!mounted) return;
@@ -458,9 +495,16 @@ class _OptionCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SuggestionsContent extends StatelessWidget {
-  const _SuggestionsContent({super.key, required this.onContinue});
+  const _SuggestionsContent({
+    super.key,
+    required this.onContinue,
+    required this.onLowStimTap,
+  });
 
   final VoidCallback onContinue;
+
+  /// Low-stim card tap-through — see _AdhdPathScreenState._onLowStimCardTap.
+  final VoidCallback onLowStimTap;
 
   @override
   Widget build(BuildContext context) {
@@ -502,12 +546,25 @@ class _SuggestionsContent extends StatelessWidget {
                 'check-ins, right inside chat. No camera, no small talk.',
           ),
           const SizedBox(height: 10),
-          const _SuggestionCard(
-            emoji: '🌙',
-            title: 'A calmer, low-stim look',
-            subtitle:
-                'A quieter color and motion theme, on the way — we’ll '
-                'switch you to it automatically once it ships.',
+          // Live-wired to LowStimService (v1.5.0, ADR-006) — unlike the two
+          // still-informational cards above/below, this one is tappable and
+          // reflects the real app-wide quiet-mode state.
+          ValueListenableBuilder<bool>(
+            valueListenable: LowStimService.lowStimNotifier,
+            builder: (context, lowStimOn, _) {
+              return _SuggestionCard(
+                key: const Key('adhd_low_stim_suggestion_card'),
+                emoji: '🌙',
+                title: 'A calmer, low-stim look',
+                subtitle: lowStimOn
+                    ? 'Quiet mode is on — a quieter color and motion theme, '
+                        'applied app-wide. Tap to turn it back off.'
+                    : 'A quieter color and motion theme. Tap to turn it on '
+                        'now — you can always flip it later in Settings.',
+                checked: lowStimOn,
+                onTap: onLowStimTap,
+              );
+            },
           ),
           const SizedBox(height: 10),
           const _SuggestionCard(
@@ -559,18 +616,30 @@ class _SuggestionsContent extends StatelessWidget {
 
 class _SuggestionCard extends StatelessWidget {
   const _SuggestionCard({
+    super.key,
     required this.emoji,
     required this.title,
     required this.subtitle,
+    this.checked = true,
+    this.onTap,
   });
 
   final String emoji;
   final String title;
   final String subtitle;
 
+  /// Whether the check icon renders as "on" (filled, success color) or
+  /// "off" (outline, muted). Defaults to true — the two still-informational
+  /// cards ("turned on for you by default") keep the original always-on look.
+  final bool checked;
+
+  /// If set, the whole card becomes tappable (currently: the low-stim card
+  /// only). Null keeps the card static, matching the original behavior.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -614,8 +683,13 @@ class _SuggestionCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Icon(Icons.check_circle_rounded,
-                        size: 18, color: GQColors.successInk),
+                    Icon(
+                      checked
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      size: 18,
+                      color: checked ? GQColors.successInk : GQColors.ink3,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -634,6 +708,13 @@ class _SuggestionCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: card,
     );
   }
 }

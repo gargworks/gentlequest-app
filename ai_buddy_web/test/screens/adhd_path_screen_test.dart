@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_buddy_web/screens/adhd_path_screen.dart';
+import 'package:ai_buddy_web/services/low_stim_service.dart';
 
 // v1.5.0 ADHD Update — ADHD-path onboarding (Workstream 2c) widget tests.
 //
@@ -153,6 +154,131 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final seen = await AdhdPathScreen.hasBeenSeen();
       expect(seen, isFalse);
+    });
+
+    // ── Low-stim suggestion card — v1.5.0 quiet-mode stitch ────────────────
+    //
+    // PR #169 shipped this card as informational/"coming soon" because
+    // PR #168 (LowStimService + Settings toggle) merged in parallel. This
+    // group covers stitching the card to the *real* LowStimService: same
+    // call path as the Settings toggle (settings_screen.dart
+    // _onLowStimChanged), gentle confirmation feedback, and the shared
+    // `low_stim_toggled` analytics event with a distinguishing source.
+    group('low-stim suggestion card', () {
+      const cardKey = Key('adhd_low_stim_suggestion_card');
+
+      setUp(() {
+        // LowStimService.lowStimNotifier is shared static state — reset
+        // before every test so nothing leaks across the suite (same
+        // pattern as low_stim_service_test.dart / j08_profile_settings_test.dart).
+        LowStimService.lowStimNotifier.value = false;
+      });
+
+      Future<void> reachSuggestions(WidgetTester tester) async {
+        SharedPreferences.setMockInitialValues({});
+        await tester.pumpWidget(_buildTestApp(() {}));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text("Let's do it"));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('I just start — it\'s not a big deal'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('I stay locked in until it\'s done'));
+        await tester.pumpAndSettle();
+      }
+
+      // A single large `pump(duration)` fires the SnackBar's auto-dismiss
+      // Timer but only ticks its reverse (fade-out) animation one frame, so
+      // it can be left "stuck" mid-animation and still counted as showing —
+      // pump in small steps so the controller actually finishes and the
+      // entry is cleared from the ScaffoldMessenger queue.
+      Future<void> pumpUntilSnackbarGone(WidgetTester tester) async {
+        for (var i = 0;
+            i < 40 && find.byType(SnackBar).evaluate().isNotEmpty;
+            i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      testWidgets('renders off by default, offering to turn quiet mode on',
+          (tester) async {
+        await reachSuggestions(tester);
+
+        expect(LowStimService.enabled, isFalse);
+        expect(find.byKey(cardKey), findsOneWidget);
+        expect(
+          find.textContaining('Tap to turn it on now', findRichText: true),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+      });
+
+      testWidgets(
+          'tapping the card flips the real LowStimService — same call path '
+          'as the Settings toggle — and gives gentle confirmation feedback',
+          (tester) async {
+        await reachSuggestions(tester);
+
+        await tester.tap(find.byKey(cardKey));
+        // Explicit pumps (not pumpAndSettle) so the transient confirmation
+        // snackbar is still on screen to assert against — pumpAndSettle
+        // would advance past its auto-dismiss duration.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(tester.takeException(), isNull);
+        expect(LowStimService.enabled, isTrue);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool(LowStimService.kLowStimModeKey), isTrue);
+
+        // Gentle confirmation feedback (matches the Settings toggle's
+        // snackbar style).
+        expect(find.text('Quiet mode is on.'), findsOneWidget);
+
+        // Card copy + icon flip to reflect the now-live "on" state.
+        expect(
+          find.textContaining('Quiet mode is on —', findRichText: true),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.check_circle_rounded), findsWidgets);
+      });
+
+      testWidgets('tapping a second time flips it back off',
+          (tester) async {
+        await reachSuggestions(tester);
+
+        await tester.tap(find.byKey(cardKey));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(LowStimService.enabled, isTrue);
+        await pumpUntilSnackbarGone(tester); // let the first snackbar clear
+
+        await tester.tap(find.byKey(cardKey));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(LowStimService.enabled, isFalse);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool(LowStimService.kLowStimModeKey), isFalse);
+        expect(find.text('Quiet mode is off.'), findsOneWidget);
+      });
+
+      testWidgets(
+          'does not disturb the unrelated adhd_pref_low_stim_v1 soft-default '
+          'pref already written when the questions were completed',
+          (tester) async {
+        await reachSuggestions(tester);
+
+        final prefsBefore = await SharedPreferences.getInstance();
+        expect(prefsBefore.getBool(kAdhdPrefLowStimKey), isTrue);
+
+        await tester.tap(find.byKey(cardKey));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final prefsAfter = await SharedPreferences.getInstance();
+        expect(prefsAfter.getBool(kAdhdPrefLowStimKey), isTrue);
+      });
     });
   });
 }
