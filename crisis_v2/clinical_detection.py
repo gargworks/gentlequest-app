@@ -337,39 +337,77 @@ class ClinicalCrisisDetector:
         return score
         
     def _combine_scores(self, base: float, context: float, temporal: float, linguistic: float) -> float:
-        """Combine multiple scores with weighted average.
+        """Combine multiple scores into a final risk score.
 
-        KNOWN BUG (found during v1.5.0 M1 verification, 2026-07-02, not fixed
-        in that pass — flagged instead of silently patched because it's a
-        scoring-architecture issue, not a pattern-coverage gap, and needs
-        deliberate clinical review rather than a surgical tweak):
-        the 0.5 weight on `base` means even an unambiguous, single
-        immediate_action=True indicator (weight 1.0, e.g. "kill myself")
-        only contributes 0.5 to `total` before context/temporal/linguistic
-        top it up — usually landing in RiskLevel.LOW (0.5-1.5) rather than
-        HIGH/CRISIS, so `immediate_action_required` (gated on
-        risk_level.severity >= HIGH) stays False for textbook crisis
-        statements like "I have a gun ready to kill myself tonight".
-        Verified empirically: see tests/test_clinical_detection_flag.py.
-        Do not treat `assess_risk()`'s `risk_level` / `immediate_action_required`
-        as production-ready until this is addressed — pattern-level
-        `clinical_indicators` detection (what this file's ADHD-update fix
-        touched) is sound; the score aggregation on top of it is not.
+        SCORING INTENT: `base` (0.0-4.0, from `_calculate_risk_score`) is the
+        primary clinical signal — the sum of C-SSRS-derived indicator
+        weights (0.6-1.0 per indicator, see `CLINICAL_INDICATORS`), already
+        scaled to land directly against the `RiskLevel` thresholds in
+        `_score_to_risk_level` (0.5 / 1.5 / 2.5 / 3.5). `context`,
+        `temporal`, and `linguistic` are small corroborating nudges
+        (each typically 0.0-0.5) layered on top — they are not peers of
+        `base` on the same scale and must not dilute it.
+
+        FIXED BUG (v1.5.0 M1 repair, 2026-07-02; found + documented but not
+        fixed in PR #167): the previous 0.5 weight on `base` halved the
+        primary signal before the small additive nudges were even applied,
+        so even an unambiguous, single immediate_action=True indicator
+        (lowest such weight in the table is 0.8, e.g. "hurt myself") could
+        never clear the HIGH threshold (2.5) on its own —
+        `immediate_action_required` (gated on
+        `risk_level.severity >= RiskLevel.HIGH.severity` in `assess_risk`)
+        stayed False for textbook crisis statements. Confirmed against the
+        module's own self-test cases in `verify_enterprise.py` and
+        `tests/test_clinical_detection_scoring.py`.
+
+        FIX — derived, not tuned by feel:
+          * Lower bound: the single lowest-weight immediate_action=True
+            indicator (0.8) must alone clear HIGH (>=2.5):
+            0.8 * BASE_WEIGHT >= 2.5  =>  BASE_WEIGHT >= 3.125
+          * Upper bound: a single highest-weight indicator (1.0, e.g.
+            "kill myself") acting alone, with no corroborating context/
+            temporal/linguistic signal, should land in HIGH — not jump
+            straight to CRISIS, which is reserved for stacked/corroborated
+            severity (see `_calculate_risk_score`'s high-risk multiplier):
+            1.0 * BASE_WEIGHT < 3.5  =>  BASE_WEIGHT < 3.5
+          => BASE_WEIGHT in [3.125, 3.5). Chosen 3.25 (comfortable margin
+          from both bounds), not an arbitrary tuning knob.
+
+        This does NOT make every self-test case in `verify_enterprise.py`
+        hit its literal expected bucket — two of its five expectations are
+        mathematically unreachable by any reweighting of these four scalar
+        inputs (proof + detail in `tests/test_clinical_detection_scoring.py`):
+        one message triggers zero signal across all four inputs (no linear
+        function of an all-zero vector can differ from another all-zero
+        result), and one expects a *lower*-weighted single indicator (0.8)
+        to outrank a *higher*-weighted one (1.0) in severity, which no
+        monotonic function of `base` can invert without unsafe weights
+        (BASE_WEIGHT high enough to do that also drags ordinary messages
+        into CRISIS). What this fix guarantees instead — the actual safety
+        property the bug was about — is that immediate_action=True
+        indicators reliably clear HIGH and set `immediate_action_required`.
+
+        INVARIANT preserved regardless of this fix: when this detector is
+        wired into the live chat path behind ENABLE_CLINICAL_DETECTION
+        (see routes/chat.py), it is escalation-only relative to the simple
+        keyword detector — a low/none clinical result never suppresses a
+        simple-detector crisis hit. That guarantee lives at the call site,
+        not in this scoring math.
         """
         weights = {
-            'base': 0.5,
+            'base': 3.25,
             'context': 0.2,
             'temporal': 0.15,
             'linguistic': 0.15,
         }
-        
+
         total = (
             base * weights['base'] +
             context * weights['context'] +
             temporal * weights['temporal'] +
             linguistic * weights['linguistic']
         )
-        
+
         return total
         
     def _score_to_risk_level(self, score: float) -> RiskLevel:

@@ -15,31 +15,48 @@ keyword-bypass incidents" the brief requires before flipping the flag:
    targeted pattern addition in crisis_v2/clinical_detection.py (see the
    comment there) mirroring the v1 fix.
 
-2. Separately — and NOT fixed in this pass, on purpose — the detector's
-   *aggregate* `risk_level` / `immediate_action_required` output has a
-   deeper scoring bug: `_combine_scores` weights the indicator-derived
-   `base` score by only 0.5, so even a single immediate_action=True
-   indicator (weight 1.0, e.g. "kill myself") lands in RiskLevel.LOW, and
-   weight <1.0 indicators (e.g. "hurt myself", weight 0.8) can round all
-   the way down to RiskLevel.NONE. Verified against the module's own
-   `verify_enterprise.py::verify_clinical_crisis` self-test cases: 4 of 5
-   fail against current scoring. This is a scoring-architecture problem
-   that needs deliberate clinical review, not a surgical patch, so it's
-   flagged here (and in a comment above `_combine_scores`) rather than
-   silently patched. Tests below therefore assert at the indicator-
-   detection layer (what was actually fixed), not the aggregate
-   risk_level — and deliberately do NOT assert immediate_action_required
-   is True, because today it is not.
+2. Separately, `_combine_scores` had a deeper scoring bug: it weighted
+   the indicator-derived `base` score by only 0.5, so even a single
+   immediate_action=True indicator (weight 1.0, e.g. "kill myself")
+   landed in RiskLevel.LOW, and weight <1.0 indicators (e.g. "hurt
+   myself", weight 0.8) could round all the way down to RiskLevel.NONE.
+   Verified against the module's own `verify_enterprise.py::verify_clinical_crisis`
+   self-test cases: 4 of 5 failed against that scoring. This class of test
+   file originally deliberately did NOT assert `immediate_action_required`
+   for that reason.
 
-3. `crisis_detector` (crisis_v2) is not wired into the live /api/chat path.
-   routes/chat.py's synchronous check calls crisis_detection.detect_crisis_level
-   (the v1, keyword-only module) plus an LLM watchdog
-   (helpers/crisis_helpers._run_crisis_watchdog); neither touches crisis_v2.
-   integrations.process_chat_with_enterprise() is the only caller of
-   crisis_detector, and nothing calls that function from the chat routes.
-   So flipping ENABLE_CLINICAL_DETECTION changes /api/enterprise/status's
-   reported flag and makes the class importable, but does not change any
-   user-facing crisis handling today — confirmed by the last test below.
+   UPDATE (v1.5.0 M1 repair, ADR-006, this PR): `_combine_scores` is
+   fixed — see its docstring in crisis_v2/clinical_detection.py for the
+   full derivation, and tests/test_clinical_detection_scoring.py for the
+   converted self-test cases (3 of 5 now pass their literal bucket; the
+   other 2 are proven mathematically unreachable via any
+   `_combine_scores`-only reweighting, but the actual safety property —
+   `immediate_action_required=True` for both — now holds). The tests
+   below still assert at the indicator-detection layer for the bypass
+   phrases specifically (that layer is unaffected by the scoring fix),
+   but `immediate_action_required` is no longer universally False; see
+   test_clinical_detection_scoring.py and
+   test_clinical_detection_integration.py for aggregate-score coverage.
+
+3. `crisis_detector` (crisis_v2) was not wired into the live /api/chat path
+   as of PR #167 — routes/chat.py's synchronous check called only
+   crisis_detection.detect_crisis_level (the v1, keyword-only module) plus
+   an LLM watchdog (helpers/crisis_helpers._run_crisis_watchdog); neither
+   touched crisis_v2. integrations.process_chat_with_enterprise() was the
+   only caller of crisis_detector, and nothing called that function from
+   the chat routes. So flipping ENABLE_CLINICAL_DETECTION changed
+   /api/enterprise/status's reported flag and made the class importable,
+   but did not change any user-facing crisis handling — confirmed by the
+   last test below (still true, see its updated docstring).
+
+   UPDATE (v1.5.0 M1 repair, ADR-006, this PR): `crisis_detector` is now
+   wired into `helpers/chat_helpers._process_chat_message` behind the
+   SAME flag, as an escalation-only layer on top of
+   crisis_detection.detect_crisis_level — it can only raise risk_level,
+   never lower it or suppress a crisis the v1 detector already caught.
+   See `helpers/chat_helpers._maybe_escalate_with_clinical_detector` and
+   tests/test_clinical_detection_integration.py (flag-off/on behavior
+   through the real /api/chat path, and an explicit invariant test).
 """
 
 import importlib
@@ -212,12 +229,22 @@ def chat_client(chat_app):
 def test_flag_flip_does_not_change_or_block_chat_endpoint(
     flag_value, chat_client, restore_integrations_state, monkeypatch
 ):
-    """routes/chat.py never reads ENABLE_CLINICAL_DETECTION or
-    integrations.crisis_detector (confirmed by inspection — see module
-    docstring), so flipping the flag must not change /api/chat's status
-    code or crisis-related response fields, and must never block the
-    response. Parametrized over both flag states to prove identical
-    behavior either way.
+    """UPDATED (v1.5.0 M1 repair, ADR-006, this PR): routes/chat.py's
+    dependency chain (via helpers/chat_helpers._process_chat_message) now
+    DOES read ENABLE_CLINICAL_DETECTION / integrations.crisis_detector —
+    see the module docstring's item 3 update. This specific test still
+    holds, but for a narrower reason than its original docstring claimed:
+    "want it all to stop" is already caught by crisis_detection.py's v1
+    keyword list (risk_level="crisis" before the clinical layer even
+    runs), and the clinical escalation layer is escalation-only — it
+    short-circuits and never even consults the clinical detector once the
+    simple detector has already said "crisis" (nothing can escalate past
+    it). So for THIS phrase specifically, flipping the flag provably
+    cannot change the response, in either flag state. It does NOT mean
+    the flag is inert for /api/chat in general — see
+    test_clinical_detection_integration.py for a message the v1 detector
+    misses entirely, where the flag flip visibly changes risk_level
+    through the real endpoint.
     """
     os.environ["ENABLE_CLINICAL_DETECTION"] = flag_value
     importlib.reload(integrations_module)

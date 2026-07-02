@@ -316,9 +316,16 @@ def chat_stream():
         full_text, actual_risk, tool_calls = _process_chat_message(
             message, session_id, is_first_message=_is_first_msg,
         )
-        # Use detected risk level from the response if available
+        # Use detected risk level from the response if available.
+        # _process_chat_message may have escalated risk_level beyond the
+        # plain detect_crisis_level() call above (see
+        # helpers/chat_helpers._maybe_escalate_with_clinical_detector,
+        # ENABLE_CLINICAL_DETECTION) — recompute crisis_data so the SSE
+        # meta event's crisis_msg/crisis_numbers match the level actually
+        # used, instead of the pre-escalation snapshot from line 310.
         if actual_risk:
             risk_level = actual_risk
+            crisis_data = get_crisis_response_and_resources(risk_level, country)
 
         # Extract exercise data from tool calls (if any)
         exercise_data = {}

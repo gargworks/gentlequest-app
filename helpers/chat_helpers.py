@@ -138,6 +138,89 @@ def _apply_layer_2_safety(
 
 
 
+# ── ENABLE_CLINICAL_DETECTION escalation layer (v1.5.0 M1) ─────────
+#
+# crisis_v2/clinical_detection.py's ClinicalCrisisDetector was previously
+# dead code — importable behind the ENABLE_CLINICAL_DETECTION flag (see
+# integrations.py) but never called from the live chat path. This wires
+# it in, still behind the same flag.
+#
+# INVARIANT (do not weaken): this is escalation-only. The clinical
+# detector can only RAISE risk_level relative to crisis_detection.py's
+# simple keyword result — it can never lower it or suppress a crisis the
+# simple detector already caught. When the flag is off/unset, this layer
+# is a complete no-op and chat behavior is byte-for-byte identical to
+# before this change.
+_V1_RISK_RANK = {"low": 0, "medium": 1, "high": 2, "crisis": 3}
+
+# crisis_v2's RiskLevel.code vocabulary ("none"/"low"/"moderate"/"high"/
+# "crisis") differs from crisis_detection.py's v1 vocabulary ("low"/
+# "medium"/"high"/"crisis" — no "none" tier). Map clinical codes onto the
+# v1 scale so the two can be compared with one hierarchy (mirrors the
+# existing risk_hierarchy pattern in helpers/crisis_helpers.py's
+# _run_crisis_watchdog). "none" folds into v1's floor ("low"); "moderate"
+# maps to v1's "medium".
+_CLINICAL_CODE_TO_V1 = {
+    "none": "low",
+    "low": "low",
+    "moderate": "medium",
+    "high": "high",
+    "crisis": "crisis",
+}
+
+
+def _maybe_escalate_with_clinical_detector(
+    message: str, session_id: str, simple_risk_level: str
+) -> str:
+    """Escalate `simple_risk_level` using ClinicalCrisisDetector, gated on
+    ENABLE_CLINICAL_DETECTION. Returns `simple_risk_level` unchanged when
+    the flag is off, the detector is unavailable, or the clinical
+    assessment is not more severe than the simple result.
+
+    No new data flow: this reuses the exact `message` + `session_id`
+    already passed into `detect_crisis_level` above — nothing new is
+    collected, sent, or persisted to run this analysis. It is a second,
+    local, in-process analyzer over data already in scope for this
+    request.
+    """
+    # Simple detector already at the ceiling — nothing can escalate past
+    # "crisis", so skip the extra computation entirely (same short-circuit
+    # helpers/crisis_helpers.py's _run_crisis_watchdog uses).
+    if simple_risk_level == "crisis":
+        return simple_risk_level
+
+    import integrations as _integrations  # local import so tests that
+    # importlib.reload(integrations) to flip the flag are picked up here
+    # at call time, not bound stale at module-import time.
+
+    if not _integrations.ENABLE_CLINICAL_DETECTION or _integrations.crisis_detector is None:
+        return simple_risk_level
+
+    try:
+        assessment = _integrations.crisis_detector.assess_risk(
+            message=message, session_id=session_id,
+        )
+        clinical_v1_level = _CLINICAL_CODE_TO_V1.get(
+            assessment["risk_level"].code, "low"
+        )
+    except Exception as exc:
+        # Fail open — same contract as _apply_layer_2_safety and the async
+        # crisis watchdog: a clinical-detector error must never block or
+        # degrade the chat response, only skip this escalation.
+        try:
+            current_app.logger.warning(
+                "clinical_detection_escalation_failed session_id=%s err=%s",
+                session_id, exc,
+            )
+        except RuntimeError:
+            pass
+        return simple_risk_level
+
+    if _V1_RISK_RANK.get(clinical_v1_level, 0) > _V1_RISK_RANK.get(simple_risk_level, 0):
+        return clinical_v1_level
+    return simple_risk_level
+
+
 # ── Main chat message processing ──────────────────────────────────
 
 def _process_chat_message(
@@ -166,7 +249,12 @@ def _process_chat_message(
         from flask import current_app  # Force local scope to fix UnboundLocalError
         # Detect crisis level FIRST
         risk_level = detect_crisis_level(message)
-        
+
+        # ENABLE_CLINICAL_DETECTION escalation layer — no-op when the flag
+        # is off/unset. See _maybe_escalate_with_clinical_detector's
+        # docstring for the escalation-only invariant.
+        risk_level = _maybe_escalate_with_clinical_detector(message, session_id, risk_level)
+
         # Guardrail Layer 1: Immediate Crisis Blocking
         if risk_level == "crisis":
              # Use the function defined in this file (available at runtime)
