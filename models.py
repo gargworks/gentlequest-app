@@ -504,3 +504,19 @@ class FunnelSnapshot(db.Model):
 
     def __repr__(self):
         return f"<FunnelSnapshot id={self.id} at={self.created_at}>"
+
+
+class FeedbackSubmission(db.Model):
+    """In-app user feedback: star rating + optional free text (FeedbackDialog)."""
+    __tablename__ = "feedback_submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
+    rating = db.Column(db.Integer, nullable=False)
+    feedback_text = db.Column(db.Text)
+    app_version = db.Column(db.String(40))
+    platform = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<FeedbackSubmission id={self.id} rating={self.rating}>"

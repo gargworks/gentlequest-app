@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/app_export.dart';
-import '../../../services/analytics_service.dart';
+import '../core/app_export.dart';
+import '../services/analytics_service.dart';
+import '../services/api_service.dart';
 
 class FeedbackDialog extends StatefulWidget {
   const FeedbackDialog({super.key});
@@ -40,7 +43,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
-      // Store feedback locally (could also send to backend)
+      // Store feedback locally
       final prefs = await SharedPreferences.getInstance();
       final feedbackList = prefs.getStringList('user_feedback') ?? [];
       feedbackList.add({
@@ -50,6 +53,14 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
         'trigger': 'after_3rd_checkin',
       }.toString());
       await prefs.setStringList('user_feedback', feedbackList);
+
+      // Also send to backend — fire-and-forget, silent failure. ApiService
+      // swallows its own errors, and we don't await it so a slow/failed
+      // network call never delays or blocks the dialog closing.
+      unawaited(ApiService().submitFeedback(
+        rating: _rating,
+        feedbackText: _feedbackController.text.trim(),
+      ));
 
       if (mounted) {
         Navigator.of(context).pop();

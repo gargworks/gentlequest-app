@@ -81,6 +81,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   // R1D6 — lazy QuestsEngine instance for streak badge (read-only, no side-effects).
   QuestsEngine? _questsEngineForStreak;
 
+  // Guards 'intervention_accepted' so it fires once per discrete exercise
+  // card, not on every rebuild of the message list (was firing on every
+  // list-item rebuild — 329 events, top-4 by volume, all noise).
+  final Set<String> _acceptedInterventionIds = {};
+
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
   // Global in-flight guard to prevent duplicate Safety & Legal sheet
@@ -1075,10 +1080,14 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final exerciseId =
         '${exercise.type.toString().split('.').last}_${exercise.name.hashCode}';
 
-    // Track that user saw/accepted an intervention
-    FirebaseService().logEvent('intervention_accepted', {
-      'exercise_type': exercise.type.toString().split('.').last,
-    });
+    // Track that user saw/accepted an intervention — guarded so it fires
+    // once per discrete exercise card, not on every rebuild of this method
+    // (this is a build-time helper, called on every message-list rebuild).
+    if (_acceptedInterventionIds.add(exerciseId)) {
+      FirebaseService().logEvent('intervention_accepted', {
+        'exercise_type': exercise.type.toString().split('.').last,
+      });
+    }
 
     switch (exercise.type) {
       case ExerciseType.breathing:

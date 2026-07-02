@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/firebase_service.dart';
 import '../../theme/gq_tokens.dart';
 import 'profile_prefs_keys.dart';
 import 'profile_widgets.dart';
@@ -407,6 +408,11 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                       child: PrimaryButton(
                         label: isFinalStep ? 'Save plan' : 'Save & continue',
                         onTap: () async {
+                          // Fires once per discrete Save tap (not on rebuild).
+                          unawaited(FirebaseService().logEvent(
+                            'safety_plan_step_saved',
+                            {'step': widget.stepIdx},
+                          ));
                           if (isFinalStep) {
                             // Final step: persist filled flag + return to home.
                             await _markPlanFilled();

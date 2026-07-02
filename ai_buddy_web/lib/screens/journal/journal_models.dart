@@ -1,6 +1,7 @@
 // Journal — data model + on-device/server persistence.
 // Split from journal_screen.dart (R1D14); see that file for the screen entry.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/firebase_service.dart';
 import '../../services/journal_api.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,6 +123,11 @@ class JournalStorage {
     final entries = await _loadLocal();
     entries.insert(0, entry);
     await _saveLocal(entries);
+
+    // Fires once per discrete save action (not on rebuild) — this is the
+    // actual persistence point, called from the editor's Save button and
+    // mood_reflection_sheet's journal prompt.
+    unawaited(FirebaseService().logEvent('journal_entry_saved'));
 
     if (AuthService.instance.isSignedIn) {
       try {

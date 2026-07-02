@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import '../config/feature_flags.dart';
@@ -239,6 +240,52 @@ class ApiService {
       // Fire-and-forget - don't break UX on analytics failure
       if (kDebugMode) {
         debugPrint('📊 Failed to report exercise outcome: $e');
+      }
+    }
+  }
+
+  /// Best-effort platform label for analytics payloads: 'ios' | 'android' | 'web' | 'other'.
+  String _platformLabel() {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      default:
+        return 'other';
+    }
+  }
+
+  /// Submit in-app user feedback (star rating + optional free text) from
+  /// FeedbackDialog. Fire-and-forget — the dialog already saves the
+  /// feedback locally, so a network failure here must never surface to
+  /// the user or block the dialog.
+  Future<void> submitFeedback({
+    required int rating,
+    String? feedbackText,
+  }) async {
+    try {
+      await _getSessionId();
+      final packageInfo = await PackageInfo.fromPlatform();
+      await _dio.post(
+        '/api/feedback',
+        data: {
+          'session_id': _sessionId,
+          'rating': rating,
+          if (feedbackText != null && feedbackText.trim().isNotEmpty)
+            'feedback_text': feedbackText.trim(),
+          'app_version': packageInfo.version,
+          'platform': _platformLabel(),
+        },
+      );
+      if (kDebugMode) {
+        debugPrint('📊 Feedback submitted: rating=$rating');
+      }
+    } catch (e) {
+      // Fire-and-forget - don't break UX on network failure
+      if (kDebugMode) {
+        debugPrint('📊 Failed to submit feedback: $e');
       }
     }
   }
