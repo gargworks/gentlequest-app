@@ -35,9 +35,31 @@ import '../widgets/offline_banner.dart';
 // R1D6 — QuestsEngine for streak badge (read-only).
 import '../quests/quests_engine.dart';
 import 'chat/chat_widgets.dart';
+// v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a)
+import '../models/body_double_session.dart';
+import '../widgets/body_double/body_double_start_sheet.dart';
+import '../widgets/body_double/body_double_timer_bar.dart';
 
 // No re-exports: every symbol extracted to chat/chat_widgets.dart was
 // private pre-split, so no external consumer can depend on them.
+
+/// v1.5.0 ADHD Update — active body-doubling session state.
+///
+/// Tick-based, not wall-clock-based: [remaining] is decremented by exactly
+/// one second per `Timer.periodic` tick in `_InteractiveChatScreenState`.
+/// Deliberately avoids `DateTime.now().difference(startedAt)` — a
+/// backgrounded app losing ticks for a few seconds is an acceptable MVP
+/// trade-off, and tick-counting keeps the countdown deterministic under
+/// widget-test fake-async pumps (which fake `Timer`, not `DateTime.now()`).
+class _BodyDoubleSession {
+  _BodyDoubleSession({required this.task, required this.total});
+
+  final String task;
+  final Duration total;
+
+  /// Set once the halfway check-in has fired, so it never re-fires.
+  bool midpointFired = false;
+}
 
 class InteractiveChatScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -80,6 +102,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
   // R1D6 — lazy QuestsEngine instance for streak badge (read-only, no side-effects).
   QuestsEngine? _questsEngineForStreak;
+
+  // ── v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a) ──────────────
+  /// Non-null while a focus session is running. One session at a time —
+  /// stacking/queuing multiple sessions is out of scope for the MVP.
+  _BodyDoubleSession? _bdSession;
+  Timer? _bdTicker;
+  Duration _bdRemaining = Duration.zero;
 
   // Guards 'intervention_accepted' so it fires once per discrete exercise
   // card, not on every rebuild of the message list (was firing on every
@@ -501,6 +530,32 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             style: TextStyleHelper.instance.headline24Bold,
                           ),
                         ),
+                        // v1.5.0 ADHD Update — body-doubling entry point.
+                        // Icon swaps to filled + coral while a session is
+                        // active as a lightweight "still running" signal.
+                        Semantics(
+                          label: _bdSession != null
+                              ? 'Focus session running'
+                              : 'Start focus session',
+                          button: true,
+                          child: InkWell(
+                            key: const Key('body_double_entry_button'),
+                            borderRadius: BorderRadius.circular(22),
+                            onTap: _startBodyDoubleFlow,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                _bdSession != null
+                                    ? Icons.timer
+                                    : Icons.timer_outlined,
+                                color: _bdSession != null
+                                    ? GQColors.coral
+                                    : GQColors.primary,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ),
                         // Profile / nav sheet entry point (Tier 2.1)
                         Semantics(
                           label: 'Open navigation menu',
@@ -551,6 +606,18 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   height: 8.h,
                   color: appTheme.colorFFF3F4,
                 ),
+                // v1.5.0 ADHD Update — pinned outside the message list (not
+                // scrolled with it) so the running timer is always visible
+                // while chatting. Check-in text lives in the transcript
+                // itself (see _startBodyDoubleSession et al.) — this bar is
+                // just the persistent countdown + end-session affordance.
+                if (_bdSession != null)
+                  BodyDoubleTimerBar(
+                    task: _bdSession!.task,
+                    remaining: _bdRemaining,
+                    total: _bdSession!.total,
+                    onEndSession: _abandonBodyDouble,
+                  ),
                 // Disclaimer moved to a ChatGPT-style footer below the input
                 // bar (see end of Column). Was an amber dismissible banner
                 // above the greeting — created an "are you in danger?" framing
@@ -1459,10 +1526,129 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     );
   }
 
+  // ── v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a) ──────────────
+  //
+  // Flow: header icon → showBodyDoubleStartSheet (task + duration) →
+  // _startBodyDoubleSession fires `body_double_started` at the real action
+  // site (here, not in build()) and inserts a start check-in into the real
+  // chat transcript → a 1s Timer.periodic ticks _bdRemaining down →
+  // _onBdTick fires the midpoint check-in once, then hands off to
+  // _completeBodyDouble on natural completion. The pinned BodyDoubleTimerBar
+  // lets the user end early via _abandonBodyDouble at any point — always a
+  // kind, no-guilt message, never a "you failed" framing (P: no streaks, no
+  // shame on abandon — see V1_5_0_ADHD_UPDATE_SCOPE.md Workstream 2a).
+
+  Future<void> _startBodyDoubleFlow() async {
+    if (_bdSession != null) {
+      // One session at a time for the MVP — surface the existing session
+      // instead of silently stacking a second timer.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('A focus session is already running.')),
+      );
+      return;
+    }
+    final config = await showBodyDoubleStartSheet(context);
+    if (config == null || !mounted) return; // sheet dismissed without starting
+    _startBodyDoubleSession(config);
+  }
+
+  void _startBodyDoubleSession(BodyDoubleSessionConfig config) {
+    // Real action site for the start event — fires once, right where the
+    // user's Start tap actually resolves into a running session.
+    FirebaseService().logEvent('body_double_started', {
+      'duration_minutes': config.duration.inMinutes,
+      'task_length': config.task.length,
+    });
+    Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
+      "I'm with you for the next ${config.duration.inMinutes} minutes on "
+      "${config.task}. No pressure — start whenever you're ready, and "
+      "I'll check in partway through. 🌱",
+    );
+    _bdTicker?.cancel();
+    setState(() {
+      _bdSession = _BodyDoubleSession(task: config.task, total: config.duration);
+      _bdRemaining = config.duration;
+    });
+    _bdTicker = Timer.periodic(const Duration(seconds: 1), _onBdTick);
+  }
+
+  void _onBdTick(Timer timer) {
+    final session = _bdSession;
+    if (session == null) {
+      timer.cancel();
+      return;
+    }
+    final next = _bdRemaining - const Duration(seconds: 1);
+    if (next <= Duration.zero) {
+      _completeBodyDouble();
+      return;
+    }
+    if (!session.midpointFired && next <= session.total ~/ 2) {
+      session.midpointFired = true;
+      Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
+        "Halfway there — still with me? A bit more on ${session.task} and "
+        "we're done. You're doing fine.",
+      );
+    }
+    if (mounted) setState(() => _bdRemaining = next);
+  }
+
+  void _completeBodyDouble() {
+    final session = _bdSession;
+    _bdTicker?.cancel();
+    _bdTicker = null;
+    if (session == null) return;
+    FirebaseService().logEvent('body_double_completed', {
+      'duration_minutes': session.total.inMinutes,
+    });
+    Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
+      "Time's up! However far you got on ${session.task}, that counts. "
+      "Nice work sticking with me. 💜",
+    );
+    if (mounted) {
+      setState(() {
+        _bdSession = null;
+        _bdRemaining = Duration.zero;
+      });
+    } else {
+      _bdSession = null;
+    }
+  }
+
+  /// Ends the session early. Never framed as failure — no streak break, no
+  /// "you gave up" language. Fires `body_double_abandoned` with the elapsed
+  /// time actually spent, then a kind close-out message in the transcript.
+  void _abandonBodyDouble() {
+    final session = _bdSession;
+    _bdTicker?.cancel();
+    _bdTicker = null;
+    if (session == null) return;
+    final elapsed = session.total - _bdRemaining;
+    FirebaseService().logEvent('body_double_abandoned', {
+      'planned_duration_minutes': session.total.inMinutes,
+      'elapsed_seconds':
+          elapsed.inSeconds.clamp(0, session.total.inSeconds),
+    });
+    Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
+      "No worries — we stopped early. ${session.task} will still be there "
+      "whenever you're ready, and so will I.",
+    );
+    if (mounted) {
+      setState(() {
+        _bdSession = null;
+        _bdRemaining = Duration.zero;
+      });
+    } else {
+      _bdSession = null;
+    }
+  }
+
   @override
   void dispose() {
     widget.reselect?.removeListener(_onReselect);
     _connectivitySub?.cancel(); // R1D12 — Offline States
+    _bdTicker?.cancel(); // v1.5.0 ADHD Update — body-doubling session timer
     _messageController.dispose();
     _scrollController.dispose();
     _inputFocus.dispose();

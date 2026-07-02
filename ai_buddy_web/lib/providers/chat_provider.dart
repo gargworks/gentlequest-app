@@ -541,6 +541,23 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Inserts a companion (assistant) message directly into the transcript
+  /// without a network round-trip.
+  ///
+  /// v1.5.0 ADHD Update — body-doubling check-ins (start/midpoint/end/
+  /// abandon) need to land on a precise wall-clock schedule and use fixed,
+  /// pre-written gentle copy. Round-tripping those through the LLM chat
+  /// endpoint would add latency at exactly the moments a time-boxed session
+  /// needs to feel responsive, risk off-tone phrasing at a moment where tone
+  /// is the whole point (never guilt on abandon), and cost a model call for
+  /// text that doesn't need to vary. This reuses the existing Message model
+  /// and chat rendering — the message shows up as a normal Alex bubble —
+  /// just skips ApiService/the network hop.
+  void insertCompanionMessage(String content) {
+    _messages.add(Message(content: content, isUser: false));
+    notifyListeners();
+  }
+
   void clearChat() {
     _messages.clear();
     _hasShownGreeting = false; // Reset greeting flag
