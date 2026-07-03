@@ -40,10 +40,15 @@ class ComplianceService {
   // ============================================
   // PREFERENCE KEYS
   // ============================================
-  // Legacy key — kept as-is so existing 18+ verifications stay valid.
-  // Naming is a misnomer now (post-2026-05-21 the threshold is 13+ for
-  // most regions, see minAgeForRegion); the *bool value* just means
-  // "user attested to be of acceptable age for their region".
+  // Key name says "18_plus" and that's accurate: v1.3.0 (operator decision)
+  // enforces 18+ everywhere via _kMinAgeUniversal below. A 2026-05-21
+  // proposal briefly lowered this to a 13+/region-aware floor; it was
+  // reverted before shipping, and the universal 18+ policy below is what's
+  // actually live. The *bool value* just means "user attested to be of
+  // acceptable age for their region" (today, that's always 18) — the key
+  // name is otherwise cosmetic. The one-tap attestation UI
+  // (welcome_screen.dart) briefly drifted out of sync with the reversion —
+  // shipped asking "I'm 13 or older" — fixed 2026-07-02 (PR #172).
   static const String _kAgeVerifiedKey = 'compliance_age_verified_18_plus';
   static const String _kLocationVerifiedKey = 'compliance_location_verified';
   static const String _kVerifiedRegionKey = 'compliance_verified_region';
@@ -73,26 +78,30 @@ class ComplianceService {
   static const Duration _kAgeSignalCacheTtl = Duration(hours: 24);
 
   // ============================================
-  // AGE-GATE THRESHOLDS BY REGION
+  // AGE-GATE THRESHOLD — universal 18+ (v1.3.0)
   // ============================================
-  // Lowered from blanket 18+ on 2026-05-21 — original app objective was
-  // high-school students. The new floor is 13 (US COPPA / UK ICO digital
-  // age of consent) wherever local law allows, stepping up to 16 or 18
-  // for jurisdictions that mandate it. Default for unknown regions is the
-  // GLOBAL universal threshold (currently 13) — review with counsel
-  // before shipping to a market not already covered here.
+  // Current, live behavior: 18+ everywhere, no regional differentiation.
+  // This is an operator decision, not a per-region legal minimum — chosen
+  // to match GentleQuest's store rating (17+/Mature), match the privacy
+  // policy's stated 18+ floor, and sidestep COPPA / GDPR-K / minor-data
+  // regulatory complexity entirely instead of building region-aware
+  // handling for it.
   //
-  // ⚠ LEGAL-REVIEW-NEEDED before public scale:
-  //   - India (DPDP 2023): article 9 effectively requires 18+ for
-  //     digital service consent unless verifiable parental consent flow
-  //     is built. We mark India 18+ below but parental-consent flow is
-  //     out of scope for Phase 1.
-  //   - EU member states that chose >13 under GDPR-K (DE/FR/IT/NL/IE/
-  //     LU/HU/LT/PL/RO/SK/CY/HR/EL): 16+.
-  //   - Australia: no specific minimum but eSafety Commissioner
-  //     guidance suggests 13+; treated as 13 here.
-  // v1.3.0: operator decision — 18+ everywhere to match privacy policy and
-  // avoid COPPA / GDPR-K / minor-data regulatory complexity.
+  // History (reverted, kept for context only): a 2026-05-21 proposal
+  // explored lowering the floor to 13 (US COPPA / UK ICO digital age of
+  // consent) with region-specific step-ups to 16 or 18 where mandated —
+  // e.g. India (DPDP 2023, parental-consent flow required below 18),
+  // GDPR-K EU member states (DE/FR/IT/NL/IE/LU/HU/LT/PL/RO/SK/CY/HR/EL:
+  // 16+), Australia (eSafety Commissioner guidance suggests 13+). That
+  // proposal was reverted before shipping in favor of the universal-18+
+  // decision below; none of the region-specific thresholds it would have
+  // required were ever built. The one-tap attestation UI
+  // (welcome_screen.dart) briefly drifted out of sync with the reversion —
+  // shipped asking "I'm 13 or older" — fixed 2026-07-02 (PR #172).
+  //
+  // If region-aware age gating is revisited, re-verify every citation
+  // above against current law rather than trusting this comment — it's
+  // already over a month old.
   static const int _kMinAgeUniversal = 18;
 
   /// Minimum age (years) before a user can use the app.

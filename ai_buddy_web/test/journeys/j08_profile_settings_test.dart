@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/settings_screen.dart';
+import 'package:ai_buddy_web/screens/settings/notification_detail_screen.dart';
 import 'package:ai_buddy_web/screens/settings/settings_widgets.dart';
 import 'package:ai_buddy_web/providers/chat_provider.dart';
 import 'package:ai_buddy_web/providers/mood_provider.dart';
@@ -37,6 +38,15 @@ void main() {
 
     Widget buildSettings() {
       return const MaterialApp(home: SettingsScreen());
+    }
+
+    // Notification detail screen (View D) — reached from Settings by tapping
+    // "Daily check-in reminder", but only when signed in (UC-S5 fix,
+    // 2026-06-12: signed-out taps now open LoginScreen instead). Pumping the
+    // screen directly tests its real current content/behavior without
+    // faking AuthService's private sign-in state.
+    Widget buildNotificationDetail() {
+      return const MaterialApp(home: NotificationDetailScreen());
     }
 
     // ── Chat header ────────────────────────────────────────────────────────────
@@ -277,24 +287,16 @@ void main() {
     // ── Notification detail screen ─────────────────────────────────────────────
 
     testWidgets('notification detail shows day chips after opening', (tester) async {
-      await tester.pumpWidget(buildSettings());
+      await tester.pumpWidget(buildNotificationDetail());
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.tap(find.text('Daily check-in reminder'));
-      await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
 
       expect(find.text('ON DAYS'), findsOneWidget);
     });
 
     testWidgets('"Send a test notification" button present in detail', (tester) async {
-      await tester.pumpWidget(buildSettings());
+      await tester.pumpWidget(buildNotificationDetail());
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.tap(find.text('Daily check-in reminder'));
-      await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
 
       await tester.ensureVisible(find.text('Send a test notification'));
@@ -302,12 +304,8 @@ void main() {
     });
 
     testWidgets('"Send a test notification" tap shows snackbar', (tester) async {
-      await tester.pumpWidget(buildSettings());
+      await tester.pumpWidget(buildNotificationDetail());
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.tap(find.text('Daily check-in reminder'));
-      await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
 
       await tester.ensureVisible(find.text('Send a test notification'));

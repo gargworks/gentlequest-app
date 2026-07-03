@@ -136,6 +136,12 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    // Two "Save & exit" affordances now coexist by design: the top-right
+    // NavSaveExitButton (UC-CA3 fix, synthetic QA 2026-06-12 — visible
+    // above-the-fold exit path) and the original footer SaveAndExitLink
+    // ("Save & exit · we'll keep your spot"). Both wire to the same
+    // _saveAndExit handler. find.textContaining('Save & exit') now matches
+    // both, so these tests target the footer link by type to disambiguate.
     testWidgets('"Save & exit" link is present in assessment', (tester) async {
       await tester.pumpWidget(buildAssessment());
       await tester.pump(const Duration(milliseconds: 300));
@@ -145,7 +151,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
 
-      expect(find.textContaining('Save & exit'), findsOneWidget);
+      expect(find.byType(SaveAndExitLink), findsOneWidget);
+      // The nav-bar "Save & exit" affordance is present too (above the
+      // fold, UC-CA3) — both exit paths coexist by design.
+      expect(find.byType(NavSaveExitButton), findsOneWidget);
     });
 
     testWidgets('"Save & exit" tap does not crash', (tester) async {
@@ -157,7 +166,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
 
-      await tester.tap(find.textContaining('Save & exit'));
+      await tester.tap(find.byType(SaveAndExitLink));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 

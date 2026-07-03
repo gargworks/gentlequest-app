@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
 import numpy as np
-from collections import defaultdict
+from collections import OrderedDict
 
 
 class RiskLevel(Enum):
@@ -40,7 +40,17 @@ class ClinicalIndicator:
 
 class ClinicalCrisisDetector:
     """Advanced crisis detection using clinical protocols"""
-    
+
+    # Bound on the number of distinct session_ids tracked in
+    # `risk_history` (FLIP-SAFE adversarial review, crisis-hardening trio
+    # 3b). Each session's own history list was already capped at 100
+    # entries (see `_update_risk_history`), but the *dict of sessions*
+    # itself had no cap -- a long-running process (or an attacker cycling
+    # session_id per request) would grow it without bound, an unbounded
+    # per-process memory leak. Simple LRU: once the cap is exceeded, the
+    # least-recently-touched session is evicted first.
+    _MAX_TRACKED_SESSIONS = 1000
+
     # C-SSRS Based Indicators
     CLINICAL_INDICATORS = {
         'suicidal_ideation_active': [
@@ -109,7 +119,24 @@ class ClinicalCrisisDetector:
         ],
         'temporal_urgency': [
             ClinicalIndicator(
-                r'\b(tonight|today|right\s+now|immediately|soon|by\s+tomorrow)\b.*\b(die|end|kill)\b',
+                # Gap between the temporal word and the die/end/kill word is
+                # bounded (FLIP-SAFE adversarial review, crisis-hardening
+                # trio 3c) -- an unbounded `.*` here is superlinear: re.search
+                # retries the `.*` backtrack from every occurrence of the
+                # first alternation, so a message packed with repeated
+                # temporal words and no die/end/kill match ever degrades
+                # toward O(n^2). Measured: ~3.2s for a single 50k-char
+                # adversarial message with the old unbounded `.*` (vs <40ms
+                # at today's 5000-char /api/chat cap in routes/chat.py --
+                # that route-level cap is the ONLY thing keeping this safe
+                # today; a different call site, a raised cap, or a
+                # batch/offline use of this detector would not be
+                # protected). 200 chars covers realistic same-sentence /
+                # short-multi-clause proximity ("tonight I'm going to kill
+                # myself", "right now I just want to end it") while
+                # bounding worst-case backtracking to O(n) overall instead
+                # of O(n^2).
+                r'\b(tonight|today|right\s+now|immediately|soon|by\s+tomorrow)\b.{0,200}?\b(die|end|kill)\b',
                 1.0, 'temporal', 'Immediate temporal intent', True
             ),
             ClinicalIndicator(
@@ -152,7 +179,11 @@ class ClinicalCrisisDetector:
     def __init__(self):
         """Initialize clinical detector with compiled patterns"""
         self.compiled_indicators = self._compile_patterns()
-        self.risk_history = defaultdict(list)
+        # OrderedDict, not defaultdict(list): eviction (below) needs to
+        # reorder/pop keys, which defaultdict doesn't help with anyway
+        # (auto-vivification was never the point -- `_update_risk_history`
+        # is the sole writer and always creates the list explicitly now).
+        self.risk_history: "OrderedDict[str, list]" = OrderedDict()
         self.session_baselines = {}
         
     def _compile_patterns(self) -> Dict[str, List[Tuple[re.Pattern, ClinicalIndicator]]]:
@@ -287,8 +318,13 @@ class ClinicalCrisisDetector:
         
     def _analyze_temporal_patterns(self, session_id: str, current_score: float) -> float:
         """Analyze temporal risk patterns"""
-        history = self.risk_history[session_id]
-        
+        # .get(), not [] -- risk_history is a plain OrderedDict now (see
+        # __init__), not a defaultdict(list); a read for a session that
+        # hasn't been written yet (first message of a session) must not
+        # auto-vivify an entry, or every fresh session would count against
+        # _MAX_TRACKED_SESSIONS before it ever produced an assessment.
+        history = self.risk_history.get(session_id, [])
+
         if not history:
             return 0.0
             
@@ -543,13 +579,28 @@ class ClinicalCrisisDetector:
         
     def _update_risk_history(self, session_id: str, assessment: Dict):
         """Update risk history for pattern detection"""
+        # Touch (or create) this session's entry and mark it
+        # most-recently-used by moving it to the end of the OrderedDict --
+        # this is what makes the eviction below an LRU, not an arbitrary
+        # insertion-order cap.
+        if session_id in self.risk_history:
+            self.risk_history.move_to_end(session_id)
+        else:
+            self.risk_history[session_id] = []
+
         self.risk_history[session_id].append({
             'timestamp': datetime.utcnow().isoformat(),
             'risk_level': assessment['risk_level'].code,
             'score': assessment['risk_level'].severity,
             'indicators': len(assessment['clinical_indicators']),
         })
-        
-        # Keep only recent history (last 100 assessments)
+
+        # Keep only recent history (last 100 assessments) *for this session*
         if len(self.risk_history[session_id]) > 100:
             self.risk_history[session_id] = self.risk_history[session_id][-100:]
+
+        # Bound the number of distinct *sessions* tracked (separate from
+        # the per-session 100-entry cap above): evict the
+        # least-recently-touched session once the cap is exceeded.
+        while len(self.risk_history) > self._MAX_TRACKED_SESSIONS:
+            self.risk_history.popitem(last=False)
