@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/api_config.dart';
-import '../screens/journal_screen.dart' show JournalStorage;
 import 'firebase_service.dart';
 import 'session_manager.dart';
 
@@ -114,14 +113,6 @@ class AuthService {
         await SessionManager.adoptCanonicalSessionId(canonical);
       }
       await _persist(id: id, email: emailValue);
-      // Push any local-only journal entries to the user's server-side
-      // store now that we have a canonical session. Idempotent — runs
-      // at most once per sign-in window (guarded by a SharedPreferences
-      // flag inside JournalStorage).
-      // Fire-and-forget: a server hiccup here shouldn't block the UI
-      // confirming the sign-in.
-      // ignore: unawaited_futures
-      JournalStorage.migrateLocalToServer();
       // Notify subscribers so server-backed providers (ChatProvider,
       // MoodProvider) refetch their lists under the new canonical
       // session id.
@@ -191,18 +182,14 @@ class AuthService {
         });
       } catch (_) {}
     }
-    // Step 3: reset the journal migration flag so the next sign-in
-    // (possibly a different user on this device) re-runs the
-    // local→server push.
-    await JournalStorage.resetMigrationFlag();
-    // Step 4: drop the previous user's canonical session_id so
+    // Step 3: drop the previous user's canonical session_id so
     // subsequent API calls don't keep hitting their server-side data.
     // Replace with a fresh anonymous session id so anonymous use post
     // sign-out works immediately. The previous user's server-side data
     // is still bound to their account — signing back in re-adopts a
     // canonical session id (which may differ now that we unbound).
     await SessionManager.regenerateAnonymousSessionId();
-    // Step 5: notify subscribers so any open chat / mood views clear
+    // Step 4: notify subscribers so any open chat / mood views clear
     // their server-backed state and re-pull under the new anonymous
     // session.
     _emitSessionChanged();

@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../services/auth_service.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
 import 'journal_shared.dart';
@@ -155,14 +154,11 @@ class JournalEmptyState extends StatelessWidget {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      // Branch on sign-in state — the privacy promise has to
-                      // match what's actually true. Anonymous = device-only
-                      // (verbatim from R1D-Journal HTML). Signed in =
-                      // synced to the user's account, still private to
-                      // them, accessible across devices.
-                      AuthService.instance.isSignedIn
-                          ? 'Synced to your account. Only you can see it.'
-                          : 'Stays on your device. Never synced. Never shared.',
+                      // Journal entries are device-local only. The backend
+                      // /api/journal/* routes were removed in PR #167
+                      // (2026-07-02); there is no server sync path. This
+                      // copy is now unconditionally true for all users.
+                      'Stays on your device. Never synced. Never shared.',
                       style: const TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10.5,
