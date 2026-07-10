@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_export.dart';
 import '../services/analytics_service.dart';
-import '../services/api_service.dart';
 
 class FeedbackDialog extends StatefulWidget {
   const FeedbackDialog({super.key});
@@ -54,20 +53,23 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
       }.toString());
       await prefs.setStringList('user_feedback', feedbackList);
 
-      // Also send to backend — fire-and-forget, silent failure. ApiService
-      // swallows its own errors, and we don't await it so a slow/failed
-      // network call never delays or blocks the dialog closing.
-      unawaited(ApiService().submitFeedback(
+      // Also send to backend via analytics_service (anonymity-mode-wins gate).
+      // Returns bool so we can show an honest SnackBar: if the call was
+      // suppressed (anonymity mode on / consent off), the feedback was only
+      // saved locally.
+      final sent = await submitFeedback(
         rating: _rating,
-        feedbackText: _feedbackController.text.trim(),
-      ));
+        text: _feedbackController.text.trim(),
+      );
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thank you for your feedback! 💙'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(sent
+                ? 'Thank you for your feedback! 💙'
+                : 'Saved on your device'),
+            duration: const Duration(seconds: 2),
           ),
         );
       }

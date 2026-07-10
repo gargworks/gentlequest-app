@@ -525,9 +525,11 @@ class FeedbackSubmission(db.Model):
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
     rating = db.Column(db.Integer, nullable=False)
     feedback_text = db.Column(db.Text)
+    trigger = db.Column(db.String(40))
+    request_id = db.Column(db.String(64))
     app_version = db.Column(db.String(40))
     platform = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     def __repr__(self):
         return f"<FeedbackSubmission id={self.id} rating={self.rating}>"

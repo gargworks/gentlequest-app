@@ -6,7 +6,7 @@ Create Date: 2026-07-02 00:00:00.000000
 
 Schema notes:
   - Anonymous — session_id FK only, no user_id/auth.
-  - rating is required (1-5); feedback_text/app_version/platform optional.
+  - rating is required (1-5); feedback_text/trigger/request_id/app_version/platform optional.
   - Length caps enforced app-side in routes/feedback.py, not via DB CHECK.
 """
 from alembic import op
@@ -26,6 +26,8 @@ def upgrade():
         sa.Column('session_id', sa.String(length=36), nullable=False),
         sa.Column('rating', sa.Integer(), nullable=False),
         sa.Column('feedback_text', sa.Text(), nullable=True),
+        sa.Column('trigger', sa.String(length=40), nullable=True),
+        sa.Column('request_id', sa.String(length=64), nullable=True),
         sa.Column('app_version', sa.String(length=40), nullable=True),
         sa.Column('platform', sa.String(length=20), nullable=True),
         sa.Column(
@@ -38,8 +40,10 @@ def upgrade():
         sa.PrimaryKeyConstraint('id'),
     )
     op.create_index('ix_feedback_submissions_session_id', 'feedback_submissions', ['session_id'])
+    op.create_index('ix_feedback_submissions_created_at', 'feedback_submissions', ['created_at'])
 
 
 def downgrade():
+    op.drop_index('ix_feedback_submissions_created_at', table_name='feedback_submissions')
     op.drop_index('ix_feedback_submissions_session_id', table_name='feedback_submissions')
     op.drop_table('feedback_submissions')

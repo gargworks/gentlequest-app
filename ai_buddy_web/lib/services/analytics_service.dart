@@ -65,3 +65,46 @@ Future<void> logAnalyticsEvent(String eventType,
     if (kDebugMode) debugPrint('analytics: log error: $e');
   }
 }
+
+/// Submit in-app user feedback (star rating + optional free text) to the
+/// backend /api/feedback endpoint.
+///
+/// Gated on ANONYMITY MODE ONLY — not analytics consent. Feedback is an
+/// explicit user act (the user typed text and pressed submit), which is its
+/// own consent to transmit that content. A user who declined passive
+/// telemetry but explicitly submits feedback should still have it sent.
+/// The anonymity-mode promise stays absolute: anonymity ON = never transmit.
+///
+/// Returns [true] if the POST was sent (regardless of server response code),
+/// [false] if suppressed by anonymity mode or network error. The UI uses
+/// this to show an honest SnackBar ("Thank you!" vs "Saved on your device").
+Future<bool> submitFeedback({
+  required int rating,
+  String? text,
+  String trigger = 'after_3rd_checkin',
+}) async {
+  try {
+    // Anonymity-mode-only gate: anonymity ON = never transmit (absolute promise).
+    // Analytics consent is NOT checked here — feedback is explicit user act.
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(kAnonymityModeKey) ?? false) return false;
+
+    final sid = await SessionManager.getOrCreateSessionId();
+    await _dio.post(
+      '/api/feedback',
+      data: {
+        'rating': rating,
+        'trigger': trigger,
+        if (text != null && text.trim().isNotEmpty) 'text': text.trim(),
+      },
+      options: Options(headers: {
+        'X-Session-ID': sid,
+        'X-Request-ID': _newRequestId(),
+      }),
+    );
+    return true;
+  } catch (e) {
+    if (kDebugMode) debugPrint('analytics: feedback submit error: $e');
+    return false;
+  }
+}
