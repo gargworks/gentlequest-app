@@ -267,7 +267,7 @@ Rules:
 - Start with a relatable hook
 - Include 2-3 specific techniques or insights
 - Reference ADHD/anxiety/overwhelm specifically
-- End with a soft mention: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app"
+- End with a soft mention: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app/?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge"
 - Write from first person perspective
 - Be specific, not generic. Use concrete examples.
 
@@ -293,7 +293,7 @@ Rules:
 - Include the perspective of someone building a mental health app
 - Reference the design philosophy: no streaks, no guilt, mood-first
 - Include 2-3 specific insights about product design for neurodivergent users
-- End with: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app"
+- End with: "GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app/?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge"
 - Tags: mentalhealth, adhd, productivity, wellness
 
 Write ONLY the article markdown, nothing else. Start with the title as a # header."""
@@ -439,7 +439,7 @@ tags: ["ADHD", "Mental Health", "Self-Care"]
             # Pick a random recent post (not the very latest, to avoid duplicates)
             post_file = random.choice(blog_posts[:5]) if len(blog_posts) >= 5 else blog_posts[0]
             slug = post_file.stem
-            blog_url = f"https://www.gentlequest.app/blog/{slug}"
+            blog_url = f"https://www.gentlequest.app/blog/{slug}?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge"
             item = {
                 "id": f"gen_medium_{int(time.time())}_{i}",
                 "channel": "medium",

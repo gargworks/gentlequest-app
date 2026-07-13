@@ -12,7 +12,7 @@ All 6 use the same link block — only the opener line varies.
 Links if you want to try it:
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+. No ads. No upsell.
 ```
@@ -26,7 +26,7 @@ Safety plan lives at the top of your profile in the app — not buried.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 If you're in crisis right now, please call your local emergency line.
 ```
@@ -40,7 +40,7 @@ Five-second mood check-ins. No streaks. No guilt. Try it:
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+.
 ```
@@ -54,7 +54,7 @@ CBT-flavored quests, 60-90 seconds each. Outgrow them and uninstall — that's t
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+.
 ```
@@ -68,7 +68,7 @@ Not a therapist. Not a clinician. A quieter app for the in-between moments.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 If you need real care, please reach out to a professional or crisis line.
 ```
@@ -82,7 +82,7 @@ In beta on iOS + Android. 18+. Free. No ads.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Feedback welcome — comments here, or via the app.
 ```
@@ -106,7 +106,7 @@ A journal that is just yours. No AI reads it. No prompts. Just a blank page.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+. No ads.
 ```
@@ -120,7 +120,7 @@ Export everything. Delete everything. Or go anonymous. Your call.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 No account needed. No tracking. No ads.
 ```
@@ -134,7 +134,7 @@ Anxious? Try the 5-4-3-2-1 grounding exercise. 60 seconds, back to now.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+.
 ```
@@ -148,7 +148,7 @@ No feed. No likes. No follower count. No algorithm. Just you and your mood.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+. No ads.
 ```
@@ -162,7 +162,7 @@ First 30 seconds in the app: open, 18+ check, say hi, log your mood. That is it.
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Free. 18+.
 ```
@@ -176,7 +176,7 @@ Real PHQ-9 screening, not just chat. Honest results, and a safety plan if needed
 
 iOS — https://apps.apple.com/app/gentlequest/id6756537464
 Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-Web — https://gentlequest.app
+Web — https://gentlequest.app/?utm_source=yt&utm_medium=organic&utm_campaign=stage0_wedge
 
 Not a diagnosis. A starting point. Free. 18+.
 ```
