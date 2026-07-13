@@ -1,7 +1,7 @@
 # GentleQuest Privacy Policy
 
-**Effective date:** 2026-05-14
-**App version:** 1.3.0
+**Effective date:** 2026-07-13
+**App version:** 1.5.0
 **Contact:** hi@eidetic.works
 
 ---
@@ -25,7 +25,6 @@ GentleQuest is built to stay quiet. We collect the minimum we need to make the a
 | Feature | What we store |
 |---|---|
 | Mood logging | Mood level (1–5 scale), optional free-text note, optional context chips you select, timestamp |
-| Journal | Entry title (optional), body text, mood tag, created/updated timestamps |
 | Chat with Alex | Full message content, is-user flag, risk level flag, message type, timestamp |
 | Clinical assessments (PHQ-9 / GAD-7) | Integer responses per question, total score, severity label, timestamp. Never rendered as a diagnosis. |
 | Notification preferences | Toggle states and reminder time — stored server-side only when you have an account session |
@@ -41,6 +40,7 @@ GentleQuest is built to stay quiet. We collect the minimum we need to make the a
 - Camera roll or photo library
 - HealthKit / Apple Health data (we do not request this entitlement)
 - Browsing history outside the app
+- **Journal entries** — stored entirely on your device. Never synced, never uploaded, never shared. (Server-side journal sync was removed in v1.5.0; the journal route was deleted and the client is local-only.)
 
 ---
 
@@ -166,7 +166,7 @@ Use this matrix when filling in App Store Connect > App Privacy for GentleQuest 
 | Category | Data Type | Collected | Linked to User | Used for Tracking |
 |---|---|---|---|---|
 | Health & Fitness | Mental health — mood entries, PHQ-9/GAD-7 scores | Yes | No (session ID only, no name/email required) | No |
-| User Content | Journal entries, chat messages | Yes | No (session ID only) | No |
+| User Content | Chat messages | Yes | No (session ID only) | No |
 | Diagnostics | Crash logs, performance data (Crashlytics) | Yes | No | No |
 | Identifiers | Anonymous session ID (UUID) | Yes | No | No |
 | Location | Coarse — US state or country (for compliance gating) | Yes | No | No |
