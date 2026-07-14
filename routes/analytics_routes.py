@@ -12,7 +12,7 @@ from typing import Any, Dict
 from flask import Blueprint, current_app, g, jsonify, request
 
 from extensions import limiter
-from models import AnalyticsEvent, Message, UserFeedback, db
+from models import AnalyticsEvent, Message, db
 
 analytics_bp = Blueprint("analytics", __name__)
 
@@ -385,7 +385,10 @@ def submit_feedback():
 
     ADR-005 criterion (iii) — human voice. Each row here is a candidate
     entry for the human_voice_ledger (source_type='feedback_backend').
+    Uses raw SQL to avoid ORM model issues with PG reserved word 'trigger'.
     """
+    from sqlalchemy import text
+
     data = request.get_json() or {}
     rating = data.get("rating")
     feedback_text = (data.get("feedback") or "").strip() or None
@@ -398,20 +401,44 @@ def submit_feedback():
         return jsonify({"error": "rating must be an integer 1-5"}), 400
 
     try:
-        row = UserFeedback(
-            session_id=session_id,
-            rating=rating,
-            feedback_text=feedback_text,
-            feedback_trigger=trigger,
-            country=country,
-            app_version=app_version,
-        )
-        db.session.add(row)
-        db.session.commit()
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        dialect = inspector.dialect.name
+
+        # Check if "trigger" column exists (PG migration creates it, SQLite db.create_all doesn't)
+        has_trigger_col = False
+        try:
+            cols = inspector.get_columns("user_feedback")
+            has_trigger_col = any(c["name"] == "trigger" for c in cols)
+        except Exception:
+            pass  # Table may not exist yet
+
+        if dialect == "sqlite":
+            db.session.execute(text(
+                'INSERT INTO user_feedback (session_id, rating, feedback_text, country, app_version, created_at) '
+                "VALUES (:sid, :rating, :ftext, :country, :ver, datetime('now'))"
+            ), {
+                "sid": session_id, "rating": rating, "ftext": feedback_text,
+                "country": country, "ver": app_version,
+            })
+            db.session.commit()
+            new_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
+        else:
+            # Postgres — use trigger column
+            result = db.session.execute(text(
+                'INSERT INTO user_feedback (session_id, rating, feedback_text, "trigger", country, app_version, created_at) '
+                "VALUES (:sid, :rating, :ftext, :trig, :country, :ver, NOW()) RETURNING id"
+            ), {
+                "sid": session_id, "rating": rating, "ftext": feedback_text,
+                "trig": trigger, "country": country, "ver": app_version,
+            })
+            new_id = result.scalar()
+            db.session.commit()
+
         current_app.logger.info(
-            f"UserFeedback: rating={rating} id={row.id} session={session_id}"
+            f"UserFeedback: rating={rating} id={new_id} session={session_id}"
         )
-        return jsonify({"success": True, "id": row.id}), 201
+        return jsonify({"success": True, "id": new_id}), 201
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Feedback submit error: {e}")
