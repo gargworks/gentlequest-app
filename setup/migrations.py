@@ -37,6 +37,19 @@ MIGRATION_STATEMENTS = [
         "  check_in_sent BOOLEAN DEFAULT FALSE"
         ")"
     ),
+    # ADR-005 criterion (iii): in-app feedback widget → backend
+    (
+        "CREATE TABLE IF NOT EXISTS user_feedback ("
+        "  id SERIAL PRIMARY KEY,"
+        "  session_id VARCHAR(36),"
+        "  rating INTEGER NOT NULL,"
+        "  feedback_text TEXT,"
+        "  \"trigger\" VARCHAR(50) DEFAULT 'after_3rd_checkin',"
+        "  country VARCHAR(10),"
+        "  app_version VARCHAR(50),"
+        "  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"
+        ")"
+    ),
 ]
 
 
