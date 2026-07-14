@@ -485,7 +485,7 @@ class UserFeedback(db.Model):
     session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=True, index=True)
     rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
     feedback_text = db.Column(db.Text)
-    trigger = db.Column(db.String(50), default="after_3rd_checkin")
+    feedback_trigger = db.Column("trigger", db.String(50), default="after_3rd_checkin")  # 'trigger' is reserved in PG
     country = db.Column(db.String(10))
     app_version = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
