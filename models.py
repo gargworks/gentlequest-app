@@ -145,17 +145,6 @@ class MoodEntry(db.Model):
 
 
 class JournalEntry(db.Model):
-    # v1.5.0 (docs/V1_5_0_ADHD_UPDATE_SCOPE.md, Workstream 3c): routes/journal.py
-    # was deleted so the "Stays on your device. Never synced. Never shared."
-    # promise (ai_buddy_web journal_empty_state.dart) is true in code — no
-    # live /api/journal route exists anymore. This model is kept (not
-    # dropped) because routes/user_settings.py's GDPR export (/api/user/export)
-    # and account-deletion (/api/user DELETE) flows still query/delete rows
-    # here for any journal entries synced server-side before the route was
-    # removed (signed-in users only — see ai_buddy_web journal_models.dart's
-    # sign-in-gated dual-write). Drop this model only once those flows are
-    # confirmed to no longer need it (e.g. after a retention-window backfill
-    # confirms no rows remain).
     __tablename__ = "journal_entries"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -488,6 +477,23 @@ class BrainState(db.Model):
         return f"<BrainState last_updated={self.last_updated}>"
 
 
+class UserFeedback(db.Model):
+    """In-app feedback from the feedback widget (ADR-005 criterion iii — human voice)."""
+    __tablename__ = "user_feedback"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=True, index=True)
+    rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
+    feedback_text = db.Column(db.Text)
+    trigger = db.Column(db.String(50), default="after_3rd_checkin")
+    country = db.Column(db.String(10))
+    app_version = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    def __repr__(self):
+        return f"<UserFeedback id={self.id} rating={self.rating}>"
+
+
 class BrainEvent(db.Model):
     """Event log for brain activities."""
     __tablename__ = "brain_events"
@@ -503,33 +509,3 @@ class BrainEvent(db.Model):
 
     def __repr__(self):
         return f"<BrainEvent type={self.event_type} emitter={self.emitter}>"
-
-
-class FunnelSnapshot(db.Model):
-    """Persisted funnel metric snapshots for historical tracking."""
-    __tablename__ = "funnel_snapshots"
-
-    id = db.Column(db.Integer, primary_key=True)
-    snapshot_data = db.Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-
-    def __repr__(self):
-        return f"<FunnelSnapshot id={self.id} at={self.created_at}>"
-
-
-class FeedbackSubmission(db.Model):
-    """In-app user feedback: star rating + optional free text (FeedbackDialog)."""
-    __tablename__ = "feedback_submissions"
-
-    id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=False, index=True)
-    rating = db.Column(db.Integer, nullable=False)
-    feedback_text = db.Column(db.Text)
-    trigger = db.Column(db.String(40))
-    request_id = db.Column(db.String(64))
-    app_version = db.Column(db.String(40))
-    platform = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
-
-    def __repr__(self):
-        return f"<FeedbackSubmission id={self.id} rating={self.rating}>"
