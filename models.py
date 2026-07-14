@@ -482,7 +482,7 @@ class UserFeedback(db.Model):
     __tablename__ = "user_feedback"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(36), db.ForeignKey("user_sessions.id"), nullable=True, index=True)
+    session_id = db.Column(db.String(36), nullable=True, index=True)
     rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
     feedback_text = db.Column(db.Text)
     feedback_trigger = db.Column("trigger", db.String(50), default="after_3rd_checkin")  # 'trigger' is reserved in PG
