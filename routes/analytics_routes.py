@@ -402,7 +402,7 @@ def submit_feedback():
             session_id=session_id,
             rating=rating,
             feedback_text=feedback_text,
-            trigger=trigger,
+            feedback_trigger=trigger,
             country=country,
             app_version=app_version,
         )
