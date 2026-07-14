@@ -478,14 +478,13 @@ class BrainState(db.Model):
 
 
 class UserFeedback(db.Model):
-    """In-app feedback from the feedback widget (ADR-005 criterion iii — human voice)."""
+    """In-app feedback from the feedback widget (ADR-005 criterion iii)."""
     __tablename__ = "user_feedback"
 
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(36), nullable=True, index=True)
-    rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
+    rating = db.Column(db.Integer, nullable=False)
     feedback_text = db.Column(db.Text)
-    feedback_trigger = db.Column("trigger", db.String(50), default="after_3rd_checkin")  # 'trigger' is reserved in PG
     country = db.Column(db.String(10))
     app_version = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
