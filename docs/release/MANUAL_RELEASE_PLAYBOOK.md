@@ -158,6 +158,19 @@ PATCH /v1/appStoreVersionLocalizations/{loc_id}
 
 ### 2.8 Submit for review
 
+**Use the script (recommended):**
+```bash
+python3 scripts/asc_submit_for_review.py \
+  --app-id 6756537464 \
+  --version-id <APP_STORE_VERSION_UUID> \
+  --platform IOS
+```
+
+The script does the 3-step flow below automatically. If it fails, see the
+gotchas below and retry manually.
+
+**Manual 3-step flow:**
+
 ```python
 # 1. Create review submission
 POST /v1/reviewSubmissions
@@ -193,6 +206,28 @@ PATCH /v1/reviewSubmissions/{RS_ID}
 }
 # Verify: GET version → appStoreState should be WAITING_FOR_REVIEW
 ```
+
+**Gotchas (hit on 2026-07-16 v1.5.1 submit):**
+
+1. **`whatsNew` is REQUIRED.** If the en-US localization has `whatsNew=null`,
+   step 2 returns 409 with `ENTITY_ERROR.ATTRIBUTE.REQUIRED` for `whatsNew`.
+   Fix: PATCH the localization first (see §2.6), then retry step 2.
+
+2. **Step 2 may return 409 "already exists" but the item is NOT actually added.**
+   The script interprets 409 as "already exists, proceed" but step 3 then fails
+   with `ENTITY_STATE_INVALID: does not have any items`. If this happens:
+   - Check the reviewSubmission state: `GET /v1/reviewSubmissions/{RS_ID}`
+   - If state is `READY_FOR_REVIEW` but no items, retry step 2 manually
+   - The 409 from step 2 can be a false positive — always verify by checking
+     the submission state before firing step 3
+
+3. **Do NOT use `POST /v1/appStoreVersionSubmissions`** — the API key lacks
+   `CREATE` permission for that endpoint (returns 403). Use the
+   `reviewSubmissions` + `reviewSubmissionItems` flow instead.
+
+4. **Builds API returns in random order.** `GET /v1/apps/{id}/builds` does NOT
+   sort by upload date. Filter by `attributes.version` (the build number) to
+   find the correct build ID. Don't assume the first result is the latest.
 
 ### 2.9 AFTER_APPROVAL auto-release semantics
 

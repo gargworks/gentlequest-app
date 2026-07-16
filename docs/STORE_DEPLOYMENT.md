@@ -99,6 +99,137 @@ git push origin main
 # Render auto-builds from render.yaml → gentlequest-blog service
 ```
 
+## iOS Submit for Review (after upload)
+
+After `xcrun altool` upload succeeds, the build is NOT submitted for review yet.
+You must create a version, link the build, set release notes, and submit.
+
+**Use the script (handles all 3 steps of the submit flow):**
+```bash
+python3 scripts/asc_submit_for_review.py \
+  --app-id 6756537464 \
+  --version-id <APP_STORE_VERSION_UUID> \
+  --platform IOS
+```
+
+**Manual steps if the script fails** (see `docs/release/MANUAL_RELEASE_PLAYBOOK.md` §2.8):
+
+1. **Create version** (if not already created):
+```python
+POST /v1/appStoreVersions
+{"data":{"type":"appStoreVersions","attributes":{"platform":"IOS","versionString":"1.5.1"},
+"relationships":{"app":{"data":{"type":"apps","id":"6756537464"}}}}}
+```
+
+2. **Link build to version** — find the build ID first:
+```python
+GET /v1/apps/6756537464/builds?limit=200  # find by version number matching your build
+PATCH /v1/appStoreVersions/{VERSION_ID}
+{"data":{"type":"appStoreVersions","id":"VERSION_ID",
+"relationships":{"build":{"data":{"type":"builds","id":"BUILD_ID"}}}}}
+```
+
+3. **Set whatsNew (release notes)** — REQUIRED or submit fails with 409:
+```python
+GET /v1/appStoreVersions/{VERSION_ID}/appStoreVersionLocalizations  # get loc_id
+PATCH /v1/appStoreVersionLocalizations/{LOC_ID}
+{"data":{"type":"appStoreVersionLocalizations","id":"LOC_ID",
+"attributes":{"whatsNew":"Your release notes here"}}}
+```
+
+4. **Submit for review** (3-step flow via reviewSubmissions API):
+```bash
+python3 scripts/asc_submit_for_review.py --app-id 6756537464 --version-id {VERSION_ID} --platform IOS
+```
+
+**IMPORTANT:** The API key does NOT have `CREATE` permission for the old
+`appStoreVersionSubmissions` endpoint. Use the newer `reviewSubmissions` +
+`reviewSubmissionItems` flow (which the script does). Do NOT try
+`POST /v1/appStoreVersionSubmissions` — it returns 403.
+
+**Verify submission:**
+```python
+GET /v1/appStoreVersions/{VERSION_ID}
+# appStoreState should be WAITING_FOR_REVIEW
+```
+
+## Checking Download / Install Numbers
+
+### Funnel endpoint (live GA4 data)
+```bash
+curl -s "https://gentlequest.onrender.com/api/metrics/funnel" | python3 -m json.tool
+```
+Returns: installs by platform (90-day + all-time), app opens, first chat count,
+active users. Simulator/emulator traffic filtered out.
+
+### GA4 analytics report (local script)
+```bash
+cd /Users/lokeshgarg/gentlequest
+python3 scripts/analytics_dashboard.py
+# Outputs: metrics/analytics_latest.json + metrics/analytics_report.md
+```
+Requires `GOOGLE_APPLICATION_CREDENTIALS` env var pointing to a GA4 service
+account JSON. The funnel endpoint above is preferred for quick checks.
+
+### Daily funnel snapshot log
+```bash
+tail -20 /Users/lokeshgarg/gentlequest/docs/strategy/stage0/backups/gate_artifacts/funnel_snapshot.latest.log
+```
+Launchd job hits the funnel endpoint daily at 02:30 UTC and logs install counts.
+
+### App Store Connect status check
+```bash
+# Generate JWT token
+TOKEN=$(python3 -c "
+import jwt, time
+with open('$HOME/.appstoreconnect/private_keys/AuthKey_L6BQY5DFKM.p8', 'rb') as f:
+    key = f.read()
+payload = {'iss':'aa60935b-8c0a-4055-b26f-f44d84c265f7','iat':int(time.time()),
+'exp':int(time.time())+1200,'aud':'appstoreconnect-v1'}
+header = {'kid':'L6BQY5DFKM','typ':'JWT','alg':'ES256'}
+print(jwt.encode(payload, key, 'ES256', headers=header))
+")
+
+# Check version states
+curl -s "https://api.appstoreconnect.apple.com/v1/apps/6756537464/appStoreVersions?limit=50" \
+  -H "Authorization: Bearer $TOKEN" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for v in d['data']:
+    a = v['attributes']
+    if a.get('appStoreState') != 'READY_FOR_SALE':
+        print(f'>>> v{a[\"versionString\"]} | {a[\"appStoreState\"]}')
+ready = [v for v in d['data'] if v['attributes'].get('appStoreState') == 'READY_FOR_SALE']
+if ready: print(f'Latest live: {ready[0][\"attributes\"][\"versionString\"]}')
+"
+```
+
+### Google Play status check
+```bash
+TOKEN=$(python3 -c "
+from google.oauth2 import service_account
+import google.auth.transport.requests
+creds = service_account.Credentials.from_service_account_file(
+    '$HOME/Downloads/gentlequest-prod-d698b1aa74fb.json',
+    scopes=['https://www.googleapis.com/auth/androidpublisher'])
+req = google.auth.transport.requests.Request()
+creds.refresh(req)
+print(creds.token)
+")
+
+EDIT=$(curl -s -X POST "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/app.gentlequest.www/edits" \
+  -H "Authorization: Bearer $TOKEN" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+
+curl -s "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/app.gentlequest.www/edits/$EDIT/tracks" \
+  -H "Authorization: Bearer $TOKEN" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for t in d['tracks']:
+    for r in t.get('releases', []):
+        print(f'{t[\"track\"]}: v{r.get(\"name\",\"?\")} | {r.get(\"status\",\"?\")}')
+"
+```
+
 ## Full Release Flow (copy-paste)
 
 ```bash
@@ -123,7 +254,11 @@ fastlane supply \
   --release_status completed \
   --skip_upload_metadata --skip_upload_images --skip_upload_screenshots
 
-# 4. Commit + push
+# 4. iOS: Create version + link build + set release notes + submit for review
+#    (see "iOS Submit for Review" section above — use asc_submit_for_review.py)
+#    Android: fastlane supply with --release_status completed goes live immediately
+
+# 5. Commit + push
 cd /Users/lokeshgarg/gentlequest
 git add ai_buddy_web/pubspec.yaml
 git commit -m "chore: bump version to X.Y.Z+BUILD"
