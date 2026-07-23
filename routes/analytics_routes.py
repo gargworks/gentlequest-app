@@ -14,6 +14,11 @@ from flask import Blueprint, current_app, g, jsonify, request
 from extensions import limiter
 from models import AnalyticsEvent, FunnelSnapshot, Message, db
 
+# Bot-filter rule set for the qualified-human funnel (Qualified Activation
+# Proof, Task 5). Imported here (rather than reimplemented) so the funnel
+# endpoint (Task 6) and the dashboard script share a single source of truth.
+from scripts.analytics_dashboard import is_qualified_human  # noqa: F401
+
 analytics_bp = Blueprint("analytics", __name__)
 
 
@@ -62,6 +67,10 @@ def log_analytics_event():
                 "duration_ms", "success", "code", "provider",
                 "quest_id", "tag", "surface", "variant", "ts", "progress",
                 "ui",
+                # Activation proof attribution metadata (Issue B2).
+                "action_type", "utm_source", "utm_medium", "utm_campaign",
+                "landing_path", "cta_id", "target_url", "referrer",
+                "result", "method", "source_cta",
             }
             for k, v in raw_meta.items():
                 if k in allowed_keys and isinstance(v, (str, int, float, bool)):
@@ -379,6 +388,156 @@ def true_metric():
         return jsonify({"error": "Failed to compute metric"}), 500
 
 
+def compute_funnel_metrics(start_dt=None, end_dt=None):
+    """Compute qualified-human funnel counts and conversion rates."""
+    now = datetime.utcnow()
+    query = AnalyticsEvent.query
+    if start_dt:
+        query = query.filter(AnalyticsEvent.timestamp >= start_dt)
+    if end_dt:
+        query = query.filter(AnalyticsEvent.timestamp <= end_dt)
+
+    all_events = query.all()
+
+    session_events_map: Dict[str, list] = {}
+    for event in all_events:
+        sid = event.session_id or f"anon_{event.id}"
+        if sid not in session_events_map:
+            session_events_map[sid] = []
+        session_events_map[sid].append(event)
+
+    landing_sessions = 0
+    cta_clicks = 0
+    web_app_opens = 0
+    compliance_passed = 0
+    first_value_actions = 0
+    returning_users = 0
+
+    min_window_ts = None
+    max_window_ts = None
+
+    DEFAULT_UA = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    )
+    first_val_types = {"first_chat_message", "first_chat_message_sent", "mood_tracked", "first_value_action"}
+
+    for sid, events in session_events_map.items():
+        session_meta: Dict[str, Any] = {}
+        user_agent = None
+        timestamps = []
+
+        has_landing = False
+        has_cta_click = False
+        has_web_app_open = False
+        has_compliance_passed = False
+        has_first_value = False
+
+        for e in events:
+            if e.timestamp:
+                timestamps.append(e.timestamp)
+            meta = e.event_metadata or {}
+            if isinstance(meta, dict):
+                session_meta.update(meta)
+                if not user_agent:
+                    user_agent = meta.get("user_agent") or meta.get("ua") or meta.get("user_agent_string")
+
+            etype = e.event_type
+            if etype == "cta_impression":
+                has_landing = True
+            elif etype == "cta_click":
+                has_cta_click = True
+            elif etype == "web_app_open_from_cta":
+                has_web_app_open = True
+            elif etype == "compliance_passed":
+                has_compliance_passed = True
+
+            if etype in first_val_types or (isinstance(meta, dict) and meta.get("action_type") == "mood_tracked"):
+                has_first_value = True
+
+        if timestamps:
+            min_ts = min(timestamps)
+            max_ts = max(timestamps)
+            if min_window_ts is None or min_ts < min_window_ts:
+                min_window_ts = min_ts
+            if max_window_ts is None or max_ts > max_window_ts:
+                max_window_ts = max_ts
+            duration_sec = (max_ts - min_ts).total_seconds()
+        else:
+            duration_sec = 0.0
+
+        pageviews = len(events)
+        ua_to_check = user_agent if user_agent else DEFAULT_UA
+
+        if not is_qualified_human(session_meta, ua_to_check, duration_sec, pageviews):
+            continue
+
+        if has_landing:
+            landing_sessions += 1
+        if has_cta_click:
+            cta_clicks += 1
+        if has_web_app_open:
+            web_app_opens += 1
+        if has_compliance_passed:
+            compliance_passed += 1
+        if has_first_value:
+            first_value_actions += 1
+
+        if timestamps:
+            sorted_ts = sorted(timestamps)
+            first_ts = sorted_ts[0]
+            if any((t - first_ts).total_seconds() >= 86400 for t in sorted_ts):
+                returning_users += 1
+
+    cta_ctr = round(cta_clicks / landing_sessions, 4) if landing_sessions > 0 else 0.0
+    first_value_conversion = round(first_value_actions / landing_sessions, 4) if landing_sessions > 0 else 0.0
+
+    w_start = (start_dt or min_window_ts or now).isoformat()
+    w_end = (end_dt or max_window_ts or now).isoformat()
+
+    return {
+        "window": {
+            "start": w_start,
+            "end": w_end
+        },
+        "counts": {
+            "landing_sessions": landing_sessions,
+            "cta_clicks": cta_clicks,
+            "web_app_opens": web_app_opens,
+            "compliance_passed": compliance_passed,
+            "first_value_actions": first_value_actions,
+            "returning_users": returning_users
+        },
+        "cta_ctr": cta_ctr,
+        "first_value_conversion": first_value_conversion
+    }
+
+
+@analytics_bp.route("/api/metrics/funnel", methods=["GET"])
+def funnel_metrics():
+    """Returns qualified-human funnel counts and conversion rates (Activation Proof Task 6)."""
+    try:
+        now = datetime.utcnow()
+        days = request.args.get("days", type=int)
+        if days:
+            start_dt = now - timedelta(days=days)
+            end_dt = now
+        else:
+            start_str = request.args.get("start")
+            end_str = request.args.get("end")
+            start_dt = datetime.fromisoformat(start_str) if start_str else None
+            end_dt = datetime.fromisoformat(end_str) if end_str else None
+
+        res = compute_funnel_metrics(start_dt, end_dt)
+        return jsonify(res), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Funnel metrics error: {e}")
+        return jsonify({"error": "Failed to compute funnel metrics"}), 500
+
+
+
+
 @analytics_bp.route("/api/feedback", methods=["POST"])
 def submit_feedback():
     """In-app feedback widget submission.
@@ -482,157 +641,6 @@ def _simulator_filter():
         )
     except ImportError:
         return None
-
-
-@analytics_bp.route("/api/metrics/funnel", methods=["GET"])
-def funnel_metrics():
-    """Full acquisition funnel: web visits → installs → app opens → first chat.
-
-    Stage 1: Web visits (GA4 web stream)
-    Stage 2: App installs (GA4 newUsers = first_open, real devices only)
-    Stage 3: App opens (GA4 app_open events, real devices only)
-    Stage 4: First chat sent (backend DB, test sessions excluded)
-
-    Simulator/emulator traffic is filtered out (arm64, sdk_gphone, Android SDK).
-    GA4 data is cached for 1 hour in the database. Each fetch is persisted as a
-    FunnelSnapshot row for historical tracking.
-    """
-    try:
-        # --- Stage 4: First chat (from DB, always fresh) ---
-        blocked = _load_blocklist()
-        all_chat_sessions = db.session.query(Message.session_id).filter(
-            Message.is_user == True
-        ).distinct().all()
-        first_chat_count = sum(1 for (sid,) in all_chat_sessions if sid not in blocked)
-
-        # --- Stages 1-3: GA4 data (cached 1 hour in DB) ---
-        cache_valid = False
-        ga4_data = None
-
-        latest_snapshot = FunnelSnapshot.query.order_by(
-            FunnelSnapshot.created_at.desc()
-        ).first()
-
-        if latest_snapshot:
-            cache_age = (datetime.utcnow() - latest_snapshot.created_at).total_seconds()
-            if cache_age < 3600:
-                ga4_data = latest_snapshot.snapshot_data
-                cache_valid = True
-
-        if not cache_valid:
-            try:
-                from google.oauth2 import service_account
-                from google.analytics.data_v1beta import BetaAnalyticsDataClient
-                from google.analytics.data_v1beta.types import (
-                    RunReportRequest, DateRange, Dimension, Metric
-                )
-
-                repo_root = os.path.dirname(os.path.dirname(__file__))
-                sa_path = os.path.join(repo_root, "secret", "gentlequest-prod-sa.json")
-                if os.path.exists(sa_path):
-                    creds = service_account.Credentials.from_service_account_file(
-                        sa_path, scopes=["https://www.googleapis.com/auth/analytics.readonly"]
-                    )
-                    client = BetaAnalyticsDataClient(credentials=creds)
-                    sim_filter = _simulator_filter()
-
-                    # Installs by platform — last 90 days (real devices only)
-                    req = RunReportRequest(
-                        property="properties/516568186",
-                        date_ranges=[DateRange(start_date="90daysAgo", end_date="today")],
-                        dimensions=[Dimension(name="platform")],
-                        metrics=[Metric(name="newUsers"), Metric(name="activeUsers")],
-                        dimension_filter=sim_filter,
-                    )
-                    resp = client.run_report(request=req)
-                    installs_90d = {}
-                    active_90d = {}
-                    for row in resp.rows:
-                        platform = row.dimension_values[0].value
-                        installs_90d[platform] = int(row.metric_values[0].value)
-                        active_90d[platform] = int(row.metric_values[1].value)
-
-                    # All-time installs (real devices only)
-                    req_all = RunReportRequest(
-                        property="properties/516568186",
-                        date_ranges=[DateRange(start_date="365daysAgo", end_date="today")],
-                        dimensions=[Dimension(name="platform")],
-                        metrics=[Metric(name="newUsers"), Metric(name="totalUsers")],
-                        dimension_filter=sim_filter,
-                    )
-                    resp_all = client.run_report(request=req_all)
-                    installs_all = {}
-                    total_all = {}
-                    for row in resp_all.rows:
-                        platform = row.dimension_values[0].value
-                        installs_all[platform] = int(row.metric_values[0].value)
-                        total_all[platform] = int(row.metric_values[1].value)
-
-                    # App opens (last 90 days, real devices only)
-                    req2 = RunReportRequest(
-                        property="properties/516568186",
-                        date_ranges=[DateRange(start_date="90daysAgo", end_date="today")],
-                        dimensions=[Dimension(name="eventName")],
-                        metrics=[Metric(name="eventCount")],
-                        dimension_filter=sim_filter,
-                    )
-                    resp2 = client.run_report(request=req2)
-                    app_opens_90d = 0
-                    for row in resp2.rows:
-                        if row.dimension_values[0].value == "app_open":
-                            app_opens_90d = int(row.metric_values[0].value)
-
-                    ga4_data = {
-                        "installs_90d": installs_90d,
-                        "active_90d": active_90d,
-                        "installs_all_time": installs_all,
-                        "total_users_all_time": total_all,
-                        "app_opens_90d": app_opens_90d,
-                        "web_visits_90d": None,
-                        "simulator_filter": "active (arm64, sdk_gphone, Android SDK excluded)",
-                    }
-
-                    # Persist to database
-                    snapshot = FunnelSnapshot(
-                        snapshot_data=ga4_data,
-                        created_at=datetime.utcnow(),
-                    )
-                    db.session.add(snapshot)
-                    db.session.commit()
-            except Exception as ga4_err:
-                current_app.logger.warning(f"GA4 fetch failed: {ga4_err}")
-                ga4_data = ga4_data or {
-                    "installs_90d": {},
-                    "active_90d": {},
-                    "app_opens_90d": 0,
-                    "web_visits_90d": None,
-                    "error": str(ga4_err),
-                }
-
-        return jsonify({
-            "funnel": {
-                "stage_1_web_visits": ga4_data.get("web_visits_90d") if ga4_data else None,
-                "stage_2_installs": ga4_data.get("installs_90d", {}) if ga4_data else {},
-                "stage_3_app_opens": ga4_data.get("app_opens_90d", 0) if ga4_data else 0,
-                "stage_4_first_chat": first_chat_count,
-            },
-            "all_time": {
-                "installs": ga4_data.get("installs_all_time", {}) if ga4_data else {},
-                "total_users": ga4_data.get("total_users_all_time", {}) if ga4_data else {},
-            },
-            "period": "last_90_days",
-            "active_users_90d": ga4_data.get("active_90d", {}) if ga4_data else {},
-            "simulator_filter": ga4_data.get("simulator_filter", "unknown") if ga4_data else "unknown",
-            "blocked_test_sessions": len(blocked),
-            "ga4_property": "516568186",
-            "cached": cache_valid,
-            "persisted_to": "funnel_snapshots table",
-            "timestamp": datetime.utcnow().isoformat(),
-        }), 200
-
-    except Exception as e:
-        current_app.logger.error(f"Funnel metrics error: {e}")
-        return jsonify({"error": "Failed to fetch funnel metrics"}), 500
 
 
 @analytics_bp.route("/api/metrics/funnel/history", methods=["GET"])

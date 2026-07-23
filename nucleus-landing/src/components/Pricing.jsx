@@ -1,4 +1,7 @@
 import { Check, X, Shield, Zap } from 'lucide-react';
+import WaitlistForm from './WaitlistForm';
+
+const STRIPE_PRO_CHECKOUT_URL = import.meta.env.VITE_STRIPE_PRO_CHECKOUT_URL || "";
 
 const PLANS = [
   {
@@ -21,22 +24,24 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$19",
+    price: "$29",
     period: "/month",
     annual: "$149/year (save 35%)",
-    description: "Verifiable AI governance",
-    cta: "Get Nucleus Pro",
-    ctaStyle: "bg-emerald-500 text-black font-bold hover:bg-emerald-400",
+    description: "Governed AI with audit trails",
+    cta: STRIPE_PRO_CHECKOUT_URL ? "Get Nucleus Pro" : "Pro tier — coming soon",
+    ctaStyle: "bg-purple-500 text-black font-bold hover:bg-purple-400",
     highlight: true,
+    checkoutUrl: STRIPE_PRO_CHECKOUT_URL,
+    requiresCheckoutUrl: true,
     features: [
       { text: "Everything in Free", included: true },
-      { text: "Cryptographically signed reports", included: true },
-      { text: "Compliance exports (DORA, SOC2, MAS)", included: true },
-      { text: "Ed25519 verifiable audit trails", included: true },
+      { text: "Audit reports (JSON / HTML / text)", included: true },
+      { text: "DSoR decision provenance", included: true },
       { text: "Priority GitHub Issues", included: true },
-      { text: "Compliance playbook guides", included: true },
       { text: "CLI Pro badge & status", included: true },
-      { text: "Offline — no cloud dependency", included: true },
+      { text: "Local-first; opt-out anonymous telemetry", included: true },
+      { text: "Cryptographically signed reports (coming in 1.13.3)", included: false },
+      { text: "Compliance exports (DORA / SOC2 / MAS) (coming)", included: false },
     ],
   },
 ];
@@ -50,8 +55,9 @@ export default function Pricing() {
             Simple pricing. No cloud lock-in.
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto">
-            Nucleus is open source and free forever. Pro adds cryptographic proof
-            that your AI agents are governed — the document you show auditors.
+            Nucleus is open source and free forever. Pro adds priority support
+            and the governance audit reports your team needs for review.
+            Cryptographic signing + compliance exports are coming in 1.13.3.
           </p>
         </div>
 
@@ -61,12 +67,12 @@ export default function Pricing() {
               key={plan.name}
               className={`rounded-xl p-8 ${
                 plan.highlight
-                  ? "bg-gradient-to-b from-emerald-500/10 to-transparent border-2 border-emerald-500/30"
+                  ? "bg-gradient-to-b from-purple-500/10 to-transparent border-2 border-purple-500/30"
                   : "bg-white/5 border border-white/10"
               }`}
             >
               {plan.highlight && (
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
+                <div className="flex items-center gap-2 text-purple-400 text-xs font-semibold uppercase tracking-wider mb-4">
                   <Shield className="w-3 h-3" />
                   <span>Recommended for teams</span>
                 </div>
@@ -79,21 +85,34 @@ export default function Pricing() {
                 <span className="text-4xl font-bold text-white">{plan.price}</span>
                 <span className="text-slate-400 ml-1">{plan.period}</span>
                 {plan.annual && (
-                  <p className="text-emerald-400 text-xs mt-1">{plan.annual}</p>
+                  <p className="text-purple-400 text-xs mt-1">{plan.annual}</p>
                 )}
               </div>
 
-              <button
-                className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${plan.ctaStyle}`}
-              >
-                {plan.cta}
-              </button>
+              {plan.checkoutUrl ? (
+                <a
+                  href={plan.checkoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`block w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors text-center ${plan.ctaStyle}`}
+                >
+                  {plan.cta}
+                </a>
+              ) : (
+                <button
+                  disabled={plan.requiresCheckoutUrl}
+                  title={plan.requiresCheckoutUrl ? "Set VITE_STRIPE_PRO_CHECKOUT_URL to enable" : undefined}
+                  className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-colors ${plan.ctaStyle} ${plan.requiresCheckoutUrl ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {plan.cta}
+                </button>
+              )}
 
               <ul className="mt-8 space-y-3">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">
                     {f.included ? (
-                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      <Check className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
                     ) : (
                       <X className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" />
                     )}
@@ -107,8 +126,17 @@ export default function Pricing() {
           ))}
         </div>
 
+        {!STRIPE_PRO_CHECKOUT_URL && (
+          <WaitlistForm
+            headline="Pro tier waitlist"
+            subline="Get notified when Pro launches — typically Day 60-of-the-90."
+          />
+        )}
+
         <p className="text-center text-slate-500 text-xs mt-8">
-          All plans run 100% locally. No data leaves your machine. MIT license.
+          Local-first; memory and governance stay on your machine.
+          Anonymous telemetry is on by default — opt out with <code>nucleus config --no-telemetry</code>.
+          MIT license.
         </p>
       </div>
     </section>

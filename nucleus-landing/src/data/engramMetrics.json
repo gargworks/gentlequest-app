@@ -1,0 +1,8 @@
+{
+  "totalEngrams": 592483,
+  "sessionsIndexed": 803,
+  "writeLatencyMs": 50,
+  "storageEngine": "SQLite",
+  "binaryType": "Go single binary",
+  "asOfDate": "2026-07-22"
+}

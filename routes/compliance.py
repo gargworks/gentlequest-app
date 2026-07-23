@@ -27,9 +27,13 @@ def log_compliance_event():
     }
     if event_type not in ALLOWED:
         return jsonify({"error": "invalid event_type"}), 400
+    # Issue B8: callers in ALLOWED already include the `compliance_` prefix
+    # (e.g. `compliance_passed`). Avoid double-prefixing into
+    # `compliance_compliance_passed`; only prefix bare event names.
+    logged_type = event_type if event_type.startswith("compliance_") else f"compliance_{event_type}"
     background_executor.submit(
         _log_analytics_event, current_app._get_current_object(),
-        session_id, f"compliance_{event_type}", data.get("metadata", {})
+        session_id, logged_type, data.get("metadata", {})
     )
     return jsonify({"ok": True}), 201
 

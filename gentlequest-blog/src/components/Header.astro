@@ -5,19 +5,79 @@ import HeaderLink from './HeaderLink.astro';
 
 <header>
 	<nav>
-		<h2><a href="/blog/">{SITE_TITLE}</a></h2>
+		<h2><a href="/">{SITE_TITLE}</a></h2>
 		<div class="internal-links">
-			<HeaderLink href="/blog/">Home</HeaderLink>
-			<HeaderLink href="/blog/about">About</HeaderLink>
+			<HeaderLink href="/">Home</HeaderLink>
+			<HeaderLink href="/blog">Blog</HeaderLink>
+			<HeaderLink href="/about">About</HeaderLink>
 		</div>
 		<div class="social-links">
-			<a href="https://gentlequest.app/?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge" target="_blank" rel="noopener">
+			<a href="https://gentlequest.app/app?ref=header_checkin_cta" target="_blank" rel="noopener">
 				<span class="sr-only">GentleQuest app</span>
-				<span class="app-link">Get the app →</span>
+				<span class="app-link">60-second check-in</span>
 			</a>
 		</div>
 	</nav>
 </header>
+
+<script is:inline>
+	(function () {
+		// GentleQuest activation-proof: header CTA impression + click instrumentation.
+		// cta_id 'header_checkin_cta'. Copy/href swap happens in Task 7 — this task
+		// ONLY adds event instrumentation; link text and href are unchanged.
+		var headerCta = document.querySelector('header .social-links a');
+		if (!headerCta) return;
+
+		var impressionFired = false;
+		function fireImpression() {
+			if (impressionFired) return;
+			impressionFired = true;
+			try {
+				window.sendBlogEvent('cta_impression', {
+					cta_id: 'header_checkin_cta',
+					landing_path: window.location.pathname,
+					target_url: headerCta.href,
+				});
+			} catch (e) {
+				console.warn('[GentleQuest] header cta_impression failed:', e);
+			}
+		}
+
+		// IntersectionObserver: fire cta_impression once when header CTA enters viewport.
+		if ('IntersectionObserver' in window) {
+			var observer = new IntersectionObserver(
+				function (entries) {
+					entries.forEach(function (entry) {
+						if (entry.isIntersecting) {
+							fireImpression();
+							observer.disconnect();
+						}
+					});
+				},
+				{ threshold: 0.5 }
+			);
+			observer.observe(headerCta);
+		} else {
+			fireImpression();
+		}
+
+		// Click listener: fire cta_click before navigation, preserving utm_* params.
+		headerCta.addEventListener('click', function () {
+			try {
+				window.sendBlogEvent('cta_click', Object.assign(
+					{
+						cta_id: 'header_checkin_cta',
+						landing_path: window.location.pathname,
+						target_url: headerCta.href,
+					},
+					window.__gqUtm || {}
+				));
+			} catch (e) {
+				console.warn('[GentleQuest] header cta_click failed:', e);
+			}
+		});
+	})();
+</script>
 <style>
 	header {
 		margin: 0;

@@ -13,6 +13,7 @@ const MCP_LOGO = "https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@master/packages
 
 import SovereignMonolith from './components/SovereignMonolith_FINAL';
 import FAQ from './components/FAQ';
+import EngramBenchmarkBadge from './components/EngramBenchmarkBadge';
 
 function LaunchBanner() {
   return (
@@ -72,6 +73,10 @@ function App() {
           <a href="#install" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Install</a>
           <a href="#enterprise" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Enterprise</a>
           <a href="/faq" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">FAQ</a>
+          <a href="https://benchmarks.nucleusos.dev" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+            <Activity className="w-4 h-4 text-purple-400" />
+            <span>Live Benchmarks</span>
+          </a>
         </div>
         <div className="flex items-center gap-3">
           <a
@@ -142,9 +147,13 @@ function App() {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AI Agents.</span>
         </h1>
 
-        <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto leading-relaxed">
           Give your AI agents a persistent brain. Memory that survives sessions, decisions that leave audit trails, governance that enforces boundaries — all running locally.
         </p>
+
+        <div className="flex justify-center mb-8">
+          <EngramBenchmarkBadge />
+        </div>
 
         {/* Sovereign Monolith (Unified Entry Point) */}
         <div className="mb-12">
@@ -311,7 +320,7 @@ function App() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 group cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-teal-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(20,184,166,0)] group-hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-slate-400 group-hover:text-white">
+              <div className="w-10 h-10 rounded-lg bg-slate-800/50 p-2 flex items-center justify-center border border-white/5 group-hover:border-purple-500/50 transition-all duration-500 shadow-[0_0_15px_rgba(168,85,247,0)] group-hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] text-slate-400 group-hover:text-white">
                 <img src={PERPLEXITY_LOGO} alt="Perplexity MCP integration with Nucleus AI" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
               <span className="font-medium text-slate-400 group-hover:text-white transition-colors">Perplexity</span>
@@ -411,8 +420,8 @@ function App() {
             <p className="text-slate-400">Why CLAUDE.md isn't enough for autonomous agents.</p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950">
+            <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="bg-white/5 border-b border-white/10">
                   <th className="p-4 md:p-6 font-medium text-slate-400">Feature</th>
@@ -472,11 +481,11 @@ function App() {
               />
               <PledgeItem
                 title="DSoR: Decision System of Record"
-                desc="Eliminate 'Black Box' decisions. Every agent interaction is SHA-256 hashed and logged with full decision provenance, proving not just what happened, but exactly why."
+                desc="Eliminate 'Black Box' decisions. Every agent interaction is logged with full provenance; cryptographic SHA-256 chaining is targeting v1.13.3, proving not just what happened, but exactly why."
               />
               <PledgeItem
                 title="Local Sovereignty First"
-                desc="Your memory (Engrams) stays on your hardware. No cloud calls, no external dependencies. You own your data."
+                desc="Memory stays on your hardware. Cloud sync is opt-in; telemetry is opt-out."
               />
             </div>
           </div>
@@ -517,7 +526,7 @@ function App() {
           <FeatureCard
             icon={<Shield className="w-6 h-6 text-blue-400" />}
             title="Audit Trail"
-            desc="Every agent decision logged with reasoning. SHA-256 hashed interaction log. Full decision provenance."
+            desc="Every agent decision logged with reasoning. Tamper-evident interaction log (SHA-256 chaining targeting v1.13.3). Full decision provenance."
           />
           <FeatureCard
             icon={<Server className="w-6 h-6 text-orange-400" />}
@@ -630,19 +639,19 @@ function App() {
       <section id="enterprise" className="px-6 py-24 max-w-7xl mx-auto border-t border-white/5">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">Enterprise Ready</h2>
-          <p className="text-slate-400 max-w-2xl mx-auto">Built for organizations that cannot compromise on data sovereignty. Air-gap deployable, compliance-ready, zero cloud dependency.</p>
+          <p className="text-slate-400 max-w-2xl mx-auto">Built for organizations that cannot compromise on data sovereignty. Local-first deployable. Air-gap operation requires `nucleus config --no-telemetry` plus disabling cloud-sync features. Compliance-ready.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/20 to-slate-900 border border-purple-500/20">
             <Shield className="w-8 h-8 text-purple-400 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Air-Gap Ready</h3>
-            <p className="text-slate-400 text-sm">Deploy in fully disconnected environments. No cloud calls, no telemetry, no external dependencies.</p>
+            <h3 className="text-xl font-bold mb-2">Local-First / Air-Gap Capable</h3>
+            <p className="text-slate-400 text-sm">Deploy in disconnected environments. Telemetry is on by default — disable with `nucleus config --no-telemetry`; cloud-sync features must also be disabled for pure air-gap operation.</p>
           </div>
           <div className="p-8 rounded-2xl bg-gradient-to-br from-blue-900/20 to-slate-900 border border-blue-500/20">
             <Lock className="w-8 h-8 text-blue-400 mb-4" />
             <h3 className="text-xl font-bold mb-2">Compliance First</h3>
-            <p className="text-slate-400 text-sm">Full cryptographic audit trail. Every decision SHA-256 hashed. Built for ITAR, SOC2, and regulated industries.</p>
+            <p className="text-slate-400 text-sm">Full audit trail with decision provenance. Cryptographic SHA-256 chaining + Ed25519 signed reports targeting v1.13.3 for ITAR/SOC2/DORA regulated industries.</p>
           </div>
           <div className="p-8 rounded-2xl bg-gradient-to-br from-green-900/20 to-slate-900 border border-green-500/20">
             <Users className="w-8 h-8 text-green-400 mb-4" />
@@ -671,7 +680,12 @@ function App() {
             <a href="https://x.com/NucleusOS" target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">X.com</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener" className="text-slate-400 hover:text-white transition-colors">GitHub</a>
           </div>
-          <p className="text-slate-500 text-sm">© 2026 Nucleus Sovereign OS. Built for the Sovereign Web.</p>
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-slate-500 text-sm">
+            <p>© 2026 Nucleus Sovereign OS. Built for the Sovereign Web.</p>
+            <p className="text-slate-500">
+              Nucleus AI is developed by <a href="https://eidetic.works" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white underline transition-colors">Eidetic Works</a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>
