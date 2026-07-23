@@ -18,12 +18,29 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import (
-    RunReportRequest, DateRange, Dimension, Metric, OrderBy, FilterExpression,
-    Filter
-)
-from google.oauth2 import service_account
+# NOTE: the google.* GA4 client imports are wrapped in try/except so this
+# module is importable (and `is_qualified_human` is usable) without the GA4
+# client libraries installed. The GA4-dependent functions (get_client,
+# run_report, pull_*, main) raise on use when google isn't available; the
+# bot-filter rule set is side-effect free on import — required by the
+# Qualified Activation Proof (Task 5).
+try:  # pragma: no cover - import guard
+    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+    from google.analytics.data_v1beta.types import (
+        RunReportRequest, DateRange, Dimension, Metric, OrderBy,
+        FilterExpression, Filter,
+    )
+    from google.oauth2 import service_account
+except ImportError:  # GA4 client libs not installed in this environment.
+    BetaAnalyticsDataClient = None  # type: ignore[assignment]
+    RunReportRequest = None  # type: ignore[assignment]
+    DateRange = None  # type: ignore[assignment]
+    Dimension = None  # type: ignore[assignment]
+    Metric = None  # type: ignore[assignment]
+    OrderBy = None  # type: ignore[assignment]
+    FilterExpression = None  # type: ignore[assignment]
+    Filter = None  # type: ignore[assignment]
+    service_account = None  # type: ignore[assignment]
 
 # ── Config ──
 PROPERTY_ID = "516568186"
@@ -33,6 +50,69 @@ METRICS_DIR = PROJECT_ROOT / "metrics"
 JSON_OUT = METRICS_DIR / "analytics_latest.json"
 REPORT_OUT = METRICS_DIR / "analytics_report.md"
 HISTORY_DIR = METRICS_DIR / "history"
+
+
+# ── Bot / crawler filter (Qualified Activation Proof, Task 5) ──
+
+# Substrings matched case-insensitively against the User-Agent string. Any
+# match disqualifies the session from the qualified-human funnel counts.
+_BOT_UA_SUBSTRINGS = (
+    "googlebot", "bingbot", "yandex", "baiduspider", "duckduckbot", "slirp",
+    "semrush", "ahrefs", "petalbot", "applebot", "facebookexternalhit",
+    "twitterbot", "linkedinbot", "telegrambot", "whatsapp",
+    "python-requests", "curl", "wget", "selenium", "puppeteer", "playwright",
+    "headlesschrome", "phantomjs", "okhttp", "go-http-client", "apachebench",
+    "jmeter", "gtmhub", "googlestackdriver", "uptimerobot", "site24x7",
+    "newrelicpinger", "dotcommonitor", "statuscake",
+)
+
+
+def is_qualified_human(session_metadata, user_agent, duration_seconds, pageviews):
+    """Return True only if the session is likely a real human.
+
+    Used by the activation funnel (Task 6) to exclude crawlers, agents, and
+    headless automation from the qualified-human gate counts. Returns False
+    if ANY of the bot rules match; otherwise True.
+
+    Args:
+        session_metadata: opaque session metadata dict (currently unused by the
+            rule set but accepted so callers can pass it through unchanged;
+            kept in the signature for forward-compat — e.g. future rules may
+            inspect IP/ASN/referrer fields without changing the call site).
+        user_agent: raw User-Agent header string (or None).
+        duration_seconds: session duration in seconds (float/int).
+        pageviews: number of page views in the session (int).
+
+    Returns:
+        bool — True if the session passes the human filter, False otherwise.
+    """
+    # Rule: empty / None / too-short UA → not a real browser.
+    if not user_agent or not isinstance(user_agent, str) or len(user_agent) < 20:
+        return False
+
+    ua_lower = user_agent.lower()
+
+    # Rule: known crawler / bot / automation UA substrings.
+    for needle in _BOT_UA_SUBSTRINGS:
+        if needle in ua_lower:
+            return False
+
+    # Rule: desktop Linux (Linux present, Android absent) with a sub-2s
+    # single-pageview session — classic headless/CI fingerprint. Mobile
+    # Android UAs also contain "Linux" but are exempted by the Android check.
+    is_linux_desktop = "linux" in ua_lower and "android" not in ua_lower
+    try:
+        dur = float(duration_seconds)
+    except (TypeError, ValueError):
+        dur = 0.0
+    try:
+        pv = int(pageviews)
+    except (TypeError, ValueError):
+        pv = 0
+    if is_linux_desktop and dur < 2.0 and pv == 1:
+        return False
+
+    return True
 
 
 def get_client():
@@ -395,6 +475,45 @@ def generate_report(data):
     return "\n".join(lines)
 
 
+def update_activation_proof_t0():
+    """Auto-trigger t=0 measurement window start timestamp (Task 10)."""
+    state_path = METRICS_DIR / "activation_proof_state.json"
+    if not state_path.exists():
+        return None
+
+    try:
+        with open(state_path, "r") as f:
+            state = json.load(f)
+    except Exception:
+        return None
+
+    if state.get("t0_timestamp") is not None:
+        return state
+
+    try:
+        from app import create_app
+        from models import AnalyticsEvent, db
+
+        flask_app = create_app()
+        with flask_app.app_context():
+            earliest_event = (
+                db.session.query(AnalyticsEvent)
+                .filter(AnalyticsEvent.event_type.in_(["cta_impression", "cta_click"]))
+                .order_by(AnalyticsEvent.timestamp.asc())
+                .first()
+            )
+            if earliest_event and earliest_event.timestamp:
+                ts = earliest_event.timestamp
+                state["t0_timestamp"] = ts.isoformat() if isinstance(ts, datetime) else str(ts)
+                state["status"] = "measuring"
+                with open(state_path, "w") as f:
+                    json.dump(state, f, indent=2)
+    except Exception:
+        pass
+
+    return state
+
+
 def main():
     json_only = "--json-only" in sys.argv
 
@@ -486,6 +605,9 @@ def main():
         for old in history_files[:-30]:
             old.unlink()
             print(f"  Pruned: {old.name}")
+
+    # Update activation proof t0 timestamp if eligible (Task 10)
+    update_activation_proof_t0()
 
     print("Done.")
     return 0

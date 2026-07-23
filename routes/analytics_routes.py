@@ -14,6 +14,11 @@ from flask import Blueprint, current_app, g, jsonify, request
 from extensions import limiter
 from models import AnalyticsEvent, FunnelSnapshot, Message, db
 
+# Bot-filter rule set for the qualified-human funnel (Qualified Activation
+# Proof, Task 5). Imported here (rather than reimplemented) so the funnel
+# endpoint (Task 6) and the dashboard script share a single source of truth.
+from scripts.analytics_dashboard import is_qualified_human  # noqa: F401
+
 analytics_bp = Blueprint("analytics", __name__)
 
 
@@ -381,6 +386,156 @@ def true_metric():
     except Exception as e:
         current_app.logger.error(f"True metric error: {e}")
         return jsonify({"error": "Failed to compute metric"}), 500
+
+
+def compute_funnel_metrics(start_dt=None, end_dt=None):
+    """Compute qualified-human funnel counts and conversion rates."""
+    now = datetime.utcnow()
+    query = AnalyticsEvent.query
+    if start_dt:
+        query = query.filter(AnalyticsEvent.timestamp >= start_dt)
+    if end_dt:
+        query = query.filter(AnalyticsEvent.timestamp <= end_dt)
+
+    all_events = query.all()
+
+    session_events_map: Dict[str, list] = {}
+    for event in all_events:
+        sid = event.session_id or f"anon_{event.id}"
+        if sid not in session_events_map:
+            session_events_map[sid] = []
+        session_events_map[sid].append(event)
+
+    landing_sessions = 0
+    cta_clicks = 0
+    web_app_opens = 0
+    compliance_passed = 0
+    first_value_actions = 0
+    returning_users = 0
+
+    min_window_ts = None
+    max_window_ts = None
+
+    DEFAULT_UA = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    )
+    first_val_types = {"first_chat_message", "first_chat_message_sent", "mood_tracked", "first_value_action"}
+
+    for sid, events in session_events_map.items():
+        session_meta: Dict[str, Any] = {}
+        user_agent = None
+        timestamps = []
+
+        has_landing = False
+        has_cta_click = False
+        has_web_app_open = False
+        has_compliance_passed = False
+        has_first_value = False
+
+        for e in events:
+            if e.timestamp:
+                timestamps.append(e.timestamp)
+            meta = e.event_metadata or {}
+            if isinstance(meta, dict):
+                session_meta.update(meta)
+                if not user_agent:
+                    user_agent = meta.get("user_agent") or meta.get("ua") or meta.get("user_agent_string")
+
+            etype = e.event_type
+            if etype == "cta_impression":
+                has_landing = True
+            elif etype == "cta_click":
+                has_cta_click = True
+            elif etype == "web_app_open_from_cta":
+                has_web_app_open = True
+            elif etype == "compliance_passed":
+                has_compliance_passed = True
+
+            if etype in first_val_types or (isinstance(meta, dict) and meta.get("action_type") == "mood_tracked"):
+                has_first_value = True
+
+        if timestamps:
+            min_ts = min(timestamps)
+            max_ts = max(timestamps)
+            if min_window_ts is None or min_ts < min_window_ts:
+                min_window_ts = min_ts
+            if max_window_ts is None or max_ts > max_window_ts:
+                max_window_ts = max_ts
+            duration_sec = (max_ts - min_ts).total_seconds()
+        else:
+            duration_sec = 0.0
+
+        pageviews = len(events)
+        ua_to_check = user_agent if user_agent else DEFAULT_UA
+
+        if not is_qualified_human(session_meta, ua_to_check, duration_sec, pageviews):
+            continue
+
+        if has_landing:
+            landing_sessions += 1
+        if has_cta_click:
+            cta_clicks += 1
+        if has_web_app_open:
+            web_app_opens += 1
+        if has_compliance_passed:
+            compliance_passed += 1
+        if has_first_value:
+            first_value_actions += 1
+
+        if timestamps:
+            sorted_ts = sorted(timestamps)
+            first_ts = sorted_ts[0]
+            if any((t - first_ts).total_seconds() >= 86400 for t in sorted_ts):
+                returning_users += 1
+
+    cta_ctr = round(cta_clicks / landing_sessions, 4) if landing_sessions > 0 else 0.0
+    first_value_conversion = round(first_value_actions / landing_sessions, 4) if landing_sessions > 0 else 0.0
+
+    w_start = (start_dt or min_window_ts or now).isoformat()
+    w_end = (end_dt or max_window_ts or now).isoformat()
+
+    return {
+        "window": {
+            "start": w_start,
+            "end": w_end
+        },
+        "counts": {
+            "landing_sessions": landing_sessions,
+            "cta_clicks": cta_clicks,
+            "web_app_opens": web_app_opens,
+            "compliance_passed": compliance_passed,
+            "first_value_actions": first_value_actions,
+            "returning_users": returning_users
+        },
+        "cta_ctr": cta_ctr,
+        "first_value_conversion": first_value_conversion
+    }
+
+
+@analytics_bp.route("/api/metrics/funnel", methods=["GET"])
+def funnel_metrics():
+    """Returns qualified-human funnel counts and conversion rates (Activation Proof Task 6)."""
+    try:
+        now = datetime.utcnow()
+        days = request.args.get("days", type=int)
+        if days:
+            start_dt = now - timedelta(days=days)
+            end_dt = now
+        else:
+            start_str = request.args.get("start")
+            end_str = request.args.get("end")
+            start_dt = datetime.fromisoformat(start_str) if start_str else None
+            end_dt = datetime.fromisoformat(end_str) if end_str else None
+
+        res = compute_funnel_metrics(start_dt, end_dt)
+        return jsonify(res), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Funnel metrics error: {e}")
+        return jsonify({"error": "Failed to compute funnel metrics"}), 500
+
+
 
 
 @analytics_bp.route("/api/feedback", methods=["POST"])
