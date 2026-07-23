@@ -64,7 +64,34 @@ def landing_page():
 
 @static_bp.route("/app", methods=["GET"])
 def serve_app():
-    """Serve the Flutter web app or fallback page (explicit route)."""
+    """Serve the Flutter web app or fallback page (explicit route).
+
+    Issue B7 (server-side): when an inbound request carries a `ref` query
+    param, fire-and-forget a `web_app_open_from_cta` analytics event so the
+    activation-proof funnel can attribute app opens back to the originating
+    CTA. Logging never blocks the response.
+    """
+    ref = request.args.get("ref")
+    if ref:
+        try:
+            from helpers.session_helpers import _get_or_create_session, _log_analytics_event, background_executor
+
+            session_id = _get_or_create_session()
+            metadata = {
+                "source_cta": ref,
+                "landing_path": "/app",
+            }
+            for utm_key in ("utm_source", "utm_medium", "utm_campaign"):
+                utm_val = request.args.get(utm_key)
+                if utm_val:
+                    metadata[utm_key] = utm_val
+            background_executor.submit(
+                _log_analytics_event, current_app._get_current_object(),
+                session_id, "web_app_open_from_cta", metadata,
+            )
+        except Exception:
+            # Analytics must never block the static app shell.
+            current_app.logger.exception("web_app_open_from_cta log failed")
     return _serve_app_logic()
 
 

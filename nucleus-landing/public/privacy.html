@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Nucleus</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #020617; color: #ffffff; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; }
+  main { max-width: 800px; margin: 0 auto; padding: 2rem; }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.25rem; margin: 2.25rem 0 0.75rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+  p { margin-bottom: 1rem; color: #cbd5e1; }
+  ul { margin: 0 0 1rem 1.5rem; color: #cbd5e1; }
+  li { margin-bottom: 0.4rem; }
+  a { color: #5eead4; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: #ffffff; font-weight: 600; }
+  code { background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
+  th { color: #ffffff; font-weight: 600; }
+  td { color: #cbd5e1; }
+  .meta { color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; }
+  footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #1e293b; font-size: 0.875rem; color: #64748b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Effective date: 2026-05-24 · Last updated: 2026-05-24</p>
+  <p>Applies to nucleusos.dev, the Nucleus Pro subscription, the Nucleus CLI/daemon (<code>eideticd</code>), and all related services operated under the "Nucleus" brand.</p>
+
+  <h2>1. Who we are</h2>
+  <p>Nucleus ("we", "us", "our") provides a local-first knowledge engram tool. This Privacy Policy explains how we collect, use, share, and protect your personal information.</p>
+  <p>For privacy questions, requests, or complaints: <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a></p>
+
+  <h2>2. Information we collect</h2>
+  <h3>2.1 Information you give us directly</h3>
+  <ul>
+    <li><strong>Email address</strong> — when you join our waitlist, subscribe to updates, or create a Pro account</li>
+    <li><strong>Name and billing address</strong> — when you purchase Nucleus Pro (handled by Stripe; we receive a redacted copy)</li>
+    <li><strong>Payment information</strong> — processed entirely by Stripe; we never see your card number</li>
+    <li><strong>Support correspondence</strong> — when you email hello@nucleusos.dev</li>
+  </ul>
+  <h3>2.2 Information we collect automatically</h3>
+  <ul>
+    <li><strong>IP address</strong> — hashed (SHA-256) and used for rate limiting only; not stored beyond 60 seconds</li>
+    <li><strong>Referrer URL</strong> — to understand which marketing channels work, retained for 90 days</li>
+    <li><strong>Browser type and version</strong> — basic web server logs, not used for profiling</li>
+    <li><strong>Usage heartbeat</strong> — when you run the Pro <code>eideticd</code> daemon, we receive a periodic anonymous ping (device ID hash) so we know when an account becomes inactive. No content of your engrams is ever sent.</li>
+  </ul>
+  <h3>2.3 Information we explicitly do NOT collect</h3>
+  <ul>
+    <li><strong>Engram contents</strong> — your engrams are stored on your device. Pro tier backs them up to our R2 bucket, but they are <strong>client-side encrypted</strong> with a key held only by you. We see ciphertext only and cannot read them.</li>
+    <li><strong>Cookies for advertising</strong> — we don't run third-party ads and don't set advertising cookies.</li>
+    <li><strong>Cross-site tracking</strong> — we don't track you across other websites.</li>
+  </ul>
+
+  <h2>3. Why we collect it (lawful basis)</h2>
+  <table>
+    <thead><tr><th>Purpose</th><th>Lawful basis (GDPR)</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td>Sending requested updates</td><td>Consent (explicit checkbox)</td><td>Waitlist emails, Pro early access</td></tr>
+      <tr><td>Providing the Pro service</td><td>Contract performance</td><td>Account creation, license delivery, engram sync</td></tr>
+      <tr><td>Tax + accounting compliance</td><td>Legal obligation (Indian Income Tax Act §44AA)</td><td>Retaining billing records 7 years</td></tr>
+      <tr><td>Preventing abuse</td><td>Legitimate interest — service security and integrity</td><td>Hashed IP rate limiting, bot filtering</td></tr>
+      <tr><td>Customer research</td><td>Legitimate interest — product improvement via research that does not adversely affect data subjects</td><td>Interview transcripts (Pro users opt-in only)</td></tr>
+    </tbody>
+  </table>
+  <p>Under DPDP 2023, we rely on <strong>consent</strong> under §6 for marketing communications, account creation, and call recording. We rely on <strong>legitimate uses</strong> under §7 only in the limited circumstances enumerated in that section. For operational purposes that do not fit §7 — such as abuse prevention, security logging, and transactional service delivery — we rely on the consent you give when you create an account or use the service, together with the legal obligations applicable to us.</p>
+
+  <h2>4. How long we keep it</h2>
+  <table>
+    <thead><tr><th>Data</th><th>Retention</th></tr></thead>
+    <tbody>
+      <tr><td>Email on waitlist</td><td>Until you unsubscribe or request deletion</td></tr>
+      <tr><td>Pro account email + license info</td><td>Account lifetime + 30 days post-cancellation (billing records separately retained 7 years per Indian Income Tax Act §44AA)</td></tr>
+      <tr><td>Billing records (Stripe-held)</td><td>7 years (Indian tax law)</td></tr>
+      <tr><td>Engram backups (R2)</td><td>Account lifetime + 30 days post-cancellation</td></tr>
+      <tr><td>Usage heartbeat</td><td>90 days rolling window</td></tr>
+      <tr><td>Customer support emails</td><td>2 years</td></tr>
+      <tr><td>Customer interview audio</td><td>We delete locally within 30 days; OpenAI may retain server-side up to 30 days under their abuse-monitoring policy. Transcribed text retained 2 years.</td></tr>
+      <tr><td>Rate-limit IP hashes</td><td>60 seconds</td></tr>
+      <tr><td>Email dedup hashes</td><td>7 days</td></tr>
+    </tbody>
+  </table>
+  <p>After retention period expires or upon valid deletion request, data is purged from primary stores and secure-deleted from backups within 30 days.</p>
+
+  <h2>5. Who we share it with (sub-processors)</h2>
+  <p>We share personal information only with the specific sub-processors listed at <a href="/subprocessors">/subprocessors</a>.</p>
+  <p>In summary: Cloudflare (hosting/storage), Stripe (payments), Kit (email lists), Resend (transactional email), and OpenAI (Whisper API, only if you consent to call recording). All bound by Data Processing Agreements and Standard Contractual Clauses for cross-border transfers, executed directly between us and each sub-processor.</p>
+  <p><strong>We do not sell your personal information.</strong> Not to anyone, ever.</p>
+
+  <h3>5.1 California categories disclosure (CCPA §1798.100)</h3>
+  <p>Over the prior 12 months we have collected the following categories of personal information from California consumers (as defined in Cal. Civ. Code §1798.140):</p>
+  <ul>
+    <li><strong>Identifiers</strong> (email address, IP address [hashed], device identifier [hashed]) — sources: directly from you, your browser; disclosed to: Cloudflare, Stripe, Kit, Resend</li>
+    <li><strong>Commercial information</strong> (subscription status, transaction history) — sources: Stripe; disclosed to: Stripe</li>
+    <li><strong>Internet/network activity</strong> (referrer URL, browser metadata, usage heartbeat) — sources: your browser, our daemon; disclosed to: Cloudflare</li>
+    <li><strong>Audio data</strong> (interview recordings, only with explicit consent) — sources: directly from you; disclosed to: OpenAI Whisper</li>
+  </ul>
+  <p>We do not collect "sensitive personal information" as defined in §1798.140(ae) — no SSN, driver's license, financial-account credentials, precise geolocation, biometric identifiers, health, or genetic data. We have not sold or shared personal information in the prior 12 months.</p>
+
+  <h2>6. Where your data is stored</h2>
+  <table>
+    <thead><tr><th>Region</th><th>What's there</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>India (Oracle Cloud Mumbai)</td><td>(planned — not yet active)</td><td>When <code>nucleus-http</code> migrates from Cloudflare Workers to OCI. No customer data currently in OCI.</td></tr>
+      <tr><td>US (Stripe, Kit, Resend, R2 primary)</td><td>Payments, email lists, transactional email, engram backups</td><td>Sub-processor headquarters; data flows under SCCs</td></tr>
+      <tr><td>Global anycast (Cloudflare edge)</td><td>Static landing, hashed deduplication keys, edge logs</td><td>CDN performance</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Cross-border transfers</strong> for EU/UK personal data are conducted under EU Standard Contractual Clauses 2021 incorporated by each sub-processor.</p>
+
+  <h2>7. Your rights</h2>
+  <h3>Under EU/UK GDPR</h3>
+  <ul>
+    <li><strong>Access</strong> the personal data we hold about you</li>
+    <li><strong>Correct</strong> inaccurate data</li>
+    <li><strong>Delete</strong> your data ("right to erasure")</li>
+    <li><strong>Restrict</strong> processing</li>
+    <li><strong>Object</strong> to processing based on legitimate interest</li>
+    <li><strong>Port</strong> your data to another service</li>
+    <li><strong>Withdraw consent</strong> at any time (without affecting prior lawful processing)</li>
+    <li><strong>Lodge a complaint</strong> with your local supervisory authority. UK users may contact the Information Commissioner's Office (ico.org.uk). EU users may contact the supervisory authority of their member state — list at edpb.europa.eu/about-edpb/board/members_en.</li>
+  </ul>
+  <h3>Under India DPDP 2023</h3>
+  <ul>
+    <li><strong>Access</strong> your personal data and information about its processing (§11)</li>
+    <li><strong>Correction, completion, updating, and erasure</strong> of your personal data (§12)</li>
+    <li><strong>Grievance redressal</strong> — file a grievance with our Grievance Officer (see §11.1); we respond within 30 days (§13)</li>
+    <li><strong>Nominate</strong> another individual to exercise your rights in the event of death or incapacity (§14)</li>
+  </ul>
+  <h3>Under California CCPA/CPRA</h3>
+  <ul>
+    <li><strong>Know</strong> what personal information we collect, use, and share</li>
+    <li><strong>Delete</strong> your personal information</li>
+    <li><strong>Correct</strong> inaccurate personal information</li>
+    <li><strong>Opt-out of sale</strong> (N/A — we don't sell)</li>
+    <li><strong>Limit use</strong> of sensitive personal information (N/A — we don't process sensitive personal information as defined in §1798.140(ae))</li>
+    <li><strong>Non-discrimination</strong> for exercising any right</li>
+  </ul>
+
+  <h3>7.1 Automated decision-making</h3>
+  <p>We do not engage in automated decision-making, including profiling, that produces legal or similarly significant effects concerning you (GDPR Art 22). License validation is a deterministic key-check, not a profiling decision.</p>
+
+  <h3>How to exercise</h3>
+  <p>Email <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a> (or <a href="mailto:legal@nucleusos.dev">legal@nucleusos.dev</a> — both reach our team) with your request. We will:</p>
+  <ul>
+    <li>Acknowledge receipt within 7 business days</li>
+    <li>Verify your identity (typically by confirming control of the email associated with your account)</li>
+    <li>Respond within 30 days (DPDP, GDPR) or 45 days (CCPA, extendable to 90 with notice)</li>
+    <li>Charge no fee for routine requests</li>
+  </ul>
+
+  <h2>8. Security</h2>
+  <ul>
+    <li>All connections to our services use TLS 1.2 or higher</li>
+    <li>Engram backups are <strong>client-side encrypted</strong> before transmission to R2</li>
+    <li>Pro account API keys are stored as SHA-256 hashes; the cleartext key never leaves your device after first issue</li>
+    <li>We use least-privilege access controls; operator access is logged</li>
+    <li>Sub-processors are SOC 2 Type II certified or equivalent</li>
+  </ul>
+  <p>In the event of a personal data breach:</p>
+  <ul>
+    <li><strong>DPDP §8(6):</strong> We will notify the Data Protection Board of India and affected Data Principals as required</li>
+    <li><strong>GDPR Art 33–34:</strong> We will notify the supervisory authority within 72 hours and affected data subjects without undue delay if high risk</li>
+    <li><strong>CCPA:</strong> We will notify the California AG and affected consumers per §1798.82</li>
+  </ul>
+
+  <h2>9. Children's privacy</h2>
+  <p>Nucleus is not directed at children and is intended for users aged 18 and over.</p>
+  <ul>
+    <li><strong>India (DPDP §9):</strong> We do not knowingly process the personal data of a child (under 18) or of a person with a disability who has a lawful guardian, without verifiable consent of the parent or lawful guardian. We do not undertake tracking, behavioral monitoring, or targeted advertising directed at children.</li>
+    <li><strong>EU/UK (GDPR Art 8):</strong> Where consent is the lawful basis and the user is under the applicable age of digital consent in their member state (13–16), we require parental consent.</li>
+    <li><strong>US (COPPA):</strong> We do not knowingly collect personal information from children under 13.</li>
+  </ul>
+  <p>If you believe a child has provided us personal data, email <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a> and we will delete it within 30 days and, where applicable, notify any sub-processor that received the data.</p>
+
+  <h2>10. Changes to this policy</h2>
+  <p>We will post a notice on nucleusos.dev and email Pro account holders for any material change. The "Last updated" date at the top of this policy reflects the most recent revision. Historical versions are kept in our public repo.</p>
+  <p>This policy is governed by the laws of India. Jurisdiction follows the same rules as our <a href="/terms">Terms of Service</a> §12.</p>
+
+  <h2>11. Contact</h2>
+  <p><strong>Privacy questions, rights requests, complaints:</strong> <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a> (or <a href="mailto:legal@nucleusos.dev">legal@nucleusos.dev</a> — both reach our team)</p>
+  <p><strong>General contact:</strong> <a href="mailto:hello@nucleusos.dev">hello@nucleusos.dev</a></p>
+  <p><strong>Postal address for legal notices.</strong> Nucleus operates as an Indian micro-enterprise at pre-launch scale. We maintain a registered postal address for the receipt of formal legal notices under DPDP §5(2), GDPR Art 13(1)(a), and equivalent provisions. To request the current address, please email <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a> (for data-protection notices) or <a href="mailto:legal@nucleusos.dev">legal@nucleusos.dev</a> (for all other notices). We will respond within 7 business days. By using this service, you agree that this email-mediated address-request mechanism satisfies any notice-address requirement applicable to pre-launch operations of this size; once we reach commercial scale (first 100 paid customers or first enterprise contract), we will publish a permanent address.</p>
+
+  <h3>11.1 Grievance Officer (DPDP §8(9) and §13(3))</h3>
+  <p>For grievances under the Digital Personal Data Protection Act 2023, you may contact our Grievance Officer:</p>
+  <ul>
+    <li><strong>Name / Role:</strong> Privacy Officer, Nucleus</li>
+    <li><strong>Email:</strong> <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a></li>
+    <li><strong>Response timeline:</strong> acknowledgment within 7 business days; resolution within 30 days of receipt, in line with DPDP §13.</li>
+  </ul>
+  <p>If your grievance is not resolved to your satisfaction, you may approach the Data Protection Board of India under DPDP §27.</p>
+
+  <footer>
+    <p>&copy; 2026 Nucleus. All rights reserved.</p>
+    <p style="margin-top: 0.5rem;"><a href="https://nucleusos.dev">&larr; Back to nucleusos.dev</a> · <a href="/terms">Terms</a> · <a href="/cookies">Cookies</a> · <a href="/subprocessors">Sub-processors</a></p>
+  </footer>
+</main>
+</body>
+</html>

@@ -62,6 +62,10 @@ def log_analytics_event():
                 "duration_ms", "success", "code", "provider",
                 "quest_id", "tag", "surface", "variant", "ts", "progress",
                 "ui",
+                # Activation proof attribution metadata (Issue B2).
+                "action_type", "utm_source", "utm_medium", "utm_campaign",
+                "landing_path", "cta_id", "target_url", "referrer",
+                "result", "method", "source_cta",
             }
             for k, v in raw_meta.items():
                 if k in allowed_keys and isinstance(v, (str, int, float, bool)):

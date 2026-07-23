@@ -4,7 +4,7 @@ import { useState } from 'react';
 const FAQ_DATA = [
   {
     q: "What is Nucleus?",
-    a: "Nucleus is a local-first MCP (Model Context Protocol) server that gives AI agents persistent memory, governance, and a full audit trail. It runs entirely on your hardware with zero cloud dependencies, acting as a sovereign control plane for AI coding assistants like Claude, Cursor, and Windsurf."
+    a: "Nucleus is a local-first MCP (Model Context Protocol) server that gives AI agents persistent memory, governance, and a full audit trail. It runs local-first on your hardware; optional cloud sync is opt-in and telemetry is opt-out via nucleus config --no-telemetry, acting as a sovereign control plane for AI coding assistants like Claude, Cursor, and Windsurf."
   },
   {
     q: "How does Nucleus work?",

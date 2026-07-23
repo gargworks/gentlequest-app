@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Sub-processors — Nucleus</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #020617; color: #ffffff; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; }
+  main { max-width: 800px; margin: 0 auto; padding: 2rem; }
+  h1 { font-size: 2rem; margin-bottom: 1rem; }
+  h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; }
+  p { margin-bottom: 1rem; color: #cbd5e1; }
+  a { color: #5eead4; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+  th, td { text-align: left; padding: 0.625rem 0.5rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
+  th { color: #ffffff; font-weight: 600; }
+  td { color: #cbd5e1; }
+  td.vendor { color: #ffffff; font-weight: 500; }
+  footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #1e293b; font-size: 0.875rem; color: #64748b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sub-processors</h1>
+  <p>A sub-processor is a third party that processes personal data on our behalf. This list is the authoritative public record. We notify customers at least 30 days before adding or changing a sub-processor.</p>
+
+  <h2>Active sub-processors</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Purpose</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="vendor">Cloudflare, Inc.</td>
+        <td>Edge compute, CDN, KV storage, R2 object storage, Email Routing, Analytics Engine</td>
+        <td>Global anycast (US/EU/APAC)</td>
+      </tr>
+      <tr>
+        <td class="vendor">Stripe Payments Inc.</td>
+        <td>Payment processing</td>
+        <td>US (primary) + EU</td>
+      </tr>
+      <tr>
+        <td class="vendor">ConvertKit, LLC (dba Kit)</td>
+        <td>Email list / marketing automation</td>
+        <td>US (Tennessee)</td>
+      </tr>
+      <tr>
+        <td class="vendor">Resend, Inc.</td>
+        <td>Transactional email</td>
+        <td>US (Delaware/AWS)</td>
+      </tr>
+      <tr>
+        <td class="vendor">Telegram FZ-LLC</td>
+        <td>Operator alerts only (no customer PII)</td>
+        <td>Global</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Conditional sub-processors</h2>
+  <p>Used only if the corresponding feature is enabled or if customer opts in.</p>
+  <table>
+    <tbody>
+      <tr>
+        <td class="vendor">OpenAI, LP (Whisper API)</td>
+        <td>Voice-to-text transcription (only for customer interviews where consent is given)</td>
+        <td>US</td>
+      </tr>
+      <tr>
+        <td class="vendor">Otter.ai, Inc.</td>
+        <td>Alternative voice-to-text transcription (operator's choice)</td>
+        <td>US (AWS)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Cross-border data transfer</h2>
+  <p>For EU/UK customer data flowing to US-based sub-processors, we rely on the EU Standard Contractual Clauses 2021 incorporated in each sub-processor's Data Processing Agreement. Indian customer data may remain within India when our planned OCI Mumbai backend goes live.</p>
+
+  <h2>Contact</h2>
+  <p>Sub-processor questions: <a href="mailto:privacy@nucleusos.dev">privacy@nucleusos.dev</a></p>
+
+  <footer>
+    <p>&copy; 2026 Nucleus. All rights reserved.</p>
+    <p style="margin-top: 0.5rem;"><a href="https://nucleusos.dev">&larr; Back to nucleusos.dev</a></p>
+  </footer>
+</main>
+</body>
+</html>
