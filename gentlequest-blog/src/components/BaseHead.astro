@@ -26,6 +26,8 @@ const { title, description, image = FallbackImage } = Astro.props;
 const GA_MEASUREMENT_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID as string | undefined;
 const GA_MEASUREMENT_ID_VALID =
 	typeof GA_MEASUREMENT_ID === 'string' && /^G-[A-Z0-9]{6,}$/.test(GA_MEASUREMENT_ID);
+// Backend URL for analytics beacon (cross-origin POST from blog → backend).
+const BACKEND_URL = (import.meta.env.PUBLIC_BACKEND_URL as string) || 'https://gentlequest.onrender.com';
 ---
 
 <!-- Global Metadata -->
@@ -107,7 +109,7 @@ const GA_MEASUREMENT_ID_VALID =
 <!-- GentleQuest activation-proof client helpers: UTM capture + dual-channel event beacon.
      sendBlogEvent fires BOTH gtag('event', ...) AND a POST to /api/analytics/log with
      the required X-Analytics-Consent: true header (backend rejects beacons without it). -->
-<script is:inline>
+<script is:inline define:vars={{ BACKEND_URL }}>
 	(function () {
 		// Capture UTM params once on load; stash on window.__gqUtm for CTA handlers.
 		try {
@@ -133,13 +135,13 @@ const GA_MEASUREMENT_ID_VALID =
 				}
 			}
 			try {
-				fetch('/api/analytics/log', {
+				fetch(BACKEND_URL + '/api/analytics/log', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-Analytics-Consent': 'true',
 					},
-					body: JSON.stringify(Object.assign({ action: eventType }, metadata)),
+					body: JSON.stringify({ event_type: eventType, metadata: metadata }),
 				}).catch(function (e) {
 					console.warn('[GentleQuest] analytics beacon failed:', e);
 				});
