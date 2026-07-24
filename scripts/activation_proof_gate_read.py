@@ -149,7 +149,7 @@ def main():
 
     # 4. Get qualified-human funnel counts from Flask app context
     from app import create_app
-    from models import db, AnalyticsEvent, UserFeedback, University
+    from models import db, AnalyticsEvent
     from routes.analytics_routes import compute_funnel_metrics
 
     flask_app = create_app()
