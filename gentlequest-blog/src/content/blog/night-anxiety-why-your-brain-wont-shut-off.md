@@ -1,7 +1,7 @@
 ---
 title: "Night Anxiety: Why Your Brain Won't Shut Off at 2 AM"
 description: "3 AM thoughts racing? Night anxiety is real and it's not your fault. Here's why it happens and 4 gentle techniques that actually work at 2 AM."
-pubDate: 2026-06-28
+pubDate: 2026-07-30
 author: "GentleQuest Team"
 tags: ["Anxiety", "Sleep", "Mental Health", "Self-Care"]
 ---
