@@ -49,6 +49,43 @@ REDDIT_USER_AGENT = "gentlequest-publisher/1.0 by u/gentlequest_dev"
 
 # ─── Credential loading ────────────────────────────────────────────────────
 
+BUFFER_CHANNEL_CACHE_PATH = Path(__file__).parent / "gq_buffer_channels.json"
+BUFFER_CHANNEL_CACHE_TTL_DAYS = 7  # re-fetch from API at most every 7 days
+
+
+def _load_buffer_channel_cache():
+    """Load cached Buffer channel IDs from disk. Returns dict with _age_days."""
+    if not BUFFER_CHANNEL_CACHE_PATH.exists():
+        return {"_age_days": 999}
+    try:
+        with open(BUFFER_CHANNEL_CACHE_PATH) as f:
+            data = json.load(f)
+        cached_at = data.get("cached_at", "")
+        if cached_at:
+            from datetime import datetime, timezone
+            cached_dt = datetime.fromisoformat(cached_at.replace("Z", "+00:00"))
+            age = (datetime.now(timezone.utc) - cached_dt).days
+            data["_age_days"] = age
+        else:
+            data["_age_days"] = 999
+        return data
+    except Exception:
+        return {"_age_days": 999}
+
+
+def _save_buffer_channel_cache(channels, org_id=None):
+    """Save Buffer channel IDs to disk cache."""
+    from datetime import datetime, timezone
+    data = dict(channels)
+    data["org_id"] = org_id
+    data["cached_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        with open(BUFFER_CHANNEL_CACHE_PATH, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"  Warning: Failed to save Buffer channel cache: {e}")
+
+
 def load_credentials():
     """Load credentials from keychain + environment."""
     creds = {}
@@ -62,11 +99,15 @@ def load_credentials():
     except subprocess.CalledProcessError:
         pass
 
-    # Buffer channel IDs — GentleQuest account (fetch dynamically from API)
-    creds["buffer_org_id"] = None  # Will be fetched from API
-    creds["buffer_twitter_channel"] = None
-    creds["buffer_linkedin_channel"] = None
-    creds["buffer_instagram_channel"] = None
+    # Buffer channel IDs — load from state cache (avoids 2 API calls every run)
+    # Only re-fetch from API if cache is missing or older than 7 days
+    buffer_cache = _load_buffer_channel_cache()
+    creds["buffer_org_id"] = buffer_cache.get("org_id")
+    creds["buffer_twitter_channel"] = buffer_cache.get("twitter") or buffer_cache.get("x")
+    creds["buffer_linkedin_channel"] = buffer_cache.get("linkedin")
+    creds["buffer_instagram_channel"] = buffer_cache.get("instagram")
+    creds["buffer_facebook_channel"] = buffer_cache.get("facebook")
+    creds["_buffer_cache_age_days"] = buffer_cache.get("_age_days", 999)
 
     # Dev.to — from keychain or env
     try:
@@ -515,7 +556,7 @@ def log_action(item, status, details=""):
 # ─── Buffer publisher ──────────────────────────────────────────────────────
 
 def fetch_buffer_channels(token):
-    """Fetch channel IDs from Buffer GraphQL API. Returns dict mapping service name to channel ID."""
+    """Fetch channel IDs from Buffer GraphQL API. Returns (channels_dict, org_id)."""
     # First get the account + organization ID
     account_query = """
     query {
@@ -541,10 +582,10 @@ def fetch_buffer_channels(token):
                 org_id = orgs[0].get("id")
     except Exception as e:
         print(f"Warning: Failed to fetch Buffer account: {e}")
-        return {}
+        return {}, None
 
     if not org_id:
-        return {}
+        return {}, None
 
     # Now fetch channels for this org
     channels_query = """
@@ -581,7 +622,7 @@ def fetch_buffer_channels(token):
     except Exception as e:
         print(f"Warning: Failed to fetch Buffer channels: {e}")
 
-    return channels
+    return channels, org_id
 
 
 def publish_to_buffer(item, creds, dry_run=False):
@@ -590,15 +631,20 @@ def publish_to_buffer(item, creds, dry_run=False):
     if not token:
         return False, "No Buffer token"
 
-    # Fetch channel IDs dynamically if not cached
-    if not creds.get("buffer_twitter_channel"):
-        channels = fetch_buffer_channels(token)
+    # Fetch channel IDs only if cache is missing or stale (>7 days)
+    if not creds.get("buffer_twitter_channel") or creds.get("_buffer_cache_age_days", 999) >= BUFFER_CHANNEL_CACHE_TTL_DAYS:
+        print("  Buffer channel cache miss/stale — fetching from API...")
+        channels, org_id = fetch_buffer_channels(token)
         if channels:
             creds["buffer_twitter_channel"] = channels.get("twitter") or channels.get("x")
             creds["buffer_linkedin_channel"] = channels.get("linkedin")
             creds["buffer_instagram_channel"] = channels.get("instagram")
             creds["buffer_facebook_channel"] = channels.get("facebook")
-            print(f"  Fetched Buffer channels: {list(channels.keys())}")
+            creds["buffer_org_id"] = org_id
+            _save_buffer_channel_cache(channels, org_id)
+            print(f"  Fetched + cached Buffer channels: {list(channels.keys())}")
+    else:
+        print(f"  Buffer channels from cache (age={creds['_buffer_cache_age_days']}d)")
 
     channel_map = {
         "twitter": creds.get("buffer_twitter_channel"),
