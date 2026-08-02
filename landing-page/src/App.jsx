@@ -13,7 +13,7 @@ import { createElement, useState } from 'react';
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
 const WEB_APP_URL = 'https://app.gentlequest.app';
-const NEWSLETTER_FORMSPREE = 'https://formspree.io/f/YOUR_FORMSPREE_ID';
+const NEWSLETTER_API = 'https://app.gentlequest.app/api/newsletter/subscribe';
 
 function AppleGlyph() {
   return (
@@ -71,10 +71,10 @@ function App() {
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(NEWSLETTER_FORMSPREE, {
+      const response = await fetch(NEWSLETTER_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email: newsletterEmail, _subject: 'New newsletter signup from landing page' }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail, source: 'landing' }),
       });
       if (response.ok) {
         setNewsletterStatus('success');
