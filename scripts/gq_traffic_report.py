@@ -130,6 +130,23 @@ def daily_report(uri):
         WHERE timestamp >= %s AND timestamp < %s
     """, (y_start, y_end))[0]["count"]
 
+    # Newsletter subscribers
+    try:
+        newsletter = query_db(uri, """
+            SELECT COUNT(*) as count FROM newsletter_subscribers
+            WHERE subscribed_at >= %s AND subscribed_at < %s AND active = true
+        """, (y_start, y_end))[0]["count"]
+    except Exception:
+        newsletter = "?"
+
+    # Total active newsletter subscribers
+    try:
+        newsletter_total = query_db(uri, """
+            SELECT COUNT(*) as count FROM newsletter_subscribers WHERE active = true
+        """)[0]["count"]
+    except Exception:
+        newsletter_total = "?"
+
     # Funnel from API
     funnel = get_funnel_from_api()
     f_counts = funnel.get("counts", {})
@@ -161,6 +178,7 @@ def daily_report(uri):
         f"Chat messages: {chat['count']} ({chat['unique_sessions']} unique sessions)",
         f"Real user chat: {real_chat}",
         f"Mood entries: {mood}",
+        f"Newsletter: {newsletter} new ({newsletter_total} total active)",
         f"Blog posts published: {blog_count}",
         "",
         f"Funnel (last 7d): {f_counts.get('landing_sessions', 0)} sessions, "
