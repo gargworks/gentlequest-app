@@ -20,22 +20,28 @@ if [ ! -d "$SCHEDULED_DIR" ] || [ -z "$(ls -A "$SCHEDULED_DIR" 2>/dev/null)" ]; 
     exit 0
 fi
 
-# Get the oldest scheduled post (by pubDate)
-# Read the pubDate from frontmatter and pick the earliest
+# Get today's date in YYYY-MM-DD format
+TODAY=$(date -u +%Y-%m-%d)
+
+# Get the oldest scheduled post (by pubDate) that is due today or earlier
+# Read the pubDate from frontmatter and pick the earliest that has reached its pubDate
 OLDEST_POST=""
 OLDEST_DATE="9999-99-99"
 
 for post in "$SCHEDULED_DIR"/*.md; do
     [ -e "$post" ] || continue
     pub_date=$(grep "^pubDate:" "$post" | head -1 | sed 's/pubDate: *//' | tr -d '"')
-    if [ "$pub_date" \< "$OLDEST_DATE" ]; then
-        OLDEST_DATE="$pub_date"
-        OLDEST_POST="$post"
+    # Only consider posts whose pubDate is today or earlier
+    if [[ "$pub_date" < "$TODAY" || "$pub_date" == "$TODAY" ]]; then
+        if [ "$pub_date" \< "$OLDEST_DATE" ]; then
+            OLDEST_DATE="$pub_date"
+            OLDEST_POST="$post"
+        fi
     fi
 done
 
 if [ -z "$OLDEST_POST" ]; then
-    log "No .md files found in scheduled/. Exiting."
+    log "No scheduled posts due yet (today=$TODAY). Exiting."
     exit 0
 fi
 
