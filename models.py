@@ -533,3 +533,17 @@ class FeedbackSubmission(db.Model):
 
     def __repr__(self):
         return f"<FeedbackSubmission id={self.id} rating={self.rating}>"
+
+
+class NewsletterSubscriber(db.Model):
+    """Blog newsletter subscribers."""
+    __tablename__ = "newsletter_subscribers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    source = db.Column(db.String(50), default="blog")
+    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<NewsletterSubscriber id={self.id} email={self.email[:20]}...>"

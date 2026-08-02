@@ -1,17 +1,15 @@
 ---
 // Newsletter signup component for GentleQuest blog
-// Uses Formspree for email capture (free tier, no backend needed)
-// Replace YOUR_FORMSPREE_ID with your actual Formspree form ID
+// Posts to the GentleQuest backend API (no third-party service needed)
+const BACKEND_URL = (import.meta.env.PUBLIC_BACKEND_URL as string) || 'https://app.gentlequest.app';
 ---
 
 <section class="newsletter">
 	<div class="newsletter-inner">
 		<h3>Get the occasional GentleQuest letter</h3>
 		<p>No spam, no streaks, no pressure. One thoughtful email every few weeks about ADHD, anxiety, and building a gentler relationship with yourself.</p>
-		<form id="newsletter-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
+		<form id="newsletter-form" data-backend={BACKEND_URL}>
 			<input type="email" name="email" placeholder="your@email.com" required />
-			<input type="hidden" name="_subject" value="New newsletter signup from GentleQuest blog" />
-			<input type="hidden" name="_template" value="table" />
 			<button type="submit">Subscribe</button>
 		</form>
 		<p id="newsletter-success" class="success-msg" style="display:none;">
@@ -25,24 +23,26 @@
 </section>
 
 <script>
-	const form = document.getElementById('newsletter-form');
+	const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
 	const success = document.getElementById('newsletter-success');
 	const error = document.getElementById('newsletter-error');
 
 	if (form) {
+		const backendUrl = form.dataset.backend || 'https://app.gentlequest.app';
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
-			const formData = new FormData(form);
+			const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
+			const email = emailInput?.value?.trim();
+			if (!email) return;
 			try {
-				const response = await fetch(form.action, {
+				const response = await fetch(`${backendUrl}/api/newsletter/subscribe`, {
 					method: 'POST',
-					body: formData,
-					headers: { 'Accept': 'application/json' }
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email, source: 'blog' }),
 				});
 				if (response.ok) {
 					form.style.display = 'none';
-					success.style.display = 'block';
-					// Track conversion
+					success!.style.display = 'block';
 					if (typeof gtag !== 'undefined') {
 						gtag('event', 'newsletter_signup', {
 							'event_category': 'engagement',
@@ -50,10 +50,10 @@
 						});
 					}
 				} else {
-					error.style.display = 'block';
+					error!.style.display = 'block';
 				}
 			} catch (err) {
-				error.style.display = 'block';
+				error!.style.display = 'block';
 			}
 		});
 	}
