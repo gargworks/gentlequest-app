@@ -159,7 +159,7 @@ function App() {
             </a>
           </div>
           <div className="gq-hero-meta" style={{ marginTop: 16 }}>
-            Free · iOS · Android · v1.4.3
+            Free · iOS · Android · v1.5.1
           </div>
         </div>
 
