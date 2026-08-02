@@ -623,8 +623,9 @@
       "target": "twitter",
       "text": "My ADHD brain often feels paralyzed when I need to start a task. It's wild how just having someone else quietly working nearby, no pressure, no talking, can completely unstick me. It's like the invisible nudge I desperately need. Do you find body doubling helps you beat task p...",
       "scheduled_for": "2026-08-02T04:30:01.317227Z",
-      "status": "pending",
-      "generated": true
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
     },
     {
       "id": "gen_tweet_1784971849_2",
@@ -632,8 +633,9 @@
       "target": "twitter",
       "text": "It's not about being lazy; it's like my brain has a massive energy deficit just for initiating. The ADHD paralysis makes starting anything, no matter how small, feel like pushing a boulder",
       "scheduled_for": "2026-08-02T08:30:01.317227Z",
-      "status": "pending",
-      "generated": true
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
     },
     {
       "id": "gen_tweet_1784971858_3",
