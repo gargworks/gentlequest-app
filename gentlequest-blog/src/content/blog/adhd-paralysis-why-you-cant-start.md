@@ -77,4 +77,4 @@ And if none of that works today, that's okay. Your brain is telling you it's ove
 
 ---
 
-*GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in with yourself. [Try it free](https://gentlequest.app).*
+*GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in with yourself. [Try it free](https://app.gentlequest.app).*

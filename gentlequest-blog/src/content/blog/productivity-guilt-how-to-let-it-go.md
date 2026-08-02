@@ -94,4 +94,4 @@ The guilt wasn't helping. It was just loud.
 
 ---
 
-*GentleQuest is a free mood check-in app. No streaks. No guilt. Just a quiet moment to check in with yourself. [Try it free](https://gentlequest.app).*
+*GentleQuest is a free mood check-in app. No streaks. No guilt. Just a quiet moment to check in with yourself. [Try it free](https://app.gentlequest.app).*

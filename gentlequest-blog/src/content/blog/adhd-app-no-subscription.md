@@ -68,7 +68,7 @@ Try GentleQuest wherever you are:
 
 - iOS — https://apps.apple.com/app/gentlequest/id6756537464
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-- Web — https://gentlequest.app
+- Web — https://app.gentlequest.app
 
 ## Strategies for Using an App With ADHD
 

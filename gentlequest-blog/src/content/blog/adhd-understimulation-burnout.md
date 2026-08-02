@@ -92,7 +92,7 @@ The antidote is *gentle* stimulation. Not a sprint. Not a marathon. A walk.
 
 ## How GentleQuest helps
 
-[GentleQuest](https://gentlequest.app) was built with understimulation burnout in mind. The daily "quests" are 2-5 minute micro-activities designed to provide gentle stimulation without overwhelm — grounding exercises, breathing techniques, reflection prompts.
+[GentleQuest](https://app.gentlequest.app) was built with understimulation burnout in mind. The daily "quests" are 2-5 minute micro-activities designed to provide gentle stimulation without overwhelm — grounding exercises, breathing techniques, reflection prompts.
 
 No streaks (because streaks trigger cortisol). No guilt (because guilt makes burnout worse). Just tiny, doable steps that give your brain what it needs.
 

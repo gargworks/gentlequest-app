@@ -102,4 +102,4 @@ That's a stronger foundation than any system.
 
 ---
 
-*GentleQuest is a free mood check-in app. No systems. No streaks. Just one tap to check in with how you're feeling. [Try it free](https://gentlequest.app).*
+*GentleQuest is a free mood check-in app. No systems. No streaks. Just one tap to check in with how you're feeling. [Try it free](https://app.gentlequest.app).*

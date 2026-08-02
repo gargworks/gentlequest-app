@@ -73,7 +73,7 @@ Streaks turn self-care into another thing you can fail at. We don't want that. Y
 
 ## If you want a gentle companion
 
-If you want these kinds of tiny steps delivered gently (no streaks, no guilt, no pressure), [GentleQuest](https://gentlequest.app) sends 2-5 minute self-care "quests" each day. You do them or you don't. Missing one doesn't break anything.
+If you want these kinds of tiny steps delivered gently (no streaks, no guilt, no pressure), [GentleQuest](https://app.gentlequest.app) sends 2-5 minute self-care "quests" each day. You do them or you don't. Missing one doesn't break anything.
 
 Free on [iOS](https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/id6756537464) and [Android](https://play.google.com/store/apps/details?id=app.gentlequest.www).
 

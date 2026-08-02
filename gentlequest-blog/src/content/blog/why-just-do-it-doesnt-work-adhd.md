@@ -88,4 +88,4 @@ You're not broken. Your brain has a different operating system. It needs differe
 
 ---
 
-*GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in. [Try it free](https://gentlequest.app).*
+*GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in. [Try it free](https://app.gentlequest.app).*

@@ -86,4 +86,4 @@ You're not broken. Your brain is doing what brains do — trying to protect you 
 
 ---
 
-*GentleQuest is a free mood check-in app. No streaks. No shame. If night anxiety is a regular thing, try logging your mood before bed — it takes 5 seconds and helps you see patterns over time. [Try it free](https://gentlequest.app).*
+*GentleQuest is a free mood check-in app. No streaks. No shame. If night anxiety is a regular thing, try logging your mood before bed — it takes 5 seconds and helps you see patterns over time. [Try it free](https://app.gentlequest.app).*

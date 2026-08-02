@@ -18,7 +18,7 @@ If you miss a day of journaling because you were *having a great day with friend
 
 ## Introducing "Rhythm" over "Streaks"
 
-At [GentleQuest](https://gentlequest.app), we've replaced the daily streak with **Rhythm**.
+At [GentleQuest](https://app.gentlequest.app), we've replaced the daily streak with **Rhythm**.
 
 - **Streaks** demand 7/7 days.
 - **Rhythm** looks at your rolling 30-day window. Did you engage enough to feel supported?

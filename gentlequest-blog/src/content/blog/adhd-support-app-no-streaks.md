@@ -90,7 +90,7 @@ GentleQuest is built with no streaks, no gamification, and no shame — by desig
 
 - iOS — https://apps.apple.com/app/gentlequest/id6756537464
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
-- Web — https://gentlequest.app
+- Web — https://app.gentlequest.app
 
 ## A Note on Scope
 
