@@ -34,7 +34,7 @@ const BACKEND_URL = (import.meta.env.PUBLIC_BACKEND_URL as string) || 'https://g
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="sitemap" href="/sitemap-index.xml" />
+<link rel="sitemap" href={new URL(import.meta.env.BASE_URL + '/sitemap-index.xml', Astro.site)} />
 <link
 	rel="alternate"
 	type="application/rss+xml"
