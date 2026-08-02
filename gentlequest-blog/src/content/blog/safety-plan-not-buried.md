@@ -3,6 +3,7 @@ title: "Your Safety Plan Shouldn't Be Buried in Settings"
 description: "A safety plan is only useful if you can find it when you're in crisis. Here's why most apps hide it — and why we put it front and center."
 pubDate: 2026-06-23
 author: "GentleQuest Team"
+tags: ["Safety", "Crisis", "Mental Health", "Self-Care"]
 ---
 
 Most mental health apps bury the safety plan.

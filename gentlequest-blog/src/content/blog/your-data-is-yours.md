@@ -3,6 +3,7 @@ title: "Your Data Is Yours: Why We Built a Mental Health App You Can Leave"
 description: "Most mental health apps trap your data. We built GentleQuest so you can export everything, delete everything, or go anonymous — no account, no email, no tracking."
 pubDate: 2026-06-25
 author: "GentleQuest Team"
+tags: ["Privacy", "Data", "Mental Health", "Self-Care"]
 ---
 
 Here's a dirty secret about mental health apps: most of them are designed to

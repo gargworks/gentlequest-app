@@ -3,6 +3,7 @@ title: "The 5-4-3-2-1 Grounding Exercise: 60 Seconds Back to Now"
 description: "When anxiety spirals, your brain lives in the future. The 5-4-3-2-1 technique pulls you back to the present using your senses. Here's how it works."
 pubDate: 2026-06-24
 author: "GentleQuest Team"
+tags: ["Anxiety", "Grounding", "Self-Care", "Mental Health"]
 ---
 
 Anxiety is a time traveler.
@@ -68,6 +69,7 @@ music, no timer counting down. Just the steps, at your pace.
 You can also build your own version into your safety plan — under "things that
 help" — so it's there when you need it most.
 
+tags: ["Anxiety", "Grounding", "Self-Care", "Mental Health"]
 ---
 
 *GentleQuest is a free mental wellness app for iOS and Android. The Wellness
