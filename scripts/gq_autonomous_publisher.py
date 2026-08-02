@@ -322,6 +322,21 @@ Write ONLY the blog post markdown, nothing else. Start with the title as a ## he
     return text, None
 
 
+def _extract_blog_title(text):
+    """Extract a clean title from generated blog post text."""
+    for line in text.split('\n'):
+        line = line.strip()
+        if line.startswith('## '):
+            return line[3:].strip()
+        if line.startswith('# '):
+            return line[2:].strip()
+    # Fallback: first non-empty line
+    for line in text.split('\n'):
+        if line.strip():
+            return line.strip().lstrip('#').strip()
+    return "Untitled"
+
+
 def generate_devto_article(creds, topic=None):
     """Generate a Dev.to article using Gemini."""
     topic = topic or random.choice(BLOG_TOPICS)
@@ -426,13 +441,14 @@ def auto_generate_content(creds, count=10):
                 print(f"  Blog generation failed: {err}")
                 continue
             # Save blog post to scheduled folder
-            slug = f"generated-{int(time.time())}-{i}"
+            clean_title = _extract_blog_title(text)
+            slug = clean_title.lower()[:60].replace(' ', '-').replace(':', '').replace(',', '').replace('--', '-')[:50]
             blog_path = Path("/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/scheduled") / f"{slug}.md"
             # Add frontmatter
             pub_date = current_time.strftime("%Y-%m-%d")
             blog_content = f"""---
-title: "{text.split(chr(10))[0].replace('# ', '').replace('## ', '')[:80]}"
-description: "{text.split(chr(10))[0].replace('# ', '').replace('## ', '')[:150]}"
+title: "{clean_title[:80]}"
+description: "{clean_title[:150]}"
 pubDate: {pub_date}
 author: "GentleQuest Team"
 tags: ["ADHD", "Mental Health", "Self-Care"]
