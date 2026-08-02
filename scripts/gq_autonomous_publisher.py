@@ -680,6 +680,12 @@ def publish_to_buffer(item, creds, dry_run=False):
     if not text:
         return False, "Empty text"
 
+    # Append app link to every 3rd tweet for traffic (tweets without links
+    # get more algorithmic reach, but we still need some traffic to the app)
+    item_id = item.get("id", "")
+    if item_id and item_id.endswith(("_3", "_6", "_9")):
+        text = text + "\n\nTry GentleQuest → https://app.gentlequest.app"
+
     if dry_run:
         return True, f"DRY RUN: Would post to Buffer/{target}: {text[:50]}..."
 
