@@ -83,6 +83,37 @@ const jsonLd = {
 			.last-updated-on {
 				font-style: italic;
 			}
+		.share-buttons {
+			display: flex;
+			gap: 0.75em;
+			justify-content: center;
+			margin: 2em 0;
+			padding: 1em 0;
+			border-top: 1px solid rgb(var(--gray-light));
+			border-bottom: 1px solid rgb(var(--gray-light));
+		}
+		.share-buttons a {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.4em;
+			padding: 0.5em 1em;
+			border-radius: 6px;
+			text-decoration: none;
+			font-size: 0.9rem;
+			font-weight: 500;
+			color: rgb(var(--gray-dark));
+			border: 1px solid rgb(var(--gray-light));
+			transition: all 0.15s;
+		}
+		.share-buttons a:hover {
+			background: rgb(var(--gray-light));
+			color: rgb(var(--black));
+		}
+		.share-buttons .share-label {
+			font-size: 0.85rem;
+			color: rgb(var(--gray));
+			margin-right: 0.5em;
+		}
 		</style>
 	</head>
 
@@ -109,6 +140,13 @@ const jsonLd = {
 						<hr />
 					</div>
 					<slot />
+				<div class="share-buttons">
+					<span class="share-label">Share:</span>
+					<a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(Astro.url.href)}&via=gentlequest_dev`} target="_blank" rel="noopener">Twitter</a>
+					<a href={`https://www.reddit.com/submit?url=${encodeURIComponent(Astro.url.href)}&title=${encodeURIComponent(title)}`} target="_blank" rel="noopener">Reddit</a>
+					<a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(Astro.url.href)}`} target="_blank" rel="noopener">LinkedIn</a>
+					<a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + Astro.url.href)}`} target="_blank" rel="noopener">WhatsApp</a>
+				</div>
 				</div>
 				<div class="prose">
 					<Newsletter />
