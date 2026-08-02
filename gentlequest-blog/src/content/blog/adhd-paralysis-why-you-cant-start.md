@@ -1,6 +1,7 @@
 ---
 title: "ADHD Paralysis: Why You Can't Start (And How to Move)"
 description: "ADHD paralysis isn't laziness. It's your brain's executive function system crashing. Here are 3 gentle ways to break the freeze without shame."
+heroImage: "../../assets/blog-placeholder-5.jpg"
 pubDate: 2026-06-27
 author: "GentleQuest Team"
 tags: ["ADHD", "Executive Function", "Mental Health", "Self-Care"]

@@ -1,6 +1,7 @@
 ---
 title: "Alternative to BetterMe: Simpler, Private, No Subscription Pressure"
 description: "If you're searching for an \"alternative to BetterMe,\" you're not alone."
+heroImage: "../../assets/blog-placeholder-2.jpg"
 pubDate: "2026-07-11"
 author: "GentleQuest Team"
 tags: ['Betterme Alternative', 'Mental Health App', 'No Subscription', 'Private', 'Gentlequest']

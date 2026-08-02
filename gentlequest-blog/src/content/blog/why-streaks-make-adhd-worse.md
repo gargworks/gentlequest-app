@@ -1,6 +1,7 @@
 ---
 title: "Why Streaks Make ADHD Worse (And What Actually Helps)"
 description: "Daily streak counters trigger cortisol and shame for people with ADHD. Here's why anti-streak habit tracking works better — and the science behind it."
+heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: 2026-06-22
 author: "GentleQuest Team"
 tags: ["ADHD", "Habit Tracking", "Mental Health", "Product Design"]

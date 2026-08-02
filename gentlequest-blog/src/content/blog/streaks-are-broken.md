@@ -1,6 +1,7 @@
 ---
 title: "Streaks are Broken"
 description: "Why we removed the daily streak counter from GentleQuest, and what we replaced it with."
+heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-01-15"
 author: "GentleQuest Team"
 tags: ["Mental Health", "Product Design", "Digital Wellness"]

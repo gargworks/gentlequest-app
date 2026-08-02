@@ -1,6 +1,7 @@
 ---
 title: "ADHD Time Blindness: Why You Can't Feel Time Passing"
 description: "ADHD time blindness isn't laziness — it's a difference in how your brain perceives time. Here's why clocks don't work and what actually helps."
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: 2026-08-03
 author: "GentleQuest Team"
 tags: ["ADHD", "Executive Function", "Mental Health", "Self-Care"]

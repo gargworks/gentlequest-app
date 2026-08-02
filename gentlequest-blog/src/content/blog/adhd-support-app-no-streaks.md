@@ -1,6 +1,7 @@
 ---
 title: "ADHD Support App No Streaks: Why Gamification Hurts More Than It Helps"
 description: "If you're searching for an \"ADHD support app no streaks,\" you've likely experienced the specific pain of gamified mental health tools when you have ADHD."
+heroImage: "../../assets/blog-placeholder-2.jpg"
 pubDate: "2026-07-08"
 author: "GentleQuest Team"
 tags: ['Adhd', 'No Streaks', 'Gamification', 'Mental Health App', 'Neurodivergent']

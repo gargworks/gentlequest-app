@@ -1,6 +1,7 @@
 ---
 title: "ADHD in Adults in the Workplace: Strategies for Focus and Success"
 description: "ADHD in adults doesn't disappear at the office door. The same challenges with attention, impulsivity, time management, and emotional regulation that affect…"
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: "2026-07-06"
 author: "GentleQuest Team"
 tags: ['Adhd', 'Adults', 'Workplace', 'Career', 'Executive Function']

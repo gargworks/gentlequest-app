@@ -1,6 +1,7 @@
 ---
 title: "ADHD App That's Private and No Tracking: Focus Tools Without Surveillance"
 description: "ADHD apps often ask you to log your focus, your tasks, your moods, your medication, and your habits."
+heroImage: "../../assets/blog-placeholder-2.jpg"
 pubDate: "2026-07-05"
 author: "GentleQuest Team"
 tags: ['Adhd App Private No Tracking', 'Private Mental Health App', 'No Tracking']

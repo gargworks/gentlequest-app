@@ -1,6 +1,7 @@
 ---
 title: "Alternative to Bearable: Simpler, Private, No Subscription Pressure"
 description: "If you're searching for an \"alternative to Bearable,\" you're not alone."
+heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-07-10"
 author: "GentleQuest Team"
 tags: ['Bearable Alternative', 'Symptom Tracker', 'Mental Health', 'No Subscription', 'Private']

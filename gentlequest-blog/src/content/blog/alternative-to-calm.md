@@ -1,6 +1,7 @@
 ---
 title: "Alternative to Calm App: Quieter, Simpler, No Subscription Pressure"
 description: "If you're searching for an \"alternative to Calm app,\" you're not alone. Calm is one of the most popular wellness apps in the world — and for good reason."
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: "2026-07-12"
 author: "GentleQuest Team"
 tags: ['Calm Alternative', 'Meditation App', 'Mental Health', 'No Subscription', 'Gentlequest']

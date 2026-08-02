@@ -1,6 +1,7 @@
 ---
 title: "ADHD in Students: Navigating Academic Life with a Different Brain"
 description: "ADHD in students is often first diagnosed in college, when the structure of home and high school falls away and the student has to manage their own schedule…"
+heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: "2026-07-07"
 author: "GentleQuest Team"
 tags: ['Adhd', 'Students', 'College', 'Executive Function', 'Academic Support']

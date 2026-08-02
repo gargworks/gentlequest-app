@@ -1,6 +1,7 @@
 ---
 title: "ADHD Understimulation Burnout: Why Rest Makes It Worse"
 description: "If you have ADHD and 'resting' makes you feel worse, you might have understimulation burnout. Here's what it is and why typical burnout advice backfires."
+heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: 2026-06-22
 author: "GentleQuest Team"
 tags: ["ADHD", "Burnout", "Mental Health", "Recovery"]

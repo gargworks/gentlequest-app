@@ -1,6 +1,7 @@
 ---
 title: "Overwhelmed? Start With One Breath (Not a System)"
 description: "When everything feels like too much, productivity systems make it worse. Here's the gentle alternative: start with one breath, one check-in, one moment."
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: 2026-06-29
 author: "GentleQuest Team"
 tags: ["Overwhelm", "Self-Care", "Mental Health", "Mindfulness"]

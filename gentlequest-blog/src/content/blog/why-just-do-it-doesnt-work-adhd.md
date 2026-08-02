@@ -1,6 +1,7 @@
 ---
 title: "Why 'Just Do It' Doesn't Work If You Have ADHD"
 description: "Nike's slogan is terrible advice for ADHD brains. Here's the neuroscience behind why you can't 'just do it' — and what actually works instead."
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: 2026-07-01
 author: "GentleQuest Team"
 tags: ["ADHD", "Executive Function", "Mental Health", "Neuroscience"]

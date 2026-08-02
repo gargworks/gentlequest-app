@@ -1,6 +1,7 @@
 ---
 title: "The Guilt of Not Doing Enough (And How to Let It Go)"
 description: "Productivity guilt is exhausting. You feel like you should always be doing more. Here's where it comes from and how to release it without giving up."
+heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: 2026-06-30
 author: "GentleQuest Team"
 tags: ["Guilt", "Productivity", "Mental Health", "Self-Compassion"]

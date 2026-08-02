@@ -1,6 +1,7 @@
 ---
 title: "IIP vs ChatGPT: 3 Real-World Stress Tests (Live Production)"
 description: "We pushed our AI product engine to the limit with 3 distinct, non-trivial use cases. Here's how it compared to generic GPT-4."
+heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-01-22"
 author: "GentleQuest Team"
 tags: ["AI Benchmark", "Product Strategy", "No-Code", "Agentic AI", "Real World"]

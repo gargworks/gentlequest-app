@@ -1,6 +1,7 @@
 ---
 title: "Alternative to Balance App: Simpler, Private, No Subscription Pressure"
 description: "If you're searching for an \"alternative to Balance app,\" you're not alone."
+heroImage: "../../assets/blog-placeholder-5.jpg"
 pubDate: "2026-07-09"
 author: "GentleQuest Team"
 tags: ['Balance Alternative', 'Meditation App', 'Mental Health', 'No Subscription', 'Private']
