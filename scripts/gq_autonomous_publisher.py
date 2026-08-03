@@ -890,17 +890,16 @@ def publish_to_indiehackers(item, creds, dry_run=False):
 # ─── Medium publisher (browser automation — import from blog) ──────────────
 
 PLAYWRIGHT_PROFILE = Path.home() / ".config" / "gentlequest" / "playwright-profile"
+BLOG_DIR = "/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/blog"
 
 def publish_to_medium(item, creds, dry_run=False):
-    """Import a blog post to Medium via browser automation.
+    """Publish a blog post to Medium by typing directly into the editor.
 
-    Uses Medium's 'Import a story' feature which:
-    - Pulls content from the blog URL
-    - Automatically sets canonical URL to the original
-    - Publishes under the @gentlequest Medium account
+    Medium removed 'Import a story', so we type the title and body
+    directly into the editor at medium.com/new-story.
     """
     if dry_run:
-        return True, f"DRY RUN: Would import to Medium: {item.get('blog_url', '')[:60]}..."
+        return True, f"DRY RUN: Would type to Medium: {item.get('blog_url', '')[:60]}..."
 
     try:
         from playwright.sync_api import sync_playwright
@@ -911,81 +910,128 @@ def publish_to_medium(item, creds, dry_run=False):
     if not blog_url:
         return False, "No blog_url in item"
 
+    # Extract slug from blog_url to find the markdown file
+    slug = blog_url.split("/blog/")[-1].split("?")[0].rstrip("/")
+    md_path = os.path.join(BLOG_DIR, f"{slug}.md")
+    if not os.path.exists(md_path):
+        return False, f"Blog markdown not found: {md_path}"
+
+    # Parse the markdown file
+    with open(md_path, "r") as f:
+        content = f.read()
+
+    # Extract frontmatter and body
+    if content.startswith("---"):
+        end = content.find("\n---", 3)
+        if end == -1:
+            return False, "Invalid frontmatter"
+        fm = content[3:end]
+        body = content[end + 4:].lstrip("\n")
+    else:
+        fm = ""
+        body = content
+
+    # Extract title
+    title_match = re.search(r'^title:\s*"([^"]*)"', fm, re.MULTILINE)
+    title = title_match.group(1) if title_match else slug.replace("-", " ").title()
+
+    # Convert markdown body to paragraphs
+    # Remove markdown formatting that Medium's editor won't handle
+    paragraphs = []
+    current_para = []
+    for line in body.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            if current_para:
+                paragraphs.append(" ".join(current_para))
+                current_para = []
+        elif stripped.startswith("##"):
+            # Convert H2 to a paragraph (Medium uses title case for headings)
+            if current_para:
+                paragraphs.append(" ".join(current_para))
+                current_para = []
+            heading_text = stripped.lstrip("#").strip()
+            paragraphs.append(heading_text)
+        elif stripped.startswith("#"):
+            if current_para:
+                paragraphs.append(" ".join(current_para))
+                current_para = []
+            # Skip H1 — the title is already set
+            continue
+        elif stripped.startswith("---"):
+            if current_para:
+                paragraphs.append(" ".join(current_para))
+                current_para = []
+            continue
+        elif stripped.startswith("!["):
+            # Skip images
+            continue
+        elif stripped.startswith("- ") or stripped.startswith("* "):
+            # Bullet points — keep as separate paragraphs
+            if current_para:
+                paragraphs.append(" ".join(current_para))
+                current_para = []
+            paragraphs.append("• " + stripped[2:].strip())
+        else:
+            # Remove markdown link syntax: [text](url) -> text
+            cleaned = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', stripped)
+            # Remove bold/italic markers
+            cleaned = cleaned.replace("**", "").replace("*", "").replace("`", "")
+            current_para.append(cleaned)
+
+    if current_para:
+        paragraphs.append(" ".join(current_para))
+
+    # Add canonical URL and CTA at the end
+    paragraphs.append(f"Originally published at https://gentlequest.app/blog/{slug}")
+    paragraphs.append("GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app")
+
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
-            str(PLAYWRIGHT_PROFILE),
-            headless=True,
+            str(Path.home() / "growth-engine" / "profiles" / "gentlequest"),
+            headless=False,  # Medium requires headed mode
             args=["--disable-blink-features=AutomationControlled"],
         )
         page = context.new_page()
         try:
             # Go to Medium's new story page
-            page.goto("https://medium.com/new-story", timeout=30000)
-            page.wait_for_load_state("networkidle", timeout=15000)
+            page.goto("https://medium.com/new-story", wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(4000)
 
             # Check if logged in
-            if "m/signin" in page.url or page.query_selector('button:has-text("Sign in")'):
-                return False, "Not logged in to Medium — run --setup-browser"
+            if "signin" in page.url.lower():
+                return False, "Not logged in to Medium — run setup_browser.py --product gentlequest --site medium"
 
-            # Look for "Import a story" link
-            import_link = page.query_selector('a:has-text("Import a story")')
-            if not import_link:
-                # Try the import URL directly
-                page.goto("https://medium.com/new-story/import", timeout=30000)
-                page.wait_for_load_state("networkidle", timeout=15000)
-            else:
-                import_link.click()
-                page.wait_for_load_state("networkidle", timeout=15000)
+            # Click on the title editor
+            editor = page.locator("[data-testid='editorTitleParagraph'], h3[data-testid], .graf--title").first
+            try:
+                editor.click(timeout=20000)
+            except Exception:
+                page.locator("article, [contenteditable='true']").first.click(timeout=20000)
 
-            # Paste the blog URL
-            url_input = page.wait_for_selector('input[type="url"], input[placeholder*="URL"], input[placeholder*="url"]', timeout=10000)
-            url_input.fill(blog_url)
-            page.wait_for_timeout(500)
+            # Type the title
+            page.keyboard.type(title, delay=12)
+            page.keyboard.press("Enter")
+            page.wait_for_timeout(800)
 
-            # Click import button
-            import_btn = page.query_selector('button:has-text("Import")')
-            if not import_btn:
-                import_btn = page.query_selector('button:has-text("import")')
-            if not import_btn:
-                return False, "Could not find Import button on Medium"
+            # Type each paragraph
+            for para in paragraphs:
+                if not para.strip():
+                    continue
+                page.keyboard.type(para, delay=6)
+                page.keyboard.press("Enter")
+                page.wait_for_timeout(400)
 
-            import_btn.click()
-
-            # Wait for import to complete (Medium fetches the content)
-            page.wait_for_timeout(5000)
-            page.wait_for_load_state("networkidle", timeout=30000)
-
-            # Click Publish
-            publish_btn = page.query_selector('button:has-text("Publish")')
-            if not publish_btn:
-                publish_btn = page.query_selector('button:has-text("Publish now")')
-            if not publish_btn:
-                # Maybe we need to confirm the import first
-                confirm_btn = page.query_selector('button:has-text("Confirm")')
-                if confirm_btn:
-                    confirm_btn.click()
-                    page.wait_for_timeout(2000)
-                    publish_btn = page.query_selector('button:has-text("Publish")')
-
-            if not publish_btn:
-                return False, "Could not find Publish button — import may have failed"
-
-            publish_btn.click()
-
-            # Handle publish dialog — confirm
-            page.wait_for_timeout(2000)
-            final_btn = page.query_selector('button:has-text("Publish now")')
-            if final_btn:
-                final_btn.click()
-
-            page.wait_for_timeout(3000)
-            medium_url = page.url
-            return True, f"Imported to Medium: {medium_url}"
+            # Wait for user to review and publish manually
+            # (auto_publish is false by design — see config)
+            return True, f"Typed to Medium editor (review and publish manually): {title[:50]}"
 
         except Exception as e:
             return False, f"Medium error: {e}"
         finally:
-            context.close()
+            # Keep browser open for manual review
+            # context.close()  # Commented out — user needs to publish manually
+            pass
 
 
 # ─── Reddit publisher (browser automation — value-first comments) ──────────
