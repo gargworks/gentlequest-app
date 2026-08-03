@@ -10,12 +10,36 @@ const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 const recentPosts = posts.slice(0, 12);
+
+const websiteJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'WebSite',
+	name: 'GentleQuest Blog',
+	url: 'https://gentlequest.app/blog/',
+	description: SITE_DESCRIPTION,
+	publisher: {
+		'@type': 'Organization',
+		name: 'GentleQuest',
+		url: 'https://gentlequest.app',
+	},
+};
+
+const orgJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Organization',
+	name: 'GentleQuest',
+	url: 'https://gentlequest.app',
+	logo: 'https://gentlequest.app/icon-512.png',
+	description: 'A gentle AI mood tracker for anxiety, stress, and burnout. No streaks. No guilt. Just small steps at your pace.',
+};
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
 	</head>
 	<body>
 		<Header />
