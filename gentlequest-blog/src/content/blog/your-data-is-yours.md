@@ -1,5 +1,5 @@
 ---
-title: "Your Data Is Yours: Why We Built a Mental Health App You Can Leave"
+title: "Your Data Is Yours: A Mental Health App You Can Leave"
 description: "Most mental health apps trap your data. We built GentleQuest so you can export everything, delete everything, or go anonymous — no account, no email, no tracking."
 heroImage: "../../assets/blog-placeholder-5.jpg"
 pubDate: 2026-06-25

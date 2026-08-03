@@ -1,5 +1,5 @@
 ---
-title: "ADHD App With No Subscription: Focus and Organization Without a Paywall"
+title: "ADHD App With No Subscription: Focus Without a Paywall"
 description: "ADHD affects focus, impulse control, organization, and emotional regulation. Here's a free ADHD app with no subscription — focus and organization without a paywall."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-07-04"
@@ -7,7 +7,7 @@ author: "GentleQuest Team"
 tags: ['Adhd App No Subscription', 'Free Adhd App', 'No Paywall Mental Health']
 ---
 
-# ADHD App With No Subscription: Focus and Organization Without a Paywall
+## ADHD App With No Subscription: Focus and Organization Without a Paywall
 
 ADHD (attention-deficit/hyperactivity disorder) affects focus, impulse control, organization, and emotional regulation. While medication and therapy are the primary treatments, many people use apps to help with task management, time awareness, and emotional regulation. If you're searching for an **ADHD app with no subscription**, here's what to look for and what to avoid.
 

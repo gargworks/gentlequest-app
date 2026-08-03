@@ -1,5 +1,5 @@
 ---
-title: "ADHD in Students: Navigating Academic Life with a Different Brain"
+title: "ADHD in Students: Navigating School With a Different Brain"
 description: "ADHD in students is often first diagnosed in college, when the structure of home and high school falls away and the student has to manage their own schedule…"
 heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: "2026-07-07"
@@ -7,7 +7,7 @@ author: "GentleQuest Team"
 tags: ['Adhd', 'Students', 'College', 'Executive Function', 'Academic Support']
 ---
 
-# ADHD in Students: Navigating Academic Life with a Different Brain
+## ADHD in Students: Navigating Academic Life with a Different Brain
 
 ADHD in students is often first diagnosed in college, when the structure of home and high school falls away and the student has to manage their own schedule, assignments, and life. For some students, this transition reveals what was always there. For others, the academic demands of higher education create new challenges. This article explores what ADHD looks like in students and what helps.
 

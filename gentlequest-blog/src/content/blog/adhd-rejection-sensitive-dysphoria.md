@@ -1,5 +1,5 @@
 ---
-title: "ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife"
+title: "ADHD and RSD: Why Criticism Feels Like a Knife"
 description: "Discover why ADHD makes criticism feel physically painful due to Rejection Sensitive Dysphoria (RSD), and learn gentle ways to cope when it strikes."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: 2026-08-02

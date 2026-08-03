@@ -1,5 +1,5 @@
 ---
-title: "Alternative to Bearable: Simpler, Private, No Subscription Pressure"
+title: "Alternative to Bearable: Simpler, Private, No Subscription"
 description: "If you're searching for an alternative to Bearable for mood tracking, you're not alone. Here's why people switch to simpler, private, no-subscription alternatives."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-07-10"
@@ -7,7 +7,7 @@ author: "GentleQuest Team"
 tags: ['Bearable Alternative', 'Symptom Tracker', 'Mental Health', 'No Subscription', 'Private']
 ---
 
-# Alternative to Bearable: Simpler, Private, No Subscription Pressure
+## Alternative to Bearable: Simpler, Private, No Subscription Pressure
 
 If you're searching for an "alternative to Bearable," you're not alone. Bearable is a popular symptom and mood tracking app that lets users log a wide range of variables — mood, symptoms, medications, habits, factors — and look for correlations. But it's not the right fit for everyone. Whether you're tired of the subscription, the complexity, the data practices, or the overwhelming customization, there are honest reasons to look elsewhere. This article explores what people commonly want from a Bearable alternative and what to consider when choosing one.
 

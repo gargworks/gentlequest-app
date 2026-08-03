@@ -1,6 +1,6 @@
 ---
-title: "Mindfulness for Anxiety: How to Actually Do It (Without the Woo)"
-description: "Mindfulness isn't about clearing your mind or sitting cross-legged for an hour. It's a practical skill that reduces anxiety. Here's how to start, without the spiritual baggage."
+title: "Mindfulness for Anxiety: How to Actually Do It"
+description: "Mindfulness isn't about clearing your mind or sitting cross-legged for an hour. It's a practical skill that reduces anxiety. Here's how to start."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-08-04"
 author: "GentleQuest Team"

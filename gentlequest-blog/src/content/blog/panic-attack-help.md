@@ -1,6 +1,6 @@
 ---
-title: "Panic Attack Help: What to Do When Your Body Sounds the Alarm"
-description: "When a panic attack hits, your body feels like it's in mortal danger — even though you're safe. Here's what's happening, what to do right now, and how to prevent the next one."
+title: "Panic Attack Help: What to Do When the Alarm Sounds"
+description: "When a panic attack hits, your body feels like it's in mortal danger — even though you're safe. Here's what's happening and what to do right now."
 heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: "2026-08-03"
 author: "GentleQuest Team"

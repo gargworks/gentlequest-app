@@ -1,5 +1,5 @@
 ---
-title: "Alternative to Day One: Simpler, Private, No Subscription Pressure"
+title: "Alternative to Day One: Simpler, Private, No Subscription"
 description: "If you're searching for an alternative to Day One for journaling, you're not alone. Here's why people switch to simpler, private, no-subscription journaling tools."
 heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: "2026-07-13"
@@ -7,7 +7,7 @@ author: "GentleQuest Team"
 tags: ['Day One Alternative', 'Journal App', 'Mental Health', 'No Subscription', 'Private']
 ---
 
-# Alternative to Day One: Simpler, Private, No Subscription Pressure
+## Alternative to Day One: Simpler, Private, No Subscription Pressure
 
 If you're searching for an "alternative to Day One," you're not alone. Day One is one of the most popular journaling apps, known for its polished design, rich media support, and sync capabilities. But it's not the right fit for everyone. Whether you're tired of the subscription, the cloud sync, the feature bloat, or the data practices, there are honest reasons to look elsewhere. This article explores what people commonly want from a Day One alternative and what to consider when choosing one — particularly for mental health journaling.
 

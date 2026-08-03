@@ -1,5 +1,5 @@
 ---
-title: "ADHD in Adults in the Workplace: Strategies for Focus and Success"
+title: "ADHD in Adults at Work: Strategies for Focus and Success"
 description: "ADHD in adults doesn't disappear at the office door. The same challenges with attention, impulsivity, time management, and emotional regulation that affect…"
 heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: "2026-07-06"
@@ -7,7 +7,7 @@ author: "GentleQuest Team"
 tags: ['Adhd', 'Adults', 'Workplace', 'Career', 'Executive Function']
 ---
 
-# ADHD in Adults in the Workplace: Strategies for Focus and Success
+## ADHD in Adults in the Workplace: Strategies for Focus and Success
 
 ADHD in adults doesn't disappear at the office door. The same challenges with attention, impulsivity, time management, and emotional regulation that affect daily life also shape the work experience. But with understanding and the right strategies, adults with ADHD can thrive professionally. This article explores what ADHD looks like in the workplace and what helps.
 

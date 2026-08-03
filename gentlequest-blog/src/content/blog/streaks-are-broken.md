@@ -1,5 +1,5 @@
 ---
-title: "Streaks are Broken: Why We Removed the Daily Counter from Our Mental Health App"
+title: "Streaks Are Broken: Why We Removed the Daily Counter"
 description: "Why daily streaks are toxic for mental health apps, what we replaced them with, and the science behind designing for consistency without shame."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-01-15"
