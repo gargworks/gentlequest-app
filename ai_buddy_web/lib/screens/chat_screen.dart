@@ -63,8 +63,39 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
         ),
+        _buildSuggestionChips(),
         _buildMessageComposer(),
       ],
+    );
+  }
+
+  Widget _buildSuggestionChips() {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    // Only show chips when there are no user messages yet
+    final hasUserMessages = chatProvider.messages.any((m) => m.isUser);
+    if (hasUserMessages) return const SizedBox.shrink();
+
+    final suggestions = [
+      'I\'m feeling anxious',
+      'I can\'t focus',
+      'I\'m overwhelmed',
+      'I need to calm down',
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 4.0,
+        children: suggestions.map((text) {
+          return ActionChip(
+            label: Text(text),
+            onPressed: () {
+              _handleSubmitted(text);
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 
