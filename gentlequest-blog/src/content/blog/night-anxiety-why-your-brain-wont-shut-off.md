@@ -85,6 +85,13 @@ Night anxiety feels like it will last forever. It won't. Your brain's cortisol c
 
 You're not broken. Your brain is doing what brains do — trying to protect you from threats, just at the wrong time. Be gentle with it.
 
+## Related reading
+
+- [The 5-4-3-2-1 Grounding Exercise: 60 Seconds Back to Now](/blog/grounding-5-4-3-2-1/)
+- [Your Safety Plan Shouldn't Be Buried in Settings](/blog/safety-plan-not-buried/)
+- [5 Tiny Self-Care Steps When You're Completely Overwhelmed](/blog/tiny-self-care-when-overwhelmed/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app. No streaks. No shame. If night anxiety is a regular thing, try logging your mood before bed — it takes 5 seconds and helps you see patterns over time. [Try it free](https://app.gentlequest.app).*

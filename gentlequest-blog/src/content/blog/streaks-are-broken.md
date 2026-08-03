@@ -84,6 +84,13 @@ We optimize for `Meaningful Sessions per Month`. Quality over quantity. Silence 
 
 This isn't just a feature change. It's a philosophy. Mental health apps should reduce pressure, not create it. They should reward showing up, not punish stepping away. They should help you build a gentler relationship with yourself — not a more anxious one.
 
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app with no streaks, no shame, and no subscription. [Try it free at app.gentlequest.app](https://app.gentlequest.app).*

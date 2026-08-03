@@ -102,3 +102,10 @@ Try it free on [iOS](https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/i
 ## If you're in crisis
 
 If you're experiencing severe burnout, depression, or thoughts of self-harm, this article isn't a substitute for professional help. Contact a mental health professional or call 988 (US) / your local crisis line.
+
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+

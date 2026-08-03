@@ -86,6 +86,13 @@ You're the product.
 If the answer is "Settings → Export, then Settings → Delete" — you're in the
 right place.
 
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+
+
 ---
 
 *GentleQuest is a free mental wellness app for iOS and Android. No account

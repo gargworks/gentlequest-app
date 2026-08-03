@@ -93,6 +93,13 @@ Not because you're trying harder. Because you're not wasting energy on guilt. Be
 
 The guilt wasn't helping. It was just loud.
 
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app. No streaks. No guilt. Just a quiet moment to check in with yourself. [Try it free](https://app.gentlequest.app).*

@@ -115,6 +115,13 @@ If you haven't filled one in yet, take 2 minutes now. Open the app → tap your 
 
 You can always add more later. But having something — even one number — already there when you need it is the difference between reaching out and not.
 
+## Related reading
+
+- [The 5-4-3-2-1 Grounding Exercise: 60 Seconds Back to Now](/blog/grounding-5-4-3-2-1/)
+- [Night Anxiety: Why Your Brain Won't Shut Off at 2 AM](/blog/night-anxiety-why-your-brain-wont-shut-off/)
+- [5 Tiny Self-Care Steps When You're Completely Overwhelmed](/blog/tiny-self-care-when-overwhelmed/)
+
+
 ---
 
 *GentleQuest is a free mental wellness app for iOS and Android. Safety plans are stored locally on your device. No account required. [Try it free at app.gentlequest.app](https://app.gentlequest.app).*

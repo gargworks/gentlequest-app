@@ -99,6 +99,13 @@ The grounding exercise is in the Wellness Library — two taps from anywhere in 
 
 You can also build your own version into your safety plan — under "things that help" — so it's there when you need it most.
 
+## Related reading
+
+- [Night Anxiety: Why Your Brain Won't Shut Off at 2 AM](/blog/night-anxiety-why-your-brain-wont-shut-off/)
+- [Your Safety Plan Shouldn't Be Buried in Settings](/blog/safety-plan-not-buried/)
+- [5 Tiny Self-Care Steps When You're Completely Overwhelmed](/blog/tiny-self-care-when-overwhelmed/)
+
+
 ---
 
 *GentleQuest is a free mental wellness app for iOS and Android. The Wellness Library includes grounding, breathing, and CBT-based exercises. No account required. [Try it free at app.gentlequest.app](https://app.gentlequest.app).*

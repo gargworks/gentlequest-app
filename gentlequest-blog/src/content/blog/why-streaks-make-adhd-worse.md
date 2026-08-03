@@ -74,3 +74,10 @@ If you're building a habit (or building an app for people with ADHD):
 If you're tired of streak-based apps making you feel guilty, [GentleQuest](https://app.gentlequest.app) is a mood tracker built on cumulative progress instead of streaks. It's free on [iOS](https://apps.apple.com/us/app/gentlequest-ai-mood-tracker/id6756537464) and [Android](https://play.google.com/store/apps/details?id=app.gentlequest.www).
 
 No streaks. No guilt. Just progress, at your pace.
+
+## Related reading
+
+- [Streaks are Broken: Why We Removed the Daily Counter from Our Mental Health App](/blog/streaks-are-broken/)
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+

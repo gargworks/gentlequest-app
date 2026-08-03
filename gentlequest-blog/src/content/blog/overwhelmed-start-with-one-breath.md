@@ -101,6 +101,13 @@ This is the opposite of what streaks and systems do. Streaks teach your brain "I
 
 That's a stronger foundation than any system.
 
+## Related reading
+
+- [5 Tiny Self-Care Steps When You're Completely Overwhelmed](/blog/tiny-self-care-when-overwhelmed/)
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app. No systems. No streaks. Just one tap to check in with how you're feeling. [Try it free](https://app.gentlequest.app).*

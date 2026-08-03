@@ -85,3 +85,10 @@ We believe that mental health tools should adapt to your fluctuating energy and 
 ---
 
 *If you or someone you know is struggling or in crisis, help is available. You are not alone. In the US, call or text 988 or chat at 988lifeline.org to reach the Suicide & Crisis Lifeline.*
+
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+- [Streaks are Broken: Why We Removed the Daily Counter from Our Mental Health App](/blog/streaks-are-broken/)
+

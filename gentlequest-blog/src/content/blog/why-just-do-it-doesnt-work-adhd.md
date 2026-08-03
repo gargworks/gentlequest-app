@@ -87,6 +87,13 @@ What works is understanding the actual problem (dopamine-driven task initiation)
 
 You're not broken. Your brain has a different operating system. It needs different software.
 
+## Related reading
+
+- [ADHD Paralysis: Why You Can't Start (And How to Move)](/blog/adhd-paralysis-why-you-cant-start/)
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in. [Try it free](https://app.gentlequest.app).*

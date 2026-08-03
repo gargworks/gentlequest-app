@@ -76,6 +76,13 @@ The next time you're frozen:
 
 And if none of that works today, that's okay. Your brain is telling you it's overloaded. Listen to it. Come back tomorrow.
 
+## Related reading
+
+- [ADHD Time Blindness: Why You Can't Feel Time Passing](/blog/adhd-time-blindness/)
+- [ADHD and Rejection Sensitive Dysphoria (RSD): Why Criticism Feels Like a Knife](/blog/adhd-rejection-sensitive-dysphoria/)
+- [Streaks are Broken: Why We Removed the Daily Counter from Our Mental Health App](/blog/streaks-are-broken/)
+
+
 ---
 
 *GentleQuest is a free mood check-in app built for ADHD brains. No streaks. No shame. Just a quiet place to check in with yourself. [Try it free](https://app.gentlequest.app).*

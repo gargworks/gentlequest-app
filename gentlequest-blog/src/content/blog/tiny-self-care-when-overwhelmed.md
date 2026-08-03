@@ -84,3 +84,10 @@ If you're experiencing a mental health emergency, these steps aren't enough. Con
 - **US:** Call or text 988
 - **UK:** Call 111, or 999 in an emergency
 - **International:** Find your local crisis line at [findahelpline.com](https://findahelpline.com)
+
+## Related reading
+
+- [The 5-4-3-2-1 Grounding Exercise: 60 Seconds Back to Now](/blog/grounding-5-4-3-2-1/)
+- [Night Anxiety: Why Your Brain Won't Shut Off at 2 AM](/blog/night-anxiety-why-your-brain-wont-shut-off/)
+- [Overwhelmed? Start With One Breath (Not a System)](/blog/overwhelmed-start-with-one-breath/)
+
