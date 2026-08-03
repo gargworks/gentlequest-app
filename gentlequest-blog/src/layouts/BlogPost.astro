@@ -12,6 +12,11 @@ type Props = CollectionEntry<'blog'>['data'] & { slug?: string };
 
 const { title, description, pubDate, updatedDate, heroImage, tags, slug } = Astro.props;
 
+// Build the absolute image URL for structured data
+const imageUrl = heroImage
+	? new URL(heroImage.src, Astro.site).toString()
+	: undefined;
+
 const jsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'BlogPosting',
@@ -33,6 +38,7 @@ const jsonLd = {
 		'@type': 'WebPage',
 		'@id': new URL(Astro.url.pathname, Astro.site).toString(),
 	},
+	...(imageUrl ? { image: imageUrl } : {}),
 };
 ---
 
