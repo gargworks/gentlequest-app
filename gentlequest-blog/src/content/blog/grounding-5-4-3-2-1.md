@@ -1,6 +1,6 @@
 ---
 title: "The 5-4-3-2-1 Grounding Exercise: 60 Seconds Back to Now"
-description: "When anxiety spirals, your brain lives in the future. The 5-4-3-2-1 technique pulls you back to the present using your senses. Here's how it works and why it's effective."
+description: "When anxiety spirals, your brain lives in the future. The 5-4-3-2-1 grounding technique pulls you back to the present using your senses. Here's how it works."
 heroImage: "../../assets/blog-placeholder-5.jpg"
 pubDate: 2026-06-24
 author: "GentleQuest Team"

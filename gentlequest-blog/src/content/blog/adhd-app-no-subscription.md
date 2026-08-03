@@ -1,6 +1,6 @@
 ---
 title: "ADHD App With No Subscription: Focus and Organization Without a Paywall"
-description: "ADHD (attention-deficit/hyperactivity disorder) affects focus, impulse control, organization, and emotional regulation."
+description: "ADHD affects focus, impulse control, organization, and emotional regulation. Here's a free ADHD app with no subscription — focus and organization without a paywall."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-07-04"
 author: "GentleQuest Team"

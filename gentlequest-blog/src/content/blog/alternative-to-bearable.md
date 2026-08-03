@@ -1,6 +1,6 @@
 ---
 title: "Alternative to Bearable: Simpler, Private, No Subscription Pressure"
-description: "If you're searching for an \"alternative to Bearable,\" you're not alone."
+description: "If you're searching for an alternative to Bearable for mood tracking, you're not alone. Here's why people switch to simpler, private, no-subscription alternatives."
 heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: "2026-07-10"
 author: "GentleQuest Team"

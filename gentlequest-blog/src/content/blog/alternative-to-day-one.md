@@ -1,6 +1,6 @@
 ---
 title: "Alternative to Day One: Simpler, Private, No Subscription Pressure"
-description: "If you're searching for an \"alternative to Day One,\" you're not alone."
+description: "If you're searching for an alternative to Day One for journaling, you're not alone. Here's why people switch to simpler, private, no-subscription journaling tools."
 heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: "2026-07-13"
 author: "GentleQuest Team"
