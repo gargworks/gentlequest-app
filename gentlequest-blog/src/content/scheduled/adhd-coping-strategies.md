@@ -1,6 +1,7 @@
 ---
 title: "ADHD Coping Strategies: 7 Techniques That Actually Work"
 description: "Practical ADHD coping strategies that work in real life. From body doubling to dopamine menus, here are 7 techniques you can start today."
+heroImage: "../../assets/blog-placeholder-1.jpg"
 pubDate: 2026-08-07
 author: "GentleQuest Team"
 tags: ["ADHD", "Coping Strategies", "Mental Health", "Self-Care"]

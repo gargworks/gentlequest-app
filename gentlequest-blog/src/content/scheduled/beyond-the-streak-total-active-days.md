@@ -1,6 +1,7 @@
 ---
 title: "Beyond the Streak: Why Total Active Days Are Your ADHD Superpower (and GentleQue"
 description: "Beyond the Streak: Why Total Active Days Are Your ADHD Superpower (and GentleQuest Gets It)"
+heroImage: "../../assets/blog-placeholder-2.jpg"
 pubDate: 2026-08-06
 author: "GentleQuest Team"
 tags: ["ADHD", "Mental Health", "Self-Care"]

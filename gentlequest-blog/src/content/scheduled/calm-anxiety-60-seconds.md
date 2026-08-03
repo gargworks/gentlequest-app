@@ -1,6 +1,7 @@
 ---
 title: "How to Calm Anxiety in 60 Seconds: 4 Techniques Backed by Science"
 description: "Four science-backed anxiety relief techniques you can use anywhere. From physiological sighs to 5-4-3-2-1 grounding, these work in 60 seconds or less."
+heroImage: "../../assets/blog-placeholder-4.jpg"
 pubDate: 2026-08-08
 author: "GentleQuest Team"
 tags: ["Anxiety", "Coping Strategies", "Mental Health", "Self-Care"]

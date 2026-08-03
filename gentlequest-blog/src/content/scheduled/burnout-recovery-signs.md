@@ -1,6 +1,7 @@
 ---
 title: "Burnout Recovery: Signs You're Burned Out (Not Lazy) and What to Do Next"
 description: "Burnout looks like laziness but it's not. Learn the signs of burnout, why rest alone doesn't fix it, and 5 gentle recovery steps that actually work."
+heroImage: "../../assets/blog-placeholder-3.jpg"
 pubDate: 2026-08-09
 author: "GentleQuest Team"
 tags: ["Burnout", "Mental Health", "Self-Care", "Recovery"]
