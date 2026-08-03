@@ -1,5 +1,5 @@
 ---
-title: "5 Tiny Self-Care Steps When You're Completely Overwhelmed"
+title: "Tiny Self-Care Steps When You're Overwhelmed"
 description: "When even 'self-care' feels like too much, these 2-minute steps actually help. No apps, no commitment, no streaks. Just small relief."
 heroImage: "../../assets/blog-placeholder-2.jpg"
 pubDate: 2026-06-22
