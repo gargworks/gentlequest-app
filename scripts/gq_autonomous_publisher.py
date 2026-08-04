@@ -1049,8 +1049,8 @@ def publish_to_medium(item, creds, dry_run=False):
 
     profile = Path.home() / "growth-engine" / "profiles" / "gentlequest"
 
-    # Try to publish — attempt 1 (headless)
-    result = _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headless=True)
+    # Try to publish — attempt 1 (headed, since headless doesn't work with Medium's editor)
+    result = _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headless=False)
 
     if result[0]:
         return result
@@ -1073,7 +1073,7 @@ def publish_to_medium(item, creds, dry_run=False):
         )
         return False, f"Medium failed + heal failed: {heal_msg} — Telegram alert sent"
 
-    # Heal succeeded — try again (headed this time, as fallback)
+    # Heal succeeded — try again (headed)
     print(f"  Healed: {heal_msg}")
     result = _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headless=False)
 
