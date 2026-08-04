@@ -53,6 +53,46 @@ REDDIT_USER_AGENT = "gentlequest-publisher/1.0 by u/gentlequest_dev"
 BUFFER_CHANNEL_CACHE_PATH = Path(__file__).parent / "gq_buffer_channels.json"
 BUFFER_CHANNEL_CACHE_TTL_DAYS = 7  # re-fetch from API at most every 7 days
 
+# Medium allows 2 posts per 24h for accounts under 100 followers
+# https://michaelswengel.com/medium-is-limiting-how-often-writers-can-publish/
+MEDIUM_DAILY_LIMIT = 2
+MEDIUM_RATE_LIMIT_PATH = Path(__file__).parent / "gq_medium_rate_limit.json"
+
+
+def _check_medium_rate_limit():
+    """Returns (can_post, count_today, reset_in_hours)."""
+    try:
+        with open(MEDIUM_RATE_LIMIT_PATH) as f:
+            data = json.load(f)
+    except Exception:
+        data = {"posts": []}
+
+    now = datetime.now(timezone.utc)
+    recent = [p for p in data.get("posts", []) if (now - datetime.fromisoformat(p["ts"].replace("Z", "+00:00"))).total_seconds() < 86400]
+    count = len(recent)
+
+    if count >= MEDIUM_DAILY_LIMIT:
+        oldest = min(datetime.fromisoformat(p["ts"].replace("Z", "+00:00")) for p in recent)
+        reset_in = 24 - (now - oldest).total_seconds() / 3600
+        return False, count, max(0, reset_in)
+    return True, count, 0
+
+
+def _record_medium_post():
+    """Record a Medium post for rate limiting."""
+    try:
+        with open(MEDIUM_RATE_LIMIT_PATH) as f:
+            data = json.load(f)
+    except Exception:
+        data = {"posts": []}
+
+    now = datetime.now(timezone.utc)
+    data["posts"] = [p for p in data.get("posts", []) if (now - datetime.fromisoformat(p["ts"].replace("Z", "+00:00"))).total_seconds() < 172800]
+    data["posts"].append({"ts": now.isoformat()})
+
+    with open(MEDIUM_RATE_LIMIT_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
 
 def _load_buffer_channel_cache():
     """Load cached Buffer channel IDs from disk. Returns dict with _age_days."""
@@ -1036,7 +1076,10 @@ def publish_to_medium(item, creds, dry_run=False):
                 current_para = []
             paragraphs.append("• " + stripped[2:].strip())
         else:
-            cleaned = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', stripped)
+            cleaned = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', stripped)  # links
+            cleaned = re.sub(r'\*\*([^*]+)\*\*', r'\1', cleaned)  # bold
+            cleaned = re.sub(r'\*([^*]+)\*', r'\1', cleaned)  # italic
+            cleaned = re.sub(r'`([^`]+)`', r'\1', cleaned)  # inline code
             cleaned = cleaned.replace("**", "").replace("*", "").replace("`", "")
             current_para.append(cleaned)
 
@@ -1153,17 +1196,40 @@ def _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headl
                     return False, "Could not find Publish button after typing"
 
                 publish_btn.click()
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(3000)
 
-                # Handle publish dialog — confirm
-                final_btn = page.query_selector('button:has-text("Publish now")')
-                if not final_btn:
-                    final_btn = page.query_selector('button:has-text("Confirm")')
-                if final_btn:
-                    final_btn.click()
-                    page.wait_for_timeout(3000)
+                # Handle publish dialog — Medium shows "Publish" (not "Publish now")
+                # The dialog has: "Submit", "Publish", "Schedule for later"
+                # An overlay div may intercept clicks — use force=True
+                final_btn = page.locator('button:has-text("Publish")').last
+                try:
+                    final_btn.click(force=True, timeout=10000)
+                    page.wait_for_timeout(5000)
+                except Exception:
+                    # Fallback: try "Publish now" or "Confirm" (older Medium UI)
+                    final_btn = page.query_selector('button:has-text("Publish now")')
+                    if not final_btn:
+                        final_btn = page.query_selector('button:has-text("Confirm")')
+                    if final_btn:
+                        final_btn.click()
+                        page.wait_for_timeout(3000)
 
-                medium_url = page.url
+                # VERIFY: Check that we actually navigated away from /edit
+                # Medium's submission URL contains "/submission" — if we're still
+                # there, the publish didn't complete (rate limited or dialog issue)
+                final_url = page.url
+                if "/submission" in final_url:
+                    # Still on submission page — publish didn't go through
+                    # This happens when Medium's rate limit (2/24h) is hit
+                    page.screenshot(path=f"/tmp/medium_submission_{slug[:30]}.png")
+                    return False, f"Publish dialog did not complete (likely rate limited) — URL: {final_url}"
+
+                # Check for draft indicator
+                body_text = page.inner_text("body")
+                if "Draft" in body_text and "/edit" in final_url:
+                    return False, f"Post saved as draft, not published — URL: {final_url}"
+
+                medium_url = final_url
                 return True, f"Published to Medium: {medium_url}"
 
             except Exception as e:
@@ -1442,6 +1508,15 @@ def run_once(creds, dry_run=False):
             item["status"] = "posted"
             continue
 
+        # Medium rate limit: 2 posts per 24h
+        if item.get("channel") == "medium" and not dry_run:
+            can_post, count, reset_in = _check_medium_rate_limit()
+            if not can_post:
+                print(f"  ⚠ Medium rate limit: {count}/{MEDIUM_DAILY_LIMIT} posts in 24h (resets in {reset_in:.1f}h)")
+                print(f"  Skipping remaining Medium items — will retry after rate limit resets")
+                # Leave item as pending for next run
+                break
+
         success, message = publish_item(item, creds, dry_run)
 
         if success:
@@ -1449,6 +1524,9 @@ def run_once(creds, dry_run=False):
             state["posted_ids"].append(item.get("id"))
             item["status"] = "posted"
             item["posted_at"] = datetime.now(timezone.utc).isoformat()
+            # Record Medium post for rate limiting
+            if item.get("channel") == "medium" and not dry_run:
+                _record_medium_post()
             log_action(item, "success", message)
         else:
             print(f"  ✗ {message}")

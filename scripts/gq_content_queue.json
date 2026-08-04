@@ -411,9 +411,10 @@
       "blog_url": "https://www.gentlequest.app/blog/adhd-paralysis-why-you-cant-start?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd Paralysis Why You Cant Start",
       "scheduled_for": "2026-07-11T23:00:00Z",
-      "status": "pending",
-      "error": "",
-      "posted_at": "2026-07-25T04:11:05.885905+00:00"
+      "status": "posted",
+      "error": "Medium failed + heal failed: No cookies file in browser profile \u2014 session may be expired \u2014 Telegram alert sent",
+      "posted_at": "2026-08-04T03:19:24.210484+00:00",
+      "retry_count": 1
     },
     {
       "id": "medium_init_iip-vs-chatgpt-stress-test",
@@ -421,9 +422,10 @@
       "blog_url": "https://www.gentlequest.app/blog/iip-vs-chatgpt-stress-test?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Iip Vs Chatgpt Stress Test",
       "scheduled_for": "2026-07-14T23:00:00Z",
-      "status": "pending",
-      "error": "",
-      "posted_at": "2026-07-25T04:11:05.886599+00:00"
+      "status": "posted",
+      "error": "Medium failed + heal failed: No cookies file in browser profile \u2014 session may be expired \u2014 Telegram alert sent",
+      "posted_at": "2026-08-04T03:21:34.332419+00:00",
+      "retry_count": 1
     },
     {
       "id": "medium_init_your-data-is-yours",
@@ -432,8 +434,8 @@
       "title": "Your Data Is Yours",
       "scheduled_for": "2026-07-17T23:00:00Z",
       "status": "pending",
-      "error": "",
-      "posted_at": "2026-07-25T04:11:05.886750+00:00"
+      "error": "Medium rate limit \u2014 saved as draft, not published",
+      "retry_count": 1
     },
     {
       "id": "reddit_init_adhd_0",
@@ -726,7 +728,8 @@
       "title": "Adhd App No Subscription",
       "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
       "status": "pending",
-      "posted_at": "2026-08-04T01:48:57.126152+00:00"
+      "error": "Medium rate limit \u2014 saved as draft, not published",
+      "retry_count": 1
     },
     {
       "id": "medium_blog_adhd-app-private-no-tracking",
