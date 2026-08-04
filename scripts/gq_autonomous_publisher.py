@@ -1456,9 +1456,11 @@ def run_once(creds, dry_run=False):
         if not dry_run:
             time.sleep(5)
 
-    state["last_run"] = datetime.now(timezone.utc).isoformat()
-    save_state(state)
-    save_queue(queue)
+    # Dry runs must NOT modify state or queue
+    if not dry_run:
+        state["last_run"] = datetime.now(timezone.utc).isoformat()
+        save_state(state)
+        save_queue(queue)
 
 def show_status(creds):
     """Show queue status."""

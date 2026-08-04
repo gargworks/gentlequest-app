@@ -1,915 +1,916 @@
 {
-    "_comment": "GentleQuest autonomous content queue. Each item has: id, channel, target, text/body, scheduled_for (ISO), status. Publisher daemon reads this and fires due items.",
-    "_channels": {
-        "buffer": "twitter, linkedin, instagram \u2014 via Buffer GraphQL API",
-        "devto": "Dev.to articles \u2014 via REST API",
-        "reddit": "Reddit comments/posts \u2014 via OAuth2 API",
-        "indiehackers": "IndieHackers posts \u2014 via browser automation"
+  "_comment": "GentleQuest autonomous content queue. Each item has: id, channel, target, text/body, scheduled_for (ISO), status. Publisher daemon reads this and fires due items.",
+  "_channels": {
+    "buffer": "twitter, linkedin, instagram \u2014 via Buffer GraphQL API",
+    "devto": "Dev.to articles \u2014 via REST API",
+    "reddit": "Reddit comments/posts \u2014 via OAuth2 API",
+    "indiehackers": "IndieHackers posts \u2014 via browser automation"
+  },
+  "items": [
+    {
+      "id": "tweet_001",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Most productivity apps make ADHD worse. They demand more: more streaks, more tracking, more guilt. I built the opposite. No streaks. No shame. Just a quiet check-in. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-06-26T15:45:00Z",
+      "status": "posted",
+      "error": "Re-queued: was posted to wrong (personal) account",
+      "posted_at": "2026-06-28T05:13:58.345986+00:00"
     },
-    "items": [
-        {
-            "id": "tweet_001",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Most productivity apps make ADHD worse. They demand more: more streaks, more tracking, more guilt. I built the opposite. No streaks. No shame. Just a quiet check-in. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-06-26T15:45:00Z",
-            "status": "posted",
-            "error": "Re-queued: was posted to wrong (personal) account",
-            "posted_at": "2026-06-28T05:13:58.345986+00:00"
-        },
-        {
-            "id": "tweet_002",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "ADHD paralysis isn't laziness. It's your brain's \"start\" button being broken. Task initiation is an executive function, not a character trait.",
-            "scheduled_for": "2026-06-27T17:00:00Z",
-            "status": "posted",
-            "error": "Re-queued: was posted to wrong (personal) account",
-            "posted_at": "2026-06-28T05:13:58.346757+00:00"
-        },
-        {
-            "id": "tweet_003",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "The \"one spoon\" method: don't clean the kitchen. Clean ONE spoon. Make the task so small your brain can't reject it. Then do another. Starting is the whole battle.",
-            "scheduled_for": "2026-06-28T13:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:36:24.556629+00:00"
-        },
-        {
-            "id": "tweet_004",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Streaks trigger cortisol (fear of loss). Total Active Days trigger dopamine (gain). One creates anxiety. The other creates momentum. Which one is your habit tracker using?",
-            "scheduled_for": "2026-06-28T17:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:36:31.971824+00:00"
-        },
-        {
-            "id": "tweet_005",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Night anxiety at 2am? Try 4-7-8 breathing: in 4, hold 7, out 8. The long exhale forces your heart rate down. It signals to your brain: the threat has passed.",
-            "scheduled_for": "2026-06-29T13:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:36:38.543930+00:00"
-        },
-        {
-            "id": "tweet_006",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "\"Just do it\" is the worst ADHD advice. Task initiation requires dopamine. ADHD brains are short on dopamine. Telling us to \"just do it\" is like telling a car to \"just drive\" with no fuel.",
-            "scheduled_for": "2026-06-29T17:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:36:44.643019+00:00"
-        },
-        {
-            "id": "tweet_007",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Productivity guilt isn't motivation. It's drain. The energy you spend feeling guilty is energy you can't spend doing things. Rest is not the absence of productivity. Rest is maintenance.",
-            "scheduled_for": "2026-06-30T13:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:54:03.954282+00:00"
-        },
-        {
-            "id": "tweet_008",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "When everything feels like too much: one breath, name the feeling, do the smallest thing you can in 2 minutes. Not the most important thing. The smallest. One thing breaks the freeze.",
-            "scheduled_for": "2026-06-30T17:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T20:54:09.506698+00:00"
-        },
-        {
-            "id": "tweet_009",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Built an app that does ONE thing: mood check-in. 5 seconds. No signup. No streaks. No guilt. If you're low, it offers gentle options. That's it. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-01T13:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T21:08:29.371399+00:00"
-        },
-        {
-            "id": "tweet_010",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "The 5-4-3-2-1 grounding method for anxiety: 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste. Pulls your brain out of the loop and back to the present.",
-            "scheduled_for": "2026-07-01T17:00:00Z",
-            "status": "posted",
-            "posted_at": "2026-07-13T21:08:35.569131+00:00"
-        },
-        {
-            "id": "tweet_011",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Habit trackers broke me. Miss one day \u2192 streak resets \u2192 \"well it's ruined\" \u2192 quit. Switched to Total Active Days. Number only goes up. Miss a day? It stays. No shame spiral.",
-            "scheduled_for": "2026-07-02T13:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-14T03:30:08.557373+00:00"
-        },
-        {
-            "id": "tweet_012",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "ADHD burnout isn't from too much stress. It's from too much of the WRONG input \u2014 low-reward, repetitive tasks. The fix isn't rest. It's novelty.",
-            "scheduled_for": "2026-07-02T17:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-17T03:30:06.068856+00:00"
-        },
-        {
-            "id": "tweet_013",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "\"You should be doing more\" \u2014 notice the guilt voice. Don't fight it. Just name it. \"There's the guilt voice.\" That tiny distance is enough to question it. And questioning it weakens it.",
-            "scheduled_for": "2026-07-03T13:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-17T04:30:03.548702+00:00"
-        },
-        {
-            "id": "tweet_014",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Body doubling works because social presence provides the dopamine signal ADHD brains can't generate internally. You don't need a real person \u2014 a \"clean with me\" video works too.",
-            "scheduled_for": "2026-07-03T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-14T13:30:17.370684+00:00"
-        },
-        {
-            "id": "tweet_015",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Overwhelm isn't having too many tasks. It's the feeling that everything matters equally and you can't prioritize. The fix isn't a system. It's one breath, one task, one moment.",
-            "scheduled_for": "2026-07-04T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-14T13:30:22.861979+00:00"
-        },
-        {
-            "id": "tweet_016",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Your brain at 2am: cortisol spikes \u2192 physical anxiety \u2192 brain generates worries to explain the feeling \u2192 worries keep you awake \u2192 more anxiety. The worries aren't the cause. They're the symptom.",
-            "scheduled_for": "2026-07-04T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-14T13:30:28.479749+00:00"
-        },
-        {
-            "id": "tweet_017",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I built a mood check-in app with no streaks and no guilt. 82 people installed it. 1 person sent a chat. So I made the mood check-in the front door. Now it's 5 seconds, one tap, done. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-05T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-17T13:41:12.983707+00:00"
-        },
-        {
-            "id": "tweet_018",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "\"Just try harder\" doesn't work for ADHD. Willpower is the OUTPUT of a healthy executive function system, not the input. You can't generate willpower by trying to have willpower.",
-            "scheduled_for": "2026-07-05T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-15T13:30:22.412021+00:00"
-        },
-        {
-            "id": "tweet_019",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "The overwhelm trap: solutions for overwhelm are themselves overwhelming. 12-step routines. 4 colored lists. 17 check-ins. You're drowning and the lifeguard throws you a textbook.",
-            "scheduled_for": "2026-07-06T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-15T13:30:27.971440+00:00"
-        },
-        {
-            "id": "tweet_020",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "What if a wellness app didn't track anything? No habits. No streaks. No goals. Just: \"How are you right now?\" One tap. 5 seconds. That's it. That's what I built. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-06T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-15T13:30:33.651080+00:00"
-        },
-        {
-            "id": "tweet_021",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "ADHD brains can do impossible things (hyperfocus) and can't do easy things (paralysis). It's not about difficulty. It's about whether the dopamine system is online at that moment.",
-            "scheduled_for": "2026-07-07T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-15T13:30:39.329805+00:00"
-        },
-        {
-            "id": "tweet_022",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "The trick for task initiation: leave tasks half-started. Open the email and type the first word today. Tomorrow you're not \"starting\" \u2014 you're \"continuing.\" Continuing takes less energy.",
-            "scheduled_for": "2026-07-07T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-17T13:41:18.511687+00:00"
-        },
-        {
-            "id": "tweet_023",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Rest without apology. Rest is not the absence of productivity. Rest is the active maintenance of the system that makes productivity possible. You are not a machine.",
-            "scheduled_for": "2026-07-08T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-16T13:30:26.229812+00:00"
-        },
-        {
-            "id": "tweet_024",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Every \"should\" has an unexamined assumption. \"I should be exercising\" \u2014 according to who? Right now? Maybe rest is more important. The \"should\" doesn't know. It's a reflex, not a truth.",
-            "scheduled_for": "2026-07-08T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-16T13:30:32.615856+00:00"
-        },
-        {
-            "id": "tweet_025",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "5-4-3-2-1 grounding: it's not distraction. It's redirecting your brain from the internal loop to external reality. The present moment is almost always safer than your brain thinks it is.",
-            "scheduled_for": "2026-07-09T13:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-16T13:30:38.092750+00:00"
-        },
-        {
-            "id": "tweet_026",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "GentleQuest: free mood check-in. No signup. No streaks. No guilt. iOS, Android, web. 5 seconds. That's the whole app. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-09T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-16T13:30:43.669102+00:00"
-        },
-        {
-            "id": "tweet_027",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "ADHD paralysis: you know what to do, you want to do it, but the neurological bridge between \"wanting\" and \"doing\" has a gap. It's not character. It's chemistry.",
-            "scheduled_for": "2026-07-10T13:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-18T03:30:02.780347+00:00"
-        },
-        {
-            "id": "tweet_028",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Productivity guilt: the more guilty you feel, the less you do. Guilt drains energy, creates avoidance, and breaks rest. The guilt wasn't helping. It was just loud.",
-            "scheduled_for": "2026-07-10T17:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-18T04:30:06.439989+00:00"
-        },
-        {
-            "id": "tweet_029",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "One breath. One feeling. One task. That's the whole method. Not a system. Not a routine. Just: start with one breath when everything is too much.",
-            "scheduled_for": "2026-07-11T13:00:00Z",
-            "status": "posted",
-            "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
-            "posted_at": "2026-07-18T05:30:07.608250+00:00"
-        },
-        {
-            "id": "tweet_030",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I built GentleQuest because I needed it. No streaks because streaks broke me. No guilt because guilt drained me. Just a quiet check-in. Free. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-11T17:00:00Z",
-            "status": "posted",
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-18T14:30:04.587235+00:00"
-        },
-        {
-            "id": "linkedin_001",
-            "channel": "buffer",
-            "target": "linkedin",
-            "text": "Most productivity apps make ADHD worse.\n\nThey demand more:\n\u2192 More streaks (that break if you miss one day)\n\u2192 More tracking\n\u2192 More guilt\n\nSo I built the opposite.\n\nGentleQuest is a mood check-in app with:\n\u2192 No streaks\n\u2192 No guilt notifications\n\u2192 No \"you failed\" reminders\n\nJust one question: \"How are you right now?\"\n\n5 seconds. One tap. Done.\n\nIf you're low, it gently offers options: breathing, grounding, or talking to an AI companion.\n\nFree on iOS, Android, and web.\n\nBuilding for neurodivergent brains first. Because if it works for ADHD, it works for everyone.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge\n\n#mentalhealth #adhd #productivity #wellness",
-            "scheduled_for": "2026-06-27T13:30:00Z",
-            "status": "posted",
-            "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
-        },
-        {
-            "id": "linkedin_002",
-            "channel": "buffer",
-            "target": "linkedin",
-            "text": "ADHD paralysis isn't laziness. It's a neurological event.\n\nYour brain's task initiation system \u2014 in the prefrontal cortex \u2014 gets overwhelmed and shuts down. You know what to do. You want to do it. But the bridge between \"wanting\" and \"doing\" has a gap.\n\nThis is why \"just do it\" is useless advice for ADHD brains. Task initiation requires dopamine. ADHD brains are short on dopamine.\n\nWhat works instead:\n\u2192 External structure (body doubling, timers)\n\u2192 Dopamine scaffolding (pair tasks with rewards)\n\u2192 Remove the initiation step (leave tasks half-started)\n\u2192 Medication (for many, it provides the fuel that makes the system work)\n\nBuilt for this reality. GentleQuest doesn't require you to \"start\" anything. Just tap how you feel. That's it.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-06-29T13:30:00Z",
-            "status": "posted",
-            "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
-        },
-        {
-            "id": "linkedin_003",
-            "channel": "buffer",
-            "target": "linkedin",
-            "text": "82 people installed my app. 1 person sent a chat.\n\nThat's not a failure. That's data.\n\nThe app was chat-first. The mood check-in was buried. So I flipped it: mood check-in became the front door. 5 seconds, one tap, done.\n\nNow the chat is an invitation, not a demand. If you log a low mood, it asks: \"Want to talk through this?\" If you say no, that's fine.\n\nThe lesson: build for the 5-second action, not the 5-minute conversation. Get people in the door first. Everything else is optional.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-01T13:30:00Z",
-            "status": "posted",
-            "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
-        },
-        {
-            "id": "linkedin_004",
-            "channel": "buffer",
-            "target": "linkedin",
-            "text": "The overwhelm trap: solutions for overwhelm are themselves overwhelming.\n\n12-step morning routines. 4 colored lists. 17 daily check-ins. You're drowning and the lifeguard throws you a textbook on swimming.\n\nWhat actually works when you're overwhelmed:\n\n1. One breath. Not meditation. One breath.\n2. Name the feeling. \"I'm overwhelmed.\" Specific feelings are easier to work with than vague ones.\n3. Pick the smallest thing. Not the most important. The smallest. Something you can do in 2 minutes.\n4. Stop after one. Don't build momentum. Just acknowledge you did something.\n\nThis is the philosophy behind GentleQuest. No systems. No streaks. Just one tap to check in.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-03T13:30:00Z",
-            "status": "posted",
-            "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
-        },
-        {
-            "id": "linkedin_005",
-            "channel": "buffer",
-            "target": "linkedin",
-            "text": "Productivity guilt is exhausting.\n\nYou finish work. You sit down to rest. And within 30 seconds, the voice starts: \"You should be doing more.\"\n\nHere's what I've learned:\n\n1. Guilt reduces productivity. The energy you spend feeling guilty is energy you can't spend doing things.\n2. Guilt creates avoidance. Tasks associated with guilt become emotionally heavier, not lighter.\n3. Guilt breaks rest. If rest feels like failure, you never actually rest.\n\nThe fix isn't to fight the guilt. It's to notice it. Name it. Question it.\n\n\"I should be doing more\" \u2014 according to who? According to what standard? Usually the standard is imaginary and impossible.\n\nRest without apology. Rest is not the absence of productivity. Rest is the active maintenance of the system that makes productivity possible.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
-            "scheduled_for": "2026-07-05T13:30:00Z",
-            "status": "posted",
-            "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
-        },
-        {
-            "id": "devto_001",
-            "channel": "devto",
-            "title": "Why I Built an Anti-Productivity App for My ADHD",
-            "body_markdown": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\n## The Problem\n\nEvery productivity app I tried had the same pattern:\n1. Excited first week\n2. Check in every day\n3. Streak climbs \u2014 7, 14, 21 days\n4. Miss one day\n5. Streak resets to zero\n6. Shame spiral\n7. Quit\n\nThe streak mechanic is supposed to motivate. For ADHD brains, it does the opposite. It triggers cortisol (fear of loss) instead of dopamine (reward). Missing a day doesn't feel like \"I'll try tomorrow\" \u2014 it feels like failure.\n\n## The Solution\n\nI built [GentleQuest](https://gentlequest.app). It tracks **Total Active Days** instead of streaks. The number only goes up. Miss a day? It stays the same. No resets. No shame.\n\nThe core feature is a one-tap mood check-in. 5 seconds. That's the whole app. If you're low, it gently offers options: breathing, grounding, or talking to an AI companion.\n\n## What I Learned from 82 Installs\n\nThe app was originally chat-first. The mood check-in was buried. 82 people installed it. 1 person sent a chat.\n\nThat's not a failure. That's data. People wanted the 5-second action, not the 5-minute conversation. So I flipped it: mood check-in became the front door.\n\nNow the chat is an invitation, not a demand. If you log a low mood, it asks: \"Want to talk through this?\" If you say no, that's fine.\n\n## The Tech\n\n- Flutter frontend (iOS, Android, Web)\n- Flask backend with Gemini 2.5 Flash\n- SQLite + Postgres databases\n- Cloud Run + Render + Cloudflare Pages\n- No signup required for mood check-in\n\n## The Philosophy\n\n- No streaks (they trigger cortisol)\n- No guilt notifications\n- No \"you failed\" reminders\n- Just a quiet place to check in with yourself\n\nIt's free on iOS, Android, and web. No signup required for the mood check-in.\n\n[Try it free](https://gentlequest.app)",
-            "tags": [
-                "mentalhealth",
-                "adhd",
-                "productivity",
-                "flutter"
-            ],
-            "published": true,
-            "scheduled_for": "2026-06-28T14:00:00Z",
-            "status": "posted",
-            "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
-            "posted_at": "2026-08-02T03:19:08.132166+00:00"
-        },
-        {
-            "id": "devto_002",
-            "channel": "devto",
-            "title": "The Neuroscience of ADHD Paralysis (And What Actually Helps)",
-            "body_markdown": "ADHD paralysis isn't laziness. It's a neurological event.\n\n## What's Actually Happening\n\nStarting a task requires a specific neurological process called **task initiation**. It happens in the prefrontal cortex:\n\n1. **Recognize** the task\n2. **Evaluate** the task\n3. **Prioritize** the task\n4. **Allocate** resources\n5. **Initiate** action\n\nFor neurotypical brains, this runs in milliseconds. For ADHD brains, the prefrontal cortex has lower dopamine availability, and the process gets stuck.\n\nThe result: you know what to do, you want to do it, but the initiation sequence doesn't fire.\n\n## Why \"Just Do It\" Fails\n\nWillpower is the **output** of a healthy executive function system, not the **input**. You can't generate willpower by trying to have willpower. That's like trying to start a car by pressing the gas when there's no fuel.\n\nADHD brains don't lack willpower. They lack the neurological fuel (dopamine) that willpower runs on.\n\n## What Actually Works\n\n### 1. External Structure\n- Body doubling (social presence provides the dopamine signal)\n- Accountability timers\n- Implementation intentions (\"When X happens, I will do Y\")\n\n### 2. Dopamine Scaffolding\n- Pair tasks with something rewarding\n- Make tasks novel (different location, different tool)\n- Create artificial urgency (real deadlines, not fake ones)\n\n### 3. Remove the Initiation Step\n- Leave tasks half-started (open the email, type the first word)\n- Reduce decisions (lay out clothes the night before)\n- Automate what you can\n\n### 4. Medication\nFor many people with ADHD, stimulant medication directly increases dopamine availability. It's not a moral failure. It's replacing a chemical your brain is short on.\n\n## The Bottom Line\n\n\"Just do it\" is advice for brains that can already do it. For ADHD brains, the doing is the hard part \u2014 and no amount of \"just\" makes it easier.\n\nWhat works is understanding the actual problem, removing the shame, and using tools that work with your brain instead of against it.\n\n---\n\n*I built [GentleQuest](https://gentlequest.app) \u2014 a free mood check-in app for ADHD brains. No streaks. No shame. Just a quiet place to check in.*",
-            "tags": [
-                "adhd",
-                "neuroscience",
-                "mentalhealth",
-                "productivity"
-            ],
-            "published": true,
-            "scheduled_for": "2026-07-01T14:00:00Z",
-            "status": "posted",
-            "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
-            "posted_at": "2026-08-02T03:19:08.132758+00:00"
-        },
-        {
-            "id": "devto_003",
-            "channel": "devto",
-            "title": "Why Streaks Make ADHD Worse (Dopamine vs Cortisol)",
-            "body_markdown": "Streaks are the worst thing to happen to ADHD habit tracking.\n\n## The Streak Trap\n\nYou know the pattern:\n1. Excited first week\n2. Check in every day\n3. Streak climbs \u2014 7, 14, 21 days\n4. Miss one day\n5. Streak resets to zero\n6. Shame spiral\n7. Quit\n\nThe streak resets to zero. And the feeling that comes with that reset isn't motivation. It's shame.\n\n## Why Streaks Backfire for ADHD\n\nStreaks work on **loss aversion** \u2014 the psychological tendency to feel the pain of losing something more strongly than the pleasure of gaining it.\n\nFor neurotypical brains, the threat of losing a streak can create just enough urgency to maintain a habit.\n\nFor ADHD brains, this mechanism backfires:\n\n### 1. Streaks trigger cortisol, not dopamine\nADHD is fundamentally a dopamine regulation difference. Streaks try to manufacture urgency through the *threat of loss* \u2014 which triggers cortisol (stress hormone), not dopamine (reward chemical).\n\n### 2. The all-or-nothing trap\nADHD brains already struggle with black-and-white thinking. Streaks reinforce this: if the streak is broken, the whole effort feels worthless.\n\n### 3. Streaks punish absence, not reward presence\nThe streak mechanic focuses on what you *didn't* do (miss a day) rather than what you *did* do (showed up 20 times). For ADHD brains, this is backwards. We need acknowledgment of what we did, not punishment for what we didn't.\n\n## The Alternative: Total Active Days\n\nI built GentleQuest to track **Total Active Days** instead of streaks.\n\n- Show up today? +1 to your total.\n- Miss a day? Total stays the same.\n- No resets. No shame.\n\nThe number only goes up. It's cumulative. It rewards showing up, not punishing absence.\n\n## The Science\n\nResearch on habit formation shows that **consistency over time** matters more than **perfect daily adherence**. Missing one day doesn't actually hurt habit formation \u2014 but the *shame* from a streak reset does.\n\nBy removing the streak mechanic, we remove the shame. By tracking total days, we keep the reward.\n\n---\n\n*[GentleQuest](https://gentlequest.app) is a free mood check-in app. No streaks. No shame. Just a quiet place to check in with yourself.*",
-            "tags": [
-                "adhd",
-                "productivity",
-                "mentalhealth",
-                "habits"
-            ],
-            "published": true,
-            "scheduled_for": "2026-07-04T14:00:00Z",
-            "status": "posted",
-            "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
-            "posted_at": "2026-08-02T03:19:08.132853+00:00"
-        },
-        {
-            "id": "ih_001",
-            "channel": "indiehackers",
-            "title": "Building an \"anti-productivity\" app for my ADHD (no broken streaks)",
-            "body": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\nIt tracks \"Total Active Days\" instead of streaks. Show up today? +1 to your total. Miss a day? Total stays the same. No resets. No shame.\n\nThe Vibe: Instead of a stressful fire icon that burns out, I use a seedling that just grows.\n\nRoast me:\n1. Does \"Total Days\" actually feel better than a streak?\n2. Is \"anti-productivity\" a good angle or just confusing?\n3. Does the design look legit?\n\nLink: https://gentlequest.app\n\n(It's free on iOS and Android. Also works on web: https://gentlequest-web-lite.pages.dev)",
-            "scheduled_for": "2026-06-27T15:00:00Z",
-            "status": "posted",
-            "error": "Playwright not installed \u2014 skipping IndieHackers",
-            "posted_at": "2026-06-28T05:13:58.346813+00:00"
-        },
-        {
-            "id": "medium_init_adhd-paralysis-why-you-cant-st",
-            "channel": "medium",
-            "blog_url": "https://www.gentlequest.app/blog/adhd-paralysis-why-you-cant-start?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd Paralysis Why You Cant Start",
-            "scheduled_for": "2026-07-11T23:00:00Z",
-            "status": "pending",
-            "error": "",
-            "posted_at": "2026-07-25T04:11:05.885905+00:00"
-        },
-        {
-            "id": "medium_init_iip-vs-chatgpt-stress-test",
-            "channel": "medium",
-            "blog_url": "https://www.gentlequest.app/blog/iip-vs-chatgpt-stress-test?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Iip Vs Chatgpt Stress Test",
-            "scheduled_for": "2026-07-14T23:00:00Z",
-            "status": "pending",
-            "error": "",
-            "posted_at": "2026-07-25T04:11:05.886599+00:00"
-        },
-        {
-            "id": "medium_init_your-data-is-yours",
-            "channel": "medium",
-            "blog_url": "https://www.gentlequest.app/blog/your-data-is-yours?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Your Data Is Yours",
-            "scheduled_for": "2026-07-17T23:00:00Z",
-            "status": "pending",
-            "error": "",
-            "posted_at": "2026-07-25T04:11:05.886750+00:00"
-        },
-        {
-            "id": "reddit_init_adhd_0",
-            "channel": "reddit",
-            "subreddit": "ADHD",
-            "topic_keywords": [
-                "paralysis",
-                "can't start",
-                "overwhelm",
-                "streaks",
-                "burnout",
-                "task initiation",
-                "executive dysfunction"
-            ],
-            "scheduled_for": "2026-07-12T05:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "reddit_init_adhd_1",
-            "channel": "reddit",
-            "subreddit": "ADHD",
-            "topic_keywords": [
-                "paralysis",
-                "can't start",
-                "overwhelm",
-                "streaks",
-                "burnout",
-                "task initiation",
-                "executive dysfunction"
-            ],
-            "scheduled_for": "2026-07-12T17:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "reddit_init_anxiety_0",
-            "channel": "reddit",
-            "subreddit": "Anxiety",
-            "topic_keywords": [
-                "overwhelm",
-                "can't calm down",
-                "panic",
-                "racing thoughts",
-                "night anxiety",
-                "grounding",
-                "breathing"
-            ],
-            "scheduled_for": "2026-07-13T05:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "reddit_init_anxiety_1",
-            "channel": "reddit",
-            "subreddit": "Anxiety",
-            "topic_keywords": [
-                "overwhelm",
-                "can't calm down",
-                "panic",
-                "racing thoughts",
-                "night anxiety",
-                "grounding",
-                "breathing"
-            ],
-            "scheduled_for": "2026-07-13T17:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "reddit_init_habits_0",
-            "channel": "reddit",
-            "subreddit": "Habits",
-            "topic_keywords": [
-                "streaks",
-                "habit tracking",
-                "consistency",
-                "guilt",
-                "missing days",
-                "starting over"
-            ],
-            "scheduled_for": "2026-07-14T05:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "reddit_init_habits_1",
-            "channel": "reddit",
-            "subreddit": "Habits",
-            "topic_keywords": [
-                "streaks",
-                "habit tracking",
-                "consistency",
-                "guilt",
-                "missing days",
-                "starting over"
-            ],
-            "scheduled_for": "2026-07-14T17:00:00Z",
-            "status": "posted",
-            "error": "Reddit blocks automation \u2014 skipped"
-        },
-        {
-            "id": "gen_tweet_1784953806_0",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My mind can race when anxiety creeps in. I used to feel lost, but now I have a simple anchor: 5-4-3-2-1 grounding. It's truly amazing how focusing on 5 sights,",
-            "scheduled_for": "2026-07-25T08:30:01.317227Z",
-            "status": "posted",
-            "generated": true,
-            "posted_at": "2026-07-25T08:30:44.146798+00:00"
-        },
-        {
-            "id": "gen_blog_1784953824_1",
-            "channel": "blog",
-            "target": "blog",
-            "text": "Blog post scheduled: generated-1784953824-1",
-            "scheduled_for": "2026-07-25T12:30:01.317227Z",
-            "status": "posted",
-            "generated": true,
-            "blog_slug": "generated-1784953824-1"
-        },
-        {
-            "id": "gen_tweet_1784953829_2",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I used to feel so much guilt if I wasn't constantly \"doing\" or checking off tasks. It was like my worth depended on my output. But I'm actively learning to challenge that narrative and simply *be*. What if letting go of that pressure is the most productive thing we can do for ...",
-            "scheduled_for": "2026-07-27T12:30:01.317227Z",
-            "status": "posted",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])",
-            "posted_at": "2026-07-27T15:30:26.497013+00:00"
-        },
-        {
-            "id": "gen_tweet_1784953835_4",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My ADHD brain is wild. One moment, I'm hyperfocused, lost for hours in a task. The next, I'm in total paralysis, staring at a blank screen, unable to start. It's not laziness, it's a dopamine quest. How do you navigate these extremes?",
-            "scheduled_for": "2026-07-30T16:30:01.317227Z",
-            "status": "posted",
-            "generated": true,
-            "posted_at": "2026-07-30T16:36:13.825512+00:00"
-        },
-        {
-            "id": "gen_blog_1784953853_5",
-            "channel": "blog",
-            "target": "blog",
-            "text": "Blog post scheduled: generated-1784953853-5",
-            "scheduled_for": "2026-07-30T20:30:01.317227Z",
-            "status": "posted",
-            "generated": true,
-            "blog_slug": "generated-1784953853-5"
-        },
-        {
-            "id": "gen_tweet_1784953857_6",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I've realized a weird habit: I often leave tasks 10% done, just enough to feel like I'm past the \"initiation\" phase. It's my sneaky way of tricking my brain into thinking I'm not *starting* from scratch next time. Anyone else do this to beat resistance?",
-            "scheduled_for": "2026-08-01T20:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971830_0",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Honestly, habit trackers just don't work for my ADHD. Instead of motivating me, seeing those empty boxes every day just triggers a spiral of shame and anxiety, reminding me of all the things",
-            "scheduled_for": "2026-08-02T00:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971838_1",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My ADHD brain often feels paralyzed when I need to start a task. It's wild how just having someone else quietly working nearby, no pressure, no talking, can completely unstick me. It's like the invisible nudge I desperately need. Do you find body doubling helps you beat task p...",
-            "scheduled_for": "2026-08-02T04:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971849_2",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "It's not about being lazy; it's like my brain has a massive energy deficit just for initiating. The ADHD paralysis makes starting anything, no matter how small, feel like pushing a boulder",
-            "scheduled_for": "2026-08-02T08:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971858_3",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Today, the sheer weight of my to-do list felt crushing. Every task seemed too big, triggering full overwhelm. So I tried something: just one tiny step. Opened the email, didn't reply. Put one dish in the sink. Amazing how starting small can break the paralysis. What's your sma...",
-            "scheduled_for": "2026-08-02T12:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971907_5",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My internal clock apparently set for 2 AM, when the cortisol decides to throw a party in my brain. Suddenly, I'm wide awake, dissecting every single worry from the past week. Why does anxiety always hit with such a brutal, specific timing?",
-            "scheduled_for": "2026-08-02T16:30:01.317227Z",
-            "status": "failed",
-            "generated": true,
-            "error": "No Buffer channel for target=twitter (available: [])"
-        },
-        {
-            "id": "gen_tweet_1784971931_8",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I'm deep in ADHD burnout, but it's not from doing too much. It's from the quiet, the sameness, the lack of novelty that leaves my brain starved. This understimulation paralysis feels so heavy, like I'm stuck in mud. Does anyone else feel utterly exhausted by the *absence* of s...",
-            "scheduled_for": "2026-08-05T20:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_tweet_1784971944_9",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I really *wanted* my habit tracker to help my ADHD, but seeing all those empty boxes just makes me feel like a failure. Instead of motivation, I just get a huge wave of anxiety",
-            "scheduled_for": "2026-08-06T00:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_blog_1785640777_0",
-            "channel": "blog",
-            "target": "blog",
-            "text": "Blog post scheduled: generated-1785640777-0",
-            "scheduled_for": "2026-08-06T04:30:01.317227Z",
-            "status": "pending",
-            "generated": true,
-            "blog_slug": "generated-1785640777-0"
-        },
-        {
-            "id": "gen_tweet_1785640781_1",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "Chasing streaks with ADHD felt like a good idea until my cortisol spiked from the pressure to maintain them. The fleeting dopamine hit of 'success' never outweighed the crash when I inevitably broke it. It made everything worse. Why do we fall for this?",
-            "scheduled_for": "2026-08-08T04:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_tweet_1785640787_3",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "The constant hum of \"should be doing more\" used to be my background noise. I'd feel guilty for resting. But I'm learning that my value isn't tied",
-            "scheduled_for": "2026-08-11T08:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_tweet_1785640793_4",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My ADHD burnout doesn't always look like overstimulation. Sometimes, it's the crushing weight of understimulation \u2013 a brain starved for novelty, for a challenge, for something *interesting* to",
-            "scheduled_for": "2026-08-11T12:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_tweet_1785640798_5",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "My brain sometimes tricks me into thinking a task needs to be 100% complete or not started at all. The 'one spoon' method is my rebel yell against that. Just one tiny",
-            "scheduled_for": "2026-08-11T16:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "gen_tweet_1785640802_6",
-            "channel": "buffer",
-            "target": "twitter",
-            "text": "I've finally realized that my body and mind aren't limitless resources. To keep going, to do good work, I *have* to schedule in rest. It's not laziness, it's essential maintenance. What's one small way you'll honor your need for rest today?",
-            "scheduled_for": "2026-08-11T20:30:01.317227Z",
-            "status": "pending",
-            "generated": true
-        },
-        {
-            "id": "medium_blog_adhd-app-no-subscription",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-app-no-subscription?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd App No Subscription",
-            "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-app-private-no-tracking",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-app-private-no-tracking?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd App Private No Tracking",
-            "scheduled_for": "2026-08-05T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-in-adults-workplace",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-in-adults-workplace?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd In Adults Workplace",
-            "scheduled_for": "2026-08-06T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-in-students",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-in-students?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd In Students",
-            "scheduled_for": "2026-08-07T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-rejection-sensitive-dysphoria",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-rejection-sensitive-dysphoria?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd Rejection Sensitive Dysphoria",
-            "scheduled_for": "2026-08-09T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-support-app-no-streaks",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-support-app-no-streaks?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd Support App No Streaks",
-            "scheduled_for": "2026-08-10T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-time-blindness",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-time-blindness?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd Time Blindness",
-            "scheduled_for": "2026-08-11T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_adhd-understimulation-burnout",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/adhd-understimulation-burnout?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Adhd Understimulation Burnout",
-            "scheduled_for": "2026-08-12T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_alternative-to-balance",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/alternative-to-balance?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Alternative To Balance",
-            "scheduled_for": "2026-08-13T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_alternative-to-bearable",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/alternative-to-bearable?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Alternative To Bearable",
-            "scheduled_for": "2026-08-14T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_alternative-to-betterme",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/alternative-to-betterme?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Alternative To Betterme",
-            "scheduled_for": "2026-08-15T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_alternative-to-calm",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/alternative-to-calm?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Alternative To Calm",
-            "scheduled_for": "2026-08-16T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_alternative-to-day-one",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/alternative-to-day-one?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Alternative To Day One",
-            "scheduled_for": "2026-08-17T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_grounding-5-4-3-2-1",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/grounding-5-4-3-2-1?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Grounding 5 4 3 2 1",
-            "scheduled_for": "2026-08-18T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_mindfulness-for-anxiety",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/mindfulness-for-anxiety?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Mindfulness For Anxiety",
-            "scheduled_for": "2026-08-20T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_night-anxiety-why-your-brain-wont-shut-off",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/night-anxiety-why-your-brain-wont-shut-off?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Night Anxiety Why Your Brain Wont Shut Off",
-            "scheduled_for": "2026-08-21T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_overwhelmed-start-with-one-breath",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/overwhelmed-start-with-one-breath?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Overwhelmed Start With One Breath",
-            "scheduled_for": "2026-08-22T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_panic-attack-help",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/panic-attack-help?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Panic Attack Help",
-            "scheduled_for": "2026-08-23T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_productivity-guilt-how-to-let-it-go",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/productivity-guilt-how-to-let-it-go?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Productivity Guilt How To Let It Go",
-            "scheduled_for": "2026-08-24T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_safety-plan-not-buried",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/safety-plan-not-buried?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Safety Plan Not Buried",
-            "scheduled_for": "2026-08-25T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_streaks-are-broken",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/streaks-are-broken?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Streaks Are Broken",
-            "scheduled_for": "2026-08-26T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_tiny-self-care-when-overwhelmed",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/tiny-self-care-when-overwhelmed?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Tiny Self Care When Overwhelmed",
-            "scheduled_for": "2026-08-27T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_why-just-do-it-doesnt-work-adhd",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/why-just-do-it-doesnt-work-adhd?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Why Just Do It Doesnt Work Adhd",
-            "scheduled_for": "2026-08-28T01:46:40.771795+00:00",
-            "status": "pending"
-        },
-        {
-            "id": "medium_blog_why-streaks-make-adhd-worse",
-            "channel": "medium",
-            "blog_url": "https://gentlequest.app/blog/why-streaks-make-adhd-worse?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
-            "title": "Why Streaks Make Adhd Worse",
-            "scheduled_for": "2026-08-29T01:46:40.771795+00:00",
-            "status": "pending"
-        }
-    ]
+    {
+      "id": "tweet_002",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "ADHD paralysis isn't laziness. It's your brain's \"start\" button being broken. Task initiation is an executive function, not a character trait.",
+      "scheduled_for": "2026-06-27T17:00:00Z",
+      "status": "posted",
+      "error": "Re-queued: was posted to wrong (personal) account",
+      "posted_at": "2026-06-28T05:13:58.346757+00:00"
+    },
+    {
+      "id": "tweet_003",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "The \"one spoon\" method: don't clean the kitchen. Clean ONE spoon. Make the task so small your brain can't reject it. Then do another. Starting is the whole battle.",
+      "scheduled_for": "2026-06-28T13:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:36:24.556629+00:00"
+    },
+    {
+      "id": "tweet_004",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Streaks trigger cortisol (fear of loss). Total Active Days trigger dopamine (gain). One creates anxiety. The other creates momentum. Which one is your habit tracker using?",
+      "scheduled_for": "2026-06-28T17:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:36:31.971824+00:00"
+    },
+    {
+      "id": "tweet_005",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Night anxiety at 2am? Try 4-7-8 breathing: in 4, hold 7, out 8. The long exhale forces your heart rate down. It signals to your brain: the threat has passed.",
+      "scheduled_for": "2026-06-29T13:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:36:38.543930+00:00"
+    },
+    {
+      "id": "tweet_006",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "\"Just do it\" is the worst ADHD advice. Task initiation requires dopamine. ADHD brains are short on dopamine. Telling us to \"just do it\" is like telling a car to \"just drive\" with no fuel.",
+      "scheduled_for": "2026-06-29T17:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:36:44.643019+00:00"
+    },
+    {
+      "id": "tweet_007",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Productivity guilt isn't motivation. It's drain. The energy you spend feeling guilty is energy you can't spend doing things. Rest is not the absence of productivity. Rest is maintenance.",
+      "scheduled_for": "2026-06-30T13:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:54:03.954282+00:00"
+    },
+    {
+      "id": "tweet_008",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "When everything feels like too much: one breath, name the feeling, do the smallest thing you can in 2 minutes. Not the most important thing. The smallest. One thing breaks the freeze.",
+      "scheduled_for": "2026-06-30T17:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T20:54:09.506698+00:00"
+    },
+    {
+      "id": "tweet_009",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Built an app that does ONE thing: mood check-in. 5 seconds. No signup. No streaks. No guilt. If you're low, it offers gentle options. That's it. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-01T13:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T21:08:29.371399+00:00"
+    },
+    {
+      "id": "tweet_010",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "The 5-4-3-2-1 grounding method for anxiety: 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste. Pulls your brain out of the loop and back to the present.",
+      "scheduled_for": "2026-07-01T17:00:00Z",
+      "status": "posted",
+      "posted_at": "2026-07-13T21:08:35.569131+00:00"
+    },
+    {
+      "id": "tweet_011",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Habit trackers broke me. Miss one day \u2192 streak resets \u2192 \"well it's ruined\" \u2192 quit. Switched to Total Active Days. Number only goes up. Miss a day? It stays. No shame spiral.",
+      "scheduled_for": "2026-07-02T13:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-14T03:30:08.557373+00:00"
+    },
+    {
+      "id": "tweet_012",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "ADHD burnout isn't from too much stress. It's from too much of the WRONG input \u2014 low-reward, repetitive tasks. The fix isn't rest. It's novelty.",
+      "scheduled_for": "2026-07-02T17:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-17T03:30:06.068856+00:00"
+    },
+    {
+      "id": "tweet_013",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "\"You should be doing more\" \u2014 notice the guilt voice. Don't fight it. Just name it. \"There's the guilt voice.\" That tiny distance is enough to question it. And questioning it weakens it.",
+      "scheduled_for": "2026-07-03T13:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-17T04:30:03.548702+00:00"
+    },
+    {
+      "id": "tweet_014",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Body doubling works because social presence provides the dopamine signal ADHD brains can't generate internally. You don't need a real person \u2014 a \"clean with me\" video works too.",
+      "scheduled_for": "2026-07-03T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-14T13:30:17.370684+00:00"
+    },
+    {
+      "id": "tweet_015",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Overwhelm isn't having too many tasks. It's the feeling that everything matters equally and you can't prioritize. The fix isn't a system. It's one breath, one task, one moment.",
+      "scheduled_for": "2026-07-04T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-14T13:30:22.861979+00:00"
+    },
+    {
+      "id": "tweet_016",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Your brain at 2am: cortisol spikes \u2192 physical anxiety \u2192 brain generates worries to explain the feeling \u2192 worries keep you awake \u2192 more anxiety. The worries aren't the cause. They're the symptom.",
+      "scheduled_for": "2026-07-04T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-14T13:30:28.479749+00:00"
+    },
+    {
+      "id": "tweet_017",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I built a mood check-in app with no streaks and no guilt. 82 people installed it. 1 person sent a chat. So I made the mood check-in the front door. Now it's 5 seconds, one tap, done. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-05T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-17T13:41:12.983707+00:00"
+    },
+    {
+      "id": "tweet_018",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "\"Just try harder\" doesn't work for ADHD. Willpower is the OUTPUT of a healthy executive function system, not the input. You can't generate willpower by trying to have willpower.",
+      "scheduled_for": "2026-07-05T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-15T13:30:22.412021+00:00"
+    },
+    {
+      "id": "tweet_019",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "The overwhelm trap: solutions for overwhelm are themselves overwhelming. 12-step routines. 4 colored lists. 17 check-ins. You're drowning and the lifeguard throws you a textbook.",
+      "scheduled_for": "2026-07-06T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-15T13:30:27.971440+00:00"
+    },
+    {
+      "id": "tweet_020",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "What if a wellness app didn't track anything? No habits. No streaks. No goals. Just: \"How are you right now?\" One tap. 5 seconds. That's it. That's what I built. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-06T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-15T13:30:33.651080+00:00"
+    },
+    {
+      "id": "tweet_021",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "ADHD brains can do impossible things (hyperfocus) and can't do easy things (paralysis). It's not about difficulty. It's about whether the dopamine system is online at that moment.",
+      "scheduled_for": "2026-07-07T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-15T13:30:39.329805+00:00"
+    },
+    {
+      "id": "tweet_022",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "The trick for task initiation: leave tasks half-started. Open the email and type the first word today. Tomorrow you're not \"starting\" \u2014 you're \"continuing.\" Continuing takes less energy.",
+      "scheduled_for": "2026-07-07T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-17T13:41:18.511687+00:00"
+    },
+    {
+      "id": "tweet_023",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Rest without apology. Rest is not the absence of productivity. Rest is the active maintenance of the system that makes productivity possible. You are not a machine.",
+      "scheduled_for": "2026-07-08T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-16T13:30:26.229812+00:00"
+    },
+    {
+      "id": "tweet_024",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Every \"should\" has an unexamined assumption. \"I should be exercising\" \u2014 according to who? Right now? Maybe rest is more important. The \"should\" doesn't know. It's a reflex, not a truth.",
+      "scheduled_for": "2026-07-08T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-16T13:30:32.615856+00:00"
+    },
+    {
+      "id": "tweet_025",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "5-4-3-2-1 grounding: it's not distraction. It's redirecting your brain from the internal loop to external reality. The present moment is almost always safer than your brain thinks it is.",
+      "scheduled_for": "2026-07-09T13:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-16T13:30:38.092750+00:00"
+    },
+    {
+      "id": "tweet_026",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "GentleQuest: free mood check-in. No signup. No streaks. No guilt. iOS, Android, web. 5 seconds. That's the whole app. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-09T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-16T13:30:43.669102+00:00"
+    },
+    {
+      "id": "tweet_027",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "ADHD paralysis: you know what to do, you want to do it, but the neurological bridge between \"wanting\" and \"doing\" has a gap. It's not character. It's chemistry.",
+      "scheduled_for": "2026-07-10T13:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-18T03:30:02.780347+00:00"
+    },
+    {
+      "id": "tweet_028",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Productivity guilt: the more guilty you feel, the less you do. Guilt drains energy, creates avoidance, and breaks rest. The guilt wasn't helping. It was just loud.",
+      "scheduled_for": "2026-07-10T17:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-18T04:30:06.439989+00:00"
+    },
+    {
+      "id": "tweet_029",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "One breath. One feeling. One task. That's the whole method. Not a system. Not a routine. Just: start with one breath when everything is too much.",
+      "scheduled_for": "2026-07-11T13:00:00Z",
+      "status": "posted",
+      "error": "Buffer error: Scheduled posts limit reached. You have 10 scheduled posts out of 10 allowed.",
+      "posted_at": "2026-07-18T05:30:07.608250+00:00"
+    },
+    {
+      "id": "tweet_030",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I built GentleQuest because I needed it. No streaks because streaks broke me. No guilt because guilt drained me. Just a quiet check-in. Free. https://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-11T17:00:00Z",
+      "status": "posted",
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-18T14:30:04.587235+00:00"
+    },
+    {
+      "id": "linkedin_001",
+      "channel": "buffer",
+      "target": "linkedin",
+      "text": "Most productivity apps make ADHD worse.\n\nThey demand more:\n\u2192 More streaks (that break if you miss one day)\n\u2192 More tracking\n\u2192 More guilt\n\nSo I built the opposite.\n\nGentleQuest is a mood check-in app with:\n\u2192 No streaks\n\u2192 No guilt notifications\n\u2192 No \"you failed\" reminders\n\nJust one question: \"How are you right now?\"\n\n5 seconds. One tap. Done.\n\nIf you're low, it gently offers options: breathing, grounding, or talking to an AI companion.\n\nFree on iOS, Android, and web.\n\nBuilding for neurodivergent brains first. Because if it works for ADHD, it works for everyone.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge\n\n#mentalhealth #adhd #productivity #wellness",
+      "scheduled_for": "2026-06-27T13:30:00Z",
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
+    },
+    {
+      "id": "linkedin_002",
+      "channel": "buffer",
+      "target": "linkedin",
+      "text": "ADHD paralysis isn't laziness. It's a neurological event.\n\nYour brain's task initiation system \u2014 in the prefrontal cortex \u2014 gets overwhelmed and shuts down. You know what to do. You want to do it. But the bridge between \"wanting\" and \"doing\" has a gap.\n\nThis is why \"just do it\" is useless advice for ADHD brains. Task initiation requires dopamine. ADHD brains are short on dopamine.\n\nWhat works instead:\n\u2192 External structure (body doubling, timers)\n\u2192 Dopamine scaffolding (pair tasks with rewards)\n\u2192 Remove the initiation step (leave tasks half-started)\n\u2192 Medication (for many, it provides the fuel that makes the system work)\n\nBuilt for this reality. GentleQuest doesn't require you to \"start\" anything. Just tap how you feel. That's it.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-06-29T13:30:00Z",
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
+    },
+    {
+      "id": "linkedin_003",
+      "channel": "buffer",
+      "target": "linkedin",
+      "text": "82 people installed my app. 1 person sent a chat.\n\nThat's not a failure. That's data.\n\nThe app was chat-first. The mood check-in was buried. So I flipped it: mood check-in became the front door. 5 seconds, one tap, done.\n\nNow the chat is an invitation, not a demand. If you log a low mood, it asks: \"Want to talk through this?\" If you say no, that's fine.\n\nThe lesson: build for the 5-second action, not the 5-minute conversation. Get people in the door first. Everything else is optional.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-01T13:30:00Z",
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
+    },
+    {
+      "id": "linkedin_004",
+      "channel": "buffer",
+      "target": "linkedin",
+      "text": "The overwhelm trap: solutions for overwhelm are themselves overwhelming.\n\n12-step morning routines. 4 colored lists. 17 daily check-ins. You're drowning and the lifeguard throws you a textbook on swimming.\n\nWhat actually works when you're overwhelmed:\n\n1. One breath. Not meditation. One breath.\n2. Name the feeling. \"I'm overwhelmed.\" Specific feelings are easier to work with than vague ones.\n3. Pick the smallest thing. Not the most important. The smallest. Something you can do in 2 minutes.\n4. Stop after one. Don't build momentum. Just acknowledge you did something.\n\nThis is the philosophy behind GentleQuest. No systems. No streaks. Just one tap to check in.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-03T13:30:00Z",
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
+    },
+    {
+      "id": "linkedin_005",
+      "channel": "buffer",
+      "target": "linkedin",
+      "text": "Productivity guilt is exhausting.\n\nYou finish work. You sit down to rest. And within 30 seconds, the voice starts: \"You should be doing more.\"\n\nHere's what I've learned:\n\n1. Guilt reduces productivity. The energy you spend feeling guilty is energy you can't spend doing things.\n2. Guilt creates avoidance. Tasks associated with guilt become emotionally heavier, not lighter.\n3. Guilt breaks rest. If rest feels like failure, you never actually rest.\n\nThe fix isn't to fight the guilt. It's to notice it. Name it. Question it.\n\n\"I should be doing more\" \u2014 according to who? According to what standard? Usually the standard is imaginary and impossible.\n\nRest without apology. Rest is not the absence of productivity. Rest is the active maintenance of the system that makes productivity possible.\n\nhttps://gentlequest.app/?utm_source=x&utm_medium=organic&utm_campaign=stage0_wedge",
+      "scheduled_for": "2026-07-05T13:30:00Z",
+      "status": "posted",
+      "error": "No LinkedIn channel on GentleQuest Buffer account \u2014 skipped"
+    },
+    {
+      "id": "devto_001",
+      "channel": "devto",
+      "title": "Why I Built an Anti-Productivity App for My ADHD",
+      "body_markdown": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\n## The Problem\n\nEvery productivity app I tried had the same pattern:\n1. Excited first week\n2. Check in every day\n3. Streak climbs \u2014 7, 14, 21 days\n4. Miss one day\n5. Streak resets to zero\n6. Shame spiral\n7. Quit\n\nThe streak mechanic is supposed to motivate. For ADHD brains, it does the opposite. It triggers cortisol (fear of loss) instead of dopamine (reward). Missing a day doesn't feel like \"I'll try tomorrow\" \u2014 it feels like failure.\n\n## The Solution\n\nI built [GentleQuest](https://gentlequest.app). It tracks **Total Active Days** instead of streaks. The number only goes up. Miss a day? It stays the same. No resets. No shame.\n\nThe core feature is a one-tap mood check-in. 5 seconds. That's the whole app. If you're low, it gently offers options: breathing, grounding, or talking to an AI companion.\n\n## What I Learned from 82 Installs\n\nThe app was originally chat-first. The mood check-in was buried. 82 people installed it. 1 person sent a chat.\n\nThat's not a failure. That's data. People wanted the 5-second action, not the 5-minute conversation. So I flipped it: mood check-in became the front door.\n\nNow the chat is an invitation, not a demand. If you log a low mood, it asks: \"Want to talk through this?\" If you say no, that's fine.\n\n## The Tech\n\n- Flutter frontend (iOS, Android, Web)\n- Flask backend with Gemini 2.5 Flash\n- SQLite + Postgres databases\n- Cloud Run + Render + Cloudflare Pages\n- No signup required for mood check-in\n\n## The Philosophy\n\n- No streaks (they trigger cortisol)\n- No guilt notifications\n- No \"you failed\" reminders\n- Just a quiet place to check in with yourself\n\nIt's free on iOS, Android, and web. No signup required for the mood check-in.\n\n[Try it free](https://gentlequest.app)",
+      "tags": [
+        "mentalhealth",
+        "adhd",
+        "productivity",
+        "flutter"
+      ],
+      "published": true,
+      "scheduled_for": "2026-06-28T14:00:00Z",
+      "status": "posted",
+      "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
+      "posted_at": "2026-08-02T03:19:08.132166+00:00"
+    },
+    {
+      "id": "devto_002",
+      "channel": "devto",
+      "title": "The Neuroscience of ADHD Paralysis (And What Actually Helps)",
+      "body_markdown": "ADHD paralysis isn't laziness. It's a neurological event.\n\n## What's Actually Happening\n\nStarting a task requires a specific neurological process called **task initiation**. It happens in the prefrontal cortex:\n\n1. **Recognize** the task\n2. **Evaluate** the task\n3. **Prioritize** the task\n4. **Allocate** resources\n5. **Initiate** action\n\nFor neurotypical brains, this runs in milliseconds. For ADHD brains, the prefrontal cortex has lower dopamine availability, and the process gets stuck.\n\nThe result: you know what to do, you want to do it, but the initiation sequence doesn't fire.\n\n## Why \"Just Do It\" Fails\n\nWillpower is the **output** of a healthy executive function system, not the **input**. You can't generate willpower by trying to have willpower. That's like trying to start a car by pressing the gas when there's no fuel.\n\nADHD brains don't lack willpower. They lack the neurological fuel (dopamine) that willpower runs on.\n\n## What Actually Works\n\n### 1. External Structure\n- Body doubling (social presence provides the dopamine signal)\n- Accountability timers\n- Implementation intentions (\"When X happens, I will do Y\")\n\n### 2. Dopamine Scaffolding\n- Pair tasks with something rewarding\n- Make tasks novel (different location, different tool)\n- Create artificial urgency (real deadlines, not fake ones)\n\n### 3. Remove the Initiation Step\n- Leave tasks half-started (open the email, type the first word)\n- Reduce decisions (lay out clothes the night before)\n- Automate what you can\n\n### 4. Medication\nFor many people with ADHD, stimulant medication directly increases dopamine availability. It's not a moral failure. It's replacing a chemical your brain is short on.\n\n## The Bottom Line\n\n\"Just do it\" is advice for brains that can already do it. For ADHD brains, the doing is the hard part \u2014 and no amount of \"just\" makes it easier.\n\nWhat works is understanding the actual problem, removing the shame, and using tools that work with your brain instead of against it.\n\n---\n\n*I built [GentleQuest](https://gentlequest.app) \u2014 a free mood check-in app for ADHD brains. No streaks. No shame. Just a quiet place to check in.*",
+      "tags": [
+        "adhd",
+        "neuroscience",
+        "mentalhealth",
+        "productivity"
+      ],
+      "published": true,
+      "scheduled_for": "2026-07-01T14:00:00Z",
+      "status": "posted",
+      "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
+      "posted_at": "2026-08-02T03:19:08.132758+00:00"
+    },
+    {
+      "id": "devto_003",
+      "channel": "devto",
+      "title": "Why Streaks Make ADHD Worse (Dopamine vs Cortisol)",
+      "body_markdown": "Streaks are the worst thing to happen to ADHD habit tracking.\n\n## The Streak Trap\n\nYou know the pattern:\n1. Excited first week\n2. Check in every day\n3. Streak climbs \u2014 7, 14, 21 days\n4. Miss one day\n5. Streak resets to zero\n6. Shame spiral\n7. Quit\n\nThe streak resets to zero. And the feeling that comes with that reset isn't motivation. It's shame.\n\n## Why Streaks Backfire for ADHD\n\nStreaks work on **loss aversion** \u2014 the psychological tendency to feel the pain of losing something more strongly than the pleasure of gaining it.\n\nFor neurotypical brains, the threat of losing a streak can create just enough urgency to maintain a habit.\n\nFor ADHD brains, this mechanism backfires:\n\n### 1. Streaks trigger cortisol, not dopamine\nADHD is fundamentally a dopamine regulation difference. Streaks try to manufacture urgency through the *threat of loss* \u2014 which triggers cortisol (stress hormone), not dopamine (reward chemical).\n\n### 2. The all-or-nothing trap\nADHD brains already struggle with black-and-white thinking. Streaks reinforce this: if the streak is broken, the whole effort feels worthless.\n\n### 3. Streaks punish absence, not reward presence\nThe streak mechanic focuses on what you *didn't* do (miss a day) rather than what you *did* do (showed up 20 times). For ADHD brains, this is backwards. We need acknowledgment of what we did, not punishment for what we didn't.\n\n## The Alternative: Total Active Days\n\nI built GentleQuest to track **Total Active Days** instead of streaks.\n\n- Show up today? +1 to your total.\n- Miss a day? Total stays the same.\n- No resets. No shame.\n\nThe number only goes up. It's cumulative. It rewards showing up, not punishing absence.\n\n## The Science\n\nResearch on habit formation shows that **consistency over time** matters more than **perfect daily adherence**. Missing one day doesn't actually hurt habit formation \u2014 but the *shame* from a streak reset does.\n\nBy removing the streak mechanic, we remove the shame. By tracking total days, we keep the reward.\n\n---\n\n*[GentleQuest](https://gentlequest.app) is a free mood check-in app. No streaks. No shame. Just a quiet place to check in with yourself.*",
+      "tags": [
+        "adhd",
+        "productivity",
+        "mentalhealth",
+        "habits"
+      ],
+      "published": true,
+      "scheduled_for": "2026-07-04T14:00:00Z",
+      "status": "posted",
+      "error": "Dev.to exception: HTTP Error 403: Forbidden Bots",
+      "posted_at": "2026-08-02T03:19:08.132853+00:00"
+    },
+    {
+      "id": "ih_001",
+      "channel": "indiehackers",
+      "title": "Building an \"anti-productivity\" app for my ADHD (no broken streaks)",
+      "body": "Standard productivity apps make my ADHD worse. They just demand *more*. More streaks (that break if I miss one day). More tracking. More guilt.\n\nSo I built the opposite.\n\nIt tracks \"Total Active Days\" instead of streaks. Show up today? +1 to your total. Miss a day? Total stays the same. No resets. No shame.\n\nThe Vibe: Instead of a stressful fire icon that burns out, I use a seedling that just grows.\n\nRoast me:\n1. Does \"Total Days\" actually feel better than a streak?\n2. Is \"anti-productivity\" a good angle or just confusing?\n3. Does the design look legit?\n\nLink: https://gentlequest.app\n\n(It's free on iOS and Android. Also works on web: https://gentlequest-web-lite.pages.dev)",
+      "scheduled_for": "2026-06-27T15:00:00Z",
+      "status": "posted",
+      "error": "Playwright not installed \u2014 skipping IndieHackers",
+      "posted_at": "2026-06-28T05:13:58.346813+00:00"
+    },
+    {
+      "id": "medium_init_adhd-paralysis-why-you-cant-st",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/adhd-paralysis-why-you-cant-start?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd Paralysis Why You Cant Start",
+      "scheduled_for": "2026-07-11T23:00:00Z",
+      "status": "pending",
+      "error": "",
+      "posted_at": "2026-07-25T04:11:05.885905+00:00"
+    },
+    {
+      "id": "medium_init_iip-vs-chatgpt-stress-test",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/iip-vs-chatgpt-stress-test?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Iip Vs Chatgpt Stress Test",
+      "scheduled_for": "2026-07-14T23:00:00Z",
+      "status": "pending",
+      "error": "",
+      "posted_at": "2026-07-25T04:11:05.886599+00:00"
+    },
+    {
+      "id": "medium_init_your-data-is-yours",
+      "channel": "medium",
+      "blog_url": "https://www.gentlequest.app/blog/your-data-is-yours?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Your Data Is Yours",
+      "scheduled_for": "2026-07-17T23:00:00Z",
+      "status": "pending",
+      "error": "",
+      "posted_at": "2026-07-25T04:11:05.886750+00:00"
+    },
+    {
+      "id": "reddit_init_adhd_0",
+      "channel": "reddit",
+      "subreddit": "ADHD",
+      "topic_keywords": [
+        "paralysis",
+        "can't start",
+        "overwhelm",
+        "streaks",
+        "burnout",
+        "task initiation",
+        "executive dysfunction"
+      ],
+      "scheduled_for": "2026-07-12T05:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "reddit_init_adhd_1",
+      "channel": "reddit",
+      "subreddit": "ADHD",
+      "topic_keywords": [
+        "paralysis",
+        "can't start",
+        "overwhelm",
+        "streaks",
+        "burnout",
+        "task initiation",
+        "executive dysfunction"
+      ],
+      "scheduled_for": "2026-07-12T17:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "reddit_init_anxiety_0",
+      "channel": "reddit",
+      "subreddit": "Anxiety",
+      "topic_keywords": [
+        "overwhelm",
+        "can't calm down",
+        "panic",
+        "racing thoughts",
+        "night anxiety",
+        "grounding",
+        "breathing"
+      ],
+      "scheduled_for": "2026-07-13T05:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "reddit_init_anxiety_1",
+      "channel": "reddit",
+      "subreddit": "Anxiety",
+      "topic_keywords": [
+        "overwhelm",
+        "can't calm down",
+        "panic",
+        "racing thoughts",
+        "night anxiety",
+        "grounding",
+        "breathing"
+      ],
+      "scheduled_for": "2026-07-13T17:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "reddit_init_habits_0",
+      "channel": "reddit",
+      "subreddit": "Habits",
+      "topic_keywords": [
+        "streaks",
+        "habit tracking",
+        "consistency",
+        "guilt",
+        "missing days",
+        "starting over"
+      ],
+      "scheduled_for": "2026-07-14T05:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "reddit_init_habits_1",
+      "channel": "reddit",
+      "subreddit": "Habits",
+      "topic_keywords": [
+        "streaks",
+        "habit tracking",
+        "consistency",
+        "guilt",
+        "missing days",
+        "starting over"
+      ],
+      "scheduled_for": "2026-07-14T17:00:00Z",
+      "status": "posted",
+      "error": "Reddit blocks automation \u2014 skipped"
+    },
+    {
+      "id": "gen_tweet_1784953806_0",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My mind can race when anxiety creeps in. I used to feel lost, but now I have a simple anchor: 5-4-3-2-1 grounding. It's truly amazing how focusing on 5 sights,",
+      "scheduled_for": "2026-07-25T08:30:01.317227Z",
+      "status": "posted",
+      "generated": true,
+      "posted_at": "2026-07-25T08:30:44.146798+00:00"
+    },
+    {
+      "id": "gen_blog_1784953824_1",
+      "channel": "blog",
+      "target": "blog",
+      "text": "Blog post scheduled: generated-1784953824-1",
+      "scheduled_for": "2026-07-25T12:30:01.317227Z",
+      "status": "posted",
+      "generated": true,
+      "blog_slug": "generated-1784953824-1"
+    },
+    {
+      "id": "gen_tweet_1784953829_2",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I used to feel so much guilt if I wasn't constantly \"doing\" or checking off tasks. It was like my worth depended on my output. But I'm actively learning to challenge that narrative and simply *be*. What if letting go of that pressure is the most productive thing we can do for ...",
+      "scheduled_for": "2026-07-27T12:30:01.317227Z",
+      "status": "posted",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])",
+      "posted_at": "2026-07-27T15:30:26.497013+00:00"
+    },
+    {
+      "id": "gen_tweet_1784953835_4",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My ADHD brain is wild. One moment, I'm hyperfocused, lost for hours in a task. The next, I'm in total paralysis, staring at a blank screen, unable to start. It's not laziness, it's a dopamine quest. How do you navigate these extremes?",
+      "scheduled_for": "2026-07-30T16:30:01.317227Z",
+      "status": "posted",
+      "generated": true,
+      "posted_at": "2026-07-30T16:36:13.825512+00:00"
+    },
+    {
+      "id": "gen_blog_1784953853_5",
+      "channel": "blog",
+      "target": "blog",
+      "text": "Blog post scheduled: generated-1784953853-5",
+      "scheduled_for": "2026-07-30T20:30:01.317227Z",
+      "status": "posted",
+      "generated": true,
+      "blog_slug": "generated-1784953853-5"
+    },
+    {
+      "id": "gen_tweet_1784953857_6",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I've realized a weird habit: I often leave tasks 10% done, just enough to feel like I'm past the \"initiation\" phase. It's my sneaky way of tricking my brain into thinking I'm not *starting* from scratch next time. Anyone else do this to beat resistance?",
+      "scheduled_for": "2026-08-01T20:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971830_0",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Honestly, habit trackers just don't work for my ADHD. Instead of motivating me, seeing those empty boxes every day just triggers a spiral of shame and anxiety, reminding me of all the things",
+      "scheduled_for": "2026-08-02T00:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971838_1",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My ADHD brain often feels paralyzed when I need to start a task. It's wild how just having someone else quietly working nearby, no pressure, no talking, can completely unstick me. It's like the invisible nudge I desperately need. Do you find body doubling helps you beat task p...",
+      "scheduled_for": "2026-08-02T04:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971849_2",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "It's not about being lazy; it's like my brain has a massive energy deficit just for initiating. The ADHD paralysis makes starting anything, no matter how small, feel like pushing a boulder",
+      "scheduled_for": "2026-08-02T08:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971858_3",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Today, the sheer weight of my to-do list felt crushing. Every task seemed too big, triggering full overwhelm. So I tried something: just one tiny step. Opened the email, didn't reply. Put one dish in the sink. Amazing how starting small can break the paralysis. What's your sma...",
+      "scheduled_for": "2026-08-02T12:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971907_5",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My internal clock apparently set for 2 AM, when the cortisol decides to throw a party in my brain. Suddenly, I'm wide awake, dissecting every single worry from the past week. Why does anxiety always hit with such a brutal, specific timing?",
+      "scheduled_for": "2026-08-02T16:30:01.317227Z",
+      "status": "failed",
+      "generated": true,
+      "error": "No Buffer channel for target=twitter (available: [])"
+    },
+    {
+      "id": "gen_tweet_1784971931_8",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I'm deep in ADHD burnout, but it's not from doing too much. It's from the quiet, the sameness, the lack of novelty that leaves my brain starved. This understimulation paralysis feels so heavy, like I'm stuck in mud. Does anyone else feel utterly exhausted by the *absence* of s...",
+      "scheduled_for": "2026-08-05T20:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_tweet_1784971944_9",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I really *wanted* my habit tracker to help my ADHD, but seeing all those empty boxes just makes me feel like a failure. Instead of motivation, I just get a huge wave of anxiety",
+      "scheduled_for": "2026-08-06T00:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_blog_1785640777_0",
+      "channel": "blog",
+      "target": "blog",
+      "text": "Blog post scheduled: generated-1785640777-0",
+      "scheduled_for": "2026-08-06T04:30:01.317227Z",
+      "status": "pending",
+      "generated": true,
+      "blog_slug": "generated-1785640777-0"
+    },
+    {
+      "id": "gen_tweet_1785640781_1",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "Chasing streaks with ADHD felt like a good idea until my cortisol spiked from the pressure to maintain them. The fleeting dopamine hit of 'success' never outweighed the crash when I inevitably broke it. It made everything worse. Why do we fall for this?",
+      "scheduled_for": "2026-08-08T04:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_tweet_1785640787_3",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "The constant hum of \"should be doing more\" used to be my background noise. I'd feel guilty for resting. But I'm learning that my value isn't tied",
+      "scheduled_for": "2026-08-11T08:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_tweet_1785640793_4",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My ADHD burnout doesn't always look like overstimulation. Sometimes, it's the crushing weight of understimulation \u2013 a brain starved for novelty, for a challenge, for something *interesting* to",
+      "scheduled_for": "2026-08-11T12:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_tweet_1785640798_5",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "My brain sometimes tricks me into thinking a task needs to be 100% complete or not started at all. The 'one spoon' method is my rebel yell against that. Just one tiny",
+      "scheduled_for": "2026-08-11T16:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "gen_tweet_1785640802_6",
+      "channel": "buffer",
+      "target": "twitter",
+      "text": "I've finally realized that my body and mind aren't limitless resources. To keep going, to do good work, I *have* to schedule in rest. It's not laziness, it's essential maintenance. What's one small way you'll honor your need for rest today?",
+      "scheduled_for": "2026-08-11T20:30:01.317227Z",
+      "status": "pending",
+      "generated": true
+    },
+    {
+      "id": "medium_blog_adhd-app-no-subscription",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-app-no-subscription?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd App No Subscription",
+      "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
+      "status": "pending",
+      "posted_at": "2026-08-04T01:48:57.126152+00:00"
+    },
+    {
+      "id": "medium_blog_adhd-app-private-no-tracking",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-app-private-no-tracking?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd App Private No Tracking",
+      "scheduled_for": "2026-08-05T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-in-adults-workplace",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-in-adults-workplace?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd In Adults Workplace",
+      "scheduled_for": "2026-08-06T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-in-students",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-in-students?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd In Students",
+      "scheduled_for": "2026-08-07T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-rejection-sensitive-dysphoria",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-rejection-sensitive-dysphoria?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd Rejection Sensitive Dysphoria",
+      "scheduled_for": "2026-08-09T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-support-app-no-streaks",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-support-app-no-streaks?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd Support App No Streaks",
+      "scheduled_for": "2026-08-10T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-time-blindness",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-time-blindness?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd Time Blindness",
+      "scheduled_for": "2026-08-11T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_adhd-understimulation-burnout",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/adhd-understimulation-burnout?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Adhd Understimulation Burnout",
+      "scheduled_for": "2026-08-12T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_alternative-to-balance",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/alternative-to-balance?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Alternative To Balance",
+      "scheduled_for": "2026-08-13T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_alternative-to-bearable",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/alternative-to-bearable?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Alternative To Bearable",
+      "scheduled_for": "2026-08-14T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_alternative-to-betterme",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/alternative-to-betterme?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Alternative To Betterme",
+      "scheduled_for": "2026-08-15T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_alternative-to-calm",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/alternative-to-calm?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Alternative To Calm",
+      "scheduled_for": "2026-08-16T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_alternative-to-day-one",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/alternative-to-day-one?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Alternative To Day One",
+      "scheduled_for": "2026-08-17T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_grounding-5-4-3-2-1",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/grounding-5-4-3-2-1?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Grounding 5 4 3 2 1",
+      "scheduled_for": "2026-08-18T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_mindfulness-for-anxiety",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/mindfulness-for-anxiety?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Mindfulness For Anxiety",
+      "scheduled_for": "2026-08-20T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_night-anxiety-why-your-brain-wont-shut-off",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/night-anxiety-why-your-brain-wont-shut-off?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Night Anxiety Why Your Brain Wont Shut Off",
+      "scheduled_for": "2026-08-21T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_overwhelmed-start-with-one-breath",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/overwhelmed-start-with-one-breath?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Overwhelmed Start With One Breath",
+      "scheduled_for": "2026-08-22T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_panic-attack-help",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/panic-attack-help?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Panic Attack Help",
+      "scheduled_for": "2026-08-23T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_productivity-guilt-how-to-let-it-go",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/productivity-guilt-how-to-let-it-go?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Productivity Guilt How To Let It Go",
+      "scheduled_for": "2026-08-24T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_safety-plan-not-buried",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/safety-plan-not-buried?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Safety Plan Not Buried",
+      "scheduled_for": "2026-08-25T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_streaks-are-broken",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/streaks-are-broken?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Streaks Are Broken",
+      "scheduled_for": "2026-08-26T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_tiny-self-care-when-overwhelmed",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/tiny-self-care-when-overwhelmed?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Tiny Self Care When Overwhelmed",
+      "scheduled_for": "2026-08-27T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_why-just-do-it-doesnt-work-adhd",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/why-just-do-it-doesnt-work-adhd?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Why Just Do It Doesnt Work Adhd",
+      "scheduled_for": "2026-08-28T01:46:40.771795+00:00",
+      "status": "pending"
+    },
+    {
+      "id": "medium_blog_why-streaks-make-adhd-worse",
+      "channel": "medium",
+      "blog_url": "https://gentlequest.app/blog/why-streaks-make-adhd-worse?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
+      "title": "Why Streaks Make Adhd Worse",
+      "scheduled_for": "2026-08-29T01:46:40.771795+00:00",
+      "status": "pending"
+    }
+  ]
 }
