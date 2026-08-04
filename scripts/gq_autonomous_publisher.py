@@ -1070,11 +1070,32 @@ def publish_to_medium(item, creds, dry_run=False):
             continue
         elif stripped.startswith("!["):
             continue
+        elif stripped.startswith("|") and stripped.endswith("|"):
+            # Markdown table row — convert to plain text
+            # Skip separator rows (|---|---|)
+            if re.match(r'^[\s|:-]+$', stripped):
+                continue
+            # Extract cells and format as "Column: Value"
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            # Strip bold/italic from cells
+            cells = [re.sub(r'\*\*([^*]+)\*\*', r'\1', c) for c in cells]
+            cells = [re.sub(r'\*([^*]+)\*', r'\1', c) for c in cells]
+            if len(cells) >= 2:
+                paragraphs.append(" | ".join(cells))
+            elif cells:
+                paragraphs.append(cells[0])
         elif stripped.startswith("- ") or stripped.startswith("* "):
             if current_para:
                 paragraphs.append(" ".join(current_para))
                 current_para = []
-            paragraphs.append("• " + stripped[2:].strip())
+            bullet_text = stripped[2:].strip()
+            # Strip markdown from bullet content too
+            bullet_text = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', bullet_text)  # links
+            bullet_text = re.sub(r'\*\*([^*]+)\*\*', r'\1', bullet_text)  # bold
+            bullet_text = re.sub(r'\*([^*]+)\*', r'\1', bullet_text)  # italic
+            bullet_text = re.sub(r'`([^`]+)`', r'\1', bullet_text)  # code
+            bullet_text = bullet_text.replace("**", "").replace("*", "").replace("`", "")
+            paragraphs.append("• " + bullet_text)
         else:
             cleaned = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', stripped)  # links
             cleaned = re.sub(r'\*\*([^*]+)\*\*', r'\1', cleaned)  # bold
