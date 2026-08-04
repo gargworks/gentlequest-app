@@ -390,6 +390,7 @@ class ComplianceService {
         'region': region,
         'method': 'ip_primary',
       });
+      await _logPassEvent('ip_primary', region);
       return ComplianceStatus.allowed;
     } catch (_) {
       return null; // signal "fall through to GPS"
@@ -401,6 +402,25 @@ class ComplianceService {
       'reason': reason,
       'region': region ?? 'unknown',
     });
+    // Also log to backend for funnel analytics
+    try {
+      await ApiService().post('/api/compliance/log', data: {
+        'event_type': 'compliance_blocked_region',
+        'metadata': {'reason': reason, 'region': region ?? 'unknown'},
+      });
+    } catch (_) {} // Analytics should never block
+  }
+
+  /// Log compliance pass to backend for funnel measurement.
+  /// Without this, the funnel endpoint shows compliance_passed=0 even
+  /// though users are getting through (issue #192).
+  Future<void> _logPassEvent(String method, String? region) async {
+    try {
+      await ApiService().post('/api/compliance/log', data: {
+        'event_type': 'compliance_passed',
+        'metadata': {'method': method, 'region': region ?? 'unknown'},
+      });
+    } catch (_) {} // Analytics should never block
   }
 
   /// Request location permission (called by UI)
@@ -467,7 +487,8 @@ class ComplianceService {
     if (_isBlockedRegion(storedRegion)) {
       return ComplianceStatus.blockedRegion;
     }
-    
+
+    await _logPassEvent('cached', storedRegion);
     return ComplianceStatus.allowed;
   }
 
@@ -539,6 +560,7 @@ class ComplianceService {
         'status': 'allowed',
         'region': placemarks.isNotEmpty ? placemarks.first.administrativeArea : 'unknown',
       });
+      await _logPassEvent('gps', placemarks.isNotEmpty ? placemarks.first.administrativeArea : 'unknown');
       return ComplianceStatus.allowed;
 
     } catch (e) {
@@ -568,6 +590,7 @@ class ComplianceService {
                 'region': region,
                 'method': 'ip_fallback',
               });
+              await _logPassEvent('ip_fallback', region);
               return ComplianceStatus.allowed;
             } else {
               await _logBlockEvent('blocked_region_ip', region);
