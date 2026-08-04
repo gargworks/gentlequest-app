@@ -312,3 +312,44 @@ backend/
 # gitlink has been untracked. Keep this entry so any future re-clone into
 # the same path is silently ignored instead of becoming a new orphan.
 mcp-get/
+
+# Build artifacts and temp files
+.coverage
+.secrets-map.json
+ai_buddy_web/ExportOptions.plist
+
+# Marketing drafts and state (managed by growth-engine, not tracked here)
+marketing/GLM_RESURRECTION_PLAN*.md
+marketing/community/drafts/
+marketing/shorts/out/
+marketing/shorts/youtube_token.json
+
+# Script backups and state files
+scripts/gq_autonomous_publisher.py.bak
+scripts/gq_medium_state.json
+scripts/gq_pipeline_health_check.py
+scripts/gq_playwright_preflight.py
+scripts/gq_publisher_log.jsonl
+scripts/gq_publisher_state.json
+scripts/gq_reddit_staging.md
+scripts/run_marketing_dashboard.sh
+
+# Nucleus test artifacts
+mcp-server-nucleus/gemini
+mcp-server-nucleus/tests/test_prove_cli.py
+tests/test_execution_verifier_coverage.py
+
+# Ops docs (ephemeral)
+docs/ops/EVENING_*.md
+docs/ops/PH_LAUNCH_*.md
+docs/ops/RENDER_ENV_VAR_*.md
+docs/ops/ph_launch_assets/
+
+# Strategy docs (managed externally)
+docs/strategy/
+
+# Flutter store deployment kit
+flutter-store-deployment-kit/LICENSE
+
+# Landing page components (separate project)
+landing-page/src/components/
