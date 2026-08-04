@@ -594,9 +594,9 @@
       "target": "twitter",
       "text": "I've realized a weird habit: I often leave tasks 10% done, just enough to feel like I'm past the \"initiation\" phase. It's my sneaky way of tricking my brain into thinking I'm not *starting* from scratch next time. Anyone else do this to beat resistance?",
       "scheduled_for": "2026-08-01T20:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971830_0",
@@ -604,9 +604,9 @@
       "target": "twitter",
       "text": "Honestly, habit trackers just don't work for my ADHD. Instead of motivating me, seeing those empty boxes every day just triggers a spiral of shame and anxiety, reminding me of all the things",
       "scheduled_for": "2026-08-02T00:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971838_1",
@@ -614,9 +614,9 @@
       "target": "twitter",
       "text": "My ADHD brain often feels paralyzed when I need to start a task. It's wild how just having someone else quietly working nearby, no pressure, no talking, can completely unstick me. It's like the invisible nudge I desperately need. Do you find body doubling helps you beat task p...",
       "scheduled_for": "2026-08-02T04:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971849_2",
@@ -624,9 +624,9 @@
       "target": "twitter",
       "text": "It's not about being lazy; it's like my brain has a massive energy deficit just for initiating. The ADHD paralysis makes starting anything, no matter how small, feel like pushing a boulder",
       "scheduled_for": "2026-08-02T08:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971858_3",
@@ -634,9 +634,9 @@
       "target": "twitter",
       "text": "Today, the sheer weight of my to-do list felt crushing. Every task seemed too big, triggering full overwhelm. So I tried something: just one tiny step. Opened the email, didn't reply. Put one dish in the sink. Amazing how starting small can break the paralysis. What's your sma...",
       "scheduled_for": "2026-08-02T12:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971907_5",
@@ -644,9 +644,9 @@
       "target": "twitter",
       "text": "My internal clock apparently set for 2 AM, when the cortisol decides to throw a party in my brain. Suddenly, I'm wide awake, dissecting every single worry from the past week. Why does anxiety always hit with such a brutal, specific timing?",
       "scheduled_for": "2026-08-02T16:30:01.317227Z",
-      "status": "failed",
+      "status": "pending",
       "generated": true,
-      "error": "No Buffer channel for target=twitter (available: [])"
+      "error": ""
     },
     {
       "id": "gen_tweet_1784971931_8",

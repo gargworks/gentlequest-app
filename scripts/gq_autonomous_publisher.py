@@ -766,14 +766,42 @@ def publish_to_buffer(item, creds, dry_run=False):
     )
 
     try:
-        with urllib.request.urlopen(req) as resp:
-            body = json.loads(resp.read())
-            result = body.get("data", {}).get("createPost", {})
-            if result.get("__typename") == "PostActionSuccess":
-                post_id = result["post"]["id"]
-                return True, f"Posted to Buffer/{target}, post_id={post_id}"
-            else:
-                return False, f"Buffer error: {result.get('message', 'unknown')}"
+        # Retry with backoff on 429 (Buffer rate limit)
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req) as resp:
+                    body = json.loads(resp.read())
+                    result = body.get("data", {}).get("createPost", {})
+                    if result.get("__typename") == "PostActionSuccess":
+                        post_id = result["post"]["id"]
+                        return True, f"Posted to Buffer/{target}, post_id={post_id}"
+                    else:
+                        return False, f"Buffer error: {result.get('message', 'unknown')}"
+            except urllib.error.HTTPError as he:
+                if he.code == 429:
+                    # Check if this is a long-term rate limit (30d window)
+                    retry_after = he.headers.get("Retry-After", "")
+                    body_text = he.read().decode()[:500]
+                    if "30d" in body_text or (retry_after and int(retry_after) > 3600):
+                        # Long-term rate limit — don't retry, return immediately
+                        return False, f"Buffer 30d rate limit exhausted (resets in {int(retry_after)//3600}h)"
+                    if attempt < 2:
+                        # Short-term rate limit — wait and retry
+                        wait = 30 * (attempt + 1)
+                        print(f"  Buffer 429 — waiting {wait}s before retry {attempt + 1}/3...")
+                        time.sleep(wait)
+                        # Rebuild request (urlopen consumed it)
+                        req = urllib.request.Request(
+                            BUFFER_GRAPHQL,
+                            data=payload,
+                            headers={
+                                "Authorization": f"Bearer {token}",
+                                "Content-Type": "application/json",
+                            }
+                        )
+                        continue
+                return False, f"Buffer HTTP {he.code}: {he.reason}"
+        return False, "Buffer: max retries exceeded"
     except Exception as e:
         return False, f"Buffer exception: {e}"
 
@@ -1520,6 +1548,29 @@ def run_once(creds, dry_run=False):
 
     print(f"Found {len(pending)} pending items.")
 
+    # Check Buffer 30d rate limit once at the start
+    buffer_rate_limited = False
+    if not dry_run:
+        buffer_pending = [i for i in pending if i.get("channel") == "buffer"]
+        if buffer_pending:
+            # Quick check: try to list channels — if 429, skip all Buffer
+            import urllib.error
+            token = creds.get("buffer_token")
+            if token:
+                test_req = urllib.request.Request(
+                    BUFFER_GRAPHQL,
+                    data=json.dumps({"query": "{ channels { id } }"}).encode(),
+                    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+                )
+                try:
+                    with urllib.request.urlopen(test_req) as resp:
+                        pass  # OK
+                except urllib.error.HTTPError as he:
+                    if he.code == 429:
+                        retry_after = he.headers.get("Retry-After", "0")
+                        buffer_rate_limited = True
+                        print(f"\n⚠ Buffer 30d rate limit exhausted (0/3000 remaining, resets in {int(retry_after)//86400}d) — skipping all Buffer items")
+
     for item in pending:
         print(f"\nProcessing: {item.get('id', '?')} → {item.get('channel')}/{item.get('target', '')}")
 
@@ -1529,14 +1580,19 @@ def run_once(creds, dry_run=False):
             item["status"] = "posted"
             continue
 
+        # Skip Buffer if 30d rate limit is hit
+        if item.get("channel") == "buffer" and buffer_rate_limited:
+            print(f"  ⚠ Skipping — Buffer 30d rate limit")
+            continue
+
         # Medium rate limit: 2 posts per 24h
         if item.get("channel") == "medium" and not dry_run:
             can_post, count, reset_in = _check_medium_rate_limit()
             if not can_post:
                 print(f"  ⚠ Medium rate limit: {count}/{MEDIUM_DAILY_LIMIT} posts in 24h (resets in {reset_in:.1f}h)")
-                print(f"  Skipping remaining Medium items — will retry after rate limit resets")
-                # Leave item as pending for next run
-                break
+                print(f"  Skipping — will retry after rate limit resets")
+                # Leave item as pending for next run, continue to other channels
+                continue
 
         success, message = publish_item(item, creds, dry_run)
 
@@ -1566,9 +1622,12 @@ def run_once(creds, dry_run=False):
                 item["error"] = message
             log_action(item, "failed", message)
 
-        # Rate limit: wait between posts
+        # Rate limit: wait between posts (longer for Buffer to avoid 429s)
         if not dry_run:
-            time.sleep(5)
+            if item.get("channel") == "buffer":
+                time.sleep(15)  # Buffer API is aggressive with rate limits
+            else:
+                time.sleep(5)
 
     # Dry runs must NOT modify state or queue
     if not dry_run:
