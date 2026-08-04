@@ -346,10 +346,11 @@ def compute_insights(data):
     ios = sum(p["users"] for p in platforms if p["os"] == "iOS")
     if android > 0 and ios > 0:
         ratio = round(android / ios, 1)
+        dominant = "Android" if android > ios else "iOS"
         insights.append({
             "severity": "info",
             "category": "platform",
-            "message": f"Android:iOS ratio is {ratio}:1 ({android} vs {ios} users). Android dominates.",
+            "message": f"Android:iOS ratio is {ratio}:1 ({android} vs {ios} users). {dominant} dominates.",
         })
 
     # No custom events
