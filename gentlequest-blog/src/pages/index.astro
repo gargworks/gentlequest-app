@@ -14,9 +14,9 @@ const recentPosts = posts.slice(0, 12);
 const websiteJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'WebSite',
-	name: 'GentleQuest Blog',
-	url: 'https://gentlequest.app/blog/',
-	description: SITE_DESCRIPTION,
+	name: 'GentleQuest',
+	url: 'https://gentlequest.app',
+	description: 'A gentle AI mood tracker for anxiety, stress, and burnout. No streaks. No guilt. Just small steps at your pace.',
 	publisher: {
 		'@type': 'Organization',
 		name: 'GentleQuest',
@@ -76,7 +76,7 @@ const faqJsonLd = {
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<BaseHead title="GentleQuest — Free AI Mood Tracker. No Streaks, No Shame." description="A gentle AI mood tracker for anxiety, stress, and burnout. 60-second check-ins, no streaks, no guilt. Try free — iOS and Android." />
 		<script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
 		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
 		<script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
