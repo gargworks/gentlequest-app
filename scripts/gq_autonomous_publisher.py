@@ -1604,6 +1604,10 @@ def run_once(creds, dry_run=False):
             # Record Medium post for rate limiting
             if item.get("channel") == "medium" and not dry_run:
                 _record_medium_post()
+            # Save the published URL to the queue item
+            if success and "Published to Medium:" in message:
+                item["url"] = message.replace("Published to Medium: ", "").strip()
+            item["posted_at"] = datetime.now(timezone.utc).isoformat()
             log_action(item, "success", message)
         else:
             print(f"  ✗ {message}")
