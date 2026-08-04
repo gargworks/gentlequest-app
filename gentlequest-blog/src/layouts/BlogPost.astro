@@ -7,6 +7,7 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import Newsletter from '../components/Newsletter.astro';
 import RelatedPosts from '../components/RelatedPosts.astro';
+import AppCTA from '../components/AppCTA.astro';
 
 type Props = CollectionEntry<'blog'>['data'] & { slug?: string };
 
@@ -199,6 +200,7 @@ const breadcrumbJsonLd = {
 						<hr />
 					</div>
 					<slot />
+				<AppCTA variant="end" />
 				<div class="share-buttons">
 					<span class="share-label">Share:</span>
 					<a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(Astro.url.href)}&via=gentlequest_dev`} target="_blank" rel="noopener">Twitter</a>
