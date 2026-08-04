@@ -32,6 +32,45 @@ const orgJsonLd = {
 	logo: 'https://gentlequest.app/icon-512.png',
 	description: 'A gentle AI mood tracker for anxiety, stress, and burnout. No streaks. No guilt. Just small steps at your pace.',
 };
+
+const faqJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: [
+		{
+			'@type': 'Question',
+			name: 'Is GentleQuest free?',
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: 'Yes, GentleQuest is completely free. No subscription, no ads, no streaks.',
+			},
+		},
+		{
+			'@type': 'Question',
+			name: 'Does GentleQuest use streaks or shame?',
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: 'No. GentleQuest has no streaks, no guilt, and no shame-based mechanics. You check in when you want to.',
+			},
+		},
+		{
+			'@type': 'Question',
+			name: 'What can GentleQuest help with?',
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: 'GentleQuest helps with anxiety, stress, burnout, ADHD overwhelm, and low mood. It provides 60-second check-ins with AI-powered support.',
+			},
+		},
+		{
+			'@type': 'Question',
+			name: 'Is my data private?',
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: 'Yes. GentleQuest does not sell your data or show ads. Your check-ins are private to you.',
+			},
+		},
+	],
+};
 ---
 
 <!doctype html>
@@ -40,6 +79,7 @@ const orgJsonLd = {
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
 		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+		<script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
 	</head>
 	<body>
 		<Header />
