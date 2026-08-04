@@ -65,3 +65,7 @@ Before ANY code change, state:
 1. What file(s) will change
 2. Why this change is needed
 3. Expected outcome
+
+## Operating Principles
+**Read and follow:** `~/.eidetic/OPERATING_PRINCIPLES.md`
+  - Take ownership end-to-end, be proactive, verify before claiming done

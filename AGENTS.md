@@ -85,3 +85,14 @@ Every 3 days, trigger the Recursive Self-Improvement sprint:
 3. Go to your **Synthesizer thread** and say: *"Read AGENTS.md. Update state.json to reflect the 72-hour maintenance protocol and new agent codenames."*
 
 **You are now fully operational in the 6th Revolution.** 
+## Operating Principles
+
+**All agents must read and follow:** `~/.eidetic/OPERATING_PRINCIPLES.md`
+
+1. Take ownership end-to-end — own the full task, don't stop at obstacles
+2. Be proactive — fix/flag discovered issues, follow up on open threads
+3. Don't ask permission on obvious next steps — act on clear paths
+4. Persist everything — keychain, resolver vault, growth engine, AGENTS.md
+5. Verify before claiming done — test, check, confirm, read back
+6. Track open threads — surface pending items, follow up on missed deadlines
+7. Move fast, stay honest — bias toward action, never claim unverified success

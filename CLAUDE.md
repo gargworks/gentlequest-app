@@ -33,3 +33,15 @@ bump. It is **always on** unless you explicitly disable it via
 - **Why it exists:** see `.brain/flywheel/thesis.md`. The short version: every
   loop has to make the next loop cheaper, faster, and more trustworthy than the
   last. The flywheel is the mechanism that proves it.
+
+## Operating Principles
+
+**All agents must read and follow:** `~/.eidetic/OPERATING_PRINCIPLES.md`
+
+1. Take ownership end-to-end
+2. Be proactive — fix/flag discovered issues
+3. Don't ask permission on obvious next steps
+4. Persist everything (keychain, resolver, growth engine)
+5. Verify before claiming done
+6. Track open threads, follow up on deadlines
+7. Move fast, stay honest
