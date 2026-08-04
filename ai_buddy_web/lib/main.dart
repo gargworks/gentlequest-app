@@ -139,7 +139,13 @@ Future<void> main() async {
   );
   final traces = double.tryParse(tracesStr) ?? 0.0;
 
-  if (dsn.isNotEmpty) {
+  // Detect placeholder DSN — crash data is being silently lost if this fires.
+  // Operator action: replace SENTRY_DSN_FRONTEND in .env with a real DSN
+  // from sentry.io, then rebuild + redeploy.
+  if (dsn.contains('placeholder') || dsn.contains('123456')) {
+    debugPrint('[sentry] WARNING: DSN is a placeholder. Crashes are NOT being '
+        'reported. Set SENTRY_DSN_FRONTEND to a real DSN in .env.');
+  } else if (dsn.isNotEmpty) {
     try {
       await sentry.Sentry.init((options) {
         options.dsn = dsn;
