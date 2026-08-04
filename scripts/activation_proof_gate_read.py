@@ -147,31 +147,31 @@ def main():
     now = datetime.now(timezone.utc) if t0_dt.tzinfo else datetime.utcnow()
     elapsed_days = max(0, (now - t0_dt).days)
 
-    # 4. Get qualified-human funnel counts from Flask app context
-    from app import create_app
-    from models import db, AnalyticsEvent
-    from routes.analytics_routes import compute_funnel_metrics
+    # 4. Get qualified-human funnel counts from PRODUCTION API
+    # (was: local Flask app + SQLite — issue #191: local DB has no production data)
+    import urllib.request
+    PRODUCTION_API = os.environ.get("GQ_API_URL", "https://app.gentlequest.app")
+    funnel_url = f"{PRODUCTION_API}/api/metrics/funnel"
 
-    flask_app = create_app()
-    with flask_app.app_context():
-        funnel_data = compute_funnel_metrics()
+    try:
+        req = urllib.request.Request(funnel_url, headers={"User-Agent": "gq-funnel-snapshot/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            funnel_data = json.loads(resp.read())
+    except Exception as e:
+        print(f"ERROR: Could not fetch funnel from {funnel_url}: {e}")
+        funnel_data = {"counts": {}}
 
-        # Additional query for downstream human signal
-        feedback_count = 0
-        try:
-            feedback_count = db.session.query(UserFeedback).count()
-        except Exception:
-            feedback_count = db.session.query(AnalyticsEvent).filter(
-                AnalyticsEvent.event_type.like("%feedback%")
-            ).count()
-
-        creator_reply_count = 0
-        try:
-            creator_reply_count = db.session.query(University).filter(
-                University.outreach_status == "replied"
-            ).count()
-        except Exception:
-            pass
+    # Downstream human signal — also from production API
+    feedback_count = 0
+    creator_reply_count = 0
+    try:
+        feedback_url = f"{PRODUCTION_API}/api/metrics/feedback-count"
+        req2 = urllib.request.Request(feedback_url, headers={"User-Agent": "gq-funnel-snapshot/1.0"})
+        with urllib.request.urlopen(req2, timeout=10) as resp:
+            fb_data = json.loads(resp.read())
+            feedback_count = fb_data.get("count", 0)
+    except Exception:
+        pass  # Endpoint may not exist — fallback to 0
 
     counts = funnel_data.get("counts", {})
     landing_sessions = counts.get("landing_sessions", 0)

@@ -490,26 +490,29 @@ def update_activation_proof_t0():
     if state.get("t0_timestamp") is not None:
         return state
 
+    # Check production API for funnel data (was: local DB — issue #191)
     try:
-        from app import create_app
-        from models import AnalyticsEvent, db
+        import urllib.request
+        api_url = os.environ.get("GQ_API_URL", "https://app.gentlequest.app")
+        funnel_url = f"{api_url}/api/metrics/funnel"
+        req = urllib.request.Request(funnel_url, headers={"User-Agent": "gq-t0-check/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            funnel_data = json.loads(resp.read())
 
-        flask_app = create_app()
-        with flask_app.app_context():
-            earliest_event = (
-                db.session.query(AnalyticsEvent)
-                .filter(AnalyticsEvent.event_type.in_(["cta_impression", "cta_click"]))
-                .order_by(AnalyticsEvent.timestamp.asc())
-                .first()
-            )
-            if earliest_event and earliest_event.timestamp:
-                ts = earliest_event.timestamp
-                state["t0_timestamp"] = ts.isoformat() if isinstance(ts, datetime) else str(ts)
+        # If there are landing sessions, set t0 to the window start
+        counts = funnel_data.get("counts", {})
+        landing_sessions = counts.get("landing_sessions", 0)
+        if landing_sessions and landing_sessions > 0:
+            window = funnel_data.get("window", {})
+            t0 = window.get("start")
+            if t0:
+                state["t0_timestamp"] = t0
                 state["status"] = "measuring"
                 with open(state_path, "w") as f:
                     json.dump(state, f, indent=2)
-    except Exception:
-        pass
+                print(f"t0 set to {t0} (landing_sessions={landing_sessions})")
+    except Exception as e:
+        print(f"t0 check failed: {e}")
 
     return state
 
