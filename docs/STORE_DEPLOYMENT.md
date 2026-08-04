@@ -738,3 +738,70 @@ rebuild the AAB, and re-upload.
 **Fix:** Wait. Verify the build is in Apple's system by running
 `xcrun altool --validate-app` — if it returns `DUPLICATE`, the build was
 received and is processing.
+
+---
+
+## Blog Deployment (Cloudflare Pages)
+
+> **CRITICAL:** The blog at `gentlequest.app/blog/` is served from **Cloudflare Pages**,
+> NOT from the Render static site. The Render static site (`gentlequest-blog.onrender.com`)
+> is a red herring — the domain `gentlequest.app` is a CNAME to `gentlequest-www.pages.dev`.
+
+### Architecture
+
+| Component | Value |
+|-----------|-------|
+| Cloudflare Pages project | `gentlequest-www` |
+| Pages subdomain | `gentlequest-www.pages.dev` |
+| Custom domains | `gentlequest.app`, `www.gentlequest.app` |
+| Cloudflare zone ID | `da0309f5d36dc458e96b65457c9ad112` |
+| Cloudflare account ID | `0ccfed02970a5a08f1e54d9f3c42d3f9` |
+| Production branch | `main` |
+| Blog source | `gentlequest-blog/` (Astro project) |
+| Astro base path | `/blog` |
+
+### Deploy Blog (manual steps)
+
+```bash
+# 1. Build the blog
+npm run build --prefix /Users/lokeshgarg/gentlequest/gentlequest-blog
+
+# 2. Restructure dist/ (Astro outputs at root, but we need /blog/ prefix)
+rm -rf /tmp/gq-blog-deploy
+mkdir -p /tmp/gq-blog-deploy/blog
+cp -r /Users/lokeshgarg/gentlequest/gentlequest-blog/dist/* /tmp/gq-blog-deploy/blog/
+
+# 3. Create _redirects file
+echo "/ /blog/ 302" > /tmp/gq-blog-deploy/_redirects
+echo "/blog/* /blog/:splat 200" >> /tmp/gq-blog-deploy/_redirects
+
+# 4. Deploy to Cloudflare Pages
+wrangler pages deploy /tmp/gq-blog-deploy \
+  --project-name gentlequest-www \
+  --branch main \
+  --commit-dirty
+
+# 5. Purge Cloudflare CDN cache (via MCP or API)
+# Using Cloudflare MCP:
+# mcp_call_tool cloudflare execute with:
+#   zoneId = "da0309f5d36dc458e96b65457c9ad112"
+#   POST /zones/{zoneId}/purge_cache with { purge_everything: true }
+
+# 6. Verify
+curl -sL "https://gentlequest.app/blog/iip-vs-chatgpt-stress-test/" | grep -o 'ref=blog_cta_[a-z_]*'
+# Should show: ref=blog_cta_end
+```
+
+### Known Issues
+
+1. **Astro base path mismatch**: Astro `base: '/blog'` generates URLs with `/blog/`
+   prefix but outputs files at the root of `dist/`. The restructure step (2) is required
+   until this is fixed.
+
+2. **Cloudflare CDN cache**: After deploying to Pages, the CDN cache must be purged.
+   The cache-control header is `s-maxage=604800` (7 days), so stale content persists
+   without explicit purge.
+
+3. **Render static site is NOT the blog origin**: The `render.yaml` has a
+   `gentlequest-blog` static site config, but `gentlequest.app` DNS points to
+   Cloudflare Pages. Deploying to Render does NOT update the live blog.
