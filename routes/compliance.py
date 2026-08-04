@@ -66,9 +66,13 @@ def ip_region_check():
             region = data.get("region", "")
             country = data.get("country", "").upper()
 
-            HARD_BAN = {"Illinois"}
-            PENDING = {"Utah", "Washington"}
-            blocked = region in HARD_BAN or region in PENDING
+            # State blocks removed per Scenario D (2026-08-04).
+            # Decision record: docs/legal/STATE_BLOCK_DECISION_2026-08-04.md
+            # IL/UT/WA unblocked — existing disclosures satisfy legal requirements.
+            # Fallback: re-add state here if regulator contacts us.
+            HARD_BAN = set()
+            PENDING = set()
+            blocked = False
 
             session_id = _get_or_create_session()
             background_executor.submit(
