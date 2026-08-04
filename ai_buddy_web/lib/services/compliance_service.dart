@@ -113,33 +113,21 @@ class ComplianceService {
   }
 
   // ============================================
-  // 🔴 HARD BAN STATES (Permanent GPS Block)
-  // No legal operating path without licensed partnerships.
+  // STATE BLOCKS — UNBLOCKED per Scenario D
+  // Decision record: docs/legal/STATE_BLOCK_DECISION_2026-08-04.md
   // ============================================
-  // Illinois: WOPR Act (HB1806), effective Aug 1, 2025
-  // - Bans AI therapy/emotion detection by unlicensed entities
-  // - Penalty: $10,000 per violation
+  // IL, UT, WA were previously blocked. Research (2026-08-04) found:
+  //   IL HB 1806: exempts "self-help apps" — GQ terms say "wellness companion, not therapy"
+  //   UT HB 452: only covers "mental health chatbots" simulating therapy — Alex says "NO Therapy Speak"
+  //   WA HB 2225: doesn't take effect until Jan 1, 2027 — currently zero legal risk
+  // Existing disclosures (footer, safety sheet, terms, crisis routing) satisfy requirements.
+  //
+  // FALLBACK: If any state regulator contacts us, re-add the state here immediately.
+  // See decision record §6 for state-specific fallback triggers.
   // ============================================
-  static const Set<String> _hardBanStates = {
-    'IL', 'Illinois',
-  };
+  static const Set<String> _hardBanStates = {};
 
-  // ============================================
-  // 🟡 TEMP BLOCK STATES (Pending Compliance)
-  // Can be unlocked when Phase 2 compliance features are built.
-  // ============================================
-  // Utah: HB 452, effective May 7, 2025
-  // - Requires: Safety policy filed with state, licensed therapist review
-  // - Penalty: $2,500/violation
-  // 
-  // Washington: MHMDA, effective Mar 31, 2024
-  // - Requires: Standalone health data privacy policy, opt-in consent
-  // - Penalty: Private right of action
-  // ============================================
-  static const Set<String> _pendingComplianceStates = {
-    'UT', 'Utah',
-    'WA', 'Washington',
-  };
+  static const Set<String> _pendingComplianceStates = {};
 
   // ============================================
   // 🟢 ALLOWED JURISDICTIONS (no code needed)
