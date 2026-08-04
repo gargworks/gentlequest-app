@@ -1367,7 +1367,7 @@ def get_pending_items(queue, state):
     for item in queue.get("items", []):
         if item.get("id") in posted_ids:
             continue
-        if item.get("status") == "posted":
+        if item.get("status") in ("posted", "failed"):
             continue
 
         # Check if scheduled and due
@@ -1437,8 +1437,19 @@ def run_once(creds, dry_run=False):
             log_action(item, "success", message)
         else:
             print(f"  ✗ {message}")
-            item["status"] = "failed"
-            item["error"] = message
+            # Keep Medium items as "pending" for retry (self-heal on next run)
+            # Other channels mark as "failed" to avoid retry spam
+            if item.get("channel") == "medium":
+                item["status"] = "pending"
+                item["error"] = message
+                item["retry_count"] = item.get("retry_count", 0) + 1
+                # After 5 retries, mark as failed to stop infinite loops
+                if item.get("retry_count", 0) >= 5:
+                    item["status"] = "failed"
+                    print(f"  ⚠ Max retries (5) reached — marking as failed")
+            else:
+                item["status"] = "failed"
+                item["error"] = message
             log_action(item, "failed", message)
 
         # Rate limit: wait between posts
