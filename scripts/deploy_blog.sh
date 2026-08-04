@@ -47,6 +47,13 @@ if ! command -v wrangler >/dev/null 2>&1; then
 	exit 1
 fi
 
+# CLOUDFLARE_API_TOKEN env var can conflict with wrangler OAuth if it lacks
+# Pages permissions. Unset it so wrangler uses its cached OAuth credentials.
+if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+	echo "==> Unsetting CLOUDFLARE_API_TOKEN (using wrangler OAuth instead)..."
+	unset CLOUDFLARE_API_TOKEN
+fi
+
 cd "$BLOG_DIR"
 
 # 1. Build
@@ -73,16 +80,23 @@ if [[ ! -d "$DIST_DIR" ]]; then
 fi
 
 # 2. Deploy via wrangler pages
-WRANGLER_ARGS=(pages deploy "$DIST_DIR" --project-name "$PROJECT_NAME")
+WRANGLER_ARGS=(pages deploy "$DIST_DIR" --project-name "$PROJECT_NAME" --commit-dirty)
 if [[ $PREVIEW -eq 1 ]]; then
 	WRANGLER_ARGS+=(--branch preview)
 else
 	WRANGLER_ARGS+=(--branch "$BRANCH")
 fi
 
-echo "==> Deploying to Cloudflare Pages (project: $PROJECT_NAME, branch: ${PREVIEW:+preview}${PREVIEW:-$BRANCH})..."
-DEPLOY_OUTPUT="$(wrangler "${WRANGLER_ARGS[@]}" 2>&1)"
-echo "$DEPLOY_OUTPUT"
+if [[ $PREVIEW -eq 1 ]]; then
+	DEPLOY_BRANCH="preview"
+else
+	DEPLOY_BRANCH="$BRANCH"
+fi
+echo "==> Deploying to Cloudflare Pages (project: $PROJECT_NAME, branch: $DEPLOY_BRANCH)..."
+DEPLOY_OUTPUT_FILE="$(mktemp)"
+wrangler "${WRANGLER_ARGS[@]}" 2>&1 | tee "$DEPLOY_OUTPUT_FILE"
+DEPLOY_OUTPUT="$(cat "$DEPLOY_OUTPUT_FILE")"
+rm -f "$DEPLOY_OUTPUT_FILE"
 
 # 3. Print the deployment URL
 URL="$(printf '%s\n' "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9./_-]+\.pages\.dev' | head -n1)"
