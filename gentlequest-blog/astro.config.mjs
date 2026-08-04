@@ -8,5 +8,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
 	site: 'https://gentlequest.app',
 	base: '/blog',
+	outDir: './dist/blog',
 	integrations: [mdx(), sitemap()],
 });
+
