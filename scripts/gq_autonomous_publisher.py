@@ -925,8 +925,10 @@ def _heal_medium_session():
         return False, f"Browser profile not found: {profile}"
 
     # Heal 2: Check if profile has cookies (session)
-    cookies_dir = profile / "Default" / "Network" / "Cookies"
-    if not cookies_dir.exists():
+    # Cookies can be at Default/Cookies or Default/Network/Cookies depending on Chrome version
+    cookies_path = profile / "Default" / "Cookies"
+    cookies_alt = profile / "Default" / "Network" / "Cookies"
+    if not cookies_path.exists() and not cookies_alt.exists():
         return False, "No cookies file in browser profile — session may be expired"
 
     # Heal 3: Try to refresh the session by visiting Medium
@@ -1105,16 +1107,28 @@ def _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headl
                 page.goto("https://medium.com/new-story", wait_until="domcontentloaded", timeout=30000)
                 page.wait_for_timeout(4000)
 
-                # Check if logged in
-                if "signin" in page.url.lower():
-                    return False, "Not logged in to Medium — session expired"
+                # Check if logged in — Medium redirects to various login URLs
+                current_url = page.url.lower()
+                if any(x in current_url for x in ["signin", "login", "auth", "/m/signin"]):
+                    return False, f"Not logged in to Medium — redirected to {page.url}"
+
+                # Check for login button/modal on the page
+                login_indicators = page.query_selector_all('a:has-text("Sign in"), button:has-text("Sign in"), a:has-text("Get started")')
+                if login_indicators:
+                    return False, "Not logged in to Medium — login button visible on page"
 
                 # Click on the title editor
                 editor = page.locator("[data-testid='editorTitleParagraph'], h3[data-testid], .graf--title").first
                 try:
                     editor.click(timeout=20000)
                 except Exception:
-                    page.locator("article, [contenteditable='true']").first.click(timeout=20000)
+                    try:
+                        page.locator("article, [contenteditable='true']").first.click(timeout=20000)
+                    except Exception:
+                        # Capture screenshot for debugging
+                        screenshot_path = f"/tmp/medium_debug_{slug[:30]}.png"
+                        page.screenshot(path=screenshot_path)
+                        return False, f"Could not find Medium editor (URL: {page.url}, screenshot: {screenshot_path})"
 
                 # Type the title
                 page.keyboard.type(title, delay=12)
