@@ -71,10 +71,12 @@ else
 	echo "==> Skipping build (--skip-build); using existing dist/"
 fi
 
-# Astro writes to ./dist/blog (see astro.config.mjs outDir).
-DIST_DIR="$BLOG_DIR/dist/blog"
-if [[ ! -d "$DIST_DIR" ]]; then
-	echo "ERROR: build output not found: $DIST_DIR" >&2
+# Astro writes to ./dist/blog (see astro.config.mjs outDir with base: '/blog').
+# We deploy the parent dist/ directory so the blog/ subdirectory is preserved
+# at /blog/ on Cloudflare Pages, matching the base path URLs.
+DIST_DIR="$BLOG_DIR/dist"
+if [[ ! -d "$DIST_DIR/blog" ]]; then
+	echo "ERROR: build output not found: $DIST_DIR/blog" >&2
 	echo "       Run without --skip-build, or check astro.config.mjs outDir." >&2
 	exit 1
 fi
