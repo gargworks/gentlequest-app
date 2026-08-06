@@ -433,9 +433,11 @@
       "blog_url": "https://www.gentlequest.app/blog/your-data-is-yours?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Your Data Is Yours",
       "scheduled_for": "2026-07-17T23:00:00Z",
-      "status": "pending",
+      "status": "posted",
       "error": "Medium rate limit \u2014 saved as draft, not published",
-      "retry_count": 1
+      "retry_count": 1,
+      "posted_at": "2026-08-05T03:32:26.742978+00:00",
+      "url": "https://gentlequest.medium.com/your-data-is-yours-a-mental-health-app-you-can-leave-6c521ae6c970?postPublishedType=initial&source=post_submit_page---post_submit_publishing_post-----------------------------------------"
     },
     {
       "id": "reddit_init_adhd_0",
@@ -672,7 +674,7 @@
       "target": "blog",
       "text": "Blog post scheduled: generated-1785640777-0",
       "scheduled_for": "2026-08-06T04:30:01.317227Z",
-      "status": "pending",
+      "status": "posted",
       "generated": true,
       "blog_slug": "generated-1785640777-0"
     },
@@ -727,9 +729,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-app-no-subscription?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd App No Subscription",
       "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
-      "status": "pending",
-      "error": "Medium rate limit \u2014 saved as draft, not published",
-      "retry_count": 1
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/602523a62a22/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F602523a62a22%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-app-private-no-tracking",
@@ -737,7 +739,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-app-private-no-tracking?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd App Private No Tracking",
       "scheduled_for": "2026-08-05T01:46:40.771795+00:00",
-      "status": "pending"
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/c4c874f66acc/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Fc4c874f66acc%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-in-adults-workplace",
@@ -745,7 +749,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-in-adults-workplace?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd In Adults Workplace",
       "scheduled_for": "2026-08-06T01:46:40.771795+00:00",
-      "status": "pending"
+      "status": "pending",
+      "error": "Medium failed + heal failed: Session heal failed: BrowserType.launch_persistent_context: Executable doesn't exist at /Users/lokeshgarg/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-arm64/chrome-headless-shell\n\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557\n\u2551 Looks like Playwright was just installed or updated.       \u2551\n\u2551 Please run the following command to download new browsers: \u2551\n\u2551                                                            \u2551\n\u2551     playwright install                                     \u2551\n\u2551                                                            \u2551\n\u2551 <3 Playwright Team                                         \u2551\n\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d \u2014 Telegram alert sent",
+      "retry_count": 4
     },
     {
       "id": "medium_blog_adhd-in-students",
