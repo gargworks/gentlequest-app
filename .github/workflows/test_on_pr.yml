@@ -1,8 +1,9 @@
 name: PR Tests
 
 on:
-  pull_request:
-    branches: [main]
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — manual trigger only
+  # pull_request:
+  #   branches: [main]
 
 jobs:
   test:

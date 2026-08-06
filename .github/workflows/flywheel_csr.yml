@@ -5,11 +5,12 @@ name: Flywheel CSR
 # of the pipeline.
 
 on:
-  push:
-    branches: [main]
-  workflow_run:
-    workflows: ["PR Tests"]
-    types: [completed]
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — manual trigger only
+  # push:
+  #   branches: [main]
+  # workflow_run:
+  #   workflows: ["PR Tests"]
+  #   types: [completed]
 
 permissions:
   contents: read

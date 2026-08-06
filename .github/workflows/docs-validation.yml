@@ -1,19 +1,20 @@
 name: Documentation Validation
 
 on:
-  push:
-    paths:
-      - '**.py'
-      - '**.dart'
-      - 'docs/**'
-      - '.brain/artifacts/synthesis/**'
-      - 'tests/test_docs.py'
-  pull_request:
-    paths:
-      - '**.py'
-      - '**.dart'
-      - 'docs/**'
-      - '.brain/artifacts/synthesis/**'
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — manual trigger only
+  # push:
+  #   paths:
+  #     - '**.py'
+  #     - '**.dart'
+  #     - 'docs/**'
+  #     - '.brain/artifacts/synthesis/**'
+  #     - 'tests/test_docs.py'
+  # pull_request:
+  #   paths:
+  #     - '**.py'
+  #     - '**.dart'
+  #     - 'docs/**'
+  #     - '.brain/artifacts/synthesis/**'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:

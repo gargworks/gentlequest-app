@@ -1,10 +1,11 @@
 name: GentleQuest CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — manual trigger only
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main ]
   workflow_dispatch:
     inputs:
       runner_type:
