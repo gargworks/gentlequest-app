@@ -7,8 +7,9 @@ name: Weekly Funnel Report
 # Schedule: every Monday at 09:00 UTC (5am EST)
 
 on:
-  schedule:
-    - cron: '0 9 * * 1'
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — re-enable one at a time after audit
+  # schedule:
+  #   - cron: '0 9 * * 1'
   workflow_dispatch:
 
 jobs:

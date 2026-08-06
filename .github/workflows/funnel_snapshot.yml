@@ -7,8 +7,9 @@ name: Daily Funnel Snapshot
 # Schedule: daily at 08:00 UTC (3am EST)
 
 on:
-  schedule:
-    - cron: '0 8 * * *'
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — re-enable one at a time after audit
+  # schedule:
+  #   - cron: '0 8 * * *'
   workflow_dispatch:  # manual trigger for testing
 
 jobs:

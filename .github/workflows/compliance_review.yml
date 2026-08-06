@@ -1,11 +1,12 @@
 name: Semi-Annual Compliance Review
 
 on:
-  schedule:
-    # July 1st at 9:00 AM UTC - Check for new state laws from spring sessions
-    - cron: '0 9 1 7 *'
-    # January 1st at 9:00 AM UTC - Check for laws from fall sessions
-    - cron: '0 9 1 1 *'
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — re-enable one at a time after audit
+  # schedule:
+  #   # July 1st at 9:00 AM UTC - Check for new state laws from spring sessions
+  #   - cron: '0 9 1 7 *'
+  #   # January 1st at 9:00 AM UTC - Check for laws from fall sessions
+  #   - cron: '0 9 1 1 *'
   workflow_dispatch:
     inputs:
       reason:

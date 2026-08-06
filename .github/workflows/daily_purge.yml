@@ -1,9 +1,10 @@
 name: Purge Old Data (Retention)
 
 on:
-  schedule:
-    # Daily at 02:15 UTC (adjust as needed)
-    - cron: "15 2 * * *"
+  # PAUSED 2026-08-06: GitHub Actions minutes abuse review — re-enable one at a time after audit
+  # schedule:
+  #   # Daily at 02:15 UTC (adjust as needed)
+  #   - cron: "15 2 * * *"
   workflow_dispatch: {}
 
 jobs:
