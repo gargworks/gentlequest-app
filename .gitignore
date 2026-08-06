@@ -324,12 +324,13 @@ marketing/community/drafts/
 marketing/shorts/out/
 marketing/shorts/youtube_token.json
 
-# Script backups and state files (glob patterns catch all gq_* generated files)
+# Script backups and state files (xvendor catch: narrow patterns, not broad globs
+# that prevent legitimate source files like gq_funnel.py from being tracked)
 scripts/gq_autonomous_publisher.py.bak
-scripts/gq_*.json
-scripts/gq_*.py
-scripts/gq_*.jsonl
-scripts/gq_*.md
+scripts/gq_publisher_state.json
+scripts/gq_medium_rate_limit.json
+scripts/gq_publisher_log.jsonl
+scripts/gq_reddit_staging.md
 scripts/run_marketing_dashboard.sh
 
 # Nucleus test artifacts
