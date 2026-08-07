@@ -1549,27 +1549,56 @@ def run_once(creds, dry_run=False):
     print(f"Found {len(pending)} pending items.")
 
     # Check Buffer 30d rate limit once at the start
+    # Cache the rate-limit check for 6h to avoid burning API calls every run
+    # (each channel-list call counts against the 3000/30d limit)
     buffer_rate_limited = False
     if not dry_run:
         buffer_pending = [i for i in pending if i.get("channel") == "buffer"]
         if buffer_pending:
-            # Quick check: try to list channels — if 429, skip all Buffer
             import urllib.error
-            token = creds.get("buffer_token")
-            if token:
-                test_req = urllib.request.Request(
-                    BUFFER_GRAPHQL,
-                    data=json.dumps({"query": "{ channels { id } }"}).encode(),
-                    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-                )
+            from datetime import datetime, timezone, timedelta
+            buffer_cache_file = Path(__file__).parent / "gq_buffer_rate_limit_cache.json"
+            cache_valid = False
+            if buffer_cache_file.exists():
                 try:
-                    with urllib.request.urlopen(test_req) as resp:
-                        pass  # OK
-                except urllib.error.HTTPError as he:
-                    if he.code == 429:
-                        retry_after = he.headers.get("Retry-After", "0")
-                        buffer_rate_limited = True
-                        print(f"\n⚠ Buffer 30d rate limit exhausted (0/3000 remaining, resets in {int(retry_after)//86400}d) — skipping all Buffer items")
+                    cache = json.loads(buffer_cache_file.read_text())
+                    cached_at = datetime.fromisoformat(cache.get("checked_at", "").replace("Z", "+00:00"))
+                    if datetime.now(timezone.utc) - cached_at < timedelta(hours=6):
+                        buffer_rate_limited = cache.get("rate_limited", False)
+                        cache_valid = True
+                        if buffer_rate_limited:
+                            print(f"\n⚠ Buffer 30d rate limit (cached) — skipping all Buffer items")
+                except Exception:
+                    pass
+
+            if not cache_valid:
+                token = creds.get("buffer_token")
+                if token:
+                    test_req = urllib.request.Request(
+                        BUFFER_GRAPHQL,
+                        data=json.dumps({"query": "{ channels { id } }"}).encode(),
+                        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+                    )
+                    try:
+                        with urllib.request.urlopen(test_req) as resp:
+                            pass  # OK
+                        buffer_rate_limited = False
+                    except urllib.error.HTTPError as he:
+                        if he.code == 429:
+                            retry_after = he.headers.get("Retry-After", "0")
+                            buffer_rate_limited = True
+                            print(f"\n⚠ Buffer 30d rate limit exhausted (0/3000 remaining, resets in {int(retry_after)//86400}d) — skipping all Buffer items")
+                    except Exception:
+                        buffer_rate_limited = True  # Assume limited on network error
+
+                    # Cache the result
+                    try:
+                        buffer_cache_file.write_text(json.dumps({
+                            "checked_at": datetime.now(timezone.utc).isoformat(),
+                            "rate_limited": buffer_rate_limited,
+                        }))
+                    except Exception:
+                        pass
 
     for item in pending:
         print(f"\nProcessing: {item.get('id', '?')} → {item.get('channel')}/{item.get('target', '')}")
