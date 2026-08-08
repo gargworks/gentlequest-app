@@ -81,6 +81,13 @@ if [[ ! -d "$DIST_DIR/blog" ]]; then
 	exit 1
 fi
 
+# Copy _redirects to dist root so Cloudflare Pages picks it up.
+# The blog's public/_redirects handles /rss.xml → /blog/rss.xml etc.
+# Without this, the SPA catch-all serves HTML for feed URLs.
+if [[ -f "$BLOG_DIR/public/_redirects" ]]; then
+	cp "$BLOG_DIR/public/_redirects" "$DIST_DIR/_redirects"
+fi
+
 # 2. Deploy via wrangler pages
 WRANGLER_ARGS=(pages deploy "$DIST_DIR" --project-name "$PROJECT_NAME" --commit-dirty)
 if [[ $PREVIEW -eq 1 ]]; then

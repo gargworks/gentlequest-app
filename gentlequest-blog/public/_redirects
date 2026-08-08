@@ -1,0 +1,5 @@
+# Redirect RSS and sitemap from root to /blog/ path
+# The blog is served at /blog/ but users/robots expect feeds at root
+/rss.xml /blog/rss.xml 302
+/sitemap-index.xml /blog/sitemap-index.xml 302
+/sitemap.xml /blog/sitemap-index.xml 302
