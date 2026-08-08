@@ -89,6 +89,12 @@ GentleQuest is built for the person who wants the focused alternative — mood c
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [Alternative to Calm App: Quieter, Simpler, No Subscription](/blog/alternative-to-calm/) — another wellness app alternative
+- [Alternative to Balance: Simpler, Private, No Subscription](/blog/alternative-to-balance/) — meditation app alternative with no subscription
+- [ADHD App With No Subscription](/blog/adhd-app-no-subscription/) — why subscription models are problematic for neurodivergent users
+
 ## A Note on Scope
 
 Neither BetterMe nor any alternative is a substitute for professional mental health care. Mood tracking, CBT tools, and meditation are supportive practices, not treatments for clinical conditions. If you're experiencing persistent anxiety, depression, or thoughts of self-harm, please seek professional support. If you're in crisis, reach out now: in the US, call or text 988; text HOME to 741741. This article is not a diagnosis; if you're struggling, see a professional.

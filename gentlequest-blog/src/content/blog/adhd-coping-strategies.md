@@ -97,3 +97,9 @@ Task batching helps you get into a "flow state" for a particular type of work, r
 ## 7. Emotional Regulation Through Self-Observation and Micro-Breaks
 
 **Why it works for ADHD:** Emotional dysregulation is a significant, often overlooked, aspect of ADHD. We can experience emotions more intensely, have difficulty modulating our responses, and be prone to mood swings or feeling easily overwhelmed. This isn't about being "overly sensitive"; it's a neurological difference in how the brain processes and manages emotions. Learning to
+
+## Related reading
+
+- [How to Calm Anxiety in 60 Seconds](/blog/calm-anxiety-60-seconds/) — quick techniques for moments of emotional overwhelm
+- [Grounding 5-4-3-2-1](/blog/grounding-5-4-3-2-1/) — a sensory grounding exercise that pairs well with micro-breaks
+- [ADHD Paralysis: Why You Can't Start](/blog/adhd-paralysis-why-you-cant-start/) — understanding the task-initiation barrier behind body doubling

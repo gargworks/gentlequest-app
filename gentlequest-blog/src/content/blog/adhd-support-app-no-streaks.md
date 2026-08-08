@@ -93,6 +93,12 @@ GentleQuest is built with no streaks, no gamification, and no shame — by desig
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [Why Streaks Make ADHD Worse](/blog/why-streaks-make-adhd-worse/) — the deeper case against streak mechanics
+- [Beyond the Streak: Why Total Active Days Are Your ADHD Superpower](/blog/beyond-the-streak-total-active-days/) — a better model for measuring engagement
+- [Streaks Are Broken](/blog/streaks-are-broken/) — why the streak paradigm fails neurodivergent users
+
 ## A Note on Scope
 
 An ADHD support app is a supportive tool, not a treatment for ADHD or for co-occurring conditions like anxiety or depression. Mood tracking, journaling, and grounding techniques can help with self-awareness and moment-to-moment regulation, but they don't replace professional care — including psychiatric evaluation, medication management where appropriate, and ADHD-informed therapy. If you're struggling with executive function, mood, or thoughts of self-harm, please seek support from a qualified professional who understands ADHD. If you're in crisis, reach out now: in the US, call or text 988; text HOME to 741741. This article is not a diagnosis; if you're struggling, see a professional.

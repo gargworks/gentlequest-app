@@ -92,6 +92,12 @@ GentleQuest is built for the person who wants the quieter alternative — mood c
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [Alternative to Balance: Simpler, Private, No Subscription](/blog/alternative-to-balance/) — another meditation app alternative
+- [Mindfulness for Anxiety](/blog/mindfulness-for-anxiety/) — how mindfulness practice supports anxiety relief
+- [Grounding 5-4-3-2-1](/blog/grounding-5-4-3-2-1/) — a simple sensory grounding technique you can use anywhere
+
 ## A Note on Scope
 
 Neither Calm nor any alternative is a substitute for professional mental health care. Meditation, breathing, and mood tracking are supportive practices, not treatments for clinical conditions. If you're experiencing persistent anxiety, depression, or thoughts of self-harm, please seek professional support. If you're in crisis, reach out now: in the US, call or text 988; text HOME to 741741. This article is not a diagnosis; if you're struggling, see a professional.

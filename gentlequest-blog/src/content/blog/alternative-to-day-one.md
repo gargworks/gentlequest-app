@@ -89,6 +89,12 @@ GentleQuest is built for the person who wants the simpler, more private alternat
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [Your Data Is Yours](/blog/your-data-is-yours/) — why on-device journaling matters for privacy
+- [Alternative to Bearable: Simpler, Private, No Subscription](/blog/alternative-to-bearable/) — another privacy-focused tracking alternative
+- [ADHD App Private, No Tracking](/blog/adhd-app-private-no-tracking/) — the case for on-device mental health data
+
 ## A Note on Scope
 
 Neither Day One nor any alternative is a substitute for professional mental health care. Journaling is a supportive practice that can help with self-awareness and emotional processing, but it is not a treatment for clinical conditions. If you're experiencing persistent anxiety, depression, or thoughts of self-harm, please seek professional support. If you're in crisis, reach out now: in the US, call or text 988; text HOME to 741741. This article is not a diagnosis; if you're struggling, see a professional.

@@ -78,3 +78,9 @@ Bilateral stimulation involves rhythmically activating alternating sides of your
 **The Science Behind It:** The exact mechanisms are still being researched, but theories suggest that bilateral stimulation helps to "unstick" distressing memories or thoughts by engaging both hemispheres of the brain. It can also act as a form of distraction, redirecting your attention from the anxious thought to the physical sensation. This rhythmic, predictable input can have a soothing effect, similar to rocking or swaying, which are self-soothing behaviors. It can help to integrate information and reduce the emotional charge of an anxious thought.
 
 **How to Do It in
+
+## Related reading
+
+- [Grounding 5-4-3-2-1](/blog/grounding-5-4-3-2-1/) — a deeper dive into the sensory grounding technique covered above
+- [Mindfulness for Anxiety](/blog/mindfulness-for-anxiety/) — building a longer-term mindfulness practice alongside quick interventions
+- [Panic Attack Help](/blog/panic-attack-help/) — what to do when anxiety escalates beyond a 60-second fix

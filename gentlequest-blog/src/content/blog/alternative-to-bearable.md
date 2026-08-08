@@ -89,6 +89,12 @@ GentleQuest is built for the person who wants the simpler alternative — mood a
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [Your Data Is Yours](/blog/your-data-is-yours/) — why on-device storage matters for health data
+- [Alternative to Day One: Simpler, Private, No Subscription](/blog/alternative-to-day-one/) — another privacy-focused alternative for journaling
+- [ADHD App Private, No Tracking](/blog/adhd-app-private-no-tracking/) — the case against cloud-synced mental health data
+
 ## A Note on Scope
 
 Neither Bearable nor any alternative is a substitute for professional medical or mental health care. Symptom and mood tracking are supportive practices that can help you and your healthcare provider identify patterns, but they are not treatments. If you're experiencing persistent symptoms, anxiety, depression, or thoughts of self-harm, please seek professional support. If you're in crisis, reach out now: in the US, call or text 988; text HOME to 741741. This article is not a diagnosis; if you're struggling, see a professional.

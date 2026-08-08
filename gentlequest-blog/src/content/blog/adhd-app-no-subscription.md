@@ -89,6 +89,12 @@ Apps work best alongside external structure: a planner, a calendar, a therapist,
 
 ADHD is a neurodevelopmental condition that often benefits from professional support. If you're struggling with focus, organization, impulse control, or emotional regulation in ways that affect your work, relationships, or well-being, an evaluation by a qualified professional can clarify whether ADHD is involved and what treatment options might help. Treatment may include medication, therapy (particularly CBT for ADHD), and accommodations.
 
+## Related reading
+
+- [ADHD App Private, No Tracking: Focus Without Surveillance](/blog/adhd-app-private-no-tracking/) — if you also care about keeping your data on your device
+- [ADHD Support App No Streaks: Why Gamification Hurts](/blog/adhd-support-app-no-streaks/) — why streak mechanics backfire for ADHD brains
+- [Beyond the Streak: Why Total Active Days Are Your ADHD Superpower](/blog/beyond-the-streak-total-active-days/) — a better way to measure consistency
+
 ## A Note on What This Isn't
 
 This article is for general information only. It's not a diagnosis, and it doesn't replace professional care. If you think you may have ADHD or if symptoms are affecting your daily life, please see a qualified medical or mental health professional for evaluation. This article is not a diagnosis — if you're struggling, see a professional.

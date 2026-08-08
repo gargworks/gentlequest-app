@@ -114,6 +114,12 @@ GentleQuest offers mood check-ins, grounding tools, journaling, and validated sc
 - Android — https://play.google.com/store/apps/details?id=com.gentlequest.app
 - Web — https://app.gentlequest.app
 
+## Related reading
+
+- [ADHD Coping Strategies: 7 Techniques That Actually Work](/blog/adhd-coping-strategies/) — body doubling, task batching, and more
+- [ADHD Time Blindness](/blog/adhd-time-blindness/) — why time estimation is hard and what helps
+- [Why "Just Do It" Doesn't Work for ADHD](/blog/why-just-do-it-doesnt-work-adhd/) — understanding task initiation barriers
+
 ## A Note on Scope
 
 This article is not a diagnosis; if you're struggling, see a professional.

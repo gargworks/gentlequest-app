@@ -71,3 +71,9 @@ Our brains aren't built for rigid, linear consistency in the way many traditiona
 Embracing total active days is about working *with* our ADHD brains, not against them. It’s an act of radical self-compassion. It respects our natural fluctuations, our need for flexibility, and our inherent resilience. It allows us to celebrate effort and progress, even when it’s imperfect and non-linear. It’s a journey of understanding ourselves better and building sustainable habits that truly serve us, free from the crushing weight of perfectionism and shame.
 
 GentleQuest is a free mood check-in app. No streaks. No shame. Try it free at https://gentlequest.app/?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge
+
+## Related reading
+
+- [Why Streaks Make ADHD Worse](/blog/why-streaks-make-adhd-worse/) — the deeper case against streak mechanics for ADHD brains
+- [Streaks Are Broken](/blog/streaks-are-broken/) — why the streak paradigm fails neurodivergent users
+- [ADHD Support App No Streaks: Why Gamification Hurts](/blog/adhd-support-app-no-streaks/) — what to look for in a no-streaks mental health app
