@@ -88,6 +88,12 @@ if [[ -f "$BLOG_DIR/public/_redirects" ]]; then
 	cp "$BLOG_DIR/public/_redirects" "$DIST_DIR/_redirects"
 fi
 
+# Copy static root files (about.html, privacy.html, terms.html, robots.txt, favicon)
+# These are served at gentlequest.app root, not under /blog/
+if [[ -d "$BLOG_DIR/static-root" ]]; then
+	cp "$BLOG_DIR/static-root/"* "$DIST_DIR/"
+fi
+
 # 2. Deploy via wrangler pages
 WRANGLER_ARGS=(pages deploy "$DIST_DIR" --project-name "$PROJECT_NAME" --commit-dirty)
 if [[ $PREVIEW -eq 1 ]]; then
