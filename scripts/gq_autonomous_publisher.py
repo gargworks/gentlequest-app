@@ -1247,21 +1247,37 @@ def _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headl
                 publish_btn.click()
                 page.wait_for_timeout(3000)
 
-                # Handle publish dialog — Medium shows "Publish" (not "Publish now")
-                # The dialog has: "Submit", "Publish", "Schedule for later"
-                # An overlay div may intercept clicks — use force=True
-                final_btn = page.locator('button:has-text("Publish")').last
+                # Handle publish dialog — wait for it to appear, then confirm.
+                # Medium's confirm dialog button text varies by UI variant:
+                # "Publish now" (current), "Publish", "Confirm", or "Submit".
+                # Use wait_for_selector (not query_selector, which returns None
+                # silently) and try variants in priority order.
+                page.screenshot(path=f"/tmp/medium_dialog_before_{slug[:30]}.png")
+
+                # Wait for the dialog to render after the first Publish click.
                 try:
-                    final_btn.click(force=True, timeout=10000)
-                    page.wait_for_timeout(5000)
+                    page.wait_for_selector('[role="dialog"]', timeout=10000)
                 except Exception:
-                    # Fallback: try "Publish now" or "Confirm" (older Medium UI)
-                    final_btn = page.query_selector('button:has-text("Publish now")')
-                    if not final_btn:
-                        final_btn = page.query_selector('button:has-text("Confirm")')
-                    if final_btn:
-                        final_btn.click()
-                        page.wait_for_timeout(3000)
+                    pass  # dialog may use a non-standard container; proceed to button search
+
+                confirmed = False
+                for label in ("Publish now", "Publish", "Confirm", "Submit"):
+                    try:
+                        btn = page.wait_for_selector(
+                            f'button:has-text("{label}")', timeout=5000
+                        )
+                        if btn:
+                            btn.click(force=True, timeout=10000)
+                            page.wait_for_timeout(5000)
+                            confirmed = True
+                            break
+                    except Exception:
+                        continue
+
+                page.screenshot(path=f"/tmp/medium_dialog_after_{slug[:30]}.png")
+                if not confirmed:
+                    page.screenshot(path=f"/tmp/medium_submission_{slug[:30]}.png")
+                    return False, f"Could not find confirm button in publish dialog — URL: {page.url}"
 
                 # VERIFY: Check that we actually navigated away from /edit
                 # Medium's submission URL contains "/submission" — if we're still
