@@ -932,7 +932,7 @@ def publish_to_indiehackers(item, creds, dry_run=False):
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
             str(PLAYWRIGHT_PROFILE),
-            headless=True,
+            headless=False,
             args=["--disable-blink-features=AutomationControlled"],
         )
         page = context.new_page()
@@ -1005,7 +1005,7 @@ def _heal_medium_session():
         with sync_playwright() as p:
             context = p.chromium.launch_persistent_context(
                 str(profile),
-                headless=True,
+                headless=False,
                 args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
             )
             page = context.new_page()
@@ -1184,7 +1184,7 @@ def publish_to_medium(item, creds, dry_run=False):
     return False, f"Medium publish failed after heal: {result[1]} — Telegram alert sent"
 
 
-def _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headless=True):
+def _try_medium_publish(sync_playwright, profile, title, paragraphs, slug, headless=False):
     """Try to publish to Medium. Returns (success, message)."""
     try:
         with sync_playwright() as p:
@@ -1353,7 +1353,7 @@ def publish_to_reddit(item, creds, dry_run=False):
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
             str(PLAYWRIGHT_PROFILE),
-            headless=True,
+            headless=False,
             args=["--disable-blink-features=AutomationControlled"],
         )
         page = context.new_page()
