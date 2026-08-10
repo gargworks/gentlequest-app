@@ -10,6 +10,7 @@ import 'package:ai_buddy_web/dhiwise/presentation/quest_screen/quest_screen.dart
     as dhiwise_quest;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:sentry/sentry.dart' as sentry;
 import 'package:provider/provider.dart';
@@ -247,7 +248,7 @@ class MyApp extends StatelessWidget {
             secondary: const Color(0xFFFF6B6B),
           ),
           useMaterial3: true,
-          pageTransitionsTheme: const PageTransitionsTheme(
+          pageTransitionsTheme: PageTransitionsTheme(
             builders: {
               TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
               TargetPlatform.android: CupertinoPageTransitionsBuilder(),
