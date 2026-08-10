@@ -82,15 +82,29 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   // ── R1D7 Chat Active States ──────────────────────────────────────────────
   /// State B — inline crisis banner visible in chat stream.
   ///
-  /// Activation contract: when the last message arrives with
-  /// riskLevel >= medium (medium, high, or crisis), we surface the banner
-  /// once per high-risk message. The user can dismiss it ("I'm okay") which
-  /// records the message id in [_crisisBannerDismissedForMessageId] so the
-  /// banner stays dismissed until a NEW high-risk message lands. This avoids
-  /// the previous dead-code state (initialized false, only set false) where
-  /// the inline banner never appeared even on a crisis bubble.
+  /// Activation contract: when a user message arrives with riskLevel >= high
+  /// (high or crisis — set by the on-device CrisisKeywordDetector in
+  /// ChatProvider.sendMessage, OR by the backend's risk_level on the AI
+  /// reply), we surface the banner and keep it visible for the entire turn
+  /// (user message + subsequent AI reply). The banner is sticky: it does NOT
+  /// dismiss when the AI reply lands with riskLevel.none — a backend
+  /// misclassification must not hide the safety surface mid-turn. The banner
+  /// dismisses only when:
+  ///   (a) the user taps "I'm okay" / "Help me find someone" — records the
+  ///       triggering user message id in [_crisisBannerDismissedForMessageId]
+  ///       so it stays dismissed until a NEW user message with elevated risk
+  ///       lands, OR
+  ///   (b) a new user message with riskLevel.none is sent — clears the
+  ///       sticky turn state so the banner doesn't leak across turns.
+  ///
+  /// [_crisisTriggerUserMessageId] tracks the user message id that armed the
+  /// banner this turn. Set when a user message with elevated risk is
+  /// detected; cleared when a subsequent user message with no risk lands.
+  /// This is distinct from [_crisisBannerDismissedForMessageId] which records
+  /// a user-dismissal for sticky-dismissal semantics.
   bool _showInlineCrisis = false;
   String? _crisisBannerDismissedForMessageId;
+  String? _crisisTriggerUserMessageId;
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
@@ -634,11 +648,28 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
                       // R1D7 State B — inline crisis banner activation.
                       //
-                      // Surface the banner when the most recent message lands
-                      // with riskLevel ∈ {medium, high, crisis}. Skip activation
-                      // if the user already dismissed the banner for THIS
-                      // specific message (sticky dismissal). Re-arms on the
-                      // next high-risk message.
+                      // Turn-sticky semantics (C1 fix): the banner arms the
+                      // moment a USER message with riskLevel ∈ {high, crisis}
+                      // is sent (set by CrisisKeywordDetector in
+                      // ChatProvider.sendMessage) and stays visible through
+                      // the subsequent AI reply, even if the backend returns
+                      // riskLevel.none on the reply. This closes the window
+                      // where a backend misclassification would hide the
+                      // safety surface mid-turn.
+                      //
+                      // The banner also arms when the AI reply itself lands
+                      // with elevated risk (backend-driven path — the
+                      // original behavior).
+                      //
+                      // Dismissal paths:
+                      //   (a) User taps "I'm okay" / "Help me find someone"
+                      //       → records the triggering user msg id in
+                      //       _crisisBannerDismissedForMessageId; banner stays
+                      //       dismissed until a NEW user message with elevated
+                      //       risk lands.
+                      //   (b) A new USER message with riskLevel.none is sent
+                      //       → clears the sticky turn state so the banner
+                      //       doesn't leak across turns.
                       //
                       // Runs post-frame to avoid calling setState during build.
                       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -646,13 +677,48 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         final msgs = chatProvider.messages;
                         if (msgs.isEmpty) return;
                         final last = msgs.last;
-                        final isElevated = last.riskLevel == RiskLevel.medium ||
+
+                        // A new user message resets the turn state unless it
+                        // itself carries elevated risk.
+                        if (last.isUser) {
+                          final userElevated =
+                              last.riskLevel == RiskLevel.high ||
+                              last.riskLevel == RiskLevel.crisis;
+                          if (userElevated) {
+                            // New crisis turn — arm the trigger and dismiss
+                            // any prior sticky-dismissal for a different msg.
+                            _crisisTriggerUserMessageId = last.id;
+                            // If the user dismissed a previous turn's banner,
+                            // that dismissal doesn't apply to this new msg.
+                            if (_crisisBannerDismissedForMessageId != last.id) {
+                              _crisisBannerDismissedForMessageId = null;
+                            }
+                          } else {
+                            // New non-crisis user message — end the turn.
+                            _crisisTriggerUserMessageId = null;
+                          }
+                        }
+
+                        // Banner is shown if either:
+                        //   - the current turn was armed by a crisis user msg
+                        //     (sticky through the AI reply), OR
+                        //   - the last message (typically the AI reply) itself
+                        //     carries elevated risk (backend-driven).
+                        // Skip if the user dismissed the banner for THIS
+                        // turn's triggering user msg.
+                        final turnArmed =
+                            _crisisTriggerUserMessageId != null;
+                        final lastElevated =
+                            last.riskLevel == RiskLevel.medium ||
                             last.riskLevel == RiskLevel.high ||
                             last.riskLevel == RiskLevel.crisis;
-                        final alreadyDismissedForThisMsg =
-                            _crisisBannerDismissedForMessageId == last.id;
+                        final dismissedForThisTurn =
+                            _crisisTriggerUserMessageId != null &&
+                            _crisisBannerDismissedForMessageId ==
+                                _crisisTriggerUserMessageId;
                         final shouldShow =
-                            isElevated && !alreadyDismissedForThisMsg;
+                            (turnArmed || lastElevated) &&
+                            !dismissedForThisTurn;
                         if (shouldShow != _showInlineCrisis) {
                           setState(() => _showInlineCrisis = shouldShow);
                         }

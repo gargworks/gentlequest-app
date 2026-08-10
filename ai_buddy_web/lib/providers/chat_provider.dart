@@ -7,6 +7,7 @@ import '../models/message.dart';
 import '../models/interactive_exercise.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/crisis_keyword_detector.dart';
 import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
@@ -201,13 +202,44 @@ class ChatProvider extends ChangeNotifier {
     _error = null;
     _isLoading = true;
 
-    // Optimistic UI: show user's message immediately and turn on typing indicator
-    final userMessage = Message(content: content, isUser: true);
+    // Optimistic UI: show user's message immediately and turn on typing indicator.
+    //
+    // C1 safety fix: run the on-device CrisisKeywordDetector against the user's
+    // text BEFORE the API call. The backend's risk_level classification is the
+    // primary signal, but it can misclassify, return late, or never return
+    // (network drop / cold start). The detector is <1ms and deny-list based, so
+    // it is a safe belt-and-braces. If it matches, we stamp the user message
+    // with RiskLevel.crisis (Tier-1 hit) or RiskLevel.high (Tier-2 hit) so the
+    // InlineCrisisBanner in interactive_chat_screen.dart fires on the next
+    // frame regardless of what the backend eventually returns. The AI reply
+    // bubble's riskLevel (set later from the API response) still drives the
+    // banner's sticky-dismissal semantics — but the user message itself now
+    // guarantees the surface appears.
+    final bool crisisTier1 = CrisisKeywordDetector.matchTier1(content);
+    final bool crisisTier2 = !crisisTier1 && CrisisKeywordDetector.match(content);
+    final RiskLevel userRisk = crisisTier1
+        ? RiskLevel.crisis
+        : (crisisTier2 ? RiskLevel.high : RiskLevel.none);
+    final userMessage = Message(
+      content: content,
+      isUser: true,
+      riskLevel: userRisk,
+    );
     _messages.add(userMessage);
     _isTyping = true;
     _isSending =
         false; // Reset debounce immediately so user can queue more messages
     notifyListeners();
+
+    // If the on-device detector fired, log it so we can measure backend-vs-client
+    // agreement over time. Do NOT short-circuit the API call — the backend may
+    // still produce a more appropriate intervention (crisis_msg + numbers) and
+    // the chat reply itself is still useful. The banner is already visible.
+    if (userRisk != RiskLevel.none) {
+      FirebaseService().logEvent('client_crisis_keyword_match', {
+        'tier': crisisTier1 ? 'tier1' : 'tier2',
+      });
+    }
 
     try {
       // Track first message for retention analytics.
@@ -565,13 +597,17 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Map string risk level to enum if present
+  // Map string risk level to enum if present. C3 fix: preserve the distinct
+  // `crisis` tier instead of collapsing it into `high` — the Message model
+  // and InlineCrisisBanner activation both branch on RiskLevel.crisis, and
+  // demoting it silently made those paths unreachable from API responses.
   RiskLevel? _mapRisk(dynamic level) {
     if (level == null) return null;
     final s = level.toString().toLowerCase();
     switch (s) {
-      case 'high':
       case 'crisis':
+        return RiskLevel.crisis;
+      case 'high':
         return RiskLevel.high;
       case 'medium':
         return RiskLevel.medium;

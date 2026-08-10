@@ -508,6 +508,11 @@ class ApiService {
         }
         switch (riskLevelStr) {
           case 'crisis':
+            riskLevel = RiskLevel.crisis;
+            if (kDebugMode) {
+              debugPrint('🔍 DEBUG: Set riskLevel to RiskLevel.crisis');
+            }
+            break;
           case 'high':
             riskLevel = RiskLevel.high;
             if (kDebugMode) {
