@@ -201,6 +201,9 @@ const breadcrumbJsonLd = {
 						<hr />
 					</div>
 					<slot />
+				<div id="mid-cta-mount" style="display:none">
+					<AppCTA variant="mid" />
+				</div>
 				<AppCTA variant="end" />
 				<div class="share-buttons">
 					<span class="share-label">Share:</span>
@@ -217,5 +220,30 @@ const breadcrumbJsonLd = {
 			</article>
 		</main>
 		<Footer />
+		<script is:inline>
+			(function () {
+				var mount = document.getElementById('mid-cta-mount');
+				if (!mount) return;
+				var prose = document.querySelector('.prose');
+				if (!prose) { mount.style.display = ''; return; }
+
+				// Prefer placing after the first <h2> in the article body.
+				var h2 = prose.querySelector('h2');
+				if (h2) {
+					h2.parentNode.insertBefore(mount, h2.nextSibling);
+				} else {
+					// Fallback: insert after the 3rd top-level element inside .prose
+					// (skipping .title and the first two content blocks from the slot).
+					var children = prose.children;
+					if (children.length >= 4) {
+						prose.insertBefore(mount, children[3]);
+					} else {
+						// Article too short — just show it before the end CTA.
+					}
+				}
+				mount.style.display = '';
+				mount.removeAttribute('id');
+			})();
+		</script>
 	</body>
 </html>

@@ -1,0 +1,120 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { getCollection } from 'astro:content';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+const blogJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Blog',
+	name: 'GentleQuest Blog',
+	url: 'https://gentlequest.app/blog/',
+	description: SITE_DESCRIPTION,
+	blogPost: posts.map((post) => ({
+		'@type': 'BlogPosting',
+		headline: post.data.title,
+		url: new URL('/blog/' + post.id + '/', Astro.site).toString(),
+		datePublished: post.data.pubDate.toISOString(),
+		author: { '@type': 'Organization', name: 'GentleQuest' },
+	})),
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Blog — ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<script type="application/ld+json" set:html={JSON.stringify(blogJsonLd)} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="blog-index">
+				<h1>GentleQuest Blog</h1>
+				<p class="blog-index-subtitle">
+					Practical, science-backed articles on ADHD, anxiety, panic attacks, mindfulness, and mental health apps. No streaks, no shame, no subscription.
+				</p>
+				{posts.length > 0 ? (
+					<ul>
+						{posts.map((post) => (
+							<li>
+								<a href={`/blog/${post.id}/`}>
+									<h4 class="title">{post.data.title}</h4>
+									<p class="date"><FormattedDate date={post.data.pubDate} /></p>
+									<p class="desc">{post.data.description}</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				) : (
+					<p class="empty">Posts coming soon.</p>
+				)}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.blog-index {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem 1rem 4rem;
+	}
+	.blog-index h1 {
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		margin: 0 0 0.5rem;
+		line-height: 1.2;
+	}
+	.blog-index-subtitle {
+		font-size: 1.1rem;
+		color: rgb(var(--gray));
+		line-height: 1.5;
+		margin: 0 0 2rem;
+	}
+	.blog-index ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.blog-index li a {
+		text-decoration: none;
+		display: block;
+		padding: 1rem;
+		border-radius: 8px;
+		transition: background 0.2s;
+	}
+	.blog-index li a:hover {
+		background: rgb(var(--gray-light));
+	}
+	.blog-index .title {
+		margin: 0 0 0.25rem;
+		color: rgb(var(--black));
+		font-size: 1.25rem;
+	}
+	.blog-index .date {
+		margin: 0 0 0.5rem;
+		color: rgb(var(--gray));
+		font-size: 0.9rem;
+	}
+	.blog-index .desc {
+		margin: 0;
+		color: rgb(var(--gray));
+		font-size: 0.95rem;
+		line-height: 1.5;
+	}
+	.empty {
+		color: rgb(var(--gray));
+		text-align: center;
+		padding: 2rem;
+	}
+</style>
