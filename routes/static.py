@@ -39,6 +39,37 @@ def _serve_app_logic():
         )
 
 
+def _fire_cta_open_beacon(landing_path):
+    """Fire web_app_open_from_cta when a ref query param is present.
+
+    Shared by the root / route (app.* domain) and the /app route so the
+    activation-proof funnel can attribute app opens back to the originating
+    CTA. Fire-and-forget via background_executor; never blocks the response.
+    """
+    ref = request.args.get("ref")
+    if not ref:
+        return
+    try:
+        from helpers.session_helpers import _get_or_create_session, _log_analytics_event, background_executor
+
+        session_id = _get_or_create_session()
+        metadata = {
+            "source_cta": ref,
+            "landing_path": landing_path,
+        }
+        for utm_key in ("utm_source", "utm_medium", "utm_campaign"):
+            utm_val = request.args.get(utm_key)
+            if utm_val:
+                metadata[utm_key] = utm_val
+        background_executor.submit(
+            _log_analytics_event, current_app._get_current_object(),
+            session_id, "web_app_open_from_cta", metadata,
+        )
+    except Exception:
+        # Analytics must never block the static app shell.
+        current_app.logger.exception("web_app_open_from_cta log failed")
+
+
 @static_bp.route("/clinical")
 @static_bp.route("/clinical-dashboard")
 def serve_clinical_dashboard():
@@ -54,9 +85,15 @@ def health_check():
 
 @static_bp.route("/")
 def landing_page():
-    """Serve the 'Quiet Launch' landing page, or the App if strictly on 'app.*' domain."""
+    """Serve the 'Quiet Launch' landing page, or the App if strictly on 'app.*' domain.
+
+    On the app.* domain, fire web_app_open_from_cta when a ref query param is
+    present so the activation-proof funnel attributes the app open back to the
+    originating CTA (same behaviour as the /app route).
+    """
     host = request.headers.get("Host", "").lower()
     if host.startswith("app.") or host.startswith("nucleus."):
+        _fire_cta_open_beacon("/")
         return _serve_app_logic()
 
     return render_template("landing.html")
@@ -71,27 +108,7 @@ def serve_app():
     activation-proof funnel can attribute app opens back to the originating
     CTA. Logging never blocks the response.
     """
-    ref = request.args.get("ref")
-    if ref:
-        try:
-            from helpers.session_helpers import _get_or_create_session, _log_analytics_event, background_executor
-
-            session_id = _get_or_create_session()
-            metadata = {
-                "source_cta": ref,
-                "landing_path": "/app",
-            }
-            for utm_key in ("utm_source", "utm_medium", "utm_campaign"):
-                utm_val = request.args.get(utm_key)
-                if utm_val:
-                    metadata[utm_key] = utm_val
-            background_executor.submit(
-                _log_analytics_event, current_app._get_current_object(),
-                session_id, "web_app_open_from_cta", metadata,
-            )
-        except Exception:
-            # Analytics must never block the static app shell.
-            current_app.logger.exception("web_app_open_from_cta log failed")
+    _fire_cta_open_beacon("/app")
     return _serve_app_logic()
 
 
