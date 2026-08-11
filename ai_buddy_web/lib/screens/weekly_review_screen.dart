@@ -21,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
+import '../widgets/shareable_mood_card.dart';
 import 'journal_screen.dart' show JournalEntry, openJournalEntry;
 
 // ─── Data models ─────────────────────────────────────────────────────────────
@@ -926,6 +927,45 @@ class _ShareWithTherapistBtn extends StatelessWidget {
   }
 }
 
+// ─── Share your week button ───────────────────────────────────────────────────
+
+class _ShareYourWeekBtn extends StatelessWidget {
+  const _ShareYourWeekBtn({required this.data});
+  final WeeklyReviewData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => showShareableMoodCard(context, data),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          color: GQColors.primarySoft,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: GQColors.primary.withValues(alpha: 0.2)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.share_outlined, size: 13, color: GQColors.primaryDk),
+            SizedBox(width: 5),
+            Text(
+              'Share your week',
+              style: TextStyle(
+                fontFamily: GQTypography.bodyFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: GQColors.primaryDk,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── State A: Full week ───────────────────────────────────────────────────────
 
 class _FullWeekBody extends StatelessWidget {
@@ -982,6 +1022,8 @@ class _FullWeekBody extends StatelessWidget {
         NextWeekPromptCard(chips: data.nextWeekChips),
         const SizedBox(height: 12),
         _ShareWithTherapistBtn(data: data),
+        const SizedBox(height: 10),
+        _ShareYourWeekBtn(data: data),
       ],
     );
   }
@@ -1024,6 +1066,8 @@ class _LightWeekBody extends StatelessWidget {
         NextWeekPromptCard(chips: data.nextWeekChips, emphasizeRest: true),
         const SizedBox(height: 12),
         _ShareWithTherapistBtn(data: data),
+        const SizedBox(height: 10),
+        _ShareYourWeekBtn(data: data),
       ],
     );
   }

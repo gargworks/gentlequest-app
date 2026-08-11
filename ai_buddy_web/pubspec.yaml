@@ -90,6 +90,11 @@ dependencies:
   # App version + build for honest Settings footer (was hardcoded
   # "Version 1.2.2 · build 26032321" until 2026-05-21).
   package_info_plus: ^8.0.0
+
+  # Shareable mood card — capture widget as PNG + share to OS share sheet.
+  share_plus: ^10.1.0
+  path_provider: ^2.1.5
+  screenshot: ^3.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -120,6 +125,7 @@ flutter:
     - assets/images/reference/
     - assets/legal/
     - assets/fonts/OFL.txt
+    - assets/brand/icon_v1/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
