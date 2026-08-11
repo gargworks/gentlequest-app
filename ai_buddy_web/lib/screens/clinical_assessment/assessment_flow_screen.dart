@@ -191,18 +191,20 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
   }
 
   void _saveAndExit() {
-    // [backend_assessment_storage_missing] — partial draft saved only in memory.
-    // Synthetic UX QA UC-CA3: confirm to the user the action registered before
-    // popping, so the exit doesn't feel like a silent drop. Show snackbar
-    // BEFORE pop so it surfaces on the parent route's messenger (otherwise
-    // the popped Scaffold's messenger has already been deactivated).
+    // [backend_assessment_storage_missing] — partial draft is NOT persisted.
+    // Previously this showed "Progress saved ✓" which was misleading since
+    // nothing was actually saved (H3 in the safety audit). The honest
+    // message tells the user their in-progress responses will be lost.
+    // Show snackbar BEFORE pop so it surfaces on the parent route's
+    // messenger (otherwise the popped Scaffold's messenger has already
+    // been deactivated).
     HapticFeedback.lightImpact();
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
     messenger.showSnackBar(
       SnackBar(
         content: const Text(
-          'Progress saved ✓',
+          'Exited assessment — in-progress responses were not saved.',
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         behavior: SnackBarBehavior.floating,

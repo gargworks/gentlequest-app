@@ -116,4 +116,53 @@ void main() {
       // ChatProvider maps: no match -> RiskLevel.none
     });
   });
+
+  group('C2 full — leet-speak normalization (platform evasion + typos)', () {
+    test('suicide variants with leet-speak match', () {
+      expect(CrisisKeywordDetector.match('I am su1cidal'), isTrue);
+      expect(CrisisKeywordDetector.match('su1cide thoughts'), isTrue);
+      expect(CrisisKeywordDetector.match('I feel suic1dal'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('su1cide'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('I am su1cidal'), isTrue);
+    });
+
+    test('unalive variants with leet-speak match', () {
+      expect(CrisisKeywordDetector.match('I want to un4live'), isTrue);
+      expect(CrisisKeywordDetector.match('un@live myself'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('un4live'), isTrue);
+    });
+
+    test('self-harm variants with leet-speak match', () {
+      expect(CrisisKeywordDetector.match('s3lf-harm'), isTrue);
+      expect(CrisisKeywordDetector.match('s3lf harm urges'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('s3lf-harm'), isTrue);
+    });
+
+    test('kill myself variants with leet-speak match', () {
+      expect(CrisisKeywordDetector.match('k1ll myself'), isTrue);
+      expect(CrisisKeywordDetector.match('I will k1ll myself'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('k1ll myself'), isTrue);
+    });
+
+    test('tier-2 leet-speak variants match via match() only', () {
+      expect(CrisisKeywordDetector.match('h0peless'), isTrue);
+      expect(CrisisKeywordDetector.match('helples5'), isTrue);
+      expect(CrisisKeywordDetector.matchTier1('h0peless'), isFalse);
+    });
+
+    test('legitimate numeric text does NOT false-positive', () {
+      expect(CrisisKeywordDetector.match('I have 10 apples'), isFalse);
+      expect(CrisisKeywordDetector.match('my zip is 90210'), isFalse);
+      expect(CrisisKeywordDetector.match('I got 3 emails today'), isFalse);
+      expect(CrisisKeywordDetector.match('call 555-1234'), isFalse);
+      expect(CrisisKeywordDetector.match('I have 47 things to do'), isFalse);
+    });
+
+    test('mixed leet + original both match (defense in depth)', () {
+      // Original spelling still matches even when leet is present elsewhere
+      expect(CrisisKeywordDetector.match('I feel suicidal and h0peless'), isTrue);
+      expect(
+          CrisisKeywordDetector.match('su1cide and also suicide'), isTrue);
+    });
+  });
 }

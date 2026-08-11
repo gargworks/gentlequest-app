@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import '../screens/welcome_screen.dart';
-import '../screens/main_screen.dart';
-import '../screens/dhiwise_chat_screen.dart';
 
 class AppRoutes {
   // Global navigator key used by deep links and other services
@@ -21,12 +18,4 @@ class AppRoutes {
   static const String crisisResources = '/crisis';
   static const String assessment = '/assessment';
   static const String home = '/home';
-
-  static Map<String, WidgetBuilder> getRoutes() {
-    return {
-      welcomeScreen: (context) => const WelcomeScreen(),
-      mainScreen: (context) => const MainScreen(),
-      dhiwiseChatScreen: (context) => const MentalHealthChatScreen(),
-    };
-  }
 }

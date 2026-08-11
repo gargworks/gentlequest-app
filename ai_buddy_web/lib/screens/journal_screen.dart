@@ -74,9 +74,24 @@ class _JournalScreenState extends State<JournalScreen> {
     );
     // Optimistic local insert for instant feedback.
     setState(() => _entries.insert(0, localEntry));
-    final updated = await JournalStorage.append(localEntry);
-    if (!mounted) return;
-    setState(() => _entries = updated);
+    try {
+      final updated = await JournalStorage.append(localEntry);
+      if (!mounted) return;
+      setState(() => _entries = updated);
+    } catch (_) {
+      // Rollback the optimistic insert so the UI doesn't show an entry
+      // that wasn't persisted. Without this, the entry would vanish on
+      // next load with no explanation (M4 — silent data loss).
+      if (!mounted) return;
+      setState(() => _entries.removeWhere((e) => e.id == localEntry.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't save just now — please try again."),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _deleteEntry(String id) async {

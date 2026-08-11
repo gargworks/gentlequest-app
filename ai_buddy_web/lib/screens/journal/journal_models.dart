@@ -63,13 +63,14 @@ class JournalStorage {
   }
 
   static Future<void> _saveLocal(List<JournalEntry> entries) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = jsonEncode(entries.map((e) => e.toJson()).toList());
-      await prefs.setString(_key, raw);
-    } catch (_) {
-      // Silent — caller already has the entry in memory; next save will retry.
-    }
+    // Propagate errors to callers so they can rollback optimistic UI
+    // inserts. Previously this swallowed all exceptions silently, which
+    // caused `append` to return the in-memory list as if persisted —
+    // the entry would vanish on next load with no user feedback
+    // (silent data loss). See M4 in the safety audit.
+    final prefs = await SharedPreferences.getInstance();
+    final raw = jsonEncode(entries.map((e) => e.toJson()).toList());
+    await prefs.setString(_key, raw);
   }
 
   // ── Public API ─────────────────────────────────────────────────────

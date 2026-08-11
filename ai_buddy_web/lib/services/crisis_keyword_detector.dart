@@ -18,8 +18,11 @@
 
 /// Checks whether a free-text string contains a crisis keyword.
 ///
-/// Algorithm: case-insensitive full-text scan over the deny-list.
-/// Edit-distance fuzzy matching is a v2 follow-up (flagged as backend work).
+/// Algorithm: case-insensitive full-text scan over the deny-list, with
+/// a leet-speak normalization pass (1→i, 0→o, 3→e, 4→a, 5→s, 7→t, @→a,
+/// $→s) to catch platform-evasion variants ("su1cide", "un4live",
+/// "s3lf-harm") and common typos. Full edit-distance fuzzy matching is
+/// a v2 follow-up (flagged as backend work).
 ///
 /// Runs synchronously — safe to call from a text-field onChange callback.
 /// Benchmarks on current word list: <1ms on mid-range devices.
@@ -113,19 +116,24 @@ class CrisisKeywordDetector {
   /// Returns `true` if [text] contains any crisis keyword.
   ///
   /// Matching is case-insensitive and substring-based, except for tokens in
-  /// [_tier1WordBoundary] which require non-digit boundaries.
+  /// [_tier1WordBoundary] which require non-digit boundaries. A leet-speak
+  /// normalization pass is applied to catch platform-evasion variants
+  /// ("su1cide", "un4live", "s3lf-harm") and common typos.
   /// An empty or whitespace-only string always returns `false`.
   static bool match(String text) {
     if (text.trim().isEmpty) return false;
     final lower = text.toLowerCase();
+    final normalized = _normalizeLeet(lower);
     for (final kw in _tier1) {
-      if (lower.contains(kw)) return true;
+      if (lower.contains(kw) || normalized.contains(kw)) return true;
     }
     for (final kw in _tier1WordBoundary) {
-      if (_matchWordBoundary(lower, kw)) return true;
+      if (_matchWordBoundary(lower, kw) || _matchWordBoundary(normalized, kw)) {
+        return true;
+      }
     }
     for (final kw in _tier2) {
-      if (lower.contains(kw)) return true;
+      if (lower.contains(kw) || normalized.contains(kw)) return true;
     }
     return false;
   }
@@ -135,13 +143,53 @@ class CrisisKeywordDetector {
   static bool matchTier1(String text) {
     if (text.trim().isEmpty) return false;
     final lower = text.toLowerCase();
+    final normalized = _normalizeLeet(lower);
     for (final kw in _tier1) {
-      if (lower.contains(kw)) return true;
+      if (lower.contains(kw) || normalized.contains(kw)) return true;
     }
     for (final kw in _tier1WordBoundary) {
-      if (_matchWordBoundary(lower, kw)) return true;
+      if (_matchWordBoundary(lower, kw) || _matchWordBoundary(normalized, kw)) {
+        return true;
+      }
     }
     return false;
+  }
+
+  /// Leet-speak normalization pass. Maps common number/symbol substitutions
+  /// back to letters so the deny-list catches platform-evasion variants
+  /// ("su1cide" → "suicide", "un4live" → "unalive", "s3lf-harm" →
+  /// "self-harm", "k1ll myself" → "kill myself"). Applied to the lowercased
+  /// input before matching; the original text is also checked so legitimate
+  /// uses of digits ("I have 10 apples") are unaffected.
+  static String _normalizeLeet(String lower) {
+    // Single-pass buffer. Common leet substitutions only — keeping the
+    // set small avoids false-positives on legitimate numeric text.
+    final buf = StringBuffer();
+    for (final ch in lower.codeUnits) {
+      String out;
+      if (ch == 0x31) {
+        out = 'i'; // 1 → i
+      } else if (ch == 0x30) {
+        out = 'o'; // 0 → o
+      } else if (ch == 0x33) {
+        out = 'e'; // 3 → e
+      } else if (ch == 0x34) {
+        out = 'a'; // 4 → a
+      } else if (ch == 0x35) {
+        out = 's'; // 5 → s
+      } else if (ch == 0x37) {
+        out = 't'; // 7 → t
+      } else if (ch == 0x40) {
+        out = 'a'; // @ → a
+      } else if (ch == 0x24) {
+        out = 's'; // $ → s
+      } else {
+        buf.writeCharCode(ch);
+        continue;
+      }
+      buf.write(out);
+    }
+    return buf.toString();
   }
 
   /// Word-boundary matcher for numeric / short tokens that would false-positive
