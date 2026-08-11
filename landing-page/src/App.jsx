@@ -67,6 +67,7 @@ const FEATURES = [
 function App() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +111,28 @@ function App() {
             <a href={WEB_APP_URL}>Get the app</a>
             <a href={WEB_APP_URL}>Open app</a>
           </nav>
+          <button
+            type="button"
+            className="gq-nav-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileNavOpen}
+            onClick={() => setMobileNavOpen((v) => !v)}
+          >
+            <span className="gq-nav-toggle-bar" />
+            <span className="gq-nav-toggle-bar" />
+            <span className="gq-nav-toggle-bar" />
+          </button>
         </div>
+        {mobileNavOpen && (
+          <nav className="gq-mobile-nav">
+            <a href="#features" onClick={() => setMobileNavOpen(false)}>Features</a>
+            <a href="#crisis" onClick={() => setMobileNavOpen(false)}>988</a>
+            <a href="/blog/" onClick={() => setMobileNavOpen(false)}>Blog</a>
+            <a href="/about" onClick={() => setMobileNavOpen(false)}>About</a>
+            <a href={WEB_APP_URL} onClick={() => setMobileNavOpen(false)}>Get the app</a>
+            <a href={WEB_APP_URL} onClick={() => setMobileNavOpen(false)}>Open app</a>
+          </nav>
+        )}
       </header>
 
       <section className="gq-hero">

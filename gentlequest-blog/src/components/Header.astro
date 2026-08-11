@@ -121,7 +121,18 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	@media (max-width: 720px) {
 		.internal-links {
-			display: none;
+			display: flex;
+			gap: 0;
+		}
+		.internal-links a {
+			font-size: 0.8rem;
+			padding: 1em 0.4em;
+		}
+		.app-link {
+			font-size: 0.8rem;
+		}
+		h2 a {
+			font-size: 0.85rem;
 		}
 	}
 </style>
