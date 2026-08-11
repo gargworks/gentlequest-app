@@ -29,26 +29,39 @@ def _seconds_until_next_08_utc():
 
 
 def _run_snapshot(app):
-    """Hit the funnel endpoint to persist a snapshot."""
+    """Hit the funnel endpoint and persist the snapshot to the database."""
     if _stop_event.is_set():
         return
     try:
-        with app.test_client() as client:
+        with app.app_context(), app.test_client() as client:
             resp = client.get("/api/metrics/funnel",
                               headers={"User-Agent": "internal-scheduler"})
             if resp.status_code == 200:
                 data = resp.get_json()
-                funnel = data.get("funnel", {})
+                # Persist the full funnel metrics blob as a snapshot row.
+                # Previously this step was missing — the endpoint only
+                # computed and returned JSON; nobody wrote a FunnelSnapshot
+                # row, so /api/metrics/funnel/history always returned 0.
+                from models import FunnelSnapshot, db
+                snapshot = FunnelSnapshot(snapshot_data=data)
+                db.session.add(snapshot)
+                db.session.commit()
+                counts = data.get("counts", {})
                 logger.info(
                     f"[funnel-scheduler] Snapshot persisted: "
-                    f"installs={funnel.get('stage_2_installs', {})} "
-                    f"opens={funnel.get('stage_3_app_opens', 0)} "
-                    f"first_chat={funnel.get('stage_4_first_chat', 0)}"
+                    f"landing={counts.get('landing_sessions', 0)} "
+                    f"cta_clicks={counts.get('cta_clicks', 0)} "
+                    f"first_value={counts.get('first_value_actions', 0)}"
                 )
             else:
                 logger.warning(f"[funnel-scheduler] Endpoint returned {resp.status_code}")
     except Exception as e:
         logger.error(f"[funnel-scheduler] Failed: {e}")
+        try:
+            from models import db
+            db.session.rollback()
+        except Exception:
+            pass
     finally:
         _schedule_next(app)
 
