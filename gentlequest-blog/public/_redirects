@@ -1,5 +1,9 @@
+# Serve sitemap and RSS directly (don't rewrite to index.html)
+/blog/sitemap-index.xml /blog/sitemap-index.xml 200
+/blog/sitemap-0.xml /blog/sitemap-0.xml 200
+/blog/rss.xml /blog/rss.xml 200
+
 # Redirect RSS and sitemap from root to /blog/ path
-# The blog is served at /blog/ but users/robots expect feeds at root
 /rss.xml /blog/rss.xml 302
 /sitemap-index.xml /blog/sitemap-index.xml 302
 /sitemap.xml /blog/sitemap-index.xml 302
