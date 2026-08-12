@@ -375,7 +375,7 @@ class _MiniMoodRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: 60,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: days.map((d) => _MiniBarSlot(entry: d)).toList(),

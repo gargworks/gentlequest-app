@@ -26,11 +26,6 @@ void main() {
       // Let the post-frame callback fire and the sheet animate in.
       await tester.pump();
       await tester.pumpAndSettle();
-      // The card's _MiniBarSlot has a known 1px RenderFlex overflow
-      // (fixed-height SizedBox(56) slightly too small for bar+label at
-      // the default text scale). Drain the captured FlutterError so it
-      // doesn't fail the test — the text content is still in the tree.
-      expect(tester.takeException(), isA<FlutterError>());
     }
 
     testWidgets('showShareableMoodCard opens a modal bottom sheet', (tester) async {
