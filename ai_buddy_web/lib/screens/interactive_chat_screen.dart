@@ -32,8 +32,8 @@ import '../widgets/voice_input_bar.dart';
 import '../widgets/web_mobile_promo_sheet.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
-// R1D6 — QuestsEngine for streak badge (read-only).
-import '../quests/quests_engine.dart';
+// Stage 1 — Companion creature (replaces the old R1D6 CompanionHeader).
+import '../widgets/companion_widget.dart';
 import 'chat/chat_widgets.dart';
 // v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a)
 import '../models/body_double_session.dart';
@@ -113,9 +113,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// True when device has no network connectivity (mid-chat offline).
   bool _isOffline = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
-
-  // R1D6 — lazy QuestsEngine instance for streak badge (read-only, no side-effects).
-  QuestsEngine? _questsEngineForStreak;
 
   // ── v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a) ──────────────
   /// Non-null while a focus session is running. One session at a time —
@@ -384,10 +381,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   @override
   void initState() {
     super.initState();
-    // R1D6 — init QuestsEngine for streak badge (best-effort; silent on failure).
-    try {
-      _questsEngineForStreak = QuestsEngine();
-    } catch (_) {}
     // Initialize with some sample messages if empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final chatProvider = Provider.of<ChatProvider>(context, listen: false);
@@ -1308,8 +1301,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // R1D6 — CompanionHeader with optional streak badge.
-          _buildCompanionHeader(),
+          // Stage 1 — Companion creature (replaces R1D6 CompanionHeader).
+          const CompanionWidget(),
           SizedBox(height: 8.h),
           // Warmth zone background card
           Container(
@@ -1381,56 +1374,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   .toList(),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// R1D6 — CompanionHeader: app name + recognition-only streak badge (≥2 days).
-  Widget _buildCompanionHeader() {
-    int streakDays = 0;
-    try {
-      streakDays = _questsEngineForStreak?.computeDailyStreak() ?? 0;
-    } catch (_) {}
-    final showStreak = streakDays >= 2;
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.h),
-      child: Row(
-        children: [
-          Text(
-            'GentleQuest',
-            style: const TextStyle(
-              fontSize: 15.0,
-              fontWeight: FontWeight.w600,
-              color: GQColors.coral,
-              letterSpacing: 0.2,
-            ),
-          ),
-          if (showStreak) ...[
-            SizedBox(width: 8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 3.h),
-              decoration: BoxDecoration(
-                color: GQColors.accentSoft,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🌱', style: TextStyle(fontSize: 11)),
-                  SizedBox(width: 4.h),
-                  Text(
-                    '$streakDays days',
-                    style: const TextStyle(
-                      fontSize: 11.0,
-                      fontWeight: FontWeight.w500,
-                      color: GQColors.coral,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

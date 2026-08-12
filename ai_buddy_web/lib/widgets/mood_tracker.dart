@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../providers/mood_provider.dart';
+import '../providers/companion_provider.dart';
 import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
 import '../theme/gq_tokens.dart';
@@ -722,6 +723,10 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           // of the day. We also resolve streakDays *here* (in the closure)
           // rather than inside `addPostFrameCallback`, so the value is bound
           // to the moment we know the entry is in.
+          // Stage 1 — capture the companion provider ref before any await
+          // so the post-await context use stays sync-safe.
+          final companionProvider =
+              Provider.of<CompanionProvider>(context, listen: false);
           final addFuture = moodProvider.addMoodEntry(
             moodLevel,
             note: note?.trim(),
@@ -734,6 +739,29 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           // Sheet was popped; the parent (MoodTrackerWidget) may have rebuilt
           // or unmounted. Guard with `mounted` before any further UI.
           if (!mounted) return;
+          // Stage 1 — feed the companion creature on every mood check-in.
+          // The companion never punishes absence; it only grows. We derive
+          // a 7-day cadence + today's count from the mood provider so the
+          // creature's mood reflects recent presence, not streak breakage.
+          try {
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
+            int recentDays = 0;
+            for (int i = 0; i < 7; i++) {
+              final d = today.subtract(Duration(days: i));
+              if ((moodProvider.moodEntriesByDate[d] ?? const []).isNotEmpty) {
+                recentDays++;
+              }
+            }
+            final checkInsToday =
+                (moodProvider.moodEntriesByDate[today] ?? const []).length;
+            await companionProvider.checkIn(
+              recentCheckInDays: recentDays,
+              checkInsToday: checkInsToday,
+            );
+          } catch (_) {
+            // Companion feed is best-effort; never block the mood flow.
+          }
           // Pre-compute streak now that the entry has propagated. Bind it
           // into the closure so the post-frame callback uses this value
           // rather than recomputing after another frame.

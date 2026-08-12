@@ -21,6 +21,7 @@ import 'providers/task_provider.dart';
 import 'providers/progress_provider.dart';
 import 'providers/quest_provider.dart';
 import 'providers/community_provider.dart';
+import 'providers/companion_provider.dart';
 import 'navigation/route_observer.dart';
 import 'navigation/home_shell.dart';
 import 'navigation/home_tab_deeplink.dart';
@@ -237,6 +238,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProgressProvider()),
         ChangeNotifierProvider(create: (_) => QuestProvider()..loadQuests()),
         ChangeNotifierProvider(create: (_) => CommunityProvider()),
+        ChangeNotifierProvider(create: (_) => CompanionProvider()),
       ],
       child: MaterialApp(
         title: 'Progress Without Pressure',
