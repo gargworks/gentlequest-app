@@ -105,7 +105,7 @@ class _ShareableMoodCardSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const _ShareableMoodCardBody(),
+              _ShareableMoodCardBody(data: data),
             ],
           ),
         ),
@@ -116,7 +116,8 @@ class _ShareableMoodCardSheet extends StatelessWidget {
 
 /// Owns the ScreenshotController and renders the captured card + Share button.
 class _ShareableMoodCardBody extends StatefulWidget {
-  const _ShareableMoodCardBody();
+  const _ShareableMoodCardBody({required this.data});
+  final WeeklyReviewData data;
 
   @override
   State<_ShareableMoodCardBody> createState() => _ShareableMoodCardBodyState();
@@ -126,10 +127,8 @@ class _ShareableMoodCardBodyState extends State<_ShareableMoodCardBody> {
   final ScreenshotController _screenshotController = ScreenshotController();
   bool _sharing = false;
 
-  // Hardcoded stub data — matches the WeeklyReviewData.stubFull() shape used
-  // by the weekly review screen. A future wire-up replaces this with the live
-  // week's data passed through from the review screen.
-  final WeeklyReviewData _data = WeeklyReviewData.stubFull();
+  // Live week data passed through from the weekly review screen.
+  late final WeeklyReviewData _data = widget.data;
 
   Future<void> _share() async {
     if (_sharing) return;
