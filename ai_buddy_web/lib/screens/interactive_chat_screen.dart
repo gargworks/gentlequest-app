@@ -29,7 +29,7 @@ import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
-import '../widgets/web_mobile_promo_sheet.dart';
+// import '../widgets/web_mobile_promo_sheet.dart'; // Re-enable in redesign
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
 // Stage 1 — Companion creature (replaces the old R1D6 CompanionHeader).
@@ -139,7 +139,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ack = prefs.getBool(_prefsLegalAckV1) ?? false;
-      if (!ack && mounted) {
+      if (!ack && mounted && !kDebugMode) {
         // Prevent double invocation from concurrent mounts/renders
         if (_legalSheetShowing) return;
         _legalSheetShowing = true;
@@ -389,11 +389,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       }
       // Ensure we start at the latest message
       _scrollToBottom();
-      // One-time Safety & Legal acknowledgment
-      _ensureLegalAck();
-      // On web only: offer the mobile app once per device. Non-blocking
-      // — user can install OR continue on web (web is now first-class).
-      WebMobilePromoSheet.maybeShow(context);
+      // One-time Safety & Legal acknowledgment — deferred to redesign.
+      // Currently too much friction (2 popups before first chat).
+      // TODO: Re-enable as a single inline disclosure in the onboarding redesign.
+      // _ensureLegalAck();
+      // On web only: offer the mobile app once per device. Non-blocking.
+      // TODO: Re-enable as a subtle banner, not a blocking popup, in redesign.
+      // WebMobilePromoSheet.maybeShow(context);
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
