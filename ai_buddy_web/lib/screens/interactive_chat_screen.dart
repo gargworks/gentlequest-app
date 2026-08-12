@@ -30,6 +30,7 @@ import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
 import '../widgets/voice_input_bar.dart';
 // import '../widgets/web_mobile_promo_sheet.dart'; // Re-enable in redesign
+import '../widgets/web_mobile_banner.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
 // Stage 1 — Companion creature (replaces the old R1D6 CompanionHeader).
@@ -615,6 +616,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   height: 8.h,
                   color: appTheme.colorFFF3F4,
                 ),
+                // Web-to-phone promo — non-blocking dismissible banner (web
+                // only). Replaces the old WebMobilePromoSheet.maybeShow popup.
+                if (kIsWeb) const WebMobileBanner(),
                 // v1.5.0 ADHD Update — pinned outside the message list (not
                 // scrolled with it) so the running timer is always visible
                 // while chatting. Check-in text lives in the transcript

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_buddy_web/screens/adhd_path_screen.dart';
 import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
+import 'package:ai_buddy_web/screens/legal/legal_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
@@ -460,16 +461,85 @@ class _WelcomeContent extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           // Legal small print — replaces the separate age modal
-                          Text(
-                            'By continuing you agree to our Terms and Privacy Policy.\nPrivate by default. No streaks. No shame.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: GQTypography.bodyFamily,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
-                              color: GQColors.ink3,
+                          Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
+                                color: GQColors.ink3,
+                              ),
+                              children: [
+                                const TextSpan(
+                                    text:
+                                        'By continuing you agree to our '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: dimmed
+                                        ? null
+                                        : () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const LegalScreen(
+                                                  title: 'Terms of Service',
+                                                  assetPath:
+                                                      'assets/legal/terms.md',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                    child: Text(
+                                      'Terms',
+                                      style: TextStyle(
+                                        fontFamily: GQTypography.bodyFamily,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: GQColors.primary,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: GQColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' and '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: dimmed
+                                        ? null
+                                        : () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const LegalScreen(
+                                                  title: 'Privacy Policy',
+                                                  assetPath:
+                                                      'assets/legal/privacy.md',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                    child: Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        fontFamily: GQTypography.bodyFamily,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: GQColors.primary,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: GQColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(
+                                  text:
+                                      '. This is not a substitute for professional care. In crisis? Call or text 988.',
+                                ),
+                              ],
                             ),
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 12),
                           // "Already with us? Sign in" — wires to the
