@@ -226,7 +226,7 @@ class _NotificationDetailScreenState
               SettingsRow(
                 iconBg: GQColors.warmSoft,
                 iconWidget:
-                    const Text('🔥', style: TextStyle(fontSize: 14)),
+                    const Text('🌱', style: TextStyle(fontSize: 14)),
                 title: 'Streak gentle nudge',
                 subtitle:
                     "We'll text you when you're 3+ days into a streak — never to shame, only to celebrate.",

@@ -201,6 +201,11 @@ class GQDurations {
   /// Source: GentleQuest_Crisis_Intervention.html (R1D9) 300ms cubic-bezier.
   static const crisisSheetSlide = Duration(milliseconds: 300);
 
+  /// Companion creature stage change crossfade.
+  /// Deliberately slower than [fade] — a stage change should feel deliberate,
+  /// not snap. New stage scales 0.94 → 1.0 over this duration.
+  static const companionStageChange = Duration(milliseconds: 600);
+
   /// Stagger delay increment for sequenced fade-in-up children.
   /// Source: GentleQuest_Onboarding.html — 80ms between each child.
   static const staggerStep = Duration(milliseconds: 80);

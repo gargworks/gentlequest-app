@@ -2329,7 +2329,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🔥', style: TextStyle(fontSize: 13)),
+                      const Text('🌱', style: TextStyle(fontSize: 13)),
                       SizedBox(width: 6.h),
                       Flexible(
                         child: RichText(
@@ -2342,14 +2342,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                             children: [
                               const TextSpan(text: 'Your '),
                               TextSpan(
-                                text: '$streakDays-day streak',
+                                text: '$streakDays active days',
                                 style: const TextStyle(
                                     color: GQColors.ink,
                                     fontWeight: FontWeight.w800),
                               ),
                               const TextSpan(
                                   text:
-                                      ' is paused — pick it up if you want, or start fresh.'),
+                                      ' — no rush, no pressure.'),
                             ],
                           ),
                         ),
@@ -2410,7 +2410,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       ),
                       child: Text(
                         streakDays > 0
-                            ? 'Continue $streakDays-day streak'
+                            ? 'Keep going — $streakDays active days'
                             : 'Continue',
                         style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w800),

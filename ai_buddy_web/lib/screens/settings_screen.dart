@@ -659,7 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               SettingsRow(
                 iconBg: GQColors.warmSoft,
-                iconWidget: const Text('🔥',
+                iconWidget: const Text('🌱',
                     style: TextStyle(fontSize: 14)),
                 title: 'Streak gentle nudge',
                 subtitle: 'Off — only celebrate, never shame',
@@ -1025,7 +1025,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SettingsRow(
                   iconBg: GQColors.warmSoft,
-                  iconWidget: const Text('🔥', style: TextStyle(fontSize: 14)),
+                  iconWidget: const Text('🌱', style: TextStyle(fontSize: 14)),
                   title: 'Streak gentle nudge',
                   trailing: GQToggle(value: false, onChanged: null),
                 ),
