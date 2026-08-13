@@ -55,7 +55,7 @@ class QuestScreen extends StatelessWidget {
               description: 'Meditate for 5 minutes',
               progress: 0.7,
               icon: Icons.self_improvement,
-              color: const Color(0xFF059669),
+              color: const Color(0xFF9CC487) // emerald→moodGreat,
             ),
             const SizedBox(height: 16),
             _buildQuestCard(
