@@ -5,23 +5,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ai_buddy_web/models/companion.dart';
 import 'package:ai_buddy_web/providers/companion_provider.dart';
+import 'package:ai_buddy_web/widgets/companion_painter.dart';
 import 'package:ai_buddy_web/widgets/companion_widget.dart';
-
-/// Stage → emoji map mirrored from companion_widget.dart (kept private there,
-/// so we restate it here for assertions).
-const Map<GrowthStage, String> _kStageEmoji = {
-  GrowthStage.seed: '🌱',
-  GrowthStage.sprout: '🌿',
-  GrowthStage.sapling: '🌳',
-  GrowthStage.young: '🦊',
-  GrowthStage.mature: '🦉',
-};
 
 void main() {
   group('CompanionWidget', () {
     /// Build a tree with a CompanionProvider seeded from [companion] so the
     /// widget under test renders deterministic state. Each testWidgets gets
     /// its own fresh SharedPreferences cache.
+    ///
+    /// Uses [tester.pump] instead of [tester.pumpAndSettle] because the
+    /// breathing animation runs continuously and would prevent
+    /// pumpAndSettle from ever settling.
     Future<void> buildWith(
       WidgetTester tester,
       Companion companion,
@@ -40,7 +35,8 @@ void main() {
         ),
       );
       // Let the provider's async _load() complete and the widget rebuild.
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
     }
 
     Companion companionForStage(GrowthStage stage) {
@@ -56,31 +52,40 @@ void main() {
       );
     }
 
-    // ── Emoji per stage — one testWidgets per stage (fresh prefs cache) ──────
+    /// Finder that matches a CustomPaint whose painter is a
+    /// CompanionPainter for the given [stage].
+    Finder painterForStage(GrowthStage stage) => find.byWidgetPredicate(
+          (w) =>
+              w is CustomPaint &&
+              w.painter is CompanionPainter &&
+              (w.painter as CompanionPainter).stage == stage,
+        );
 
-    testWidgets('renders 🌱 for seed stage', (tester) async {
+    // ── CompanionPainter per stage — one testWidgets per stage ─────────────
+
+    testWidgets('renders CompanionPainter for seed stage', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.seed));
-      expect(find.text(_kStageEmoji[GrowthStage.seed]!), findsWidgets);
+      expect(painterForStage(GrowthStage.seed), findsWidgets);
     });
 
-    testWidgets('renders 🌿 for sprout stage', (tester) async {
+    testWidgets('renders CompanionPainter for sprout stage', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.sprout));
-      expect(find.text(_kStageEmoji[GrowthStage.sprout]!), findsWidgets);
+      expect(painterForStage(GrowthStage.sprout), findsWidgets);
     });
 
-    testWidgets('renders 🌳 for sapling stage', (tester) async {
+    testWidgets('renders CompanionPainter for sapling stage', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.sapling));
-      expect(find.text(_kStageEmoji[GrowthStage.sapling]!), findsWidgets);
+      expect(painterForStage(GrowthStage.sapling), findsWidgets);
     });
 
-    testWidgets('renders 🦊 for young stage', (tester) async {
+    testWidgets('renders CompanionPainter for young stage', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.young));
-      expect(find.text(_kStageEmoji[GrowthStage.young]!), findsWidgets);
+      expect(painterForStage(GrowthStage.young), findsWidgets);
     });
 
-    testWidgets('renders 🦉 for mature stage', (tester) async {
+    testWidgets('renders CompanionPainter for mature stage', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.mature));
-      expect(find.text(_kStageEmoji[GrowthStage.mature]!), findsWidgets);
+      expect(painterForStage(GrowthStage.mature), findsWidgets);
     });
 
     // ── Tap interaction ─────────────────────────────────────────────────────
@@ -90,12 +95,13 @@ void main() {
 
       // Tap the card (InkWell wraps the whole row).
       await tester.tap(find.byType(CompanionWidget));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // A SnackBar should appear with a non-empty message.
       final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
       expect(snackBar, isNotNull);
-      // The SnackBar content is a Row with an emoji Text + an Expanded Text.
+      // The SnackBar content is a Row with a CustomPaint + an Expanded Text.
       // Verify it has some text content (the encouraging message).
       final textWidgets = tester
           .widgetList<Text>(find.byType(Text))

@@ -18,15 +18,7 @@ import 'package:provider/provider.dart';
 import '../models/companion.dart';
 import '../providers/companion_provider.dart';
 import '../theme/gq_tokens.dart';
-
-/// Emoji rendered for each growth stage.
-const Map<GrowthStage, String> _kStageEmoji = {
-  GrowthStage.seed: '🌱',
-  GrowthStage.sprout: '🌿',
-  GrowthStage.sapling: '🌳',
-  GrowthStage.young: '🦊',
-  GrowthStage.mature: '🦉',
-};
+import 'companion_painter.dart';
 
 /// Short label for each growth stage, shown under the name.
 const Map<GrowthStage, String> _kStageLabel = {
@@ -78,8 +70,10 @@ class CompanionWidget extends StatefulWidget {
 }
 
 class _CompanionWidgetState extends State<CompanionWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _bounceController;
+  late final AnimationController _breatheController;
+  late final Animation<double> _breatheAnimation;
   bool _celebrating = false;
 
   @override
@@ -89,11 +83,23 @@ class _CompanionWidgetState extends State<CompanionWidget>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
+    _breatheController = AnimationController(
+      vsync: this,
+      duration: GQDurations.breathe,
+    );
+    _breatheAnimation = Tween<double>(begin: 1.0, end: 1.035).animate(
+      CurvedAnimation(
+        parent: _breatheController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _breatheController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _bounceController.dispose();
+    _breatheController.dispose();
     super.dispose();
   }
 
@@ -128,7 +134,6 @@ class _CompanionWidgetState extends State<CompanionWidget>
   }
 
   Widget _buildCard(BuildContext context, Companion companion) {
-    final emoji = _kStageEmoji[companion.growthStage] ?? '🌱';
     final stageLabel = _kStageLabel[companion.growthStage] ?? 'Seed';
     final progress = _progressToNextStage(companion.lifetimeXp);
 
@@ -144,7 +149,7 @@ class _CompanionWidgetState extends State<CompanionWidget>
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Row(
               children: [
-                // Creature emoji with a gentle bounce on level-up.
+                // Creature illustration with a gentle bounce on level-up.
                 ScaleTransition(
                   scale: Tween<double>(begin: 1.0, end: 1.25).animate(
                     CurvedAnimation(
@@ -153,15 +158,17 @@ class _CompanionWidgetState extends State<CompanionWidget>
                     ),
                   ),
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
+                    duration: GQDurations.companionStageChange,
                     transitionBuilder: (child, anim) =>
                         FadeTransition(opacity: anim, child: child),
-                    child: Text(
-                      emoji,
+                    child: ScaleTransition(
+                      scale: _breatheAnimation,
                       key: ValueKey(companion.growthStage),
-                      style: const TextStyle(
-                        fontSize: 30,
-                        height: 1.0,
+                      child: CustomPaint(
+                        size: const Size.square(36),
+                        painter: CompanionPainter(
+                          stage: companion.growthStage,
+                        ),
                       ),
                     ),
                   ),
@@ -294,13 +301,18 @@ class _CompanionWidgetState extends State<CompanionWidget>
 
   void _showEncouragement(BuildContext context, Companion companion) {
     final message = _pickTapMessage(companion.mood);
-    final emoji = _kStageEmoji[companion.growthStage] ?? '🌱';
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 18)),
+            CustomPaint(
+              size: const Size.square(20),
+              painter: CompanionPainter(
+                stage: companion.growthStage,
+                simplified: true,
+              ),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
