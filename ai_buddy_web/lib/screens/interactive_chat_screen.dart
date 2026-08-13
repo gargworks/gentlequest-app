@@ -39,8 +39,12 @@ import '../widgets/chat_error_bubble.dart';
 import '../widgets/companion_status_dot.dart';
 import '../widgets/connection_pill.dart';
 import '../widgets/offline_safe_list.dart';
-// Stage 1 — Companion creature (replaces the old R1D6 CompanionHeader).
-import '../widgets/companion_widget.dart';
+// Silent Witness — companion relocated to bottom-left above the input bar.
+import '../widgets/silent_witness.dart';
+// Heavy-language detection — on-device, pre-send.
+import '../services/crisis_keyword_detector.dart';
+// GrowthStage enum for the Silent Witness.
+import '../models/companion.dart';
 import 'chat/chat_widgets.dart';
 // v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a)
 import '../models/body_double_session.dart';
@@ -132,6 +136,36 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   // card, not on every rebuild of the message list (was firing on every
   // list-item rebuild — 329 events, top-4 by volume, all noise).
   final Set<String> _acceptedInterventionIds = {};
+
+  // ── Silent Witness state ─────────────────────────────────────────────────
+  // Companion relocated from chat header to bottom-left above the input bar.
+  // Heavy-language detection (on-device, pre-send) drives the settle state;
+  // crisis-surface mounting drives the stay (frozen) state.
+  WitnessState _witnessState = WitnessState.breathe;
+  Timer? _settleRevertTimer;
+  final GlobalKey<SilentWitnessState> _witnessKey =
+      GlobalKey<SilentWitnessState>();
+
+  void _onDraftChanged(String draft) {
+    if (!mounted) return;
+    final heavy = CrisisKeywordDetector.match(draft);
+    if (heavy) {
+      _settleRevertTimer?.cancel();
+      if (_witnessState != WitnessState.stay) {
+        setState(() => _witnessState = WitnessState.settle);
+      }
+      // Revert to breathe after 10s of non-heavy typing.
+      _settleRevertTimer = Timer(const Duration(seconds: 10), () {
+        if (!mounted) return;
+        if (_witnessState == WitnessState.settle) {
+          setState(() => _witnessState = WitnessState.breathe);
+        }
+      });
+    } else {
+      // Light draft: if we were settling (not in crisis/stay), let the
+      // existing revert timer run rather than snapping back instantly.
+    }
+  }
 
   // One-time legal acknowledgment key
   static const _prefsLegalAckV1 = 'legal_ack_v1';
@@ -547,6 +581,19 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             Container(
               color: Theme.of(context).scaffoldBackgroundColor,
             ),
+            // Silent Witness — companion anchored bottom-left, above the
+            // input bar. Positioned using the measured input-bar height so
+            // it sits just above the input row regardless of keyboard state.
+            Positioned(
+              left: 18,
+              bottom: _inputBarHeight + 8,
+              child: SilentWitness(
+                key: _witnessKey,
+                state: _witnessState,
+                stage: GrowthStage.seed,
+                edgePadding: 0,
+              ),
+            ),
             // Main Content
             Column(
               children: [
@@ -577,42 +624,30 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   ChatConnectionState.unreachable;
                               final showPill = cp.connectionState ==
                                   ChatConnectionState.reconnecting;
+                              // Header shows two names (Quest & Alex) — no
+                              // companion avatar. Companion relocated to the
+                              // Silent Witness at bottom-left.
                               return Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     isUnreachable
                                         ? 'CAN\u2019T REACH'
-                                        : 'YOU\u2019RE WITH',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.8,
+                                        : 'QUEST & ALEX',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyleHelper
+                                        .instance.headline24Bold
+                                        .copyWith(
+                                      fontSize: 18,
                                       color: isUnreachable
                                           ? GQColors.ink2
-                                          : GQColors.ink3,
+                                          : null,
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        ProfileConfig.aiName,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyleHelper
-                                            .instance.headline24Bold
-                                            .copyWith(
-                                          color: isUnreachable
-                                              ? GQColors.ink2
-                                              : null,
-                                        ),
-                                      ),
-                                      if (showPill) ...[
-                                        const SizedBox(width: 8),
-                                        const ConnectionPill(visible: true),
-                                      ],
-                                    ],
-                                  ),
+                                  if (showPill) ...[
+                                    const SizedBox(height: 4),
+                                    const ConnectionPill(visible: true),
+                                  ],
                                 ],
                               );
                             },
@@ -981,8 +1016,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         return Opacity(
                           opacity: dimInput ? 0.55 : 1.0,
                           child: Padding(
+                            // 52px left padding gives the Silent Witness
+                            // (bottom-left, 28px) floor space so the input
+                            // bar doesn't overlap it.
                             padding:
-                                EdgeInsets.fromLTRB(16.h, 4.h, 0.h, 16.h),
+                                EdgeInsets.fromLTRB(52.h, 4.h, 0.h, 16.h),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -1019,6 +1057,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                             fontSize: 16.0,
                                             color: GQColors.ink,
                                           ),
+                                          // Silent Witness: on-device heavy-
+                                          // language detection on every draft
+                                          // change (pre-send, no network).
+                                          onChanged: _onDraftChanged,
                                           onSubmitted: (_) {
                                             _sendMessage();
                                             WidgetsBinding.instance
@@ -1405,9 +1447,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Stage 1 — Companion creature (replaces R1D6 CompanionHeader).
-          const CompanionWidget(),
-          SizedBox(height: 8.h),
+          // Silent Witness: companion moved from chat header to bottom-left
+          // above the input bar (see _buildBody Stack). Header no longer
+          // shows the companion card.
           // Warmth zone background card
           Container(
             margin: EdgeInsets.symmetric(horizontal: 8.h),
@@ -1762,6 +1804,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     widget.reselect?.removeListener(_onReselect);
     _connectivitySub?.cancel(); // R1D12 — Offline States
     _bdTicker?.cancel(); // v1.5.0 ADHD Update — body-doubling session timer
+    _settleRevertTimer?.cancel(); // Silent Witness settle revert
     _messageController.dispose();
     _scrollController.dispose();
     _inputFocus.dispose();

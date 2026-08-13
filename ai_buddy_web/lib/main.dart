@@ -3,6 +3,7 @@ import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/quest_preview_screen.dart';
 import 'package:ai_buddy_web/screens/clinical_assessment_screen.dart';
 import 'package:ai_buddy_web/screens/welcome_screen.dart';
+import 'package:ai_buddy_web/screens/onboarding_vow_screen.dart';
 import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart'
     as dhiwise_wellness;
 import 'dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
@@ -322,6 +323,8 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool _resolved = false;
   bool _showWelcome = false;
+  // Onboarding Vow — shown once before the welcome screen for new users.
+  bool _showVow = false;
   // v1.4.0 Phase C — terminal block when device returns verifiedUnder in a
   // region that requires a verified signal (Texas SB 2420 today).
   bool _ageBlocked = false;
@@ -340,10 +343,12 @@ class _SplashScreenState extends State<SplashScreen> {
         : const Duration(milliseconds: 800);
     final results = await Future.wait<dynamic>([
       WelcomeScreen.hasBeenSeen(),
+      OnboardingVowScreen.hasBeenSeen(),
       Future<void>.delayed(splashDelay),
     ]);
     if (!mounted) return;
     final seen = results[0] as bool;
+    final vowSeen = results[1] as bool;
 
     // v1.4.0 Phase C — verified-signal gate. Only runs once welcome is past
     // and only in regions that require a verified signal (Phase B decides).
@@ -367,6 +372,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
     setState(() {
+      // Vow shows first for new users who haven't seen it AND haven't seen
+      // the welcome screen yet. If welcome was already seen, the vow was
+      // too (or the user upgraded — either way, don't re-show).
+      _showVow = !vowSeen && !seen;
       _showWelcome = !seen;
       _ageBlocked = ageBlocked;
       _resolved = true;
@@ -380,6 +389,10 @@ class _SplashScreenState extends State<SplashScreen> {
     }
     if (_ageBlocked) {
       return const AgeVerificationBlockedScreen();
+    }
+    // Onboarding Vow shows before the welcome screen for first-time users.
+    if (_showVow) {
+      return const OnboardingVowScreen();
     }
     return _showWelcome ? const WelcomeScreen() : const ComplianceGuardScreen();
   }

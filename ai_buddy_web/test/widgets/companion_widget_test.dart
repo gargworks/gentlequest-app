@@ -121,11 +121,14 @@ void main() {
       expect(find.textContaining('streak'), findsNothing);
     });
 
-    // ── Growth progress bar ─────────────────────────────────────────────────
+    // ── Active days (not progress bar) ──────────────────────────────────────
 
-    testWidgets('growth progress bar is visible', (tester) async {
+    testWidgets('shows active days text (not XP bar)', (tester) async {
       await buildWith(tester, companionForStage(GrowthStage.seed));
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      // Lv badge and XP progress bar removed per Fable #1a design spec
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      // Card shows stage name + active days instead
+      expect(find.textContaining('active days'), findsOneWidget);
     });
   });
 }

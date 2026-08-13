@@ -93,6 +93,10 @@ class _CompanionWidgetState extends State<CompanionWidget>
         curve: Curves.easeInOut,
       ),
     );
+    // Return-after-absence: start mid-cycle (phase -2.8s = half-breath) so
+    // the breathing appears to have been running before the user arrived,
+    // not beginning fresh at phase 0.
+    _breatheController.value = 0.5;
     _breatheController.repeat(reverse: true);
   }
 
@@ -135,7 +139,6 @@ class _CompanionWidgetState extends State<CompanionWidget>
 
   Widget _buildCard(BuildContext context, Companion companion) {
     final stageLabel = _kStageLabel[companion.growthStage] ?? 'Seed';
-    final progress = _progressToNextStage(companion.lifetimeXp);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -179,100 +182,30 @@ class _CompanionWidgetState extends State<CompanionWidget>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Name + level
-                      Row(
-                        children: [
-                          Text(
-                            companion.name,
-                            style: const TextStyle(
-                              fontFamily: GQTypography.displayFamily,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: GQColors.ink,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: GQColors.primarySoft,
-                              borderRadius:
-                                  BorderRadius.circular(GQRadii.button),
-                            ),
-                            child: Text(
-                              'Lv ${companion.level}',
-                              style: const TextStyle(
-                                fontFamily: GQTypography.bodyFamily,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: GQColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
+                      // Name only — Lv badge and XP bar removed from the
+                      // companion card. Level chip and XP bar stay on Quest
+                      // surfaces only.
+                      Text(
+                        companion.name,
+                        style: const TextStyle(
+                          fontFamily: GQTypography.displayFamily,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: GQColors.ink,
+                          letterSpacing: -0.2,
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      // Stage label + growth progress bar
-                      Row(
-                        children: [
-                          Text(
-                            stageLabel,
-                            style: const TextStyle(
-                              fontFamily: GQTypography.bodyFamily,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: GQColors.ink3,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                  GQRadii.button),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 4,
-                                backgroundColor:
-                                    GQColors.primarySoft,
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                        GQColors.primary),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      // Anti-streak: total active days, NOT a streak.
-                      Row(
-                        children: [
-                          const Text('🌿',
-                              style: TextStyle(fontSize: 11, height: 1.0)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${companion.totalActiveDays} active '
-                            '${companion.totalActiveDays == 1 ? 'day' : 'days'}',
-                            style: const TextStyle(
-                              fontFamily: GQTypography.bodyFamily,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: GQColors.ink3,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '· ${companion.totalCheckIns} '
-                            '${companion.totalCheckIns == 1 ? 'check-in' : 'check-ins'}',
-                            style: const TextStyle(
-                              fontFamily: GQTypography.bodyFamily,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: GQColors.ink3,
-                            ),
-                          ),
-                        ],
+                      // Stage label + active days only (no level, no XP bar).
+                      Text(
+                        '$stageLabel · ${companion.totalActiveDays} active '
+                        '${companion.totalActiveDays == 1 ? 'day' : 'days'}',
+                        style: const TextStyle(
+                          fontFamily: GQTypography.bodyFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: GQColors.ink3,
+                        ),
                       ),
                     ],
                   ),
@@ -283,20 +216,6 @@ class _CompanionWidgetState extends State<CompanionWidget>
         ),
       ),
     );
-  }
-
-  /// Progress fraction (0.0–1.0) from the current stage's threshold to the
-  /// next stage's threshold. Returns 1.0 at [GrowthStage.mature] (no next).
-  double _progressToNextStage(int lifetimeXp) {
-    final stage = Companion.stageForXp(lifetimeXp);
-    if (stage == GrowthStage.mature) return 1.0;
-    final currentThreshold = growthStageThresholds[stage]!;
-    final nextStage = GrowthStage.values[stage.index + 1];
-    final nextThreshold = growthStageThresholds[nextStage]!;
-    if (nextThreshold == currentThreshold) return 1.0;
-    final span = nextThreshold - currentThreshold;
-    final into = (lifetimeXp - currentThreshold).clamp(0, span);
-    return into / span;
   }
 
   void _showEncouragement(BuildContext context, Companion companion) {
