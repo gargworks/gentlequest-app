@@ -5,7 +5,7 @@ import '../theme/gq_tokens.dart';
 
 /// App-wide bottom navigation used across Talk, Mood, Quest screens
 /// Ensures consistent look and navigation behavior.
-enum AppTab { talk, mood, quest, community }
+enum AppTab { talk, mood, quest, yours, community }
 
 class AppBottomNav extends StatelessWidget {
   final AppTab current;
@@ -52,6 +52,9 @@ class AppBottomNav extends StatelessWidget {
                   // if (FeatureFlags.enableLeopardMode)
                   _buildItem(context, Icons.emoji_events_outlined, 'Quest',
                       AppTab.quest,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
+                  _buildItem(context, Icons.book_outlined, 'Yours',
+                      AppTab.yours,
                       activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(context, Icons.people_outline, 'Community',
                       AppTab.community,

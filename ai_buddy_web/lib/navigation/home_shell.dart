@@ -7,6 +7,7 @@ import '../screens/mood_tracker_screen.dart';
 import '../widgets/community_feed_screen.dart';
 import '../services/compliance_service.dart';
 import '../screens/compliance_guard_screen.dart';
+import '../screens/yours_screen.dart';
 
 import '../widgets/crisis_resources.dart';
 import '../models/message.dart';
@@ -31,12 +32,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   final _talkNavKey = GlobalKey<NavigatorState>();
   final _moodNavKey = GlobalKey<NavigatorState>();
   final _questNavKey = GlobalKey<NavigatorState>();
+  final _yoursNavKey = GlobalKey<NavigatorState>();
   final _communityNavKey = GlobalKey<NavigatorState>();
 
   // Reselect notifiers to trigger screen-specific actions
   final ValueNotifier<int> _talkReselect = ValueNotifier<int>(0);
   final ValueNotifier<int> _moodReselect = ValueNotifier<int>(0);
   final ValueNotifier<int> _questReselect = ValueNotifier<int>(0);
+  final ValueNotifier<int> _yoursReselect = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -104,6 +107,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         case AppTab.quest:
           _questReselect.value++;
           break;
+        case AppTab.yours:
+          _yoursReselect.value++;
+          break;
         case AppTab.community:
           break;
       }
@@ -118,8 +124,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         return 1;
       case AppTab.quest:
         return 2;
-      case AppTab.community:
+      case AppTab.yours:
         return 3;
+      case AppTab.community:
+        return 4;
     }
   }
 
@@ -131,6 +139,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         return _moodNavKey.currentState;
       case AppTab.quest:
         return _questNavKey.currentState;
+      case AppTab.yours:
+        return _yoursNavKey.currentState;
       case AppTab.community:
         return _communityNavKey.currentState;
     }
@@ -246,8 +256,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         ),
       ),
       buildTabNavigator(
-        key: _communityNavKey,
+        key: _yoursNavKey,
         active: _index == 3,
+        builder: (_) => const YoursScreen(),
+      ),
+      buildTabNavigator(
+        key: _communityNavKey,
+        active: _index == 4,
         builder: (_) => const CommunityFeedScreen(),
       ),
     ];
@@ -300,6 +315,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 break;
               case AppTab.quest:
                 _questReselect.value++;
+                break;
+              case AppTab.yours:
+                _yoursReselect.value++;
                 break;
               case AppTab.community:
                 break;
