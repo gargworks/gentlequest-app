@@ -89,6 +89,18 @@ class GQColors {
   /// Source: GentleQuest_Offline_States.html --gq-amber-soft: #FBF1DC (R1D12)
   static const amberSoft = Color(0xFFFBF1DC);
 
+  /// Ink on amber — dark warm foreground for text/icons on amberSoft surfaces.
+  /// Source: Chat Error Implementation Spec (offline_banner, chat error bubble).
+  static const inkOnAmber = Color(0xFF7A5A20);
+
+  /// Ink on coral — dark warm foreground for text/icons on accentSoft surfaces.
+  /// Source: Chat Error Implementation Spec (crisis row in offline safe list).
+  static const inkOnCoral = Color(0xFF7A2424);
+
+  /// Secondary surface — tinted lavender for muted companion backing, cards.
+  /// Source: Chat Error Implementation Spec (muted avatar backing).
+  static const surface2 = Color(0xFFF2F1FE);
+
   /// Coral dark — pressed/dark coral, on-light text accent.
   /// Source: agent ruling 2026-05-22 (compliance_guard L360/L683/L1460 sweep).
   static const coralDk = Color(0xFFE0494C);
