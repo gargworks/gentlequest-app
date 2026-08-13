@@ -7,7 +7,7 @@ import '../providers/community_provider.dart';
 import './app_back_button.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../core/utils/size_utils.dart';
-import '../theme/theme_helper.dart';
+import '../theme/gq_tokens.dart';
 import '../theme/text_style_helper.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
@@ -566,7 +566,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         children: [
           // Header (matches other tabs)
           Container(
-            color: appTheme.whiteCustom,
+            color: Colors.white,
             padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
             child: SafeArea(
               top: true,
@@ -598,7 +598,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             ),
           ),
           // Divider under header
-          Container(height: 8.h, color: appTheme.colorFFF3F4),
+          Container(height: 8.h, color: GQColors.softBg),
           // Topic filter chips (compact with 'More')
           SizedBox(
             height: 52,

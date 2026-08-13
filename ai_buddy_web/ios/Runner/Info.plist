@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -35,9 +37,46 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GentleQuest needs the microphone so you can speak instead of type when that feels easier.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech is recognized on this device — your voice stays here. Used so you can talk to Alex without typing.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -58,37 +97,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:gentlequest.com</string>
 		<string>applinks:gentlequest.app</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>GentleQuest uses your location to verify compliance with local AI mental health regulations.</string>
-	<!-- Dev-only Dart VM / Bonjour keys removed for App Store compliance (audit BLOCKER #7).
-	     Re-add locally ONLY for wireless (non-USB) debugging — do not ship:
-	       NSLocalNetworkUsageDescription + NSBonjourServices (_dartobservatory._tcp) -->
-	<!-- Firebase: Disable auto-initialization to prevent SIGABRT double-init crash.
-	     Firebase will be initialized from Dart code only (FirebaseService.initialize).
-	     This fixes the crash: +[FIRApp addAppToAppDictionary:] duplicate app exception -->
-	<key>FirebaseAutomaticScreenReportingEnabled</key>
-	<false/>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
-	<!-- R1D7 voice input — speech_to_text package needs mic + speech permissions.
-	     Phrasing kept human, not legal/clinical, to match wellness-companion tone. -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>GentleQuest needs the microphone so you can speak instead of type when that feels easier.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Speech is recognized on this device — your voice stays here. Used so you can talk to Alex without typing.</string>
-	<!-- Export compliance: app uses only standard/exempt encryption (HTTPS). -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 </dict>
 </plist>

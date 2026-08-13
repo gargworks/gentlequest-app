@@ -30,14 +30,15 @@ const _kAmberSoft = GQColors.amberSoft;
 /// Amber border opacity factor: rgba(200,146,61,0.28)
 const _kAmberBorder = Color(0x47C8923D);
 
-/// Dark amber ink for offline heading text: #7A5A20
-const _kAmberInk = Color(0xFF7A5A20);
+/// Dark amber ink for offline heading text.
+/// Token: GQColors.inkOnAmber (#7A5A20)
+const _kAmberInk = GQColors.inkOnAmber;
 
 /// Crisis line row background: #FFE8E8 (coral-soft)
 /// Source: HTML State B CrisisLineRow — background: #FFE8E8; border: rgba(255,107,107,0.28)
 const _kCrisisBg = GQColors.accentSoft;
 const _kCrisisBorder = Color(0x47FF6B6B);
-const _kCrisisInk = Color(0xFF7A2424);
+const _kCrisisInk = GQColors.inkOnCoral;
 
 // ─── A · OfflineBanner ────────────────────────────────────────────────────────
 
@@ -519,7 +520,7 @@ class _CrisisLineRow extends StatelessWidget {
                 child: const Icon(
                   Icons.phone_in_talk_rounded,
                   size: 14,
-                  color: Color(0xFFB33636),
+                  color: GQColors.coralDkDeep,
                 ),
               ),
               const SizedBox(width: 10),

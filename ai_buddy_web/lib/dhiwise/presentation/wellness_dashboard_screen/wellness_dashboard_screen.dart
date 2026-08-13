@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:confetti/confetti.dart';
 
 import '../../core/app_export.dart';
+import '../../../theme/gq_tokens.dart';
 import '../../../providers/mood_provider.dart';
 import './widgets/recommendation_card_widget.dart';
 import '../../../theme/text_style_helper.dart' as CoreTextStyles;
@@ -1886,7 +1887,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          color: appTheme.whiteCustom,
+          color: Colors.white,
           padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
           child: SafeArea(
             top: true,
@@ -1978,7 +1979,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
         ),
         Container(
           height: 8.h,
-          color: appTheme.colorFFF3F4,
+          color: GQColors.softBg,
         ),
       ],
     );

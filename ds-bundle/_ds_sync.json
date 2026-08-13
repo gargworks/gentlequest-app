@@ -1,0 +1,24 @@
+{
+  "shape": "package",
+  "styleSha": "06e8d8228ce87c8347703f0bf0d1a19524a48c7c07f8a7fb77e4588161031287",
+  "renderHashes": {
+    "App": "e92cd66ee734b5db",
+    "ChatWidget": "09b1f6954e38b58c"
+  },
+  "sourceKeys": {
+    "App": "39e99120b35f12f2",
+    "ChatWidget": "39e99120b35f12f2"
+  },
+  "keyRecipe": 7,
+  "scriptsSha": "d09681f16bb35382",
+  "sourceHashes": {
+    "components/general/App/App.jsx": "78392b88b860",
+    "components/general/App/App.d.ts": "de04fdd0e6e1",
+    "components/general/App/App.prompt.md": "1514361424ec",
+    "components/general/ChatWidget/ChatWidget.jsx": "9971899e7ebb",
+    "components/general/ChatWidget/ChatWidget.d.ts": "5e596e0686fe",
+    "components/general/ChatWidget/ChatWidget.prompt.md": "0f08f84acd44"
+  },
+  "auxSha": "fe66e28d97677c68",
+  "bundleSha12": "e7a455c363de"
+}

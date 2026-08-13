@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/utils/size_utils.dart';
 import '../core/utils/image_constant.dart';
-import '../theme/theme_helper.dart';
+import '../theme/gq_tokens.dart';
 import '../theme/text_style_helper.dart';
 import '../widgets/dhiwise/custom_button.dart';
 import '../widgets/dhiwise/custom_image_view.dart';
@@ -29,7 +29,7 @@ class MentalHealthChatScreen extends StatelessWidget {
             children: [
               // Header
               Container(
-                color: appTheme.whiteCustom,
+                color: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
                 child: SafeArea(
                   top: true,
@@ -67,10 +67,10 @@ class MentalHealthChatScreen extends StatelessWidget {
                                     height: 12.h,
                                     width: 12.h,
                                     decoration: BoxDecoration(
-                                      color: appTheme.colorFF10B9,
+                                      color: GQColors.moodGreat,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: appTheme.whiteCustom,
+                                        color: Colors.white,
                                         width: 2.h,
                                       ),
                                     ),
@@ -99,7 +99,7 @@ class MentalHealthChatScreen extends StatelessWidget {
               // Divider
               Container(
                 height: 8.h,
-                color: appTheme.colorFFF3F4,
+                color: GQColors.softBg,
               ),
 
               // Chat Messages
@@ -146,22 +146,22 @@ class MentalHealthChatScreen extends StatelessWidget {
               // Divider
               Container(
                 height: 16.h,
-                color: appTheme.colorFFF3F4,
+                color: GQColors.softBg,
               ),
 
               // Quick Response Buttons
               Container(
-                color: appTheme.whiteCustom,
+                color: Colors.white,
                 padding: EdgeInsets.all(16.h),
                 child: Row(
                   children: [
                     Expanded(
                       child: CustomButton(
                         text: 'Tell me more',
-                        backgroundColor: appTheme.colorFFF3F4,
-                        textColor: appTheme.colorFF6B72,
+                        backgroundColor: GQColors.softBg,
+                        textColor: GQColors.ink2,
                         showBorder: true,
-                        borderColor: appTheme.colorFFE5E7,
+                        borderColor: GQColors.hair,
                         textStyle: TextStyleHelper.instance.title18,
                         padding: EdgeInsets.symmetric(
                             horizontal: 24.h, vertical: 12.h),
@@ -174,8 +174,8 @@ class MentalHealthChatScreen extends StatelessWidget {
                     Expanded(
                       child: CustomButton(
                         text: 'Okay',
-                        backgroundColor: appTheme.colorFFF3F4,
-                        textColor: appTheme.colorFF6B72,
+                        backgroundColor: GQColors.softBg,
+                        textColor: GQColors.ink2,
                         textStyle: TextStyleHelper.instance.title18,
                         padding: EdgeInsets.symmetric(
                             horizontal: 24.h, vertical: 12.h),
@@ -188,10 +188,10 @@ class MentalHealthChatScreen extends StatelessWidget {
                     Expanded(
                       child: CustomButton(
                         text: 'Got it, thanks!',
-                        backgroundColor: appTheme.colorFFF3F4,
-                        textColor: appTheme.colorFF6B72,
+                        backgroundColor: GQColors.softBg,
+                        textColor: GQColors.ink2,
                         showBorder: true,
-                        borderColor: appTheme.colorFFE5E7,
+                        borderColor: GQColors.hair,
                         textStyle: TextStyleHelper.instance.title18,
                         padding: EdgeInsets.symmetric(
                             horizontal: 24.h, vertical: 12.h),
@@ -206,11 +206,11 @@ class MentalHealthChatScreen extends StatelessWidget {
 
               // Message Input
               Container(
-                color: appTheme.whiteCustom,
+                color: Colors.white,
                 padding: EdgeInsets.all(16.h),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: appTheme.colorFFF3F4,
+                    color: GQColors.softBg,
                     borderRadius: BorderRadius.circular(25.h),
                   ),
                   padding:
@@ -222,12 +222,12 @@ class MentalHealthChatScreen extends StatelessWidget {
                           decoration: InputDecoration(
                             hintText: 'Type a message...',
                             hintStyle: TextStyleHelper.instance.title18
-                                .copyWith(color: appTheme.colorFF9CA3),
+                                .copyWith(color: GQColors.ink3),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                           ),
                           style: TextStyleHelper.instance.title18
-                              .copyWith(color: appTheme.colorFF6B72),
+                              .copyWith(color: GQColors.ink2),
                         ),
                       ),
                       SizedBox(width: 12.h),
@@ -239,7 +239,7 @@ class MentalHealthChatScreen extends StatelessWidget {
                           height: 40.h,
                           width: 40.h,
                           decoration: BoxDecoration(
-                            color: appTheme.colorFF4B55,
+                            color: GQColors.ink2,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -247,7 +247,7 @@ class MentalHealthChatScreen extends StatelessWidget {
                               imagePath: ImageConstant.img,
                               height: 20.h,
                               width: 20.h,
-                              color: appTheme.whiteCustom,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -259,14 +259,14 @@ class MentalHealthChatScreen extends StatelessWidget {
 
               // Bottom Navigation
               Container(
-                color: appTheme.whiteCustom,
+                color: Colors.white,
                 child: SafeArea(
                   top: false,
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: appTheme.colorFFF3F4,
+                          color: GQColors.softBg,
                           width: 1.h,
                         ),
                       ),
@@ -321,14 +321,14 @@ class MentalHealthChatScreen extends StatelessWidget {
         Flexible(
           child: Container(
             decoration: BoxDecoration(
-              color: appTheme.colorFFF3F4,
+              color: GQColors.softBg,
               borderRadius: BorderRadius.circular(16.h),
             ),
             padding: EdgeInsets.all(16.h),
             child: Text(
               message,
               style: TextStyleHelper.instance.title18
-                  .copyWith(color: appTheme.colorFF6B72, height: 1.44),
+                  .copyWith(color: GQColors.ink2, height: 1.44),
             ),
           ),
         ),
@@ -343,7 +343,7 @@ class MentalHealthChatScreen extends StatelessWidget {
         Flexible(
           child: Container(
             decoration: BoxDecoration(
-              color: appTheme.colorFFBBF7,
+              color: GQColors.primarySoft,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16.h),
                 topRight: Radius.circular(16.h),
@@ -355,7 +355,7 @@ class MentalHealthChatScreen extends StatelessWidget {
             child: Text(
               message,
               style: TextStyleHelper.instance.title18
-                  .copyWith(color: appTheme.colorFF1665, height: 1.44),
+                  .copyWith(color: GQColors.primaryDk, height: 1.44),
             ),
           ),
         ),
@@ -376,7 +376,7 @@ class MentalHealthChatScreen extends StatelessWidget {
         SizedBox(width: 12.h),
         Container(
           decoration: BoxDecoration(
-            color: appTheme.colorFFF3F4,
+            color: GQColors.softBg,
             borderRadius: BorderRadius.circular(16.h),
           ),
           padding: EdgeInsets.all(12.h),
@@ -407,7 +407,7 @@ class MentalHealthChatScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyleHelper.instance.body14Medium.copyWith(
-                color: isActive ? appTheme.blackCustom : appTheme.colorFF6B72),
+                color: isActive ? Colors.black : GQColors.ink2),
           ),
         ],
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/mood_tracker.dart';
 import '../core/utils/size_utils.dart';
-import '../theme/theme_helper.dart';
+import '../theme/gq_tokens.dart';
 import '../theme/text_style_helper.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_back_button.dart';
@@ -25,7 +25,7 @@ class MoodTrackerScreen extends StatelessWidget {
         children: [
           // Header
           Container(
-            color: appTheme.whiteCustom,
+            color: Colors.white,
             padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
             child: SafeArea(
               top: true,
@@ -59,7 +59,7 @@ class MoodTrackerScreen extends StatelessWidget {
           // Divider
           Container(
             height: 8.h,
-            color: appTheme.colorFFF3F4,
+            color: GQColors.softBg,
           ),
           // Mood Tracker Content
           Expanded(

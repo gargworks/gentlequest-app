@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../dhiwise/core/utils/size_utils.dart';
-import './theme_helper.dart';
+import '../gq_tokens.dart';
 
 /// A helper class for managing text styles in the application
 class TextStyleHelper {
@@ -63,7 +63,7 @@ class TextStyleHelper {
   TextStyle get headline24Bold => TextStyle(
         fontSize: 24.fSize,
         fontWeight: FontWeight.bold,
-        color: appTheme.colorFF1F29,
+        color: GQColors.ink,
       );
 
   TextStyle get headline22Inter => TextStyle(

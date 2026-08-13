@@ -9,7 +9,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
-import '../theme/theme_helper.dart';
 import '../theme/text_style_helper.dart';
 import '../widgets/status_avatar.dart';
 import '../config/profile_config.dart';
@@ -211,7 +210,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: appTheme.whiteCustom,
+      backgroundColor: Colors.white,
       builder: (ctx) {
         return SafeArea(
           top: false,
@@ -599,7 +598,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               children: [
                 // Header
                 Container(
-                  color: appTheme.whiteCustom,
+                  color: Colors.white,
                   padding:
                       EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
                   child: SafeArea(
@@ -727,7 +726,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Divider
                 Container(
                   height: 8.h,
-                  color: appTheme.colorFFF3F4,
+                  color: GQColors.softBg,
                 ),
                 // Web-to-phone promo — non-blocking dismissible banner (web
                 // only). Replaces the old WebMobilePromoSheet.maybeShow popup.
@@ -946,7 +945,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 //   D (voice)     → VoiceInputBar replaces text input in-place
                 Container(
                   key: _inputBarKey,
-                  color: appTheme.whiteCustom,
+                  color: Colors.white,
                   child: SafeArea(
                     top: false,
                     bottom: true,
@@ -1032,7 +1031,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                     Expanded(
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: appTheme.colorFFF3F4,
+                                          color: GQColors.softBg,
                                           borderRadius:
                                               BorderRadius.circular(24.h),
                                         ),
@@ -1126,7 +1125,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     label: 'Wellness disclaimer',
                     child: Container(
                       width: double.infinity,
-                      color: appTheme.whiteCustom,
+                      color: Colors.white,
                       padding: EdgeInsets.fromLTRB(12.h, 0, 12.h, 6.h),
                       child: const Text(
                         // Verbatim compliance copy.
@@ -1232,7 +1231,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 decoration: BoxDecoration(
                   color: message.isUser
                       ? GQColors.successSoft
-                      : appTheme.whiteCustom,
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(16.h),
                   boxShadow: [
                     BoxShadow(
@@ -1252,13 +1251,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         p: TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.w400,
-                          color: appTheme.colorFF1F29,
+                          color: GQColors.ink,
                           height: 1.4,
                         ),
                         strong: TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.bold,
-                          color: appTheme.colorFF1F29,
+                          color: GQColors.ink,
                           height: 1.4,
                         ),
                       ),

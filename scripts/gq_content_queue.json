@@ -729,9 +729,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-app-no-subscription?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd App No Subscription",
       "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
-      "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/5a17351db924/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F5a17351db924%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/9d1632a13ce4/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F9d1632a13ce4%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-app-private-no-tracking",
@@ -739,9 +739,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-app-private-no-tracking?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd App Private No Tracking",
       "scheduled_for": "2026-08-05T01:46:40.771795+00:00",
-      "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/4b30c7ddf1a9/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F4b30c7ddf1a9%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/d0b98eece20e/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Fd0b98eece20e%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-in-adults-workplace",
@@ -749,9 +749,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-in-adults-workplace?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd In Adults Workplace",
       "scheduled_for": "2026-08-06T01:46:40.771795+00:00",
-      "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/8161e883fbfa/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F8161e883fbfa%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/d29a6b527ee8/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Fd29a6b527ee8%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-in-students",
@@ -759,9 +759,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-in-students?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd In Students",
       "scheduled_for": "2026-08-07T01:46:40.771795+00:00",
-      "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/f7ee8ba14298/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Ff7ee8ba14298%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/fb671a59ab73/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Ffb671a59ab73%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-rejection-sensitive-dysphoria",
@@ -769,7 +769,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-rejection-sensitive-dysphoria?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd Rejection Sensitive Dysphoria",
       "scheduled_for": "2026-08-09T01:46:40.771795+00:00",
-      "status": "pending"
+      "status": "failed",
+      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/0f3f453b943c/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F0f3f453b943c%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
+      "retry_count": 5
     },
     {
       "id": "medium_blog_adhd-support-app-no-streaks",
@@ -777,7 +779,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-support-app-no-streaks?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd Support App No Streaks",
       "scheduled_for": "2026-08-10T01:46:40.771795+00:00",
-      "status": "pending"
+      "status": "posted",
+      "posted_at": "2026-08-10T02:32:16.810890+00:00",
+      "url": "https://gentlequest.medium.com/adhd-support-app-no-streaks-why-gamification-hurts-a8d616a97ae2?postPublishedType=initial&source=post_submit_page---post_submit_publishing_post-----------------------------------------"
     },
     {
       "id": "medium_blog_adhd-time-blindness",
@@ -785,7 +789,9 @@
       "blog_url": "https://gentlequest.app/blog/adhd-time-blindness?utm_source=blog&utm_medium=organic&utm_campaign=stage0_wedge",
       "title": "Adhd Time Blindness",
       "scheduled_for": "2026-08-11T01:46:40.771795+00:00",
-      "status": "pending"
+      "status": "posted",
+      "posted_at": "2026-08-11T02:31:59.611991+00:00",
+      "url": "https://gentlequest.medium.com/adhd-time-blindness-why-you-cant-feel-time-passing-3e1889c4783c?postPublishedType=initial&source=post_submit_page---post_submit_publishing_post-----------------------------------------"
     },
     {
       "id": "medium_blog_adhd-understimulation-burnout",
@@ -922,286 +928,6 @@
       "title": "Why Streaks Make Adhd Worse",
       "scheduled_for": "2026-08-29T01:46:40.771795+00:00",
       "status": "pending"
-    },
-    {
-      "id": "gen_tweet_1786390273_0",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-10T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "task paralysis",
-        "text": "ADHD paralysis isn't laziness. It's your brain hitting a wall between knowing what to do and actually starting. I spent years thinking I was broken. Turns out that gap has a name."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786476673_1",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-11T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "streak guilt",
-        "text": "Streak-based apps taught me to feel ashamed on day 0. Day 0 is when I needed kindness most. You don't lose progress by resting."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786563073_2",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-12T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "executive dysfunction",
-        "text": "Executive dysfunction looks like sitting on your bed for 45 minutes knowing you need to shower. It's not a willpower problem. Your brain's starter motor is glitching."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786649473_3",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-13T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "medication mood swings",
-        "text": "Meds wearing off at 4pm used to wreck my evenings. Naming the crash out loud -- 'this is the dip, not me' -- made it 30% less personal. Small reframe, real difference."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786735873_4",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-14T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "forgetting to track",
-        "text": "The irony of mood tracking apps: the days I most need to track are the days I forget to open them. That's not a you problem. That's a design problem."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786822273_5",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-15T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "burnout",
-        "text": "Burnout with ADHD doesn't feel like tired. It feels like the volume got turned up on everything and the off switch is in another room."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786908673_6",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-16T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "self compassion",
-        "text": "Self-compassion isn't soft. It's the only thing that got me to try again after the 47th failed routine. Shame makes me hide. Kindness makes me show up."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786995073_7",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-17T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "routine",
-        "text": "My routine doesn't survive contact with a bad day. So I stopped building routines and started building 'good enough' floors. Floor: brush teeth, drink water, exist. That counts."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1787081473_8",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-18T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "procrastination",
-        "text": "Procrastination with ADHD isn't avoiding the task. It's avoiding the feeling the task gives you. Once I named the feeling, the task got lighter. Not easy. Lighter."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1787167873_9",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-19T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "mood tracking",
-        "text": "Tracked my mood for 30 days without a streak counter. Saw the pattern: bad days cluster around poor sleep, not bad character. Data over guilt."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787254273_10",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-20T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "task paralysis",
-        "text": "God, the paralysis thing. I spent years thinking I was lazy because I'd sit there knowing exactly what to do and not move. What finally clicked for me wasn't a productivity trick -- it was learning that the gap between 'know' and 'do' is an actual executive function thing, not a character flaw.\n\nThe thing that helped most: shrinking the first step until it was almost embarrassing. Not 'clean the kitchen' -- 'stand up.' Not 'start the report' -- 'open the doc.' Sometimes I still don't do the second step. But standing up happens more often than cleaning ever did.\n\nAlso -- body doubling. Just having another human in the room, not even helping, drops the activation cost somehow. Have you tried anything like that, or is it more the overwhelm kind of stuck?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787340673_11",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-21T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "streak guilt",
-        "text": "This. The moment I let day 0 exist without punishment, tracking actually started working for me. Streaks made me quit the whole thing every time I broke one. No-streak tracking is the only kind that survived more than two weeks."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787427073_12",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-22T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "morning anxiety",
-        "text": "Morning anxiety is brutal -- it's like your nervous system boots up in alarm mode before you've even opened your eyes. Two things that took the edge off for me (not fixed, just edged off): not checking my phone for the first 20 minutes, and drinking water before coffee. The phone thing mattered more than I expected.\n\nWhat does your morning actually look like right now? Sometimes naming the first anxious thought out loud helps me see it's not as true as it feels."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787513473_13",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-23T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "getting out of bed",
-        "text": "Getting out of bed when everything feels pointless is genuinely one of the hardest things a person can do. People who haven't been there think it's about motivation. It's not. It's about moving a body that feels like it's made of concrete.\n\nWhat helped me wasn't a reason to get up. It was making the getting-up part require less. Phone and water on the nightstand. Clothes already on the chair. Window cracked so the light changes. I'd negotiate with myself: 'you don't have to shower, you don't have to be okay, you have to be vertical.' Some days vertical was the whole win.\n\nThe shame about staying in bed made it worse, honestly. Like I was failing at the bare minimum. You're not failing. You're in a hard season and doing the thing that's in front of you."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787599873_14",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-24T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "mood journaling",
-        "text": "Mood journaling changed more for me than years of just thinking about my patterns. The thing I noticed: my bad days weren't random. They clustered around poor sleep and skipped meals, not around me being a fundamentally broken person. Seeing that on paper hit different than feeling it.\n\nI tried a few apps and bounced off the ones that punished me for missing days. Ended up building a tiny free thing that does check-ins without streaks or shame -- happy to share the link if useful. But honestly even a notes app and a 1-5 scale works. The data matters more than the tool."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787686273_15",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-25T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "executive dysfunction",
-        "text": "Executive dysfunction is so isolating because from the outside it looks like nothing's wrong with you. Inside you're screaming at yourself to move and nothing happens. You're not alone in that specific feeling -- it's one of the most common things people describe post-diagnosis. Have you talked to anyone about the assessment process?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787772673_16",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-26T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "spiral tracking",
-        "text": "Spiral tracking is such a good instinct. I started doing something similar and it pulled me out of the 'anxiety is happening TO me' feeling into 'oh, this has a shape.'\n\nWhat I logged: trigger, first thought, body feeling, what I did, how long it lasted. The how-long-it-lasted part was the surprise. I'd feel like a panic moment lasted forever, then see it was 8 minutes. That didn't make it pleasant, but it made it survivable in a way it wasn't before.\n\nOne thing I'd add: log the moments it DIDN'T spiral too. Otherwise the log becomes a record of only the bad and that's its own weight."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787859073_17",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-27T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "low-effort self care",
-        "text": "Low-effort self care is real self care. The idea that it only counts if it's a bubble bath and a journal entry is nonsense. Brushing your teeth with your eyes half closed counts. Eating a granola bar standing in the kitchen counts. The bar for 'cared for yourself today' is on the floor and that's fine."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787945473_18",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-28T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "tracking symptoms for a doctor",
-        "text": "Tracking symptoms ahead of a doctor's appointment was the single best prep I ever did. First appointment I went in with vibes and got nothing useful. Second one I went in with two weeks of 'slept 4hrs, irritable, couldn't start tasks, cried at a commercial' and the conversation was completely different.\n\nDoctors can't work with 'I've been feeling bad.' They can work with patterns. Even a notes-app log with three columns -- date, what happened, how I felt -- gives them something to anchor on.\n\nI built a free mood check-in thing that works for this (no streaks, no shame, you can show the history to a clinician). Happy to share if it'd help. But seriously, even paper works -- the point is to not walk in relying on memory when your memory is one of the symptoms."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1788031873_19",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-29T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "medication mood swings",
-        "text": "The med crash is so real and so under-discussed. Mine hit at 4pm like a switch and I spent months thinking I was just a terrible person in the evenings. Naming it -- 'this is the dip, not me' -- didn't fix it but made it less personal.\n\nThings that helped the crash land softer: protein at lunch (not only carbs), not pushing through it but actually resting for 20 min, and warning the people around me that 4-6pm me is a different gear. Have you noticed if yours lines up with a specific time, or is it more unpredictable?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
     }
   ],
   "queue": [
@@ -1928,8 +1654,8 @@
       "title": "Adhd App No Subscription",
       "scheduled_for": "2026-08-04T01:46:40.771795+00:00",
       "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/5a17351db924/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F5a17351db924%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "error": "",
+      "retry_count": 0
     },
     {
       "id": "medium_blog_adhd-app-private-no-tracking",
@@ -1938,8 +1664,8 @@
       "title": "Adhd App Private No Tracking",
       "scheduled_for": "2026-08-05T01:46:40.771795+00:00",
       "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/4b30c7ddf1a9/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F4b30c7ddf1a9%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "error": "",
+      "retry_count": 0
     },
     {
       "id": "medium_blog_adhd-in-adults-workplace",
@@ -1948,8 +1674,8 @@
       "title": "Adhd In Adults Workplace",
       "scheduled_for": "2026-08-06T01:46:40.771795+00:00",
       "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/8161e883fbfa/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2F8161e883fbfa%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "error": "",
+      "retry_count": 0
     },
     {
       "id": "medium_blog_adhd-in-students",
@@ -1958,8 +1684,8 @@
       "title": "Adhd In Students",
       "scheduled_for": "2026-08-07T01:46:40.771795+00:00",
       "status": "pending",
-      "error": "Medium publish failed after heal: Publish dialog did not complete (likely rate limited) \u2014 URL: https://medium.com/p/f7ee8ba14298/submission?redirectUrl=https%3A%2F%2Fmedium.com%2Fp%2Ff7ee8ba14298%2Fedit&submitType=publishing-post&postPublishedType=initial \u2014 Telegram alert sent",
-      "retry_count": 1
+      "error": "",
+      "retry_count": 0
     },
     {
       "id": "medium_blog_adhd-rejection-sensitive-dysphoria",
@@ -2120,286 +1846,6 @@
       "title": "Why Streaks Make Adhd Worse",
       "scheduled_for": "2026-08-29T01:46:40.771795+00:00",
       "status": "pending"
-    },
-    {
-      "id": "gen_tweet_1786390273_0",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-10T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "task paralysis",
-        "text": "ADHD paralysis isn't laziness. It's your brain hitting a wall between knowing what to do and actually starting. I spent years thinking I was broken. Turns out that gap has a name."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786476673_1",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-11T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "streak guilt",
-        "text": "Streak-based apps taught me to feel ashamed on day 0. Day 0 is when I needed kindness most. You don't lose progress by resting."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786563073_2",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-12T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "executive dysfunction",
-        "text": "Executive dysfunction looks like sitting on your bed for 45 minutes knowing you need to shower. It's not a willpower problem. Your brain's starter motor is glitching."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786649473_3",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-13T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "medication mood swings",
-        "text": "Meds wearing off at 4pm used to wreck my evenings. Naming the crash out loud -- 'this is the dip, not me' -- made it 30% less personal. Small reframe, real difference."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786735873_4",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-14T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "forgetting to track",
-        "text": "The irony of mood tracking apps: the days I most need to track are the days I forget to open them. That's not a you problem. That's a design problem."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786822273_5",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-15T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "burnout",
-        "text": "Burnout with ADHD doesn't feel like tired. It feels like the volume got turned up on everything and the off switch is in another room."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786908673_6",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-16T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "self compassion",
-        "text": "Self-compassion isn't soft. It's the only thing that got me to try again after the 47th failed routine. Shame makes me hide. Kindness makes me show up."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1786995073_7",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-17T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "routine",
-        "text": "My routine doesn't survive contact with a bad day. So I stopped building routines and started building 'good enough' floors. Floor: brush teeth, drink water, exist. That counts."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1787081473_8",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-18T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "procrastination",
-        "text": "Procrastination with ADHD isn't avoiding the task. It's avoiding the feeling the task gives you. Once I named the feeling, the task got lighter. Not easy. Lighter."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_tweet_1787167873_9",
-      "channel": "buffer",
-      "status": "pending",
-      "scheduled_for": "2026-08-19T02:00:00.000000+00:00",
-      "content": {
-        "type": "tweet",
-        "topic": "mood tracking",
-        "text": "Tracked my mood for 30 days without a streak counter. Saw the pattern: bad days cluster around poor sleep, not bad character. Data over guilt."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787254273_10",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-20T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "task paralysis",
-        "text": "God, the paralysis thing. I spent years thinking I was lazy because I'd sit there knowing exactly what to do and not move. What finally clicked for me wasn't a productivity trick -- it was learning that the gap between 'know' and 'do' is an actual executive function thing, not a character flaw.\n\nThe thing that helped most: shrinking the first step until it was almost embarrassing. Not 'clean the kitchen' -- 'stand up.' Not 'start the report' -- 'open the doc.' Sometimes I still don't do the second step. But standing up happens more often than cleaning ever did.\n\nAlso -- body doubling. Just having another human in the room, not even helping, drops the activation cost somehow. Have you tried anything like that, or is it more the overwhelm kind of stuck?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787340673_11",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-21T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "streak guilt",
-        "text": "This. The moment I let day 0 exist without punishment, tracking actually started working for me. Streaks made me quit the whole thing every time I broke one. No-streak tracking is the only kind that survived more than two weeks."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787427073_12",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-22T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "morning anxiety",
-        "text": "Morning anxiety is brutal -- it's like your nervous system boots up in alarm mode before you've even opened your eyes. Two things that took the edge off for me (not fixed, just edged off): not checking my phone for the first 20 minutes, and drinking water before coffee. The phone thing mattered more than I expected.\n\nWhat does your morning actually look like right now? Sometimes naming the first anxious thought out loud helps me see it's not as true as it feels."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787513473_13",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-23T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "getting out of bed",
-        "text": "Getting out of bed when everything feels pointless is genuinely one of the hardest things a person can do. People who haven't been there think it's about motivation. It's not. It's about moving a body that feels like it's made of concrete.\n\nWhat helped me wasn't a reason to get up. It was making the getting-up part require less. Phone and water on the nightstand. Clothes already on the chair. Window cracked so the light changes. I'd negotiate with myself: 'you don't have to shower, you don't have to be okay, you have to be vertical.' Some days vertical was the whole win.\n\nThe shame about staying in bed made it worse, honestly. Like I was failing at the bare minimum. You're not failing. You're in a hard season and doing the thing that's in front of you."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787599873_14",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-24T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "mood journaling",
-        "text": "Mood journaling changed more for me than years of just thinking about my patterns. The thing I noticed: my bad days weren't random. They clustered around poor sleep and skipped meals, not around me being a fundamentally broken person. Seeing that on paper hit different than feeling it.\n\nI tried a few apps and bounced off the ones that punished me for missing days. Ended up building a tiny free thing that does check-ins without streaks or shame -- happy to share the link if useful. But honestly even a notes app and a 1-5 scale works. The data matters more than the tool."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787686273_15",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-25T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "executive dysfunction",
-        "text": "Executive dysfunction is so isolating because from the outside it looks like nothing's wrong with you. Inside you're screaming at yourself to move and nothing happens. You're not alone in that specific feeling -- it's one of the most common things people describe post-diagnosis. Have you talked to anyone about the assessment process?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787772673_16",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-26T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "spiral tracking",
-        "text": "Spiral tracking is such a good instinct. I started doing something similar and it pulled me out of the 'anxiety is happening TO me' feeling into 'oh, this has a shape.'\n\nWhat I logged: trigger, first thought, body feeling, what I did, how long it lasted. The how-long-it-lasted part was the surprise. I'd feel like a panic moment lasted forever, then see it was 8 minutes. That didn't make it pleasant, but it made it survivable in a way it wasn't before.\n\nOne thing I'd add: log the moments it DIDN'T spiral too. Otherwise the log becomes a record of only the bad and that's its own weight."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787859073_17",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-27T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "low-effort self care",
-        "text": "Low-effort self care is real self care. The idea that it only counts if it's a bubble bath and a journal entry is nonsense. Brushing your teeth with your eyes half closed counts. Eating a granola bar standing in the kitchen counts. The bar for 'cared for yourself today' is on the floor and that's fine."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1787945473_18",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-28T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "tracking symptoms for a doctor",
-        "text": "Tracking symptoms ahead of a doctor's appointment was the single best prep I ever did. First appointment I went in with vibes and got nothing useful. Second one I went in with two weeks of 'slept 4hrs, irritable, couldn't start tasks, cried at a commercial' and the conversation was completely different.\n\nDoctors can't work with 'I've been feeling bad.' They can work with patterns. Even a notes-app log with three columns -- date, what happened, how I felt -- gives them something to anchor on.\n\nI built a free mood check-in thing that works for this (no streaks, no shame, you can show the history to a clinician). Happy to share if it'd help. But seriously, even paper works -- the point is to not walk in relying on memory when your memory is one of the symptoms."
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
-    },
-    {
-      "id": "gen_reddit_1788031873_19",
-      "channel": "reddit",
-      "status": "pending",
-      "scheduled_for": "2026-08-29T02:00:00.000000+00:00",
-      "content": {
-        "type": "reddit",
-        "topic": "medication mood swings",
-        "text": "The med crash is so real and so under-discussed. Mine hit at 4pm like a switch and I spent months thinking I was just a terrible person in the evenings. Naming it -- 'this is the dip, not me' -- didn't fix it but made it less personal.\n\nThings that helped the crash land softer: protein at lunch (not only carbs), not pushing through it but actually resting for 20 min, and warning the people around me that 4-6pm me is a different gear. Have you noticed if yours lines up with a specific time, or is it more unpredictable?"
-      },
-      "retry_count": 0,
-      "error": "",
-      "created_at": "2026-08-08T19:31:13.242071+00:00"
     }
   ]
 }

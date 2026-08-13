@@ -1,0 +1,13 @@
+{
+  "shape": "package",
+  "pkg": "gentlequest-landing",
+  "globalName": "GQ",
+  "projectId": "91e654cd-ddb3-4a71-b7c8-81b4a88cd85e",
+  "buildCmd": "cd landing-page && npm run build",
+  "srcDir": "landing-page/src",
+  "cssEntry": "landing-page/src/index.css",
+  "componentSrcMap": {
+    "App": "landing-page/src/App.jsx",
+    "ChatWidget": "landing-page/src/components/ChatWidget.jsx"
+  }
+}

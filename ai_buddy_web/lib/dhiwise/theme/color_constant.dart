@@ -13,7 +13,7 @@ class ColorConstant {
 
   // Accents (Tailwind-like 500 tones)
   static const Color blue500 = Color(0xFF3B82F6);
-  static const Color green500 = Color(0xFF10B981);
+  static const Color green500 = Color(0xFF9CC487); // emerald→moodGreat per token migration
   static const Color red500 = Color(0xFFEF4444);
   static const Color orange500 = Color(0xFFF59E0B);
   static const Color purple500 = Color(0xFFA855F7);

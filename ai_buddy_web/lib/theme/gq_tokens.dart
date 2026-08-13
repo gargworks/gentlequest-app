@@ -105,6 +105,11 @@ class GQColors {
   /// Source: agent ruling 2026-05-22 (compliance_guard L360/L683/L1460 sweep).
   static const coralDk = Color(0xFFE0494C);
 
+  /// Coral dark deep — darker coral for crisis-line icon accents (#B33636).
+  /// Distinct from [coralDk] (#E0494C); used in offline crisis-row phone icon.
+  /// Source: offline_banner.dart _CrisisLineRow phone icon (R1D12).
+  static const coralDkDeep = Color(0xFFB33636);
+
   /// Success soft tint — pale green background for "safe / passed" surfaces.
   /// Source: agent ruling 2026-05-22 (compliance_guard L695/L698 sweep).
   static const successSoft = Color(0xFFE8F4EE);

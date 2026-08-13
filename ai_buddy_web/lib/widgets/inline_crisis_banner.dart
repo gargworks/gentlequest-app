@@ -58,8 +58,8 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
   Widget build(BuildContext context) {
     // Coral banner: rgba(255,107,107,0.14) → rgba(255,107,107,0.08)
     // Border: rgba(255,107,107,0.35)
-    // Body text: #7A2A2C (deep maroon)
-    const bodyInk = Color(0xFF7A2A2C);
+    // Body text: GQColors.inkOnCoral (#7A2424) — deep coral ink
+    const bodyInk = GQColors.inkOnCoral;
     const bannerBg1 = Color(0x24FF6B6B); // ~0.14 opacity
     const bannerBg2 = Color(0x14FF6B6B); // ~0.08 opacity
     const bannerBorder = Color(0x59FF6B6B); // ~0.35 opacity
