@@ -22,7 +22,6 @@ import '../models/interactive_exercise.dart';
 import '../services/firebase_service.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
-import '../widgets/message_bubble.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/profile_nav_sheet.dart';
 import '../widgets/ai_thinking_indicator.dart';
@@ -35,6 +34,11 @@ import '../widgets/voice_input_bar.dart';
 import '../widgets/web_mobile_banner.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
+// Chat Error & Offline States — design spec implementation
+import '../widgets/chat_error_bubble.dart';
+import '../widgets/companion_status_dot.dart';
+import '../widgets/connection_pill.dart';
+import '../widgets/offline_safe_list.dart';
 // Stage 1 — Companion creature (replaces the old R1D6 CompanionHeader).
 import '../widgets/companion_widget.dart';
 import 'chat/chat_widgets.dart';
@@ -420,6 +424,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     if (nowOffline != _isOffline) {
       setState(() => _isOffline = nowOffline);
     }
+    // Wire connection state to the chat provider.
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (nowOffline) {
+      chatProvider.markConnectionOffline();
+    } else {
+      chatProvider.markConnectionOnline();
+    }
   }
 
   @override
@@ -560,10 +571,51 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           },
                         ),
                         Expanded(
-                          child: Text(
-                            ProfileConfig.aiName,
-                            textAlign: TextAlign.center,
-                            style: TextStyleHelper.instance.headline24Bold,
+                          child: Consumer<ChatProvider>(
+                            builder: (ctx, cp, _) {
+                              final isUnreachable = cp.connectionState ==
+                                  ChatConnectionState.unreachable;
+                              final showPill = cp.connectionState ==
+                                  ChatConnectionState.reconnecting;
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    isUnreachable
+                                        ? 'CAN\u2019T REACH'
+                                        : 'YOU\u2019RE WITH',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                      color: isUnreachable
+                                          ? GQColors.ink2
+                                          : GQColors.ink3,
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        ProfileConfig.aiName,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyleHelper
+                                            .instance.headline24Bold
+                                            .copyWith(
+                                          color: isUnreachable
+                                              ? GQColors.ink2
+                                              : null,
+                                        ),
+                                      ),
+                                      if (showPill) ...[
+                                        const SizedBox(width: 8),
+                                        const ConnectionPill(visible: true),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         // v1.5.0 ADHD Update — body-doubling entry point.
@@ -752,6 +804,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                       // Detect empty conversation: only greeting, no user messages
                       final hasUserMessages =
                           chatProvider.messages.any((m) => m.isUser);
+
+                      // Cold-start offline (State B): no connectivity at
+                      // launch and no user messages yet → show OfflineSafeList
+                      // instead of the chat message list.
+                      if (_isOffline && !hasUserMessages) {
+                        return OfflineSafeList(
+                          onCrisis: () => _showHelpSheet(),
+                        );
+                      }
+
                       final hideSuggestions = _inputFocus.hasFocus;
                       // Always show conversation starters for new users
                       // (chips builder handles which functional shortcuts to include)
@@ -898,10 +960,23 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         }
 
                         // States A/B/C — standard text input with dim for thinking/exercise
-                        final dimInput = isThinking;
+                        // Offline (State B): input disabled.
+                        // Unreachable (State C): input enabled but shows
+                        // queued count in the hint.
+                        final isOfflineState = chatProvider.connectionState ==
+                            ChatConnectionState.offline;
+                        final isUnreachableState = chatProvider.connectionState ==
+                            ChatConnectionState.unreachable;
+                        final dimInput = isThinking || isOfflineState;
                         final hintText = isThinking
                             ? 'Alex is thinking…'
-                            : 'Type your message...';
+                            : isOfflineState
+                                ? 'You\u2019re offline — Alex will be back when you reconnect'
+                                : isUnreachableState
+                                    ? (chatProvider.queuedCount > 0
+                                        ? '${chatProvider.queuedCount} message${chatProvider.queuedCount == 1 ? '' : 's'} queued'
+                                        : 'Type your message...')
+                                    : 'Type your message...';
 
                         return Opacity(
                           opacity: dimInput ? 0.55 : 1.0,
@@ -1036,45 +1111,19 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   Widget _buildErrorBubble(Message message) {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final errorState = chatProvider.errorStateFor(message.id) ??
+        ChatErrorState.failed;
+    final showActions = chatProvider.errorActionsAvailable(message.id);
+
     return Padding(
       padding: EdgeInsets.only(bottom: 16.h),
-      child: MessageBubble(
-        message: message,
-        isError: true,
-        onRetry: _retryLastFailedMessage,
+      child: ChatErrorBubble(
+        state: errorState,
+        showActions: showActions,
+        onRetry: () => chatProvider.retryFromErrorBubble(message.id),
       ),
     );
-  }
-
-  void _retryLastFailedMessage() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    final msgs = chatProvider.messages;
-    // Retry contract: only the user message IMMEDIATELY preceding the most
-    // recent error bubble is eligible. We do not walk further back looking
-    // for "any" prior user message — that would retry stale content the
-    // user already moved past (e.g. user → ai-ok → user → ai-ok → user
-    // → error: only the last user msg is the candidate). If the slot
-    // before the error isn't a user message (e.g. two errors in a row, or
-    // the error landed before any user input), we skip the retry entirely
-    // rather than guess.
-    String? errorId;
-    String? retryText;
-    int errorIndex = -1;
-    for (int i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].type == MessageType.error) {
-        errorId = msgs[i].id;
-        errorIndex = i;
-        break;
-      }
-    }
-    if (errorIndex > 0) {
-      final prev = msgs[errorIndex - 1];
-      if (prev.isUser && prev.type != MessageType.error) {
-        retryText = prev.content;
-      }
-    }
-    if (errorId != null) chatProvider.removeMessage(errorId);
-    if (retryText != null) chatProvider.sendMessage(retryText);
   }
 
   Widget _buildMessageBubble(Message message, {bool isLast = false}) {
@@ -1103,12 +1152,35 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: [
             if (!message.isUser) ...[
-              StatusAvatar(
-                name: ProfileConfig.aiName,
-                imageAsset: ProfileConfig.aiAvatarAsset,
-                size: 52.h,
-                status: PresenceStatus.none,
-                showStatus: false,
+              Consumer<ChatProvider>(
+                builder: (ctx, cp, _) {
+                  final presence = switch (cp.connectionState) {
+                    ChatConnectionState.online => CompanionPresence.online,
+                    ChatConnectionState.reconnecting =>
+                      CompanionPresence.reconnecting,
+                    ChatConnectionState.unreachable =>
+                      CompanionPresence.unreachable,
+                    ChatConnectionState.offline =>
+                      CompanionPresence.unreachable,
+                  };
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      StatusAvatar(
+                        name: ProfileConfig.aiName,
+                        imageAsset: ProfileConfig.aiAvatarAsset,
+                        size: 52.h,
+                        status: PresenceStatus.none,
+                        showStatus: false,
+                      ),
+                      Positioned(
+                        right: -1,
+                        bottom: -1,
+                        child: CompanionStatusDot(presence: presence),
+                      ),
+                    ],
+                  );
+                },
               ),
               SizedBox(width: 12.h),
             ],

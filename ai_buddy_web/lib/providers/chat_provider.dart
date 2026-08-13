@@ -12,6 +12,40 @@ import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 import '../services/streaming/streaming_sse.dart' as sse;
 import '../services/voice_notes_service.dart';
+import '../widgets/chat_error_bubble.dart';
+
+/// Coarse connection state for the chat surface. Drives the companion
+/// status dot, the connection pill, the app-bar label, and the offline
+/// safe list.
+enum ChatConnectionState {
+  /// Connected and sending normally.
+  online,
+
+  /// A send failed; silent retries are in flight.
+  reconnecting,
+
+  /// Silent retries exhausted (x2) — server-side outage.
+  unreachable,
+
+  /// No device connectivity at launch (cold-start offline).
+  offline,
+}
+
+/// A user message that failed to send and is queued for silent retry.
+class _QueuedMessage {
+  final String content;
+  final String? country;
+  final String userMessageId;
+  final String errorBubbleId;
+  int retryCount = 0;
+
+  _QueuedMessage({
+    required this.content,
+    this.country,
+    required this.userMessageId,
+    required this.errorBubbleId,
+  });
+}
 
 class ChatProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -26,6 +60,42 @@ class ChatProvider extends ChangeNotifier {
 
   bool _isOptimisticGreeting =
       false; // Track if we are showing the temporary local greeting
+
+  // ── Chat Error / Offline States ──────────────────────────────────────────
+  /// Current connection state for the chat surface.
+  ChatConnectionState _connectionState = ChatConnectionState.online;
+  ChatConnectionState get connectionState => _connectionState;
+
+  /// Queued user messages awaiting silent retry.
+  final List<_QueuedMessage> _outboundQueue = [];
+
+  /// Per-error-bubble state (failed vs unreachable), keyed by error Message ID.
+  final Map<String, ChatErrorState> _errorStates = {};
+
+  /// Error bubbles whose action row has been removed (queue flushed on
+  /// reconnect — bubble stays in history as a record but loses the retry
+  /// / alternate-action buttons).
+  final Set<String> _flushedErrorIds = {};
+
+  /// Silent-retry backoff schedule: 2s, then 6s. Two retries max.
+  static const List<Duration> _retryBackoffs = [
+    Duration(seconds: 2),
+    Duration(seconds: 6),
+  ];
+
+  Timer? _retryTimer;
+
+  /// Look up the error state for a given error-bubble Message ID.
+  /// Returns null if the ID is not a tracked error bubble.
+  ChatErrorState? errorStateFor(String messageId) => _errorStates[messageId];
+
+  /// Whether the action row (retry / alternate) should be visible for a
+  /// given error bubble. False once the queue has been flushed on reconnect.
+  bool errorActionsAvailable(String messageId) =>
+      !_flushedErrorIds.contains(messageId);
+
+  /// Number of messages currently queued for retry.
+  int get queuedCount => _outboundQueue.length;
 
   // Welcome back messages based on time away
   static const List<String> _welcomeBackMessages = [
@@ -307,10 +377,8 @@ class ChatProvider extends ChangeNotifier {
       _error = errorMessage;
       if (_isTyping) _isTyping = false;
 
-      // Add error message bubble (user message already added above)
-      _messages.add(
-        Message(content: errorMessage, isUser: false, type: MessageType.error),
-      );
+      // Queue for silent retry with ChatErrorBubble (failed state).
+      _queueFailedSend(content, country, userMessage.id, errorMessage);
     } catch (e) {
       debugPrint('❌ Unexpected error in sendMessage: $e');
 
@@ -326,13 +394,8 @@ class ChatProvider extends ChangeNotifier {
       _error = friendly;
       if (_isTyping) _isTyping = false;
 
-      _messages.add(
-        Message(
-          content: friendly,
-          isUser: false,
-          type: MessageType.error,
-        ),
-      );
+      // Queue for silent retry with ChatErrorBubble (failed state).
+      _queueFailedSend(content, country, userMessage.id, friendly);
     } finally {
       _isSending = false; // reset tap debounce so future sends work
       _isLoading = false;
@@ -570,7 +633,170 @@ class ChatProvider extends ChangeNotifier {
 
   void removeMessage(String id) {
     _messages.removeWhere((m) => m.id == id);
+    _errorStates.remove(id);
+    _flushedErrorIds.remove(id);
     notifyListeners();
+  }
+
+  // ── Chat Error / Offline: queue, retry, flush ────────────────────────────
+
+  /// Called when a send fails. Adds a tracked error bubble (failed state),
+  /// queues the message for silent retry, sets the connection state to
+  /// reconnecting, and schedules the first retry after 2s.
+  void _queueFailedSend(
+    String content,
+    String? country,
+    String userMessageId,
+    String errorText,
+  ) {
+    final errorBubble = Message(
+      content: errorText,
+      isUser: false,
+      type: MessageType.error,
+    );
+    _messages.add(errorBubble);
+    _errorStates[errorBubble.id] = ChatErrorState.failed;
+
+    _outboundQueue.add(_QueuedMessage(
+      content: content,
+      country: country,
+      userMessageId: userMessageId,
+      errorBubbleId: errorBubble.id,
+    ));
+
+    if (_connectionState == ChatConnectionState.online) {
+      _connectionState = ChatConnectionState.reconnecting;
+    }
+    _scheduleRetry();
+    notifyListeners();
+  }
+
+  /// Schedules the next silent retry using the backoff schedule
+  /// (2s for retry 0, 6s for retry 1). No-op if the queue is empty or
+  /// the retry cap has been reached.
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    if (_outboundQueue.isEmpty) return;
+
+    final next = _outboundQueue.first;
+    if (next.retryCount >= _retryBackoffs.length) {
+      // Two retries exhausted → escalate to unreachable.
+      _escalateToUnreachable();
+      return;
+    }
+
+    final delay = _retryBackoffs[next.retryCount];
+    _retryTimer = Timer(delay, _attemptRetry);
+  }
+
+  /// Attempts a silent retry of the oldest queued message. On success,
+  /// removes the error bubble and processes the AI reply. On failure,
+  /// increments the retry count and reschedules (or escalates).
+  void _attemptRetry() async {
+    if (_outboundQueue.isEmpty) return;
+    final queued = _outboundQueue.first;
+
+    try {
+      // Try streaming first, then non-streaming — mirrors sendMessage.
+      final handle =
+          await _apiService.streamMessage(queued.content, country: queued.country);
+      if (handle != null) {
+        // Remove error bubble before streaming adds the AI reply.
+        _messages.removeWhere((m) => m.id == queued.errorBubbleId);
+        _errorStates.remove(queued.errorBubbleId);
+        _outboundQueue.removeAt(0);
+        _connectionState = ChatConnectionState.online;
+        notifyListeners();
+        await _handleStreamingMessage(handle, queued.content, queued.country);
+        _processQueueAfterSuccess();
+        return;
+      }
+      await _processNonStreamingResponse(queued.content, country: queued.country);
+      // Success — clean up the error bubble and queue.
+      _messages.removeWhere((m) => m.id == queued.errorBubbleId);
+      _errorStates.remove(queued.errorBubbleId);
+      _outboundQueue.removeAt(0);
+      _connectionState = ChatConnectionState.online;
+      notifyListeners();
+      _processQueueAfterSuccess();
+    } catch (e) {
+      debugPrint('🔄 Silent retry failed: $e');
+      queued.retryCount++;
+      if (queued.retryCount >= _retryBackoffs.length) {
+        _escalateToUnreachable();
+      } else {
+        _scheduleRetry();
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Escalates the oldest queued message to the unreachable state.
+  void _escalateToUnreachable() {
+    if (_outboundQueue.isEmpty) return;
+    final queued = _outboundQueue.first;
+    _errorStates[queued.errorBubbleId] = ChatErrorState.unreachable;
+    _connectionState = ChatConnectionState.unreachable;
+    notifyListeners();
+  }
+
+  /// After a successful retry, if more messages are queued, retry the next
+  /// one immediately (flush oldest-first).
+  void _processQueueAfterSuccess() {
+    if (_outboundQueue.isEmpty) {
+      _connectionState = ChatConnectionState.online;
+      notifyListeners();
+      return;
+    }
+    // Flush remaining queued messages immediately.
+    _attemptRetry();
+  }
+
+  /// Called by the UI when device connectivity returns. Flushes the queue
+  /// oldest-first. Error bubbles that were retried successfully are removed;
+  /// any remaining error bubbles lose their action row (become historical).
+  void markConnectionOnline() {
+    if (_connectionState == ChatConnectionState.online) return;
+    _retryTimer?.cancel();
+
+    if (_outboundQueue.isEmpty) {
+      _connectionState = ChatConnectionState.online;
+      notifyListeners();
+      return;
+    }
+
+    // Mark all current error bubbles as flushed (lose action row) and
+    // attempt to flush the queue.
+    for (final queued in _outboundQueue) {
+      _flushedErrorIds.add(queued.errorBubbleId);
+    }
+    _connectionState = ChatConnectionState.reconnecting;
+    notifyListeners();
+    _attemptRetry();
+  }
+
+  /// Called by the UI when the device goes offline (cold-start or mid-chat).
+  void markConnectionOffline() {
+    _retryTimer?.cancel();
+    _connectionState = ChatConnectionState.offline;
+    notifyListeners();
+  }
+
+  /// User-initiated retry for a specific error bubble (taps "Try again").
+  /// Resets the retry count for that message and fires immediately.
+  void retryFromErrorBubble(String errorBubbleId) {
+    final idx = _outboundQueue.indexWhere((q) => q.errorBubbleId == errorBubbleId);
+    if (idx == -1) return;
+    // Move to front and retry immediately.
+    final queued = _outboundQueue.removeAt(idx);
+    queued.retryCount = 0;
+    _outboundQueue.insert(0, queued);
+    _flushedErrorIds.remove(errorBubbleId);
+    _errorStates[errorBubbleId] = ChatErrorState.failed;
+    _connectionState = ChatConnectionState.reconnecting;
+    _retryTimer?.cancel();
+    notifyListeners();
+    _attemptRetry();
   }
 
   /// Inserts a companion (assistant) message directly into the transcript
@@ -644,6 +870,7 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _retryTimer?.cancel();
     _authSessionSub?.cancel();
     for (final sub in _subscriptions) {
       sub.cancel();
