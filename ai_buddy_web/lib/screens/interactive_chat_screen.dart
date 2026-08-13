@@ -28,6 +28,8 @@ import '../widgets/profile_nav_sheet.dart';
 import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
+import '../widgets/sean_ellis_survey_sheet.dart';
+import '../providers/survey_provider.dart';
 import '../widgets/voice_input_bar.dart';
 // import '../widgets/web_mobile_promo_sheet.dart'; // Re-enable in redesign
 import '../widgets/web_mobile_banner.dart';
@@ -449,8 +451,32 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     // Fire-and-forget send. Provider will immediately add the user message and set typing.
     // Scroll now to reveal the just-added message, and handle errors non-blockingly.
     _scrollToBottom();
-    chatProvider.sendMessage(messageText).catchError((e) {
+    chatProvider.sendMessage(messageText).then((_) {
+      // After the AI reply lands, increment the chat-session counter and
+      // check whether the Sean-Ellis PMF survey should be shown. The sheet
+      // is non-blocking and only fires once per user (SharedPreferences gate
+      // inside SurveyProvider).
+      _maybeShowSeanEllisSurvey();
+    }).catchError((e) {
       debugPrint('sendMessage error: $e');
+    });
+  }
+
+  /// Increment the chat-session counter via [SurveyProvider] and, if the
+  /// user has now crossed the 3-session threshold and hasn't seen the
+  /// survey yet, present the Sean-Ellis bottom sheet. Non-blocking.
+  void _maybeShowSeanEllisSurvey() {
+    final surveyProvider = context.read<SurveyProvider>();
+    surveyProvider.incrementSessionCount().then((_) {
+      if (!mounted) return;
+      if (!surveyProvider.shouldShowSurvey()) return;
+      // Defer to the next frame so the chat UI settles before the sheet
+      // slides up — keeps the survey non-blocking w.r.t. the reply render.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (!surveyProvider.shouldShowSurvey()) return;
+        showSeanEllisSurveySheet(context);
+      });
     });
   }
 
