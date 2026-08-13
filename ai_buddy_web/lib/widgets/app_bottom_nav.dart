@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../theme/gq_tokens.dart';
 
 /// App-wide bottom navigation used across Talk, Mood, Quest screens
 /// Ensures consistent look and navigation behavior.
@@ -88,8 +89,8 @@ class AppBottomNav extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/home', arguments: tab);
       },
       borderRadius: BorderRadius.circular(12),
-      focusColor: Colors.blue.withValues(alpha: 0.10),
-      hoverColor: Colors.blue.withValues(alpha: 0.06),
+      focusColor: GQColors.primary.withValues(alpha: 0.10),
+      hoverColor: GQColors.primary.withValues(alpha: 0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
         child: Column(
@@ -99,8 +100,8 @@ class AppBottomNav extends StatelessWidget {
               icon,
               size: 28.0,
               color: isActive
-                  ? Colors.blue
-                  : Colors.grey, // keep current grey→blue
+                  ? GQColors.primary
+                  : GQColors.ink3,
             ),
             const SizedBox(height: 4.0),
             AnimatedOpacity(
@@ -113,7 +114,7 @@ class AppBottomNav extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 12.0,
-                      color: isActive ? Colors.blue : Colors.grey,
+                      color: isActive ? GQColors.primary : GQColors.ink3,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
