@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/chat_provider.dart';
+import '../providers/companion_provider.dart';
 import '../models/message.dart';
 import '../theme/text_style_helper.dart';
 import '../widgets/status_avatar.dart';
@@ -48,9 +49,10 @@ import '../services/crisis_keyword_detector.dart';
 import '../models/companion.dart';
 import 'chat/chat_widgets.dart';
 // v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a)
+// Fable #4 — Shared Solitude (body doubling as presence)
 import '../models/body_double_session.dart';
 import '../widgets/body_double/body_double_start_sheet.dart';
-import '../widgets/body_double/body_double_timer_bar.dart';
+import '../widgets/body_double/shared_solitude_space.dart';
 
 // No re-exports: every symbol extracted to chat/chat_widgets.dart was
 // private pre-split, so no external consumer can depend on them.
@@ -131,7 +133,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// stacking/queuing multiple sessions is out of scope for the MVP.
   _BodyDoubleSession? _bdSession;
   Timer? _bdTicker;
-  Duration _bdRemaining = Duration.zero;
 
   // Guards 'intervention_accepted' so it fires once per discrete exercise
   // card, not on every rebuild of the message list (was firing on every
@@ -749,27 +750,22 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             },
                           ),
                         ),
-                        // v1.5.0 ADHD Update — body-doubling entry point.
-                        // Icon swaps to filled + coral while a session is
-                        // active as a lightweight "still running" signal.
+                        // Fable #4 — Shared Solitude entry point. The icon is
+                        // a quiet "sit with company" affordance; no filled/
+                        // running state is shown here because the room is a
+                        // pushed route (the chat isn't visible during a run).
                         Semantics(
-                          label: _bdSession != null
-                              ? 'Focus session running'
-                              : 'Start focus session',
+                          label: 'Sit with company',
                           button: true,
                           child: InkWell(
                             key: const Key('body_double_entry_button'),
                             borderRadius: BorderRadius.circular(22),
                             onTap: _startBodyDoubleFlow,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
                               child: Icon(
-                                _bdSession != null
-                                    ? Icons.timer
-                                    : Icons.timer_outlined,
-                                color: _bdSession != null
-                                    ? GQColors.coral
-                                    : GQColors.primary,
+                                Icons.groups_outlined,
+                                color: GQColors.primary,
                                 size: 28,
                               ),
                             ),
@@ -828,18 +824,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Web-to-phone promo — non-blocking dismissible banner (web
                 // only). Replaces the old WebMobilePromoSheet.maybeShow popup.
                 if (kIsWeb) const WebMobileBanner(),
-                // v1.5.0 ADHD Update — pinned outside the message list (not
-                // scrolled with it) so the running timer is always visible
-                // while chatting. Check-in text lives in the transcript
-                // itself (see _startBodyDoubleSession et al.) — this bar is
-                // just the persistent countdown + end-session affordance.
-                if (_bdSession != null)
-                  BodyDoubleTimerBar(
-                    task: _bdSession!.task,
-                    remaining: _bdRemaining,
-                    total: _bdSession!.total,
-                    onEndSession: _abandonBodyDouble,
-                  ),
+                // Fable #4 — Shared Solitude: the inline timer bar is no
+                // longer shown. When a session is running, the user is in the
+                // SharedSolitudeSpace room (pushed route), not the chat. The
+                // silent clock backs the room; check-in text lives in the
+                // transcript (see _startBodyDoubleSession et al.).
                 // Disclaimer moved to a ChatGPT-style footer below the input
                 // bar (see end of Column). Was an amber dismissible banner
                 // above the greeting — created an "are you in danger?" framing
@@ -1781,25 +1770,24 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     );
   }
 
-  // ── v1.5.0 ADHD Update — Body-doubling MVP (Workstream 2a) ──────────────
+  // ── Fable #4 — Shared Solitude (body doubling as presence) ─────────────
   //
-  // Flow: header icon → showBodyDoubleStartSheet (task + duration) →
+  // Flow: header icon → showBodyDoubleStartSheet (intention + duration) →
   // _startBodyDoubleSession fires `body_double_started` at the real action
-  // site (here, not in build()) and inserts a start check-in into the real
-  // chat transcript → a 1s Timer.periodic ticks _bdRemaining down →
-  // _onBdTick fires the midpoint check-in once, then hands off to
-  // _completeBodyDouble on natural completion. The pinned BodyDoubleTimerBar
-  // lets the user end early via _abandonBodyDouble at any point — always a
-  // kind, no-guilt message, never a "you failed" framing (P: no streaks, no
-  // shame on abandon — see V1_5_0_ADHD_UPDATE_SCOPE.md Workstream 2a).
+  // site, inserts a quiet start check-in into the transcript, then PUSHES
+  // the SharedSolitudeSpace room as a full-screen route. The silent clock
+  // lives inside the room (tick-based Timer), not here. When the user taps
+  // "I'm done" in the room, onDone fires → _onSharedSolitudeDone awards
+  // +5 XP silently via CompanionProvider.checkIn() and pops back to chat.
+  // "Step out" pops the room without the XP check-in (early exit, no shame).
 
   Future<void> _startBodyDoubleFlow() async {
     if (_bdSession != null) {
-      // One session at a time for the MVP — surface the existing session
-      // instead of silently stacking a second timer.
+      // One session at a time — surface the existing room instead of
+      // silently stacking a second one.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('A focus session is already running.')),
+            content: Text('A shared-solitude room is already open.')),
       );
       return;
     }
@@ -1810,93 +1798,51 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
   void _startBodyDoubleSession(BodyDoubleSessionConfig config) {
     // Real action site for the start event — fires once, right where the
-    // user's Start tap actually resolves into a running session.
+    // user's "Sit down" tap resolves into a running session.
     FirebaseService().logEvent('body_double_started', {
       'duration_minutes': config.duration.inMinutes,
       'task_length': config.task.length,
     });
     Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
-      "I'm with you for the next ${config.duration.inMinutes} minutes on "
-      "${config.task}. No pressure — start whenever you're ready, and "
-      "I'll check in partway through. 🌱",
+      "I'm sitting with you on ${config.task}. No countdown, no pressure — "
+      "just presence. Step out whenever. 🌱",
     );
     _bdTicker?.cancel();
     setState(() {
       _bdSession = _BodyDoubleSession(task: config.task, total: config.duration);
-      _bdRemaining = config.duration;
     });
-    _bdTicker = Timer.periodic(const Duration(seconds: 1), _onBdTick);
+    // Push the room. The room owns the silent clock; we keep _bdSession as
+    // a lightweight "a room is open" flag so the entry button can guard
+    // against double-starts while the route is on the stack.
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SharedSolitudeSpace(
+          intention: config.task,
+          total: config.duration,
+          onDone: _onSharedSolitudeDone,
+        ),
+      ),
+    ).then((_) {
+      // Route popped (Step out, I'm done, or system back). Clear the flag.
+      if (mounted) {
+        setState(() {
+          _bdSession = null;
+        });
+      } else {
+        _bdSession = null;
+      }
+    });
   }
 
-  void _onBdTick(Timer timer) {
-    final session = _bdSession;
-    if (session == null) {
-      timer.cancel();
-      return;
-    }
-    final next = _bdRemaining - const Duration(seconds: 1);
-    if (next <= Duration.zero) {
-      _completeBodyDouble();
-      return;
-    }
-    if (!session.midpointFired && next <= session.total ~/ 2) {
-      session.midpointFired = true;
-      Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
-        "Halfway there — still with me? A bit more on ${session.task} and "
-        "we're done. You're doing fine.",
-      );
-    }
-    if (mounted) setState(() => _bdRemaining = next);
-  }
-
-  void _completeBodyDouble() {
-    final session = _bdSession;
-    _bdTicker?.cancel();
-    _bdTicker = null;
-    if (session == null) return;
+  /// Called from SharedSolitudeSpace when the user taps "I'm done" on the
+  /// return screen. Awards +5 XP silently via CompanionProvider.checkIn()
+  //  (no toast, no confetti) and lets the room's onDone pop the route.
+  void _onSharedSolitudeDone() {
+    // Silent +5 XP — no toast, no confetti. The companion grows quietly.
+    Provider.of<CompanionProvider>(context, listen: false).checkIn();
     FirebaseService().logEvent('body_double_completed', {
-      'duration_minutes': session.total.inMinutes,
+      'duration_minutes': _bdSession?.total.inMinutes ?? 0,
     });
-    Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
-      "Time's up! However far you got on ${session.task}, that counts. "
-      "Nice work sticking with me. 💜",
-    );
-    if (mounted) {
-      setState(() {
-        _bdSession = null;
-        _bdRemaining = Duration.zero;
-      });
-    } else {
-      _bdSession = null;
-    }
-  }
-
-  /// Ends the session early. Never framed as failure — no streak break, no
-  /// "you gave up" language. Fires `body_double_abandoned` with the elapsed
-  /// time actually spent, then a kind close-out message in the transcript.
-  void _abandonBodyDouble() {
-    final session = _bdSession;
-    _bdTicker?.cancel();
-    _bdTicker = null;
-    if (session == null) return;
-    final elapsed = session.total - _bdRemaining;
-    FirebaseService().logEvent('body_double_abandoned', {
-      'planned_duration_minutes': session.total.inMinutes,
-      'elapsed_seconds':
-          elapsed.inSeconds.clamp(0, session.total.inSeconds),
-    });
-    Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
-      "No worries — we stopped early. ${session.task} will still be there "
-      "whenever you're ready, and so will I.",
-    );
-    if (mounted) {
-      setState(() {
-        _bdSession = null;
-        _bdRemaining = Duration.zero;
-      });
-    } else {
-      _bdSession = null;
-    }
   }
 
   @override

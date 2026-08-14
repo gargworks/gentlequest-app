@@ -156,6 +156,19 @@ class GQColors {
   /// Safety plan card — contact-row call button text (crisis-line accent).
   static const safetyCallButtonInk = Color(0xFF5C49B6);
 
+  // ── Shared Solitude (Fable #4) — dusk room palette ────────────────────────
+  // Source: Fable #4 spec — Shared Solitude (body doubling as presence).
+  /// Dusk gradient stop 1 — top.
+  static const duskTop = Color(0xFFEFEEFB);
+  /// Dusk gradient stop 2 — middle.
+  static const duskMid = Color(0xFFE9E7F8);
+  /// Dusk gradient stop 3 — bottom.
+  static const duskBottom = Color(0xFFF5EFF2);
+  /// Ambient glow — top-left field.
+  static const glowTopLeft = Color(0xFFDDE2FB);
+  /// Ambient glow — top-right field.
+  static const glowTopRight = Color(0xFFFBE3DD);
+
   /// Ordered list for programmatic mood-scale rendering (e.g. sliders, charts).
   static const moodPalette = [
     moodSlateLavender,
@@ -244,6 +257,23 @@ class GQDurations {
   /// Crossfade from notify-me form to confirmation state (State C).
   /// Source: GentleQuest_Compliance_Extensions.html — "300ms ease-in crossfade".
   static const notifyConfirmCrossfade = Duration(milliseconds: 300);
+
+  // ── Fable #4 — Shared Solitude (body doubling as presence) ───────────────
+
+  /// Entering a room isn't a UI event — app chrome fades, dusk + glows come up.
+  static const roomEnter = Duration(milliseconds: 1800);
+
+  /// Ambient glow field 1 breathing period (top-left).
+  static const glowBreathe1 = Duration(milliseconds: 9000);
+
+  /// Ambient glow field 2 breathing period (top-right) — desynced from field 1.
+  static const glowBreathe2 = Duration(milliseconds: 12000);
+
+  /// Someone leaves/arrives — glow opacity eases over this window.
+  static const presenceDim = Duration(milliseconds: 4000);
+
+  /// The return — no bell. Dusk gradient transitions to gq-bg over this window.
+  static const roomReturn = Duration(milliseconds: 45000);
 }
 
 // ─── Typography ──────────────────────────────────────────────────────────────

@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import '../../models/body_double_session.dart';
 import '../../theme/gq_tokens.dart';
 
-/// BodyDoubleStartSheet — v1.5.0 ADHD Update, Workstream 2a.
+/// BodyDoubleStartSheet — Fable #4: Shared Solitude.
 ///
-/// Modal bottom sheet where the user names a task and picks a duration
-/// before starting a body-doubling session. Follows the same
+/// Modal bottom sheet where the user names an intention and picks a duration
+/// before sitting down in the shared-solitude room. Follows the same
 /// `showXSheet(context)` convention as `showSafetyLegalSheet` /
 /// `showProfileNavSheet`.
 ///
 /// Returns null if dismissed without starting (Close / swipe-down /
-/// tap-outside). No analytics fire for a dismissal — `body_double_started`
-/// is only logged by the caller at the real action site (the Start button
-/// tap), once this Future resolves with a non-null config.
+/// tap-outside). The inverted design replaces the v1.5.0 "Focus together"
+/// framing with "Sit with company" — a room, not a timer.
 Future<BodyDoubleSessionConfig?> showBodyDoubleStartSheet(
     BuildContext context) {
   return showModalBottomSheet<BodyDoubleSessionConfig>(
@@ -23,6 +22,12 @@ Future<BodyDoubleSessionConfig?> showBodyDoubleStartSheet(
     builder: (ctx) => const _BodyDoubleStartSheetContent(),
   );
 }
+
+/// Sentinel duration meaning "no fixed end — step out when I leave."
+/// Encoded as a very large Duration so the existing tick-based controller
+/// in `InteractiveChatScreen` simply never reaches zero in practice; the
+/// SharedSolitudeSpace "Step out" button is the real exit path for this mode.
+const Duration kBodyDoubleOpenEnded = Duration(days: 365);
 
 class _BodyDoubleStartSheetContent extends StatefulWidget {
   const _BodyDoubleStartSheetContent();
@@ -35,7 +40,15 @@ class _BodyDoubleStartSheetContent extends StatefulWidget {
 class _BodyDoubleStartSheetContentState
     extends State<_BodyDoubleStartSheetContent> {
   final TextEditingController _taskController = TextEditingController();
-  int _selectedMinutes = kBodyDoubleDurationPresetsMinutes[1]; // default 10
+
+  /// Index into [_durationOptions]. Default to 50 min (index 1).
+  int _selectedDurationIndex = 1;
+
+  static const List<_DurationOption> _durationOptions = [
+    _DurationOption(label: '25 min', duration: Duration(minutes: 25)),
+    _DurationOption(label: '50 min', duration: Duration(minutes: 50)),
+    _DurationOption(label: 'When I leave', duration: kBodyDoubleOpenEnded),
+  ];
 
   @override
   void dispose() {
@@ -43,12 +56,12 @@ class _BodyDoubleStartSheetContentState
     super.dispose();
   }
 
-  void _start() {
+  void _sitDown() {
     final task = _taskController.text.trim();
     Navigator.of(context).pop(
       BodyDoubleSessionConfig(
         task: task.isEmpty ? 'this' : task,
-        duration: Duration(minutes: _selectedMinutes),
+        duration: _durationOptions[_selectedDurationIndex].duration,
       ),
     );
   }
@@ -74,7 +87,7 @@ class _BodyDoubleStartSheetContentState
                 children: [
                   Expanded(
                     child: Text(
-                      'Focus together',
+                      'Sit with company',
                       style: theme.textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
@@ -88,15 +101,14 @@ class _BodyDoubleStartSheetContentState
               ),
               const SizedBox(height: 4),
               Text(
-                "I'll stay with you while you work — no streaks, no "
-                'pressure. Just tell me what you\'re doing and I\'ll check '
-                'in along the way.',
+                'Work next to others, quietly. Nobody sees you. '
+                "Nobody counts you. Quest sits too.",
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: GQColors.ink2),
               ),
               const SizedBox(height: 20),
               Text(
-                'What are we doing?',
+                "What's your intention?",
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
@@ -106,7 +118,7 @@ class _BodyDoubleStartSheetContentState
                 controller: _taskController,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
-                  hintText: 'e.g. tidy the kitchen, answer emails…',
+                  hintText: 'e.g. draft the two emails',
                   filled: true,
                   fillColor: GQColors.softBg,
                   border: OutlineInputBorder(
@@ -119,21 +131,26 @@ class _BodyDoubleStartSheetContentState
               ),
               const SizedBox(height: 20),
               Text(
-                'For how long?',
-                style: theme.textTheme.labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                "I'LL STEP OUT AFTER",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: GQColors.ink3,
+                  letterSpacing: 0.8,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: kBodyDoubleDurationPresetsMinutes.map((minutes) {
-                  final selected = minutes == _selectedMinutes;
+                children: List.generate(_durationOptions.length, (i) {
+                  final opt = _durationOptions[i];
+                  final selected = i == _selectedDurationIndex;
                   return ChoiceChip(
-                    label: Text('$minutes min'),
+                    key: Key('body_double_duration_$i'),
+                    label: Text(opt.label),
                     selected: selected,
                     onSelected: (_) =>
-                        setState(() => _selectedMinutes = minutes),
+                        setState(() => _selectedDurationIndex = i),
                     selectedColor: GQColors.primarySoft,
                     labelStyle: TextStyle(
                       color: selected ? GQColors.primaryDk : GQColors.ink2,
@@ -143,14 +160,30 @@ class _BodyDoubleStartSheetContentState
                       color: selected ? GQColors.primary : GQColors.hair,
                     ),
                   );
-                }).toList(),
+                }),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: GQColors.softBg,
+                  borderRadius: BorderRadius.circular(GQRadii.card),
+                ),
+                child: Text(
+                  "No countdown on screen. Pull down anytime to ask how "
+                  "long it's been. The room will tell you when your time's "
+                  'up — gently.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: GQColors.ink2, height: 1.45),
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   key: const Key('body_double_start_button'),
-                  onPressed: _start,
+                  onPressed: _sitDown,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GQColors.primary,
                     foregroundColor: Colors.white,
@@ -159,7 +192,17 @@ class _BodyDoubleStartSheetContentState
                       borderRadius: BorderRadius.circular(GQRadii.button),
                     ),
                   ),
-                  child: Text('Start $_selectedMinutes-minute session'),
+                  child: const Text('Sit down'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  'Camera off. Mic off. Presence is one bit: here.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: GQColors.ink3,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -169,4 +212,10 @@ class _BodyDoubleStartSheetContentState
       ),
     );
   }
+}
+
+class _DurationOption {
+  const _DurationOption({required this.label, required this.duration});
+  final String label;
+  final Duration duration;
 }
