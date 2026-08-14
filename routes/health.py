@@ -36,7 +36,37 @@ def _build_health_note(db_down: bool, ai_available: bool):
 @health_bp.route("/api/health", methods=["GET"])
 @limiter.exempt
 def health():
-    """Enhanced health check endpoint with environment info"""
+    """Lightweight health check for Render — no DB query, no Neon compute burn.
+
+    Render pings this every ~60s. Each DB query wakes Neon and burns compute
+    (80.95/100 CU-hrs in 14 days). This endpoint returns 200 without touching
+    the database. Use /api/health/deep for full DB+Redis+Ollama diagnostics.
+    """
+    try:
+        from helpers.health_helpers import _detect_platform
+
+        platform = _detect_platform()
+        ai_available = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS"))
+
+        return jsonify({
+            "status": "healthy",
+            "database": "skipped",  # Use /api/health/deep for DB check
+            "ai_chat_available": ai_available,
+            "environment": os.environ.get("ENVIRONMENT", "production"),
+            "platform": platform,
+            "version": os.environ.get("VERSION", "1.0.0"),
+            "note": "Lightweight check — DB not queried to preserve Neon compute. Use /api/health/deep for diagnostics.",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }), 200
+    except Exception as e:
+        # Even on error, return 200 so Render doesn't restart the service
+        return jsonify({"status": "healthy", "error": str(e)}), 200
+
+
+@health_bp.route("/api/health/full", methods=["GET"])
+@limiter.exempt
+def health_full():
+    """Full health check with DB+Redis+Ollama — for debugging only, not for Render health checks."""
     try:
         from helpers.health_helpers import (
             _check_database_health,
