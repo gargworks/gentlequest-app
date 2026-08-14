@@ -18,8 +18,10 @@ import 'package:flutter/material.dart';
 
 import '../screens/weekly_review_screen.dart' show WeeklyReviewData, DayMoodEntry;
 import '../theme/gq_tokens.dart';
+import 'companion_painter.dart';
 import 'companion_widget.dart' show CompanionWidget;
 import 'letter_fragment_picker.dart';
+import '../models/companion.dart' show GrowthStage;
 
 /// Renders the weekly review as a prose letter.
 ///
@@ -52,7 +54,26 @@ class WeeklyLetter extends StatelessWidget {
           const SizedBox(height: 14),
           _LetterBody(composer: composer),
           const SizedBox(height: 18),
-          _Signature(companion: CompanionWidget()),
+          if (isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  const _BreathingCompanion(),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Sapling · 34 active days · unchanged',
+                    style: TextStyle(
+                      fontFamily: GQTypography.bodyFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: GQColors.ink3,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            _Signature(companion: CompanionWidget()),
           const SizedBox(height: 22),
           _LetterButtons(isEmpty: isEmpty, onKeep: () => _openPicker(context), onNotNow: onClose ?? () => Navigator.of(context).maybePop()),
         ],
@@ -164,11 +185,18 @@ class _Paragraph extends StatelessWidget {
     if (highlightSentence == null || highlightSentence!.isEmpty) {
       built = spans;
     } else {
-      // Wrap the highlight sentence in a BackgroundColoredSpan-like effect.
-      // Flutter RichText doesn't support per-span background inline easily
-      // without WidgetSpan; we use TextSpan with a recognition marker and
-      // render the highlight via a Stack overlay below.
-      built = spans;
+      // Apply primary-soft underline background to the highlight sentence
+      // (the "anyway" that gets the visual emphasis).
+      final bgPaint = Paint()..color = GQColors.primarySoft;
+      built = spans.map((s) {
+        if (s is TextSpan && (s.text ?? '') == highlightSentence) {
+          return TextSpan(
+            text: s.text,
+            style: (s.style ?? const TextStyle()).copyWith(background: bgPaint),
+          );
+        }
+        return s;
+      }).toList();
     }
 
     return RichText(
@@ -180,6 +208,58 @@ class _Paragraph extends StatelessWidget {
           }
           return s;
         }).toList(),
+      ),
+    );
+  }
+}
+
+// ─── Breathing companion (empty-week state) ──────────────────────────────────
+
+/// 84px companion with a breathing ScaleTransition, shown in the empty-week
+/// state. Renders a CustomPaint with CompanionPainter (simplified: false)
+/// at 84px, centered, breathing.
+class _BreathingCompanion extends StatefulWidget {
+  const _BreathingCompanion();
+
+  @override
+  State<_BreathingCompanion> createState() => _BreathingCompanionState();
+}
+
+class _BreathingCompanionState extends State<_BreathingCompanion>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _breatheController;
+  late final Animation<double> _breatheAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _breatheController = AnimationController(
+      vsync: this,
+      duration: GQDurations.breathe,
+    );
+    _breatheAnimation = Tween<double>(begin: 1.0, end: 1.035).animate(
+      CurvedAnimation(parent: _breatheController, curve: Curves.easeInOut),
+    );
+    _breatheController.value = 0.5;
+    _breatheController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _breatheController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _breatheAnimation,
+      child: CustomPaint(
+        size: const Size.square(84),
+        painter: const CompanionPainter(
+          stage: GrowthStage.sapling,
+          simplified: false,
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:ai_buddy_web/providers/companion_provider.dart';
 import 'package:ai_buddy_web/screens/weekly_review_screen.dart';
 import 'test_helpers.dart';
 
@@ -10,7 +12,10 @@ void main() {
     Widget build(WeeklyReviewData data) {
       return MaterialApp(
         home: Scaffold(
-          body: WeeklyReviewScreen(data: data),
+          body: ChangeNotifierProvider(
+            create: (_) => CompanionProvider(),
+            child: WeeklyReviewScreen(data: data),
+          ),
         ),
       );
     }
@@ -41,44 +46,72 @@ void main() {
       expect(find.byType(WeeklyReviewScreen), findsOneWidget);
     });
 
-    // ── "Just rest" button (light state with emphasizeRest) ───────────────────
+    // ── Letter format (replaced old NextWeekPromptCard dashboard) ─────────────
 
-    testWidgets('"Just rest" button is present in light state', (tester) async {
+    testWidgets('renders "Dear you" letter header', (tester) async {
       await tester.pumpWidget(build(WeeklyReviewData.stubLight()));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      expect(find.text('Just rest'), findsOneWidget);
+      expect(find.text('Dear you,'), findsOneWidget);
     });
 
-    testWidgets('"Just rest" tap does not crash', (tester) async {
+    testWidgets('letter body is present (non-empty prose)', (tester) async {
       await tester.pumpWidget(build(WeeklyReviewData.stubLight()));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      await tester.tap(find.text('Just rest'));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
+      // The letter body is rendered as RichText. At least one RichText
+      // widget should contain meaningful prose (not just the header).
+      final richTexts = tester.widgetList<RichText>(find.byType(RichText));
+      final hasBody = richTexts.any((rt) {
+        String extract(InlineSpan span) {
+          if (span is TextSpan) {
+            final buf = StringBuffer(span.text ?? '');
+            for (final child in span.children ?? <InlineSpan>[]) {
+              buf.write(extract(child));
+            }
+            return buf.toString();
+          }
+          return '';
+        }
+        final text = extract(rt.text);
+        return text.isNotEmpty &&
+            !text.startsWith('Dear you,') &&
+            !text.startsWith('YOUR WEEK');
+      });
+      expect(hasBody, isTrue, reason: 'Letter body prose should be present');
     });
 
-    // ── "Skip this" link ──────────────────────────────────────────────────────
-
-    testWidgets('"Skip this" link is present', (tester) async {
+    testWidgets('"Keep a line from this" or "Close" button is present',
+        (tester) async {
       await tester.pumpWidget(build(WeeklyReviewData.stubLight()));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      expect(find.textContaining("Skip this"), findsOneWidget);
+      // Non-empty weeks show 'Keep a line from this'; empty weeks show 'Close'.
+      final keepLine = find.text('Keep a line from this');
+      final close = find.text('Close');
+      expect(
+        keepLine.evaluate().isNotEmpty || close.evaluate().isNotEmpty,
+        isTrue,
+        reason: 'Either "Keep a line from this" or "Close" should be present',
+      );
     });
 
-    testWidgets('"Skip this" tap does not crash', (tester) async {
+    testWidgets('letter button tap does not crash', (tester) async {
       await tester.pumpWidget(build(WeeklyReviewData.stubLight()));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      await tester.tap(find.textContaining("Skip this"));
+      // Tap whichever button is present.
+      final keepLine = find.text('Keep a line from this');
+      final close = find.text('Close');
+      if (keepLine.evaluate().isNotEmpty) {
+        await tester.tap(keepLine);
+      } else if (close.evaluate().isNotEmpty) {
+        await tester.tap(close);
+      }
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 

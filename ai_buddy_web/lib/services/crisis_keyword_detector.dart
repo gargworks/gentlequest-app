@@ -113,6 +113,18 @@ class CrisisKeywordDetector {
     'crisis mode',
   ];
 
+  /// Tier 3 — softer distress signals (only matched when [match] is called
+  /// with `softerThreshold: true`). These individual words trigger the
+  /// companion settle state earlier, giving more sensitive detection for
+  /// 72h post-crisis.
+  static const List<String> _tier3 = [
+    'tired',
+    'exhausted',
+    'overwhelmed',
+    'drained',
+    'burnt out',
+  ];
+
   /// Returns `true` if [text] contains any crisis keyword.
   ///
   /// Matching is case-insensitive and substring-based, except for tokens in
@@ -120,7 +132,11 @@ class CrisisKeywordDetector {
   /// normalization pass is applied to catch platform-evasion variants
   /// ("su1cide", "un4live", "s3lf-harm") and common typos.
   /// An empty or whitespace-only string always returns `false`.
-  static bool match(String text) {
+  ///
+  /// When [softerThreshold] is true, Tier-3 softer signals ('tired',
+  /// 'exhausted', 'overwhelmed', 'drained', 'burnt out') are also matched,
+  /// giving more sensitive detection for 72h post-crisis.
+  static bool match(String text, {bool softerThreshold = false}) {
     if (text.trim().isEmpty) return false;
     final lower = text.toLowerCase();
     final normalized = _normalizeLeet(lower);
@@ -134,6 +150,11 @@ class CrisisKeywordDetector {
     }
     for (final kw in _tier2) {
       if (lower.contains(kw) || normalized.contains(kw)) return true;
+    }
+    if (softerThreshold) {
+      for (final kw in _tier3) {
+        if (lower.contains(kw) || normalized.contains(kw)) return true;
+      }
     }
     return false;
   }
