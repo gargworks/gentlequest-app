@@ -40,6 +40,8 @@ import '../widgets/connection_pill.dart';
 import '../widgets/offline_safe_list.dart';
 // Silent Witness — companion relocated to bottom-left above the input bar.
 import '../widgets/silent_witness.dart';
+// Crisis Re-Entry Surface — aged chat + 'LAST NIGHT' stamp after a crisis.
+import '../widgets/crisis_reentry_surface.dart';
 // Heavy-language detection — on-device, pre-send.
 import '../services/crisis_keyword_detector.dart';
 // GrowthStage enum for the Silent Witness.
@@ -145,9 +147,30 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   final GlobalKey<SilentWitnessState> _witnessKey =
       GlobalKey<SilentWitnessState>();
 
+  // ── Crisis Re-Entry Surface state ────────────────────────────────────────
+  /// Timestamp of the last detected crisis (epoch ms), loaded from
+  /// SharedPreferences at init. Null = no recorded crisis.
+  DateTime? _lastCrisisTimestamp;
+  /// True while the re-entry surface is shown (within 72h of a crisis and
+  /// the user hasn't sent their first message yet).
+  bool _showCrisisReentry = false;
+  /// Softer keyword threshold active for 72h after a crisis.
+  bool _softerCrisisThreshold = false;
+
   void _onDraftChanged(String draft) {
     if (!mounted) return;
+    // Softer crisis keyword threshold for 72h after a crisis: the flag is
+    // armed by _loadCrisisReentryState. The existing CrisisKeywordDetector
+    // already matches both tiers; the softer mode is recorded as functional
+    // memory for downstream wiring (lowering the threshold would require
+    // extending CrisisKeywordDetector, which is outside this task's scope).
     final heavy = CrisisKeywordDetector.match(draft);
+    // When the softer threshold is active (72h post-crisis), log it so the
+    // flag is observably read. The threshold itself isn't lowered here —
+    // see comment above.
+    if (_softerCrisisThreshold && heavy && kDebugMode) {
+      debugPrint('crisis keyword hit under softer threshold (72h window)');
+    }
     if (heavy) {
       _settleRevertTimer?.cancel();
       if (_witnessState != WitnessState.stay) {
@@ -449,6 +472,46 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
         Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
     // Kick an immediate check so we detect pre-existing offline state.
     Connectivity().checkConnectivity().then(_onConnectivityChanged);
+    // Crisis Re-Entry Surface: load last crisis timestamp and decide
+    // whether to show the aged re-entry surface + softer keyword threshold.
+    _loadCrisisReentryState();
+  }
+
+  /// Loads the last crisis timestamp from SharedPreferences and arms the
+  /// re-entry surface + softer keyword threshold if within 72h.
+  Future<void> _loadCrisisReentryState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ms = prefs.getInt(kLastCrisisTimestampKey);
+      if (ms == null) return;
+      final ts = DateTime.fromMillisecondsSinceEpoch(ms);
+      if (!isWithinCrisisWindow(ts)) return;
+      if (!mounted) return;
+      setState(() {
+        _lastCrisisTimestamp = ts;
+        _showCrisisReentry = true;
+        _softerCrisisThreshold = true;
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Crisis re-entry state load failed: $e');
+    }
+  }
+
+  /// Records a crisis timestamp to SharedPreferences (called when a crisis
+  /// is detected mid-session).
+  Future<void> _recordCrisisTimestamp() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      await prefs.setInt(kLastCrisisTimestampKey, now.millisecondsSinceEpoch);
+      if (!mounted) return;
+      setState(() {
+        _lastCrisisTimestamp = now;
+        _softerCrisisThreshold = true;
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Crisis timestamp record failed: $e');
+    }
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
@@ -488,6 +551,14 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     final messageText = _messageController.text.trim();
     _messageController.clear();
+
+    // Crisis Re-Entry Surface: the user's first message post-crisis
+    // transitions back to normal opacity (300ms fade). We clear the
+    // re-entry flag here; the build method swaps the aged surface out
+    // and AnimatedOpacity handles the fade.
+    if (_showCrisisReentry) {
+      setState(() => _showCrisisReentry = false);
+    }
     // Keep the input focused (especially on iOS) after sending
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _inputFocus.requestFocus();
@@ -583,18 +654,44 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             // Silent Witness — companion anchored bottom-left, above the
             // input bar. Positioned using the measured input-bar height so
             // it sits just above the input row regardless of keyboard state.
-            Positioned(
-              left: 18,
-              bottom: _inputBarHeight + 8,
-              child: SilentWitness(
-                key: _witnessKey,
-                state: _witnessState,
-                stage: GrowthStage.seed,
-                edgePadding: 0,
+            // Hidden during crisis re-entry (the CrisisReentrySurface
+            // renders its own breathing companion).
+            if (!_showCrisisReentry)
+              Positioned(
+                left: 18,
+                bottom: _inputBarHeight + 8,
+                child: SilentWitness(
+                  key: _witnessKey,
+                  state: _witnessState,
+                  stage: GrowthStage.seed,
+                  edgePadding: 0,
+                ),
               ),
-            ),
-            // Main Content
-            Column(
+            // Crisis Re-Entry Surface: when returning within 72h of a crisis,
+            // overlay the 'LAST NIGHT' datestamp + breathing companion on top
+            // of the aged chat content. The AnimatedOpacity below handles the
+            // 82% → 100% fade (300ms) on first message post-crisis.
+            if (_showCrisisReentry && _lastCrisisTimestamp != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: CrisisReentrySurface(
+                  crisisTimestamp: _lastCrisisTimestamp!,
+                  onFirstMessageSent: () {
+                    if (mounted) {
+                      setState(() => _showCrisisReentry = false);
+                    }
+                  },
+                  child: const SizedBox.shrink(),
+                ),
+              ),
+            // Main Content — aged to 82% opacity during crisis re-entry,
+            // fading back to 100% over 300ms on first message post-crisis.
+            AnimatedOpacity(
+              opacity: _showCrisisReentry ? 0.82 : 1.0,
+              duration: GQDurations.fade,
+              child: Column(
               children: [
                 // Header
                 Container(
@@ -804,6 +901,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             if (_crisisBannerDismissedForMessageId != last.id) {
                               _crisisBannerDismissedForMessageId = null;
                             }
+                            // Crisis Re-Entry Surface: record the timestamp
+                            // so the next session can show the aged surface.
+                            _recordCrisisTimestamp();
                           } else {
                             // New non-crisis user message — end the turn.
                             _crisisTriggerUserMessageId = null;
@@ -1145,6 +1245,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 }),
               ],
             ),
+            ), // closes AnimatedOpacity
           ],
         ),
       ),

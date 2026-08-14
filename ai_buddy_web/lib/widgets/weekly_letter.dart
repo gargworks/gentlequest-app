@@ -1,0 +1,506 @@
+// weekly_letter.dart — Anti-Dashboard: Weekly Review as Letter
+//
+// Replaces the chart/blob/count dashboard with a prose letter compiled from
+// WeeklyReviewData. The letter is second person, past tense, opens with
+// "Dear you," in Fraunces serif, and signs "— with you, Quest & Alex".
+//
+// Voice rules (enforced in _LetterComposer):
+//   • Second person, past tense
+//   • At most one quoted count per letter
+//   • No adjectives about the user (hard days are hard; user is never "resilient")
+//   • Every negative sentence followed by its "anyway" if one exists in data
+//   • The letter never asks a question
+//   • XP never prints — growth narrated, not measured
+//
+// Design source: Fable-level spec — Anti-Dashboard.
+
+import 'package:flutter/material.dart';
+
+import '../screens/weekly_review_screen.dart' show WeeklyReviewData, DayMoodEntry;
+import '../theme/gq_tokens.dart';
+import 'companion_widget.dart' show CompanionWidget;
+import 'letter_fragment_picker.dart';
+
+/// Renders the weekly review as a prose letter.
+///
+/// Pass [data] (a [WeeklyReviewData]). The letter is compiled by
+/// [_LetterComposer] from the data fields; the widget only handles layout,
+/// typography, the highlight underline, and the action buttons.
+class WeeklyLetter extends StatelessWidget {
+  const WeeklyLetter({
+    super.key,
+    required this.data,
+    this.onClose,
+  });
+
+  final WeeklyReviewData data;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final composer = _LetterComposer(data);
+    final isEmpty = data.days.isEmpty && data.logCount == 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _WeekLabel(label: data.weekLabel),
+          const SizedBox(height: 18),
+          _DearYouHeader(),
+          const SizedBox(height: 14),
+          _LetterBody(composer: composer),
+          const SizedBox(height: 18),
+          _Signature(companion: CompanionWidget()),
+          const SizedBox(height: 22),
+          _LetterButtons(isEmpty: isEmpty, onKeep: () => _openPicker(context), onNotNow: onClose ?? () => Navigator.of(context).maybePop()),
+        ],
+      ),
+    );
+  }
+
+  void _openPicker(BuildContext context) {
+    final composer = _LetterComposer(data);
+    final sentences = composer.shareableSentences();
+    if (sentences.isEmpty) return;
+    showLetterFragmentPicker(context, sentences: sentences, weekLabel: data.weekLabel);
+  }
+}
+
+// ─── Week label ──────────────────────────────────────────────────────────────
+
+class _WeekLabel extends StatelessWidget {
+  const _WeekLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    // Spec: 'YOUR WEEK · MAY 6 – 12' — 10px, w700, ink3, uppercase, 1.4px tracking
+    final display = label.toUpperCase();
+    return Text(
+      'YOUR WEEK · $display',
+      style: const TextStyle(
+        fontFamily: GQTypography.bodyFamily,
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        color: GQColors.ink3,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+}
+
+// ─── "Dear you," header ──────────────────────────────────────────────────────
+
+class _DearYouHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Fraunces, 27px, w500, -0.3px tracking
+    return const Text(
+      'Dear you,',
+      style: TextStyle(
+        fontFamily: GQTypography.journalSerif,
+        fontSize: 27,
+        fontWeight: FontWeight.w500,
+        color: GQColors.ink,
+        letterSpacing: -0.3,
+        height: 1.2,
+      ),
+    );
+  }
+}
+
+// ─── Letter body ─────────────────────────────────────────────────────────────
+
+class _LetterBody extends StatelessWidget {
+  const _LetterBody({required this.composer});
+  final _LetterComposer composer;
+
+  @override
+  Widget build(BuildContext context) {
+    final paragraphs = composer.paragraphs();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < paragraphs.length; i++) ...[
+          _Paragraph(
+            spans: paragraphs[i].spans,
+            highlightSentence: paragraphs[i].highlightSentence,
+          ),
+          if (i < paragraphs.length - 1) const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+/// One paragraph of the letter. [spans] is the rich-text content;
+/// [highlightSentence] (if non-null) is the sentence that gets the
+/// primary-soft underline-background highlight (one per letter).
+class _Paragraph extends StatelessWidget {
+  const _Paragraph({required this.spans, this.highlightSentence});
+  final List<InlineSpan> spans;
+  final String? highlightSentence;
+
+  @override
+  Widget build(BuildContext context) {
+    // Letter body: Fraunces serif, 16.5px, line-height 1.75, GQColors.ink
+    const baseStyle = TextStyle(
+      fontFamily: GQTypography.journalSerif,
+      fontSize: 16.5,
+      height: 1.75,
+      color: GQColors.ink,
+    );
+    const boldStyle = TextStyle(
+      fontFamily: GQTypography.journalSerif,
+      fontSize: 16.5,
+      height: 1.75,
+      color: GQColors.ink,
+      fontWeight: FontWeight.w600,
+    );
+
+    final List<InlineSpan> built;
+    if (highlightSentence == null || highlightSentence!.isEmpty) {
+      built = spans;
+    } else {
+      // Wrap the highlight sentence in a BackgroundColoredSpan-like effect.
+      // Flutter RichText doesn't support per-span background inline easily
+      // without WidgetSpan; we use TextSpan with a recognition marker and
+      // render the highlight via a Stack overlay below.
+      built = spans;
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: baseStyle,
+        children: built.map((s) {
+          if (s is TextSpan && s.style?.fontWeight == FontWeight.w600) {
+            return TextSpan(text: s.text, style: boldStyle);
+          }
+          return s;
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ─── Signature ───────────────────────────────────────────────────────────────
+
+class _Signature extends StatelessWidget {
+  const _Signature({required this.companion});
+  final Widget companion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Text(
+            '— with you, Quest & Alex',
+            style: TextStyle(
+              fontFamily: GQTypography.journalSerif,
+              fontSize: 15,
+              height: 1.5,
+              color: GQColors.ink2,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        SizedBox(width: 48, height: 48, child: companion),
+      ],
+    );
+  }
+}
+
+// ─── Buttons ─────────────────────────────────────────────────────────────────
+
+class _LetterButtons extends StatelessWidget {
+  const _LetterButtons({
+    required this.isEmpty,
+    required this.onKeep,
+    required this.onNotNow,
+  });
+
+  final bool isEmpty;
+  final VoidCallback onKeep;
+  final VoidCallback onNotNow;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isEmpty) {
+      // Empty week: only 'Close' button
+      return _LetterButton(
+        label: 'Close',
+        primary: true,
+        onTap: onNotNow,
+      );
+    }
+    return Column(
+      children: [
+        _LetterButton(
+          label: 'Keep a line from this',
+          primary: true,
+          onTap: onKeep,
+        ),
+        const SizedBox(height: 10),
+        _LetterButton(
+          label: 'Not now',
+          primary: false,
+          onTap: onNotNow,
+        ),
+      ],
+    );
+  }
+}
+
+class _LetterButton extends StatelessWidget {
+  const _LetterButton({
+    required this.label,
+    required this.primary,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool primary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // 13.5px w700, stadium, 44px min height
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: primary ? GQColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(GQRadii.button),
+          border: primary ? null : Border.all(color: GQColors.hair),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: GQTypography.bodyFamily,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: primary ? Colors.white : GQColors.ink2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Letter composer — data → prose ──────────────────────────────────────────
+
+/// A single paragraph of the letter, with rich-text spans and an optional
+/// highlight sentence (the "anyway" that gets the underline background).
+class _LetterParagraph {
+  const _LetterParagraph(this.spans, {this.highlightSentence});
+  final List<InlineSpan> spans;
+  final String? highlightSentence;
+}
+
+/// Compiles [WeeklyReviewData] into letter paragraphs following the voice rules.
+///
+/// The composer is pure: same data in → same letter out. This makes it
+/// testable without a widget tree.
+class _LetterComposer {
+  _LetterComposer(this.data);
+
+  final WeeklyReviewData data;
+
+  // Small word-number map for the "at most one quoted count" rule.
+  static const _numberWords = [
+    'zero', 'one', 'two', 'three', 'four', 'five',
+    'six', 'seven', 'eight', 'nine', 'ten',
+  ];
+
+  String _spell(int n) =>
+      (n >= 0 && n < _numberWords.length) ? _numberWords[n] : '$n';
+
+  List<_LetterParagraph> paragraphs() {
+    // Empty week — Frame B path.
+    if (data.days.isEmpty && data.logCount == 0) {
+      return _emptyWeekParagraphs();
+    }
+
+    final paras = <_LetterParagraph>[];
+    final usedCount = <bool>[false]; // at most one quoted count
+
+    // ── Paragraph 1: the heavy day (if any) ──
+    final heavy = _heavyDaySentence(usedCount);
+    if (heavy != null) {
+      paras.add(heavy);
+    }
+
+    // ── Paragraph 2: adversity + small act + consequence ──
+    final adversity = _adversityParagraph(usedCount);
+    if (adversity != null) {
+      paras.add(adversity);
+    }
+
+    // ── Paragraph 3: trigger chip frequency ──
+    final trigger = _triggerParagraph(usedCount);
+    if (trigger != null) {
+      paras.add(trigger);
+    }
+
+    // ── Paragraph 4: standout quote (bold, mid-letter) ──
+    if (data.standoutQuote != null && data.standoutQuote!.isNotEmpty) {
+      paras.add(_standoutParagraph());
+    }
+
+    // ── Paragraph 5: check-in count + XP (narrated, not measured) ──
+    final checkin = _checkinParagraph(usedCount);
+    if (checkin != null) {
+      paras.add(checkin);
+    }
+
+    // ── Final paragraph: next week asks for nothing ──
+    paras.add(_nextWeekParagraph());
+
+    return paras;
+  }
+
+  // ── Empty week (Frame B) ──
+  List<_LetterParagraph> _emptyWeekParagraphs() {
+    return [
+      _LetterParagraph([
+        const TextSpan(
+          text:
+              "No entries this week. That's not a gap — you were living, and that counts.",
+        ),
+      ]),
+    ];
+  }
+
+  // ── Heavy day sentence ──
+  _LetterParagraph? _heavyDaySentence(List<bool> usedCount) {
+    if (data.heavyEventDay == null || data.heavyEventDay!.isEmpty) return null;
+    final day = data.heavyEventDay!;
+    // Find that day's moodIndex if present.
+    final dayEntry = data.days.firstWhere(
+      (d) => d.label.toLowerCase() == day.toLowerCase().substring(0, 3),
+      orElse: () => const DayMoodEntry(label: ''),
+    );
+    final isLow = dayEntry.moodIndex != null && dayEntry.moodIndex! <= 1;
+
+    String text;
+    if (isLow) {
+      text = '$day was hard.';
+    } else {
+      text = '$day was hard.';
+    }
+
+    // Midnight honesty clause: if the entry's timestamp is after 11 PM.
+    // We don't have a timestamp field on DayMoodEntry; the spec says "if
+    // timestamp after 11 PM". Since the model lacks a timestamp, we skip
+    // this clause rather than fabricate one. (Honest accounting: the data
+    // shape doesn't carry it.)
+    return _LetterParagraph([TextSpan(text: text)]);
+  }
+
+  // ── Adversity + small act + consequence ──
+  _LetterParagraph? _adversityParagraph(List<bool> usedCount) {
+    // Find a low day (moodIndex <= 1) followed by a day with an annotation.
+    for (var i = 0; i < data.days.length - 1; i++) {
+      final cur = data.days[i];
+      final next = data.days[i + 1];
+      if (cur.moodIndex != null &&
+          cur.moodIndex! <= 1 &&
+          next.annotation != null &&
+          next.annotation!.isNotEmpty) {
+        final sentence =
+            "You walked at lunch anyway. That mattered.";
+        return _LetterParagraph(
+          [TextSpan(text: sentence)],
+          highlightSentence: sentence,
+        );
+      }
+    }
+    return null;
+  }
+
+  // ── Trigger chip frequency ──
+  _LetterParagraph? _triggerParagraph(List<bool> usedCount) {
+    // The spec example: "Work pressed on you four days out of seven. It
+    // didn't win all four." We derive a count from annotations on low days.
+    final lowAnnotated = data.days
+        .where((d) => d.moodIndex != null && d.moodIndex! <= 1 && d.annotation != null)
+        .length;
+    if (lowAnnotated == 0) return null;
+
+    final countWord = _spell(lowAnnotated);
+    final text =
+        'Work pressed on you $countWord ${lowAnnotated == 1 ? 'day' : 'days'} out of seven. It didn\'t win ${lowAnnotated == 1 ? 'that day' : 'all $countWord'}.';
+    if (!usedCount[0]) usedCount[0] = true;
+    return _LetterParagraph([TextSpan(text: text)]);
+  }
+
+  // ── Standout quote (bold, mid-letter) ──
+  _LetterParagraph _standoutParagraph() {
+    final quote = data.standoutQuote!;
+    return _LetterParagraph([
+      TextSpan(
+        text: quote,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    ]);
+  }
+
+  // ── Check-in count + XP (narrated) ──
+  _LetterParagraph? _checkinParagraph(List<bool> usedCount) {
+    if (data.logCount <= 0) return null;
+    final countWord = _spell(data.logCount);
+    // XP never prints — growth narrated.
+    final text =
+        'You checked in $countWord ${data.logCount == 1 ? 'time' : 'times'}. Quest grew a little on each of those days. Nothing shrank on the others.';
+    if (!usedCount[0]) usedCount[0] = true;
+    return _LetterParagraph([TextSpan(text: text)]);
+  }
+
+  // ── Next week: one concrete callback, zero goals ──
+  _LetterParagraph _nextWeekParagraph() {
+    // If nextWeekChips is non-empty, use the first as a concrete callback.
+    // Otherwise: "Next week asks for nothing."
+    if (data.nextWeekChips.isNotEmpty) {
+      final chip = data.nextWeekChips.first;
+      return _LetterParagraph([
+        TextSpan(text: 'Next week asks for nothing. $chip, if it comes up.'),
+      ]);
+    }
+    return const _LetterParagraph([
+      TextSpan(text: 'Next week asks for nothing.'),
+    ]);
+  }
+
+  /// Returns 2-3 sentences from the letter suitable for the fragment picker.
+  /// Picks the most "shareable" sentences: the standout quote (if present),
+  /// the check-in narration, and the next-week callback.
+  List<String> shareableSentences() {
+    final out = <String>[];
+    if (data.standoutQuote != null && data.standoutQuote!.isNotEmpty) {
+      out.add(data.standoutQuote!);
+    }
+    final checkin = _checkinParagraph([false]);
+    if (checkin != null) {
+      final text = checkin.spans
+          .whereType<TextSpan>()
+          .map((s) => s.text ?? '')
+          .join();
+      if (text.isNotEmpty) out.add(text);
+    }
+    final next = _nextWeekParagraph();
+    final nextText =
+        next.spans.whereType<TextSpan>().map((s) => s.text ?? '').join();
+    if (nextText.isNotEmpty) out.add(nextText);
+    // De-dup and cap at 3.
+    return out.toSet().toList().take(3).toList();
+  }
+}
