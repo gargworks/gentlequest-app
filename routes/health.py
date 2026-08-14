@@ -59,8 +59,10 @@ def health():
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }), 200
     except Exception as e:
-        # Even on error, return 200 so Render doesn't restart the service
-        return jsonify({"status": "healthy", "error": str(e)}), 200
+        # Return 503 on real failure — Render should know the app is broken.
+        # The lightweight check has no DB dependency, so if this throws,
+        # something is genuinely wrong (import failure, jsonify broken, etc).
+        return jsonify({"status": "unhealthy", "error": str(e)}), 503
 
 
 @health_bp.route("/api/health/full", methods=["GET"])
