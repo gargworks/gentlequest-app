@@ -353,3 +353,4 @@ flutter-store-deployment-kit/LICENSE
 # Landing page components (separate project)
 landing-page/src/components/
 mcp-server-nucleus/tests/
+secret/gentlequest-prod-sa.json
