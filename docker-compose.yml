@@ -9,8 +9,11 @@ services:
       - "3000:3000" # Map host 3000 to container HUD (listening on $PORT)
     environment:
       - PORT=3000
-      - HUD_USER=admin
-      - HUD_PASS=nucleus
+      # HUD_USER / HUD_PASS: no hardcoded default — middleware.ts fails
+      # closed (503) if unset. Set real values via shell env or a local
+      # .env file (never commit real values here).
+      - HUD_USER=${HUD_USER:?set HUD_USER before starting the HUD service}
+      - HUD_PASS=${HUD_PASS:?set HUD_PASS before starting the HUD service}
       - FORCE_VERTEX=1 # Optional: Enable Real Oracle locally if credentials mounting works
       # - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-creds.json
     volumes:

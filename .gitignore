@@ -119,6 +119,17 @@ ai_buddy_web/android/key.properties
 .brain/.state.lock
 .brain/.sync_state.json
 secret/service_account.json
+
+# Live GCP service-account keys — ignore the whole directory. Ignoring only
+# service_account.json is how secret/gentlequest-prod-sa.json got committed
+# and briefly exposed on a public mirror (Google abuse notice, 2026-08-15).
+secret/
+secrets/.ipc_secret
+
+# YouTube OAuth client secrets — never commit.
+marketing/shorts/client_secret_*.json
+**/client_secret_*.apps.googleusercontent.com.json
+
 backend_config.env
 venv_39/
 

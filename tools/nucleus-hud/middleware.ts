@@ -40,12 +40,18 @@ export function middleware(req: NextRequest) {
                 const decoded = base64Decode(authValue)
                 const [user, pwd] = decoded.split(':')
 
-                // HARDCODED SOVEREIGN CREDENTIALS (v1)
-                // Ideally, these come from ENV vars: HUD_USER / HUD_PASS
-                // But for the "Unified Container", we can default to 'admin' / 'nucleus'
-                // or read from process.env
-                const validUser = process.env.HUD_USER || 'admin'
-                const validPass = process.env.HUD_PASS || 'nucleus'
+                // Fail closed: no hardcoded credential fallback. An
+                // unconfigured HUD must not be reachable with a known
+                // default (was: 'admin' / 'nucleus').
+                const validUser = process.env.HUD_USER
+                const validPass = process.env.HUD_PASS
+
+                if (!validUser || !validPass) {
+                    return new NextResponse(
+                        'HUD auth is not configured (HUD_USER/HUD_PASS unset)',
+                        { status: 503 },
+                    )
+                }
 
                 if (user === validUser && pwd === validPass) {
                     return NextResponse.next()
