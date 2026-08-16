@@ -1,0 +1,51 @@
+{
+  "tier_id": "R1D4",
+  "description": "Mood Entry — walk from dashboard to mood sheet, select Heavy, exit via Skip",
+  "steps": [
+    {
+      "action": "screenshot",
+      "name": "01_launch"
+    },
+    {
+      "action": "tap_label",
+      "label": "Mood",
+      "wait_ms": 800,
+      "comment": "Bottom nav second tab (4-tab layout). Fallback coord: x=190, y=843"
+    },
+    {
+      "action": "screenshot",
+      "name": "02_mood_tab"
+    },
+    {
+      "action": "tap_label",
+      "label": "Track",
+      "wait_ms": 600,
+      "comment": "Primary CTA on mood dashboard. Alt label: 'Log Mood'. Fallback: x=195, y=480"
+    },
+    {
+      "action": "screenshot",
+      "name": "03_mood_entry_sheet"
+    },
+    {
+      "action": "tap_pixel",
+      "x": 195,
+      "y": 540,
+      "wait_ms": 800,
+      "comment": "Tap 'Heavy' emoji — leftmost of 5 emoji pills in the mood entry sheet"
+    },
+    {
+      "action": "screenshot",
+      "name": "04_heavy_selected"
+    },
+    {
+      "action": "tap_label",
+      "label": "Skip",
+      "wait_ms": 600,
+      "comment": "Top-right Skip button to exit mood entry sheet cleanly"
+    },
+    {
+      "action": "screenshot",
+      "name": "05_post_skip"
+    }
+  ]
+}
