@@ -34,22 +34,24 @@ void main() {
     });
   });
 
-  group('Jurisdiction Classification - Hard Bans', () {
-    test('Illinois is hard-blocked (WOPR Act)', () {
-      expect(service.getBlockReason('Illinois'), BlockReason.hardBan);
-      expect(service.getBlockReason('IL'), BlockReason.hardBan);
-    });
-  });
-
-  group('Jurisdiction Classification - Pending Compliance', () {
-    test('Utah is temp-blocked (HB 452)', () {
-      expect(service.getBlockReason('Utah'), BlockReason.pendingCompliance);
-      expect(service.getBlockReason('UT'), BlockReason.pendingCompliance);
+  // IL / UT / WA were unblocked on 2026-08-04 after legal research; see
+  // docs/legal/STATE_BLOCK_DECISION_2026-08-04.md. Both _hardBanStates and
+  // _pendingComplianceStates are now empty. These tests previously asserted
+  // the old blocking behaviour and had been failing since that change.
+  group('Jurisdiction Classification - Previously Blocked States', () {
+    test('Illinois is ALLOWED (WOPR Act — self-help app exemption)', () {
+      expect(service.getBlockReason('Illinois'), BlockReason.none);
+      expect(service.getBlockReason('IL'), BlockReason.none);
     });
 
-    test('Washington is temp-blocked (MHMDA)', () {
-      expect(service.getBlockReason('Washington'), BlockReason.pendingCompliance);
-      expect(service.getBlockReason('WA'), BlockReason.pendingCompliance);
+    test('Utah is ALLOWED (HB 452 — covers therapy chatbots, not companions)', () {
+      expect(service.getBlockReason('Utah'), BlockReason.none);
+      expect(service.getBlockReason('UT'), BlockReason.none);
+    });
+
+    test('Washington is ALLOWED (MHMDA — HB 2225 not effective until 2027)', () {
+      expect(service.getBlockReason('Washington'), BlockReason.none);
+      expect(service.getBlockReason('WA'), BlockReason.none);
     });
   });
 
