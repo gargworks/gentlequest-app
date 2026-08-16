@@ -346,11 +346,19 @@ def compute_insights(data):
     ios = sum(p["users"] for p in platforms if p["os"] == "iOS")
     if android > 0 and ios > 0:
         ratio = round(android / ios, 1)
-        dominant = "Android" if android > ios else "iOS"
+        # Three-way: an exact tie is neither platform dominating. The old
+        # two-way form ("Android" if android > ios else "iOS") reported
+        # "iOS dominates" on a 1.0:1 split, which is simply false.
+        if android > ios:
+            leader = "Android dominates."
+        elif ios > android:
+            leader = "iOS dominates."
+        else:
+            leader = "Even split."
         insights.append({
             "severity": "info",
             "category": "platform",
-            "message": f"Android:iOS ratio is {ratio}:1 ({android} vs {ios} users). {dominant} dominates.",
+            "message": f"Android:iOS ratio is {ratio}:1 ({android} vs {ios} users). {leader}",
         })
 
     # No custom events
