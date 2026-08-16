@@ -5,6 +5,10 @@
 
 set -e
 
+# launchd runs with a minimal PATH that lacks node/npx/wrangler, so the
+# deploy step silently fails when this runs on a schedule rather than by hand.
+export PATH="$HOME/.nvm/versions/node/v22.18.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.npm-global/bin"
+
 BLOG_DIR="/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/blog"
 SCHEDULED_DIR="/Users/lokeshgarg/gentlequest/gentlequest-blog/src/content/scheduled"
 LANDING_DIR="/Users/lokeshgarg/gentlequest/landing-page"
@@ -58,7 +62,9 @@ cd "$LANDING_DIR"
 npm run build >> "$LOG_FILE" 2>&1
 
 log "Deploying to Cloudflare Pages..."
-npx wrangler pages deploy dist --project-name=gentlequest-www --commit-dirty=true >> "$LOG_FILE" 2>&1
+# --branch=main is load-bearing: without it wrangler infers the current git
+# branch and ships a PREVIEW deploy, so production never actually updates.
+npx wrangler pages deploy dist --project-name=gentlequest-www --branch=main --commit-dirty=true >> "$LOG_FILE" 2>&1
 
 log "Done. Published $POST_NAME"
 

@@ -115,11 +115,44 @@ def is_qualified_human(session_metadata, user_agent, duration_seconds, pageviews
     return True
 
 
+def _resolve_credentials(scopes):
+    """Resolve GA4 service-account credentials.
+
+    Order: GOOGLE_APPLICATION_CREDENTIALS (path to key file) ->
+    GQ_GA_SA_JSON (inline JSON string) -> secret/gentlequest-prod-sa.json
+    (legacy file fallback). Returns None if no source is available/valid.
+
+    The legacy hardcoded path is no longer sufficient on its own: that key
+    was exposed publicly and is being disabled, so the env-var paths are
+    what keep this working after rotation.
+    """
+    env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if env_path and Path(env_path).exists():
+        return service_account.Credentials.from_service_account_file(env_path, scopes=scopes)
+
+    inline_json = os.environ.get("GQ_GA_SA_JSON")
+    if inline_json:
+        try:
+            info = json.loads(inline_json)
+            return service_account.Credentials.from_service_account_info(info, scopes=scopes)
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"  Warning: GQ_GA_SA_JSON is set but not valid JSON ({e}); falling back")
+
+    if CREDS_PATH.exists():
+        return service_account.Credentials.from_service_account_file(
+            str(CREDS_PATH), scopes=scopes
+        )
+
+    return None
+
+
 def get_client():
-    creds = service_account.Credentials.from_service_account_file(
-        str(CREDS_PATH),
-        scopes=["https://www.googleapis.com/auth/analytics.readonly"],
-    )
+    creds = _resolve_credentials(["https://www.googleapis.com/auth/analytics.readonly"])
+    if creds is None:
+        raise SystemExit(
+            "Error: no GA4 credentials found (checked GOOGLE_APPLICATION_CREDENTIALS, "
+            f"GQ_GA_SA_JSON, and {CREDS_PATH})"
+        )
     return BetaAnalyticsDataClient(credentials=creds)
 
 
@@ -533,8 +566,17 @@ def main():
     METRICS_DIR.mkdir(exist_ok=True)
     HISTORY_DIR.mkdir(exist_ok=True)
 
-    if not CREDS_PATH.exists():
-        print(f"Error: credentials not found at {CREDS_PATH}")
+    # Don't hard-fail on the legacy file alone — env-var credentials
+    # (GOOGLE_APPLICATION_CREDENTIALS / GQ_GA_SA_JSON) are valid sources.
+    if (
+        not CREDS_PATH.exists()
+        and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        and not os.environ.get("GQ_GA_SA_JSON")
+    ):
+        print(
+            "Error: no GA4 credentials found (checked GOOGLE_APPLICATION_CREDENTIALS, "
+            f"GQ_GA_SA_JSON, and {CREDS_PATH})"
+        )
         sys.exit(1)
 
     client = get_client()
