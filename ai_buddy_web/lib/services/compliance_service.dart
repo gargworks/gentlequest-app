@@ -473,9 +473,23 @@ class ComplianceService {
     
     // Check if region is blocked
     if (_isBlockedRegion(storedRegion)) {
+      await _logBlockEvent('blocked_region_cached', storedRegion);
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'blocked',
+        'region': storedRegion,
+        'method': 'cached',
+      });
       return ComplianceStatus.blockedRegion;
     }
 
+    // Terminal event for the cached-allow path. Previously this path fired
+    // a 'started' event but no terminal 'compliance_result', leaving cached
+    // check-ins invisible in analytics (the silent-cache blindness).
+    await FirebaseService().logEvent('compliance_result', {
+      'status': 'allowed',
+      'region': storedRegion,
+      'method': 'cached',
+    });
     await _logPassEvent('cached', storedRegion);
     return ComplianceStatus.allowed;
   }
@@ -489,6 +503,10 @@ class ComplianceService {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_services_disabled'}); } catch (_) {}
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'location_services_disabled',
+        'method': 'gps',
+      });
       return ComplianceStatus.locationServicesDisabled;
     }
 
@@ -496,11 +514,20 @@ class ComplianceService {
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_permission_denied'}); } catch (_) {}
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'location_permission_required',
+        'method': 'gps',
+      });
       return ComplianceStatus.locationPermissionRequired;
     }
 
     if (permission == LocationPermission.deniedForever) {
       try { await ApiService().post('/api/compliance/log', data: {'event_type': 'gps_permission_denied', 'metadata': {'forever': true}}); } catch (_) {}
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'location_permission_required',
+        'method': 'gps',
+        'forever': true,
+      });
       return ComplianceStatus.locationPermissionRequired;
     }
 
@@ -589,6 +616,10 @@ class ComplianceService {
       }
 
       // On error, we cannot verify -> treat as needing retry
+      await FirebaseService().logEvent('compliance_result', {
+        'status': 'error',
+        'method': 'unverified',
+      });
       return ComplianceStatus.error;
     }
   }
