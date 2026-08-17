@@ -1803,9 +1803,21 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       'duration_minutes': config.duration.inMinutes,
       'task_length': config.task.length,
     });
+    if (config.wantsLive) {
+      // Fake-door signal only — no matching backend exists yet. This event
+      // is the entire Phase-A demand test: does anyone pick "With someone"
+      // at all. See BodyDoubleSessionConfig.wantsLive.
+      FirebaseService().logEvent('body_double_live_interest', {
+        'duration_minutes': config.duration.inMinutes,
+      });
+    }
     Provider.of<ChatProvider>(context, listen: false).insertCompanionMessage(
-      "I'm sitting with you on ${config.task}. No countdown, no pressure — "
-      "just presence. Step out whenever. 🌱",
+      config.wantsLive
+          ? "Live rooms aren't open yet, so it's just us for now on "
+              "${config.task}. No countdown, no pressure — I'll let you "
+              "know the moment there's someone else here. 🌱"
+          : "I'm sitting with you on ${config.task}. No countdown, no "
+              "pressure — just presence. Step out whenever. 🌱",
     );
     _bdTicker?.cancel();
     setState(() {

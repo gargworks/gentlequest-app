@@ -44,6 +44,12 @@ class _BodyDoubleStartSheetContentState
   /// Index into [_durationOptions]. Default to 50 min (index 1).
   int _selectedDurationIndex = 1;
 
+  /// Fake-door toggle: "Just me" (default, unchanged behavior) vs
+  /// "With someone" (tags the session for the live-interest signal — see
+  /// [BodyDoubleSessionConfig.wantsLive]). No real matching exists yet;
+  /// this only measures demand before a matching backend gets built.
+  bool _wantsLive = false;
+
   static const List<_DurationOption> _durationOptions = [
     _DurationOption(label: '25 min', duration: Duration(minutes: 25)),
     _DurationOption(label: '50 min', duration: Duration(minutes: 50)),
@@ -62,6 +68,7 @@ class _BodyDoubleStartSheetContentState
       BodyDoubleSessionConfig(
         task: task.isEmpty ? 'this' : task,
         duration: _durationOptions[_selectedDurationIndex].duration,
+        wantsLive: _wantsLive,
       ),
     );
   }
@@ -106,6 +113,50 @@ class _BodyDoubleStartSheetContentState
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: GQColors.ink2),
               ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    key: const Key('body_double_solo_chip'),
+                    label: const Text('Just me'),
+                    selected: !_wantsLive,
+                    onSelected: (_) => setState(() => _wantsLive = false),
+                    selectedColor: GQColors.primarySoft,
+                    labelStyle: TextStyle(
+                      color: !_wantsLive ? GQColors.primaryDk : GQColors.ink2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    side: BorderSide(
+                      color: !_wantsLive ? GQColors.primary : GQColors.hair,
+                    ),
+                  ),
+                  ChoiceChip(
+                    key: const Key('body_double_live_chip'),
+                    label: const Text('With someone'),
+                    selected: _wantsLive,
+                    onSelected: (_) => setState(() => _wantsLive = true),
+                    selectedColor: GQColors.primarySoft,
+                    labelStyle: TextStyle(
+                      color: _wantsLive ? GQColors.primaryDk : GQColors.ink2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    side: BorderSide(
+                      color: _wantsLive ? GQColors.primary : GQColors.hair,
+                    ),
+                  ),
+                ],
+              ),
+              if (_wantsLive) ...[
+                const SizedBox(height: 8),
+                Text(
+                  "Live rooms aren't open yet — sitting with Quest for now. "
+                  "We'll let you know the moment there's someone else here.",
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: GQColors.ink2, height: 1.4),
+                ),
+              ],
               const SizedBox(height: 20),
               Text(
                 "What's your intention?",
