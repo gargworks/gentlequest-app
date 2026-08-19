@@ -221,6 +221,47 @@ print("DEBUG: calling create_app()")
 app = create_app()
 print("DEBUG: app instance created successfully")
 
+# Start background schedulers here, at MODULE level, not inside
+# `if __name__ == "__main__":` below. Production runs
+# `gunicorn app:app` (see start.sh) -- gunicorn imports this module as a
+# WSGI callable, it never executes the `__main__` block, so anything
+# scheduler-related placed there is dead code in production. This bit
+# GentleQuest once already: the funnel scheduler's registration lived
+# only in `__main__` and was never actually running as a cron under
+# gunicorn; the one real snapshot row that existed came from someone's
+# local `python app.py` run against the prod DB, not a live daily job.
+#
+# Gunicorn runs GUNICORN_WORKERS (default 4) separate processes, each
+# importing this module fresh -- so module-level scheduler starts must be
+# guarded by a single-worker lock, or every push/snapshot fires 4x.
+#
+# app.config["TESTING"] alone is NOT a reliable guard here: it depends on
+# CI/PYTEST_CURRENT_TEST env vars that pytest does not set until a test
+# actually starts running, which is AFTER this module-level line executes
+# during test collection (verified empirically -- import time is too
+# early). `"pytest" in sys.modules` is reliable at import time: pytest
+# imports itself before collecting any test module, so by the time this
+# line runs under pytest, it's already there.
+_under_pytest = "pytest" in sys.modules
+if not app.config.get("TESTING") and not _under_pytest:
+    from scheduler._single_worker_lock import acquire as _acquire_scheduler_lock
+
+    if _acquire_scheduler_lock("funnel"):
+        try:
+            from scheduler.funnel_scheduler import start_funnel_scheduler
+            start_funnel_scheduler(app)
+            app.logger.info("Funnel snapshot scheduler started")
+        except Exception as e:
+            app.logger.warning(f"Funnel scheduler failed to start: {e}")
+
+    if _acquire_scheduler_lock("retention_nudge"):
+        try:
+            from scheduler.retention_nudge_scheduler import start_retention_nudge_scheduler
+            start_retention_nudge_scheduler(app)
+            app.logger.info("Retention nudge scheduler started")
+        except Exception as e:
+            app.logger.warning(f"Retention nudge scheduler failed to start: {e}")
+
 
 if __name__ == "__main__":
     # Run auto-migrations first
@@ -232,13 +273,5 @@ if __name__ == "__main__":
             app.logger.info("Database tables created successfully")
         except Exception as e:
             app.logger.error(f"Database initialization error: {e}")
-
-    # Start daily funnel snapshot scheduler (self-snapshotting backend)
-    try:
-        from scheduler.funnel_scheduler import start_funnel_scheduler
-        start_funnel_scheduler(app)
-        app.logger.info("Funnel snapshot scheduler started")
-    except Exception as e:
-        app.logger.warning(f"Funnel scheduler failed to start: {e}")
 
     app.run(host="0.0.0.0", port=app.config.get("PORT", 5055), debug=False)

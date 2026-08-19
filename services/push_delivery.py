@@ -7,7 +7,7 @@ from datetime import datetime
 from models import PushToken, db
 
 CRISIS_CATEGORY = "crisis_followup"
-PASSIVE_CATEGORIES = {"daily_checkin", "weekly_review"}
+PASSIVE_CATEGORIES = {"daily_checkin", "weekly_review", "gentle_return"}
 INVALID_TOKEN_REASONS = {"Unregistered", "BadDeviceToken", "DeviceTokenNotForTopic", "NotRegistered"}
 
 
