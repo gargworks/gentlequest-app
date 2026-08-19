@@ -57,11 +57,23 @@ SELECT
     c.cohort_date,
     COUNT(DISTINCT c.session_id)                       AS cohort_size,
     COUNT(DISTINCT r.session_id)                       AS d14_returned,
+    -- Eligible = members who have actually reached their own D14 mark
+    -- (first_open + 14 days <= now). A member whose mark hasn't arrived
+    -- yet cannot have returned or churned; folding them into the rate's
+    -- denominator manufactures a fake low rate. See d14_cohort_pooled.sql
+    -- for the same fix in the pooled query.
+    COUNT(DISTINCT c.session_id) FILTER (
+        WHERE c.first_open_ts + INTERVAL '14 days' <= NOW()
+    )                                                  AS eligible_size,
     CASE
-        WHEN COUNT(DISTINCT c.session_id) = 0 THEN NULL
+        WHEN COUNT(DISTINCT c.session_id) FILTER (
+            WHERE c.first_open_ts + INTERVAL '14 days' <= NOW()
+        ) = 0 THEN NULL
         ELSE ROUND(
             COUNT(DISTINCT r.session_id)::numeric
-            / COUNT(DISTINCT c.session_id)::numeric,
+            / COUNT(DISTINCT c.session_id) FILTER (
+                WHERE c.first_open_ts + INTERVAL '14 days' <= NOW()
+            )::numeric,
             4
         )
     END                                                AS d14_rate

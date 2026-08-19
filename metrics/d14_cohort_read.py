@@ -112,17 +112,22 @@ def run_cohort(
         return {
             "cohort_date": cohort_start.isoformat(),
             "cohort_size": 0,
+            "eligible_size": 0,
             "d14_returned": 0,
             "d14_rate": None,
             "verdict": "INSUFFICIENT",
         }
-    cohort_date, cohort_size, d14_returned, d14_rate = row
+    cohort_date, cohort_size, d14_returned, eligible_size, d14_rate = row
     cohort_size = int(cohort_size or 0)
+    eligible_size = int(eligible_size or 0)
     d14_returned = int(d14_returned or 0)
     # psycopg2 returns Decimal for numeric; coerce to float so the >=
     # comparison against a float threshold is exact, not Decimal-vs-float.
     d14_rate_f = float(d14_rate) if d14_rate is not None else None
-    if cohort_size < min_cohort:
+    # Gated on eligible_size, not cohort_size: a member whose own 14-day
+    # mark hasn't arrived yet must not manufacture a premature FAIL. See
+    # run_pooled_cohort for the same fix.
+    if eligible_size < min_cohort:
         verdict = "INSUFFICIENT"
     elif d14_rate_f is not None and d14_rate_f >= pass_threshold:
         verdict = "PASS"
@@ -131,6 +136,7 @@ def run_cohort(
     return {
         "cohort_date": cohort_date.isoformat() if hasattr(cohort_date, "isoformat") else str(cohort_date),
         "cohort_size": cohort_size,
+        "eligible_size": eligible_size,
         "d14_returned": d14_returned,
         "d14_rate": d14_rate_f,
         "verdict": verdict,
@@ -307,10 +313,10 @@ def main(argv: Optional[list] = None) -> int:
         else:
             # Header
             print(
-                f"{'cohort_date':<12} {'cohort_size':>11} {'d14_returned':>12} "
-                f"{'d14_rate':>9} {'verdict':<13}"
+                f"{'cohort_date':<12} {'cohort_size':>11} {'eligible':>9} "
+                f"{'d14_returned':>12} {'d14_rate':>9} {'verdict':<13}"
             )
-            print("-" * 60)
+            print("-" * 70)
 
             any_rows = False
             for d in daterange(start, end):
@@ -321,7 +327,8 @@ def main(argv: Optional[list] = None) -> int:
                 )
                 print(
                     f"{r['cohort_date']:<12} {r['cohort_size']:>11} "
-                    f"{r['d14_returned']:>12} {rate_str:>9} {r['verdict']:<13}"
+                    f"{r['eligible_size']:>9} {r['d14_returned']:>12} "
+                    f"{rate_str:>9} {r['verdict']:<13}"
                 )
             if not any_rows:
                 print("(no cohort dates in range)")
