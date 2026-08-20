@@ -218,7 +218,7 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                     ),
@@ -256,7 +256,7 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
                           ? ElevatedButton(
                               onPressed: _onBegin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: GQColors.primary,
+                                backgroundColor: GQColors.primaryDk,
                                 foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
                                 padding: const EdgeInsets.symmetric(

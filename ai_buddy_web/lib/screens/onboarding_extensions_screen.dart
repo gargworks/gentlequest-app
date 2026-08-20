@@ -294,7 +294,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
               child: ElevatedButton(
                 onPressed: _saving ? null : _saveAndEnable,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GQColors.primary,
+                  backgroundColor: GQColors.primaryDk,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: const StadiumBorder(),
@@ -322,7 +322,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
           TextButton(
             onPressed: _snooze,
             style: TextButton.styleFrom(
-              foregroundColor: GQColors.ink3,
+              foregroundColor: GQColors.ink2,
               textStyle: const TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 13.5,
@@ -424,7 +424,7 @@ class _NotifPreviewRow extends StatelessWidget {
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
-                                color: GQColors.ink3,
+                                color: GQColors.ink2,
                               ),
                             ),
                           ),
@@ -438,7 +438,7 @@ class _NotifPreviewRow extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                         height: 1.4,
                       ),
                     ),
@@ -448,7 +448,7 @@ class _NotifPreviewRow extends StatelessWidget {
               const SizedBox(width: 12),
               // Toggle or locked icon
               if (locked)
-                Icon(Icons.lock_rounded, size: 18, color: GQColors.ink3)
+                Icon(Icons.lock_rounded, size: 18, color: GQColors.ink2)
               else
                 Switch(
                   value: value,
@@ -467,7 +467,7 @@ class _NotifPreviewRow extends StatelessWidget {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
                 height: 1.4,
               ),
             ),
@@ -586,7 +586,7 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -628,7 +628,7 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
                     child: ElevatedButton(
                       onPressed: widget.onContinue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: GQColors.primary,
+                        backgroundColor: GQColors.primaryDk,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: const StadiumBorder(),
@@ -848,7 +848,7 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
                   child: ElevatedButton(
                     onPressed: widget.onContinueWithout,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GQColors.primary,
+                      backgroundColor: GQColors.primaryDk,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: const StadiumBorder(),
@@ -928,14 +928,14 @@ class _SettingsDeepLinkCard extends StatelessWidget {
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                     ),
                   ),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                color: GQColors.ink3, size: 20),
+                color: GQColors.ink2, size: 20),
           ],
         ),
       ),
@@ -1206,7 +1206,7 @@ class _TutorialCard extends StatelessWidget {
                 child: TextButton(
                   onPressed: onSkip,
                   style: TextButton.styleFrom(
-                    foregroundColor: GQColors.ink3,
+                    foregroundColor: GQColors.ink2,
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
                     textStyle: const TextStyle(
@@ -1225,7 +1225,7 @@ class _TutorialCard extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onGotIt,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GQColors.primary,
+                    backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: const StadiumBorder(),

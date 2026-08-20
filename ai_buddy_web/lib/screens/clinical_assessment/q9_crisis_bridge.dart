@@ -111,7 +111,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
               fontFamily: GQTypography.bodyFamily,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
               letterSpacing: 0.7,
             ),
           ),

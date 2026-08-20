@@ -236,7 +236,7 @@ class _BodyDoubleStartSheetContentState
                   key: const Key('body_double_start_button'),
                   onPressed: _sitDown,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GQColors.primary,
+                    backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

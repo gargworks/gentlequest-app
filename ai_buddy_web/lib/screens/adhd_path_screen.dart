@@ -333,7 +333,7 @@ class _IntroContent extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     height: 1.5,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -348,7 +348,7 @@ class _IntroContent extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onContinue,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: const StadiumBorder(),
@@ -586,7 +586,7 @@ class _SuggestionsContent extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 height: 1.5,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
               ),
             ),
           ),
@@ -596,7 +596,7 @@ class _SuggestionsContent extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onContinue,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: const StadiumBorder(),
@@ -688,7 +688,7 @@ class _SuggestionCard extends StatelessWidget {
                           ? Icons.check_circle_rounded
                           : Icons.circle_outlined,
                       size: 18,
-                      color: checked ? GQColors.successInk : GQColors.ink3,
+                      color: checked ? GQColors.successInk : GQColors.ink2,
                     ),
                   ],
                 ),

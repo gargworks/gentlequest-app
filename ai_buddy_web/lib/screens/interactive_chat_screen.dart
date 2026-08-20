@@ -1222,7 +1222,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11.0,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                           height: 1.3,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1570,7 +1570,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.w400,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -1580,7 +1580,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 11.0,
                     fontWeight: FontWeight.w400,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],
@@ -1633,7 +1633,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             style: TextStyle(
               fontSize: 13.0,
               fontWeight: FontWeight.w500,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
             ),
           ),
         ),

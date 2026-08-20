@@ -176,7 +176,7 @@ class _YoursCard extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                       ),
                     ),
                   ],
@@ -184,7 +184,7 @@ class _YoursCard extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
                 size: 24,
               ),
             ],

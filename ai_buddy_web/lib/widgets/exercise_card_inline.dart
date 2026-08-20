@@ -210,7 +210,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
                 style: const TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ],
@@ -384,7 +384,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink3,
+            color: GQColors.ink2,
           ),
         ),
       ],
@@ -444,7 +444,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ),

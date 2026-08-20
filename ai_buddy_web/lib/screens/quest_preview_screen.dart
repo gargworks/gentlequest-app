@@ -150,7 +150,7 @@ class QuestPreviewScreen extends StatelessWidget {
                 '${(progress * 100).toInt()}% complete',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ],

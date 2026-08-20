@@ -293,7 +293,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                   letterSpacing: 0.6),
             ),
           ),
@@ -336,7 +336,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GQColors.primary,
+                    backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: const StadiumBorder(),
@@ -358,7 +358,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     // Coral — not red (P4 / P13)
-                    backgroundColor: GQColors.coral,
+                    backgroundColor: GQColors.dangerInk,
                     disabledBackgroundColor:
                         GQColors.coral.withValues(alpha: 0.5),
                     foregroundColor: Colors.white,
@@ -391,7 +391,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
                 height: 1.4),
           ),
         ],

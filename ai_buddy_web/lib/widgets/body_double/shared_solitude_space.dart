@@ -420,7 +420,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ),
@@ -538,7 +538,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
             ),
           ),
           const Spacer(flex: 2),
@@ -548,7 +548,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
               key: const Key('shared_solitude_im_done'),
               onPressed: _imDone,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 36, vertical: 12),

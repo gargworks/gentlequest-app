@@ -559,7 +559,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             fontSize: 10.5,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.7,
-            color: GQColors.ink3,
+            color: GQColors.ink2,
           ),
         ),
         const SizedBox(height: 8),
@@ -650,7 +650,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ),
@@ -755,7 +755,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ),
@@ -871,7 +871,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: const TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
                 // Verbatim: "SEE · HEAR · FEEL · SMELL · TASTE"
@@ -880,7 +880,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],
@@ -951,7 +951,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],
@@ -1076,7 +1076,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
-                                color: GQColors.ink3,
+                                color: GQColors.ink2,
                               ),
                             ),
                     ),
@@ -1093,7 +1093,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
             ),
           ),
         ],
@@ -1163,7 +1163,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: const TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ),
@@ -1288,7 +1288,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                     ],
@@ -1410,12 +1410,12 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink3)),
+                              color: GQColors.ink2)),
                       Text(remainStr,
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink3)),
+                              color: GQColors.ink2)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -1503,7 +1503,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ),
@@ -1530,7 +1530,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ),
@@ -1628,7 +1628,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink3,
+            color: GQColors.ink2,
           ),
         ),
         const SizedBox(width: 8),
@@ -1704,7 +1704,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.7,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
               const SizedBox(height: 1),
@@ -1724,7 +1724,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],

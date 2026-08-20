@@ -563,7 +563,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                       ),
                     ),
                   ),
@@ -971,7 +971,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                   height: 1.55,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ),
@@ -1017,7 +1017,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: () => _handleAgeVerification(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
@@ -1065,7 +1065,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: _requestLocation,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.coral,
+                backgroundColor: GQColors.primaryDk,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 foregroundColor: Colors.white,
               ),
@@ -1121,7 +1121,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: _checkStatus,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                 foregroundColor: Colors.white,
               ),
@@ -1235,7 +1235,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.4,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                     ),
@@ -1251,7 +1251,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                     ),
                   ),
                 ),
@@ -1318,7 +1318,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 ElevatedButton(
                   onPressed: _isSubmittingEmail ? null : _submitNotifyEmail,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GQColors.primary,
+                    backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 14),
@@ -1350,7 +1350,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 const Text(
                   "Blocked users retain full rights to their data.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: GQColors.ink3),
+                  style: TextStyle(fontSize: 12, color: GQColors.ink2),
                 ),
               ],
 
@@ -1397,7 +1397,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ElevatedButton(
               onPressed: _checkStatus,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               ),
@@ -1416,7 +1416,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const Text(
               "Alternative verification uses your internet connection instead of GPS.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: GQColors.ink3),
+              style: TextStyle(fontSize: 12, color: GQColors.ink2),
             ),
           ],
         ),

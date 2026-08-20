@@ -204,7 +204,7 @@ class _CompanionWidgetState extends State<CompanionWidget>
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                     ],

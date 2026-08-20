@@ -45,7 +45,7 @@ class AssessmentQuestionCard extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
               letterSpacing: 0.7,
             ),
           ),
@@ -213,7 +213,7 @@ class _LikertPill extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   color: isSelected
                       ? Colors.white.withAlpha(179)
-                      : GQColors.ink3,
+                      : GQColors.ink2,
                   letterSpacing: 0.4,
                 ),
               ),

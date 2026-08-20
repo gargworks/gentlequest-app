@@ -364,7 +364,7 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
         FilledButton(
           onPressed: _saveThought,
           style: FilledButton.styleFrom(
-            backgroundColor: GQColors.primary,
+            backgroundColor: GQColors.primaryDk,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(GQRadii.card),
             ),

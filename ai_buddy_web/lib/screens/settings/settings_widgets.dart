@@ -100,7 +100,7 @@ class SettingsRow extends StatelessWidget {
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: subtitleColor ?? GQColors.ink3,
+                          color: subtitleColor ?? GQColors.ink2,
                           height: 1.35)),
                 ],
               ],
@@ -188,7 +188,7 @@ class SectionLabel extends StatelessWidget {
             fontFamily: GQTypography.bodyFamily,
             fontSize: 10.5,
             fontWeight: FontWeight.w800,
-            color: color ?? GQColors.ink3,
+            color: color ?? GQColors.ink2,
             letterSpacing: 0.7),
       ),
     );

@@ -103,7 +103,7 @@ class BodyDoubleTimerBar extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                         decoration: TextDecoration.underline,
                       ),
                     ),

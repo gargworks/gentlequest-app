@@ -929,7 +929,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink3),
+                    color: GQColors.ink2),
               ),
             );
           },
@@ -951,7 +951,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink3),
+              color: GQColors.ink2),
         ),
         const SizedBox(height: 30),
       ],

@@ -66,7 +66,7 @@ class WeeklyLetter extends StatelessWidget {
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                     ),
                   ),
                 ],
@@ -105,7 +105,7 @@ class _WeekLabel extends StatelessWidget {
         fontFamily: GQTypography.bodyFamily,
         fontSize: 10,
         fontWeight: FontWeight.w700,
-        color: GQColors.ink3,
+        color: GQColors.ink2,
         letterSpacing: 1.4,
       ),
     );

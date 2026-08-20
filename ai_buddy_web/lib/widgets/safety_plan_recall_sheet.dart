@@ -185,7 +185,7 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
                       style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -296,7 +296,7 @@ class _EyebrowLabel extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
-          color: GQColors.ink3,
+          color: GQColors.ink2,
         ),
       ),
     );
@@ -388,7 +388,7 @@ class _ContactCard extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
               ),
             ),
           ],
@@ -436,7 +436,7 @@ class _ContactCard extends StatelessWidget {
               style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
                 fontStyle: FontStyle.italic,
               ),
             ),

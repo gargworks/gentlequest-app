@@ -165,7 +165,7 @@ class _SeanEllisSurveySheetState extends State<_SeanEllisSurveySheet> {
             child: ElevatedButton(
               onPressed: _canSubmit ? _submit : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.primary,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: GQColors.primary.withValues(alpha: 0.4),
                 disabledForegroundColor: Colors.white70,

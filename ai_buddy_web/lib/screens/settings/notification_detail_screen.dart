@@ -104,7 +104,7 @@ class _NotificationDetailScreenState
                                         fontFamily: GQTypography.bodyFamily,
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w800,
-                                        color: GQColors.ink3,
+                                        color: GQColors.ink2,
                                         letterSpacing: 0.7),
                                   ),
                                   const SizedBox(height: 2),
@@ -133,7 +133,7 @@ class _NotificationDetailScreenState
                                                   GQTypography.bodyFamily,
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
-                                              color: GQColors.ink3),
+                                              color: GQColors.ink2),
                                         ),
                                       ],
                                     ),
@@ -172,7 +172,7 @@ class _NotificationDetailScreenState
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink3,
+                              color: GQColors.ink2,
                               letterSpacing: 0.7)),
                       const SizedBox(height: 6),
                       Row(
@@ -206,7 +206,7 @@ class _NotificationDetailScreenState
                                         fontWeight: FontWeight.w800,
                                         color: active
                                             ? Colors.white
-                                            : GQColors.ink3)),
+                                            : GQColors.ink2)),
                               ),
                             ),
                           );
@@ -397,7 +397,7 @@ class _TestNotificationBtn extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink3),
+              color: GQColors.ink2),
         ),
       ],
     );

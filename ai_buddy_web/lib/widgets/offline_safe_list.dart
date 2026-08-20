@@ -119,7 +119,7 @@ class OfflineSafeList extends StatelessWidget {
           style: TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: GQColors.ink3,
+            color: GQColors.ink2,
           ),
         ),
       ],
@@ -211,7 +211,7 @@ class _OfflineRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                 ),
               ),
             ],

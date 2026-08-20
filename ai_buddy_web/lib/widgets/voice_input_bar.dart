@@ -235,7 +235,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                     ),
@@ -314,7 +314,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -472,7 +472,7 @@ class VoicePrivacyNudge extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
               letterSpacing: 0.4,
             ),
           ),

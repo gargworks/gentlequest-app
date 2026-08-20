@@ -171,7 +171,7 @@ class _StartupScreenState extends State<StartupScreen> {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry Connection'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: GQColors.primary,
+                          backgroundColor: GQColors.primaryDk,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,

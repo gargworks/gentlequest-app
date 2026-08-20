@@ -117,7 +117,7 @@ class JournalEmptyState extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => onStartEntry(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GQColors.primary,
+                  backgroundColor: GQColors.primaryDk,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shadowColor: Colors.transparent,

@@ -2233,7 +2233,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     MaterialPageRoute(builder: (_) => const JournalScreen()));
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: GQColors.coral,
+                backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 padding:
@@ -2375,7 +2375,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: GQColors.primary,
+                        backgroundColor: GQColors.primaryDk,
                         foregroundColor: Colors.white,
                         shape: const StadiumBorder(),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -2463,7 +2463,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink3),
+                          color: GQColors.ink2),
                     ),
                   ],
                 ),
@@ -2480,7 +2480,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GQColors.primary,
+                  backgroundColor: GQColors.primaryDk,
                   foregroundColor: Colors.white,
                   shape: const StadiumBorder(),
                   padding:
@@ -2762,7 +2762,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                       ),
                       SizedBox(height: 1.h),
@@ -2799,7 +2799,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                         color: allEmpty
-                            ? GQColors.ink3
+                            ? GQColors.ink2
                             : (state == DashboardState.feelingGreat
                                 ? const Color(0xFFB5562F)
                                 : GQColors.primaryDk),
@@ -2838,7 +2838,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                                 ? (state == DashboardState.feelingGreat
                                     ? const Color(0xFFB5562F)
                                     : GQColors.primaryDk)
-                                : GQColors.ink3,
+                                : GQColors.ink2,
                           ),
                         ),
                       ),
@@ -2934,7 +2934,7 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
               ),
             ),
             SizedBox(height: 8.h),

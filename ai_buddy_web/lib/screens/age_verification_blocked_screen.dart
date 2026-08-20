@@ -113,7 +113,7 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                   key: const Key('age_blocked_close_button'),
                   onPressed: () => _closeApp(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GQColors.primary,
+                    backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: const StadiumBorder(),

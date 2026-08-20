@@ -191,7 +191,7 @@ class _QuestScreenState extends State<QuestScreen> {
             ),
           ],
         ),
-        backgroundColor: GQColors.primary,
+        backgroundColor: GQColors.primaryDk,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(milliseconds: 1400),
         shape: RoundedRectangleBorder(
@@ -209,7 +209,7 @@ class _QuestScreenState extends State<QuestScreen> {
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
         content: const Text('Opening Alex…'),
-        backgroundColor: GQColors.primary,
+        backgroundColor: GQColors.primaryDk,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GQRadii.card),
@@ -299,7 +299,7 @@ class _QuestListView extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -331,7 +331,7 @@ class _QuestListView extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -355,7 +355,7 @@ class _QuestListView extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink3,
+                        color: GQColors.ink2,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -434,7 +434,7 @@ class _QuestListView extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 13,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                         ),
                         children: [
                           TextSpan(
@@ -522,7 +522,7 @@ class _InProgressCard extends StatelessWidget {
               ),
             ),
             // Chevron
-            Icon(Icons.chevron_right_rounded, color: GQColors.ink3, size: 20),
+            Icon(Icons.chevron_right_rounded, color: GQColors.ink2, size: 20),
           ],
         ),
       ),
@@ -675,7 +675,7 @@ class _QuestGridCard extends StatelessWidget {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w700,
-                color: GQColors.ink3,
+                color: GQColors.ink2,
               ),
             ),
           ],

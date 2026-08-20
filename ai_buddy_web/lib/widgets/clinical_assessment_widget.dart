@@ -258,7 +258,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           const SizedBox(height: 8),
           Text(
             _assessmentDescription,
-            style: const TextStyle(color: GQColors.ink3, fontSize: 14),
+            style: const TextStyle(color: GQColors.ink2, fontSize: 14),
           ),
           const SizedBox(height: 16),
 
@@ -271,7 +271,7 @@ class _ClinicalAssessmentWidgetState extends State<ClinicalAssessmentWidget> {
           const SizedBox(height: 8),
           Text(
             'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-            style: const TextStyle(color: GQColors.ink3, fontSize: 12),
+            style: const TextStyle(color: GQColors.ink2, fontSize: 12),
           ),
           const SizedBox(height: 24),
 

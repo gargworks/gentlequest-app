@@ -131,7 +131,7 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => widget.onOpenEditor(),
-        backgroundColor: GQColors.primary,
+        backgroundColor: GQColors.primaryDk,
         elevation: 6,
         child: const Icon(Icons.add, color: Colors.white, size: 22),
       ),
@@ -285,7 +285,7 @@ class _TimelineStatStrip extends StatelessWidget {
             '·',
             style: TextStyle(
               fontSize: 10,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -320,7 +320,7 @@ class _WeekHeader extends StatelessWidget {
           fontFamily: GQTypography.bodyFamily,
           fontSize: 11,
           fontWeight: FontWeight.w800,
-          color: GQColors.ink3,
+          color: GQColors.ink2,
           letterSpacing: 0.6,
         ),
       ),
@@ -380,7 +380,7 @@ class _JournalEntryCard extends StatelessWidget {
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -406,7 +406,7 @@ class _JournalEntryCard extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 10.5,
-                            color: GQColors.ink3,
+                            color: GQColors.ink2,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -416,7 +416,7 @@ class _JournalEntryCard extends StatelessWidget {
                         style: const TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10.5,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

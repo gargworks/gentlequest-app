@@ -166,7 +166,7 @@ class _LastNightStamp extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink3,
+              color: GQColors.ink2,
               letterSpacing: 1.2,
             ),
           ),

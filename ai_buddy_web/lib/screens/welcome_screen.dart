@@ -413,7 +413,7 @@ class _WelcomeContent extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: dimmed ? null : onContinue,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: GQColors.primary,
+                                backgroundColor: GQColors.primaryDk,
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor: GQColors.primary
                                     .withAlpha(180),
@@ -453,9 +453,9 @@ class _WelcomeContent extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: GQColors.ink3,
+                                color: GQColors.ink2,
                                 decoration: TextDecoration.underline,
-                                decorationColor: GQColors.ink3,
+                                decorationColor: GQColors.ink2,
                               ),
                             ),
                           ),
@@ -468,7 +468,7 @@ class _WelcomeContent extends StatelessWidget {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
-                                color: GQColors.ink3,
+                                color: GQColors.ink2,
                               ),
                               children: [
                                 const TextSpan(
@@ -561,7 +561,7 @@ class _WelcomeContent extends StatelessWidget {
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: GQColors.ink3,
+                                  color: GQColors.ink2,
                                 ),
                                 children: [
                                   const TextSpan(text: 'Already with us? '),
@@ -759,7 +759,7 @@ class _AgeModalState extends State<_AgeModal> {
                     child: ElevatedButton(
                       onPressed: _loading ? null : _handleConfirm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: GQColors.primary,
+                        backgroundColor: GQColors.primaryDk,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: const StadiumBorder(),
@@ -812,7 +812,7 @@ class _AgeModalState extends State<_AgeModal> {
                   Icon(
                     Icons.shield_outlined,
                     size: 12,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -823,7 +823,7 @@ class _AgeModalState extends State<_AgeModal> {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
-                      color: GQColors.ink3,
+                      color: GQColors.ink2,
                     ),
                   ),
                 ],
@@ -1348,13 +1348,13 @@ class _ResourceCard extends StatelessWidget {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.open_in_new_rounded, size: 14, color: GQColors.ink3),
+          Icon(Icons.open_in_new_rounded, size: 14, color: GQColors.ink2),
         ],
       ),
     );

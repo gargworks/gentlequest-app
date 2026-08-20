@@ -104,7 +104,7 @@ class AppBottomNav extends StatelessWidget {
               size: 28.0,
               color: isActive
                   ? GQColors.primary
-                  : GQColors.ink3,
+                  : GQColors.ink2,
             ),
             const SizedBox(height: 4.0),
             AnimatedOpacity(
@@ -117,7 +117,7 @@ class AppBottomNav extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 12.0,
-                      color: isActive ? GQColors.primary : GQColors.ink3,
+                      color: isActive ? GQColors.primary : GQColors.ink2,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),

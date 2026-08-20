@@ -458,7 +458,7 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: GQColors.ink3.withValues(alpha: opacity),
+                color: GQColors.ink2.withValues(alpha: opacity),
                 shape: BoxShape.circle,
               ),
             );
@@ -471,7 +471,7 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink3,
+            color: GQColors.ink2,
           ),
         ),
       ],
@@ -701,13 +701,13 @@ class _OfflineCapabilityCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, size: 18, color: GQColors.ink3),
+          const Icon(Icons.chevron_right_rounded, size: 18, color: GQColors.ink2),
         ],
       ),
     );

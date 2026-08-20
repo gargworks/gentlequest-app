@@ -343,7 +343,7 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink3,
+                          color: GQColors.ink2,
                           height: 1.5,
                         ),
                       ),
