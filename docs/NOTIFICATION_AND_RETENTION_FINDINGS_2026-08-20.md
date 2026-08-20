@@ -93,27 +93,66 @@ would `ImportError` in the Docker image.
 **Also note:** `push_delivery.py:123-125` silently `continue`s on `platform == "web"`.
 Server push structurally excludes the majority of the user base (see §5).
 
-## 4. Retention is genuinely near zero — and this is NOT an instrumentation artifact
+## 4. Real app retention is UNKNOWN — the D14 instrument measures the wrong population
 
-Session lifespan across all 265 distinct `session_id`s ever recorded
-(`analytics_events`, direct production query):
+> **CORRECTED 2026-08-20, same day.** This section first claimed "retention is genuinely
+> near zero — users open GentleQuest once and do not come back." **That claim was wrong**
+> and is retracted. It was reached by ruling out one artifact (identity churn) and treating
+> the survivor as proven, without running a positive control on the *population* being
+> measured. A peer review asked "is a row written for every session, or only some?" — the
+> right question, and it broke the claim. The corrected finding is below. The original
+> error is left visible rather than quietly overwritten.
 
-| span between first and last event | sessions |
-|---|---|
-| < 1 hour | **263 (99.2%)** |
-| < 1 day | 1 |
-| ≥ 14 days | 1 |
+Session lifespan across all 265 distinct `session_id`s in `analytics_events` (direct
+production query): **263 (99.2%) span under one hour**; 1 spans <1 day; 1 spans ≥14 days.
 
-The obvious hypothesis — "`session_id` regenerates per launch, so returns are undetectable
-by construction" — was **checked and refuted**. `SessionManager.getOrCreateSessionId()`
+Two artifacts had to be ruled out before reading anything into that. Only one was.
+
+**Artifact A — identity churn: RULED OUT.** `SessionManager.getOrCreateSessionId()`
 (`lib/services/session_manager.dart:47-57`) resolves in-memory → persisted secure storage →
-create-only-if-absent. The id persists across relaunches.
+create-only-if-absent. `session_id` genuinely persists across relaunches, so returns are not
+lost to id regeneration.
 
-**So the data means what it says: users open GentleQuest once and do not come back.**
+**Artifact B — wrong population: NOT ruled out. This is the real defect.**
 
-Caveat, honestly stated: persistence is strongest on native. On web, secure storage degrades
-to browser storage, which incognito/clearing wipes — so the web slice of this number is
-softer than the native slice. That weakens the precision, not the direction.
+```
+events=313  distinct sessions=265  events/session=1.18
+245 of 265 sessions (92%) have EXACTLY ONE event
+
+event_type breakdown:
+  cta_impression          206 events / 206 sessions   <-- landing-page marketing event
+  compliance_ip_fallback   35 / 30
+  compliance_passed        29 / 17
+  first_chat_message       21 / 21
+  web_app_open_from_cta    12 / 12
+  chat_message              6 /  1
+  cta_click                 4 /  4
+```
+
+**206 of 265 sessions (78%) exist solely because someone loaded a page carrying a CTA.**
+Only **33 sessions** carry any real app-usage event at all.
+
+`metrics/d14_cohort.sql` defines the cohort as *every* `session_id` whose earliest
+`analytics_events` row lands on the cohort date — with no event-type filter and no platform
+filter. So the D14 denominator is overwhelmingly **landing-page visitors who never installed
+anything**. A web visitor who read a page and left is counted as a cohort member who "failed
+to return on D14."
+
+Worse, native app telemetry is barely present. Last 10 days: `first_chat_message` = 1,
+`chat_message` = 1 — against 209 lifetime native installs (GA4 `first_open`: iOS 142 +
+Android 67) and ~24 weekly actives. Whatever the native apps are doing, it is not landing in
+this table in usable volume.
+
+**Corrected verdict: app retention is not ~0%. It is UNMEASURED.** The number this
+instrument produces is closer to landing-page bounce than to app retention, and the honest
+state is INSUFFICIENT, not a value.
+
+**What this implies for the gate:** the D14 criterion cannot be read from
+`analytics_events` as currently defined, no matter how much data accumulates. Fixing it means
+either (a) filtering the cohort to sessions with a real app-usage event — which collapses n
+far below the n≥40 floor on current volume — or (b) measuring D14 from **GA4/Firebase**,
+which does hold genuine per-user native app events (`first_open` etc.) and supports cohort
+retention natively. (b) is the sound path. Neither has been built.
 
 ## 5. No notification lever can move the D14 gate
 
@@ -142,10 +181,14 @@ so the 2026-08-15 → ~08-27 sub-cohort is uncoverable by construction regardles
 - Fix §3a regardless — it is cheap and it is a live landmine.
 - Do **not** build server push for this gate: it costs more and reaches strictly fewer users
   than the local path.
-- The real finding is §4. A notification does not fix a product people do not return to.
-  The roadmap's own middle band already grants one automatic 4-week extension to 2026-11-05;
-  reading the gate honestly and taking that beats a rushed release chasing ~9% of the
-  denominator.
+- **The real finding is §4, and it is an instrumentation finding, not a product verdict.**
+  Before anyone concludes anything about retention — good or bad — the D14 metric needs to be
+  measured from GA4/Firebase rather than from `analytics_events`, whose population is ~78%
+  landing-page traffic. Building a retention lever against the current number would be
+  optimising against landing-page bounce.
+- The roadmap's own middle band already grants one automatic 4-week extension to 2026-11-05.
+  Taking it and rebuilding the measurement beats both a rushed release and a premature
+  "retention is dead" conclusion.
 
 ## Still unverified
 
