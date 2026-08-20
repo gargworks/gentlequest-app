@@ -53,6 +53,7 @@ import 'chat/chat_widgets.dart';
 import '../models/body_double_session.dart';
 import '../widgets/body_double/body_double_start_sheet.dart';
 import '../widgets/body_double/shared_solitude_space.dart';
+import '../widgets/gq/gq.dart';
 
 // No re-exports: every symbol extracted to chat/chat_widgets.dart was
 // private pre-split, so no external consumer can depend on them.
@@ -292,11 +293,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                     await Clipboard.setData(
                                         ClipboardData(text: number));
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                            content: Text(
-                                                'Call not supported. Number copied to clipboard.')),
+                                      GQBanner.show(
+                                        context,
+                                        message:
+                                            'Call not supported. Number copied to clipboard.',
+                                        category: GQBannerCategory.amber,
                                       );
                                     }
                                   }
@@ -330,11 +331,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       await Clipboard.setData(
                                           ClipboardData(text: textInstr));
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'SMS not supported. Instructions copied to clipboard.')),
+                                        GQBanner.show(
+                                          context,
+                                          message:
+                                              'SMS not supported. Instructions copied to clipboard.',
+                                          category: GQBannerCategory.amber,
                                         );
                                       }
                                     }
@@ -349,11 +350,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                       await Clipboard.setData(
                                           ClipboardData(text: toCopy.trim()));
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content:
-                                                  Text('Copied to clipboard.')),
+                                        GQBanner.show(
+                                          context,
+                                          message: 'Copied to clipboard.',
+                                          category: GQBannerCategory.info,
                                         );
                                       }
                                     }
@@ -1709,7 +1709,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// "your voice stays on this device" promise. VoiceInputBar's
   /// onUnsupported callback fires if the device/locale can't do on-device
   /// recognition, in which case we drop the user back to the text bar with
-  /// a one-time "voice isn't supported here" SnackBar.
+  /// a one-time "voice isn't supported here" GQBanner.
   ///
   /// Hidden on web — Web Speech API silently uses Google Cloud and would
   /// break the on-device privacy promise, so Phase 1 deliberately excludes
@@ -1746,7 +1746,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   /// Handler for VoiceInputBar's onUnsupported callback. Bails out of voice
-  /// mode and surfaces a single, honest SnackBar so the user understands why
+  /// mode and surfaces a single, honest GQBanner so the user understands why
   /// nothing happened. Avoids the "advertise broken feature" trap.
   void _onVoiceUnsupported() {
     if (!mounted) return;
@@ -1754,19 +1754,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       _voiceInputActive = false;
       _voiceTranscript = '';
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          "Voice input isn't supported on this device · please type",
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GQRadii.card),
-        ),
-        backgroundColor: GQColors.ink2,
-      ),
+    GQBanner.show(
+      context,
+      message: "Voice input isn't supported on this device — please type",
+      category: GQBannerCategory.amber,
     );
   }
 
@@ -1785,9 +1776,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     if (_bdSession != null) {
       // One session at a time — surface the existing room instead of
       // silently stacking a second one.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('A shared-solitude room is already open.')),
+      GQBanner.show(
+        context,
+        message: 'A shared-solitude room is already open.',
+        category: GQBannerCategory.info,
       );
       return;
     }
