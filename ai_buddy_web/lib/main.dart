@@ -29,6 +29,7 @@ import 'navigation/home_shell.dart';
 import 'navigation/home_tab_deeplink.dart';
 import 'widgets/app_bottom_nav.dart' show AppTab;
 import 'services/notification_service.dart';
+import 'services/notification_payload_router.dart';
 import 'services/auth_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/pref_migrator.dart';
@@ -53,12 +54,19 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 DateTime? _lastDeepLinkAt;
 String? _lastDeepLinkPayload;
 
-// Handle notification payloads centrally
-void _handleNotificationPayload(String? payload) {
-  if (payload == null) return;
+// Handle notification payloads centrally.
+//
+// Payloads arrive as `gq://<host>?source=...` from every scheduled
+// notification, but the routing below matches bare tokens. Those two sets did
+// not overlap at all until 2026-08-20, so tapping ANY scheduled notification
+// did nothing. normalizeNotificationPayload bridges them; the mapping and its
+// drift test live in services/notification_payload_router.dart.
+void _handleNotificationPayload(String? rawPayload) {
+  if (rawPayload == null) return;
+  final payload = normalizeNotificationPayload(rawPayload);
   if (kDebugMode) {
     try {
-      debugPrint('[DeepLink] payload received: $payload');
+      debugPrint('[DeepLink] payload received: $rawPayload -> $payload');
     } catch (_) {}
   }
   // Deduplicate identical payloads fired in quick succession (e.g., resume + tap)
