@@ -9,6 +9,9 @@
          require this queries block too so SpeechRecognizer can resolve the
          on-device recognizer service. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Required so scheduled notifications survive a reboot / app update.
+         Paired with ScheduledNotificationBootReceiver below. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
@@ -71,6 +74,46 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- flutter_local_notifications scheduling receivers.
+             LOAD-BEARING: without these, EVERY zonedSchedule notification is
+             silently dropped on Android. zonedSchedule delivers via an
+             AlarmManager PendingIntent.getBroadcast targeting
+             ScheduledNotificationReceiver; if the class is not declared, the
+             broadcast goes nowhere and nothing surfaces.
+
+             The plugin does NOT declare these for you. Its own
+             android/src/main/AndroidManifest.xml declares only VIBRATE and
+             POST_NOTIFICATIONS. The receivers appear only in the plugin's
+             example app, i.e. documentation of what a consuming app must add.
+             Verified 2026-08-20 against plugin 17.2.4, and against this app's
+             merged release manifest, which contained ZERO receivers.
+
+             Consequence of their absence, in shipped builds: dailyCheckin,
+             worriedCheckin, weeklyReview, streakNudge AND crisisFollowup were
+             all undeliverable on Android. It went unnoticed because Settings'
+             "Send a test notification" uses _plugin.show(), which fires
+             immediately and bypasses this receiver entirely, so the test
+             button worked while everything scheduled failed.
+
+             Deliberately NOT adding SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM:
+             all call sites use AndroidScheduleMode.inexactAllowWhileIdle, and
+             exact-alarm permissions trigger Play policy review.
+
+             See docs/NOTIFICATION_AND_RETENTION_FINDINGS_2026-08-20.md §1. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
