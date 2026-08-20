@@ -29,9 +29,17 @@ def _apns_payload(title, body, category, collapse_key):
 
 
 def _apns_client():
-    from apns2.client import APNsClient
-    from apns2.credentials import TokenCredentials
-
+    # Config check BEFORE the import, and the import guarded.
+    #
+    # These two lines used to sit at the top of this function, above the
+    # env-var check below -- which made the `return None` /
+    # "apns_not_configured" path unreachable dead code. `apns2` is in NO
+    # requirements file (verified 2026-08-20; `git log -S` shows it never
+    # was), and Dockerfile installs only requirements.txt, so in production
+    # this function raised ModuleNotFoundError instead of degrading. The
+    # only reason it never fired is that push_tokens has 0 rows -- the
+    # empty table was the sole thing preventing a crash. See
+    # docs/NOTIFICATION_AND_RETENTION_FINDINGS_2026-08-20.md §3a.
     key_path = os.getenv("APNS_AUTH_KEY_PATH")
     auth_key_base64 = os.getenv("APNS_AUTH_KEY_BASE64")
     if not key_path and auth_key_base64:
@@ -41,6 +49,14 @@ def _apns_client():
         key_path = fh.name
     if not all([key_path, os.getenv("APNS_KEY_ID"), os.getenv("APNS_TEAM_ID"), os.getenv("APNS_BUNDLE_ID")]):
         return None
+
+    try:
+        from apns2.client import APNsClient
+        from apns2.credentials import TokenCredentials
+    except ImportError:
+        # Configured but the dependency isn't installed -- degrade, don't crash.
+        return None
+
     credentials = TokenCredentials(
         auth_key_path=key_path,
         auth_key_id=os.getenv("APNS_KEY_ID"),
@@ -51,10 +67,12 @@ def _apns_client():
 
 
 def _send_ios(token, title, body, category, collapse_key):
-    from apns2.payload import Payload
-
     client = _apns_client()
     if not client:
+        return {"sent": False, "reason": "apns_not_configured"}
+    try:
+        from apns2.payload import Payload
+    except ImportError:
         return {"sent": False, "reason": "apns_not_configured"}
     payload_dict = _apns_payload(title, body, category, collapse_key)
     payload = Payload(custom=payload_dict, alert=payload_dict["aps"]["alert"], sound="default")
@@ -81,8 +99,17 @@ def _fcm_message(token, title, body, category, collapse_key):
 
 
 def _send_android(token, title, body, category, collapse_key):
-    import firebase_admin
-    from firebase_admin import credentials, messaging
+    # Same defect as _apns_client: these imports used to sit above the
+    # FCM_SERVICE_ACCOUNT_JSON check, making "fcm_not_configured"
+    # unreachable. `firebase-admin` is in no requirements file, so in the
+    # deployed image this raised ModuleNotFoundError rather than degrading.
+    # Extra trap: firebase_admin IS installed on the dev machine, so the
+    # Android path passes locally and dies in Docker.
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, messaging
+    except ImportError:
+        return {"sent": False, "reason": "fcm_not_configured"}
 
     if not firebase_admin._apps:
         service_account = os.getenv("FCM_SERVICE_ACCOUNT_JSON")
