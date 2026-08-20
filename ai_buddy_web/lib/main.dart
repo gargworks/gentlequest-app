@@ -46,6 +46,7 @@ import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/screens/age_verification_blocked_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:ai_buddy_web/services/play_age_signals_service.dart';
+import 'package:ai_buddy_web/screens/debug/gq_component_gallery_screen.dart';
 
 // Root navigator key to support global routing from notification taps
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -315,6 +316,10 @@ class MyApp extends StatelessWidget {
               ),
           '/quests-list': (context) => const dhiwise_quest.QuestScreen(),
           '/clinical-assessment': (context) => const ClinicalAssessmentScreen(),
+          // Design Authority WO-4 acceptance criterion: debug-only component
+          // gallery. Not linked from any in-app navigation — reach via
+          // Navigator.pushNamed(context, '/debug/gq-gallery').
+          '/debug/gq-gallery': (context) => const GQComponentGalleryScreen(),
         },
       ),
     );
