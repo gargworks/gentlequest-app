@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
 // GentleQuest design-system tokens — consolidated from 21-design audit.
-// Source of truth: docs/design/refs/REVIEW.md § Cross-cutting design tokens.
+// Source of truth: docs/design/refs/REVIEW.md § Cross-cutting design tokens,
+// superseded where noted by Token Sheet v2 (GentleQuest Design Authority,
+// WO-3, 2026-08-21 handoff).
 //
 // Usage rules:
 //   • Reference these constants everywhere instead of raw Color literals.
 //   • "coral-not-red" is principle #1: GQColors.coral replaces any red accent.
 //   • Full ThemeData / ColorScheme migration is a downstream task (Tier 1.2+).
 //   • Do NOT add widget-specific overrides here; keep this file token-only.
+//
+// WO-3 note: Token Sheet v2 names some existing tokens differently
+// (accentSoft -> coralSoft, softBg -> bg). Values are unchanged; only the
+// v2 name is added as an alias rather than renaming ~40 call sites blind.
+// Renaming existing usages is WO-5 sweep scope, not WO-3 token-landing scope.
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 
@@ -32,8 +39,17 @@ class GQColors {
   /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-accent-soft + R1D1 Onboarding.
   static const accentSoft = Color(0xFFFFE8E8);
 
+  /// Token Sheet v2 name for [accentSoft]. Same value.
+  static const coralSoft = accentSoft;
+
   /// Soft lavender-tinted off-white — default screen/scaffold background.
   static const softBg = Color(0xFFF8F7FF);
+
+  /// Token Sheet v2 name for [softBg] (page background). Same value.
+  static const bg = softBg;
+
+  /// Card surface — Token Sheet v2. White, distinct from [bg].
+  static const surface = Color(0xFFFFFFFF);
 
   /// Near-black primary text — --gq-ink.
   /// Source: R1D4 GentleQuest_Mood_Entry.html + R1D1 Onboarding.
@@ -179,10 +195,47 @@ class GQColors {
   ];
 }
 
+/// Dark color set — Token Sheet v2, Design Authority D7.
+///
+/// Defined now so no future work invents its own dark palette; NOT wired
+/// into ThemeData / MaterialApp yet — that integration is WO-8 (gated
+/// behind the GQ widget layer landing in WO-4, so 7 components get themed
+/// instead of ~40 screens individually). Deep ink-violet, not black.
+class GQDarkColors {
+  GQDarkColors._();
+
+  static const bg = Color(0xFF14121F);
+  static const surface = Color(0xFF1E1B2E);
+
+  static const ink = Color(0xFFF2F0FA);
+  static const ink2 = Color(0xFFC9C5DC);
+
+  /// Unlike light-mode ink3 (decorative/≥14px only, D3), ink3 passes
+  /// contrast on dark (~5.4:1) and is text-legal there.
+  static const ink3 = Color(0xFF8B86AB);
+
+  /// Lifted primary for dark backgrounds. CTA fills stay [GQColors.primaryDk]
+  /// with white text even in dark mode — D3's contrast ruling doesn't relax.
+  static const primary = Color(0xFF8B9CF2);
+
+  /// Coral as text/icon on dark passes (~6.8:1); still never a white-text
+  /// fill, on light or dark — see D3.
+  static const coral = Color(0xFFFF6B6B);
+
+  /// Soft-tint replacement rule for dark mode: don't reuse the light-mode
+  /// fixed pastels (primarySoft, coralSoft, etc.) — use 12-16% alpha of the
+  /// parent hue instead. Helper, not a fixed palette.
+  static Color softTint(Color hue, {double alpha = 0.14}) =>
+      hue.withValues(alpha: alpha);
+}
+
 // ─── Radii ───────────────────────────────────────────────────────────────────
 
 class GQRadii {
   GQRadii._();
+
+  /// Chip / pill-adjacent corner radius — Token Sheet v2.
+  static const chip = 12.0;
 
   /// Standard card corner radius.
   static const card = 16.0;
@@ -200,6 +253,99 @@ class GQRadii {
 
   /// Stadium (fully-rounded) buttons — use with StadiumBorder or BorderRadius.circular(button).
   static const button = 999.0;
+}
+
+// ─── Spacing ─────────────────────────────────────────────────────────────────
+// Token Sheet v2 — 4-pt grid. Section rhythm: eyebrow -8-> title -14-> body
+// -24-> next section. Did not exist before WO-3; screens previously used ad
+// hoc values (8/12/13/14/16/20/24/28/32 with no shared rhythm — the design
+// audit's "density chaos" finding).
+
+class GQSpacing {
+  GQSpacing._();
+
+  static const xs = 4.0;
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+  static const xl = 24.0;
+  static const xxl = 32.0;
+  static const xxxl = 48.0;
+  static const xxxxl = 64.0;
+}
+
+// ─── Accessibility ───────────────────────────────────────────────────────────
+
+class GQA11y {
+  GQA11y._();
+
+  /// Minimum touch target — Token Sheet v2. Close buttons, toggles, and
+  /// chips are included; no exceptions.
+  static const minTouchTarget = 44.0;
+}
+
+// ─── Mood shape-channel (D2 — binding accessibility rule) ───────────────────
+// "Mood is never encoded by hue alone." WCAG 1.4.1. Every mood visualization
+// must pair color with a second channel: size/shape in charts, a label on
+// pills, an icon in dots. This enum + map is that second channel, so a chart
+// built against it can't accidentally regress to color-only.
+
+enum GQMoodShape { largest, large, medium, small, smallest }
+
+class GQMoodScaleEntry {
+  const GQMoodScaleEntry({
+    required this.color,
+    required this.label,
+    required this.shape,
+    required this.dotCount,
+  });
+
+  final Color color;
+  final String label;
+  final GQMoodShape shape;
+
+  /// Dot-count channel for compact indicators (e.g. a 5-dot strip).
+  final int dotCount;
+}
+
+class GQMoodScale {
+  GQMoodScale._();
+
+  /// Canonical five moods, ordered high -> low energy, per D2. The prior
+  /// 6-mood set (with an Angry entry) and the separate --mood-1..5 rose/blue
+  /// scale used in the Weekly Review mock are retired by this decision.
+  static const great = GQMoodScaleEntry(
+    color: GQColors.moodGreat,
+    label: 'Great',
+    shape: GQMoodShape.largest,
+    dotCount: 5,
+  );
+  static const good = GQMoodScaleEntry(
+    color: GQColors.moodGood,
+    label: 'Good',
+    shape: GQMoodShape.large,
+    dotCount: 4,
+  );
+  static const okay = GQMoodScaleEntry(
+    color: GQColors.moodOkay,
+    label: 'Okay',
+    shape: GQMoodShape.medium,
+    dotCount: 3,
+  );
+  static const meh = GQMoodScaleEntry(
+    color: GQColors.moodMeh,
+    label: 'Meh',
+    shape: GQMoodShape.small,
+    dotCount: 2,
+  );
+  static const rough = GQMoodScaleEntry(
+    color: GQColors.moodRough,
+    label: 'Rough',
+    shape: GQMoodShape.smallest,
+    dotCount: 1,
+  );
+
+  static const all = [great, good, okay, meh, rough];
 }
 
 // ─── Durations ───────────────────────────────────────────────────────────────
@@ -274,6 +420,34 @@ class GQDurations {
 
   /// The return — no bell. Dusk gradient transitions to gq-bg over this window.
   static const roomReturn = Duration(milliseconds: 45000);
+
+  // ── Token Sheet v2 (WO-3) — the GQ widget layer's baseline motion set ────
+  // "Motion constants ship inside the [widget] layer — no screen re-declares
+  // a duration." (D6). These are the only legal general-purpose timings for
+  // new widget-layer components; existing feature-scoped durations above
+  // (crisisSheetSlide, urgencyRingPulse, etc.) are untouched.
+
+  /// Tap feedback — scale to .98. Pair with [GQMotion.standardCurve].
+  static const tap = Duration(milliseconds: 200);
+
+  /// Selection — spring to 1.04. The mood-select / chip-select affordance.
+  static const select = Duration(milliseconds: 220);
+
+  /// Generic sheet slide-in (GQSheet, D6). Distinct from the crisis-specific
+  /// [crisisSheetSlide] (300ms) — do not merge; that one is intentionally
+  /// tuned separately for the crisis surface.
+  static const sheetSlide = Duration(milliseconds: 320);
+
+  /// Full-page cross-fade on navigation.
+  static const pageFade = Duration(milliseconds: 300);
+}
+
+/// Motion curve — Token Sheet v2. The one legal easing curve for widget-layer
+/// motion; screens should not invent their own.
+class GQMotion {
+  GQMotion._();
+
+  static const standardCurve = Cubic(0.22, 0.94, 0.32, 1.0);
 }
 
 // ─── Typography ──────────────────────────────────────────────────────────────
@@ -301,4 +475,71 @@ class GQTypography {
   /// Scoped to: _StarterChips labels, _NotebookScribble Text.
   /// Source: GentleQuest_Journal.html (R1D14) "Today, what worked was…" starters.
   static const handwritten = 'Caveat';
+
+  // ── Type scale (Token Sheet v2, WO-3) — "the only legal sizes" ───────────
+  // Did not exist before WO-3: this class previously held font-FAMILY names
+  // only, no sizes/weights, so every screen picked its own — the design
+  // audit's "text style anarchy" finding (inline TextStyle(fontSize: 16),
+  // TextStyleHelper legacy, GoogleFonts.interTextTheme, and this class, all
+  // live at once). These styles are additive — they don't retrofit existing
+  // screens (that's WO-5); they give new/swept work one place to read from.
+  //
+  // bodyLg deliberately uses [bodyFamily] (Inter), not [journalSerif]: the
+  // existing journalSerif doc comment above is explicit that Fraunces is
+  // scoped to journal surfaces only and must not be adopted globally. Journal
+  // widgets that want the serif "lead" treatment should compose
+  // TextStyle(fontFamily: GQTypography.journalSerif) on top of bodyLg's
+  // size/weight/height rather than bodyLg itself defaulting to serif.
+
+  static const display = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 34,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.8,
+  );
+
+  static const title = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.5,
+  );
+
+  static const titleSm = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.4,
+  );
+
+  static const bodyLg = TextStyle(
+    fontFamily: bodyFamily,
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    height: 1.55,
+  );
+
+  static const body = TextStyle(
+    fontFamily: bodyFamily,
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+
+  /// Secondary rows, hints. Pair with [GQColors.ink2] per D3 (ink3 never
+  /// sets text below 14px).
+  static const caption = TextStyle(
+    fontFamily: bodyFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+  );
+
+  /// Eyebrows, timestamps. Pair with [GQColors.ink2], not ink3 (D3) —
+  /// despite the name, this is an 11px style and ink3 is barred below 14px.
+  static const micro = TextStyle(
+    fontFamily: bodyFamily,
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.2,
+  );
 }
