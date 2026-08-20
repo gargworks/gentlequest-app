@@ -35,7 +35,7 @@ const FEATURES = [
   {
     Icon: Lock,
     title: 'Private by default',
-    body: "Stays on your device. Never synced. Never shared by default. Export when you want. Delete when you're done.",
+    body: "Yours alone. Export everything or delete everything — one tap, anytime.",
   },
   {
     Icon: PhoneCall,
@@ -55,7 +55,7 @@ const FEATURES = [
   {
     Icon: BookOpen,
     title: 'Journal on phone',
-    body: 'Local-first by default. Three views: today, an entry, the timeline. Yours.',
+    body: 'A journal that answers to you. Export or delete anytime. Never sold, never shared.',
   },
   {
     Icon: CalendarHeart,
@@ -181,7 +181,7 @@ function App() {
             </a>
           </div>
           <div className="gq-hero-meta" style={{ marginTop: 16 }}>
-            Free · iOS · Android · v1.5.1
+            Free · iOS · Android · v1.6.0
           </div>
         </div>
 
