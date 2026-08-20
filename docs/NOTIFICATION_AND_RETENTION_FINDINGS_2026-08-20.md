@@ -143,16 +143,42 @@ Worse, native app telemetry is barely present. Last 10 days: `first_chat_message
 Android 67) and ~24 weekly actives. Whatever the native apps are doing, it is not landing in
 this table in usable volume.
 
-**Corrected verdict: app retention is not ~0%. It is UNMEASURED.** The number this
-instrument produces is closer to landing-page bounce than to app retention, and the honest
-state is INSUFFICIENT, not a value.
+**Corrected verdict from `analytics_events`: INSUFFICIENT, not a value.** That instrument
+measures something closer to landing-page bounce than app retention, and no data volume
+fixes it.
 
-**What this implies for the gate:** the D14 criterion cannot be read from
-`analytics_events` as currently defined, no matter how much data accumulates. Fixing it means
-either (a) filtering the cohort to sessions with a real app-usage event — which collapses n
-far below the n≥40 floor on current volume — or (b) measuring D14 from **GA4/Firebase**,
-which does hold genuine per-user native app events (`first_open` etc.) and supports cohort
-retention natively. (b) is the sound path. Neither has been built.
+### 4a. Re-measured properly via GA4 cohorts — the number is real now
+
+Rather than leave it INSUFFICIENT, the sound path was built and run:
+**`metrics/d14_cohort_ga4.py`** (new), using GA4's native cohort API on
+`firstSessionDate`. Verified working 2026-08-20.
+
+**Matured cohort, 2026-06-25 → 2026-07-25 (past D14, so scoreable):**
+
+| platform | n | D1 | D7 | D14 |
+|---|---|---|---|---|
+| iOS | 3 | 0.0% | 0.0% | 0.0% |
+| web | 87 | 0.0% | 0.0% | 0.0% |
+| **ALL** | **90** | | | **0.0%** |
+
+Only three return-visits exist across all 90 users, all before D6. **D14 = 0.0% on n=90.**
+That is below the roadmap's own 7% *kill* line, not merely below the 15% pass bar.
+
+**Gate window so far (2026-08-15 → present, post-1.6.0):** n=10, all web, **D1 = 10%**
+(1 of 10) — the first non-zero D1 anywhere in the data. n=10 is far too small to read, and
+the tool correctly returns INSUFFICIENT (49 days from maturity). Noted only because it is
+the first movement, not as evidence 1.6.0 worked.
+
+**Note on the epistemics, since it matters more than the number:** the original claim
+("retention ~0%") and this one agree. The retraction in §4 was still correct and necessary
+— a true conclusion reached through an invalid instrument is not knowledge, it is luck, and
+it would have been indistinguishable from the many cases where the same reasoning produces
+a wrong answer. The retraction is what produced the working instrument.
+
+**Acquisition context (grim, and separate):** GA4 shows **zero** native newUsers in
+2026-08-15→20; all 10 are web. Consistent with App Store Connect reporting 1 first-time
+download across 90 days. Arrival is ~2/day and essentially all web, so the gate will be
+measured on web traffic regardless of instrument — because that is who is actually arriving.
 
 ## 5. No notification lever can move the D14 gate
 
