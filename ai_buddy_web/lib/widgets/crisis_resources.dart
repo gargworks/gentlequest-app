@@ -370,7 +370,14 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
     // Same clipboard fallback + logging _launchUri gives every other
     // resource on this surface — this call site just also needs to know
     // whether it worked, to show C3's banner.
-    if (!mounted) return;
+    //
+    // context.mounted (not State.mounted) guards the context use on the
+    // next line — the analyzer can't prove a passed-in context parameter
+    // tracks the State's own mounted flag, and on this surface a
+    // use-after-unmount isn't a cosmetic miss, it's the 988 dialer never
+    // launching. State.mounted guards the setState below instead, since
+    // that's what it actually verifies.
+    if (!context.mounted) return;
     await _launchUri(context, uri, label: 'Call 988');
     if (!mounted) return;
     setState(() => _dialerFailed = true);
