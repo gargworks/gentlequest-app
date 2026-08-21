@@ -62,6 +62,18 @@ Future<CrisisSheetChoice?> showCrisisInterventionSheet(
   return choice;
 }
 
+/// Shared by [CrisisInterventionSheet] (WO-6.2) and [AcuteCrisisTakeover]
+/// (WO-6.1 C1) — reads the one persisted signal a safety plan exists.
+/// `.partial` is never actually assigned anywhere today (a defined but
+/// unused SafetyPlanState value); this still branches on the real enum so
+/// it comes right whenever/if that gets wired up too.
+Future<SafetyPlanState> _loadSafetyPlanState() async {
+  final prefs = await SharedPreferences.getInstance();
+  return (prefs.getBool(kSafetyPlanFilled) ?? false)
+      ? SafetyPlanState.filled
+      : SafetyPlanState.empty;
+}
+
 enum CrisisSheetChoice { call988, text741741, keepChatting, ventingOptOut }
 
 /// State A — Soft intervention sheet.
@@ -82,7 +94,11 @@ class CrisisInterventionSheet extends StatelessWidget {
           ),
         ),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
-        child: Column(
+        // Scrollable: the safety-plan row (WO-6.2) pushed the fixed-height
+        // content past what a small viewport (or a large text-scale
+        // accessibility setting) can show without overflowing.
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // drag indicator
@@ -151,6 +167,68 @@ class CrisisInterventionSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
+
+            // WO-6.2 — safety-plan recall, secondary to 988 (P3): 988 stays
+            // the one primary CTA, this is visually quieter (GQCard, not a
+            // crisis-styled button) and never above it. Renders nothing
+            // when the plan is empty — an empty state here is an
+            // invitation to a form, and that's not a fair ask of someone
+            // in crisis.
+            FutureBuilder<SafetyPlanState>(
+              future: _loadSafetyPlanState(),
+              initialData: SafetyPlanState.empty,
+              builder: (context, snapshot) {
+                final state = snapshot.data ?? SafetyPlanState.empty;
+                if (state == SafetyPlanState.empty) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Semantics(
+                    button: true,
+                    label: 'Your safety plan — the words you wrote for a moment like this',
+                    child: GQCard(
+                      haptic: false,
+                      onTap: () => showSafetyPlanRecallSheet(context),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: GQColors.primarySoft,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Center(
+                              child: Text('🗺️', style: TextStyle(fontSize: 16)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Your safety plan',
+                                    style: GQTypography.body.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: GQColors.ink)),
+                                const SizedBox(height: 2),
+                                Text(
+                                    'The words you wrote for a moment like this.',
+                                    style: GQTypography.caption
+                                        .copyWith(color: GQColors.ink2)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              color: GQColors.ink3, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
 
             // Option 2 — Text 741741
             Semantics(
@@ -222,6 +300,7 @@ class CrisisInterventionSheet extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -270,12 +349,10 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
   }
 
   Future<void> _loadPlanState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final state = await _loadSafetyPlanState();
     if (!mounted) return;
     setState(() {
-      _planState = (prefs.getBool(kSafetyPlanFilled) ?? false)
-          ? SafetyPlanState.filled
-          : SafetyPlanState.empty;
+      _planState = state;
     });
   }
 
