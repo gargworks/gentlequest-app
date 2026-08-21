@@ -11,7 +11,13 @@ import 'package:timezone/timezone.dart' as tz;
 // these keys and the schedulers below read the same keys before firing. If
 // they ever drift, toggling off in Settings would not actually suppress the
 // push. Source of truth is settings_screen.dart.
-const String _kPrefsStreakNudgeKey = 'notif_streak_nudge_v1';
+//
+// WO-5.3 A1: renamed off the "streak"-named key. settings_screen.dart
+// forward-migrates the legacy value into the new key on every Settings
+// mount, but a nudge can fire before the user ever reopens Settings post
+// update — the legacy fallback read below covers that window.
+const String _kPrefsStreakNudgeKey = 'notif_gentle_nudge_v1';
+const String _kPrefsStreakNudgeLegacyKey = 'notif_streak_nudge_v1';
 const String _kPrefsWorriedCheckinKey = 'notif_worried_checkin_v1';
 
 // ─── Notification IDs ──────────────────────────────────────────────────────
@@ -704,6 +710,11 @@ class NotificationService {
   /// Returns whether streak nudge is currently enabled (off by default).
   static bool get streakNudgeEnabled => _streakNudgeEnabled;
 
+  /// The pref key Settings wrote this preference under before WO-5.3 A1's
+  /// rename. Exposed so settings_screen.dart can forward-migrate an
+  /// existing opt-in without spelling out the legacy name itself.
+  static String get legacyGentleNudgePrefKey => _kPrefsStreakNudgeLegacyKey;
+
   /// Schedule a streak nudge notification at [scheduledTime].
   ///
   /// Wire-up site: call from [QuestsEngine.markComplete] (or any per-day
@@ -752,7 +763,9 @@ class NotificationService {
     // prefs but the engine still holds a true _streakNudgeEnabled in memory).
     try {
       final prefs = await SharedPreferences.getInstance();
-      final prefsEnabled = prefs.getBool(_kPrefsStreakNudgeKey) ?? false;
+      final prefsEnabled = prefs.getBool(_kPrefsStreakNudgeKey) ??
+          prefs.getBool(_kPrefsStreakNudgeLegacyKey) ??
+          false;
       if (!prefsEnabled) {
         debugPrint(
             'NotificationService: streak nudge skipped — prefs opt-in false.');

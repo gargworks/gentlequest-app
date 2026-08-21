@@ -1,11 +1,12 @@
-// Settings — D: notification detail screen (daily reminder, streak nudge,
+// Settings — D: notification detail screen (daily reminder, gentle nudge,
 // reminder time, day-of-week picker) + test-notification button.
-// Split from settings_screen.dart (R1D20).
+// Split from settings_screen.dart (R1D20). WO-5.3 Parts A1/A3/D/F.
 
 import 'package:flutter/material.dart';
 
 import '../../services/notification_service_impl.dart';
 import '../../theme/gq_tokens.dart';
+import '../../widgets/gq/gq.dart';
 import 'settings_widgets.dart';
 
 // ─── Notification detail screen (View D) ─────────────────────────────────────
@@ -21,8 +22,13 @@ class NotificationDetailScreen extends StatefulWidget {
 class _NotificationDetailScreenState
     extends State<NotificationDetailScreen> {
   bool _dailyOn = true;
-  bool _streakOn = false;
+  bool _gentleNudgeOn = false;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
+
+  // Persistent, point-of-failure banner for the test-notification button
+  // (WO-5.3 Part D: failures render inline, amber, until dismissed —
+  // success is silent, the notification itself is the confirmation).
+  String? _testNotifError;
 
   // M T W T F active by default, S S off
   final List<bool> _days = [true, true, true, true, true, false, false];
@@ -35,6 +41,19 @@ class _NotificationDetailScreenState
       initialTime: _reminderTime,
     );
     if (picked != null && mounted) setState(() => _reminderTime = picked);
+  }
+
+  Future<void> _sendTestNotification() async {
+    setState(() => _testNotifError = null);
+    final granted = await NotificationService.requestPermissions();
+    if (!granted) {
+      if (!mounted) return;
+      setState(() => _testNotifError =
+          'Notifications permission denied. Enable in system settings.');
+      return;
+    }
+    await NotificationService.sendTestNotification();
+    // Success is silent — the notification arriving is the confirmation.
   }
 
   @override
@@ -70,7 +89,7 @@ class _NotificationDetailScreenState
                     size: 14, color: GQColors.primaryDk),
                 title: 'Daily check-in reminder',
                 subtitle: 'A nudge to log your mood',
-                trailing: GQToggle(
+                trailing: SettingsToggle(
                   value: _dailyOn,
                   onChanged: (v) => setState(() => _dailyOn = v),
                 ),
@@ -220,19 +239,20 @@ class _NotificationDetailScreenState
 
           const SizedBox(height: 14),
 
-          // STREAK NUDGE CARD
+          // GENTLE NUDGE CARD (WO-5.3 A1 rename — P9, number-first framing
+          // is out; this is presence, not a counter).
           SettingsCard(
             children: [
               SettingsRow(
                 iconBg: GQColors.warmSoft,
                 iconWidget:
                     const Text('🌱', style: TextStyle(fontSize: 14)),
-                title: 'Streak gentle nudge',
+                title: 'Gentle nudge',
                 subtitle:
-                    "We'll text you when you're 3+ days into a streak — never to shame, only to celebrate.",
-                trailing: GQToggle(
-                  value: _streakOn,
-                  onChanged: (v) => setState(() => _streakOn = v),
+                    "We'll text you after a few good days in a row — never to shame, only to celebrate.",
+                trailing: SettingsToggle(
+                  value: _gentleNudgeOn,
+                  onChanged: (v) => setState(() => _gentleNudgeOn = v),
                 ),
               ),
             ],
@@ -250,7 +270,7 @@ class _NotificationDetailScreenState
                 title: 'Worried check-in',
                 subtitle:
                     'Sent within 24h after we detect a heavy moment. Always optional to ignore.',
-                trailing: GQToggle(
+                trailing: const SettingsToggle(
                   value: true,
                   locked: true,
                   onChanged: null,
@@ -309,43 +329,18 @@ class _NotificationDetailScreenState
 
           const SizedBox(height: 18),
 
+          if (_testNotifError != null) ...[
+            GQBanner(
+              message: _testNotifError!,
+              category: GQBannerCategory.amber,
+              onDismiss: () => setState(() => _testNotifError = null),
+            ),
+            const SizedBox(height: GQSpacing.md),
+          ],
+
           // Test notification button — fires a real local notification so
           // the user sees exactly what the OS surface looks like.
-          _TestNotificationBtn(
-            onTap: () async {
-              // Ask once if needed; tests are useless without permission.
-              final granted = await NotificationService.requestPermissions();
-              if (!granted) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Notifications permission denied. Enable in system settings.',
-                      style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-                return;
-              }
-              await NotificationService.sendTestNotification();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Test notification sent.',
-                      style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontWeight: FontWeight.w600)),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: GQColors.ink,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
+          _TestNotificationBtn(onTap: _sendTestNotification),
         ],
       ),
     );

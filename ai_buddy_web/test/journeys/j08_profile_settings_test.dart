@@ -79,12 +79,12 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
-    testWidgets('YOUR DATA section is present', (tester) async {
+    testWidgets('PRIVACY section is present', (tester) async {
       await tester.pumpWidget(buildSettings());
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      expect(find.text('YOUR DATA'), findsOneWidget);
+      expect(find.text('PRIVACY'), findsOneWidget);
     });
 
     testWidgets('NOTIFICATIONS section is present', (tester) async {
@@ -182,12 +182,12 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('"Streak gentle nudge" row is present', (tester) async {
+    testWidgets('"Gentle nudge" row is present', (tester) async {
       await tester.pumpWidget(buildSettings());
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      expect(find.text('Streak gentle nudge'), findsOneWidget);
+      expect(find.text('Gentle nudge'), findsOneWidget);
     });
 
     // ── APPEARANCE section (v1.5.0 low-stim quiet mode, ADR-006) ──────────────
@@ -210,25 +210,34 @@ void main() {
       await tester.scrollUntilVisible(find.text('Low-stim quiet mode'), 100.0);
       expect(find.text('Low-stim quiet mode'), findsOneWidget);
       final toggle = tester
-          .widget<GQToggle>(find.byKey(const Key('low_stim_toggle')));
+          .widget<SettingsToggle>(find.byKey(const Key('low_stim_toggle')));
       expect(toggle.value, isFalse);
     });
 
     testWidgets(
         '"Low-stim quiet mode" toggle flips on tap and persists to prefs',
         (tester) async {
+      // WO-5.3 grew this screen's content (PRIVACY section, banners), so
+      // the toggle no longer fits the default 800x600 test surface without
+      // scrolling — and this ListView virtualizes its children (SliverList
+      // culls anything outside the viewport's cache extent even when built
+      // from a plain `children:` list), so scrolling to it and back off
+      // unmounts other rows unpredictably. Simplest robust fix: give the
+      // test surface enough height that nothing needs to scroll at all.
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(buildSettings());
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
-      await tester.scrollUntilVisible(find.text('Low-stim quiet mode'), 100.0);
       await tester.tap(find.byKey(const Key('low_stim_toggle')));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
       expect(tester.takeException(), isNull);
       final toggle = tester
-          .widget<GQToggle>(find.byKey(const Key('low_stim_toggle')));
+          .widget<SettingsToggle>(find.byKey(const Key('low_stim_toggle')));
       expect(toggle.value, isTrue);
       expect(LowStimService.enabled, isTrue);
 
@@ -253,6 +262,7 @@ void main() {
       await tester.pump();
 
       await tester.scrollUntilVisible(find.text('Privacy policy'), 100.0);
+      await tester.ensureVisible(find.text('Privacy policy'));
       await tester.tap(find.text('Privacy policy'));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
@@ -275,6 +285,7 @@ void main() {
       await tester.pump();
 
       await tester.scrollUntilVisible(find.text('Crisis resources'), 100.0);
+      await tester.ensureVisible(find.text('Crisis resources'));
       await tester.tap(find.text('Crisis resources'));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();

@@ -133,7 +133,7 @@ class GQBanner extends StatelessWidget {
   }
 }
 
-enum GQBannerCategory { info, warm, amber, danger }
+enum GQBannerCategory { info, warm, amber, danger, success }
 
 class _Palette {
   const _Palette({required this.soft, required this.ink, required this.icon});
@@ -152,6 +152,8 @@ _Palette _paletteFor(GQBannerCategory category) {
       return const _Palette(soft: GQColors.amberSoft, ink: GQColors.inkOnAmber, icon: Icons.wifi_off_rounded);
     case GQBannerCategory.danger:
       return const _Palette(soft: GQColors.dangerSoft, ink: GQColors.dangerInk, icon: Icons.error_outline_rounded);
+    case GQBannerCategory.success:
+      return const _Palette(soft: GQColors.successSoft, ink: GQColors.successInk, icon: Icons.check_circle_outline_rounded);
   }
 }
 
