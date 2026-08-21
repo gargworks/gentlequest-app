@@ -7,6 +7,21 @@ enum MessageType { text, error, system }
 // Added in R1D9 to match server-side _enhanced_crisis_detection risk_level values.
 enum RiskLevel { none, low, medium, high, crisis }
 
+// WO-6.3 F1 — a bare RiskLevel can't say WHERE a .crisis verdict came from,
+// and that distinction is safety-load-bearing: a Tier-1 keyword hit and a
+// server model classification both arrive as the same enum value, but only
+// the server verdict is trusted enough to interrupt with a full-screen
+// takeover (see CrisisResourcesWidget). .server is the default for every
+// existing call site — only chat_provider.dart's on-device keyword stamp
+// sets .keyword.
+enum RiskSource { server, keyword }
+
+class RiskAssessment {
+  final RiskLevel level;
+  final RiskSource source;
+  const RiskAssessment(this.level, this.source);
+}
+
 class Message {
   final String id;
   String content;
@@ -14,6 +29,7 @@ class Message {
   final DateTime timestamp;
   final MessageType type;
   final RiskLevel riskLevel;
+  final RiskSource riskSource;
   final List<String>? resources;
   final String? crisisMsg;
   final List<Map<String, dynamic>>? crisisNumbers;
@@ -28,6 +44,7 @@ class Message {
     DateTime? timestamp,
     this.type = MessageType.text,
     this.riskLevel = RiskLevel.none,
+    this.riskSource = RiskSource.server,
     this.resources,
     this.crisisMsg,
     this.crisisNumbers,

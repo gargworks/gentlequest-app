@@ -294,6 +294,12 @@ class ChatProvider extends ChangeNotifier {
       content: content,
       isUser: true,
       riskLevel: userRisk,
+      // WO-6.3 F1: this is the one place a message's risk comes from the
+      // on-device keyword detector rather than the server. See
+      // RiskSource's doc comment — this distinction gates the full-screen
+      // takeover.
+      riskSource:
+          userRisk != RiskLevel.none ? RiskSource.keyword : RiskSource.server,
     );
     _messages.add(userMessage);
     _isTyping = true;

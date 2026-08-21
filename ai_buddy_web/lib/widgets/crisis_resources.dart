@@ -325,26 +325,19 @@ class AcuteCrisisTakeover extends StatefulWidget {
   State<AcuteCrisisTakeover> createState() => _AcuteCrisisTakeoverState();
 }
 
-class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _heartCtrl;
-  late final Animation<double> _heartScale;
-
+class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
   // WO-6.1 C1: read the real plan state rather than trust an external bool
   // nobody was ever passing — the old `hasSafetyPlan` flag had zero live
   // callers setting it true.
   SafetyPlanState _planState = SafetyPlanState.empty;
 
+  // WO-6.3 C3: the huge CTA needs its own failure signal (not just
+  // _launchUri's silent clipboard fallback) so the banner can appear.
+  bool _dialerFailed = false;
+
   @override
   void initState() {
     super.initState();
-    _heartCtrl = AnimationController(
-      vsync: this,
-      duration: GQDurations.heartPulse,
-    )..repeat(reverse: true);
-    _heartScale = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _heartCtrl, curve: Curves.easeInOut),
-    );
     _loadPlanState();
   }
 
@@ -356,145 +349,112 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
     });
   }
 
-  @override
-  void dispose() {
-    _heartCtrl.dispose();
-    super.dispose();
+  Future<void> _callNow(BuildContext context) async {
+    setState(() => _dialerFailed = false);
+    HapticFeedback.mediumImpact(); // D7: the one crisis CTA on this surface
+    final uri = Uri.parse('tel:988');
+    bool launched = false;
+    try {
+      launched =
+          await canLaunchUrl(uri) && await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // fall through to the clipboard fallback below
+    }
+    if (launched) {
+      FirebaseService().logEvent('crisis_resource_launch_success', {
+        'scheme': 'tel',
+        'label': 'Call 988',
+      });
+      return;
+    }
+    // Same clipboard fallback + logging _launchUri gives every other
+    // resource on this surface — this call site just also needs to know
+    // whether it worked, to show C3's banner.
+    if (!mounted) return;
+    await _launchUri(context, uri, label: 'Call 988');
+    if (!mounted) return;
+    setState(() => _dialerFailed = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false, // nav locked per spec
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.0, 0.55, 1.0],
-              colors: [Color(0xFFF0EEFE), Color(0xFFFBE9E2), GQColors.warm1],
-            ),
+    // WO-6.3 Part A: the nav lock comes off. System back / hardware back
+    // must work and must do exactly what the exit button does — trapping
+    // is a coercion pattern, and coercion fails on effect before it fails
+    // on principle (P2, P6: crisis never blocks).
+    return Scaffold(
+      body: Container(
+        // IMG-TINT — crisis-surface illustration wash, intentional off-token.
+        // Low-contrast, top-to-bottom, on GQColors.warmSoft — never a red or
+        // high-saturation field (D4: the surface should feel held, not
+        // alarmed).
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [GQColors.warmSoft, GQColors.softBg],
           ),
-          child: SafeArea(
-            child: Stack(
-              children: [
-                // soft halo behind icon
-                Positioned(
-                  top: 88,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 280,
-                      height: 280,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(colors: [
-                          GQColors.warm2.withAlpha(115),
-                          GQColors.warm2.withAlpha(0),
-                        ]),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+              child: Column(
+                children: [
+                  // Static warm orb — WO-6.3 D: a perpetually animating
+                  // element on a crisis surface is agitating. Static by
+                  // construction, so it's reduced-motion-safe with no
+                  // branch needed.
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        center: Alignment(-0.3, -0.4),
+                        colors: [GQColors.warmSoft, GQColors.warm1],
                       ),
                     ),
+                    child: const Icon(Icons.favorite_rounded,
+                        color: GQColors.coralDk, size: 36),
                   ),
-                ),
+                  const SizedBox(height: 24),
 
-                // pulsing heart icon
-                Positioned(
-                  top: 108,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: ScaleTransition(
-                      scale: _heartScale,
-                      child: Container(
-                        width: 88,
-                        height: 88,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.4, -0.4),
-                            colors: [GQColors.warm1, GQColors.moodCoralPeach,
-                                     GQColors.coral],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: GQColors.coral.withAlpha(128),
-                              blurRadius: 40,
-                              offset: const Offset(0, 18),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.favorite_rounded,
-                            color: Colors.white, size: 40),
-                      ),
-                    ),
+                  // C1 headline — replaces "Right now, please stay with
+                  // me.", which asked something of the person for the
+                  // app's sake.
+                  Text(
+                    "We're here, right now.",
+                    textAlign: TextAlign.center,
+                    style: GQTypography.title.copyWith(color: GQColors.ink),
                   ),
-                ),
+                  const SizedBox(height: 12),
 
-                // headline block — verbatim
-                Positioned(
-                  top: 218,
-                  left: 24,
-                  right: 24,
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Right now, please\nstay with me.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: GQTypography.displayFamily,
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: GQColors.ink,
-                          letterSpacing: -0.6,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "I want to make sure you're okay. The fastest way is calling 988 — they want to help.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          color: GQColors.ink2,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
+                  // C2 body — names the app's limit out loud rather than
+                  // implying software can keep someone safe.
+                  Text(
+                    'This sounds heavier than we can hold together. 988 is free, 24/7, and they answer.',
+                    textAlign: TextAlign.center,
+                    style: GQTypography.bodyLg.copyWith(color: GQColors.ink2),
                   ),
-                ),
+                  const SizedBox(height: 28),
 
-                // Huge CTA — Call 988 (tel:988)
-                Positioned(
-                  top: 404,
-                  left: 20,
-                  right: 20,
-                  child: Semantics(
+                  // Huge CTA — Call 988 (tel:988). D3: dangerInk fill with
+                  // white text (4.75:1) — coral-with-white fails contrast
+                  // (2.77:1) and this is the one button in the app that
+                  // must never be hard to read.
+                  Semantics(
                     button: true,
-                    label: 'Call 988 now — Suicide and Crisis Lifeline, available 24/7',
+                    label:
+                        'Call 988 — Suicide and Crisis Lifeline, free, 24/7',
                     child: GestureDetector(
-                      onTap: () =>
-                          _launchUri(context, Uri.parse('tel:988'), label: 'Call 988'),
+                      onTap: () => _callNow(context),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 24),
                         decoration: BoxDecoration(
+                          color: GQColors.dangerInk,
                           borderRadius: BorderRadius.circular(24),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [GQColors.moodCoralPeach, GQColors.coral],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: GQColors.coral.withAlpha(140),
-                              blurRadius: 48,
-                              offset: const Offset(0, 22),
-                            ),
-                          ],
                         ),
                         child: Row(
                           children: [
@@ -509,206 +469,204 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
                                   color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 14),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Call 988 now',
-                                  style: TextStyle(
-                                    fontFamily: GQTypography.displayFamily,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    letterSpacing: -0.3,
-                                    height: 1.1,
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    // C3: drop "now" — urgency is already
+                                    // carried by the whole surface;
+                                    // imperative stacking reads as pressure.
+                                    'Call 988',
+                                    style: TextStyle(
+                                      fontFamily: GQTypography.displayFamily,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -0.3,
+                                      height: 1.1,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Suicide & Crisis Lifeline · 24/7',
-                                  style: TextStyle(
-                                    fontFamily: GQTypography.bodyFamily,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    height: 1.0,
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Suicide & Crisis Lifeline · free, 24/7',
+                                    style: TextStyle(
+                                      fontFamily: GQTypography.bodyFamily,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      height: 1.0,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
+                  if (_dialerFailed) ...[
+                    const SizedBox(height: 8),
+                    GQBanner(
+                      category: GQBannerCategory.amber,
+                      message: "We couldn't open your phone app. The number is 988.",
+                      onDismiss: () => setState(() => _dialerFailed = false),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
 
-                // Secondary row: Text 988 + Chat online
-                Positioned(
-                  top: 558,
-                  left: 20,
-                  right: 20,
-                  child: Column(
+                  // C4 — keep as built: Text 988 + Chat at 988lifeline.org
+                  // side by side. Routing all three modalities to the same
+                  // 988 service is more coherent than sending the text
+                  // channel to a different org (Crisis Text Line stays
+                  // where it already lives, in the crisis-resources card).
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Semantics(
-                              button: true,
-                              label: 'Text 988',
-                              child: _SecondaryBtn(
-                                onTap: () => _launchUri(
-                                  context,
-                                  Uri.parse('sms:988'),
-                                  label: 'Text 988',
-                                ),
-                                icon: const Icon(Icons.message_rounded,
-                                    color: GQColors.primaryDk, size: 20),
-                                label: 'Text 988',
-                              ),
-                            ),
+                      Expanded(
+                        child: Semantics(
+                          button: true,
+                          label: 'Text 988',
+                          child: _SecondaryBtn(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _launchUri(context, Uri.parse('sms:988'),
+                                  label: 'Text 988');
+                            },
+                            icon: const Icon(Icons.message_rounded,
+                                color: GQColors.primaryDk, size: 20),
+                            label: 'Text 988',
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Semantics(
-                              button: true,
-                              label: '988lifeline.org — chat online',
-                              child: _SecondaryBtn(
-                                onTap: () => _launchUri(
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Semantics(
+                          button: true,
+                          label: '988lifeline.org — chat online',
+                          child: _SecondaryBtn(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _launchUri(
                                   context,
                                   Uri.parse('https://988lifeline.org/chat/'),
-                                  label: '988lifeline.org',
-                                ),
-                                icon: const Icon(Icons.language_rounded,
-                                    color: GQColors.primaryDk, size: 20),
-                                label: '988lifeline.org',
-                              ),
-                            ),
+                                  label: '988lifeline.org');
+                            },
+                            icon: const Icon(Icons.language_rounded,
+                                color: GQColors.primaryDk, size: 20),
+                            label: '988lifeline.org',
                           ),
-                        ],
+                        ),
                       ),
-                      // WO-6.1 C1: filled/partial open the user's own plan
-                      // directly (no intermediate screen — three scroll-
-                      // lengths of identity settings between a person in
-                      // crisis and the thing they wrote for exactly this
-                      // was the defect). Empty never routes to the 5-step
-                      // builder — asking someone in crisis to complete a
-                      // form is the worst possible ask.
-                      if (_planState == SafetyPlanState.filled ||
-                          _planState == SafetyPlanState.partial) ...[
-                        const SizedBox(height: 8),
-                        Semantics(
-                          button: true,
-                          label: 'I have a safety plan I want to use',
-                          child: GestureDetector(
-                            onTap: () => showSafetyPlanRecallSheet(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 13),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(179),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: GQColors.hair),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Text('🗺️', style: TextStyle(fontSize: 16)),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'I have a safety plan I want to use',
-                                    style: TextStyle(
-                                      fontFamily: GQTypography.bodyFamily,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: GQColors.ink,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Icon(Icons.chevron_right_rounded,
-                                      color: GQColors.ink2, size: 16),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ] else ...[
-                        const SizedBox(height: 8),
-                        GQBanner(
-                          category: GQBannerCategory.warm,
-                          message:
-                              "You haven't written a plan yet — and now isn't the time to. 988 is one tap away.",
-                          child: Semantics(
-                            button: true,
-                            label: 'Call 988',
-                            child: GestureDetector(
-                              onTap: () => _launchUri(
-                                context,
-                                Uri.parse('tel:988'),
-                                label: 'Call 988',
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: GQColors.coralSoft,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.phone_rounded,
-                                        size: 14, color: GQColors.inkOnCoral),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Call 988',
-                                      style: TextStyle(
-                                        fontFamily: GQTypography.bodyFamily,
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: GQColors.inkOnCoral,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
-                ),
 
-                // Deliberately tiny step-back — 11pt, no bg
-                Positioned(
-                  bottom: 34,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Semantics(
+                  // C5 — safety-plan row, already wired in WO-6.1 C1.
+                  // filled/partial open the user's own plan directly (no
+                  // intermediate screen). Empty never routes to the 5-step
+                  // builder — asking someone in crisis to complete a form
+                  // is the worst possible ask.
+                  if (_planState == SafetyPlanState.filled ||
+                      _planState == SafetyPlanState.partial) ...[
+                    const SizedBox(height: 8),
+                    Semantics(
                       button: true,
-                      label: 'Step back to chat',
-                      child: TextButton(
-                        onPressed: widget.onStepBack,
-                        style: TextButton.styleFrom(
+                      label: 'I have a safety plan I want to use',
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          showSafetyPlanRecallSheet(context);
+                        },
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 8),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: Size.zero,
-                        ),
-                        child: const Text(
-                          'Step back to chat',
-                          style: TextStyle(
-                            fontFamily: GQTypography.bodyFamily,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: GQColors.ink2,
+                              horizontal: 14, vertical: 13),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(179),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: GQColors.hair),
+                          ),
+                          child: const Row(
+                            children: [
+                              Text('🗺️', style: TextStyle(fontSize: 16)),
+                              SizedBox(width: 10),
+                              Text(
+                                'I have a safety plan I want to use',
+                                style: TextStyle(
+                                  fontFamily: GQTypography.bodyFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: GQColors.ink,
+                                ),
+                              ),
+                              Spacer(),
+                              Icon(Icons.chevron_right_rounded,
+                                  color: GQColors.ink2, size: 16),
+                            ],
                           ),
                         ),
                       ),
                     ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    GQBanner(
+                      category: GQBannerCategory.warm,
+                      message:
+                          "You haven't written a plan yet — and now isn't the time to. 988 is one tap away.",
+                      child: Semantics(
+                        button: true,
+                        label: 'Call 988',
+                        child: GestureDetector(
+                          onTap: () => _callNow(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: GQColors.coralSoft,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.phone_rounded,
+                                    size: 14, color: GQColors.inkOnCoral),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Call 988',
+                                  style: TextStyle(
+                                    fontFamily: GQTypography.bodyFamily,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: GQColors.inkOnCoral,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+
+                  // Part B — the exit becomes a real button. Deliberately-
+                  // small was the wrong call: a hard-to-find exit doesn't
+                  // keep anyone on the screen in a useful way, it just
+                  // produces a person hunting the corners of a full-screen
+                  // interrupt while in acute distress. Always enabled, no
+                  // confirm dialog — leaving is never a mistake worth
+                  // gatekeeping.
+                  Semantics(
+                    button: true,
+                    label: "I'm okay for now — return to chat",
+                    child: GQButton(
+                      label: "I'm okay for now",
+                      variant: GQButtonVariant.ghost,
+                      haptic: false,
+                      onPressed: () =>
+                          (widget.onStepBack ?? () => Navigator.of(context).maybePop())(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -934,12 +892,19 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
 
 class CrisisResourcesWidget extends StatelessWidget {
   final RiskLevel riskLevel;
+  // WO-6.3 F1: .server is the only source this widget will ever route a
+  // full-screen takeover from (once that routing exists — not yet, see the
+  // class doc). Both live call sites pass a hardcoded RiskLevel.high, not a
+  // real per-message assessment, so this defaults honestly to .server
+  // rather than implying a keyword origin that isn't happening here.
+  final RiskSource riskSource;
   final String? crisisMsg;
   final List<Map<String, dynamic>>? crisisNumbers;
 
   const CrisisResourcesWidget({
     super.key,
     required this.riskLevel,
+    this.riskSource = RiskSource.server,
     this.crisisMsg,
     this.crisisNumbers,
   });
@@ -948,6 +913,13 @@ class CrisisResourcesWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // crisis level → show inline fallback card (AcuteCrisisTakeover is
     // shown as a full-screen route; this is the inline fallback).
+    //
+    // WO-6.3 F1 ruling: even once real full-screen routing exists, it only
+    // fires for RiskAssessment(.crisis, .server) — a keyword-sourced .crisis
+    // stays on this inline path, same as .high. That routing isn't added
+    // yet (gated on the operator's read of backend crisis-classification
+    // calibration); this widget still only ever renders inline today
+    // regardless of riskSource.
     if (riskLevel == RiskLevel.crisis || riskLevel == RiskLevel.high) {
       return _LegacyCrisisCard(
         riskLevel: riskLevel,
@@ -1343,6 +1315,20 @@ class _EmojiChoice extends StatelessWidget {
 // Shared URL launcher (preserves existing web fallback logic)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Test-only seam for the clipboard fallback below. Every real device has a
+/// working Clipboard; the widget-test host does not register the platform
+/// channel a real device would answer, and that call hangs rather than
+/// failing fast — same shape as [AgeVerificationBlockedScreen]'s
+/// `debugCloseAppOverride`. Null (the default) means the real
+/// [Clipboard.setData] is used; production behavior is unchanged.
+@visibleForTesting
+Future<void> Function(ClipboardData data)? debugClipboardSetDataOverride;
+
+Future<void> _setClipboardData(ClipboardData data) {
+  final override = debugClipboardSetDataOverride;
+  return override != null ? override(data) : Clipboard.setData(data);
+}
+
 Future<void> _launchUri(BuildContext context, Uri uri, {String? label}) async {
   // Cache messenger before any async gap.
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -1373,7 +1359,7 @@ Future<void> _launchUri(BuildContext context, Uri uri, {String? label}) async {
 
   if (uri.scheme == 'tel') {
     final number = uri.path;
-    await Clipboard.setData(ClipboardData(text: number));
+    await _setClipboardData(ClipboardData(text: number));
     if (!kIsWeb) return;
     messenger?.showSnackBar(
       SnackBar(content: Text('Phone number copied: $number')),
@@ -1382,7 +1368,7 @@ Future<void> _launchUri(BuildContext context, Uri uri, {String? label}) async {
   }
   if (uri.scheme == 'sms') {
     final number = uri.path;
-    await Clipboard.setData(ClipboardData(text: number));
+    await _setClipboardData(ClipboardData(text: number));
     if (!kIsWeb) return;
     final res = (label != null && label.isNotEmpty) ? ' for $label' : '';
     messenger?.showSnackBar(
@@ -1391,7 +1377,7 @@ Future<void> _launchUri(BuildContext context, Uri uri, {String? label}) async {
     return;
   }
   final urlStr = uri.toString();
-  await Clipboard.setData(ClipboardData(text: urlStr));
+  await _setClipboardData(ClipboardData(text: urlStr));
   if (kIsWeb) {
     messenger?.showSnackBar(SnackBar(content: Text('Link copied: $urlStr')));
   }
