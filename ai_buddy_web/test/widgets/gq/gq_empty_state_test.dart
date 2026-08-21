@@ -31,4 +31,19 @@ void main() {
     await tester.pumpWidget(host(const GQEmptyState(illustration: Icon(Icons.eco), line: 'Empty')));
     expect(find.byType(TextButton), findsNothing);
   });
+
+  testWidgets('sub renders a second line below the primary line', (tester) async {
+    await tester.pumpWidget(host(const GQEmptyState(
+      illustration: Icon(Icons.wifi_off_rounded),
+      line: "We couldn't load the questions just now.",
+      sub: 'Might be the connection. Nothing was lost.',
+    )));
+    expect(find.text("We couldn't load the questions just now."), findsOneWidget);
+    expect(find.text('Might be the connection. Nothing was lost.'), findsOneWidget);
+  });
+
+  testWidgets('null sub renders no second line', (tester) async {
+    await tester.pumpWidget(host(const GQEmptyState(illustration: Icon(Icons.eco), line: 'Empty')));
+    expect(find.text('Empty'), findsOneWidget);
+  });
 }

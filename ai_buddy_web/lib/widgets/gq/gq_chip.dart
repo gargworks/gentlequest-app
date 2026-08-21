@@ -3,14 +3,29 @@ import 'package:flutter/services.dart';
 
 import '../../theme/gq_tokens.dart';
 
+/// Compact horizontal pill (the original variant) or a full-width [block]
+/// with its own radius/fill contract — see [GQChipVariant].
+enum GQChipVariant { pill, block }
+
 /// Design Authority D6 — the chip that replaces raw ChoiceChip/FilterChip.
 ///
-/// A selectable pill (radius [GQRadii.button], 999 — fully rounded) with an
-/// optional leading emoji/icon slot. D7: light haptic impact on select, and
-/// the select spring (scale to 1.04 over [GQDurations.select]) rather than
-/// a flat tap — this is the "selection states don't celebrate" fix the
-/// design audit called out (picking a mood was a border-color change; this
-/// gives every GQChip selection the same small, real motion).
+/// [GQChipVariant.pill] (default): a compact stadium pill (radius
+/// [GQRadii.button]) with an optional leading emoji/icon slot — context
+/// chips, mood-entry tags.
+///
+/// [GQChipVariant.block]: a full-width option row (radius [GQRadii.card],
+/// min-height 56) — WO-5.1's Likert options and any other single-column
+/// choice list. Selected fills [GQColors.primaryDk] solid with white text
+/// (a pill's soft-tint selection reads too quiet at this size); unselected
+/// is [GQColors.surface] with a [GQColors.hair] border. Optional [caption]
+/// renders as a small trailing label (e.g. a Likert numeric value) — the
+/// tap target stays the whole chip, never the caption alone.
+///
+/// D7: light haptic impact on select, and the select spring (scale to 1.04
+/// over [GQDurations.select]) rather than a flat tap — this is the
+/// "selection states don't celebrate" fix the design audit called out
+/// (picking a mood was a border-color change; this gives every GQChip
+/// selection the same small, real motion).
 class GQChip extends StatelessWidget {
   const GQChip({
     super.key,
@@ -18,6 +33,8 @@ class GQChip extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.emoji,
+    this.variant = GQChipVariant.pill,
+    this.caption,
   });
 
   final String label;
@@ -28,8 +45,15 @@ class GQChip extends StatelessWidget {
   /// works without an icon-font mapping.
   final String? emoji;
 
+  final GQChipVariant variant;
+
+  /// [GQChipVariant.block] only: an optional trailing small caption (e.g.
+  /// a Likert option's raw numeric value) beside the label.
+  final String? caption;
+
   @override
   Widget build(BuildContext context) {
+    final isBlock = variant == GQChipVariant.block;
     return _SelectSpring(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -38,30 +62,53 @@ class GQChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: GQDurations.fade,
         curve: GQMotion.standardCurve,
-        padding: const EdgeInsets.symmetric(horizontal: GQSpacing.lg, vertical: GQSpacing.sm),
-        constraints: const BoxConstraints(minHeight: GQA11y.minTouchTarget),
+        width: isBlock ? double.infinity : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: GQSpacing.lg,
+          vertical: isBlock ? GQSpacing.md : GQSpacing.sm,
+        ),
+        constraints: BoxConstraints(
+          minHeight: isBlock ? 56.0 : GQA11y.minTouchTarget,
+        ),
         decoration: BoxDecoration(
-          color: selected ? GQColors.primarySoft : GQColors.surface,
-          borderRadius: BorderRadius.circular(GQRadii.button),
-          border: Border.all(
-            color: selected ? GQColors.primaryDk : GQColors.hair,
-            width: selected ? 1.5 : 1,
-          ),
+          color: isBlock
+              ? (selected ? GQColors.primaryDk : GQColors.surface)
+              : (selected ? GQColors.primarySoft : GQColors.surface),
+          borderRadius: BorderRadius.circular(isBlock ? GQRadii.card : GQRadii.button),
+          border: isBlock && selected
+              ? null
+              : Border.all(
+                  color: selected ? GQColors.primaryDk : GQColors.hair,
+                  width: selected ? 1.5 : 1,
+                ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: isBlock ? MainAxisSize.max : MainAxisSize.min,
           children: [
             if (emoji != null) ...[
               Text(emoji!, style: const TextStyle(fontSize: 16)),
               const SizedBox(width: GQSpacing.xs),
             ],
-            Text(
-              label,
-              style: GQTypography.caption.copyWith(
-                color: selected ? GQColors.primaryDk : GQColors.ink2,
-                fontWeight: FontWeight.w700,
+            Flexible(
+              child: Text(
+                label,
+                style: GQTypography.caption.copyWith(
+                  color: isBlock
+                      ? (selected ? Colors.white : GQColors.ink)
+                      : (selected ? GQColors.primaryDk : GQColors.ink2),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
+            if (isBlock && caption != null) ...[
+              const SizedBox(width: GQSpacing.sm),
+              Text(
+                caption!,
+                style: GQTypography.micro.copyWith(
+                  color: selected ? Colors.white.withValues(alpha: 0.85) : GQColors.ink2,
+                ),
+              ),
+            ],
           ],
         ),
       ),

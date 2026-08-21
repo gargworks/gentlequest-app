@@ -9,6 +9,7 @@ import '../../providers/assessment_provider.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_bottom_nav.dart' show AppTab;
 import '../../widgets/crisis_resources.dart';
+import '../../widgets/gq/gq.dart';
 import 'assessment_models.dart';
 import 'assessment_question_card.dart';
 import 'assessment_widgets.dart';
@@ -199,21 +200,11 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
     // messenger (otherwise the popped Scaffold's messenger has already
     // been deactivated).
     HapticFeedback.lightImpact();
-    final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
-    messenger.showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Exited assessment — in-progress responses were not saved.',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GQRadii.card),
-        ),
-        backgroundColor: GQColors.ink2,
-      ),
+    GQBanner.show(
+      context,
+      message: 'Exited assessment — in-progress responses were not saved.',
+      category: GQBannerCategory.amber,
     );
     nav.maybePop();
   }

@@ -16,6 +16,7 @@ class GQEmptyState extends StatelessWidget {
     super.key,
     required this.illustration,
     required this.line,
+    this.sub,
     this.actionLabel,
     this.onAction,
   });
@@ -25,6 +26,10 @@ class GQEmptyState extends StatelessWidget {
   final Widget illustration;
 
   final String line;
+
+  /// Optional second line, quieter than [line] — e.g. reassurance that
+  /// nothing was lost, or a hint at what caused the empty/error state.
+  final String? sub;
 
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -43,6 +48,16 @@ class GQEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GQTypography.body.copyWith(color: GQColors.ink2),
           ),
+          if (sub != null) ...[
+            const SizedBox(height: GQSpacing.xs),
+            Text(
+              sub!,
+              textAlign: TextAlign.center,
+              // D3: ink3 never sets text below 14px — caption (13px) pairs
+              // with ink2 even for de-emphasized copy like this.
+              style: GQTypography.caption.copyWith(color: GQColors.ink2),
+            ),
+          ],
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: GQSpacing.xl),
             GQButton(

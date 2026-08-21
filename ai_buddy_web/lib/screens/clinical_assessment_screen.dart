@@ -21,9 +21,9 @@
 
 import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/gq/gq.dart';
 import 'clinical_assessment/assessment_flow_screen.dart';
 import 'clinical_assessment/assessment_models.dart';
-import 'clinical_assessment/assessment_widgets.dart';
 
 // Re-export the section libraries so existing `import 'clinical_assessment_screen.dart'`
 // consumers (tests, routes) keep seeing the same public symbols as before
@@ -48,49 +48,24 @@ class ClinicalAssessmentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GQColors.softBg,
-      appBar: AppBar(
-        backgroundColor: GQColors.softBg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Check-ins',
-          style: TextStyle(
-            fontFamily: GQTypography.displayFamily,
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: GQColors.ink,
-            letterSpacing: -0.3,
-          ),
-        ),
-        leading: NavBackButton(onTap: () => Navigator.of(context).maybePop()),
-      ),
+      appBar: const GQHeader(title: 'Check in'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header copy — verbatim from HTML design intent
-            const Text(
-              'How are you, really?',
-              style: TextStyle(
-                fontFamily: GQTypography.displayFamily,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: GQColors.ink,
-                letterSpacing: -0.5,
-              ),
-            ),
+            // WO-5.1 Part C: spec's "current" headline/sub assumed
+            // "How are you feeling?" / "Take a validated screening to
+            // better understand your mental health." — this screen's
+            // actual copy had already moved past that (warmer sub, already
+            // non-clinical-cold). Style token swapped to GQType.title per
+            // spec; copy left as-is since it already meets the sweep's
+            // intent and the spec gave no replacement for this exact text.
+            Text('How are you, really?', style: GQTypography.title.copyWith(color: GQColors.ink)),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'These short check-ins use clinical screening tools to give you a signal — not a verdict.',
-              style: TextStyle(
-                fontFamily: GQTypography.bodyFamily,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-                color: GQColors.ink2,
-                height: 1.5,
-              ),
+              style: GQTypography.body.copyWith(color: GQColors.ink2),
             ),
             const SizedBox(height: 24),
 
@@ -109,37 +84,10 @@ class ClinicalAssessmentScreen extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            // Disclaimer — verbatim aligned
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: GQColors.primarySoft,
-                borderRadius: BorderRadius.circular(GQRadii.card),
-                border: Border.all(color: GQColors.primary.withAlpha(38)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: GQColors.primaryDk,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'PHQ-9 is a clinical screening tool, not a diagnostic instrument.',
-                      style: TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // Disclaimer — legally load-bearing, copy unchanged (WO-5.1 Part C).
+            const GQBanner(
+              category: GQBannerCategory.info,
+              message: 'PHQ-9 is a clinical screening tool, not a diagnostic instrument.',
             ),
           ],
         ),
@@ -167,69 +115,54 @@ class _AssessmentEntryCard extends StatelessWidget {
 
   const _AssessmentEntryCard({required this.scale, required this.onTap});
 
+  // WO-5.1 Part C: spec's replacement copy ("How the last two weeks have
+  // felt" / "How worry has been sitting") assumed the current subtitle was
+  // "Depression Screening" / "Anxiety Screening" — it's actually already
+  // "Depression screener · clinical-grade · ~2 min" (not clinical-cold, but
+  // not the warm register either). Applying the spec's intended warm
+  // subtitle, and keeping the scale name + time estimate as the small
+  // caption underneath per the spec's own "stays clinically identifiable"
+  // instruction, rather than dropping that info to force a literal match.
+  String get _warmSubtitle => scale == AssessmentScale.phq9
+      ? 'How the last two weeks have felt'
+      : 'How worry has been sitting';
+
+  String get _clinicalCaption =>
+      scale == AssessmentScale.phq9 ? 'PHQ-9 · ~2 min' : 'GAD-7 · ~2 min';
+
   @override
   Widget build(BuildContext context) {
     final isPhq9 = scale == AssessmentScale.phq9;
-    final bgColor = isPhq9 ? GQColors.primarySoft : GQColors.accentSoft;
-    final borderColor = isPhq9
-        ? GQColors.primary.withAlpha(51)
-        : GQColors.coral.withAlpha(51);
-    final accentColor = isPhq9 ? GQColors.primary : GQColors.coral;
+    final iconTile = isPhq9 ? GQColors.primarySoft : GQColors.moodOkay.withValues(alpha: 0.18);
+    final accentColor = isPhq9 ? GQColors.primaryDk : GQColors.coralDk;
     final icon = isPhq9
         ? Icons.sentiment_neutral_rounded
         : Icons.psychology_rounded;
 
-    return GestureDetector(
+    return GQCard(
+      large: true,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(GQRadii.cardLg),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: accentColor.withAlpha(38),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: accentColor, size: 24),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: iconTile, shape: BoxShape.circle),
+            child: Icon(icon, color: accentColor, size: 24),
+          ),
+          const SizedBox(width: GQSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_warmSubtitle, style: GQTypography.titleSm.copyWith(fontSize: 16, color: GQColors.ink)),
+                const SizedBox(height: GQSpacing.xs),
+                Text(_clinicalCaption, style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    scale.title,
-                    style: TextStyle(
-                      fontFamily: GQTypography.displayFamily,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: GQColors.ink,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    scale.subtitle,
-                    style: const TextStyle(
-                      fontFamily: GQTypography.bodyFamily,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: GQColors.ink2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, color: accentColor, size: 16),
-          ],
-        ),
+          ),
+          Icon(Icons.arrow_forward_ios_rounded, color: accentColor, size: 16),
+        ],
       ),
     );
   }

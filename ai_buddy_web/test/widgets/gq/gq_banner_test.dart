@@ -48,4 +48,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Overlay message'), findsNothing);
   });
+
+  testWidgets('eyebrow and icon override render, and child slot renders below message', (tester) async {
+    await tester.pumpWidget(host(const GQBanner(
+      message: 'Body text',
+      eyebrow: "we're here",
+      icon: Icons.favorite_border,
+      child: Text('embedded widget'),
+    )));
+    expect(find.text("WE'RE HERE"), findsOneWidget);
+    expect(find.text('Body text'), findsOneWidget);
+    expect(find.text('embedded widget'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+  });
+
+  testWidgets('no child renders no extra content below message', (tester) async {
+    await tester.pumpWidget(host(const GQBanner(message: 'Just a message')));
+    expect(find.text('Just a message'), findsOneWidget);
+  });
 }

@@ -25,6 +25,9 @@ class GQBanner extends StatelessWidget {
     required this.message,
     this.category = GQBannerCategory.info,
     this.onDismiss,
+    this.icon,
+    this.eyebrow,
+    this.child,
   });
 
   final String message;
@@ -33,6 +36,17 @@ class GQBanner extends StatelessWidget {
   /// Null renders no dismiss control (for a banner tied to state that
   /// clears itself, e.g. "still loading").
   final VoidCallback? onDismiss;
+
+  /// Overrides the category's default icon.
+  final IconData? icon;
+
+  /// Optional small-caps line above [message] (e.g. "WE'RE HERE").
+  final String? eyebrow;
+
+  /// Optional content below [message], separated by an [GQSpacing.md] gap —
+  /// e.g. embedding [CrisisResourcesWidget] under a follow-up banner. A
+  /// legitimate widget-layer extension point, not a screen-local hack.
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -44,23 +58,44 @@ class GQBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(GQRadii.card),
         border: Border.all(color: palette.ink.withValues(alpha: 0.24)),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(palette.icon, size: 20, color: palette.ink),
-          const SizedBox(width: GQSpacing.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: GQTypography.caption.copyWith(color: palette.ink, height: 1.4),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon ?? palette.icon, size: 20, color: palette.ink),
+              const SizedBox(width: GQSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (eyebrow != null) ...[
+                      Text(
+                        eyebrow!.toUpperCase(),
+                        style: GQTypography.micro.copyWith(color: palette.ink),
+                      ),
+                      const SizedBox(height: GQSpacing.xs),
+                    ],
+                    Text(
+                      message,
+                      style: GQTypography.caption.copyWith(color: palette.ink, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              if (onDismiss != null) ...[
+                const SizedBox(width: GQSpacing.sm),
+                GestureDetector(
+                  onTap: onDismiss,
+                  child: Icon(Icons.close_rounded, size: 18, color: palette.ink),
+                ),
+              ],
+            ],
           ),
-          if (onDismiss != null) ...[
-            const SizedBox(width: GQSpacing.sm),
-            GestureDetector(
-              onTap: onDismiss,
-              child: Icon(Icons.close_rounded, size: 18, color: palette.ink),
-            ),
+          if (child != null) ...[
+            const SizedBox(height: GQSpacing.md),
+            child!,
           ],
         ],
       ),

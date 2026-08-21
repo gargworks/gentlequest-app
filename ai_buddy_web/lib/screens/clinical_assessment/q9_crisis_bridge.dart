@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/gq_tokens.dart';
+import '../../widgets/gq/gq.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // C — Q9 crisis bridge sheet
@@ -234,7 +235,6 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
 }
 
 Future<void> _launchUri988(BuildContext context) async {
-  final messenger = ScaffoldMessenger.maybeOf(context);
   final uri = Uri.parse('tel:988');
   try {
     final launched = await canLaunchUrl(uri) &&
@@ -244,9 +244,9 @@ Future<void> _launchUri988(BuildContext context) async {
     // fall through
   }
   await Clipboard.setData(const ClipboardData(text: '988'));
-  messenger?.showSnackBar(
-    const SnackBar(content: Text('988 copied to clipboard')),
-  );
+  if (context.mounted) {
+    GQBanner.show(context, message: '988 copied to clipboard', category: GQBannerCategory.info);
+  }
 }
 
 enum _BridgeCardStyle { green, primary, coral }

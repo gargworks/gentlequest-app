@@ -26,4 +26,36 @@ void main() {
     expect(find.text('☀️'), findsOneWidget);
     expect(find.text('Sunny'), findsOneWidget);
   });
+
+  testWidgets('block variant renders full width with a caption and fires onSelected', (tester) async {
+    bool? result;
+    await tester.pumpWidget(host(SizedBox(
+      width: 300,
+      child: GQChip(
+        variant: GQChipVariant.block,
+        label: 'Not at all',
+        caption: '0',
+        selected: false,
+        onSelected: (v) => result = v,
+      ),
+    )));
+    expect(find.text('Not at all'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+    await tester.tap(find.text('Not at all'));
+    await tester.pumpAndSettle();
+    expect(result, isTrue);
+  });
+
+  testWidgets('block variant selected state renders without throwing', (tester) async {
+    await tester.pumpWidget(host(SizedBox(
+      width: 300,
+      child: GQChip(
+        variant: GQChipVariant.block,
+        label: 'Nearly every day',
+        selected: true,
+        onSelected: (_) {},
+      ),
+    )));
+    expect(find.text('Nearly every day'), findsOneWidget);
+  });
 }
