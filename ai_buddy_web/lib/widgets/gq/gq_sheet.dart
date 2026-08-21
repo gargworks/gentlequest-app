@@ -67,10 +67,15 @@ class GQSheet extends StatelessWidget {
     required Widget content,
     String? title,
     bool isScrollControlled = true,
+    // Some callers pop the caller's own dialog/sheet right before opening
+    // this one and need it to float above the root, not the route that was
+    // just dismissed — showModalBottomSheet's own default.
+    bool useRootNavigator = false,
   }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
+      useRootNavigator: useRootNavigator,
       backgroundColor: Colors.transparent,
       barrierColor: GQColors.ink.withValues(alpha: 0.32),
       transitionAnimationController: null,

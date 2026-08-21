@@ -10,6 +10,7 @@ import '../providers/companion_provider.dart';
 import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
 import '../theme/gq_tokens.dart';
+import 'gq/gq.dart';
 import 'mood_low_reflection_sheet.dart';
 import 'mood_reflection_sheet.dart';
 import '../screens/onboarding_extensions_screen.dart';
@@ -715,14 +716,6 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           // Track if this is the user's first mood entry — used to show
           // the notification opt-in sheet after the reflection/toast.
           final bool isFirstEntry = moodProvider.moodEntries.isEmpty;
-          // R1D5 streak-race fix: await the provider so the optimistic cache
-          // update + first save have landed before we compute the streak for
-          // the reflection sheet. `addMoodEntry` is `Future<void>` and only
-          // returns once the local cache is updated; computing streakDays
-          // afterwards prevents the badge from under-counting on first entry
-          // of the day. We also resolve streakDays *here* (in the closure)
-          // rather than inside `addPostFrameCallback`, so the value is bound
-          // to the moment we know the entry is in.
           // Stage 1 — capture the companion provider ref before any await
           // so the post-await context use stays sync-safe.
           final companionProvider =
@@ -762,11 +755,6 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
           } catch (_) {
             // Companion feed is best-effort; never block the mood flow.
           }
-          // Pre-compute streak now that the entry has propagated. Bind it
-          // into the closure so the post-frame callback uses this value
-          // rather than recomputing after another frame.
-          final int? streakDays =
-              moodLevel == 5 ? QuestsEngine().computeTotalActiveDays() : null;
           // R1D5 — Post-submit reflection: branch by mood level.
           //   moodLevel 1–2 → Low mood sheet (State A)
           //   moodLevel 5   → Great mood sheet (State B, celebrates + harvests insight)
@@ -780,8 +768,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             if (moodLevel <= 2) {
               await showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);
             } else if (moodLevel == 5) {
-              // streakDays already computed above with fresh provider state.
-              await showMoodGreatReflectionSheet(context, streakDays: streakDays!);
+              await showMoodGreatReflectionSheet(context);
             } else {
               // Neutral (3–4): lightweight logged toast, auto-dismisses ~3s.
               showMoodNeutralToast(context);
@@ -1072,28 +1059,31 @@ enum _MoodContext {
 
 /// Mood-level → label mapping for the 5-pill row.
 /// Labels are verbatim from R1D4 spec:
-///   "Heavy" · "Low" · "Okay" · "Good" · "Great"
-const _kMoodLabels = ['Heavy', 'Low', 'Okay', 'Good', 'Great'];
+/// D2 (Design Authority) locks the mood scale at exactly these five labels.
+/// Was 'Heavy'/'Low' for levels 1-2 — WO-5.2 A2 renames to the canonical
+/// D2 set; this also fixed a real color bug (see [_moodSelectedBg]): levels
+/// 1 and 2 both rendered with the same generic accentSoft tint before this
+/// change, with no visual distinction between them.
+const _kMoodLabels = ['Rough', 'Meh', 'Okay', 'Good', 'Great'];
 
 /// Emojis paired with each mood label (low → high energy).
 const _kMoodEmojis = ['😔', '😕', '😐', '🙂', '😊'];
 
-/// Semantic background colour for each selected mood pill.
-/// Heavy/Low use accentSoft; Okay uses primarySoft gradient; Good/Great use
-/// their semantic colours at 0.20 opacity.
+/// Semantic background colour for each selected mood pill — the canonical
+/// D2 mood-scale tokens (GQMoodScale), not generic accentSoft.
 Color _moodSelectedBg(int moodLevel) {
-  // moodLevel is 1-based (1=Heavy … 5=Great)
+  // moodLevel is 1-based (1=Rough … 5=Great)
   switch (moodLevel) {
-    case 1: // Heavy — accentSoft (per REVIEW.md token note)
-      return GQColors.accentSoft;
-    case 2: // Low — accentSoft (per REVIEW.md token note)
-      return GQColors.accentSoft;
-    case 3: // Okay — lavender
-      return GQColors.moodOkay.withValues(alpha: 0.35);
-    case 4: // Good — peach
-      return GQColors.moodGood.withValues(alpha: 0.35);
-    case 5: // Great — green
-      return GQColors.moodGreat.withValues(alpha: 0.35);
+    case 1:
+      return GQMoodScale.rough.color.withValues(alpha: 0.35);
+    case 2:
+      return GQMoodScale.meh.color.withValues(alpha: 0.35);
+    case 3:
+      return GQMoodScale.okay.color.withValues(alpha: 0.35);
+    case 4:
+      return GQMoodScale.good.color.withValues(alpha: 0.35);
+    case 5:
+      return GQMoodScale.great.color.withValues(alpha: 0.35);
     default:
       return GQColors.primarySoft;
   }
@@ -1114,50 +1104,33 @@ class _MoodEntrySheet extends StatefulWidget {
 }
 
 class _MoodEntrySheetState extends State<_MoodEntrySheet> {
-  // Default preselected: "Okay" = level 3 (index 2, 1-based = 3)
+  // Default preselected: "Okay" = level 3 (index 2, 1-based = 3). Kept as
+  // the internal starting value, but the CTA stays disabled until the user
+  // actually taps a mood (see [_hasSelected]) — a default is not a choice.
   int _selectedLevel = 3;
   final Set<_MoodContext> _contexts = {};
   bool _noteExpanded = false;
   final _noteController = TextEditingController();
 
-  // Auto-advance timer — 800ms hold then submit (P7: cancellable)
-  Timer? _autoAdvanceTimer;
-  bool _autoAdvancePending = false;
+  // WO-5.2 A4: the 800ms auto-advance is deleted, not tuned. Auto-advancing
+  // on emotional input means a mis-tap logs the wrong feeling and moves on.
+  // One tap selects; the CTA is the only commit path. This reverses P7's
+  // earlier "auto-advance with cancel" allowance for this surface
+  // specifically.
+  bool _hasSelected = false;
 
   @override
   void dispose() {
-    _autoAdvanceTimer?.cancel();
     _noteController.dispose();
     super.dispose();
   }
 
   void _selectMood(int level) {
-    if (_selectedLevel == level && _autoAdvancePending) {
-      // Second tap on already-selected = confirm immediately (cancel auto-advance)
-      _cancelAutoAdvance();
-      _submit();
-      return;
-    }
-    _cancelAutoAdvance();
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedLevel = level;
-      _autoAdvancePending = true;
+      _hasSelected = true;
     });
-    HapticFeedback.selectionClick();
-    // P7: 800ms auto-advance using GQDurations.autoAdvance (cancellable)
-    _autoAdvanceTimer = Timer(GQDurations.autoAdvance, () {
-      if (mounted && _autoAdvancePending) {
-        _submit();
-      }
-    });
-  }
-
-  void _cancelAutoAdvance() {
-    _autoAdvanceTimer?.cancel();
-    _autoAdvanceTimer = null;
-    if (mounted) {
-      setState(() => _autoAdvancePending = false);
-    }
   }
 
   void _submit() {
@@ -1257,15 +1230,13 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // P2: Skip is visible at top-right throughout
+                  // P2: Skip is visible at top-right throughout. WO-5.2 A6:
+                  // 34x34 was below the 44pt minimum touch target.
                   GestureDetector(
-                    onTap: () {
-                      _cancelAutoAdvance();
-                      Navigator.of(context, rootNavigator: true).pop();
-                    },
+                    onTap: () => Navigator.of(context, rootNavigator: true).pop(),
                     child: Container(
-                      width: 34,
-                      height: 34,
+                      width: GQA11y.minTouchTarget,
+                      height: GQA11y.minTouchTarget,
                       decoration: BoxDecoration(
                         color: GQColors.softBg,
                         shape: BoxShape.circle,
@@ -1291,10 +1262,10 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: List.generate(5, (index) {
                   final level = index + 1; // 1-based
-                  final isSelected = _selectedLevel == level;
+                  final isSelected = _selectedLevel == level && _hasSelected;
                   return _MoodEmojiButton(
                     emoji: _kMoodEmojis[index],
-                    label: _kMoodLabels[index], // verbatim labels from spec
+                    label: _kMoodLabels[index], // D2 canonical labels
                     isSelected: isSelected,
                     selectedBg: _moodSelectedBg(level),
                     onTap: () => _selectMood(level),
@@ -1303,111 +1274,37 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
               ),
             ),
 
-            // Auto-advance affordance (shown when timer is running)
-            AnimatedOpacity(
-              opacity: _autoAdvancePending ? 1.0 : 0.0,
-              duration: GQDurations.fade,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.schedule_rounded,
-                      size: 13,
-                      color: GQColors.primary,
-                    ),
-                    const SizedBox(width: 5),
-                    const Text(
-                      'Submitting in 800ms · tap again to confirm now',
-                      style: TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: GQColors.primary,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Cancel affordance (P7: always cancellable)
-                    GestureDetector(
-                      onTap: _cancelAutoAdvance,
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontFamily: GQTypography.bodyFamily,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
             const SizedBox(height: 24),
 
-            // ── Zone 3 · context chips (optional, multi-select) ───────────
-            GestureDetector(
-              // Tapping chips cancels auto-advance (P7)
-              onTap: _cancelAutoAdvance,
-              behavior: HitTestBehavior.translucent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'What shaped this?',
-                          style: TextStyle(
-                            fontFamily: GQTypography.bodyFamily,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: GQColors.ink2,
-                          ),
-                        ),
-                        const Text(
-                          'OPTIONAL',
-                          style: TextStyle(
-                            fontFamily: GQTypography.bodyFamily,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: GQColors.ink2,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _MoodContext.values.map((ctx) {
-                        final selected = _contexts.contains(ctx);
-                        return _ContextChip(
-                          label: ctx.label,
-                          isSelected: selected,
-                          onTap: () {
-                            _cancelAutoAdvance();
-                            setState(() {
-                              if (selected) {
-                                _contexts.remove(ctx);
-                              } else {
-                                _contexts.add(ctx);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
+            // ── Zone 3 · context chips (optional, multi-select) — GQChip pill ──
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("WHAT'S TOUCHING IT? · OPTIONAL", style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+                  const SizedBox(height: GQSpacing.sm),
+                  Wrap(
+                    spacing: GQSpacing.sm,
+                    runSpacing: GQSpacing.sm,
+                    children: _MoodContext.values.map((ctx) {
+                      final selected = _contexts.contains(ctx);
+                      return GQChip(
+                        label: ctx.label,
+                        selected: selected,
+                        onSelected: (v) {
+                          setState(() {
+                            if (v) {
+                              _contexts.add(ctx);
+                            } else {
+                              _contexts.remove(ctx);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ),
 
@@ -1422,10 +1319,7 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                     ? CrossFadeState.showSecond
                     : CrossFadeState.showFirst,
                 firstChild: GestureDetector(
-                  onTap: () {
-                    _cancelAutoAdvance();
-                    setState(() => _noteExpanded = true);
-                  },
+                  onTap: () => setState(() => _noteExpanded = true),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -1518,50 +1412,27 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
 
             const SizedBox(height: 20),
 
-            // ── Zone 5 · submit CTA ────────────────────────────────────────
+            // ── Zone 5 · submit CTA (WO-5.2 A4) ─────────────────────────────
+            // Enables only on first selection — a default is not a choice.
+            // "Log this" drops the earlier "· 2 sec" speed-brag framing.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GestureDetector(
-                onTap: () {
-                  _cancelAutoAdvance();
-                  _submit();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: GQColors.primary,
-                    borderRadius: BorderRadius.circular(GQRadii.button),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A667EEA),
-                        blurRadius: 26,
-                        offset: Offset(0, 12),
-                        spreadRadius: -10,
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Log mood',
-                        style: TextStyle(
-                          fontFamily: GQTypography.displayFamily,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(
-                        Icons.check_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
+              child: GQButton(
+                label: 'Log this',
+                onPressed: _hasSelected ? _submit : null,
+              ),
+            ),
+
+            // WO-5.2 A6: explicit skip affordance below the CTA, ≥44pt —
+            // the single most-cited P2 violation in the audit. In addition
+            // to (not instead of) the top-right close icon.
+            const SizedBox(height: GQSpacing.sm),
+            Center(
+              child: GQButton(
+                label: 'Skip — just close',
+                variant: GQButtonVariant.text,
+                fullWidth: false,
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
               ),
             ),
           ],
@@ -1690,44 +1561,3 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
   }
 }
 
-/// Context chip: filled (primary) when selected, ghost when unselected.
-class _ContextChip extends StatelessWidget {
-  const _ContextChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? GQColors.primary : GQColors.softBg,
-          borderRadius: BorderRadius.circular(GQRadii.button),
-          border: Border.all(
-            color: isSelected ? GQColors.primary : GQColors.hair,
-            width: 1.5,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: GQTypography.bodyFamily,
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-            color: isSelected ? Colors.white : GQColors.ink,
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import '../theme/gq_tokens.dart';
 import '../navigation/home_tab_deeplink.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../screens/journal_screen.dart' show JournalEntry, JournalStorage;
+import 'gq/gq.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // R1D5 — Mood Reflection Sheet
@@ -34,25 +36,18 @@ import '../screens/journal_screen.dart' show JournalEntry, JournalStorage;
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /// Shows the "great mood" celebration bottom sheet (State B).
-///
-/// [streakDays] is the current streak / active-days count. Pass 0 to hide the
-/// streak badge.
-Future<void> showMoodGreatReflectionSheet(
-  BuildContext context, {
-  int streakDays = 0,
-}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+Future<void> showMoodGreatReflectionSheet(BuildContext context) {
+  // WO-5.2 C1: GQSheet.show owns radius/grabber/keyboard-awareness/320ms
+  // slide; useRootNavigator floats above the mood-entry dialog just popped.
+  return GQSheet.show<void>(
+    context,
+    content: const _GreatReflectionSheet(),
     useRootNavigator: true,
-    builder: (_) => _GreatReflectionSheet(streakDays: streakDays),
   );
 }
 
 class _GreatReflectionSheet extends StatefulWidget {
-  final int streakDays;
-  const _GreatReflectionSheet({required this.streakDays});
+  const _GreatReflectionSheet();
 
   @override
   State<_GreatReflectionSheet> createState() => _GreatReflectionSheetState();
@@ -60,18 +55,13 @@ class _GreatReflectionSheet extends StatefulWidget {
 
 class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
     with TickerProviderStateMixin {
-  late final AnimationController _slideCtrl;
-  late final Animation<Offset> _slideAnim;
-
-  // Badge bounce animation
-  late final AnimationController _bounceCtrl;
-  late final Animation<double> _bounceAnim;
-
-  // Confetti dots (5 dots per spec)
+  // Confetti dots (5 dots per spec) — a celebration effect, not a streak
+  // surface, so it stays under C4.
   late final AnimationController _confettiCtrl;
 
   final _thoughtController = TextEditingController();
   bool _saved = false;
+  bool _saveFailed = false;
 
   static const List<Color> _confettiColors = [
     GQColors.coral,
@@ -84,46 +74,14 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
   @override
   void initState() {
     super.initState();
-
-    _slideCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
-    _slideCtrl.forward();
-
-    // Badge bounce — runs once on appear
-    _bounceCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _bounceAnim = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 40),
-      TweenSequenceItem(tween: Tween(begin: 1.25, end: 0.92), weight: 30),
-      TweenSequenceItem(tween: Tween(begin: 0.92, end: 1.0), weight: 30),
-    ]).animate(CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeOut));
-
     _confettiCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
-    );
-
-    // Stagger: slide in → bounce badge → confetti
-    _slideCtrl.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _bounceCtrl.forward();
-        _confettiCtrl.forward();
-      }
-    });
+    )..forward();
   }
 
   @override
   void dispose() {
-    _slideCtrl.dispose();
-    _bounceCtrl.dispose();
     _confettiCtrl.dispose();
     _thoughtController.dispose();
     super.dispose();
@@ -139,10 +97,12 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
       _dismiss();
       return;
     }
-    // Persist the reflection as a journal entry. Anonymous → device-local;
-    // signed-in → device cache + server source-of-truth. Was previously
-    // fire-and-forget which would show "Saved." even when the future
-    // threw — the user's "What worked?" reflection silently dropped.
+    setState(() => _saveFailed = false);
+    // Persist the reflection as a journal entry. JournalStorage.append is
+    // local-only (SharedPreferences) — there is no server sync path, so a
+    // failure here means the write genuinely didn't happen; nothing is
+    // "pending sync" (verified 2026-08-21, WO-5.2's flagged D4 question —
+    // the sync path this catch block used to claim doesn't exist).
     try {
       await JournalStorage.append(JournalEntry(
         id: DateTime.now().toIso8601String(),
@@ -150,90 +110,38 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
         createdAt: DateTime.now(),
       ));
       if (!mounted) return;
+      HapticFeedback.mediumImpact();
       setState(() => _saved = true);
       Future.delayed(const Duration(milliseconds: 900), _dismiss);
     } catch (_) {
       if (!mounted) return;
-      // Local SharedPreferences write almost never throws, but the
-      // signed-in path's server POST can — fail loud rather than lie.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Saved locally — we'll sync next time you have a connection.",
-          ),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      setState(() => _saved = true);
-      Future.delayed(const Duration(milliseconds: 900), _dismiss);
+      setState(() => _saveFailed = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnim,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: GQColors.softBg,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(GQRadii.sheet),
-          ),
-        ),
-        padding: EdgeInsets.fromLTRB(
-          24,
-          20,
-          24,
-          MediaQuery.of(context).padding.bottom + 24,
-        ),
-        child: _saved ? _buildSavedState() : _buildMainContent(context),
-      ),
-    );
+    return _saved ? _buildSavedState() : _buildMainContent(context);
   }
 
   Widget _buildSavedState() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 24),
-        Icon(Icons.check_circle_outline_rounded,
-            color: GQColors.primary, size: 48),
-        const SizedBox(height: 12),
-        const Text(
-          'Saved.',
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: GQSpacing.xl),
+        const Icon(Icons.check_circle_outline_rounded, color: GQColors.primary, size: 48),
+        const SizedBox(height: GQSpacing.md),
+        Text('Saved.', style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+        const SizedBox(height: GQSpacing.xl),
       ],
     );
   }
 
   Widget _buildMainContent(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Drag handle
-        Center(
-          child: Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.black12,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
         // Confetti row — 5 dots per spec
         AnimatedBuilder(
           animation: _confettiCtrl,
@@ -266,134 +174,69 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
             );
           },
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: GQSpacing.sm),
 
-        // Headline
+        // Headline + sub — WO-5.2 C3 exact copy.
         Text(
-          'Quiet wins count.',
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Inter',
-            color: Colors.black87,
-          ),
+          'Love that. What worked today?',
+          style: GQTypography.titleSm.copyWith(color: GQColors.ink),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: GQSpacing.xs),
         Text(
-          'Good days are worth remembering.',
-          style: textTheme.bodyMedium?.copyWith(
-            fontFamily: 'Inter',
-            color: Colors.black54,
-            height: 1.4,
-          ),
+          "30 seconds — I'll remember it for next time.",
+          style: GQTypography.body.copyWith(color: GQColors.ink2),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: GQSpacing.xl),
 
-        // Streak badge (bounce animation)
-        if (widget.streakDays > 0) ...[
-          Center(
-            child: ScaleTransition(
-              scale: _bounceAnim,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: GQColors.accentSoft,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🌱', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${widget.streakDays} active days',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
+        // WO-5.2 C4 (non-negotiable): the streak badge that lived here is
+        // deleted, not replaced. CompanionProvider's own doc already
+        // commits to "no streaks that break, no decay, no shame" —
+        // consistent with that, and with the same call made on WO-6's
+        // Home screen and WO-5.1's assessment result screen.
 
-        // "What worked?" field
-        Text(
-          'What worked?',
-          style: textTheme.labelLarge?.copyWith(
-            fontFamily: 'Inter',
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
+        // Single-line field per spec (was multi-line).
         TextField(
           controller: _thoughtController,
           decoration: InputDecoration(
-            hintText: 'Optional — just for you',
-            hintStyle: const TextStyle(
-              fontFamily: 'Inter',
-              color: Colors.black38,
-              fontSize: 14,
-            ),
+            hintText: 'good food, walked, slept well, said no…',
+            hintStyle: GQTypography.body.copyWith(color: GQColors.ink3),
+            helperText: 'private to you',
+            helperStyle: GQTypography.micro.copyWith(color: GQColors.ink2),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: GQColors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(GQRadii.card),
-              borderSide: BorderSide.none,
+              borderSide: const BorderSide(color: GQColors.hair),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          maxLines: 3,
-          style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
+          maxLines: 1,
+          style: GQTypography.body.copyWith(color: GQColors.ink),
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _saveThought(),
         ),
-        const SizedBox(height: 16),
 
-        // Save thought button
-        FilledButton(
-          onPressed: _saveThought,
-          style: FilledButton.styleFrom(
-            backgroundColor: GQColors.primaryDk,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(GQRadii.card),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14),
+        if (_saveFailed) ...[
+          const SizedBox(height: GQSpacing.md),
+          GQBanner(
+            category: GQBannerCategory.amber,
+            message: "That didn't save. Your entry is still here — try again?",
+            onDismiss: () => setState(() => _saveFailed = false),
           ),
-          child: const Text(
-            'Save thought',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
+        ],
+        const SizedBox(height: GQSpacing.lg),
 
-        // Dismiss link
+        GQButton(label: 'Save thought', onPressed: _saveThought),
+        const SizedBox(height: GQSpacing.sm),
+
         Center(
-          child: TextButton(
+          child: GQButton(
+            label: 'Just close',
+            variant: GQButtonVariant.ghost,
+            fullWidth: false,
             onPressed: _dismiss,
-            style: TextButton.styleFrom(foregroundColor: Colors.black45),
-            child: const Text(
-              'Skip',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                decoration: TextDecoration.underline,
-              ),
-            ),
           ),
         ),
       ],

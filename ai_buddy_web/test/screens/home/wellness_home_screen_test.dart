@@ -50,7 +50,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.widgetWithText(GQButton, 'Quick check-in'));
     await tester.pumpAndSettle();
-    expect(find.text('Mood Tracker'), findsOneWidget);
+    expect(find.text("Let's check in"), findsOneWidget);
   });
 
   testWidgets('reselect notifier scrolls back to top without throwing',

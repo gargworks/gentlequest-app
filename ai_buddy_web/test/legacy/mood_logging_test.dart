@@ -35,11 +35,11 @@ void main() {
     // Verify basic presence
     expect(find.byType(MoodTrackerScreen), findsOneWidget);
 
-    // Check for "Log Mood" or similar button text if standard,
-    // but for now, just verifying the screen pumps without error is a good smoke test.
-    // We can also check for common mood UI elements like slider or icons if known.
-    // Assuming there's a title or header:
-    expect(find.textContaining('Mood'),
-        findsWidgets); // Likely in header or button
+    // WO-5.2 Part B renamed the screen title from "Mood Tracker" to an
+    // invitation ("Let's check in") -- deliberate, D6's "screen titles are
+    // questions or invitations, never feature names." A loose
+    // find.textContaining('Mood') no longer matches anything on first
+    // render by design; assert the real current header instead.
+    expect(find.text("Let's check in"), findsOneWidget);
   });
 }
