@@ -23,10 +23,14 @@ class SafetyPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state == SafetyPlanState.empty) {
-      return _SafetyPlanEmpty(onBuild: onBuild);
+    switch (state) {
+      case SafetyPlanState.empty:
+        return _SafetyPlanEmpty(onBuild: onBuild);
+      case SafetyPlanState.partial:
+        return _SafetyPlanPartial(onEdit: onEdit);
+      case SafetyPlanState.filled:
+        return _SafetyPlanFilled(onEdit: onEdit);
     }
-    return _SafetyPlanFilled(onEdit: onEdit);
   }
 }
 
@@ -234,6 +238,69 @@ class _SafetyPlanFilledState extends State<_SafetyPlanFilled> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// WO-6.4: the state a plan is in after some fields are written but the
+/// builder hasn't been completed. Deliberately no progress indicator, no
+/// "3 of 5", no completion percentage — it's not a task with a bar, it's
+/// something written at whatever pace it's written at (P9).
+class _SafetyPlanPartial extends StatelessWidget {
+  final VoidCallback onEdit;
+  const _SafetyPlanPartial({required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            GQColors.safetyGradStart,
+            GQColors.safetyGradMid,
+            GQColors.safetyGradEnd,
+          ],
+          stops: [0.0, 0.6, 1.0],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Your safety plan',
+            style: TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Started — pick it up whenever.',
+            style: TextStyle(
+              fontFamily: GQTypography.bodyFamily,
+              fontSize: 13,
+              color: Colors.white,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: SafetyButton(
+              label: 'Keep going',
+              onTap: onEdit,
+              style: SafetyButtonStyle.solid,
             ),
           ),
         ],

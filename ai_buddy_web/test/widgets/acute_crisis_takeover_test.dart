@@ -111,7 +111,27 @@ void main() {
 
     testWidgets('shows the safety-plan row when a plan is filled',
         (tester) async {
-      SharedPreferences.setMockInitialValues({kSafetyPlanFilled: true});
+      // WO-6.4: .filled now requires content too, not just the flag —
+      // _loadSafetyPlanState() derives it from both together.
+      SharedPreferences.setMockInitialValues({
+        kSafetyPlanFilled: true,
+        kSafetyPlanFieldKeys.first: 'a warning sign',
+      });
+      await pushTakeover(tester);
+
+      expect(find.text('I have a safety plan I want to use'), findsOneWidget);
+      expect(find.textContaining("You haven't written a plan yet"),
+          findsNothing);
+    });
+
+    testWidgets('shows the safety-plan row for a partial plan too (no flag)',
+        (tester) async {
+      // WO-6.4: a partial plan (content, no completion flag) must be
+      // reachable here too, not just in the SafetyPlanCard — this was the
+      // whole point of fixing the derivation.
+      SharedPreferences.setMockInitialValues({
+        kSafetyPlanFieldKeys.first: 'a warning sign',
+      });
       await pushTakeover(tester);
 
       expect(find.text('I have a safety plan I want to use'), findsOneWidget);

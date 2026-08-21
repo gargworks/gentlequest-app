@@ -11,6 +11,7 @@ import 'profile/profile_widgets.dart';
 import 'profile/safety_plan_builder.dart';
 import 'profile/safety_plan_card.dart';
 import 'profile/voice_card.dart';
+import '../widgets/crisis_resources.dart' show deriveSafetyPlanState;
 
 // Re-export the section libraries so existing `import 'profile_screen.dart'`
 // consumers (tests, nav sheets) keep seeing the same public symbols as before
@@ -73,7 +74,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _showBuilder
           ? SafetyPlanBuilderStep(
               stepIdx: _builderStep,
-              onClose: () => setState(() { _showBuilder = false; _builderStep = 0; }),
+              // WO-6.4: closing early (not just completing) can still have
+              // written partial content — refresh so the card picks up
+              // .partial in the same session, not only after a relaunch.
+              onClose: () => setState(() { _showBuilder = false; _builderStep = 0; _homeRefreshKey++; }),
               onNext: () => setState(() => _builderStep++),
               onCompleted: _onBuilderComplete,
             )
@@ -154,7 +158,7 @@ class _ProfileHomeBodyState extends State<ProfileHomeBody> {
   int _toneIndex = 0; // 0=Warm, 1=Direct, 2=Quiet
   int _greetingStyleIndex = 0;
   bool _voiceNotes = false;
-  bool _planFilled = false; // hydrated from prefs on init
+  SafetyPlanState _planState = SafetyPlanState.empty; // hydrated from prefs on init
 
   // Debounce per-key so rapid edits coalesce into one disk write.
   final Map<String, Timer> _debouncers = {};
@@ -195,7 +199,7 @@ class _ProfileHomeBodyState extends State<ProfileHomeBody> {
       _toneIndex = prefs.getInt(kProfileTone) ?? 0;
       _greetingStyleIndex = prefs.getInt('profile_greeting_style_v1') ?? 0;
       _voiceNotes = prefs.getBool(kProfileVoiceNotes) ?? false;
-      _planFilled = prefs.getBool(kSafetyPlanFilled) ?? false;
+      _planState = deriveSafetyPlanState(prefs);
       // Sync nickname controller without clobbering an active edit.
       if (_nicknameCtrl.text != _nickname) {
         _nicknameCtrl.text = _nickname;
@@ -289,7 +293,7 @@ class _ProfileHomeBodyState extends State<ProfileHomeBody> {
         const SizedBox(height: 14),
         const SectionLabel('YOUR SAFETY PLAN'),
         SafetyPlanCard(
-          state: _planFilled ? SafetyPlanState.filled : SafetyPlanState.empty,
+          state: _planState,
           onBuild: widget.onBuildPlan,
           onEdit: widget.onEditPlan,
         ),

@@ -8,6 +8,16 @@ import 'package:ai_buddy_web/widgets/crisis_resources.dart';
 // WO-6.2: CrisisInterventionSheet gains a secondary "Your safety plan" row
 // below the 988 CTA when the user has one — the live crisis surface had no
 // safety-plan recall at all before this.
+//
+// WO-6.4: a "filled" plan in these prefs mocks now needs real field
+// content too, not just the completion flag — _loadSafetyPlanState()
+// derives .filled from content + flag together, so a flag with no
+// content resolves to .empty by design.
+final _kFilledPlanPrefs = {
+  kSafetyPlanFilled: true,
+  kSafetyPlanFieldKeys.first: 'a warning sign',
+};
+
 void main() {
   group('CrisisInterventionSheet — safety plan row', () {
     Future<void> openSheet(WidgetTester tester) async {
@@ -37,7 +47,7 @@ void main() {
     });
 
     testWidgets('renders below 988 when a plan is filled', (tester) async {
-      SharedPreferences.setMockInitialValues({kSafetyPlanFilled: true});
+      SharedPreferences.setMockInitialValues(_kFilledPlanPrefs);
       await openSheet(tester);
 
       expect(find.text('Your safety plan'), findsOneWidget);
@@ -52,7 +62,7 @@ void main() {
 
     testWidgets('tapping the row opens the safety plan recall sheet',
         (tester) async {
-      SharedPreferences.setMockInitialValues({kSafetyPlanFilled: true});
+      SharedPreferences.setMockInitialValues(_kFilledPlanPrefs);
       await openSheet(tester);
 
       await tester.tap(find.text('Your safety plan'));

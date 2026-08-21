@@ -15,7 +15,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart';
-import '../screens/profile/profile_prefs_keys.dart' show kSafetyPlanFilled;
+import '../screens/profile/profile_prefs_keys.dart'
+    show kSafetyPlanFilled, kSafetyPlanFieldKeys;
 import '../screens/profile/safety_plan_card.dart' show SafetyPlanState;
 import '../services/firebase_service.dart';
 import '../theme/gq_tokens.dart';
@@ -62,16 +63,35 @@ Future<CrisisSheetChoice?> showCrisisInterventionSheet(
   return choice;
 }
 
-/// Shared by [CrisisInterventionSheet] (WO-6.2) and [AcuteCrisisTakeover]
-/// (WO-6.1 C1) — reads the one persisted signal a safety plan exists.
-/// `.partial` is never actually assigned anywhere today (a defined but
-/// unused SafetyPlanState value); this still branches on the real enum so
-/// it comes right whenever/if that gets wired up too.
-Future<SafetyPlanState> _loadSafetyPlanState() async {
-  final prefs = await SharedPreferences.getInstance();
+/// WO-6.4: [kSafetyPlanFilled] only flips on full 5-step completion, but
+/// SafetyPlanBuilderStep persists every field on every step regardless of
+/// completion — so a 3-of-5 plan has real content sitting in prefs with
+/// that flag still false. Deriving state from content first (rather than
+/// trusting the flag alone) is what makes `.partial` reachable instead of
+/// a silently-lost-work bug. Content wins over the flag in both
+/// directions: fields with no flag is `.partial`, and a stale flag with
+/// every field cleared is `.empty` (so a wiped plan doesn't leave a
+/// crisis row pointing at nothing).
+///
+/// Public (not `_`-prefixed) and synchronous over an already-loaded
+/// [SharedPreferences] so profile_screen.dart's `_loadFromPrefs()` — which
+/// already holds `prefs` from its own single `getInstance()` call — can
+/// share this derivation instead of re-deriving it, which is exactly the
+/// kind of two-copy drift this work order exists to close.
+SafetyPlanState deriveSafetyPlanState(SharedPreferences prefs) {
+  final anyContent = kSafetyPlanFieldKeys
+      .any((key) => (prefs.getString(key) ?? '').trim().isNotEmpty);
+  if (!anyContent) return SafetyPlanState.empty;
   return (prefs.getBool(kSafetyPlanFilled) ?? false)
       ? SafetyPlanState.filled
-      : SafetyPlanState.empty;
+      : SafetyPlanState.partial;
+}
+
+/// Shared by [CrisisInterventionSheet] (WO-6.2) and [AcuteCrisisTakeover]
+/// (WO-6.1 C1) — reads whether a safety plan exists.
+Future<SafetyPlanState> _loadSafetyPlanState() async {
+  final prefs = await SharedPreferences.getInstance();
+  return deriveSafetyPlanState(prefs);
 }
 
 enum CrisisSheetChoice { call988, text741741, keepChatting, ventingOptOut }
