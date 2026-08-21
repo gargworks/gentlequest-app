@@ -49,7 +49,7 @@ void main() {
       );
     });
 
-    testWidgets('tap shows the shipped snackbar message', (tester) async {
+    testWidgets('tap shows the warm GQBanner message', (tester) async {
       await buildWith(tester);
       await tester.tap(find.byType(SilentWitness));
       await tester.pump();
@@ -58,6 +58,9 @@ void main() {
         find.textContaining("I'm always glad to see you. No rush."),
         findsOneWidget,
       );
+      // Drain the banner's 2s auto-dismiss timer so it doesn't leak past
+      // this test (flutter test asserts no pending timers on teardown).
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('settle state changes the breathing animation duration',
@@ -100,6 +103,40 @@ void main() {
       );
       // Verify the state object is SilentWitnessState (not a generic State).
       expect(stateBreathe, isNotNull);
+    });
+
+    testWidgets(
+        'renders without a ParentDataWidget conflict when the caller wraps '
+        'it in its own Positioned (the real call-site shape in '
+        'interactive_chat_screen.dart)', (tester) async {
+      // Regression test: SilentWitness used to wrap itself in a Positioned
+      // too, so any caller doing exactly this — which the class doc always
+      // told callers to do — crashed with "competing ParentDataWidgets".
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: 18,
+                    bottom: 8,
+                    child: SilentWitness(
+                      state: WitnessState.breathe,
+                      stage: GrowthStage.seed,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SilentWitness), findsOneWidget);
     });
 
     testWidgets('stay (crisis) state freezes and shows shadow', (tester) async {

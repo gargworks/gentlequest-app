@@ -10,7 +10,7 @@
 ///   • stay (crisis) — transform frozen; no new tween targets it while a
 ///     crisis surface is mounted.
 ///
-/// Tap shows the shipped snackbar: "I'm always glad to see you. No rush."
+/// Tap shows a warm GQBanner: "I'm always glad to see you. No rush."
 /// A 22px soft shadow ellipse appears under it in settle / crisis states.
 library;
 
@@ -19,21 +19,24 @@ import 'package:flutter/material.dart';
 import '../models/companion.dart';
 import '../theme/gq_tokens.dart';
 import 'companion_painter.dart';
+import 'gq/gq.dart';
 
 /// The three behavioral states the witness can be in.
 enum WitnessState { breathe, settle, stay }
 
 /// A silent companion witness anchored bottom-left above the input bar.
 ///
-/// Renders a [CompanionPainter] in simplified mode at ~28px. The parent
-/// positions it (typically via [Positioned] inside a [Stack]); this widget
-/// only owns its animation + tap behavior.
+/// Renders a [CompanionPainter] in simplified mode at ~28px. The caller
+/// must wrap this in its own [Positioned] inside a [Stack] — this widget
+/// owns only its animation + tap behavior, not its placement. (It used to
+/// also wrap itself in a Positioned, which crashed with "competing
+/// ParentDataWidgets" the moment a caller did what this doc always said to
+/// do and positioned it externally too.)
 class SilentWitness extends StatefulWidget {
   const SilentWitness({
     super.key,
     this.state = WitnessState.breathe,
     this.stage = GrowthStage.seed,
-    this.edgePadding = 18.0,
   });
 
   /// Current behavioral state. The parent drives this from heavy-language
@@ -42,9 +45,6 @@ class SilentWitness extends StatefulWidget {
 
   /// Growth stage to paint. Defaults to [GrowthStage.seed].
   final GrowthStage stage;
-
-  /// Distance from the left edge. Default 18px per spec.
-  final double edgePadding;
 
   @override
   State<SilentWitness> createState() => SilentWitnessState();
@@ -139,73 +139,63 @@ class SilentWitnessState extends State<SilentWitness>
     super.dispose();
   }
 
-  void _showWitnessSnackbar(BuildContext context) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("I'm always glad to see you. No rush."),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: GQColors.ink,
-        duration: Duration(seconds: 2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-      ),
+  void _showWitnessBanner(BuildContext context) {
+    GQBanner.show(
+      context,
+      message: "I'm always glad to see you. No rush.",
+      category: GQBannerCategory.warm,
+      duration: const Duration(seconds: 2),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: widget.edgePadding,
-      bottom: 0,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _showWitnessSnackbar(context),
-        child: SizedBox(
-          width: 30,
-          height: 44,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomLeft,
-            children: [
-              // Soft shadow ellipse — settle / stay only.
-              if (_showShadow)
-                Positioned(
-                  left: 4,
-                  bottom: 0,
-                  child: Container(
-                    width: 22,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: GQColors.moodSlateLavender.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showWitnessBanner(context),
+      child: SizedBox(
+        width: 30,
+        height: 44,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomLeft,
+          children: [
+            // Soft shadow ellipse — settle / stay only.
+            if (_showShadow)
+              Positioned(
+                left: 4,
+                bottom: 0,
+                child: Container(
+                  width: 22,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: GQColors.moodSlateLavender.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-              // Companion form — lean applied via transform, scale via
-              // breathing. Origin is bottom-center so the lean pivots from
-              // the ground.
-              Transform.translate(
-                offset: const Offset(0, 0),
-                child: Transform(
+              ),
+            // Companion form — lean applied via transform, scale via
+            // breathing. Origin is bottom-center so the lean pivots from
+            // the ground.
+            Transform.translate(
+              offset: const Offset(0, 0),
+              child: Transform(
+                alignment: Alignment.bottomCenter,
+                transform: Matrix4.rotationZ(_leanDeg * 3.14159265 / 180),
+                child: ScaleTransition(
+                  scale: _breatheAnimation,
                   alignment: Alignment.bottomCenter,
-                  transform: Matrix4.rotationZ(_leanDeg * 3.14159265 / 180),
-                  child: ScaleTransition(
-                    scale: _breatheAnimation,
-                    alignment: Alignment.bottomCenter,
-                    child: CustomPaint(
-                      size: const Size.square(30),
-                      painter: CompanionPainter(
-                        stage: widget.stage,
-                        simplified: true,
-                      ),
+                  child: CustomPaint(
+                    size: const Size.square(30),
+                    painter: CompanionPainter(
+                      stage: widget.stage,
+                      simplified: true,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

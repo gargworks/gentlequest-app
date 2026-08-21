@@ -665,7 +665,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   key: _witnessKey,
                   state: _witnessState,
                   stage: GrowthStage.seed,
-                  edgePadding: 0,
                 ),
               ),
             // Crisis Re-Entry Surface: when returning within 72h of a crisis,
