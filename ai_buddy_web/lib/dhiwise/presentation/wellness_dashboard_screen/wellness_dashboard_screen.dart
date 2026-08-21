@@ -29,7 +29,7 @@ import '../../../screens/quest_screen/widgets/quest_card_widget.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../widgets/feedback_dialog.dart';
-import '../../../widgets/profile_nav_sheet.dart';
+import '../../../screens/profile_screen.dart';
 import '../../../theme/gq_tokens.dart';
 
 // ── R1D2+R1D3: Dashboard state machine ───────────────────────────────────────
@@ -1943,9 +1943,14 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
                     ),
                   ),
                 ),
-                // R1D2: Profile avatar button — opens profile nav sheet (Tier 2.1)
+                // R1D2: Profile avatar button. profile_nav_sheet.dart was
+                // deleted (WO-6.1 — its 4 destinations all moved onto the
+                // You tab / are dead routes); this legacy dhiwise screen is
+                // itself unreachable from the live 4-tab app, so this only
+                // needs to keep compiling, not stay pixel-identical.
                 GestureDetector(
-                  onTap: () => showProfileNavSheet(context),
+                  onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileScreen())),
                   child: Container(
                     width: 44.h,
                     height: 44.h,

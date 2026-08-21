@@ -6,8 +6,7 @@ import '../../theme/gq_tokens.dart';
 ///
 /// Modal bottom sheet where the user names an intention and picks a duration
 /// before sitting down in the shared-solitude room. Follows the same
-/// `showXSheet(context)` convention as `showSafetyLegalSheet` /
-/// `showProfileNavSheet`.
+/// `showXSheet(context)` convention as `showSafetyLegalSheet`.
 ///
 /// Returns null if dismissed without starting (Close / swipe-down /
 /// tap-outside). The inverted design replaces the v1.5.0 "Focus together"

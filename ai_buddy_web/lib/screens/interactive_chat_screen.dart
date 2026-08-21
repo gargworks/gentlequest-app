@@ -23,7 +23,6 @@ import '../services/firebase_service.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
 import '../theme/gq_tokens.dart';
-import '../widgets/profile_nav_sheet.dart';
 import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
 import '../widgets/exercise_card_inline.dart';
@@ -764,23 +763,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                               padding: EdgeInsets.all(8),
                               child: Icon(
                                 Icons.groups_outlined,
-                                color: GQColors.primary,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Profile / nav sheet entry point (Tier 2.1)
-                        Semantics(
-                          label: 'Open navigation menu',
-                          button: true,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(22),
-                            onTap: () => showProfileNavSheet(context),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.account_circle_outlined,
                                 color: GQColors.primary,
                                 size: 28,
                               ),

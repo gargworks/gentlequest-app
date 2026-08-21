@@ -21,7 +21,7 @@ export 'profile/safety_plan_builder.dart';
 export 'profile/safety_plan_card.dart';
 export 'profile/voice_card.dart';
 
-// profile_screen.dart — Tier 3.6 R1D19
+// profile_screen.dart — Tier 3.6 R1D19, WO-6.1 extraction
 //
 // Implements GentleQuest Profile screen per GentleQuest_Profile.html.
 // Views:
@@ -30,11 +30,19 @@ export 'profile/voice_card.dart';
 //         profile/voice_card.dart, profile/safety_plan_card.dart)
 //   B · Safety plan builder — 5 steps (profile/safety_plan_builder.dart)
 //
+// WO-6.1: the You tab now renders this screen's substance directly instead
+// of linking to it (the profile-avatar entry point in Chat's header is
+// retired). [ProfileHomeBody] holds the actual state/persistence/three
+// sections and is shared between this file's own standalone Scaffold (kept
+// for existing test coverage) and yours_screen.dart's tab composition,
+// so the real logic isn't duplicated — only each surface's header/footer
+// chrome differs.
+//
 // Profile + safety-plan data persisted via SharedPreferences (this tier).
 // secure_storage migration is a separate follow-up.
 // Key constants live in profile/profile_prefs_keys.dart.
 
-// ─── Entry point ─────────────────────────────────────────────────────────────
+// ─── Entry point (standalone; no live in-app caller post-WO-6.1) ─────────────
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -46,8 +54,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showBuilder = false;
   int _builderStep = 0;
-  // Bump this key to force _ProfileHome to remount on plan-completion so it
-  // re-reads the `safety_plan_filled_v1` flag and flips its card state.
+  // Bump this key to force ProfileHomeBody to remount on plan-completion so
+  // it re-reads the `safety_plan_filled_v1` flag and flips its card state.
   int _homeRefreshKey = 0;
 
   void _onBuilderComplete() {
@@ -69,32 +77,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onNext: () => setState(() => _builderStep++),
               onCompleted: _onBuilderComplete,
             )
-          : _ProfileHome(
-              key: ValueKey('profile_home_$_homeRefreshKey'),
-              onBuildPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
-              onEditPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
+          : Column(
+              children: [
+                ProfileNavBar(
+                  title: 'Your profile',
+                  showBack: true,
+                  showClose: true,
+                  onBack: () => Navigator.maybePop(context),
+                  onClose: () => Navigator.maybePop(context),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ProfileHomeBody(
+                          key: ValueKey('profile_home_$_homeRefreshKey'),
+                          onBuildPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
+                          onEditPlan: () => setState(() { _showBuilder = true; _builderStep = 0; }),
+                        ),
+                        const SizedBox(height: 18),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                            child: Text(
+                              'Settings →',
+                              style: TextStyle(
+                                fontFamily: GQTypography.bodyFamily,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: GQColors.primaryDk,
+                                decoration: TextDecoration.underline,
+                                decorationColor: GQColors.primaryDk,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
 }
 
-// ─── View A · Profile home ────────────────────────────────────────────────────
+// ─── Shared content: About You + How Alex Talks + Safety Plan ────────────────
+//
+// The state-bearing core of the profile surface. No header, no trailing
+// Settings link — those are each caller's own chrome (ProfileScreen above,
+// YoursScreen for the You tab).
 
-class _ProfileHome extends StatefulWidget {
+class ProfileHomeBody extends StatefulWidget {
   final VoidCallback onBuildPlan;
   final VoidCallback onEditPlan;
 
-  const _ProfileHome({
+  const ProfileHomeBody({
     super.key,
     required this.onBuildPlan,
     required this.onEditPlan,
   });
 
   @override
-  State<_ProfileHome> createState() => _ProfileHomeState();
+  State<ProfileHomeBody> createState() => _ProfileHomeBodyState();
 }
 
-class _ProfileHomeState extends State<_ProfileHome> {
+class _ProfileHomeBodyState extends State<ProfileHomeBody> {
   // Form state — defaults shown until SharedPreferences load completes.
   // `_loaded` gates the nickname TextField rebuild via controller text-sync.
   String _nickname = '';
@@ -185,99 +236,62 @@ class _ProfileHomeState extends State<_ProfileHome> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nav bar
-        ProfileNavBar(
-          title: 'Your profile',
-          showBack: true,
-          showClose: true,
-          onBack: () => Navigator.maybePop(context),
-          onClose: () => Navigator.maybePop(context),
+        // ── ABOUT YOU ────────────────────────────────────────────────
+        const SectionLabel('ABOUT YOU'),
+        AboutYouCard(
+          nicknameController: _nicknameCtrl,
+          pronounIndex: _pronounIndex,
+          avatarIndex: _avatarIndex,
+          pronouns: _pronouns,
+          avatarGradients: _avatarGradients,
+          onNicknameChanged: (v) {
+            setState(() => _nickname = v);
+            _persistProfile<String>(kProfileNickname, v);
+          },
+          onPronounSelected: (i) {
+            setState(() => _pronounIndex = i);
+            _persistProfile<int>(kProfilePronoun, i);
+          },
+          onAvatarSelected: (i) {
+            setState(() => _avatarIndex = i);
+            _persistProfile<int>(kProfileAvatar, i);
+          },
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── ABOUT YOU ────────────────────────────────────────────────
-                const SectionLabel('ABOUT YOU'),
-                AboutYouCard(
-                  nicknameController: _nicknameCtrl,
-                  pronounIndex: _pronounIndex,
-                  avatarIndex: _avatarIndex,
-                  pronouns: _pronouns,
-                  avatarGradients: _avatarGradients,
-                  onNicknameChanged: (v) {
-                    setState(() => _nickname = v);
-                    _persistProfile<String>(kProfileNickname, v);
-                  },
-                  onPronounSelected: (i) {
-                    setState(() => _pronounIndex = i);
-                    _persistProfile<int>(kProfilePronoun, i);
-                  },
-                  onAvatarSelected: (i) {
-                    setState(() => _avatarIndex = i);
-                    _persistProfile<int>(kProfileAvatar, i);
-                  },
-                ),
 
-                // ── HOW ALEX TALKS TO YOU ─────────────────────────────────
-                const SizedBox(height: 14),
-                const SectionLabel('HOW ALEX TALKS TO YOU'),
-                VoiceCard(
-                  toneIndex: _toneIndex,
-                  tones: _tones,
-                  voiceNotes: _voiceNotes,
-                  greetingStyleIndex: _greetingStyleIndex,
-                  greetingStyles: _greetingStyles,
-                  onToneSelected: (i) {
-                    setState(() => _toneIndex = i);
-                    _persistProfile<int>(kProfileTone, i);
-                    ProfileConfig.setToneIndex(i);
-                  },
-                  onVoiceNotesToggled: (v) {
-                    setState(() => _voiceNotes = v);
-                    _persistProfile<bool>(kProfileVoiceNotes, v);
-                  },
-                  onGreetingStyleSelected: (i) {
-                    setState(() => _greetingStyleIndex = i);
-                    _persistProfile<int>('profile_greeting_style_v1', i);
-                    ProfileConfig.setGreetingStyleIndex(i);
-                  },
-                ),
+        // ── HOW ALEX TALKS TO YOU ─────────────────────────────────
+        const SizedBox(height: 14),
+        const SectionLabel('HOW ALEX TALKS TO YOU'),
+        VoiceCard(
+          toneIndex: _toneIndex,
+          tones: _tones,
+          voiceNotes: _voiceNotes,
+          greetingStyleIndex: _greetingStyleIndex,
+          greetingStyles: _greetingStyles,
+          onToneSelected: (i) {
+            setState(() => _toneIndex = i);
+            _persistProfile<int>(kProfileTone, i);
+            ProfileConfig.setToneIndex(i);
+          },
+          onVoiceNotesToggled: (v) {
+            setState(() => _voiceNotes = v);
+            _persistProfile<bool>(kProfileVoiceNotes, v);
+          },
+          onGreetingStyleSelected: (i) {
+            setState(() => _greetingStyleIndex = i);
+            _persistProfile<int>('profile_greeting_style_v1', i);
+            ProfileConfig.setGreetingStyleIndex(i);
+          },
+        ),
 
-                // ── YOUR SAFETY PLAN ──────────────────────────────────────
-                const SizedBox(height: 14),
-                const SectionLabel('YOUR SAFETY PLAN'),
-                SafetyPlanCard(
-                  state: _planFilled ? SafetyPlanState.filled : SafetyPlanState.empty,
-                  onBuild: widget.onBuildPlan,
-                  onEdit: widget.onEditPlan,
-                ),
-
-                // Settings link
-                const SizedBox(height: 18),
-                Center(
-                  child: GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-                    child: Text(
-                      'Settings →',
-                      style: TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: GQColors.primaryDk,
-                        decoration: TextDecoration.underline,
-                        decorationColor: GQColors.primaryDk,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+        // ── YOUR SAFETY PLAN ──────────────────────────────────────
+        const SizedBox(height: 14),
+        const SectionLabel('YOUR SAFETY PLAN'),
+        SafetyPlanCard(
+          state: _planFilled ? SafetyPlanState.filled : SafetyPlanState.empty,
+          onBuild: widget.onBuildPlan,
+          onEdit: widget.onEditPlan,
         ),
       ],
     );

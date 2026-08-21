@@ -12,11 +12,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message.dart';
-import '../screens/profile_screen.dart' show ProfileScreen;
+import '../screens/profile/profile_prefs_keys.dart' show kSafetyPlanFilled;
+import '../screens/profile/safety_plan_card.dart' show SafetyPlanState;
 import '../services/firebase_service.dart';
 import '../theme/gq_tokens.dart';
+import '../widgets/gq/gq.dart';
+import 'safety_plan_recall_sheet.dart' show showSafetyPlanRecallSheet;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A — Soft Intervention Sheet (risk: medium / high)
@@ -232,12 +236,10 @@ class CrisisInterventionSheet extends StatelessWidget {
 
 class AcuteCrisisTakeover extends StatefulWidget {
   final VoidCallback? onStepBack;
-  final bool hasSafetyPlan;
 
   const AcuteCrisisTakeover({
     super.key,
     this.onStepBack,
-    this.hasSafetyPlan = false,
   });
 
   @override
@@ -249,6 +251,11 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
   late final AnimationController _heartCtrl;
   late final Animation<double> _heartScale;
 
+  // WO-6.1 C1: read the real plan state rather than trust an external bool
+  // nobody was ever passing — the old `hasSafetyPlan` flag had zero live
+  // callers setting it true.
+  SafetyPlanState _planState = SafetyPlanState.empty;
+
   @override
   void initState() {
     super.initState();
@@ -259,6 +266,17 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
     _heartScale = Tween<double>(begin: 1.0, end: 1.06).animate(
       CurvedAnimation(parent: _heartCtrl, curve: Curves.easeInOut),
     );
+    _loadPlanState();
+  }
+
+  Future<void> _loadPlanState() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _planState = (prefs.getBool(kSafetyPlanFilled) ?? false)
+          ? SafetyPlanState.filled
+          : SafetyPlanState.empty;
+    });
   }
 
   @override
@@ -492,15 +510,21 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
                           ),
                         ],
                       ),
-                      if (widget.hasSafetyPlan) ...[
+                      // WO-6.1 C1: filled/partial open the user's own plan
+                      // directly (no intermediate screen — three scroll-
+                      // lengths of identity settings between a person in
+                      // crisis and the thing they wrote for exactly this
+                      // was the defect). Empty never routes to the 5-step
+                      // builder — asking someone in crisis to complete a
+                      // form is the worst possible ask.
+                      if (_planState == SafetyPlanState.filled ||
+                          _planState == SafetyPlanState.partial) ...[
                         const SizedBox(height: 8),
                         Semantics(
                           button: true,
                           label: 'I have a safety plan I want to use',
                           child: GestureDetector(
-                            onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const ProfileScreen())),
+                            onTap: () => showSafetyPlanRecallSheet(context),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 13),
@@ -526,6 +550,48 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover>
                                   Icon(Icons.chevron_right_rounded,
                                       color: GQColors.ink2, size: 16),
                                 ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 8),
+                        GQBanner(
+                          category: GQBannerCategory.warm,
+                          message:
+                              "You haven't written a plan yet — and now isn't the time to. 988 is one tap away.",
+                          child: Semantics(
+                            button: true,
+                            label: 'Call 988',
+                            child: GestureDetector(
+                              onTap: () => _launchUri(
+                                context,
+                                Uri.parse('tel:988'),
+                                label: 'Call 988',
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: GQColors.coralSoft,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.phone_rounded,
+                                        size: 14, color: GQColors.inkOnCoral),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Call 988',
+                                      style: TextStyle(
+                                        fontFamily: GQTypography.bodyFamily,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: GQColors.inkOnCoral,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

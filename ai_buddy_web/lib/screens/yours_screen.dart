@@ -1,27 +1,61 @@
-/// Yours screen — the "Your space" tab.
+/// Yours screen — the "You" tab. WO-6.1: inlines ProfileScreen's content
+/// (About You / How Alex Talks / Safety Plan) directly rather than linking
+/// to it — the profile-avatar entry point in Chat's header is retired
+/// alongside this, so this tab is now the only way in.
 ///
-/// Surfaces three private destinations in priority order:
-///   1. Weekly Review (promoted at top when pending)
-///   2. Journal
-///   3. Resources
-///
-/// Each card navigates to its respective screen. The companion creature
-/// appears in the header at 52px per the design agent spec.
+/// Weekly Review, Journal, and Resource Library moved out (Part B): Journal
+/// is a root tab, Weekly Review lives inside it, Library is a Home quick
+/// lane (already wired). This screen owns Check-in and Settings as its only
+/// outbound rows.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../theme/gq_tokens.dart';
 import '../widgets/companion_widget.dart';
-import 'journal_screen.dart';
-import 'resource_library_screen.dart';
-import 'weekly_review_screen.dart';
+import '../widgets/gq/gq.dart';
+import 'clinical_assessment_screen.dart';
+import 'profile_screen.dart';
+import 'settings_screen.dart';
 
-class YoursScreen extends StatelessWidget {
+class YoursScreen extends StatefulWidget {
   const YoursScreen({super.key});
 
   @override
+  State<YoursScreen> createState() => _YoursScreenState();
+}
+
+class _YoursScreenState extends State<YoursScreen> {
+  bool _showBuilder = false;
+  int _builderStep = 0;
+  // Bump to force ProfileHomeBody to remount on plan-completion so it
+  // re-reads the safety_plan_filled_v1 flag and flips its card state.
+  int _homeRefreshKey = 0;
+
+  void _onBuilderComplete() {
+    setState(() {
+      _showBuilder = false;
+      _builderStep = 0;
+      _homeRefreshKey++;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_showBuilder) {
+      return Scaffold(
+        backgroundColor: GQColors.softBg,
+        body: SafetyPlanBuilderStep(
+          stepIdx: _builderStep,
+          onClose: () => setState(() {
+            _showBuilder = false;
+            _builderStep = 0;
+          }),
+          onNext: () => setState(() => _builderStep++),
+          onCompleted: _onBuilderComplete,
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: GQColors.softBg,
       body: SafeArea(
@@ -31,42 +65,35 @@ class YoursScreen extends StatelessWidget {
           children: [
             _buildHeader(context),
             const SizedBox(height: 24),
-            _YoursCard(
-              icon: Icons.insights_outlined,
-              title: 'Weekly Review',
-              subtitle: 'Your week, gently summarized',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => WeeklyReviewScreen(
-                      data: WeeklyReviewData.stubFull(),
-                    ),
-                  ),
-                );
-              },
+            ProfileHomeBody(
+              key: ValueKey('yours_profile_$_homeRefreshKey'),
+              onBuildPlan: () => setState(() {
+                _showBuilder = true;
+                _builderStep = 0;
+              }),
+              onEditPlan: () => setState(() {
+                _showBuilder = true;
+                _builderStep = 0;
+              }),
             ),
-            const SizedBox(height: 12),
-            _YoursCard(
-              icon: Icons.book_outlined,
-              title: 'Journal',
-              subtitle: 'Reflections and notes',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const JournalScreen()),
-                );
-              },
+            const SizedBox(height: 14),
+            _YoursRow(
+              icon: Icons.self_improvement_outlined,
+              title: 'Check in',
+              subtitle: 'A few questions, at your pace.',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const ClinicalAssessmentScreen()),
+              ),
             ),
-            const SizedBox(height: 12),
-            _YoursCard(
-              icon: Icons.library_books_outlined,
-              title: 'Resources',
-              subtitle: 'Your library of guides',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const ResourceLibraryScreen()),
-                );
-              },
+            const SizedBox(height: 10),
+            _YoursRow(
+              icon: Icons.settings_outlined,
+              title: 'Settings',
+              subtitle: 'Privacy, notifications, account.',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
             ),
           ],
         ),
@@ -99,7 +126,8 @@ class YoursScreen extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: GQColors.ink3,
+                  // D3: 14px is text, not decoration — ink3 doesn't qualify.
+                  color: GQColors.ink2,
                 ),
               ),
             ],
@@ -116,13 +144,15 @@ class YoursScreen extends StatelessWidget {
   }
 }
 
-class _YoursCard extends StatelessWidget {
+/// A Check-in / Settings row — pure navigation (haptic: false per the D7
+/// consequence-vs-motion ruling), GQCard + GQType per D6/D3.
+class _YoursRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _YoursCard({
+  const _YoursRow({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -131,64 +161,39 @@ class _YoursCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(GQRadii.card),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(GQRadii.card),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(GQRadii.card),
-            border: Border.all(color: GQColors.hair),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: GQColors.primarySoft,
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(icon, color: GQColors.primary, size: 22),
+    return GQCard(
+      onTap: onTap,
+      haptic: false,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56 - 2 * GQSpacing.lg),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: GQColors.primarySoft,
+                borderRadius: BorderRadius.circular(11),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: GQColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontFamily: GQTypography.bodyFamily,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(icon, color: GQColors.primary, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GQTypography.body.copyWith(fontWeight: FontWeight.w700, color: GQColors.ink)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: GQTypography.caption.copyWith(color: GQColors.ink2)),
+                ],
               ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: GQColors.ink2,
-                size: 24,
-              ),
-            ],
-          ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: GQColors.ink3,
+              size: 24,
+            ),
+          ],
         ),
       ),
     );

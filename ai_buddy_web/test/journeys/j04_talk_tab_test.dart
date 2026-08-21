@@ -40,25 +40,9 @@ void main() {
       expect(find.byType(TextField), findsAtLeast(1));
     });
 
-    testWidgets('profile avatar icon is present in header', (tester) async {
-      await tester.pumpWidget(buildChat());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
-    });
-
-    testWidgets('profile avatar tap does not crash', (tester) async {
-      await tester.pumpWidget(buildChat());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.tap(find.byIcon(Icons.account_circle_outlined));
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
+    // "profile avatar icon" tests removed (WO-6.1): the avatar entry point
+    // and profile_nav_sheet.dart it opened were deleted — the You tab is
+    // now the only way into Profile. Removed rather than left to flap.
 
     testWidgets('voice input accessibility label is present', (tester) async {
       await tester.pumpWidget(buildChat());

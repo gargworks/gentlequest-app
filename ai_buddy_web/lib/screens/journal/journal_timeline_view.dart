@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
+import '../../widgets/gq/gq.dart';
+import '../weekly_review_screen.dart';
 import 'journal_entry_view.dart';
 import 'journal_models.dart';
 import 'journal_shared.dart';
@@ -148,6 +150,15 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
                     ),
                   ),
                 ),
+                // WO-6.1 Part B: temporary entry point relocated from the
+                // old You-tab card — full Journal-tab composition (where
+                // this naturally belongs) is its own work order.
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _WeeklyReviewEntryRow(),
+                  ),
+                ),
                 // Week groups
                 for (final label in groups.keys) ...[
                   SliverToBoxAdapter(
@@ -173,6 +184,54 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
+    );
+  }
+}
+
+/// WO-6.1 Part B: temporary Weekly Review entry point. Pure navigation
+/// (haptic: false, D7).
+class _WeeklyReviewEntryRow extends StatelessWidget {
+  const _WeeklyReviewEntryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return GQCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.stubFull()),
+        ),
+      ),
+      haptic: false,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: GQColors.primarySoft,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Icon(Icons.insights_outlined,
+                color: GQColors.primary, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Weekly Review',
+                    style: GQTypography.body.copyWith(
+                        fontWeight: FontWeight.w700, color: GQColors.ink)),
+                const SizedBox(height: 2),
+                Text('Your week, gently summarized',
+                    style: GQTypography.caption.copyWith(color: GQColors.ink2)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded,
+              color: GQColors.ink3, size: 24),
+        ],
+      ),
     );
   }
 }

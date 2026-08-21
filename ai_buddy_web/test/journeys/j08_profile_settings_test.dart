@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/screens/settings_screen.dart';
 import 'package:ai_buddy_web/screens/settings/notification_detail_screen.dart';
 import 'package:ai_buddy_web/screens/settings/settings_widgets.dart';
-import 'package:ai_buddy_web/providers/chat_provider.dart';
-import 'package:ai_buddy_web/providers/mood_provider.dart';
-import 'package:ai_buddy_web/providers/quest_provider.dart';
-import 'package:ai_buddy_web/providers/progress_provider.dart';
 import 'package:ai_buddy_web/services/low_stim_service.dart';
 import 'test_helpers.dart';
+
+// WO-6.1: the "Chat header contains profile avatar icon" / "Profile avatar
+// tap" tests that used to live here were removed — the avatar entry point
+// and profile_nav_sheet.dart it opened were deleted, the You tab is now the
+// only way into Profile. Removed rather than left to flap.
 
 void main() {
   group('J08: Settings screen — comprehensive', () {
@@ -21,18 +20,6 @@ void main() {
       // the whole test file run (see LowStimService), not per-widget state.
       LowStimService.lowStimNotifier.value = false;
     });
-
-    Widget buildChat() {
-      return MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => ChatProvider()),
-          ChangeNotifierProvider(create: (_) => MoodProvider()),
-          ChangeNotifierProvider(create: (_) => QuestProvider()),
-          ChangeNotifierProvider(create: (_) => ProgressProvider()),
-        ],
-        child: const MaterialApp(home: InteractiveChatScreen()),
-      );
-    }
 
     Widget buildSettings() {
       return const MaterialApp(home: SettingsScreen());
@@ -46,28 +33,6 @@ void main() {
     Widget buildNotificationDetail() {
       return const MaterialApp(home: NotificationDetailScreen());
     }
-
-    // ── Chat header ────────────────────────────────────────────────────────────
-
-    testWidgets('Chat header contains profile avatar icon', (tester) async {
-      await tester.pumpWidget(buildChat());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
-    });
-
-    testWidgets('Profile avatar tap does not crash', (tester) async {
-      await tester.pumpWidget(buildChat());
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      await tester.tap(find.byIcon(Icons.account_circle_outlined));
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-    });
 
     // ── SettingsScreen rendering ───────────────────────────────────────────────
 
