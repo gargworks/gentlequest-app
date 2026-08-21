@@ -742,6 +742,7 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
         curve: GQMotion.standardCurve,
         child: GQCard(
           onTap: () => widget.onTap(exercise),
+          haptic: false, // pure navigation — pushes the exercise scaffold
           child: Stack(
             children: [
               Column(
@@ -903,6 +904,7 @@ class _AskAlexFallback extends StatelessWidget {
           GQButton(
             label: 'Ask Alex',
             onPressed: onTap,
+            haptic: false, // pure navigation — deep-links to the Talk tab
           ),
           const SizedBox(height: GQSpacing.sm),
           Text(

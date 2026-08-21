@@ -13,11 +13,15 @@ import '../../theme/gq_tokens.dart';
 ///
 /// Radius: [GQRadii.card] (16) by default, [GQRadii.cardLg] (20) via
 /// [large]. Optional [onTap] gets the D7 selection spring: scale to 1.04
-/// over [GQDurations.select] (220ms) plus a light haptic — for cards that
-/// function as selectable choices (e.g. a mood option), not generic
-/// navigation taps, which should feel like [GQButton]'s tap (0.98 scale),
-/// not a selection (1.04 scale). Pass [isSelectable] to opt into the
+/// over [GQDurations.select] (220ms) plus a light haptic by default — for
+/// cards that function as selectable choices (e.g. a mood option), not
+/// generic navigation taps, which should feel like [GQButton]'s tap (0.98
+/// scale), not a selection (1.04 scale). Pass [isSelectable] to opt into the
 /// select spring instead of a flat press.
+///
+/// Set [haptic] to false for pure-navigation cards (a card whose only
+/// effect is a push) — haptics mark consequence, not motion; if every tap
+/// buzzes, none of them mean anything.
 class GQCard extends StatefulWidget {
   const GQCard({
     super.key,
@@ -28,6 +32,7 @@ class GQCard extends StatefulWidget {
     this.selected = false,
     this.padding = const EdgeInsets.all(GQSpacing.lg),
     this.color = GQColors.surface,
+    this.haptic = true,
   });
 
   final Widget child;
@@ -47,6 +52,10 @@ class GQCard extends StatefulWidget {
 
   final EdgeInsets padding;
   final Color color;
+
+  /// False for pure-navigation taps (no consequence beyond a push). See the
+  /// class doc.
+  final bool haptic;
 
   @override
   State<GQCard> createState() => _GQCardState();
@@ -71,7 +80,7 @@ class _GQCardState extends State<GQCard> {
       onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
       onTap: tappable
           ? () {
-              HapticFeedback.lightImpact();
+              if (widget.haptic) HapticFeedback.lightImpact();
               widget.onTap!();
             }
           : null,

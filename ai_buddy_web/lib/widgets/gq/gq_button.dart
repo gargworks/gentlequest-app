@@ -15,9 +15,12 @@ import '../../theme/gq_tokens.dart';
 ///   - [GQButtonVariant.text] — no fill, no border, primaryDk text only.
 ///
 /// Motion: [GQDurations.tap] (200ms, scale to .98) on press, using
-/// [GQMotion.standardCurve]. Haptics: light impact on tap, per D7's haptics
-/// map ("light impact on mood/chip select") extended to button taps generally
-/// — never on a disabled/loading press, and never as a punishment buzz.
+/// [GQMotion.standardCurve]. Haptics: light impact on tap by default, per
+/// D7's haptics map ("light impact on mood/chip select") extended to button
+/// taps generally — never on a disabled/loading press, and never as a
+/// punishment buzz. Set [haptic] to false for pure-navigation affordances
+/// (a button whose only effect is a push) — haptics mark consequence, not
+/// motion; if every tap buzzes, none of them mean anything.
 ///
 /// Touch target: [GQA11y.minTouchTarget] (44pt) is enforced via minHeight.
 class GQButton extends StatefulWidget {
@@ -30,6 +33,7 @@ class GQButton extends StatefulWidget {
     this.loading = false,
     this.leadingIcon,
     this.fullWidth = true,
+    this.haptic = true,
   });
 
   final String label;
@@ -47,6 +51,10 @@ class GQButton extends StatefulWidget {
   final IconData? leadingIcon;
 
   final bool fullWidth;
+
+  /// False for pure-navigation taps (no consequence beyond a push). See the
+  /// class doc.
+  final bool haptic;
 
   @override
   State<GQButton> createState() => _GQButtonState();
@@ -77,7 +85,7 @@ class _GQButtonState extends State<GQButton> {
       onTapUp: (_) => _setPressed(false),
       onTap: _enabled
           ? () {
-              HapticFeedback.lightImpact();
+              if (widget.haptic) HapticFeedback.lightImpact();
               widget.onPressed!();
             }
           : null,
