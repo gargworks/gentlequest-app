@@ -3,9 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/gq_tokens.dart';
 
-/// App-wide bottom navigation used across Talk, Mood, Quest screens
-/// Ensures consistent look and navigation behavior.
-enum AppTab { talk, mood, quest, yours, community }
+/// App-wide bottom navigation.
+///
+/// Design Authority D5 — 4-tab IA: Home / Chat / Journal / You. `mood`,
+/// `quest`, and `community` are retired from the visible nav (their screens
+/// are reachable from Home instead, or in `quest`'s case a currently-unwired
+/// experiment — see lib/features/leopard/) but the enum cases stay so the
+/// not-yet-swept dhiwise/leopard code that still references them keeps
+/// compiling. [AppBottomNav] itself only ever renders the 4 live tabs;
+/// [HomeShell] treats the 3 retired values as aliases for [home].
+enum AppTab { talk, mood, quest, yours, community, home, journal }
 
 class AppBottomNav extends StatelessWidget {
   final AppTab current;
@@ -40,24 +47,16 @@ class AppBottomNav extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  _buildItem(context, Icons.home_rounded, 'Home', AppTab.home,
+                      activeLabelOnly: kActiveLabelOnlyDemo),
                   _buildItem(
-                      context, Icons.chat_bubble_outline, 'Talk', AppTab.talk,
+                      context, Icons.chat_bubble_outline, 'Chat', AppTab.talk,
                       activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.mood, 'Mood', AppTab.mood,
+                  _buildItem(context, Icons.auto_stories_outlined, 'Journal',
+                      AppTab.journal,
                       activeLabelOnly: kActiveLabelOnlyDemo),
-                  // LEOPARD SEAL: The Quest Tab is the entry point for both experiments.
-                  // Default (Flag=False) -> Old Epxeriment (Wellness Dashboard)
-                  // Leopard (Flag=True)  -> New Experiment (Leopard Gate -> Shell)
-                  // Note: We always show the tab now so the "Old Experiment" is accessible.
-                  // if (FeatureFlags.enableLeopardMode)
-                  _buildItem(context, Icons.emoji_events_outlined, 'Quest',
-                      AppTab.quest,
-                      activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.book_outlined, 'Yours',
+                  _buildItem(context, Icons.person_outline_rounded, 'You',
                       AppTab.yours,
-                      activeLabelOnly: kActiveLabelOnlyDemo),
-                  _buildItem(context, Icons.people_outline, 'Community',
-                      AppTab.community,
                       activeLabelOnly: kActiveLabelOnlyDemo),
                 ],
               ),

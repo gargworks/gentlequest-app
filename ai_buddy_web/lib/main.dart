@@ -21,7 +21,6 @@ import 'providers/assessment_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/progress_provider.dart';
 import 'providers/quest_provider.dart';
-import 'providers/community_provider.dart';
 import 'providers/companion_provider.dart';
 import 'providers/survey_provider.dart';
 import 'navigation/route_observer.dart';
@@ -85,11 +84,13 @@ void _handleNotificationPayload(String? rawPayload) {
   }
   _lastDeepLinkPayload = payload;
   _lastDeepLinkAt = now;
-  // Route to Explore/Quest tab. Keep backwards compatibility for 'open_today'.
+  // D5's 4-tab IA retired the standalone Quest and Mood tabs — both land on
+  // Home now (Quest via a "quest" quick-lane surfaced there once it ships;
+  // mood check-in is Home's "Today's one thing" zone). Keep the payload
+  // names for backwards compatibility with already-scheduled notifications.
   if (payload == 'open_quest' || payload == 'open_today') {
-    // Immediately signal HomeShell to switch to Quest tab if it's mounted
     try {
-      homeTabDeepLink.request(AppTab.quest);
+      homeTabDeepLink.request(AppTab.home);
     } catch (_) {}
 
     final nav = rootNavigatorKey.currentState;
@@ -99,13 +100,12 @@ void _handleNotificationPayload(String? rawPayload) {
           .addPostFrameCallback((_) => _handleNotificationPayload(payload));
       return;
     }
-    // Ensure a HomeShell is the root and open with Quest tab
     nav.pushNamedAndRemoveUntil('/home', (route) => false,
-        arguments: AppTab.quest);
+        arguments: AppTab.home);
   }
   if (payload == 'open_mood') {
     try {
-      homeTabDeepLink.request(AppTab.mood);
+      homeTabDeepLink.request(AppTab.home);
     } catch (_) {}
     final nav = rootNavigatorKey.currentState;
     if (nav == null) {
@@ -114,7 +114,7 @@ void _handleNotificationPayload(String? rawPayload) {
       return;
     }
     nav.pushNamedAndRemoveUntil('/home', (route) => false,
-        arguments: AppTab.mood);
+        arguments: AppTab.home);
   }
   if (payload == 'open_talk') {
     try {
@@ -248,12 +248,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ProgressProvider()),
         ChangeNotifierProvider(create: (_) => QuestProvider()..loadQuests()),
-        ChangeNotifierProvider(create: (_) => CommunityProvider()),
         ChangeNotifierProvider(create: (_) => CompanionProvider()),
         ChangeNotifierProvider(create: (_) => SurveyProvider()..load()),
       ],
       child: MaterialApp(
-        title: 'Progress Without Pressure',
+        title: 'GentleQuest',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -296,12 +295,13 @@ class MyApp extends StatelessWidget {
         routes: {
           '/home': (context) {
             final args = ModalRoute.of(context)?.settings.arguments;
-            final initial = (args is AppTab) ? args : AppTab.mood;
+            final initial = (args is AppTab) ? args : AppTab.home;
             return HomeShell(initialTab: initial);
           },
+          // Legacy route name; HomeShell normalizes the retired Quest tab to Home.
           '/home/quest': (context) => HomeShell(initialTab: AppTab.quest),
-          // Legacy landing route redirected to HomeShell Talk tab
-          '/main': (context) => HomeShell(initialTab: AppTab.mood),
+          // Legacy landing route redirected to HomeShell Home tab
+          '/main': (context) => const HomeShell(),
           '/dhiwise-chat': (context) => const MentalHealthChatScreen(),
           '/preview-quest': (context) => const QuestPreviewScreen(),
           '/interactive-chat': (context) => const InteractiveChatScreen(),

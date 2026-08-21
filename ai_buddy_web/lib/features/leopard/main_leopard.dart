@@ -7,7 +7,6 @@ import 'package:ai_buddy_web/providers/assessment_provider.dart';
 import 'package:ai_buddy_web/providers/task_provider.dart';
 import 'package:ai_buddy_web/providers/progress_provider.dart';
 import 'package:ai_buddy_web/providers/quest_provider.dart';
-import 'package:ai_buddy_web/providers/community_provider.dart';
 import 'package:ai_buddy_web/navigation/route_observer.dart';
 import 'package:ai_buddy_web/services/notification_service.dart';
 import 'package:ai_buddy_web/services/firebase_service.dart';
@@ -49,7 +48,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ProgressProvider()),
         ChangeNotifierProvider(create: (_) => QuestProvider()..loadQuests()),
-        ChangeNotifierProvider(create: (_) => CommunityProvider()),
       ],
       child: MaterialApp(
         title: 'GentleQuest // LEOPARD', // Debug Title

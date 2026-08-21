@@ -5,7 +5,6 @@ import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
 import 'package:ai_buddy_web/providers/chat_provider.dart';
 import 'package:ai_buddy_web/providers/mood_provider.dart';
 import 'package:ai_buddy_web/providers/quest_provider.dart';
-import 'package:ai_buddy_web/providers/community_provider.dart';
 import 'package:ai_buddy_web/providers/progress_provider.dart';
 import 'test_helpers.dart';
 
@@ -19,7 +18,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => MoodProvider()),
           ChangeNotifierProvider(create: (_) => QuestProvider()),
-          ChangeNotifierProvider(create: (_) => CommunityProvider()),
           ChangeNotifierProvider(create: (_) => ProgressProvider()),
         ],
         child: const MaterialApp(home: InteractiveChatScreen()),

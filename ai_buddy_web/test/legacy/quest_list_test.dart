@@ -9,7 +9,6 @@ import 'package:ai_buddy_web/providers/assessment_provider.dart';
 import 'package:ai_buddy_web/providers/task_provider.dart';
 import 'package:ai_buddy_web/providers/progress_provider.dart';
 import 'package:ai_buddy_web/providers/quest_provider.dart';
-import 'package:ai_buddy_web/providers/community_provider.dart';
 
 import 'package:ai_buddy_web/dhiwise/core/utils/size_utils.dart';
 
@@ -29,7 +28,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => ProgressProvider()),
           ChangeNotifierProvider(
               create: (_) => QuestProvider()..loadQuests()), // Pre-load
-          ChangeNotifierProvider(create: (_) => CommunityProvider()),
         ],
         child: Sizer(builder: (context, orientation, deviceType) {
           return MaterialApp(

@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../widgets/app_bottom_nav.dart';
 import 'home_tab_deeplink.dart';
 import '../screens/interactive_chat_screen.dart';
-import '../screens/mood_tracker_screen.dart';
-import '../widgets/community_feed_screen.dart';
+import '../screens/journal_screen.dart';
+import '../screens/home/wellness_home_screen.dart';
 import '../services/compliance_service.dart';
 import '../screens/compliance_guard_screen.dart';
 import '../screens/yours_screen.dart';
@@ -13,14 +13,20 @@ import '../widgets/crisis_resources.dart';
 import '../models/message.dart';
 import '../widgets/safety_legal_sheet.dart';
 import '../widgets/help_entrypoint.dart';
-import '../features/leopard/widgets/leopard_gate.dart';
 
 // Global deep-link controller for switching HomeShell tabs from anywhere
 // e.g., when handling a notification tap.
 
+/// Design Authority D5 — 4-tab IA: Home / Chat / Journal / You.
+///
+/// [AppTab] still carries `mood`, `quest`, and `community` cases so the
+/// not-yet-swept dhiwise/leopard code keeps compiling, but this shell only
+/// has 4 real tabs. Any of those 3 retired values reaching here (an old
+/// deep link, a stray notification payload, the legacy `/home/quest` route)
+/// is treated as an alias for [AppTab.home] rather than crashing.
 class HomeShell extends StatefulWidget {
   final AppTab initialTab;
-  const HomeShell({super.key, this.initialTab = AppTab.mood});
+  const HomeShell({super.key, this.initialTab = AppTab.home});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -29,26 +35,43 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late AppTab _current;
   // Per-tab navigator keys
+  final _homeNavKey = GlobalKey<NavigatorState>();
   final _talkNavKey = GlobalKey<NavigatorState>();
-  final _moodNavKey = GlobalKey<NavigatorState>();
-  final _questNavKey = GlobalKey<NavigatorState>();
+  final _journalNavKey = GlobalKey<NavigatorState>();
   final _yoursNavKey = GlobalKey<NavigatorState>();
-  final _communityNavKey = GlobalKey<NavigatorState>();
 
   // Reselect notifiers to trigger screen-specific actions
+  final ValueNotifier<int> _homeReselect = ValueNotifier<int>(0);
   final ValueNotifier<int> _talkReselect = ValueNotifier<int>(0);
-  final ValueNotifier<int> _moodReselect = ValueNotifier<int>(0);
-  final ValueNotifier<int> _questReselect = ValueNotifier<int>(0);
-  final ValueNotifier<int> _yoursReselect = ValueNotifier<int>(0);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this); // Compliance Watcher
-    _current = widget.initialTab;
+    _current = _normalize(widget.initialTab);
     _onDeepLinkTab(); // Process any pre-set deep-link tab value on startup
     // Listen for deep-link tab change requests
     homeTabDeepLink.addListener(_onDeepLinkTab);
+  }
+
+  /// Maps the 3 retired tab values (mood/quest/community — no longer
+  /// visible in [AppBottomNav]) onto [AppTab.home]. Every switch in this
+  /// class routes through here first so a stray old-shaped deep link or
+  /// route argument degrades to Home instead of hitting a missing case.
+  AppTab _normalize(AppTab tab) {
+    switch (tab) {
+      case AppTab.home:
+      case AppTab.mood:
+      case AppTab.quest:
+      case AppTab.community:
+        return AppTab.home;
+      case AppTab.talk:
+        return AppTab.talk;
+      case AppTab.journal:
+        return AppTab.journal;
+      case AppTab.yours:
+        return AppTab.yours;
+    }
   }
 
   @override
@@ -79,7 +102,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   void _onDeepLinkTab() {
-    final target = homeTabDeepLink.value;
+    final target = _normalize(homeTabDeepLink.value);
     if (kDebugMode) {
       try {
         debugPrint(
@@ -98,51 +121,54 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       final nav = _navFor(target);
       nav?.popUntil((route) => route.isFirst);
       switch (target) {
+        case AppTab.home:
+          _homeReselect.value++;
+          break;
         case AppTab.talk:
           _talkReselect.value++;
           break;
-        case AppTab.mood:
-          _moodReselect.value++;
-          break;
-        case AppTab.quest:
-          _questReselect.value++;
-          break;
+        case AppTab.journal:
         case AppTab.yours:
-          _yoursReselect.value++;
           break;
+        case AppTab.mood:
+        case AppTab.quest:
         case AppTab.community:
-          break;
+          break; // unreachable — _normalize already folded these into home
       }
     }
   }
 
   int get _index {
     switch (_current) {
-      case AppTab.talk:
+      case AppTab.home:
         return 0;
-      case AppTab.mood:
+      case AppTab.talk:
         return 1;
-      case AppTab.quest:
+      case AppTab.journal:
         return 2;
       case AppTab.yours:
         return 3;
+      case AppTab.mood:
+      case AppTab.quest:
       case AppTab.community:
-        return 4;
+        return 0; // unreachable — _normalize already folded these into home
     }
   }
 
   NavigatorState? _navFor(AppTab tab) {
     switch (tab) {
+      case AppTab.home:
+        return _homeNavKey.currentState;
       case AppTab.talk:
         return _talkNavKey.currentState;
-      case AppTab.mood:
-        return _moodNavKey.currentState;
-      case AppTab.quest:
-        return _questNavKey.currentState;
+      case AppTab.journal:
+        return _journalNavKey.currentState;
       case AppTab.yours:
         return _yoursNavKey.currentState;
+      case AppTab.mood:
+      case AppTab.quest:
       case AppTab.community:
-        return _communityNavKey.currentState;
+        return _homeNavKey.currentState; // unreachable — see _normalize
     }
   }
 
@@ -217,7 +243,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Help overlay no longer depends on chat risk; static and shown only on Community tab
+    // Help overlay shown only on the Home tab (was: Community tab, retired).
     Widget buildTabNavigator({
       required GlobalKey<NavigatorState> key,
       required WidgetBuilder builder,
@@ -234,36 +260,30 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
     final pages = <Widget>[
       buildTabNavigator(
-        key: _talkNavKey,
+        key: _homeNavKey,
         active: _index == 0,
+        builder: (_) => WellnessHomeScreen(
+          showBottomNav: false,
+          reselect: _homeReselect,
+        ),
+      ),
+      buildTabNavigator(
+        key: _talkNavKey,
+        active: _index == 1,
         builder: (_) => InteractiveChatScreen(
           showBottomNav: false,
           reselect: _talkReselect,
         ),
       ),
       buildTabNavigator(
-        key: _moodNavKey,
-        active: _index == 1,
-        builder: (_) =>
-            MoodTrackerScreen(showBottomNav: false, reselect: _moodReselect),
-      ),
-      buildTabNavigator(
-        key: _questNavKey,
+        key: _journalNavKey,
         active: _index == 2,
-        builder: (_) => LeopardGate(
-          showBottomNav: false,
-          reselect: _questReselect,
-        ),
+        builder: (_) => const JournalScreen(),
       ),
       buildTabNavigator(
         key: _yoursNavKey,
         active: _index == 3,
         builder: (_) => const YoursScreen(),
-      ),
-      buildTabNavigator(
-        key: _communityNavKey,
-        active: _index == 4,
-        builder: (_) => const CommunityFeedScreen(),
       ),
     ];
 
@@ -289,38 +309,37 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         body: Stack(
           children: [
             IndexedStack(index: _index, children: pages),
-            // Show Help entrypoint only on the Community tab
-            if (_current == AppTab.community)
+            if (_current == AppTab.home)
               HelpEntrypointOverlay(onPressed: _showHelpSheet),
           ],
         ),
         bottomNavigationBar: AppBottomNav(
           current: _current,
           onTap: (tab) {
-            setState(() => _current = tab);
+            setState(() => _current = _normalize(tab));
             if (tab == AppTab.talk) {
               _talkReselect.value++;
             }
           },
           onReselect: (tab) {
             // Pop to root of the tab, then trigger reselect action
-            final nav = _navFor(tab);
+            final target = _normalize(tab);
+            final nav = _navFor(target);
             nav?.popUntil((route) => route.isFirst);
-            switch (tab) {
+            switch (target) {
+              case AppTab.home:
+                _homeReselect.value++;
+                break;
               case AppTab.talk:
                 _talkReselect.value++;
                 break;
-              case AppTab.mood:
-                _moodReselect.value++;
-                break;
-              case AppTab.quest:
-                _questReselect.value++;
-                break;
+              case AppTab.journal:
               case AppTab.yours:
-                _yoursReselect.value++;
                 break;
+              case AppTab.mood:
+              case AppTab.quest:
               case AppTab.community:
-                break;
+                break; // unreachable — _normalize already folded these into home
             }
           },
         ),
