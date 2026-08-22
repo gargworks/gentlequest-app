@@ -2,7 +2,7 @@
 
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -55,7 +55,7 @@ class TestComputeWeeklyTrend:
         assert out["window_days"] == 7
 
     def test_single_entry(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         out = compute_weekly_trend([_MoodEntry(3, now)])
         assert out["count"] == 1
         assert out["mean"] == 3.0
@@ -64,7 +64,7 @@ class TestComputeWeeklyTrend:
         assert len(out["daily"]) == 1
 
     def test_multiple_entries_in_window(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         entries = [
             _MoodEntry(1, now - timedelta(days=1)),
             _MoodEntry(3, now - timedelta(days=2)),
@@ -77,7 +77,7 @@ class TestComputeWeeklyTrend:
         assert len(out["daily"]) == 3
 
     def test_entries_outside_window_excluded(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         entries = [
             _MoodEntry(5, now - timedelta(days=1)),   # in window
             _MoodEntry(1, now - timedelta(days=20)),  # out
@@ -87,14 +87,14 @@ class TestComputeWeeklyTrend:
         assert out["mean"] == 5.0
 
     def test_30_day_window(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         entries = [_MoodEntry(i, now - timedelta(days=d)) for i, d in enumerate([5, 10, 20])]
         out = compute_weekly_trend(entries, window_days=30)
         assert out["count"] == 3
         assert out["window_days"] == 30
 
     def test_daily_bucket_averaging(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         d1 = now - timedelta(days=1)
         entries = [
             _MoodEntry(2, d1),
@@ -151,7 +151,7 @@ class TestKeywordHeatmap:
         assert out["buckets"] == list(CRISIS_KEYWORD_BUCKETS.keys())
 
     def test_ai_messages_excluded(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         msgs = [
             _Message("I feel hopeless", now, is_user=False),  # AI msg, ignored
             _Message("good day", now, is_user=True),
@@ -160,20 +160,20 @@ class TestKeywordHeatmap:
         assert out["totals_per_bucket"] == {}
 
     def test_user_message_with_crisis_keyword(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         msgs = [_Message("I feel hopeless and worthless", now, is_user=True)]
         out = compute_keyword_heatmap(msgs)
         assert out["totals_per_bucket"].get("hopelessness") == 1
         assert len(out["heatmap"]) == 1
 
     def test_outside_window_excluded(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         msgs = [_Message("hopeless", now - timedelta(days=40), is_user=True)]
         out = compute_keyword_heatmap(msgs, window_days=30)
         assert out["totals_per_bucket"] == {}
 
     def test_no_raw_content_in_output(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = "I feel hopeless and my secret is X"
         msgs = [_Message(raw, now, is_user=True)]
         out = compute_keyword_heatmap(msgs)

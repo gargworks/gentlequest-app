@@ -7,7 +7,7 @@ DB session access. They return plain dicts/lists ready for jsonify.
 
 import statistics
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 # Crisis keyword taxonomy for heatmap bucketing (must match crisis_helpers tiers).
@@ -45,7 +45,7 @@ def compute_weekly_trend(
             "daily": [{"date": "YYYY-MM-DD", "avg": float, "count": int}, ...]
         }
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     cutoff = now - timedelta(days=window_days)
     window = [e for e in mood_entries if e.timestamp and e.timestamp >= cutoff]
 
@@ -125,7 +125,7 @@ def compute_keyword_heatmap(
             "totals_per_bucket": {"hopelessness": 3, ...}
         }
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     cutoff = now - timedelta(days=window_days)
     by_day_bucket: Counter = Counter()
     totals: Counter = Counter()
