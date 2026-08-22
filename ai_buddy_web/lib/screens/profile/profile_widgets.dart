@@ -480,10 +480,12 @@ class PrimaryButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9999),
-          color: GQColors.primary,
+          // D3: primary fails 4.5:1 with white text (3.66:1); primaryDk
+          // passes (5.30:1).
+          color: GQColors.primaryDk,
           boxShadow: const [
             BoxShadow(
-              color: Color(0x8C667EEA),
+              color: Color(0x8C4F63C9), // primaryDk at the same alpha
               blurRadius: 26,
               offset: Offset(0, 12),
               spreadRadius: -10,

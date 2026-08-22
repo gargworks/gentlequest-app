@@ -130,7 +130,7 @@ class _GQComponentGalleryScreenState extends State<GQComponentGalleryScreen> {
           if (_lastBannerCategory != null)
             Padding(
               padding: const EdgeInsets.only(top: GQSpacing.xs),
-              child: Text('Last fired: $_lastBannerCategory', style: GQTypography.micro.copyWith(color: GQColors.ink3)),
+              child: Text('Last fired: $_lastBannerCategory', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
             ),
           _SectionLabel('GQSheet'),
           GQButton(
@@ -158,7 +158,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: GQSpacing.xl, bottom: GQSpacing.sm),
-      child: Text(text, style: GQTypography.micro.copyWith(color: GQColors.ink3)),
+      child: Text(text, style: GQTypography.micro.copyWith(color: GQColors.ink2)),
     );
   }
 }

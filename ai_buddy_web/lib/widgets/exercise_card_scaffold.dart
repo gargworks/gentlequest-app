@@ -599,11 +599,11 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: GQColors.primary,
+                  color: GQColors.primaryDk,
                   borderRadius: BorderRadius.circular(GQRadii.button),
                   boxShadow: [
                     BoxShadow(
-                      color: GQColors.primary.withValues(alpha: 0.55),
+                      color: GQColors.primaryDk.withValues(alpha: 0.55),
                       blurRadius: 22,
                       offset: const Offset(0, 10),
                       spreadRadius: -10,
@@ -673,11 +673,11 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: GQColors.primary,
+                  color: GQColors.primaryDk,
                   borderRadius: BorderRadius.circular(GQRadii.button),
                   boxShadow: [
                     BoxShadow(
-                      color: GQColors.primary.withValues(alpha: 0.55),
+                      color: GQColors.primaryDk.withValues(alpha: 0.55),
                       blurRadius: 22,
                       offset: const Offset(0, 10),
                       spreadRadius: -10,
@@ -1120,11 +1120,11 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               padding: EdgeInsets.symmetric(
                   vertical: isInline ? 11 : 14),
               decoration: BoxDecoration(
-                color: GQColors.primary,
+                color: GQColors.primaryDk,
                 borderRadius: BorderRadius.circular(GQRadii.button),
                 boxShadow: [
                   BoxShadow(
-                    color: GQColors.primary.withValues(alpha: 0.55),
+                    color: GQColors.primaryDk.withValues(alpha: 0.55),
                     blurRadius: 22,
                     offset: const Offset(0, 10),
                     spreadRadius: -10,
@@ -1453,11 +1453,11 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: GQColors.primary,
+                  color: GQColors.primaryDk,
                   borderRadius: BorderRadius.circular(GQRadii.button),
                   boxShadow: [
                     BoxShadow(
-                      color: GQColors.primary.withValues(alpha: 0.55),
+                      color: GQColors.primaryDk.withValues(alpha: 0.55),
                       blurRadius: 22,
                       offset: const Offset(0, 10),
                       spreadRadius: -10,
@@ -1547,10 +1547,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: GQColors.primary,
+                color: GQColors.primaryDk,
                 boxShadow: [
                   BoxShadow(
-                    color: GQColors.primary.withValues(alpha: 0.55),
+                    color: GQColors.primaryDk.withValues(alpha: 0.55),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
                     spreadRadius: -10,

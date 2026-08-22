@@ -434,11 +434,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     decoration: BoxDecoration(
-                      color: GQColors.coral,
+                      color: GQColors.dangerInk,
                       borderRadius: BorderRadius.circular(GQRadii.button),
                       boxShadow: [
                         BoxShadow(
-                          color: GQColors.coral.withAlpha(153),
+                          color: GQColors.dangerInk.withAlpha(153),
                           blurRadius: 32,
                           offset: const Offset(0, 14),
                         ),
@@ -932,11 +932,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     decoration: BoxDecoration(
-                      color: GQColors.primary,
+                      color: GQColors.primaryDk,
                       borderRadius: BorderRadius.circular(GQRadii.button),
                       boxShadow: [
                         BoxShadow(
-                          color: GQColors.primary.withAlpha(153),
+                          color: GQColors.primaryDk.withAlpha(153),
                           blurRadius: 28,
                           offset: const Offset(0, 12),
                         ),

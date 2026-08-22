@@ -1550,7 +1550,7 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
               fontSize: widget.isSelected ? 12.0 : 11.0,
               fontWeight:
                   widget.isSelected ? FontWeight.w800 : FontWeight.w700,
-              color: widget.isSelected ? GQColors.primary : GQColors.ink3,
+              color: widget.isSelected ? GQColors.primary : GQColors.ink2,
               letterSpacing: 0.2,
             ),
             child: Text(widget.label),

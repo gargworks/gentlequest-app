@@ -377,7 +377,7 @@ class _NeutralToastOverlayState extends State<_NeutralToastOverlay>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: GQColors.primary,
+                        color: GQColors.primaryDk,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(

@@ -157,8 +157,9 @@ class _StartupScreenState extends State<StartupScreen> {
                       const SizedBox(height: 12),
                       Text(
                         _errorDetails,
+                        // D3: bodySmall is 12px — below ink3's 14px floor.
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: GQColors.ink3,
+                              color: GQColors.ink2,
                             ),
                         textAlign: TextAlign.center,
                       ),

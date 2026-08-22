@@ -149,7 +149,8 @@ class _GreetingZone extends StatelessWidget {
               children: [
                 Text(
                   '$weekday · $month ${now.day}',
-                  style: GQTypography.micro.copyWith(color: GQColors.ink3),
+                  // D3: ink3 never carries text below 14px; micro is 11px.
+                  style: GQTypography.micro.copyWith(color: GQColors.ink2),
                 ),
                 const SizedBox(height: GQSpacing.xs),
                 Text(_greeting(now.hour), style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
@@ -315,7 +316,7 @@ class _WeekShapeZone extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('THIS WEEK', style: GQTypography.micro.copyWith(color: GQColors.ink3)),
+              Text('THIS WEEK', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
               GestureDetector(
                 onTap: () => Navigator.of(context).push<void>(
                     MaterialPageRoute(builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.stubFull()))),
@@ -394,7 +395,7 @@ class _DayBar extends StatelessWidget {
         Text(
           isToday ? 'TODAY' : letter,
           style: GQTypography.micro.copyWith(
-            color: isToday ? GQColors.primaryDk : GQColors.ink3,
+            color: isToday ? GQColors.primaryDk : GQColors.ink2,
             fontSize: isToday ? 9 : 10.5,
           ),
         ),
@@ -492,7 +493,7 @@ class _DailyNudgeZone extends StatelessWidget {
               children: [
                 Text('A gentle daily nudge?', style: GQTypography.caption.copyWith(color: GQColors.ink, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                Text('One soft reminder. Off whenever you want.', style: GQTypography.micro.copyWith(color: GQColors.ink3)),
+                Text('One soft reminder. Off whenever you want.', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
               ],
             ),
           ),

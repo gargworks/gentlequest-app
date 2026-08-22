@@ -331,11 +331,15 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: GQColors.coral,
+                          // D3: coral fails 4.5:1 with white text
+                          // (2.77:1). "Stop recording" isn't a crisis/
+                          // destructive action, so primaryDk (5.30:1)
+                          // rather than dangerInk.
+                          color: GQColors.primaryDk,
                           borderRadius: BorderRadius.circular(GQRadii.button),
                           boxShadow: const [
                             BoxShadow(
-                              color: Color(0x8CFF6B6B),
+                              color: Color(0x8C4F63C9), // primaryDk, same alpha
                               blurRadius: 18,
                               offset: Offset(0, 8),
                               spreadRadius: -8,

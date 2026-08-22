@@ -189,12 +189,14 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: GQColors.coral,
+                              // D3: coral fails 4.5:1 with white text
+                              // (2.77:1); dangerInk passes (4.75:1).
+                              color: GQColors.dangerInk,
                               borderRadius:
                                   BorderRadius.circular(GQRadii.button),
                               boxShadow: const [
                                 BoxShadow(
-                                  color: Color(0x8CFF6B6B),
+                                  color: Color(0x8CC44A4A), // dangerInk, same alpha
                                   blurRadius: 20,
                                   offset: Offset(0, 8),
                                 ),

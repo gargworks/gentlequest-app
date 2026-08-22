@@ -262,9 +262,11 @@ class _PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = onTap == null;
     return Material(
+      // D3: primary fails 4.5:1 with white text (3.66:1); primaryDk
+      // passes (5.30:1).
       color: disabled
-          ? GQColors.primary.withValues(alpha: 0.4)
-          : GQColors.primary,
+          ? GQColors.primaryDk.withValues(alpha: 0.4)
+          : GQColors.primaryDk,
       borderRadius: BorderRadius.circular(GQRadii.button),
       child: InkWell(
         onTap: onTap,

@@ -287,7 +287,7 @@ class CrisisInterventionSheet extends StatelessWidget {
                 iconBg: GQColors.primarySoft,
                 icon: const Text('💬', style: TextStyle(fontSize: 18)),
                 titleColor: GQColors.ink,
-                subtitleColor: GQColors.ink3,
+                subtitleColor: GQColors.ink2,
                 title: 'Keep chatting with me',
                 subtitle: "I'll stay with you. Take your time.",
               ),

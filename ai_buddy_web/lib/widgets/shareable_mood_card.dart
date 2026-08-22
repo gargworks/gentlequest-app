@@ -182,11 +182,11 @@ class _ShareableMoodCardBodyState extends State<_ShareableMoodCardBody> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: GQColors.primary,
+              color: GQColors.primaryDk,
               borderRadius: BorderRadius.circular(GQRadii.button),
               boxShadow: [
                 BoxShadow(
-                  color: GQColors.primary.withValues(alpha: 0.35),
+                  color: GQColors.primaryDk.withValues(alpha: 0.35),
                   blurRadius: 24,
                   offset: const Offset(0, 10),
                 ),

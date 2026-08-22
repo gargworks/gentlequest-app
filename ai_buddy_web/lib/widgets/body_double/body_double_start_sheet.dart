@@ -182,9 +182,10 @@ class _BodyDoubleStartSheetContentState
               const SizedBox(height: 20),
               Text(
                 "I'LL STEP OUT AFTER",
+                // D3: labelSmall is 11px — below ink3's 14px floor.
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink3,
+                  color: GQColors.ink2,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -249,8 +250,9 @@ class _BodyDoubleStartSheetContentState
               Center(
                 child: Text(
                   'Camera off. Mic off. Presence is one bit: here.',
+                  // D3: bodySmall is 12px — below ink3's 14px floor.
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: GQColors.ink3,
+                    color: GQColors.ink2,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
