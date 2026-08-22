@@ -520,7 +520,10 @@ class _CrisisLineRow extends StatelessWidget {
                 child: const Icon(
                   Icons.phone_in_talk_rounded,
                   size: 14,
-                  color: GQColors.coralDkDeep,
+                  // WO-3 reconciliation retired coralDkDeep (#B33636 — the
+                  // exact red already swept everywhere else); icon sits on
+                  // white, not the amber tint, so dangerInk not inkOnAmber.
+                  color: GQColors.dangerInk,
                 ),
               ),
               const SizedBox(width: 10),

@@ -439,7 +439,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         center: Alignment(-0.3, -0.4),
-                        colors: [GQColors.warmSoft, GQColors.warm1],
+                        colors: [GQColors.warmSoft, GQIllustration.warm1],
                       ),
                     ),
                     child: const Icon(Icons.favorite_rounded,
@@ -647,7 +647,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: GQColors.coralSoft,
+                              color: GQColors.accentSoft,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Row(
@@ -735,7 +735,11 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
     super.initState();
     _heartCtrl = AnimationController(
       vsync: this,
-      duration: GQDurations.heartPulse,
+      // WO-3 reconciliation retired GQDurations.heartPulse (unreachable —
+      // CrisisFollowUpCard itself has no live callers, see WO-3 Token
+      // Sheet Reconciliation). Inlined so this dead-but-compiling class
+      // doesn't need the token kept alive just for it.
+      duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
     _heartScale = Tween<double>(begin: 1.0, end: 1.06).animate(
       CurvedAnimation(parent: _heartCtrl, curve: Curves.easeInOut),
@@ -777,11 +781,11 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                 shape: BoxShape.circle,
                 gradient: const RadialGradient(
                   center: Alignment(-0.4, -0.4),
-                  colors: [GQColors.warm1, GQColors.moodCoralPeach],
+                  colors: [GQIllustration.warm1, GQIllustration.companionCoralPeach],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: GQColors.moodCoralPeach.withAlpha(102),
+                    color: GQIllustration.companionCoralPeach.withAlpha(102),
                     blurRadius: 28,
                     offset: const Offset(0, 12),
                   ),
@@ -862,7 +866,7 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                   label: 'Better',
                   labelColor: const Color(0xFF9A6049),
                   bg: GQColors.warmSoft,
-                  borderColor: GQColors.moodCoralPeach.withAlpha(64),
+                  borderColor: GQIllustration.companionCoralPeach.withAlpha(64),
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.better),
                 ),
@@ -1147,11 +1151,11 @@ class _CrisisIconBubble extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: const RadialGradient(
           center: Alignment(-0.4, -0.4),
-          colors: [GQColors.warm1, GQColors.warm2, GQColors.moodCoralPeach],
+          colors: [GQIllustration.warm1, GQIllustration.warm2, GQIllustration.companionCoralPeach],
         ),
         boxShadow: [
           BoxShadow(
-            color: GQColors.moodCoralPeach.withAlpha(115),
+            color: GQIllustration.companionCoralPeach.withAlpha(115),
             blurRadius: 28,
             offset: const Offset(0, 12),
           ),

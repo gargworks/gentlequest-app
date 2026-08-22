@@ -24,7 +24,7 @@ class GQHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onBack,
     this.showBack = true,
     this.actions,
-    this.backgroundColor = GQColors.bg,
+    this.backgroundColor = GQColors.softBg,
   });
 
   final String title;

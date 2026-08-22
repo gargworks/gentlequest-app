@@ -39,7 +39,7 @@ class CompanionPainter extends CustomPainter {
 
   // ── Desaturated color helpers ────────────────────────────────────────────
   Color _foliage(Color normal) =>
-      desaturated ? GQColors.moodSlateLavender : normal;
+      desaturated ? GQIllustration.companionSlateLavender : normal;
   Color _trunk(Color normal) => desaturated ? GQColors.ink3 : normal;
   Color _accent(Color normal) =>
       desaturated ? const Color(0xFFE5E2EE) : normal;
@@ -85,7 +85,7 @@ class CompanionPainter extends CustomPainter {
   /// Ground shadow ellipse. Skipped in simplified mode.
   void _shadow(Canvas canvas) {
     if (simplified) return;
-    _oval(canvas, 48, 82, 25, 4.5, _backing(GQColors.moodSlateLavender), opacity: 0.6);
+    _oval(canvas, 48, 82, 25, 4.5, _backing(GQIllustration.companionSlateLavender), opacity: 0.6);
   }
 
   void _oval(
@@ -173,7 +173,7 @@ class CompanionPainter extends CustomPainter {
   /// shadow + seed body + highlight.
   void _paintSeed(Canvas canvas) {
     _shadow(canvas);
-    _oval(canvas, 48, 71, 9.5, 12, _accent(GQColors.moodCoralPeach));
+    _oval(canvas, 48, 71, 9.5, 12, _accent(GQIllustration.companionCoralPeach));
     if (!simplified) {
       _oval(canvas, 44.5, 66, 2.8, 3.8, _accent(GQColors.moodGood), opacity: 0.9);
     }
@@ -184,7 +184,7 @@ class CompanionPainter extends CustomPainter {
   void _paintSprout(Canvas canvas) {
     _shadow(canvas);
     _rrect(canvas, 46.25, 58, 3.5, 22, 1.75, _trunk(GQColors.primary));
-    _rotatedOval(canvas, 38, 60, 9, 5.5, _foliage(GQColors.moodPeri), -16);
+    _rotatedOval(canvas, 38, 60, 9, 5.5, _foliage(GQIllustration.companionPeri), -16);
     _rotatedOval(canvas, 58, 57, 9, 5.5, _foliage(GQColors.primary), 16);
   }
 
@@ -193,11 +193,11 @@ class CompanionPainter extends CustomPainter {
   void _paintSapling(Canvas canvas) {
     _shadow(canvas);
     _rrect(canvas, 45.75, 30, 4.5, 50, 2.25, _trunk(GQColors.primary));
-    _rotatedOval(canvas, 32, 62, 13, 7, _foliage(GQColors.moodSlateLavender), -22);
-    _rotatedOval(canvas, 64, 57, 13, 7, _foliage(GQColors.moodPeri), 22);
-    _rotatedOval(canvas, 34, 45, 12, 6.5, _foliage(GQColors.moodPeri), -18);
+    _rotatedOval(canvas, 32, 62, 13, 7, _foliage(GQIllustration.companionSlateLavender), -22);
+    _rotatedOval(canvas, 64, 57, 13, 7, _foliage(GQIllustration.companionPeri), 22);
+    _rotatedOval(canvas, 34, 45, 12, 6.5, _foliage(GQIllustration.companionPeri), -18);
     _rotatedOval(canvas, 62, 40, 12, 6.5, _foliage(GQColors.primary), 18);
-    _circle(canvas, 48, 27, 5, _accent(GQColors.moodCoralPeach));
+    _circle(canvas, 48, 27, 5, _accent(GQIllustration.companionCoralPeach));
   }
 
   /// Stage 4 — Young tree (400 XP):
@@ -207,8 +207,8 @@ class CompanionPainter extends CustomPainter {
     _rrect(canvas, 44, 48, 8, 32, 4, _trunk(GQColors.ink2));
     _circle(canvas, 48, 35, 22, _foliage(GQColors.primary));
     if (!simplified) {
-      _circle(canvas, 39, 27, 8.5, _foliage(GQColors.moodPeri), opacity: 0.5);
-      _circle(canvas, 65, 23, 5, _accent(GQColors.moodCoralPeach));
+      _circle(canvas, 39, 27, 8.5, _foliage(GQIllustration.companionPeri), opacity: 0.5);
+      _circle(canvas, 65, 23, 5, _accent(GQIllustration.companionCoralPeach));
     }
   }
 
@@ -217,11 +217,11 @@ class CompanionPainter extends CustomPainter {
   void _paintMatureTree(Canvas canvas) {
     _shadow(canvas);
     _rrect(canvas, 43, 44, 10, 36, 5, _trunk(GQColors.ink2));
-    _circle(canvas, 29, 40, 17, _foliage(GQColors.moodPeri));
+    _circle(canvas, 29, 40, 17, _foliage(GQIllustration.companionPeri));
     _circle(canvas, 67, 40, 17, _foliage(GQColors.primaryDk));
     _circle(canvas, 48, 25, 21, _foliage(GQColors.primary));
     if (!simplified) {
-      _circle(canvas, 69, 20, 5.5, _accent(GQColors.moodCoralPeach));
+      _circle(canvas, 69, 20, 5.5, _accent(GQIllustration.companionCoralPeach));
       _circle(canvas, 30, 27, 4, _accent(GQColors.moodGood));
     }
   }

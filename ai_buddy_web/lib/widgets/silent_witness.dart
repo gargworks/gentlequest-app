@@ -169,7 +169,7 @@ class SilentWitnessState extends State<SilentWitness>
                   width: 22,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: GQColors.moodSlateLavender.withValues(alpha: 0.5),
+                    color: GQIllustration.companionSlateLavender.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

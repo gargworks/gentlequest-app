@@ -2624,8 +2624,8 @@ class _WellnessDashboardScreenState extends State<WellnessDashboardScreen>
 
     Color moodColor(int? level) {
       if (level == null) return Colors.transparent;
-      return GQColors.moodPalette[
-          (level - 1).clamp(0, GQColors.moodPalette.length - 1)];
+      return GQIllustration.shareGradient[
+          (level - 1).clamp(0, GQIllustration.shareGradient.length - 1)];
     }
 
     // Bar height proportions

@@ -27,7 +27,7 @@ class _GQComponentGalleryScreenState extends State<GQComponentGalleryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GQColors.bg,
+      backgroundColor: GQColors.softBg,
       appBar: GQHeader(title: 'GQ Component Gallery'),
       body: ListView(
         padding: const EdgeInsets.all(GQSpacing.lg),

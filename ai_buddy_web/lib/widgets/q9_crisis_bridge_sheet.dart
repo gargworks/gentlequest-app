@@ -69,7 +69,7 @@ class Q9CrisisBridgeSheet extends StatelessWidget {
                 height: 54,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [GQColors.warm1, GQColors.warm2],
+                    colors: [GQIllustration.warm1, GQIllustration.warm2],
                   ),
                   shape: BoxShape.circle,
                 ),

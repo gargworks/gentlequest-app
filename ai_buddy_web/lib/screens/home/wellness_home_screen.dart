@@ -90,7 +90,7 @@ class _WellnessHomeScreenState extends State<WellnessHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GQColors.bg,
+      backgroundColor: GQColors.softBg,
       bottomNavigationBar:
           widget.showBottomNav ? const AppBottomNav(current: AppTab.home) : null,
       body: SafeArea(

@@ -395,7 +395,7 @@ class _MiniBarSlot extends StatelessWidget {
     final barH = idx == null ? 0.0 : (0.2 + idx * 0.2) * maxH;
     final color = idx == null
         ? Colors.transparent
-        : GQColors.moodPalette[idx.clamp(0, 4)];
+        : GQIllustration.shareGradient[idx.clamp(0, 4)];
 
     return Expanded(
       child: Padding(

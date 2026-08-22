@@ -147,7 +147,7 @@ _Palette _paletteFor(GQBannerCategory category) {
     case GQBannerCategory.info:
       return const _Palette(soft: GQColors.primarySoft, ink: GQColors.primaryDk, icon: Icons.info_outline_rounded);
     case GQBannerCategory.warm:
-      return const _Palette(soft: GQColors.coralSoft, ink: GQColors.inkOnCoral, icon: Icons.favorite_outline_rounded);
+      return const _Palette(soft: GQColors.accentSoft, ink: GQColors.inkOnCoral, icon: Icons.favorite_outline_rounded);
     case GQBannerCategory.amber:
       return const _Palette(soft: GQColors.amberSoft, ink: GQColors.inkOnAmber, icon: Icons.wifi_off_rounded);
     case GQBannerCategory.danger:

@@ -11,10 +11,11 @@ import 'package:flutter/material.dart';
 //   • Full ThemeData / ColorScheme migration is a downstream task (Tier 1.2+).
 //   • Do NOT add widget-specific overrides here; keep this file token-only.
 //
-// WO-3 note: Token Sheet v2 names some existing tokens differently
-// (accentSoft -> coralSoft, softBg -> bg). Values are unchanged; only the
-// v2 name is added as an alias rather than renaming ~40 call sites blind.
-// Renaming existing usages is WO-5 sweep scope, not WO-3 token-landing scope.
+// WO-3 Token Sheet Reconciliation (2026-08-22): the coralSoft/bg aliases
+// this file originally carried for Token Sheet v2's alternate names are
+// collapsed — accentSoft and softBg are canonical, alias removed, all call
+// sites swept. See WO-3 Token Sheet Reconciliation.html for the full ruling,
+// including GQIllustration (below) and the four tokens retired as dead.
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 
@@ -39,14 +40,8 @@ class GQColors {
   /// Source: R1D4 GentleQuest_Mood_Entry.html --gq-accent-soft + R1D1 Onboarding.
   static const accentSoft = Color(0xFFFFE8E8);
 
-  /// Token Sheet v2 name for [accentSoft]. Same value.
-  static const coralSoft = accentSoft;
-
   /// Soft lavender-tinted off-white — default screen/scaffold background.
   static const softBg = Color(0xFFF8F7FF);
-
-  /// Token Sheet v2 name for [softBg] (page background). Same value.
-  static const bg = softBg;
 
   /// Card surface — Token Sheet v2. White, distinct from [bg].
   static const surface = Color(0xFFFFFFFF);
@@ -90,13 +85,6 @@ class GQColors {
   /// Source: GentleQuest_Journal.html (R1D14) + timeline widget map.
   static const moodRough = Color(0xFFC49AD9);
 
-  // Mood palette — ordered low-energy (index 0) → high-energy (index 4).
-  static const moodSlateLavender = Color(0xFFC9CCEB); // index 0 — calm/low
-  static const moodMutedPlum     = Color(0xFFB6A3D9); // index 1
-  static const moodPeri          = Color(0xFFA9B5F4); // index 2 — mid
-  static const moodPeach         = Color(0xFFFFB59B); // index 3
-  static const moodCoralPeach    = Color(0xFFFF8E7A); // index 4 — warm/high
-
   /// Amber — offline state indicator, non-critical warnings.
   /// Source: REVIEW.md cross-cutting tokens + GentleQuest_Push_Notifications.html --gq-amber
   static const amber = Color(0xFFC8923D);
@@ -120,11 +108,6 @@ class GQColors {
   /// Coral dark — pressed/dark coral, on-light text accent.
   /// Source: agent ruling 2026-05-22 (compliance_guard L360/L683/L1460 sweep).
   static const coralDk = Color(0xFFE0494C);
-
-  /// Coral dark deep — darker coral for crisis-line icon accents (#B33636).
-  /// Distinct from [coralDk] (#E0494C); used in offline crisis-row phone icon.
-  /// Source: offline_banner.dart _CrisisLineRow phone icon (R1D12).
-  static const coralDkDeep = Color(0xFFB33636);
 
   /// Success soft tint — pale green background for "safe / passed" surfaces.
   /// Source: agent ruling 2026-05-22 (compliance_guard L695/L698 sweep).
@@ -153,6 +136,17 @@ class GQColors {
   /// 12-site / 8-file recurrence (8 active surfaces + 4 legacy dhiwise) promoted
   /// to token 2026-05-22. Sibling of accentSoft/primarySoft/successSoft.
   static const warmSoft = Color(0xFFFFF1E5);
+}
+
+/// Illustration-only tokens — Token Sheet v2 Part C (WO-3 Token Sheet
+/// Reconciliation, 2026-08-22). Decorative gradient stops, glow halos, and
+/// the companion-creature/share-card palette — never a fill, border, or
+/// text color doing structural UI work. Keeping them flat-namespaced
+/// beside [GQColors] made them read as general-purpose (the mood*-prefixed
+/// companion palette was misread as the retired mood scale during this
+/// reconciliation); this namespace is the fix.
+class GQIllustration {
+  GQIllustration._();
 
   // ── Crisis / warmth gradient stops (R1D9 — Crisis Intervention) ───────────
   // Source: GentleQuest_Crisis_Intervention.html --gq-warm-1 / --gq-warm-2
@@ -185,13 +179,26 @@ class GQColors {
   /// Ambient glow — top-right field.
   static const glowTopRight = Color(0xFFFBE3DD);
 
-  /// Ordered list for programmatic mood-scale rendering (e.g. sliders, charts).
-  static const moodPalette = [
-    moodSlateLavender,
-    moodMutedPlum,
-    moodPeri,
-    moodPeach,
-    moodCoralPeach,
+  // ── Companion creature palette (R1D4-era) — renamed from GQColors.mood*
+  // by WO-3 reconciliation. Same hexes, same order; the mood* names were
+  // never the mood scale (see GQMoodScale) — they're the on-screen
+  // companion's illustration colors and the mood-share card's gradient,
+  // and the naming collision is what caused this reconciliation to
+  // misread them as dead once already.
+  static const companionSlateLavender = Color(0xFFC9CCEB);
+  static const companionMutedPlum = Color(0xFFB6A3D9);
+  static const companionPeri = Color(0xFFA9B5F4);
+  static const companionPeach = Color(0xFFFFB59B);
+  static const companionCoralPeach = Color(0xFFFF8E7A);
+
+  /// Share-card gradient (WO-3 rename — was GQColors.moodPalette). Ordered
+  /// low-energy (index 0) → high-energy (index 4); same order as before.
+  static const shareGradient = [
+    companionSlateLavender,
+    companionMutedPlum,
+    companionPeri,
+    companionPeach,
+    companionCoralPeach,
   ];
 }
 
@@ -356,9 +363,6 @@ class GQDurations {
   /// Standard element fade-in / fade-out.
   static const fade = Duration(milliseconds: 300);
 
-  /// Auto-advance interval (e.g. onboarding card carousel).
-  static const autoAdvance = Duration(milliseconds: 800);
-
   /// Typewriter effect — delay between each text chunk in chat.
   static const typewriter = Duration(milliseconds: 200);
 
@@ -368,10 +372,6 @@ class GQDurations {
   /// Welcome hero illustration breathing loop.
   /// Source: GentleQuest_Onboarding.html (R1D1).
   static const breathe = Duration(milliseconds: 5600);
-
-  /// Heart-pulse animation in crisis surfaces — slow, calming rhythm.
-  /// Source: GentleQuest_Crisis_Intervention.html (R1D9) @keyframes gqHeartPulse 2400ms.
-  static const heartPulse = Duration(milliseconds: 2400);
 
   /// Slide-up sheet animation for crisis State A.
   /// Source: GentleQuest_Crisis_Intervention.html (R1D9) 300ms cubic-bezier.
@@ -414,9 +414,6 @@ class GQDurations {
 
   /// Ambient glow field 2 breathing period (top-right) — desynced from field 1.
   static const glowBreathe2 = Duration(milliseconds: 12000);
-
-  /// Someone leaves/arrives — glow opacity eases over this window.
-  static const presenceDim = Duration(milliseconds: 4000);
 
   /// The return — no bell. Dusk gradient transitions to gq-bg over this window.
   static const roomReturn = Duration(milliseconds: 45000);

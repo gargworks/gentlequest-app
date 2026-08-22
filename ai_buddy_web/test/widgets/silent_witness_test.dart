@@ -172,10 +172,10 @@ void main() {
           .where((c) {
         if (c.decoration is! BoxDecoration) return false;
         final bd = c.decoration as BoxDecoration;
-        // Shadow ellipse is 22x6 with moodSlateLavender tint.
+        // Shadow ellipse is 22x6 with companionSlateLavender tint.
         if (c.constraints?.maxWidth == 22) return true;
         return bd.color?.withValues(alpha: 1.0) ==
-            GQColors.moodSlateLavender.withValues(alpha: 1.0);
+            GQIllustration.companionSlateLavender.withValues(alpha: 1.0);
       });
       expect(shadowContainers, isEmpty);
     });

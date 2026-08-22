@@ -271,11 +271,11 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                   end: Alignment.bottomCenter,
                   colors: [
                     Color.lerp(
-                        GQColors.duskTop, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskTop, GQColors.softBg, _returnBgAnim.value)!,
                     Color.lerp(
-                        GQColors.duskMid, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskMid, GQColors.softBg, _returnBgAnim.value)!,
                     Color.lerp(
-                        GQColors.duskBottom, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskBottom, GQColors.softBg, _returnBgAnim.value)!,
                   ],
                 ),
               ),
@@ -298,7 +298,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                     height: 300,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: GQColors.glowTopLeft
+                      color: GQIllustration.glowTopLeft
                           .withValues(alpha: _glow1Anim.value),
                     ),
                     child: BackdropFilter(
@@ -325,7 +325,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                     height: 280,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: GQColors.glowTopRight
+                      color: GQIllustration.glowTopRight
                           .withValues(alpha: _glow2Anim.value),
                     ),
                     child: BackdropFilter(

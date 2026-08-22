@@ -25,7 +25,7 @@ class MoodTrackerScreen extends StatelessWidget {
     return KeyboardDismissibleScaffold(
       safeTop: false,
       safeBottom: false,
-      backgroundColor: GQColors.bg,
+      backgroundColor: GQColors.softBg,
       appBar: const GQHeader(title: "Let's check in"),
       body: Column(
         children: [
