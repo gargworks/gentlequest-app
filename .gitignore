@@ -274,7 +274,9 @@ shortcut_plan.md
 # Temp directories
 -d
 .brain-id
-metrics/
+metrics/**
+!metrics/__init__.py
+!metrics/d14_cohort_ga4.py
 notebooks/
 orchestration/
 launch/

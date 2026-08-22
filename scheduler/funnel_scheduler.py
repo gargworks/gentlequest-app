@@ -13,6 +13,8 @@ import logging
 import threading
 from datetime import datetime, timedelta, timezone
 
+from metrics.d14_cohort_ga4 import collect_native_retention_gate
+
 logger = logging.getLogger(__name__)
 
 _timer = None
@@ -38,7 +40,36 @@ def _run_snapshot(app):
                               headers={"User-Agent": "internal-scheduler"})
             if resp.status_code == 200:
                 data = resp.get_json()
-                # Persist the full funnel metrics blob as a snapshot row.
+
+                # Attach the native D1/D7/D14 retention gate.  The collector
+                # returns a structured error result on credential/API failure,
+                # so a GA4 outage never prevents the funnel row from persisting.
+                try:
+                    data["retention_gate"] = collect_native_retention_gate()
+                except Exception as exc:
+                    logger.error(f"[funnel-scheduler] Retention gate collection failed: {exc}")
+                    data["retention_gate"] = {
+                        "schema_version": 1,
+                        "population": "native",
+                        "status": "error",
+                        "reason": "unexpected_error",
+                        "below_kill_line": False,
+                    }
+
+                rg = data.get("retention_gate", {})
+                native = rg.get("native", {})
+                d14 = native.get("d14", {})
+                logger.info(
+                    f"[funnel-scheduler] Snapshot persisted: "
+                    f"landing={data.get('counts', {}).get('landing_sessions', 0)} "
+                    f"cta_clicks={data.get('counts', {}).get('cta_clicks', 0)} "
+                    f"first_value={data.get('counts', {}).get('first_value_actions', 0)} "
+                    f"retention={rg.get('status')}/{rg.get('reason')} "
+                    f"native_n={native.get('total_n', 0)} "
+                    f"d14_rate={d14.get('rate', 0.0)}"
+                )
+
+                # Persist the full funnel + retention metrics blob as a snapshot row.
                 # Previously this step was missing — the endpoint only
                 # computed and returned JSON; nobody wrote a FunnelSnapshot
                 # row, so /api/metrics/funnel/history always returned 0.
@@ -46,13 +77,6 @@ def _run_snapshot(app):
                 snapshot = FunnelSnapshot(snapshot_data=data)
                 db.session.add(snapshot)
                 db.session.commit()
-                counts = data.get("counts", {})
-                logger.info(
-                    f"[funnel-scheduler] Snapshot persisted: "
-                    f"landing={counts.get('landing_sessions', 0)} "
-                    f"cta_clicks={counts.get('cta_clicks', 0)} "
-                    f"first_value={counts.get('first_value_actions', 0)}"
-                )
             else:
                 logger.warning(f"[funnel-scheduler] Endpoint returned {resp.status_code}")
     except Exception as e:

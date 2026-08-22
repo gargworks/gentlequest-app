@@ -649,6 +649,11 @@ def funnel_history():
 
     Query params:
       limit — number of snapshots to return (default 30, max 100)
+
+    Response freshness:
+      ok    — latest snapshot <= 36 hours old with a retention_gate
+      stale — latest snapshot > 36 hours old
+      empty — no snapshots
     """
     try:
         limit = min(int(request.args.get("limit", 30)), 100)
@@ -656,8 +661,32 @@ def funnel_history():
             FunnelSnapshot.created_at.desc()
         ).limit(limit).all()
 
+        freshness = {
+            "status": "empty",
+            "latest_created_at": None,
+            "age_hours": None,
+            "retention_gate_status": None,
+        }
+
+        if snapshots:
+            latest = snapshots[0]
+            latest_dt = latest.created_at
+            freshness["latest_created_at"] = latest_dt.isoformat()
+            now = datetime.utcnow()
+            age = now - latest_dt
+            freshness["age_hours"] = round(age.total_seconds() / 3600, 2)
+            freshness["status"] = "ok" if age <= timedelta(hours=36) else "stale"
+
+            snapshot_data = latest.snapshot_data or {}
+            rg = snapshot_data.get("retention_gate")
+            if rg is None:
+                freshness["retention_gate_status"] = "missing"
+            else:
+                freshness["retention_gate_status"] = rg.get("status", "error")
+
         return jsonify({
             "count": len(snapshots),
+            "freshness": freshness,
             "snapshots": [
                 {
                     "id": s.id,

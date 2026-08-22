@@ -16,7 +16,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app
-from models import AnalyticsEvent, db
+from models import AnalyticsEvent, FunnelSnapshot, db
 
 
 def _sync_submit(fn, *args, **kwargs):
@@ -203,3 +203,69 @@ class TestFunnelEndpoint:
         assert data["counts"]["landing_sessions"] == 1
         assert data["counts"]["first_value_actions"] == 1
         assert data["counts"]["returning_users"] == 1
+
+
+class TestFunnelHistoryEndpoint:
+    """Tests for GET /api/metrics/funnel/history freshness metadata."""
+
+    def test_empty_history_freshness_empty(self, client):
+        resp = client.get("/api/metrics/funnel/history?limit=1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["count"] == 0
+        assert data["freshness"]["status"] == "empty"
+        assert data["freshness"]["latest_created_at"] is None
+        assert data["freshness"]["retention_gate_status"] is None
+
+    def test_recent_history_freshness_ok(self, app, client):
+        with app.app_context():
+            snapshot = FunnelSnapshot(
+                snapshot_data={
+                    "counts": {"landing_sessions": 1},
+                    "retention_gate": {"status": "insufficient", "reason": "not_mature"},
+                },
+                created_at=datetime.utcnow(),
+            )
+            db.session.add(snapshot)
+            db.session.commit()
+
+        resp = client.get("/api/metrics/funnel/history?limit=1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["count"] == 1
+        assert data["freshness"]["status"] == "ok"
+        assert data["freshness"]["retention_gate_status"] == "insufficient"
+
+    def test_old_history_freshness_stale(self, app, client):
+        with app.app_context():
+            snapshot = FunnelSnapshot(
+                snapshot_data={"counts": {"landing_sessions": 1}},
+                created_at=datetime.utcnow() - timedelta(hours=48),
+            )
+            db.session.add(snapshot)
+            db.session.commit()
+
+        resp = client.get("/api/metrics/funnel/history?limit=1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["count"] == 1
+        assert data["freshness"]["status"] == "stale"
+        assert data["freshness"]["retention_gate_status"] == "missing"
+
+    def test_retention_gate_error_status(self, app, client):
+        with app.app_context():
+            snapshot = FunnelSnapshot(
+                snapshot_data={
+                    "counts": {"landing_sessions": 1},
+                    "retention_gate": {"status": "error", "reason": "authentication_failed"},
+                },
+                created_at=datetime.utcnow(),
+            )
+            db.session.add(snapshot)
+            db.session.commit()
+
+        resp = client.get("/api/metrics/funnel/history?limit=1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["freshness"]["status"] == "ok"
+        assert data["freshness"]["retention_gate_status"] == "error"
