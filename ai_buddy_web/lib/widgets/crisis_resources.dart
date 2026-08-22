@@ -616,16 +616,25 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                             children: [
                               Text('🗺️', style: TextStyle(fontSize: 16)),
                               SizedBox(width: 10),
-                              Text(
-                                'I have a safety plan I want to use',
-                                style: TextStyle(
-                                  fontFamily: GQTypography.bodyFamily,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: GQColors.ink,
+                              // WO-8 AX3: Expanded (replacing a bare Text plus
+                              // Spacer). A Row will not wrap an unconstrained
+                              // Text, so at large accessibility text scales
+                              // this label overflowed and shoved the chevron
+                              // off-screen. Expanded lets it wrap and makes the
+                              // Spacer redundant — the safety plan is the main
+                              // alternative to 988 on this surface, so its
+                              // label has to stay readable.
+                              Expanded(
+                                child: Text(
+                                  'I have a safety plan I want to use',
+                                  style: TextStyle(
+                                    fontFamily: GQTypography.bodyFamily,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: GQColors.ink,
+                                  ),
                                 ),
                               ),
-                              Spacer(),
                               Icon(Icons.chevron_right_rounded,
                                   color: GQColors.ink2, size: 16),
                             ],

@@ -84,7 +84,13 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
         ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
-      child: Column(
+      // WO-8 AX3: scrollable. At large accessibility text scales the three
+      // bridge options grow enough to push the always-present 988 pill below
+      // the fold, making the emergency affordance unreachable on exactly the
+      // surface that exists to offer it. Same fix, and same reasoning, as the
+      // SingleChildScrollView added to CrisisInterventionSheet in WO-6.2.
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Drag handle
@@ -238,13 +244,22 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
                     size: 16,
                   ),
                   const SizedBox(width: 6),
-                  const Text(
-                    'Call 988 now · always tap-ready', // verbatim from HTML
-                    style: TextStyle(
-                      fontFamily: GQTypography.bodyFamily,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: GQColors.coral,
+                  // WO-8 AX3: Flexible, not a bare Text. In a Row an
+                  // unconstrained Text will not wrap — at large accessibility
+                  // text scales this label ran past the pill and clipped at
+                  // the screen edge. A truncated 988 affordance on the Q9
+                  // suicidal-ideation path is the worst clipping bug this app
+                  // can have, so it wraps instead of overflowing.
+                  const Flexible(
+                    child: Text(
+                      'Call 988 now · always tap-ready', // verbatim from HTML
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: GQTypography.bodyFamily,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: GQColors.coral,
+                      ),
                     ),
                   ),
                 ],
@@ -252,6 +267,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
             ),
           ),
         ],
+      ),
       ),
     );
   }
