@@ -35,6 +35,8 @@ import 'services/pref_migrator.dart';
 import 'services/low_stim_service.dart';
 import 'config/profile_config.dart';
 import 'screens/legal/legal_screen.dart';
+import 'theme/gq_theme.dart';
+import 'theme/gq_tokens.dart';
 import 'theme/low_stim_mode.dart';
 import 'widgets/branded_splash.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
@@ -235,6 +237,36 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+/// WO-8 Part A — one ThemeData builder for both brightnesses, so light and
+/// dark cannot drift apart in structure (only in the values that are meant to
+/// differ). The GQ semantic palette rides in `extensions` rather than being
+/// mapped onto ColorScheme slots — see [GQTheme] for why.
+ThemeData _gqThemeData(Brightness brightness) {
+  final gq = brightness == Brightness.dark ? GQTheme.dark : GQTheme.light;
+  return ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: GQColors.primary,
+      primary: GQColors.primary,
+      secondary: GQColors.coral,
+      brightness: brightness,
+    ),
+    useMaterial3: true,
+    scaffoldBackgroundColor: gq.bg,
+    extensions: <ThemeExtension<dynamic>>[gq],
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        // WO-8 Part C: Android was previously mapped to the Cupertino builder
+        // too, giving it an iOS slide on every push. Restored to the Material
+        // default so navigation feels native per-platform. This is visible to
+        // existing Android users — an intended change, not a cleanup.
+        TargetPlatform.android: ZoomPageTransitionsBuilder(),
+      },
+    ),
+  );
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -254,21 +286,20 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'GentleQuest',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF667EEA),
-            primary: const Color(0xFF667EEA),
-            secondary: const Color(0xFFFF6B6B),
-          ),
-          useMaterial3: true,
-          pageTransitionsTheme: PageTransitionsTheme(
-            builders: {
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-              TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-              TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
-        ),
+        theme: _gqThemeData(Brightness.light),
+        darkTheme: _gqThemeData(Brightness.dark),
+        // WO-8: dark mode is PLUMBED but not yet ACTIVATED.
+        //
+        // The GQ widget layer still reads static GQColors constants rather
+        // than Theme.of, so flipping this to ThemeMode.system today would
+        // produce a half-dark app: themed surfaces going dark underneath
+        // hardcoded near-white cards and near-black text. That is strictly
+        // worse than staying light.
+        //
+        // This becomes ThemeMode.system in the same change that converts the
+        // components — activation is a deliberate step, not a side effect of
+        // landing the infrastructure.
+        themeMode: ThemeMode.light,
         // Low-stim "quiet mode" (v1.5.0 ADHD update, ADR-006): wraps every
         // routed screen (this is MaterialApp's routing-content builder slot,
         // above Navigator) with a saturation/motion filter that reacts
