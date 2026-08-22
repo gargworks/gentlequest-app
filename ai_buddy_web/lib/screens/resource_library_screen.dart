@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../navigation/home_tab_deeplink.dart';
 import '../screens/exercise_scaffold_screen.dart';
+import '../screens/rumination_reset_screen.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/app_bottom_nav.dart' show AppTab;
 import '../widgets/exercise_card_scaffold.dart';
@@ -109,6 +110,15 @@ const List<_Exercise> _kExercises = [
     isRecent: true,
   ),
   _Exercise(
+    id: 'rumination_reset',
+    name: 'Loop reset',
+    emoji: '↻',
+    durationLabel: '2 min',
+    categoryLabel: 'quick',
+    category: _ExerciseCategory.quickWins,
+    tileBackground: GQColors.accentSoft,
+  ),
+  _Exercise(
     id: 'body_scan',
     name: '3-min body scan',
     emoji: '🫁',
@@ -177,8 +187,8 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
       vsync: this,
       duration: GQDurations.breathe,
     );
-    if (!(WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
-        .disableAnimations)) {
+    if (!(WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations)) {
       _breatheController.repeat(reverse: true);
     }
 
@@ -202,15 +212,18 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
       final favs = _kExercises.where((e) => e.isFavorite).toList();
       final recents =
           _kExercises.where((e) => e.isRecent && !e.isFavorite).toList();
-      final rest = _kExercises
-          .where((e) => !e.isFavorite && !e.isRecent)
-          .toList();
+      final rest =
+          _kExercises.where((e) => !e.isFavorite && !e.isRecent).toList();
       return [...favs, ...recents, ...rest];
     }
     return _kExercises.where((e) => e.category == _selectedCategory).toList();
   }
 
   void _onExerciseTap(_Exercise exercise) {
+    if (exercise.id == 'rumination_reset') {
+      RuminationResetScreen.show(context);
+      return;
+    }
     // Every exercise in _kExercises has a scaffold mapping; ids without
     // one are kept out of the catalog (see the FUTURE WORK block above
     // _kExercises). Assert in debug for fast-feedback during development;
@@ -218,11 +231,13 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
     // banner as Part B's SnackBar conversion — this is the zero-SnackBar
     // invariant's single surviving fallback path.
     final scaffoldType = _exerciseScaffoldType(exercise);
-    assert(scaffoldType != null,
+    assert(
+        scaffoldType != null,
         'Exercise ${exercise.id} has no scaffold mapping; '
         'add to _exerciseScaffoldType() or remove from _kExercises.');
     if (scaffoldType == null) {
-      debugPrint('[resource_library] no scaffold for ${exercise.id}; skipping tap');
+      debugPrint(
+          '[resource_library] no scaffold for ${exercise.id}; skipping tap');
       if (mounted) {
         GQBanner.show(
           context,
@@ -508,8 +523,7 @@ class _FeaturedExerciseCard extends StatelessWidget {
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha(56), // ~0.22
-                            borderRadius:
-                                BorderRadius.circular(GQRadii.button),
+                            borderRadius: BorderRadius.circular(GQRadii.button),
                           ),
                           child: const Text(
                             "TRY THIS WHEN YOU'RE HEAVY",
@@ -532,8 +546,7 @@ class _FeaturedExerciseCard extends StatelessWidget {
                               horizontal: 9, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.black.withAlpha(56), // ~0.22
-                            borderRadius:
-                                BorderRadius.circular(GQRadii.button),
+                            borderRadius: BorderRadius.circular(GQRadii.button),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -741,6 +754,7 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
         duration: _reduceMotion ? Duration.zero : GQDurations.fade,
         curve: GQMotion.standardCurve,
         child: GQCard(
+          key: ValueKey('${exercise.id}_card'),
           onTap: () => widget.onTap(exercise),
           haptic: false, // pure navigation — pushes the exercise scaffold
           child: Stack(
@@ -840,8 +854,8 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: GQColors.primarySoft,
                       borderRadius: BorderRadius.circular(6),

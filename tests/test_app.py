@@ -1063,6 +1063,19 @@ class TestInterventionOutcome:
             })
             assert response.status_code == 200
 
+    def test_intervention_outcome_accepts_rumination_reset_without_text(self, authenticated_client):
+        with patch('providers.session_memory.update_intervention_outcome', return_value=True) as update:
+            response = authenticated_client.post('/api/intervention/outcome', json={
+                'intervention_id': 'rumination_reset_default',
+                'exercise_type': 'rumination_reset',
+                'outcome': 'completed',
+                'time_spent_seconds': 95,
+            })
+            assert response.status_code == 200
+            kwargs = update.call_args.kwargs
+            assert kwargs['exercise_type'] == 'rumination_reset'
+            assert kwargs['feedback'] is None
+
     def test_intervention_outcome_missing_id(self, authenticated_client):
         """Missing intervention_id returns 400"""
         response = authenticated_client.post('/api/intervention/outcome', json={
