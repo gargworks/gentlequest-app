@@ -227,3 +227,21 @@ def memory_system_status():
             "status": "error",
             "message": str(e)
         }), 200
+
+
+@admin_bp.route("/api/admin/funnel_snapshot", methods=["POST"])
+@limiter.limit("5 per hour")
+def admin_funnel_snapshot():
+    """Admin-only: manually trigger one funnel snapshot + retention gate."""
+    auth_header = request.headers.get("X-Admin-Key")
+    expected_key = os.getenv("TELEGRAM_CHAT_ID", "")
+    if not auth_header or auth_header != expected_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        from scheduler.funnel_scheduler import _run_snapshot
+        _run_snapshot(current_app, schedule_next=False)
+        return jsonify({"ok": True, "message": "Funnel snapshot triggered"}), 202
+    except Exception as exc:
+        current_app.logger.error(f"[admin] Manual funnel snapshot failed: {exc}")
+        return jsonify({"ok": False, "error": str(exc)}), 500

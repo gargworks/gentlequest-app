@@ -30,7 +30,7 @@ def _seconds_until_next_08_utc():
     return (target - now).total_seconds()
 
 
-def _run_snapshot(app):
+def _run_snapshot(app, schedule_next=True):
     """Hit the funnel endpoint and persist the snapshot to the database."""
     if _stop_event.is_set():
         return
@@ -87,7 +87,8 @@ def _run_snapshot(app):
         except Exception:
             pass
     finally:
-        _schedule_next(app)
+        if schedule_next:
+            _schedule_next(app)
 
 
 def _schedule_next(app):

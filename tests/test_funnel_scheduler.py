@@ -95,6 +95,43 @@ class TestFunnelScheduler:
             assert rg.get("status") == "error"
             assert rg.get("reason") == "unexpected_error"
 
+    def test_admin_funnel_snapshot_triggers_run(self, app, monkeypatch):
+        from scheduler import funnel_scheduler
+
+        fake_gate = {
+            "schema_version": 1,
+            "status": "insufficient",
+            "reason": "not_mature",
+            "native": {"total_n": 12, "d14": {"eligible_n": 0, "returned": 0, "rate": 0.0}},
+        }
+
+        monkeypatch.setenv("TELEGRAM_CHAT_ID", "test-admin-key")
+        with patch.object(
+            funnel_scheduler, "_schedule_next"
+        ), patch.object(
+            funnel_scheduler, "collect_native_retention_gate", return_value=fake_gate
+        ):
+            with app.test_client() as client:
+                resp = client.post(
+                    "/api/admin/funnel_snapshot",
+                    headers={"X-Admin-Key": "test-admin-key"},
+                )
+
+        assert resp.status_code == 202
+        assert resp.get_json()["ok"] is True
+
+        with app.app_context():
+            assert FunnelSnapshot.query.count() == 1
+
+    def test_admin_funnel_snapshot_rejects_bad_key(self, app, monkeypatch):
+        monkeypatch.setenv("TELEGRAM_CHAT_ID", "test-admin-key")
+        with app.test_client() as client:
+            resp = client.post(
+                "/api/admin/funnel_snapshot",
+                headers={"X-Admin-Key": "wrong-key"},
+            )
+        assert resp.status_code == 401
+
     def test_no_snapshot_when_funnel_endpoint_fails(self, app):
         from scheduler import funnel_scheduler
         from flask.testing import FlaskClient
