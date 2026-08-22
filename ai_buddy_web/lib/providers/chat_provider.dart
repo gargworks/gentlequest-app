@@ -444,6 +444,11 @@ class ChatProvider extends ChangeNotifier {
       isUser: false,
       type: aiMessage.type,
       riskLevel: aiMessage.riskLevel,
+      // Explicit, not inherited from the constructor default: this risk came
+      // from the backend classifier, and that provenance is what admits a
+      // full-screen takeover. Relying on the default would leave the most
+      // consequential branch in the app resting on an unstated assumption.
+      riskSource: RiskSource.server,
       crisisMsg: aiMessage.crisisMsg,
       crisisNumbers: aiMessage.crisisNumbers,
       exercise: aiMessage.exercise,
@@ -528,6 +533,12 @@ class ChatProvider extends ChangeNotifier {
                 timestamp: streaming!.timestamp,
                 type: MessageType.text,
                 riskLevel: metaRisk,
+                // Server-classified (SSE `meta`). Explicit for the same
+                // reason as the non-streaming path above. Deliberately NOT
+                // copyWith here: metaCrisisMsg/metaCrisisNumbers are
+                // legitimately nullable, and copyWith's null-coalescing
+                // would preserve a stale value instead of clearing it.
+                riskSource: RiskSource.server,
                 crisisMsg: metaCrisisMsg,
                 crisisNumbers: metaCrisisNumbers,
                 exercise: metaExercise,
@@ -545,6 +556,8 @@ class ChatProvider extends ChangeNotifier {
               isUser: false,
               type: MessageType.text,
               riskLevel: metaRisk,
+              // Server-classified (SSE first `token`).
+              riskSource: RiskSource.server,
               crisisMsg: metaCrisisMsg,
               crisisNumbers: metaCrisisNumbers,
               exercise: metaExercise,

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../config/feature_flags.dart';
 import '../providers/chat_provider.dart';
 import '../providers/companion_provider.dart';
 import '../models/message.dart';
@@ -119,6 +120,20 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   bool _showInlineCrisis = false;
   String? _crisisBannerDismissedForMessageId;
   String? _crisisTriggerUserMessageId;
+
+  /// WO-6.3 Part E — full-screen takeover routing.
+  ///
+  /// [_crisisTakeoverShownForMessageId] is the same message-id de-dupe idiom
+  /// the inline banner already uses, so a rebuild cannot re-push the route
+  /// for a message that already triggered it.
+  ///
+  /// [_userSentThisSession] exists because this callback also runs after
+  /// `loadChatHistory()` swaps in server history. Without it, opening the app
+  /// days later on a conversation whose last message was classified `.crisis`
+  /// would slam the user with a full-screen takeover about an old exchange.
+  /// A takeover may only follow a live exchange, never a scroll-back.
+  String? _crisisTakeoverShownForMessageId;
+  bool _userSentThisSession = false;
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
@@ -552,6 +567,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     final messageText = _messageController.text.trim();
     _messageController.clear();
 
+    // WO-6.3 Part E: marks this as a live exchange, which is a precondition
+    // for the full-screen takeover. Set here rather than on receipt so that
+    // history loaded at startup can never satisfy it.
+    _userSentThisSession = true;
+
     // Crisis Re-Entry Surface: the user's first message post-crisis
     // transitions back to normal opacity (300ms fade). We clear the
     // re-entry flag here; the build method swaps the aged surface out
@@ -902,6 +922,44 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             !dismissedForThisTurn;
                         if (shouldShow != _showInlineCrisis) {
                           setState(() => _showInlineCrisis = shouldShow);
+                        }
+
+                        // ── WO-6.3 Part E — full-screen crisis takeover ──
+                        // Every condition here is load-bearing:
+                        //
+                        //  • riskSource == .server — CrisisKeywordDetector is
+                        //    a deny-list, and deny-lists false-positive on
+                        //    quotes, song lyrics, sarcasm and third-person
+                        //    discussion. Interrupting someone with a
+                        //    full-screen takeover because they typed a lyric
+                        //    is a real harm, so a keyword-sourced .crisis
+                        //    deliberately stays on the inline banner above.
+                        //  • !last.isUser — server classification arrives on
+                        //    the reply, never on the locally-stamped user
+                        //    message.
+                        //  • _userSentThisSession — a takeover may only
+                        //    follow a live exchange. Without this, opening
+                        //    the app on history whose last message was
+                        //    .crisis would ambush the user about an old
+                        //    conversation.
+                        //  • message-id de-dupe — a rebuild must not re-push
+                        //    a route the user already dismissed.
+                        //
+                        // Ships behind a compile-time flag, default OFF.
+                        if (FeatureFlags.enableCrisisTakeover &&
+                            _userSentThisSession &&
+                            !last.isUser &&
+                            last.riskLevel == RiskLevel.crisis &&
+                            last.riskSource == RiskSource.server &&
+                            _crisisTakeoverShownForMessageId != last.id) {
+                          _crisisTakeoverShownForMessageId = last.id;
+                          // A crisis grave enough to interrupt for should also
+                          // age into the gentle re-entry surface next session.
+                          _recordCrisisTimestamp();
+                          Navigator.of(context, rootNavigator: true)
+                              .push(MaterialPageRoute<void>(
+                            builder: (_) => const AcuteCrisisTakeover(),
+                          ));
                         }
                       });
 

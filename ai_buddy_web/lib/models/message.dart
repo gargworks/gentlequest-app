@@ -81,6 +81,24 @@ class Message {
         (e) => e.toString() == 'RiskLevel.${json['risk_level'] ?? 'none'}',
         orElse: () => RiskLevel.none,
       ),
+      // WO-6.3 F1 / Phase 2a. Absent `risk_source` resolves to .server, and
+      // that is correct rather than merely convenient: the ONLY caller of
+      // this factory is ApiService.getChatHistory(), so every JSON reaching
+      // here is the server's own record. The backend does not emit the field
+      // today; parsing it anyway means the day it starts, provenance is
+      // honoured instead of silently flattened.
+      //
+      // The reason this default is safe is load-bearing, so it must not be
+      // inherited blindly: if this factory ever parses locally-persisted
+      // messages (draft cache, offline queue), absence would no longer imply
+      // server origin, and a keyword-stamped .crisis would launder itself
+      // into a server verdict — exactly the false positive the full-screen
+      // takeover gate exists to prevent. Re-derive this default before
+      // adding any such caller.
+      riskSource: RiskSource.values.firstWhere(
+        (e) => e.toString() == 'RiskSource.${json['risk_source'] ?? 'server'}',
+        orElse: () => RiskSource.server,
+      ),
       resources: (json['resources'] as List<dynamic>?)?.cast<String>(),
       crisisMsg: json['crisis_msg'] as String?,
       crisisNumbers: (json['crisis_numbers'] as List<dynamic>?)
@@ -98,10 +116,54 @@ class Message {
       'timestamp': timestamp.toIso8601String(),
       'type': type.toString().split('.').last,
       'risk_level': riskLevel.toString().split('.').last,
+      // Written so a serialize→deserialize round-trip preserves provenance.
+      // Nothing calls toJson() today; that is precisely why this is here —
+      // the first caller added (offline queue, draft cache) would otherwise
+      // silently downgrade a keyword-stamped .crisis to .server on the way
+      // back in, and the takeover gate would fire on a false positive.
+      'risk_source': riskSource.toString().split('.').last,
       'resources': resources,
       'crisis_msg': crisisMsg,
       'crisis_numbers': crisisNumbers,
     };
+  }
+
+  /// Field-preserving copy, for call sites that genuinely mean "same message,
+  /// one field changed".
+  ///
+  /// Note what this deliberately does NOT do: ChatProvider's streaming `meta`
+  /// path still constructs by hand. That is not an oversight — `crisisMsg`
+  /// and `crisisNumbers` are legitimately nullable there, and copyWith's
+  /// null-coalescing would preserve a stale value where the caller means to
+  /// clear it. copyWith is the right tool for partial updates, the wrong one
+  /// for full re-specification; conflating the two would trade a dropped
+  /// field for a stuck one.
+  Message copyWith({
+    String? id,
+    String? content,
+    bool? isUser,
+    DateTime? timestamp,
+    MessageType? type,
+    RiskLevel? riskLevel,
+    RiskSource? riskSource,
+    List<String>? resources,
+    String? crisisMsg,
+    List<Map<String, dynamic>>? crisisNumbers,
+    InteractiveExercise? exercise,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      isUser: isUser ?? this.isUser,
+      timestamp: timestamp ?? this.timestamp,
+      type: type ?? this.type,
+      riskLevel: riskLevel ?? this.riskLevel,
+      riskSource: riskSource ?? this.riskSource,
+      resources: resources ?? this.resources,
+      crisisMsg: crisisMsg ?? this.crisisMsg,
+      crisisNumbers: crisisNumbers ?? this.crisisNumbers,
+      exercise: exercise ?? this.exercise,
+    );
   }
 
   Color getMessageColor(BuildContext context) {
