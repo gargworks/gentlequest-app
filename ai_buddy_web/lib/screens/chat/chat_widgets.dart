@@ -201,8 +201,30 @@ class TypingDots extends StatefulWidget {
 class _TypingDotsState extends State<TypingDots>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1000))
-    ..repeat();
+      vsync: this, duration: const Duration(milliseconds: 1000));
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _c.stop();
+    } else {
+      _c.repeat();
+    }
+  }
+
   @override
   void dispose() {
     _c.dispose();
@@ -213,7 +235,8 @@ class _TypingDotsState extends State<TypingDots>
   Widget build(BuildContext context) {
     // shimmer base — Material default expected (agent ruling 2026-05-22 keep raw)
     final baseColor = Colors.grey.shade500;
-    final reduceMotion = MediaQuery.of(context).accessibleNavigation;
+    final reduceMotion =
+        _reduceMotion || MediaQuery.of(context).accessibleNavigation;
     if (reduceMotion) {
       if (_c.isAnimating) _c.stop();
       // Static dots for reduced motion
@@ -273,6 +296,28 @@ class _BreathingOrbState extends State<BreathingOrb>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scale;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _controller.stop();
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
 
   @override
   void initState() {
@@ -280,7 +325,7 @@ class _BreathingOrbState extends State<BreathingOrb>
     _controller = AnimationController(
       vsync: this,
       duration: GQDurations.breathe,
-    )..repeat(reverse: true);
+    );
     _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
@@ -294,7 +339,8 @@ class _BreathingOrbState extends State<BreathingOrb>
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).accessibleNavigation;
+    final reduceMotion =
+        _reduceMotion || MediaQuery.of(context).accessibleNavigation;
     if (reduceMotion) {
       return _orbShape(1.0);
     }

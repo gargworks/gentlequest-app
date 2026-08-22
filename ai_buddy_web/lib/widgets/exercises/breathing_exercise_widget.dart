@@ -39,6 +39,29 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
   // Glow pulse animation
   late AnimationController _glowController;
 
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _glowController.stop();
+    } else {
+      _glowController.repeat(reverse: true);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +90,7 @@ class _BreathingExerciseWidgetState extends State<BreathingExerciseWidget>
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
+    );
 
     // Start entrance animation
     _entranceController.forward();

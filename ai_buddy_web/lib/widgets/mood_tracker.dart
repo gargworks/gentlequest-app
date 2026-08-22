@@ -1469,6 +1469,28 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _pulse;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _pulseController.stop();
+    } else if (widget.isSelected) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
 
   @override
   void initState() {
@@ -1480,14 +1502,14 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
     _pulse = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    if (widget.isSelected) _pulseController.repeat(reverse: true);
+    if (widget.isSelected && !_reduceMotion) _pulseController.repeat(reverse: true);
   }
 
   @override
   void didUpdateWidget(_MoodEmojiButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isSelected && !oldWidget.isSelected) {
-      _pulseController.repeat(reverse: true);
+      if (!_reduceMotion) _pulseController.repeat(reverse: true);
     } else if (!widget.isSelected && oldWidget.isSelected) {
       _pulseController.stop();
       _pulseController.reset();

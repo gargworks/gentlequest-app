@@ -149,6 +149,28 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ringController;
   StreamSubscription<List<ConnectivityResult>>? _sub;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _ringController.stop();
+    } else {
+      _ringController.repeat();
+    }
+  }
 
   @override
   void initState() {
@@ -156,7 +178,7 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
     _ringController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
-    )..repeat();
+    );
 
     // Listen for reconnection — auto-route back on reconnect.
     _sub = Connectivity().onConnectivityChanged.listen(_onConnectivityChange);
@@ -425,6 +447,28 @@ class QueuedMessageMetaRow extends StatefulWidget {
 class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _pulse.stop();
+    } else {
+      _pulse.repeat();
+    }
+  }
 
   @override
   void initState() {
@@ -432,7 +476,7 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
     _pulse = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat();
+    );
   }
 
   @override
@@ -443,7 +487,8 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).accessibleNavigation;
+    final reduceMotion =
+        _reduceMotion || MediaQuery.of(context).accessibleNavigation;
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,

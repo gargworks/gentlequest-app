@@ -63,6 +63,28 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
   bool _beginVisible = false;
   bool _seedVisible = false;
   bool _reducedMotion = false;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _breathe.stop();
+    } else if (_seedVisible) {
+      _breathe.repeat(reverse: true);
+    }
+  }
 
   @override
   void initState() {
@@ -107,8 +129,8 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
       setState(() {
         _seedVisible = true;
         _breathe.value = 0.5; // mid-breath
-        _breathe.repeat(reverse: true);
       });
+      if (!_reduceMotion) _breathe.repeat(reverse: true);
     }
     // Reveal lines at their cue times.
     for (int i = 0; i < _kVowLines.length; i++) {
@@ -130,7 +152,7 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
       _beginVisible = true;
       _seedVisible = true;
     });
-    if (!_breathe.isAnimating) {
+    if (!_breathe.isAnimating && !_reduceMotion) {
       _breathe.value = 0.5;
       _breathe.repeat(reverse: true);
     }

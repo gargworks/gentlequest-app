@@ -98,13 +98,36 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
   late final AnimationController _bellCtrl;
   late final Animation<double> _bellScale;
 
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _bellCtrl.stop();
+    } else {
+      _bellCtrl.repeat(reverse: true);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _bellCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
+    );
     _bellScale = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _bellCtrl, curve: Curves.easeInOut),
     );

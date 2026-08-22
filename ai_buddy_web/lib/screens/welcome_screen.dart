@@ -59,6 +59,29 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   late final AnimationController _u18Ctrl;
   late final Animation<double> _u18Fade;
 
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _breatheCtrl.stop();
+    } else {
+      _breatheCtrl.repeat(reverse: true);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +90,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     _breatheCtrl = AnimationController(
       vsync: this,
       duration: GQDurations.breathe,
-    )..repeat(reverse: true);
+    );
     _breatheAnim = Tween<double>(begin: 1.0, end: 1.04).animate(
       CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeInOut),
     );

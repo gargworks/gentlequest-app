@@ -65,6 +65,30 @@ class SilentWitnessState extends State<SilentWitness>
       widget.state == WitnessState.settle ||
       widget.state == WitnessState.stay;
 
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _breatheController.stop();
+    } else if (widget.state == WitnessState.breathe ||
+               widget.state == WitnessState.settle) {
+      _breatheController.repeat(reverse: true);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -84,7 +108,6 @@ class SilentWitnessState extends State<SilentWitness>
       });
     // Return-after-absence: start mid-cycle (phase -2.8s = half-breath).
     _breatheController.value = 0.5;
-    _breatheController.repeat(reverse: true);
   }
 
   Animation<double> _buildBreatheAnimation(WitnessState s) {
@@ -115,13 +138,13 @@ class SilentWitnessState extends State<SilentWitness>
         // Revert lean + restore normal breathing.
         _leanController.reverse();
         _breatheAnimation = _buildBreatheAnimation(WitnessState.breathe);
-        _breatheController.repeat(reverse: true);
+        if (!_reduceMotion) _breatheController.repeat(reverse: true);
         setState(() {});
       case WitnessState.settle:
         // Stretch breathing to 8.4s, drop amplitude, lean 1.6° toward input.
         // Transition over 600ms ease-out.
         _breatheAnimation = _buildBreatheAnimation(WitnessState.settle);
-        _breatheController.repeat(reverse: true);
+        if (!_reduceMotion) _breatheController.repeat(reverse: true);
         _leanController.forward(from: _leanController.value);
         setState(() {});
       case WitnessState.stay:

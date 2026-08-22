@@ -60,19 +60,44 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   late final AnimationController _waveCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
-  )..repeat();
+  );
 
   // Ring pulse: 1600ms ease-out per HTML
   late final AnimationController _ringCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
-  )..repeat();
+  );
 
   // Elapsed timer
   late final AnimationController _elapsedCtrl = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 60), // 60s cap
   )..forward();
+
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _waveCtrl.stop();
+      _ringCtrl.stop();
+    } else {
+      _waveCtrl.repeat();
+      _ringCtrl.repeat();
+    }
+  }
 
   // Bar animation delays (60–280ms stagger from HTML)
   static const _barDelays = [
@@ -209,7 +234,8 @@ class _VoiceInputBarState extends State<VoiceInputBar>
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).accessibleNavigation;
+    final reduceMotion =
+        _reduceMotion || MediaQuery.of(context).accessibleNavigation;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),

@@ -229,6 +229,28 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
     with SingleTickerProviderStateMixin {
   late final AnimationController _breatheController;
   late final Animation<double> _breatheAnimation;
+  bool _reduceMotion = false;
+  // The first didChangeDependencies pass must ALWAYS apply, even when rm
+  // equals the initial `false`. Without this the equality guard below
+  // early-returns on first mount and the animation is never started at
+  // all — the failure is invisible to tests because nothing asserts that
+  // a perpetual animation is actually running.
+  bool _motionGateInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ADR-006: respect quiet-mode reduced motion.
+    final rm = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionGateInitialised && rm == _reduceMotion) return;
+    _motionGateInitialised = true;
+    _reduceMotion = rm;
+    if (rm) {
+      _breatheController.stop();
+    } else {
+      _breatheController.repeat(reverse: true);
+    }
+  }
 
   @override
   void initState() {
@@ -241,7 +263,6 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
       CurvedAnimation(parent: _breatheController, curve: Curves.easeInOut),
     );
     _breatheController.value = 0.5;
-    _breatheController.repeat(reverse: true);
   }
 
   @override
