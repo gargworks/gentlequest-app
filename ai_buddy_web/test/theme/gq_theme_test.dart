@@ -122,10 +122,10 @@ void main() {
 
   group('lerp', () {
     test('endpoints are exact, so a mode switch cannot land off-palette', () {
-      final mid = GQTheme.light.lerp(GQTheme.dark, 0.0) as GQTheme;
+      final mid = GQTheme.light.lerp(GQTheme.dark, 0.0);
       expect(mid.bg, GQTheme.light.bg);
 
-      final end = GQTheme.light.lerp(GQTheme.dark, 1.0) as GQTheme;
+      final end = GQTheme.light.lerp(GQTheme.dark, 1.0);
       expect(end.bg, GQTheme.dark.bg);
     });
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Design Authority D6 — "replaces every SnackBar for user-facing feedback."
@@ -50,7 +51,8 @@ class GQBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = _paletteFor(category);
+    final theme = GQTheme.of(context);
+    final palette = _paletteFor(category, theme);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: GQSpacing.lg, vertical: GQSpacing.md),
       decoration: BoxDecoration(
@@ -142,18 +144,18 @@ class _Palette {
   final IconData icon;
 }
 
-_Palette _paletteFor(GQBannerCategory category) {
+_Palette _paletteFor(GQBannerCategory category, GQTheme theme) {
   switch (category) {
     case GQBannerCategory.info:
-      return const _Palette(soft: GQColors.primarySoft, ink: GQColors.primaryDk, icon: Icons.info_outline_rounded);
+      return _Palette(soft: theme.primarySoft, ink: GQColors.primaryDk, icon: Icons.info_outline_rounded);
     case GQBannerCategory.warm:
-      return const _Palette(soft: GQColors.accentSoft, ink: GQColors.inkOnCoral, icon: Icons.favorite_outline_rounded);
+      return _Palette(soft: theme.accentSoft, ink: theme.inkOnCoral, icon: Icons.favorite_outline_rounded);
     case GQBannerCategory.amber:
-      return const _Palette(soft: GQColors.amberSoft, ink: GQColors.inkOnAmber, icon: Icons.wifi_off_rounded);
+      return _Palette(soft: theme.amberSoft, ink: theme.inkOnAmber, icon: Icons.wifi_off_rounded);
     case GQBannerCategory.danger:
-      return const _Palette(soft: GQColors.dangerSoft, ink: GQColors.dangerInk, icon: Icons.error_outline_rounded);
+      return _Palette(soft: theme.dangerSoft, ink: GQColors.dangerInk, icon: Icons.error_outline_rounded);
     case GQBannerCategory.success:
-      return const _Palette(soft: GQColors.successSoft, ink: GQColors.successInk, icon: Icons.check_circle_outline_rounded);
+      return _Palette(soft: theme.successSoft, ink: theme.successInk, icon: Icons.check_circle_outline_rounded);
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Design Authority D6 — the one bottom-sheet shape.
@@ -16,13 +17,14 @@ class GQSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = GQTheme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: Container(
-        decoration: const BoxDecoration(
-          color: GQColors.surface,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -41,13 +43,13 @@ class GQSheet extends StatelessWidget {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: GQSpacing.lg),
                     decoration: BoxDecoration(
-                      color: GQColors.hair,
+                      color: theme.hair,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 if (title != null) ...[
-                  Text(title!, style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+                  Text(title!, style: GQTypography.titleSm.copyWith(color: theme.ink)),
                   const SizedBox(height: GQSpacing.lg),
                 ],
                 child,
@@ -72,12 +74,13 @@ class GQSheet extends StatelessWidget {
     // just dismissed — showModalBottomSheet's own default.
     bool useRootNavigator = false,
   }) {
+    final theme = GQTheme.of(context);
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
       useRootNavigator: useRootNavigator,
       backgroundColor: Colors.transparent,
-      barrierColor: GQColors.ink.withValues(alpha: 0.32),
+      barrierColor: theme.ink.withValues(alpha: 0.32),
       transitionAnimationController: null,
       builder: (context) => TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),

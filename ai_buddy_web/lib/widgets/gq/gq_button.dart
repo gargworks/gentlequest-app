@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Design Authority D6/D7 — the button that replaces raw ElevatedButton.
@@ -72,7 +73,8 @@ class _GQButtonState extends State<GQButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _colorsFor(widget.variant, _enabled);
+    final theme = GQTheme.of(context);
+    final colors = _colorsFor(widget.variant, _enabled, theme);
     final height = switch (widget.size) {
       GQButtonSize.small => 40.0,
       GQButtonSize.medium => 52.0,
@@ -153,9 +155,9 @@ class _ButtonColors {
   final Color? border;
 }
 
-_ButtonColors _colorsFor(GQButtonVariant variant, bool enabled) {
-  final disabledFill = GQColors.ink3.withValues(alpha: 0.16);
-  final disabledFg = GQColors.ink3;
+_ButtonColors _colorsFor(GQButtonVariant variant, bool enabled, GQTheme theme) {
+  final disabledFill = theme.ink3.withValues(alpha: 0.16);
+  final disabledFg = theme.ink3;
 
   switch (variant) {
     case GQButtonVariant.primary:
@@ -173,7 +175,7 @@ _ButtonColors _colorsFor(GQButtonVariant variant, bool enabled) {
               foreground: GQColors.primaryDk,
               border: GQColors.primaryDk,
             )
-          : _ButtonColors(fill: Colors.transparent, foreground: disabledFg, border: GQColors.hair);
+          : _ButtonColors(fill: Colors.transparent, foreground: disabledFg, border: theme.hair);
     case GQButtonVariant.text:
       return enabled
           ? const _ButtonColors(fill: Colors.transparent, foreground: GQColors.primaryDk)

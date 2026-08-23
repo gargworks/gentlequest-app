@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Design Authority D6 — the card that replaces raw Card(elevation: 4).
@@ -31,7 +32,7 @@ class GQCard extends StatefulWidget {
     this.isSelectable = false,
     this.selected = false,
     this.padding = const EdgeInsets.all(GQSpacing.lg),
-    this.color = GQColors.surface,
+    this.color,
     this.haptic = true,
   });
 
@@ -51,7 +52,7 @@ class GQCard extends StatefulWidget {
   final bool selected;
 
   final EdgeInsets padding;
-  final Color color;
+  final Color? color;
 
   /// False for pure-navigation taps (no consequence beyond a push). See the
   /// class doc.
@@ -66,8 +67,10 @@ class _GQCardState extends State<GQCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = GQTheme.of(context);
     final radius = widget.large ? GQRadii.cardLg : GQRadii.card;
     final tappable = widget.onTap != null;
+    final cardColor = widget.color ?? theme.surface;
 
     double scale = 1.0;
     if (tappable && _pressed) {
@@ -92,21 +95,23 @@ class _GQCardState extends State<GQCard> {
           duration: GQDurations.fade,
           padding: widget.padding,
           decoration: BoxDecoration(
-            color: widget.color,
+            color: cardColor,
             borderRadius: BorderRadius.circular(radius),
             border: widget.isSelectable && widget.selected
                 ? Border.all(color: GQColors.primaryDk, width: 2)
-                : Border.all(color: GQColors.hair, width: 1),
-            boxShadow: const [
+                : Border.all(color: theme.hair, width: 1),
+            boxShadow: [
               // The mocks' one shadow recipe: soft, long-throw, low alpha.
               // 0 12px 26px -10px rgba(102,126,234,.55) —
               // Flutter has no negative spread, so a smaller blur at a
               // downward offset with the same color/alpha approximates it
               // without the harsh, tight Material elevation shadow.
+              // Derived from the theme's primary so the shadow tracks the
+              // mode while remaining the same alpha recipe.
               BoxShadow(
-                color: Color(0x8C667EEA), // rgba(102,126,234,.55)
+                color: theme.primary.withValues(alpha: 0.55), // rgba(102,126,234,.55) in light
                 blurRadius: 16,
-                offset: Offset(0, 6),
+                offset: const Offset(0, 6),
               ),
             ],
           ),

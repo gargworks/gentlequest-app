@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import 'gq_button.dart';
 
@@ -36,6 +37,7 @@ class GQEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: GQSpacing.xxl, vertical: GQSpacing.xxxl),
       child: Column(
@@ -46,7 +48,7 @@ class GQEmptyState extends StatelessWidget {
           Text(
             line,
             textAlign: TextAlign.center,
-            style: GQTypography.body.copyWith(color: GQColors.ink2),
+            style: GQTypography.body.copyWith(color: theme.ink2),
           ),
           if (sub != null) ...[
             const SizedBox(height: GQSpacing.xs),
@@ -55,7 +57,7 @@ class GQEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               // D3: ink3 never sets text below 14px — caption (13px) pairs
               // with ink2 even for de-emphasized copy like this.
-              style: GQTypography.caption.copyWith(color: GQColors.ink2),
+              style: GQTypography.caption.copyWith(color: theme.ink2),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[

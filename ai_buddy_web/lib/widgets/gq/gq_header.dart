@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Design Authority D6/D5 — "every screen adopts one shared header/back
@@ -24,7 +25,7 @@ class GQHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onBack,
     this.showBack = true,
     this.actions,
-    this.backgroundColor = GQColors.softBg,
+    this.backgroundColor,
   });
 
   final String title;
@@ -37,15 +38,17 @@ class GQHeader extends StatelessWidget implements PreferredSizeWidget {
 
   final bool showBack;
   final List<Widget>? actions;
-  final Color backgroundColor;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
+    final theme = GQTheme.of(context);
+    final headerBg = backgroundColor ?? theme.bg;
     return Container(
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: const Border(bottom: BorderSide(color: GQColors.hair, width: 1)),
+        color: headerBg,
+        border: Border(bottom: BorderSide(color: theme.hair, width: 1)),
       ),
       child: SizedBox(
         height: kToolbarHeight,
@@ -57,7 +60,7 @@ class GQHeader extends StatelessWidget implements PreferredSizeWidget {
                 height: GQA11y.minTouchTarget,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                  color: GQColors.ink,
+                  color: theme.ink,
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                   tooltip: 'Back',
                 )
@@ -67,7 +70,7 @@ class GQHeader extends StatelessWidget implements PreferredSizeWidget {
             Expanded(
               child: Text(
                 title,
-                style: GQTypography.titleSm.copyWith(color: GQColors.ink),
+                style: GQTypography.titleSm.copyWith(color: theme.ink),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

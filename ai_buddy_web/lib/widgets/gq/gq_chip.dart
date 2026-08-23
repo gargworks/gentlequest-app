@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// Compact horizontal pill (the original variant) or a full-width [block]
@@ -17,9 +18,17 @@ enum GQChipVariant { pill, block }
 /// min-height 56) — WO-5.1's Likert options and any other single-column
 /// choice list. Selected fills [GQColors.primaryDk] solid with white text
 /// (a pill's soft-tint selection reads too quiet at this size); unselected
-/// is [GQColors.surface] with a [GQColors.hair] border. Optional [caption]
-/// renders as a small trailing label (e.g. a Likert numeric value) — the
-/// tap target stays the whole chip, never the caption alone.
+/// is the themed surface with a themed hairline border. The selected fill
+/// stays [GQColors.primaryDk] rather than a theme slot precisely because it
+/// carries white text — see [GQTheme] on why fills with white foregrounds are
+/// mode-invariant. Optional [caption] renders as a small trailing label (e.g.
+/// a Likert numeric value) — the tap target stays the whole chip, never the
+/// caption alone.
+///
+/// NOTE: [caption] currently has no call sites. Its selected-state colour is
+/// white, which is correct over the block variant's primaryDk fill but would
+/// be unreadable over the pill variant's soft tint. Unreachable today; fix
+/// that pairing before giving [caption] a first caller.
 ///
 /// D7: light haptic impact on select, and the select spring (scale to 1.04
 /// over [GQDurations.select]) rather than a flat tap — this is the
@@ -53,6 +62,7 @@ class GQChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = GQTheme.of(context);
     final isBlock = variant == GQChipVariant.block;
     return _SelectSpring(
       onTap: () {
@@ -72,13 +82,13 @@ class GQChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isBlock
-              ? (selected ? GQColors.primaryDk : GQColors.surface)
-              : (selected ? GQColors.primarySoft : GQColors.surface),
+              ? (selected ? GQColors.primaryDk : theme.surface)
+              : (selected ? theme.primarySoft : theme.surface),
           borderRadius: BorderRadius.circular(isBlock ? GQRadii.card : GQRadii.button),
           border: isBlock && selected
               ? null
               : Border.all(
-                  color: selected ? GQColors.primaryDk : GQColors.hair,
+                  color: selected ? GQColors.primaryDk : theme.hair,
                   width: selected ? 1.5 : 1,
                 ),
         ),
@@ -94,8 +104,8 @@ class GQChip extends StatelessWidget {
                 label,
                 style: GQTypography.caption.copyWith(
                   color: isBlock
-                      ? (selected ? Colors.white : GQColors.ink)
-                      : (selected ? GQColors.primaryDk : GQColors.ink2),
+                      ? (selected ? Colors.white : theme.ink)
+                      : (selected ? GQColors.primaryDk : theme.ink2),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -105,7 +115,7 @@ class GQChip extends StatelessWidget {
               Text(
                 caption!,
                 style: GQTypography.micro.copyWith(
-                  color: selected ? Colors.white.withValues(alpha: 0.85) : GQColors.ink2,
+                  color: selected ? Colors.white.withValues(alpha: 0.85) : theme.ink2,
                 ),
               ),
             ],
