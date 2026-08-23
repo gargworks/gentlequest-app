@@ -48,10 +48,32 @@ gcloud services enable cloudbuild.googleapis.com
 ### Environment Info
 | Property | Value |
 |:---|:---|
-| **Project ID** | `gen-lang-client-0894185576` |
-| **Project Name** | `gentlequest-prod` |
+| **Project ID** | `gen-lang-client-0894185576` ⚠️ **UNVERIFIED — see note** |
+| **Project Name** | `gentlequest-prod` (display name, NOT a project ID — see note) |
 | **Account** | `gargenterprises2019@gmail.com` |
 | **Region** | `us-central1` |
+
+> **⚠️ Note added 2026-08-23 — "gentlequest-prod" names three different things.**
+>
+> `gcloud projects describe gen-lang-client-0894185576` returns
+> "does not have permission ... (or it may not exist)" for
+> `mailforlkgarg@gmail.com`. It does not appear in that account's
+> `gcloud projects list`. It may genuinely belong to the
+> `gargenterprises2019@gmail.com` account this table names, or it may be a
+> transcription error. **Unresolved — confirm before relying on this row.**
+>
+> Two other projects also answer to the name "gentlequest-prod", and conflating
+> them has already cost real debugging time:
+>
+> | What | Project ID | Number | Role |
+> |:---|:---|:---|:---|
+> | display name "gentlequest-prod" | `gen-lang-client-0814369801` | 89695193768 | release toolchain (`docs/STORE_DEPLOYMENT.md`) |
+> | project ID `gentlequest-prod` | `gentlequest-prod` | 680543456536 | old Firebase project; owns the revoked analytics SA |
+> | the shipping app | `gentlequestapp` | 315814630048 | current Firebase project since 2026-06-03 (`74c33128`) |
+>
+> **Rule: always cite the project NUMBER.** It is the only unambiguous handle;
+> the display name is not unique and the ID is easy to mistype.
+> See the 2026-08-23 amendment in `docs/gates/ADR-007-stage1-retention-instrument.md`.
 
 ---
 

@@ -28,7 +28,40 @@
 |------|------|
 | Firebase Admin SA | `~/gentlequest/secret/gentlequest-prod-sa.json` |
 | gcloud active account | `mailforlkgarg@gmail.com` |
-| gcloud project | `gentlequest-prod` (alias: `gen-lang-client-0814369801`) |
+| gcloud project | `gen-lang-client-0814369801` (display name "gentlequest-prod", project number 89695193768) |
+
+<!-- Clarified 2026-08-23, verified against `gcloud projects list`.
+
+     This row previously read "gentlequest-prod (alias: gen-lang-client-0814369801)".
+     "Alias" was the wrong word and it cost real time: GCP project IDs are
+     immutable and unique, so one is never an alias of another. But the row was
+     not simply wrong, and an earlier draft of this note that called it
+     "provably false" was itself wrong. What is actually true:
+
+       * `gen-lang-client-0814369801` is a project ID whose DISPLAY NAME is
+         "gentlequest-prod" (project number 89695193768). This is the gcloud
+         project used by the release toolchain, and it is what this row means.
+       * `gentlequest-prod` is ALSO a real, separate project ID (project number
+         680543456536) — the old Firebase project. The service-account key on
+         disk self-identifies as project_id `gentlequest-prod`, i.e. that one.
+
+     Two different projects, one shared human-readable name. Whenever you write
+     "gentlequest-prod" here, say whether you mean the ID or the display name,
+     and give the project number. The number is the only unambiguous handle.
+
+     docs/infra/protocols/NUCLEUS_OPERATIONS_GUIDE.md names a THIRD value,
+     `gen-lang-client-0894185576`, also labelled "gentlequest-prod". It does not
+     resolve for mailforlkgarg@gmail.com — either it belongs to another account
+     (that guide lists gargenterprises2019@gmail.com) or it is a typo. Unresolved
+     as of 2026-08-23; treat that row as unverified.
+
+     IMPORTANT, and not captured by this table at all: the SHIPPING APP uses
+     neither of the above. It was reconfigured onto Firebase project
+     `gentlequestapp` (315814630048) on 2026-06-03 in commit 74c33128 — see
+     ai_buddy_web/android/app/google-services.json. This table describes the
+     release/signing toolchain only. Do not read it as describing where app
+     telemetry goes.
+     See the 2026-08-23 amendment in docs/gates/ADR-007-stage1-retention-instrument.md. -->
 
 ### Flutter SDK
 | Item | Path |
