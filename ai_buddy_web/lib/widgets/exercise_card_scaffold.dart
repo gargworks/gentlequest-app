@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// ExerciseCardScaffold — R1D16 Exercise Cards
@@ -304,14 +305,15 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildBreathingCard() {
+    final t = GQTheme.of(context);
     final isInline = widget.exerciseContext == ExerciseContext.inline;
     return Container(
       decoration: BoxDecoration(
-        color: GQColors.softBg,
+        color: t.bg,
         borderRadius: BorderRadius.circular(
             isInline ? GQRadii.card : 0),
         border: isInline
-            ? Border.all(color: GQColors.hair)
+            ? Border.all(color: t.hair)
             : null,
         boxShadow: isInline
             ? const [
@@ -352,6 +354,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBreathOrb(bool isInline) {
+    final t = GQTheme.of(context);
     final orbSize = isInline ? 120.0 : 200.0;
     final ringSize = isInline ? 170.0 : 280.0;
     // Phase display verbatim from HTML
@@ -388,6 +391,8 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 painter: _RingPainter(
                   radius: ringSize / 2 * 0.857,
                   progress: 1 - dashOffset / circumference,
+                  primaryColor: t.primary,
+                  coralColor: t.coral,
                 ),
               );
             },
@@ -402,16 +407,16 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               if (reduceMotion || _breathPaused) {
                 scale = 0.85;
               } else {
-                final t = _breathCtrl.value;
-                if (t < 0.2105) {
+                final orbT = _breathCtrl.value;
+                if (orbT < 0.2105) {
                   // inhale 4s → scale 0.85→1.15
-                  scale = 0.85 + (0.30 * (t / 0.2105));
-                } else if (t < 0.5789) {
+                  scale = 0.85 + (0.30 * (orbT / 0.2105));
+                } else if (orbT < 0.5789) {
                   // hold 7s
                   scale = 1.15;
                 } else {
                   // exhale 8s → scale 1.15→0.85
-                  scale = 1.15 - (0.30 * ((t - 0.5789) / 0.4211));
+                  scale = 1.15 - (0.30 * ((orbT - 0.5789) / 0.4211));
                 }
               }
               return Transform.scale(
@@ -421,18 +426,18 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   height: orbSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const RadialGradient(
+                    gradient: RadialGradient(
                       center: Alignment(-0.3, -0.35),
                       colors: [
                         Color(0xF2FFFFFF), // white core
-                        GQColors.primarySoft, // EEF0FE
+                        t.primarySoft, // EEF0FE
                         Color(0xB3B6A8FA), // soft violet
                       ],
                       stops: [0.0, 0.5, 1.0],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: GQColors.primary.withValues(alpha: 0.45),
+                        color: t.primary.withValues(alpha: 0.45),
                         blurRadius: isInline ? 30 : 60,
                         offset: const Offset(0, 14),
                         spreadRadius: isInline ? -12 : -20,
@@ -462,10 +467,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 // Verbatim: "Hold"
                 Text(
                   phaseVerb,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                     letterSpacing: -0.4,
                   ),
                 ),
@@ -490,10 +495,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                     final total = phaseDurationMs ~/ 1000;
                     return Text(
                       '$elapsed / $total',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     );
                   },
@@ -507,10 +512,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               children: [
                 Text(
                   phaseVerb,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -534,10 +539,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                     final total = phaseDurationMs ~/ 1000;
                     return Text(
                       '$elapsed / $total',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     );
                   },
@@ -550,16 +555,17 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildRoundCounter() {
+    final t = GQTheme.of(context);
     return Column(
       children: [
         // Verbatim: "ROUND 1 OF 3"
         Text(
           'ROUND $_breathRound OF $_breathTotalRounds',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.7,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
         const SizedBox(height: 8),
@@ -574,7 +580,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               height: 6,
               decoration: BoxDecoration(
                 color: active
-                    ? GQColors.primary
+                    ? t.primary
                     : const Color(0x40667EEA),
                 borderRadius: BorderRadius.circular(GQRadii.button),
               ),
@@ -586,6 +592,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBreathingControls(bool isInline) {
+    final t = GQTheme.of(context);
     if (isInline) {
       return Column(
         children: [
@@ -641,7 +648,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             button: true,
             child: GestureDetector(
               onTap: widget.onOpenFullscreen,
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 6),
                 child: Text(
                   // Verbatim from HTML inline ghost row
@@ -650,7 +657,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ),
@@ -721,18 +728,18 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: t.surface,
                   borderRadius: BorderRadius.circular(GQRadii.button),
-                  border: Border.all(color: GQColors.hair),
+                  border: Border.all(color: t.hair),
                 ),
-                child: const Center(
+                child: Center(
                   // Verbatim: "Skip phase"
                   child: Text(
                     'Skip phase',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ),
@@ -747,7 +754,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           label: "Exit exercise",
           child: GestureDetector(
             onTap: _onDone,
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 11),
               // Verbatim: "I'm done"
               child: Text(
@@ -755,7 +762,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
@@ -766,6 +773,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildVoiceGuideToggle() {
+    final t = GQTheme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -778,7 +786,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(GQRadii.button),
               color: _voiceGuideOn
-                  ? GQColors.primary
+                  ? t.primary
                   : const Color(0x33667EEA),
             ),
             padding: const EdgeInsets.all(2),
@@ -789,10 +797,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               child: Container(
                 width: 16,
                 height: 16,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
+                  color: t.surface,
+                  boxShadow: const [
                     BoxShadow(
                       color: Color(0x33000000),
                       blurRadius: 3,
@@ -806,12 +814,12 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
         ),
         const SizedBox(width: 10),
         // Verbatim: "Calm voice guide"
-        const Text(
+        Text(
           'Calm voice guide',
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ],
@@ -823,6 +831,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildGroundingCard() {
+    final t = GQTheme.of(context);
     final isInline = widget.exerciseContext == ExerciseContext.inline;
     final sense = _GroundingSense.values[_groundStep];
     final count = _groundSenseCount[_groundStep];
@@ -830,10 +839,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
 
     return Container(
       decoration: BoxDecoration(
-        color: GQColors.softBg,
+        color: t.bg,
         borderRadius: BorderRadius.circular(
             isInline ? GQRadii.card : 0),
-        border: isInline ? Border.all(color: GQColors.hair) : null,
+        border: isInline ? Border.all(color: t.hair) : null,
         boxShadow: isInline
             ? const [
                 BoxShadow(
@@ -868,19 +877,19 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 // Verbatim: "STEP 1 OF 5"
                 Text(
                   'STEP ${_groundStep + 1} OF 5',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 // Verbatim: "SEE · HEAR · FEEL · SMELL · TASTE"
-                const Text(
+                Text(
                   _groundSenseSequence,
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -897,6 +906,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
 
   Widget _buildGroundingPrompt(
       bool isInline, _GroundingSense sense, int count, String senseLabel) {
+    final t = GQTheme.of(context);
     if (isInline) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,10 +917,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             height: 54,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [GQColors.primarySoft, GQColors.accentSoft],
+                colors: [t.primarySoft, t.accentSoft],
               ),
             ),
             child: Center(
@@ -928,10 +938,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               children: [
                 Text(
                   '$count',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.primary,
+                    color: t.primary,
                     letterSpacing: -1,
                     height: 1,
                   ),
@@ -939,19 +949,19 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 Text(
                   // Verbatim pattern: "things you can [sense]"
                   'things you can $senseLabel',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                   'just notice',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -964,9 +974,9 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
     // Standalone prompt card
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.cardLg),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
         boxShadow: const [
           BoxShadow(
             color: Color(0x2E1F1B3A),
@@ -985,10 +995,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             height: 64,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [GQColors.primarySoft, GQColors.accentSoft],
+                colors: [t.primarySoft, t.accentSoft],
               ),
             ),
             child: Center(
@@ -1002,10 +1012,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           const SizedBox(height: 16),
           Text(
             '$count',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 64,
               fontWeight: FontWeight.w800,
-              color: GQColors.primary,
+              color: t.primary,
               height: 1,
               letterSpacing: -2,
             ),
@@ -1014,22 +1024,22 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           Text(
             // Verbatim: "things you can see"
             'things you can $senseLabel',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 8),
           // Verbatim: "Name them out loud, or just notice."
-          const Text(
+          Text(
             'Name them out loud, or just notice.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: GQColors.ink2,
+              color: t.ink2,
               height: 1.5,
             ),
           ),
@@ -1059,11 +1069,11 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: checked ? GQColors.primarySoft : Colors.white,
+                      color: checked ? t.primarySoft : t.surface,
                       border: Border.all(
                         color: checked
-                            ? GQColors.primary
-                            : GQColors.hair,
+                            ? t.primary
+                            : t.hair,
                         width: 1.5,
                       ),
                     ),
@@ -1073,10 +1083,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                               size: 16, color: GQColors.primaryDk)
                           : Text(
                               '${i + 1}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                               ),
                             ),
                     ),
@@ -1087,13 +1097,13 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           ),
           const SizedBox(height: 8),
           // Verbatim: "TAP AS YOU FIND THEM · OPTIONAL"
-          const Text(
+          Text(
             'TAP AS YOU FIND THEM · OPTIONAL',
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
         ],
@@ -1103,6 +1113,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
 
   Widget _buildGroundingControls(
       bool isInline, int count, String senseLabel) {
+    final t = GQTheme.of(context);
     final isLastStep = _groundStep == 4;
     final ctaLabel = isLastStep
         ? "I'm done"
@@ -1160,10 +1171,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                     ? "Open fullscreen · Skip to chat"
                     : "Skip to chat",
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
@@ -1188,14 +1199,15 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildBodyScanCard() {
+    final t = GQTheme.of(context);
     final isInline = widget.exerciseContext == ExerciseContext.inline;
 
     return Container(
       decoration: BoxDecoration(
-        color: GQColors.softBg,
+        color: t.bg,
         borderRadius: BorderRadius.circular(
             isInline ? GQRadii.card : 0),
-        border: isInline ? Border.all(color: GQColors.hair) : null,
+        border: isInline ? Border.all(color: t.hair) : null,
         boxShadow: isInline
             ? const [
                 BoxShadow(
@@ -1233,6 +1245,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBodyScanInlineContent() {
+    final t = GQTheme.of(context);
     // Inline: compact silhouette + progress row
     return AnimatedBuilder(
       animation: _scanCtrl,
@@ -1261,6 +1274,8 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 painter: _SilhouettePainter(
                   glowProgress: _scanCtrl.value,
                   focusIndex: focusIndex,
+                  primaryColor: t.primary,
+                  coralColor: t.coral,
                 ),
               ),
             ),
@@ -1274,10 +1289,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                       Expanded(
                         child: Text(
                           caption,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
+                            color: t.ink,
                             height: 1.4,
                           ),
                         ),
@@ -1285,10 +1300,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                       Text(
                         // Verbatim pattern: "SHOULDERS · 1:12"
                         '$focusLabel · $elapsedStr',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ],
@@ -1296,10 +1311,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   const SizedBox(height: 2),
                   Text(
                     subtext,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       height: 1.4,
                     ),
                   ),
@@ -1313,7 +1328,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                       minHeight: 4,
                       backgroundColor: const Color(0x261F1B3A),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        GQColors.primary,
+                        t.primary,
                       ),
                     ),
                   ),
@@ -1327,6 +1342,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBodyScanStandaloneContent() {
+    final t = GQTheme.of(context);
     return AnimatedBuilder(
       animation: _scanCtrl,
       builder: (ctx, _) {
@@ -1358,6 +1374,8 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 painter: _SilhouettePainter(
                   glowProgress: _scanCtrl.value,
                   focusIndex: focusIndex,
+                  primaryColor: t.primary,
+                  coralColor: t.coral,
                   large: true,
                 ),
               ),
@@ -1378,10 +1396,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             Text(
               caption,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink,
+                color: t.ink,
                 height: 1.5,
               ),
             ),
@@ -1390,10 +1408,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             Text(
               subtext,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: GQColors.ink2,
+                color: t.ink2,
                 height: 1.5,
               ),
             ),
@@ -1407,15 +1425,15 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(elapsedStr,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink2)),
+                              color: t.ink2)),
                       Text(remainStr,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink2)),
+                              color: t.ink2)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -1425,8 +1443,8 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                       value: _scanCtrl.value,
                       minHeight: 5,
                       backgroundColor: const Color(0x261F1B3A),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        GQColors.primary,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        t.primary,
                       ),
                     ),
                   ),
@@ -1440,6 +1458,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBodyScanControls(bool isInline) {
+    final t = GQTheme.of(context);
     if (isInline) {
       return Column(
         children: [
@@ -1494,7 +1513,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             button: true,
             child: GestureDetector(
               onTap: widget.onOpenFullscreen,
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 6),
                 child: Text(
                   // Verbatim from inline ghost row
@@ -1503,7 +1522,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ),
@@ -1522,7 +1541,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           button: true,
           child: GestureDetector(
             onTap: _onDone,
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               // Verbatim: "I'm done"
               child: Text(
@@ -1530,7 +1549,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
@@ -1577,21 +1596,21 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: t.surface,
                 borderRadius: BorderRadius.circular(GQRadii.button),
-                border: Border.all(color: GQColors.hair),
+                border: Border.all(color: t.hair),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.fast_forward_rounded,
-                      size: 14, color: GQColors.ink2),
+                      size: 14, color: t.ink2),
                   SizedBox(width: 4),
                   Text(
                     '+30s',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ],
@@ -1604,6 +1623,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildBodyScanWaveform() {
+    final t = GQTheme.of(context);
     // Mute audio toggle row
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1616,19 +1636,19 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             width: 2,
             height: _scanMuted ? 4 : (6 + i * 2).toDouble(),
             decoration: BoxDecoration(
-              color: GQColors.primary,
+              color: t.primary,
               borderRadius: BorderRadius.circular(1),
             ),
           );
         }),
         const SizedBox(width: 8),
         // Verbatim: "Mute audio, just visual"
-        const Text(
+        Text(
           'Mute audio, just visual',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
         const SizedBox(width: 8),
@@ -1641,7 +1661,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(GQRadii.button),
               color: _scanMuted
-                  ? GQColors.primary
+                  ? t.primary
                   : const Color(0x33667EEA),
             ),
             padding: const EdgeInsets.all(2),
@@ -1652,9 +1672,9 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
               child: Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: t.surface,
                 ),
               ),
             ),
@@ -1672,6 +1692,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
     required String title,
     String? subtitle,
   }) {
+    final t = GQTheme.of(context);
     final isInline = widget.exerciseContext == ExerciseContext.inline;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1682,13 +1703,13 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
           height: isInline ? 28 : 32,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: GQColors.primarySoft,
+            color: t.primarySoft,
           ),
           child: Center(
             child: Icon(
               _typeIcon(widget.type),
               size: isInline ? 14 : 16,
-              color: GQColors.primary,
+              color: t.primary,
             ),
           ),
         ),
@@ -1698,13 +1719,13 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Verbatim: "EXERCISE"
-              const Text(
+              Text(
                 'EXERCISE',
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.7,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
               const SizedBox(height: 1),
@@ -1713,7 +1734,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 style: TextStyle(
                   fontSize: isInline ? 13.5 : 17,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink,
+                  color: t.ink,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1721,10 +1742,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -1744,10 +1765,10 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
                 shape: BoxShape.circle,
                 color: Colors.transparent,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close_rounded,
                 size: 16,
-                color: GQColors.ink3,
+                color: t.ink3,
               ),
             ),
           ),
@@ -1765,6 +1786,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
   }
 
   Widget _buildStepProgressBar({required int current, required int total}) {
+    final t = GQTheme.of(context);
     return Row(
       children: List.generate(total, (i) {
         final filled = i < current;
@@ -1774,7 +1796,7 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
             height: widget.exerciseContext == ExerciseContext.inline ? 4 : 6,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(GQRadii.button),
-              color: filled ? GQColors.primary : const Color(0x33667EEA),
+              color: filled ? t.primary : const Color(0x33667EEA),
             ),
           ),
         );
@@ -1786,10 +1808,21 @@ class _ExerciseCardScaffoldState extends State<ExerciseCardScaffold>
 // ─── Custom painters ─────────────────────────────────────────────────────────
 
 class _RingPainter extends CustomPainter {
-  const _RingPainter({required this.radius, required this.progress});
+  const _RingPainter({
+    required this.radius,
+    required this.progress,
+    required this.primaryColor,
+    required this.coralColor,
+  });
 
   final double radius;
   final double progress;
+
+  /// [GQTheme.primary] / [GQTheme.coral] read at the call site — [paint]
+  /// has no [BuildContext], so the theme-aware color must be threaded in
+  /// through the constructor rather than read here.
+  final Color primaryColor;
+  final Color coralColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1802,8 +1835,8 @@ class _RingPainter extends CustomPainter {
     canvas.drawCircle(centre, radius, trackPaint);
 
     final progressPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [GQColors.primary, Color(0xFFB6A8FA), GQColors.coral],
+      ..shader = LinearGradient(
+        colors: [primaryColor, const Color(0xFFB6A8FA), coralColor],
       ).createShader(Rect.fromCircle(center: centre, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
@@ -1819,13 +1852,18 @@ class _RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress ||
+      old.primaryColor != primaryColor ||
+      old.coralColor != coralColor;
 }
 
 class _SilhouettePainter extends CustomPainter {
   const _SilhouettePainter({
     required this.glowProgress,
     required this.focusIndex,
+    required this.primaryColor,
+    required this.coralColor,
     this.large = false,
   });
 
@@ -1833,15 +1871,21 @@ class _SilhouettePainter extends CustomPainter {
   final int focusIndex;
   final bool large;
 
+  /// [GQTheme.primary] / [GQTheme.coral] read at the call site — [paint]
+  /// has no [BuildContext], so the theme-aware color must be threaded in
+  /// through the constructor rather than read here.
+  final Color primaryColor;
+  final Color coralColor;
+
   @override
   void paint(Canvas canvas, Size size) {
     final sh = size.height;
     // Silhouette fill
     final fill = Paint()
-      ..color = GQColors.primary.withValues(alpha: 0.18)
+      ..color = primaryColor.withValues(alpha: 0.18)
       ..style = PaintingStyle.fill;
     final stroke = Paint()
-      ..color = GQColors.primary.withValues(alpha: 0.40)
+      ..color = primaryColor.withValues(alpha: 0.40)
       ..style = PaintingStyle.stroke
       ..strokeWidth = large ? 1.2 : 0.8;
 
@@ -1883,8 +1927,8 @@ class _SilhouettePainter extends CustomPainter {
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          GQColors.coral.withValues(alpha: 0.55),
-          GQColors.coral.withValues(alpha: 0.18),
+          coralColor.withValues(alpha: 0.55),
+          coralColor.withValues(alpha: 0.18),
           Colors.transparent,
         ],
         stops: const [0.0, 0.5, 1.0],
@@ -1905,5 +1949,8 @@ class _SilhouettePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SilhouettePainter old) =>
-      old.glowProgress != glowProgress || old.focusIndex != focusIndex;
+      old.glowProgress != glowProgress ||
+      old.focusIndex != focusIndex ||
+      old.primaryColor != primaryColor ||
+      old.coralColor != coralColor;
 }

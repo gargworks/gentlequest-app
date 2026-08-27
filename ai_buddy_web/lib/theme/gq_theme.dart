@@ -27,6 +27,12 @@ import 'gq_tokens.dart';
 /// values in both factories, where a one-character edit would go unnoticed.
 /// Keep reading them from [GQColors] directly at call sites.
 ///
+/// **[GQColors.coralDk] joined this exception list by operator ruling on
+/// 2026-08-27.** It is the "on-light text accent" used on compliance tags and
+/// the crisis-resources icon — the same danger/crisis family as [GQColors.dangerInk],
+/// so it stays byte-identical in both modes rather than getting a dark variant.
+/// Same structural enforcement: no slot here, no way to theme it silently.
+///
 /// **Mood colours are absent for the same reason.** A mood being a different
 /// colour at night breaks recognition, and [GQMoodScale] already carries
 /// shape + dotCount as its accessibility channels (D2), so hue does not need

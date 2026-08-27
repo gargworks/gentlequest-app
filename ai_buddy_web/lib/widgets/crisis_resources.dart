@@ -19,6 +19,7 @@ import '../screens/profile/profile_prefs_keys.dart'
     show kSafetyPlanFilled, kSafetyPlanFieldKeys;
 import '../screens/profile/safety_plan_card.dart' show SafetyPlanState;
 import '../services/firebase_service.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/gq/gq.dart';
 import 'safety_plan_recall_sheet.dart' show showSafetyPlanRecallSheet;
@@ -40,6 +41,7 @@ Future<CrisisSheetChoice?> showCrisisInterventionSheet(
   RiskLevel risk = RiskLevel.medium,
   String source = 'unspecified',
 }) async {
+  final t = GQTheme.of(context);
   FirebaseService().logEvent('crisis_intervention_sheet_shown', {
     'risk': risk.toString().split('.').last,
     'source': source,
@@ -50,7 +52,7 @@ Future<CrisisSheetChoice?> showCrisisInterventionSheet(
     enableDrag: false,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: GQColors.ink.withAlpha(153), // 0.6 opacity
+    barrierColor: t.ink.withAlpha(153), // 0.6 opacity
     builder: (ctx) => CrisisInterventionSheet(risk: risk),
   );
   if (choice != null) {
@@ -104,11 +106,12 @@ class CrisisInterventionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       label: 'Crisis support options',
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: t.surface,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(GQRadii.sheetLg),
           ),
@@ -126,7 +129,7 @@ class CrisisInterventionSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: GQColors.ink.withAlpha(46),
+                color: t.ink.withAlpha(46),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -137,21 +140,21 @@ class CrisisInterventionSheet extends StatelessWidget {
             const SizedBox(height: 12),
 
             // headline — verbatim
-            const Text(
+            Text(
               "I'm staying with you.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: GQTypography.displayFamily,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: GQColors.ink,
+                color: t.ink,
                 letterSpacing: -0.4,
               ),
             ),
             const SizedBox(height: 6),
 
             // body — verbatim
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 "What you're feeling is real, and you don't have to be alone right now.",
@@ -160,7 +163,7 @@ class CrisisInterventionSheet extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                   height: 1.45,
                 ),
               ),
@@ -216,7 +219,7 @@ class CrisisInterventionSheet extends StatelessWidget {
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
-                              color: GQColors.primarySoft,
+                              color: t.primarySoft,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Center(
@@ -231,17 +234,17 @@ class CrisisInterventionSheet extends StatelessWidget {
                                 Text('Your safety plan',
                                     style: GQTypography.body.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        color: GQColors.ink)),
+                                        color: t.ink)),
                                 const SizedBox(height: 2),
                                 Text(
                                     'The words you wrote for a moment like this.',
                                     style: GQTypography.caption
-                                        .copyWith(color: GQColors.ink2)),
+                                        .copyWith(color: t.ink2)),
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right_rounded,
-                              color: GQColors.ink3, size: 20),
+                          Icon(Icons.chevron_right_rounded,
+                              color: t.ink3, size: 20),
                         ],
                       ),
                     ),
@@ -263,12 +266,12 @@ class CrisisInterventionSheet extends StatelessWidget {
                     label: 'Crisis Text Line',
                   );
                 },
-                backgroundColor: GQColors.primarySoft,
-                borderColor: GQColors.primary.withAlpha(51),
-                iconBg: Colors.white,
+                backgroundColor: t.primarySoft,
+                borderColor: t.primary.withAlpha(51),
+                iconBg: t.surface,
                 icon: _messageIcon(GQColors.primaryDk),
-                titleColor: GQColors.ink,
-                subtitleColor: GQColors.ink2,
+                titleColor: t.ink,
+                subtitleColor: t.ink2,
                 title: 'Text someone now',
                 subtitle: 'Text HOME to 741741 · Crisis Text Line',
               ),
@@ -282,12 +285,12 @@ class CrisisInterventionSheet extends StatelessWidget {
               child: _OptionCard(
                 onTap: () =>
                     Navigator.of(context).pop(CrisisSheetChoice.keepChatting),
-                backgroundColor: Colors.white,
-                borderColor: GQColors.hair,
-                iconBg: GQColors.primarySoft,
+                backgroundColor: t.surface,
+                borderColor: t.hair,
+                iconBg: t.primarySoft,
                 icon: const Text('💬', style: TextStyle(fontSize: 18)),
-                titleColor: GQColors.ink,
-                subtitleColor: GQColors.ink2,
+                titleColor: t.ink,
+                subtitleColor: t.ink2,
                 title: 'Keep chatting with me',
                 subtitle: "I'll stay with you. Take your time.",
               ),
@@ -305,13 +308,13 @@ class CrisisInterventionSheet extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
+                child: Text(
                   "I'm safe — was just venting",
                   style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     decoration: TextDecoration.underline,
                     decorationColor: Color(0x668B86AB),
                     decorationStyle: TextDecorationStyle.solid,
@@ -405,6 +408,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     // WO-6.3 Part A: the nav lock comes off. System back / hardware back
     // must work and must do exactly what the exit button does — trapping
     // is a coercion pattern, and coercion fails on effect before it fails
@@ -415,11 +419,11 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
         // Low-contrast, top-to-bottom, on GQColors.warmSoft — never a red or
         // high-saturation field (D4: the surface should feel held, not
         // alarmed).
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [GQColors.warmSoft, GQColors.softBg],
+            colors: [t.warmSoft, t.bg],
           ),
         ),
         child: SafeArea(
@@ -435,11 +439,11 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                   Container(
                     width: 96,
                     height: 96,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         center: Alignment(-0.3, -0.4),
-                        colors: [GQColors.warmSoft, GQIllustration.warm1],
+                        colors: [t.warmSoft, GQIllustration.warm1],
                       ),
                     ),
                     child: const Icon(Icons.favorite_rounded,
@@ -453,7 +457,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                   Text(
                     "We're here, right now.",
                     textAlign: TextAlign.center,
-                    style: GQTypography.title.copyWith(color: GQColors.ink),
+                    style: GQTypography.title.copyWith(color: t.ink),
                   ),
                   const SizedBox(height: 12),
 
@@ -462,7 +466,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                   Text(
                     'This sounds heavier than we can hold together. 988 is free, 24/7, and they answer.',
                     textAlign: TextAlign.center,
-                    style: GQTypography.bodyLg.copyWith(color: GQColors.ink2),
+                    style: GQTypography.bodyLg.copyWith(color: t.ink2),
                   ),
                   const SizedBox(height: 28),
 
@@ -608,11 +612,11 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 13),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(179),
+                            color: t.surface.withAlpha(179),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: GQColors.hair),
+                            border: Border.all(color: t.hair),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Text('🗺️', style: TextStyle(fontSize: 16)),
                               SizedBox(width: 10),
@@ -631,12 +635,12 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                                     fontFamily: GQTypography.bodyFamily,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
-                                    color: GQColors.ink,
+                                    color: t.ink,
                                   ),
                                 ),
                               ),
                               Icon(Icons.chevron_right_rounded,
-                                  color: GQColors.ink2, size: 16),
+                                  color: t.ink2, size: 16),
                             ],
                           ),
                         ),
@@ -656,14 +660,14 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: GQColors.accentSoft,
+                              color: t.accentSoft,
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.phone_rounded,
-                                    size: 14, color: GQColors.inkOnCoral),
+                                    size: 14, color: t.inkOnCoral),
                                 SizedBox(width: 6),
                                 Text(
                                   'Call 988',
@@ -671,7 +675,7 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                                     fontFamily: GQTypography.bodyFamily,
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
-                                    color: GQColors.inkOnCoral,
+                                    color: t.inkOnCoral,
                                   ),
                                 ),
                               ],
@@ -763,14 +767,15 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: GQColors.primary.withAlpha(46)),
+        border: Border.all(color: t.primary.withAlpha(46)),
         boxShadow: [
           BoxShadow(
-            color: GQColors.primary.withAlpha(46),
+            color: t.primary.withAlpha(46),
             blurRadius: 50,
             offset: const Offset(0, 24),
           ),
@@ -807,14 +812,14 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
           const SizedBox(height: 16),
 
           // headline — verbatim
-          const Text(
+          Text(
             'Just checking in.\nHow are you, right now?',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: GQTypography.displayFamily,
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               letterSpacing: -0.4,
               height: 1.2,
             ),
@@ -822,14 +827,14 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
           const SizedBox(height: 8),
 
           // body — verbatim
-          const Text(
+          Text(
             'No need to explain. Even one word is enough.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: GQColors.ink2,
+              color: t.ink2,
               height: 1.45,
             ),
           ),
@@ -843,9 +848,9 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                 _EmojiChoice(
                   emoji: '😔',
                   label: 'Heavy',
-                  labelColor: GQColors.ink2,
-                  bg: GQColors.primarySoft,
-                  borderColor: GQColors.hair,
+                  labelColor: t.ink2,
+                  bg: t.primarySoft,
+                  borderColor: t.hair,
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.heavy),
                 ),
@@ -853,9 +858,9 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                 _EmojiChoice(
                   emoji: '😶',
                   label: 'Off',
-                  labelColor: GQColors.ink2,
-                  bg: GQColors.primarySoft,
-                  borderColor: GQColors.hair,
+                  labelColor: t.ink2,
+                  bg: t.primarySoft,
+                  borderColor: t.hair,
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.off),
                 ),
@@ -863,9 +868,9 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                 _EmojiChoice(
                   emoji: '🙂',
                   label: 'Okay',
-                  labelColor: GQColors.ink2,
-                  bg: GQColors.primarySoft,
-                  borderColor: GQColors.hair,
+                  labelColor: t.ink2,
+                  bg: t.primarySoft,
+                  borderColor: t.hair,
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.okay),
                 ),
@@ -874,7 +879,7 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
                   emoji: '🌱',
                   label: 'Better',
                   labelColor: const Color(0xFF9A6049),
-                  bg: GQColors.warmSoft,
+                  bg: t.warmSoft,
                   borderColor: GQIllustration.companionCoralPeach.withAlpha(64),
                   onTap: () =>
                       widget.onMoodSelected?.call(FollowUpMoodChoice.better),
@@ -886,9 +891,9 @@ class _CrisisFollowUpCardState extends State<CrisisFollowUpCard>
 
           // Divider + "Talk to someone" — always available (P6)
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: GQColors.hair, style: BorderStyle.solid),
+                top: BorderSide(color: t.hair, style: BorderStyle.solid),
               ),
             ),
             padding: const EdgeInsets.only(top: 16),
@@ -951,6 +956,7 @@ class CrisisResourcesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     // crisis level → show inline fallback card (AcuteCrisisTakeover is
     // shown as a full-screen route; this is the inline fallback).
     //
@@ -965,8 +971,8 @@ class CrisisResourcesWidget extends StatelessWidget {
         riskLevel: riskLevel,
         crisisMsg: crisisMsg,
         crisisNumbers: crisisNumbers,
-        accentColor: GQColors.coral,
-        accentBg: GQColors.accentSoft,
+        accentColor: t.coral,
+        accentBg: t.accentSoft,
       );
     }
     if (riskLevel == RiskLevel.medium) {
@@ -974,8 +980,8 @@ class CrisisResourcesWidget extends StatelessWidget {
         riskLevel: riskLevel,
         crisisMsg: crisisMsg,
         crisisNumbers: crisisNumbers,
-        accentColor: GQColors.primary,
-        accentBg: GQColors.primarySoft,
+        accentColor: t.primary,
+        accentBg: t.primarySoft,
       );
     }
     // low / none — compact resource card
@@ -983,8 +989,8 @@ class CrisisResourcesWidget extends StatelessWidget {
       riskLevel: riskLevel,
       crisisMsg: crisisMsg,
       crisisNumbers: crisisNumbers,
-      accentColor: GQColors.ink3,
-      accentBg: GQColors.softBg,
+      accentColor: t.ink3,
+      accentBg: t.bg,
     );
   }
 }
@@ -1266,14 +1272,15 @@ class _SecondaryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
         ),
         child: Column(
           children: [
@@ -1281,11 +1288,11 @@ class _SecondaryBtn extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                color: GQColors.ink,
+                color: t.ink,
               ),
             ),
           ],
