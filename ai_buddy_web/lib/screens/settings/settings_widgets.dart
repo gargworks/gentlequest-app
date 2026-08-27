@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 // ─── Shared primitive widgets ─────────────────────────────────────────────────
@@ -16,14 +17,15 @@ class SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: GQColors.hair, width: 1),
+        color: t.surface,
+        border: Border.all(color: t.hair, width: 1),
         borderRadius: BorderRadius.circular(GQRadii.cardLg),
         boxShadow: [
           BoxShadow(
-            color: GQColors.ink.withValues(alpha: 0.08),
+            color: t.ink.withValues(alpha: 0.08),
             blurRadius: 26,
             offset: const Offset(0, 12),
             spreadRadius: -10,
@@ -42,7 +44,7 @@ class SettingsCard extends StatelessWidget {
               Divider(
                   height: 1,
                   thickness: 1,
-                  color: GQColors.hair,
+                  color: t.hair,
                   indent: 0,
                   endIndent: 0),
               child,
@@ -92,6 +94,7 @@ class _SettingsRowState extends State<SettingsRow> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final row = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 56),
       child: Padding(
@@ -116,12 +119,12 @@ class _SettingsRowState extends State<SettingsRow> {
                   Text(widget.title,
                       style: GQTypography.body.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: widget.titleColor ?? GQColors.ink)),
+                          color: widget.titleColor ?? t.ink)),
                   if (widget.subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(widget.subtitle!,
                         style: GQTypography.caption.copyWith(
-                            color: widget.subtitleColor ?? GQColors.ink2,
+                            color: widget.subtitleColor ?? t.ink2,
                             height: 1.35)),
                   ],
                 ],
@@ -160,8 +163,8 @@ class Chevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Icon(Icons.chevron_right_rounded,
-        size: 18, color: GQColors.ink3);
+    final t = GQTheme.of(context);
+    return Icon(Icons.chevron_right_rounded, size: 18, color: t.ink3);
   }
 }
 
@@ -184,6 +187,7 @@ class SettingsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final disabled = onChanged == null && !locked;
     return Transform.scale(
       scale: 0.85,
@@ -196,14 +200,14 @@ class SettingsToggle extends StatelessWidget {
                 onChanged!(v);
               },
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (disabled) return GQColors.ink3;
-          return Colors.white;
+          if (disabled) return t.ink3;
+          return t.surface;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (locked) return GQColors.primary.withValues(alpha: 0.8);
-          if (disabled) return GQColors.hair;
-          if (states.contains(WidgetState.selected)) return GQColors.primary;
-          return GQColors.ink3.withValues(alpha: 0.32);
+          if (locked) return t.primary.withValues(alpha: 0.8);
+          if (disabled) return t.hair;
+          if (states.contains(WidgetState.selected)) return t.primary;
+          return t.ink3.withValues(alpha: 0.32);
         }),
       ),
     );
@@ -221,13 +225,14 @@ class SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(
           left: 6, top: GQSpacing.xl, bottom: GQSpacing.sm),
       child: Text(
         label,
         // D3: micro is an 11px style — pair with ink2, never ink3.
-        style: GQTypography.micro.copyWith(color: color ?? GQColors.ink2),
+        style: GQTypography.micro.copyWith(color: color ?? t.ink2),
       ),
     );
   }

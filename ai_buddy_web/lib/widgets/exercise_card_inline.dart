@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// ExerciseCardInline — State C (R1D7 Chat Active States)
@@ -131,19 +132,20 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
   }
 
   Widget _buildCard(bool reduceMotion) {
+    final t = GQTheme.of(context);
     return AnimatedOpacity(
       opacity: 1.0,
       duration: const Duration(milliseconds: 700),
       child: Container(
         margin: const EdgeInsets.fromLTRB(4, 4, 4, 10),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment(-0.5, -1),
             end: Alignment(0.5, 1),
             colors: [
-              GQColors.primarySoft,       // EEF0FE
-              Color(0xFFFBF1F4),           // warm mid
-              GQColors.accentSoft,         // FFE8E8
+              t.primarySoft,       // EEF0FE
+              Color(0xFFFBF1F4),   // warm mid
+              t.accentSoft,        // FFE8E8
             ],
             stops: [0.0, 0.6, 1.0],
           ),
@@ -176,6 +178,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
   }
 
   Widget _buildHeader() {
+    final t = GQTheme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -183,6 +186,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
               const Text(
                 'EXERCISE',
                 style: TextStyle(
@@ -193,13 +197,13 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
+              Text(
                 // Verbatim from HTML
                 '4-7-8 Breathing',
                 style: TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink,
+                  color: t.ink,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -207,10 +211,10 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
               Text(
                 // Verbatim from HTML (dynamic round)
                 '~ 1 minute · Round $_currentRound of ${widget.totalRounds}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ],
@@ -220,10 +224,11 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: t.surface,
             borderRadius: BorderRadius.circular(GQRadii.button),
             border: Border.all(color: Color(0x33667EEA)),
           ),
+          // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
           child: const Text(
             // Verbatim from HTML
             'LIVE',
@@ -302,7 +307,10 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
               );
             },
           ),
-          // Phase label overlay
+          // Phase label overlay. The three Colors.white below sit on the
+          // breathing orb's raw-hex radial gradient (primary/coral opacity
+          // blend, not a GQColors/theme fill) — illustration-adjacent, left
+          // static like the orb gradient itself.
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -358,6 +366,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
   }
 
   Widget _buildPhaseDots() {
+    final t = GQTheme.of(context);
     // 3 dots: in · hold · out; active dot = full primary
     final phases = [BreathPhase.inhale, BreathPhase.hold, BreathPhase.exhale];
     return Row(
@@ -371,20 +380,20 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
             height: 5,
             decoration: BoxDecoration(
               color: active
-                  ? GQColors.primary
+                  ? t.primary
                   : const Color(0x40667EEA),
               borderRadius: BorderRadius.circular(GQRadii.button),
             ),
           );
         }),
         const SizedBox(width: 6),
-        const Text(
+        Text(
           // Verbatim from HTML
           'in · hold · out',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ],
@@ -392,6 +401,7 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
   }
 
   Widget _buildControls() {
+    final t = GQTheme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -404,9 +414,9 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: t.surface,
                 borderRadius: BorderRadius.circular(GQRadii.button),
-                border: Border.all(color: GQColors.hair),
+                border: Border.all(color: t.hair),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -414,15 +424,15 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
                   Icon(
                     _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                     size: 14,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     _paused ? 'Resume' : 'Pause',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink,
+                      color: t.ink,
                     ),
                   ),
                 ],
@@ -436,15 +446,15 @@ class _ExerciseCardInlineState extends State<ExerciseCardInline>
           label: "I'm done with the exercise",
           child: GestureDetector(
             onTap: _onDone,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Text(
                 // Verbatim from HTML
                 "I'm done",
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
@@ -468,13 +478,14 @@ class ExerciseCollapsedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       margin: const EdgeInsets.fromLTRB(4, 0, 4, 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.65),
+        color: t.surface.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: Row(
         children: [
@@ -483,10 +494,10 @@ class ExerciseCollapsedRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink2,
+                color: t.ink2,
                 height: 1.4,
               ),
             ),

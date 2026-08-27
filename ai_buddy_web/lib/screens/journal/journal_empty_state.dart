@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
 import 'journal_shared.dart';
@@ -17,10 +18,11 @@ class JournalEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
@@ -34,13 +36,13 @@ class JournalEmptyState extends StatelessWidget {
             return const SizedBox.shrink();
           },
         ),
-        title: const Text(
+        title: Text(
           'Journal',
           style: TextStyle(
             fontFamily: GQTypography.displayFamily,
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: GQColors.ink,
+            color: t.ink,
             letterSpacing: -0.3,
           ),
         ),
@@ -48,9 +50,10 @@ class JournalEmptyState extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: NavIconButton(
-              backgroundColor: GQColors.primarySoft,
-              borderColor: Color(0x33667EEA),
+              backgroundColor: t.primarySoft,
+              borderColor: const Color(0x33667EEA),
               onTap: () => onStartEntry(),
+              // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
               child: const Icon(
                 Icons.add,
                 size: 16,
@@ -64,7 +67,7 @@ class JournalEmptyState extends StatelessWidget {
           child: Divider(
             height: 1,
             thickness: 1,
-            color: GQColors.hair,
+            color: t.hair,
           ),
         ),
       ),
@@ -78,21 +81,21 @@ class JournalEmptyState extends StatelessWidget {
             const SizedBox(height: 18),
 
             // Headline + sub
-            const Text(
+            Text(
               "Your journal starts here.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: GQTypography.journalSerif,
                 fontSize: 26,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink,
+                color: t.ink,
                 letterSpacing: -0.6,
                 height: 1.2,
               ),
             ),
             const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 "Even one line is a journal. We'll keep it for you.",
                 textAlign: TextAlign.center,
@@ -100,7 +103,7 @@ class JournalEmptyState extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                   height: 1.5,
                 ),
               ),
@@ -117,6 +120,9 @@ class JournalEmptyState extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => onStartEntry(),
                 style: ElevatedButton.styleFrom(
+                  // primaryDk + white foreground stay static — CTA fill,
+                  // byte-identical across modes by design (contrast travels
+                  // with the fill).
                   backgroundColor: GQColors.primaryDk,
                   foregroundColor: Colors.white,
                   elevation: 0,
@@ -147,10 +153,10 @@ class JournalEmptyState extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.lock_outline,
                       size: 11,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -159,11 +165,11 @@ class JournalEmptyState extends StatelessWidget {
                       // (2026-07-02); there is no server sync path. This
                       // copy is now unconditionally true for all users.
                       'Stays on your device. Never synced. Never shared.',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -192,7 +198,9 @@ class _EmptyStateIllustration extends StatelessWidget {
         height: 160,
         child: Stack(
           children: [
-            // Page
+            // Page. Colors.white here is illustration (the notebook-page
+            // graphic), not UI chrome — stays static like the rest of this
+            // hand-drawn illustration's raw-hex strokes/shadows below.
             Positioned.fill(
               child: Transform.rotate(
                 angle: -0.052, // ~-3 degrees
@@ -463,15 +471,16 @@ class _StarterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
         ),
         child: Row(
           children: [
@@ -479,10 +488,11 @@ class _StarterChip extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: GQColors.primarySoft,
+                color: t.primarySoft,
                 borderRadius: BorderRadius.circular(9),
               ),
               alignment: Alignment.center,
+              // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
               child: Text(
                 label,
                 style: const TextStyle(
@@ -497,11 +507,11 @@ class _StarterChip extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GQTypography.handwritten,
                   fontSize: 17,
                   fontWeight: FontWeight.w500,
-                  color: GQColors.ink,
+                  color: t.ink,
                   letterSpacing: 0.2,
                 ),
               ),

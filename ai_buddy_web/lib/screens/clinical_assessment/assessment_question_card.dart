@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import 'assessment_models.dart';
 
@@ -24,15 +25,17 @@ class AssessmentQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       decoration: BoxDecoration(
+        // IMG-TINT — soft card wash, raw hex, not a GQColors reference.
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFFF4F5FE), Color(0xFFFAF1F1)],
         ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -41,11 +44,11 @@ class AssessmentQuestionCard extends StatelessWidget {
           // "QUESTION 4 OF 9" — verbatim eyebrow
           Text(
             'QUESTION ${qIdx + 1} OF $total',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink2,
+              color: t.ink2,
               letterSpacing: 0.7,
             ),
           ),
@@ -54,11 +57,11 @@ class AssessmentQuestionCard extends StatelessWidget {
           // Question text
           Text(
             questionText,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GQTypography.displayFamily,
               fontSize: 21,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               letterSpacing: -0.5,
               height: 1.3,
             ),
@@ -71,9 +74,10 @@ class AssessmentQuestionCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: GQColors.primary.withAlpha(26), // 0.10
+                color: t.primary.withAlpha(26), // 0.10
                 borderRadius: BorderRadius.circular(99),
               ),
+              // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -113,11 +117,11 @@ class AssessmentQuestionCard extends StatelessWidget {
                 'PHQ-9 and GAD-7 are validated screening tools used by clinicians worldwide. '
                 'We use them to help you notice patterns — not to label you. '
                 'Your answers are private and never shared.',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                   height: 1.5,
                 ),
               ),
@@ -174,6 +178,7 @@ class _LikertPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -182,16 +187,16 @@ class _LikertPill extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? GQColors.primary : Colors.white,
+          color: isSelected ? t.primary : t.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? GQColors.primary : GQColors.hair,
+            color: isSelected ? t.primary : t.hair,
             width: 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: GQColors.primary.withAlpha(140),
+                    color: t.primary.withAlpha(140),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
                     spreadRadius: -12,
@@ -201,7 +206,8 @@ class _LikertPill extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Score number
+            // Score number. Colors.white (selected) is the foreground on the
+            // t.primary FILL — stays literal, contrast travels with the fill.
             SizedBox(
               width: 14,
               child: Text(
@@ -213,13 +219,14 @@ class _LikertPill extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   color: isSelected
                       ? Colors.white.withAlpha(179)
-                      : GQColors.ink2,
+                      : t.ink2,
                   letterSpacing: 0.4,
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            // Label — verbatim
+            // Label — verbatim. Colors.white (selected) stays literal for the
+            // same reason as the score number above.
             Expanded(
               child: Text(
                 label,
@@ -227,12 +234,19 @@ class _LikertPill extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : GQColors.ink,
+                  color: isSelected ? Colors.white : t.ink,
                   letterSpacing: -0.2,
                 ),
               ),
             ),
-            // Check ring
+            // Check ring. Judgment call: fill+border stay static Colors.white
+            // (not t.surface) in the selected branch — this badge exists
+            // solely to back the static GQColors.primaryDk checkmark below
+            // with a guaranteed-contrast surface, the same CTA-fill
+            // discipline applied to a badge instead of a button. Converting
+            // the badge to t.surface while the icon stays fixed-value would
+            // risk exactly the contrast drift GQTheme's primaryDk exclusion
+            // is designed to prevent.
             Container(
               width: 22,
               height: 22,
@@ -240,7 +254,7 @@ class _LikertPill extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: isSelected ? Colors.white : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? Colors.white : GQColors.ink.withAlpha(41),
+                  color: isSelected ? Colors.white : t.ink.withAlpha(41),
                   width: 1.5,
                 ),
               ),

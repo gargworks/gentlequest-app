@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/companion_provider.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../companion_painter.dart';
 import 'body_double_start_sheet.dart';
@@ -256,11 +257,16 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
   }
 
   Widget _buildStack(BuildContext context) {
+    final t = GQTheme.of(context);
     final size = MediaQuery.of(context).size;
     return Stack(
       fit: StackFit.expand,
       children: [
         // ── Dusk gradient (with return fade to gq-bg) ────────────────────────
+        // duskTop/Mid/Bottom (GQIllustration.*) stay static — illustration
+        // hue, not UI chrome. The lerp TARGET tracks the theme background
+        // (t.bg) so the return transition settles into the current mode's
+        // background instead of always fading to light softBg.
         AnimatedBuilder(
           animation: _returnBgAnim,
           builder: (context, _) {
@@ -271,11 +277,11 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                   end: Alignment.bottomCenter,
                   colors: [
                     Color.lerp(
-                        GQIllustration.duskTop, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskTop, t.bg, _returnBgAnim.value)!,
                     Color.lerp(
-                        GQIllustration.duskMid, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskMid, t.bg, _returnBgAnim.value)!,
                     Color.lerp(
-                        GQIllustration.duskBottom, GQColors.softBg, _returnBgAnim.value)!,
+                        GQIllustration.duskBottom, t.bg, _returnBgAnim.value)!,
                   ],
                 ),
               ),
@@ -367,11 +373,11 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.journalSerif,
                     fontStyle: FontStyle.italic,
                     fontSize: 16,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     height: 1.4,
                   ),
                 ),
@@ -414,13 +420,13 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
               const SizedBox(height: 18),
               Opacity(
                 opacity: _enterAnim.value,
-                child: const Text(
+                child: Text(
                   'Others are here too.',
-                  key: Key('shared_solitude_others_here'),
+                  key: const Key('shared_solitude_others_here'),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ),
@@ -439,23 +445,23 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 44),
                 child: Material(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: t.surface.withValues(alpha: 0.6),
                   shape: StadiumBorder(
-                    side: BorderSide(color: GQColors.hair),
+                    side: BorderSide(color: t.hair),
                   ),
                   child: InkWell(
                     key: const Key('shared_solitude_step_out'),
                     customBorder: const StadiumBorder(),
                     onTap: _stepOut,
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 12),
                       child: Text(
                         'Step out',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ),
@@ -480,16 +486,16 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: t.surface.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(GQRadii.button),
-                    border: Border.all(color: GQColors.hair),
+                    border: Border.all(color: t.hair),
                   ),
                   child: Text(
                     _formatElapsed(_elapsed),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ),
@@ -515,30 +521,31 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
   }
 
   Widget _buildReturnOverlay(BuildContext context) {
+    final t = GQTheme.of(context);
     return SafeArea(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(flex: 3),
-          const Text(
+          Text(
             "That's the time you set aside.",
-            key: Key('shared_solitude_return_line1'),
+            key: const Key('shared_solitude_return_line1'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: GQTypography.journalSerif,
               fontSize: 19,
-              color: GQColors.ink,
+              color: t.ink,
               height: 1.4,
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'The room keeps no record.',
-            key: Key('shared_solitude_return_line2'),
+            key: const Key('shared_solitude_return_line2'),
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
           const Spacer(flex: 2),
@@ -548,6 +555,9 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
               key: const Key('shared_solitude_im_done'),
               onPressed: _imDone,
               style: ElevatedButton.styleFrom(
+                // primaryDk + white foreground stay static — CTA fill,
+                // byte-identical across modes by design (contrast travels
+                // with the fill).
                 backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
                 padding:
@@ -570,6 +580,7 @@ class _SharedSolitudeSpaceState extends State<SharedSolitudeSpace>
             key: const Key('shared_solitude_stay_longer'),
             onTap: _stayLonger,
             behavior: HitTestBehavior.opaque,
+            // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
             child: const SizedBox(
               height: 44,
               child: Center(

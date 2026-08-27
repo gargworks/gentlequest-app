@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import 'profile_widgets.dart';
 
@@ -28,6 +29,7 @@ class AboutYouCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return ProfileCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,25 +44,25 @@ class AboutYouCard extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink,
+              color: t.ink,
             ),
             decoration: InputDecoration(
               hintText: '',
               filled: true,
-              fillColor: GQColors.softBg,
+              fillColor: t.bg,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
-                borderSide: const BorderSide(color: GQColors.hair),
+                borderSide: BorderSide(color: t.hair),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
-                borderSide: const BorderSide(color: GQColors.hair),
+                borderSide: BorderSide(color: t.hair),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
-                borderSide: const BorderSide(color: GQColors.primary),
+                borderSide: BorderSide(color: t.primary),
               ),
             ),
           ),
@@ -71,7 +73,7 @@ class AboutYouCard extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
 
@@ -91,19 +93,21 @@ class AboutYouCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: selected ? GQColors.primary : GQColors.softBg,
+                    color: selected ? t.primary : t.bg,
                     borderRadius: BorderRadius.circular(9999),
                     border: Border.all(
-                      color: selected ? GQColors.primary : GQColors.hair,
+                      color: selected ? t.primary : t.hair,
                     ),
                   ),
+                  // Colors.white (selected) is the foreground on the t.primary
+                  // FILL — stays literal, contrast travels with the fill.
                   child: Text(
                     pronouns[i],
                     style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : GQColors.ink2,
+                      color: selected ? Colors.white : t.ink2,
                     ),
                   ),
                 ),
