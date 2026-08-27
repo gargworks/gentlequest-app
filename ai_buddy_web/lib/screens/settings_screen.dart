@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../services/firebase_service.dart' show FirebaseService, kAnonymityModeKey;
 import '../services/low_stim_service.dart';
 import '../services/notification_service_impl.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 import 'settings/notification_detail_screen.dart';
@@ -449,8 +450,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: GQHeader(
         title: 'Settings',
         actions: _anonymityOn
@@ -472,6 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // PRIVACY (A2); the standalone erase section at the bottom is gone.
 
   Widget _buildDefaultView() {
+    final t = GQTheme.of(context);
     final authService = AuthService.instance;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
@@ -481,7 +484,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.shield_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Anonymity mode',
@@ -493,7 +496,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.download_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Export my data',
@@ -502,7 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _handleExportData,
             ),
             SettingsRow(
-              iconBg: GQColors.dangerSoft,
+              iconBg: t.dangerSoft,
               iconWidget: const Icon(Icons.delete_sweep_outlined,
                   size: 14, color: GQColors.dangerInk),
               title: 'Erase all my data',
@@ -529,26 +532,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             if (authService.isSignedIn)
               SettingsRow(
-                iconBg: GQColors.primarySoft,
+                iconBg: t.primarySoft,
                 iconWidget: const Icon(Icons.check_circle_outline,
                     size: 14, color: GQColors.primaryDk),
                 title: 'Signed in',
                 subtitle: authService.email ?? '',
                 trailing: TextButton(
                   onPressed: _handleSignOut,
-                  child: const Text(
+                  child: Text(
                     'Sign out',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ),
               )
             else
               SettingsRow(
-                iconBg: GQColors.primarySoft,
+                iconBg: t.primarySoft,
                 iconWidget: const Icon(Icons.sync_outlined,
                     size: 14, color: GQColors.primaryDk),
                 title: 'Sign in to sync across devices',
@@ -558,7 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _openLoginScreen,
               ),
             SettingsRow(
-              iconBg: GQColors.dangerSoft,
+              iconBg: t.dangerSoft,
               iconWidget: const Icon(Icons.delete_outline,
                   size: 14, color: GQColors.dangerInk),
               title: 'Delete my account',
@@ -581,7 +584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               if (authService.isSignedIn)
                 SettingsRow(
-                  iconBg: GQColors.primarySoft,
+                  iconBg: t.primarySoft,
                   iconWidget: const Icon(Icons.notifications_outlined,
                       size: 14, color: GQColors.primaryDk),
                   title: 'Daily check-in reminder',
@@ -594,7 +597,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 )
               else
                 SettingsRow(
-                  iconBg: GQColors.primarySoft,
+                  iconBg: t.primarySoft,
                   iconWidget: const Icon(Icons.notifications_outlined,
                       size: 14, color: GQColors.primaryDk),
                   title: 'Daily check-in reminder',
@@ -604,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: _openLoginScreen,
                 ),
               SettingsRow(
-                iconBg: GQColors.warmSoft,
+                iconBg: t.warmSoft,
                 iconWidget: const Text('🌱',
                     style: TextStyle(fontSize: 14)),
                 title: 'Gentle nudge',
@@ -615,7 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               SettingsRow(
-                iconBg: GQColors.primarySoft,
+                iconBg: t.primarySoft,
                 iconWidget: const Icon(Icons.favorite_outline,
                     size: 14, color: GQColors.primaryDk),
                 title: "If I'm worried about you",
@@ -655,7 +658,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.chat_bubble_outline,
                   size: 14, color: GQColors.primaryDk),
               title: 'Companion name',
@@ -674,7 +677,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // with ElevenLabs-grade TTS). Surfacing a "coming soon" row
             // with a tappable chevron is a vestigial affordance.
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.star_outline,
                   size: 14, color: GQColors.primaryDk),
               title: 'Inline crisis check-ins',
@@ -712,7 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.spa_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Low-stim quiet mode',
@@ -747,7 +750,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Chevron(),
             ),
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.shield_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Privacy policy',
@@ -762,16 +765,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             SettingsRow(
-              iconBg: GQColors.accentSoft,
-              iconWidget: const Icon(Icons.phone_outlined,
-                  size: 14, color: GQColors.coral),
+              iconBg: t.accentSoft,
+              iconWidget: Icon(Icons.phone_outlined,
+                  size: 14, color: t.coral),
               title: 'Crisis resources',
               subtitle: '988 · Text HOME to 741741',
               trailing: const Chevron(),
               onTap: () async => showSafetyLegalSheet(context),
             ),
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.mail_outline,
                   size: 14, color: GQColors.primaryDk),
               title: 'Send feedback',
@@ -786,7 +789,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.description_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Terms of service',
@@ -801,7 +804,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.code_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Open source licenses',
@@ -821,9 +824,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SettingsCard(
             children: [
               SettingsRow(
-                iconBg: GQColors.accentSoft,
-                iconWidget: const Icon(Icons.bug_report_outlined,
-                    size: 14, color: GQColors.coral),
+                iconBg: t.accentSoft,
+                iconWidget: Icon(Icons.bug_report_outlined,
+                    size: 14, color: t.coral),
                 title: 'Test crisis intervention sheet',
                 subtitle: 'Opens the sheet without triggering real risk',
                 trailing: const Chevron(),
@@ -835,9 +838,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (!kIsWeb)
                 SettingsRow(
-                  iconBg: GQColors.accentSoft,
-                  iconWidget: const Icon(Icons.bolt_outlined,
-                      size: 14, color: GQColors.coral),
+                  iconBg: t.accentSoft,
+                  iconWidget: Icon(Icons.bolt_outlined,
+                      size: 14, color: t.coral),
                   title: 'Test fatal crash',
                   subtitle: 'Force a fatal crash to test Crashlytics',
                   trailing: const Chevron(),
@@ -870,7 +873,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink2),
+                    color: t.ink2),
               ),
             );
           },
@@ -887,6 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // YOUR DEVICE DATA dissolves into PRIVACY (Erase row), same as View A.
 
   Widget _buildAnonymityOnView() {
+    final t = GQTheme.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
       children: [
@@ -898,7 +902,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.shield_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Anonymity mode',
@@ -911,7 +915,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             SettingsRow(
-              iconBg: GQColors.primarySoft,
+              iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.download_outlined,
                   size: 14, color: GQColors.primaryDk),
               title: 'Export my data',
@@ -920,7 +924,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _handleExportData,
             ),
             SettingsRow(
-              iconBg: GQColors.dangerSoft,
+              iconBg: t.dangerSoft,
               iconWidget: const Icon(Icons.delete_sweep_outlined,
                   size: 14, color: GQColors.dangerInk),
               title: 'Erase all my data',
@@ -946,7 +950,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsCard(
           children: [
             SettingsRow(
-              iconBg: GQColors.dangerSoft,
+              iconBg: t.dangerSoft,
               iconWidget: const Icon(Icons.delete_outline,
                   size: 14, color: GQColors.dangerInk),
               title: 'Delete my account',
@@ -966,7 +970,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: SettingsCard(
               children: [
                 SettingsRow(
-                  iconBg: GQColors.primarySoft,
+                  iconBg: t.primarySoft,
                   iconWidget: const Icon(Icons.notifications_outlined,
                       size: 14, color: GQColors.primaryDk),
                   title: 'Daily check-in reminder',
@@ -974,13 +978,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const SettingsToggle(value: false, onChanged: null),
                 ),
                 SettingsRow(
-                  iconBg: GQColors.warmSoft,
+                  iconBg: t.warmSoft,
                   iconWidget: const Text('🌱', style: TextStyle(fontSize: 14)),
                   title: 'Gentle nudge',
                   trailing: const SettingsToggle(value: false, onChanged: null),
                 ),
                 SettingsRow(
-                  iconBg: GQColors.primarySoft,
+                  iconBg: t.primarySoft,
                   iconWidget: const Icon(Icons.favorite_outline,
                       size: 14, color: GQColors.primaryDk),
                   title: "If I'm worried about you",
@@ -1000,7 +1004,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink2),
+                color: t.ink2),
           ),
         ),
       ],
@@ -1014,6 +1018,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// for the destructive affirmative. Cancel stays the visually easier exit
   /// (P13).
   void _showEraseLocalDataSheet(BuildContext context) {
+    final t = GQTheme.of(context);
     GQSheet.show<void>(
       context,
       content: Builder(
@@ -1022,11 +1027,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Erase all local data?',
-                style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+                style: GQTypography.titleSm.copyWith(color: t.ink)),
             const SizedBox(height: GQSpacing.sm),
             Text(
                 "This deletes your journal, moods, and check-ins from this device. It can't be undone.",
-                style: GQTypography.body.copyWith(color: GQColors.ink2)),
+                style: GQTypography.body.copyWith(color: t.ink2)),
             const SizedBox(height: GQSpacing.lg),
             Row(
               children: [

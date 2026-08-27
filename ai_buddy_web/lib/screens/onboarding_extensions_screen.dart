@@ -28,6 +28,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
 // ─── SharedPreferences keys ───────────────────────────────────────────────────
@@ -178,9 +179,10 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: t.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(GQRadii.sheetLg)),
         boxShadow: [
           BoxShadow(
@@ -217,23 +219,23 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [GQColors.primarySoft, GQColors.accentSoft],
+                    colors: [t.primarySoft, t.accentSoft],
                   ),
                   borderRadius: BorderRadius.circular(32),
                 ),
                 child: Center(
                   child: Icon(Icons.notifications_outlined,
-                      size: 28, color: GQColors.primary),
+                      size: 28, color: t.primary),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 20),
           // Heading
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               'One nudge a day,\nonly if it helps.',
@@ -244,12 +246,12 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 fontWeight: FontWeight.w800,
                 height: 1.2,
                 letterSpacing: -0.3,
-                color: GQColors.ink,
+                color: t.ink,
               ),
             ),
           ),
           const SizedBox(height: 10),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               "Here's what we'd send. Toggle anything off, anytime.",
@@ -259,7 +261,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
                 height: 1.55,
-                color: GQColors.ink2,
+                color: t.ink2,
               ),
             ),
           ),
@@ -271,8 +273,8 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
               children: [
                 _NotifPreviewRow(
                   icon: Icons.access_time_rounded,
-                  iconBg: GQColors.primarySoft,
-                  iconColor: GQColors.primary,
+                  iconBg: t.primarySoft,
+                  iconColor: t.primary,
                   label: 'Daily check-in reminder',
                   sublabel: 'Around 9 am · skippable',
                   value: _dailyCheckIn,
@@ -282,7 +284,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 const SizedBox(height: 8),
                 _NotifPreviewRow(
                   icon: Icons.local_fire_department_rounded,
-                  iconBg: GQColors.warmSoft,
+                  iconBg: t.warmSoft,
                   iconColor: const Color(0xFFFF8C42),
                   label: 'Streak gentle nudge',
                   sublabel: 'Off by default — no streak shame',
@@ -294,8 +296,8 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
                 const SizedBox(height: 8),
                 _NotifPreviewRow(
                   icon: Icons.favorite_rounded,
-                  iconBg: GQColors.accentSoft,
-                  iconColor: GQColors.coral,
+                  iconBg: t.accentSoft,
+                  iconColor: t.coral,
                   label: "If I'm worried about you",
                   sublabel: 'Crisis follow-up · always on',
                   value: _wellnessLocked,
@@ -345,7 +347,7 @@ class _NotificationOptInSheetState extends State<NotificationOptInSheet>
           TextButton(
             onPressed: _snooze,
             style: TextButton.styleFrom(
-              foregroundColor: GQColors.ink2,
+              foregroundColor: t.ink2,
               textStyle: const TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 13.5,
@@ -389,12 +391,13 @@ class _NotifPreviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: GQColors.softBg,
+        color: t.bg,
         borderRadius: BorderRadius.circular(GQRadii.card),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,11 +425,11 @@ class _NotifPreviewRow extends StatelessWidget {
                         Flexible(
                           child: Text(
                             label,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink,
+                              color: t.ink,
                             ),
                           ),
                         ),
@@ -436,18 +439,18 @@ class _NotifPreviewRow extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: t.surface,
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: GQColors.hair),
+                              border: Border.all(color: t.hair),
                             ),
                             child: Text(
                               badge!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                               ),
                             ),
                           ),
@@ -457,11 +460,11 @@ class _NotifPreviewRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       sublabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         height: 1.4,
                       ),
                     ),
@@ -471,12 +474,12 @@ class _NotifPreviewRow extends StatelessWidget {
               const SizedBox(width: 12),
               // Toggle or locked icon
               if (locked)
-                Icon(Icons.lock_rounded, size: 18, color: GQColors.ink2)
+                Icon(Icons.lock_rounded, size: 18, color: t.ink2)
               else
                 Switch(
                   value: value,
                   onChanged: onChanged,
-                  activeColor: GQColors.primary,
+                  activeColor: t.primary,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
             ],
@@ -490,7 +493,7 @@ class _NotifPreviewRow extends StatelessWidget {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: GQColors.ink2,
+                color: t.ink2,
                 height: 1.4,
               ),
             ),
@@ -555,6 +558,7 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final name = widget.userName;
     final days = widget.daysSince;
 
@@ -569,7 +573,7 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
     final subCopy = "It's been $dayLabel. No judgment — let's just say hi.";
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -587,16 +591,16 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        gradient: const RadialGradient(
-                          colors: [GQColors.accentSoft, GQColors.primarySoft],
+                        gradient: RadialGradient(
+                          colors: [t.accentSoft, t.primarySoft],
                           radius: 0.85,
                         ),
                         borderRadius: BorderRadius.circular(60),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.favorite_rounded,
                         size: 52,
-                        color: GQColors.coral,
+                        color: t.coral,
                       ),
                     ),
                   ),
@@ -604,37 +608,37 @@ class _ReturningUserWelcomeState extends State<ReturningUserWelcome>
                   // Date chip — "TUESDAY · MAY 7" style
                   Text(
                     _todayChip(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                   const SizedBox(height: 8),
                   // Main heading
                   Text(
                     heading,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.displayFamily,
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
                       height: 1.15,
                       letterSpacing: -0.5,
-                      color: GQColors.ink,
+                      color: t.ink,
                     ),
                   ),
                   const SizedBox(height: 12),
                   // Sub-copy — no shame
                   Text(
                     subCopy,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -698,21 +702,22 @@ class _ReassurancePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: GQColors.primarySoft,
+        color: t.primarySoft,
         borderRadius: BorderRadius.circular(GQRadii.card),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           height: 1.45,
-          color: GQColors.ink2,
+          color: t.ink2,
         ),
       ),
     );
@@ -807,8 +812,9 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -827,16 +833,16 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
                       color: const Color(0xFFF0EFF8),
                       borderRadius: BorderRadius.circular(50),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.notifications_off_rounded,
                       size: 44,
-                      color: GQColors.ink3,
+                      color: t.ink3,
                     ),
                   ),
                 ),
                 const SizedBox(height: 36),
                 // Heading
-                const Text(
+                Text(
                   "All good. We'll work\nwithout notifications.",
                   style: TextStyle(
                     fontFamily: GQTypography.displayFamily,
@@ -844,11 +850,11 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     letterSpacing: -0.4,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   "Everything works without notifications. "
                   "You can always enable them later from Settings "
                   "if you change your mind.",
@@ -857,7 +863,7 @@ class _PermissionDeniedRecoveryState extends State<PermissionDeniedRecovery>
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     height: 1.55,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -902,14 +908,15 @@ class _SettingsDeepLinkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: BorderRadius.circular(GQRadii.card),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A1F1B3A),
@@ -924,14 +931,14 @@ class _SettingsDeepLinkCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: GQColors.primarySoft,
+                color: t.primarySoft,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.settings_rounded,
-                  size: 20, color: GQColors.primary),
+              child: Icon(Icons.settings_rounded,
+                  size: 20, color: t.primary),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -941,7 +948,7 @@ class _SettingsDeepLinkCard extends StatelessWidget {
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink,
+                      color: t.ink,
                     ),
                   ),
                   SizedBox(height: 2),
@@ -951,14 +958,14 @@ class _SettingsDeepLinkCard extends StatelessWidget {
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: GQColors.ink2, size: 20),
+            Icon(Icons.chevron_right_rounded,
+                color: t.ink2, size: 20),
           ],
         ),
       ),
@@ -1146,10 +1153,11 @@ class _TutorialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.cardLg),
         boxShadow: const [
           BoxShadow(
@@ -1173,7 +1181,7 @@ class _TutorialCard extends StatelessWidget {
                 width: active ? 20 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: active ? GQColors.primary : GQColors.primarySoft,
+                  color: active ? t.primary : t.primarySoft,
                   borderRadius: BorderRadius.circular(100),
                 ),
               );
@@ -1187,22 +1195,22 @@ class _TutorialCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: GQColors.primarySoft,
+                  color: t.primarySoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child:
-                    Icon(stepData.icon, size: 22, color: GQColors.primary),
+                    Icon(stepData.icon, size: 22, color: t.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   stepData.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.displayFamily,
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
               ),
@@ -1212,12 +1220,12 @@ class _TutorialCard extends StatelessWidget {
           // Body text
           Text(
             stepData.body,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.5,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
           const SizedBox(height: 20),
@@ -1229,7 +1237,7 @@ class _TutorialCard extends StatelessWidget {
                 child: TextButton(
                   onPressed: onSkip,
                   style: TextButton.styleFrom(
-                    foregroundColor: GQColors.ink2,
+                    foregroundColor: t.ink2,
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
                     textStyle: const TextStyle(
