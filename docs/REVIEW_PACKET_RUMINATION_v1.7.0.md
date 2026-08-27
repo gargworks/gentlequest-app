@@ -42,3 +42,19 @@
 - Code review complete by `main` (Claude Code).
 - This human packet must be reviewed and cleared before the build is promoted from internal track to production.
 - iOS / Android builds will be uploaded to internal / TestFlight only until this review is cleared.
+
+## Amendment — 2026-08-27: gate bypassed, not cleared
+
+The release-gating section above records what was agreed. It does not describe what happened. This section is appended, not a rewrite, to keep both on the record.
+
+**What happened:** On 2026-08-27 the operator explicitly decided to promote both platforms to production without this clinical/legal packet being cleared. The gate was raised by `main` (Claude Code) at release time; the operator reaffirmed the decision to proceed anyway. This was a deliberate, informed call by the operator, not an oversight or a process failure.
+
+**What shipped:**
+- **Android:** version 1.7.1 (versionCode 26082701) is LIVE in Play production, status `completed`. Previous production version was 1.6.0.
+- **iOS:** version 1.7.1 (build 26082701) submitted to App Store review, state `WAITING_FOR_REVIEW`, releaseType `AFTER_APPROVAL` — it will auto-release the moment Apple approves it, with no further human step. Previous App Store version 1.6.0 remains `READY_FOR_SALE` until that happens.
+
+**Why it was bypassed:** The release was driven by commit `645754bb`, which fixes two accessibility defects on the live PHQ-9 suicidal-ideation screen (`lib/screens/clinical_assessment/q9_crisis_bridge.dart`). At roughly 2x accessibility text scale, the 988 crisis-line label clipped at the screen edge, and the always-present 988 pill could be pushed below the fold on a non-scrollable sheet. Both defects were present in the previously-shipped build 1.7.0+26082201, meaning they were live and in users' hands on the crisis path before this fix went out.
+
+**What remains outstanding:** The clinical/legal review of the Loop Reset feature described in this packet (Sections 1–4 above) has **not been completed**. It was bypassed, not done. It is now a **post-release obligation**, not a pre-release gate. It still needs to happen.
+
+**Status of the gate language above:** The "Release gating" section above no longer describes enforced behavior. It reflects the policy as originally agreed, not what actually governed this release. Do not read it as still-active policy without checking whether this amendment — or a later one — has been added.
