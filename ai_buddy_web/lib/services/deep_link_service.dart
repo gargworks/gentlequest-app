@@ -131,10 +131,19 @@ class DeepLinkService {
         _navigateTo(AppRoutes.questScreen, queryParams);
         break;
       case '/wellness':
-        _navigateTo(AppRoutes.wellnessDashboard, queryParams);
+        // '/wellness-dashboard' is not a registered route (Phase 3 dead-code
+        // sweep archived the dhiwise wellness dashboard). Normalize to home,
+        // same as the '/quest' case above.
+        _navigateTo(AppRoutes.home, queryParams);
         break;
       case '/crisis':
-        _navigateTo(AppRoutes.crisisResources, queryParams);
+        // AppRoutes.crisisResources ('/crisis') is not registered in
+        // main.dart's routes table and there is no onUnknownRoute handler —
+        // navigating there would crash. Normalize to home until a real
+        // crisis deep-link destination exists; which screen that should be
+        // is a clinical routing decision, not a code one — tracked in repo
+        // issues.
+        _navigateTo(AppRoutes.home, queryParams);
         break;
       case '/assessment':
         if (queryParams.containsKey('id')) {
@@ -210,8 +219,9 @@ class DeepLinkService {
       // Navigate to mood tracker with pre-filled mood
       _navigateTo(AppRoutes.moodTracker, {'preset': content});
     } else if (type == 'crisis') {
-      // Navigate directly to crisis resources
-      _navigateTo(AppRoutes.crisisResources, {});
+      // Same unregistered-route crash risk as the '/crisis' deep-link case
+      // above — normalize to home; tracked in repo issues.
+      _navigateTo(AppRoutes.home, {});
     }
 
     FirebaseService().logEvent('content_shared', {
