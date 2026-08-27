@@ -7,6 +7,7 @@ import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/screens/legal/legal_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -226,13 +227,15 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    final t = GQTheme.of(context);
     switch (_state) {
       case _WelcomeState.welcome:
         return _WelcomeContent(
@@ -256,9 +259,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               child: GestureDetector(
                 onTap: () {}, // prevent pass-through
                 child: ColoredBox(
-                  // Tokenized — was Color(0x52281C3A) raw hex. GQColors.ink at 0.32α
+                  // Tokenized — was Color(0x52281C3A) raw hex. t.ink at 0.32α
                   // matches the prior rgba(31,27,58,0.32) backdrop intent.
-                  color: GQColors.ink.withValues(alpha: 0.32),
+                  color: t.ink.withValues(alpha: 0.32),
                   child: const SizedBox.expand(),
                 ),
               ),
@@ -305,8 +308,9 @@ class _WelcomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return ColoredBox(
-      color: GQColors.softBg,
+      color: t.bg,
       child: SafeArea(
         child: Stack(
           children: [
@@ -363,7 +367,7 @@ class _WelcomeContent extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
-                        color: GQColors.primary,
+                        color: t.primary,
                       ),
                     ),
                   ),
@@ -383,7 +387,7 @@ class _WelcomeContent extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           height: 1.1,
                           letterSpacing: -0.6,
-                          color: GQColors.ink,
+                          color: t.ink,
                         ),
                       ),
                     ),
@@ -403,7 +407,7 @@ class _WelcomeContent extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           height: 1.55,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ),
@@ -438,7 +442,7 @@ class _WelcomeContent extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: GQColors.primaryDk,
                                 foregroundColor: Colors.white,
-                                disabledBackgroundColor: GQColors.primary
+                                disabledBackgroundColor: t.primary
                                     .withAlpha(180),
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 18),
@@ -476,9 +480,9 @@ class _WelcomeContent extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                                 decoration: TextDecoration.underline,
-                                decorationColor: GQColors.ink2,
+                                decorationColor: t.ink2,
                               ),
                             ),
                           ),
@@ -491,7 +495,7 @@ class _WelcomeContent extends StatelessWidget {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                               ),
                               children: [
                                 const TextSpan(
@@ -519,9 +523,9 @@ class _WelcomeContent extends StatelessWidget {
                                         fontFamily: GQTypography.bodyFamily,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: GQColors.primary,
+                                        color: t.primary,
                                         decoration: TextDecoration.underline,
-                                        decorationColor: GQColors.primary,
+                                        decorationColor: t.primary,
                                       ),
                                     ),
                                   ),
@@ -549,9 +553,9 @@ class _WelcomeContent extends StatelessWidget {
                                         fontFamily: GQTypography.bodyFamily,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: GQColors.primary,
+                                        color: t.primary,
                                         decoration: TextDecoration.underline,
-                                        decorationColor: GQColors.primary,
+                                        decorationColor: t.primary,
                                       ),
                                     ),
                                   ),
@@ -584,17 +588,17 @@ class _WelcomeContent extends StatelessWidget {
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: GQColors.ink2,
+                                  color: t.ink2,
                                 ),
                                 children: [
                                   const TextSpan(text: 'Already with us? '),
                                   TextSpan(
                                     text: 'Sign in',
                                     style: TextStyle(
-                                      color: GQColors.primary,
+                                      color: t.primary,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.underline,
-                                      decorationColor: GQColors.primary,
+                                      decorationColor: t.primary,
                                     ),
                                   ),
                                 ],
@@ -660,17 +664,18 @@ class _AgeModalState extends State<_AgeModal> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(GQRadii.sheetLg),
           ),
           boxShadow: [
             BoxShadow(
-              color: GQColors.ink.withAlpha(64),
+              color: t.ink.withAlpha(64),
               blurRadius: 60,
               offset: const Offset(0, -20),
             ),
@@ -688,7 +693,7 @@ class _AgeModalState extends State<_AgeModal> {
                 height: 5,
                 decoration: BoxDecoration(
                   // Tokenized — was Color(0xFFE5E2EE) raw hex, used as divider.
-                  color: GQColors.hair,
+                  color: t.hair,
                   borderRadius: BorderRadius.circular(100),
                 ),
               ),
@@ -697,11 +702,11 @@ class _AgeModalState extends State<_AgeModal> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [GQColors.primarySoft, GQColors.accentSoft],
+                    colors: [t.primarySoft, t.accentSoft],
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -720,7 +725,7 @@ class _AgeModalState extends State<_AgeModal> {
                   fontWeight: FontWeight.w800,
                   height: 1.2,
                   letterSpacing: -0.3,
-                  color: GQColors.ink,
+                  color: t.ink,
                 ),
               ),
               const SizedBox(height: 10),
@@ -746,7 +751,7 @@ class _AgeModalState extends State<_AgeModal> {
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       height: 1.4,
-                      color: GQColors.ink,
+                      color: t.ink,
                     ),
                   );
                 },
@@ -760,8 +765,8 @@ class _AgeModalState extends State<_AgeModal> {
                     child: OutlinedButton(
                       onPressed: _loading ? null : widget.onNotYet,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: GQColors.ink,
-                        side: const BorderSide(color: GQColors.hair, width: 1.5),
+                        foregroundColor: t.ink,
+                        side: BorderSide(color: t.hair, width: 1.5),
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: const StadiumBorder(),
                       ),
@@ -823,7 +828,7 @@ class _AgeModalState extends State<_AgeModal> {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 13,
                   height: 1.55,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -835,7 +840,7 @@ class _AgeModalState extends State<_AgeModal> {
                   Icon(
                     Icons.shield_outlined,
                     size: 12,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -846,7 +851,7 @@ class _AgeModalState extends State<_AgeModal> {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ],
@@ -872,8 +877,9 @@ class _Under18Screen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -888,13 +894,13 @@ class _Under18Screen extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: t.surface,
                       shape: BoxShape.circle,
-                      border: Border.all(color: GQColors.hair, width: 1),
+                      border: Border.all(color: t.hair, width: 1),
                     ),
                     child: Icon(
                       Icons.chevron_left,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       size: 22,
                     ),
                   ),
@@ -910,18 +916,18 @@ class _Under18Screen extends StatelessWidget {
                     Container(
                       width: 72,
                       height: 72,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [GQColors.primarySoft, GQColors.accentSoft],
+                          colors: [t.primarySoft, t.accentSoft],
                         ),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Icon(
                           Icons.favorite,
-                          color: GQColors.coral,
+                          color: t.coral,
                           size: 32,
                         ),
                       ),
@@ -936,7 +942,7 @@ class _Under18Screen extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         height: 1.15,
                         letterSpacing: -0.4,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -948,7 +954,7 @@ class _Under18Screen extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 16,
                         height: 1.6,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],
@@ -959,44 +965,44 @@ class _Under18Screen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
-                  children: const [
+                  children: [
                     _ResourceCard(
-                      iconBg: GQColors.primarySoft,
-                      iconColor: GQColors.primary,
+                      iconBg: t.primarySoft,
+                      iconColor: t.primary,
                       usePhoneIcon: false,
                       useChatIcon: true,
                       title: 'Crisis Text Line',
                       tag: 'TEXT',
-                      tagBg: GQColors.primarySoft,
-                      tagColor: GQColors.primary,
+                      tagBg: t.primarySoft,
+                      tagColor: t.primary,
                       // VERBATIM: HTML
                       actionLabel: 'Text HOME to 741741',
                       meta: 'Free · 24/7 · Trained counselors',
                     ),
                     SizedBox(height: 10),
                     _ResourceCard(
-                      iconBg: GQColors.accentSoft,
-                      iconColor: GQColors.coral,
+                      iconBg: t.accentSoft,
+                      iconColor: t.coral,
                       usePhoneIcon: true,
                       useChatIcon: false,
                       title: 'Teen Line',
                       tag: 'CALL · TEXT',
-                      tagBg: GQColors.accentSoft,
-                      tagColor: GQColors.coral,
+                      tagBg: t.accentSoft,
+                      tagColor: t.coral,
                       // VERBATIM: HTML
                       actionLabel: 'Call 800-852-8336',
                       meta: 'Teens helping teens · 6–10pm PT',
                     ),
                     SizedBox(height: 10),
                     _ResourceCard(
-                      iconBg: GQColors.primarySoft,
-                      iconColor: GQColors.primary,
+                      iconBg: t.primarySoft,
+                      iconColor: t.primary,
                       usePhoneIcon: false,
                       useChatIcon: false,
                       title: 'JED Foundation',
                       tag: 'RESOURCES',
-                      tagBg: GQColors.primarySoft,
-                      tagColor: GQColors.primary,
+                      tagBg: t.primarySoft,
+                      tagColor: t.primary,
                       // VERBATIM: HTML
                       actionLabel: 'jedfoundation.org',
                       meta: 'Mental health for teens & young adults',
@@ -1011,14 +1017,14 @@ class _Under18Screen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [GQColors.primarySoft, GQColors.accentSoft],
+                      colors: [t.primarySoft, t.accentSoft],
                     ),
                     borderRadius:
                         BorderRadius.circular(GQRadii.cardLg),
-                    border: Border.all(color: GQColors.hair),
+                    border: Border.all(color: t.hair),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1030,7 +1036,7 @@ class _Under18Screen extends StatelessWidget {
                             fontSize: 15,
                             height: 1.55,
                             fontWeight: FontWeight.w600,
-                            color: GQColors.ink,
+                            color: t.ink,
                           ),
                           children: [
                             // VERBATIM: HTML — "Come back when you're 18 —
@@ -1044,7 +1050,7 @@ class _Under18Screen extends StatelessWidget {
                             TextSpan(
                               text: 'we’ll be here.',
                               style: TextStyle(
-                                color: GQColors.primary,
+                                color: t.primary,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -1058,7 +1064,7 @@ class _Under18Screen extends StatelessWidget {
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ],
@@ -1084,8 +1090,8 @@ class _Under18Screen extends StatelessWidget {
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: GQColors.primary,
-                      side: const BorderSide(color: GQColors.primary, width: 1.5),
+                      foregroundColor: t.primary,
+                      side: BorderSide(color: t.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: const StadiumBorder(),
                     ),
@@ -1148,6 +1154,7 @@ class _BreathingIllustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return SizedBox(
       width: 200,
       height: 200,
@@ -1163,8 +1170,8 @@ class _BreathingIllustration extends StatelessWidget {
               gradient: RadialGradient(
                 center: const Alignment(-0.3, -0.4),
                 colors: [
-                  GQColors.primary.withAlpha(89),
-                  GQColors.primary.withAlpha(13),
+                  t.primary.withAlpha(89),
+                  t.primary.withAlpha(13),
                 ],
               ),
             ),
@@ -1178,8 +1185,8 @@ class _BreathingIllustration extends StatelessWidget {
               gradient: RadialGradient(
                 center: const Alignment(0.2, -0.4),
                 colors: [
-                  GQColors.coral.withAlpha(77),
-                  GQColors.coral.withAlpha(13),
+                  t.coral.withAlpha(77),
+                  t.coral.withAlpha(13),
                 ],
               ),
             ),
@@ -1190,14 +1197,14 @@ class _BreathingIllustration extends StatelessWidget {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [GQColors.primary, GQColors.coral],
+                colors: [t.primary, t.coral],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: GQColors.primary.withAlpha(115),
+                  color: t.primary.withAlpha(115),
                   blurRadius: 40,
                   offset: const Offset(0, 16),
                 ),
@@ -1225,15 +1232,16 @@ class _TrustChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.button),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
         boxShadow: [
           BoxShadow(
-            color: GQColors.ink.withAlpha(10),
+            color: t.ink.withAlpha(10),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -1250,7 +1258,7 @@ class _TrustChip extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
         ],
@@ -1287,15 +1295,16 @@ class _ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.cardLg),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
         boxShadow: [
           BoxShadow(
-            color: GQColors.ink.withAlpha(8),
+            color: t.ink.withAlpha(8),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -1330,7 +1339,7 @@ class _ResourceCard extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1361,7 +1370,7 @@ class _ResourceCard extends StatelessWidget {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1371,13 +1380,13 @@ class _ResourceCard extends StatelessWidget {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.open_in_new_rounded, size: 14, color: GQColors.ink2),
+          Icon(Icons.open_in_new_rounded, size: 14, color: t.ink2),
         ],
       ),
     );

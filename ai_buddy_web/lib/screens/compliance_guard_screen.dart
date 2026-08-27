@@ -16,6 +16,7 @@ import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:url_launcher/url_launcher.dart'; // Added for Data Export & App Store links
 import 'package:ai_buddy_web/services/crisis_keyword_detector.dart';
 import 'package:ai_buddy_web/services/mdm_detection_service.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 import 'compliance/compliance_widgets.dart';
 
@@ -338,6 +339,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildCrisisOverride() {
+    final t = GQTheme.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF1F1), // IMG-TINT: soft coral atmosphere per HTML (agent ruling 2026-05-22 keep raw)
       body: SafeArea(
@@ -354,12 +356,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   animation: _urgencyPulseCtrl,
                   builder: (context, child) {
                     // Pulse: box-shadow expands from 0 to 16px and back
-                    final t = _urgencyPulseCtrl.value;
-                    final shadowRadius = t < 0.7
-                        ? (t / 0.7) * 16.0
-                        : ((1.0 - t) / 0.3) * 16.0;
-                    final shadowOpacity = t < 0.7
-                        ? 0.45 * (1.0 - (t / 0.7))
+                    final pulseT = _urgencyPulseCtrl.value;
+                    final shadowRadius = pulseT < 0.7
+                        ? (pulseT / 0.7) * 16.0
+                        : ((1.0 - pulseT) / 0.3) * 16.0;
+                    final shadowOpacity = pulseT < 0.7
+                        ? 0.45 * (1.0 - (pulseT / 0.7))
                         : 0.0;
                     return Container(
                       width: 74,
@@ -373,11 +375,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                           colors: [Color(0xFFFFD9D9), Color(0xFFFFE8E8)],
                         ),
                         border: Border.all(
-                          color: GQColors.coral.withAlpha(89), // 0.35 opacity
+                          color: t.coral.withAlpha(89), // 0.35 opacity
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: GQColors.coral
+                            color: t.coral
                                 .withAlpha((shadowOpacity * 255).round()),
                             blurRadius: shadowRadius,
                           ),
@@ -397,7 +399,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 20),
 
               // Urgency block — verbatim copy (State A)
-              const Text(
+              Text(
                 'Right now, please call 988.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -406,11 +408,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.4,
                   height: 1.18,
-                  color: GQColors.ink,
+                  color: t.ink,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Free, confidential, available 24/7.\nThey want to help.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -418,7 +420,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   height: 1.6,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
 
@@ -481,15 +483,15 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: t.surface,
                             borderRadius: BorderRadius.circular(GQRadii.button),
-                            border: Border.all(color: GQColors.hair),
+                            border: Border.all(color: t.hair),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.message_rounded,
-                                  color: GQColors.ink, size: 14),
+                                  color: t.ink, size: 14),
                               SizedBox(width: 6),
                               Text(
                                 'Text 988',
@@ -497,7 +499,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
-                                  color: GQColors.ink,
+                                  color: t.ink,
                                 ),
                               ),
                             ],
@@ -520,15 +522,15 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: t.surface,
                             borderRadius: BorderRadius.circular(GQRadii.button),
-                            border: Border.all(color: GQColors.hair),
+                            border: Border.all(color: t.hair),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.language_rounded,
-                                  color: GQColors.ink, size: 14),
+                                  color: t.ink, size: 14),
                               SizedBox(width: 6),
                               Text(
                                 'Chat online',
@@ -536,7 +538,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
-                                  color: GQColors.ink,
+                                  color: t.ink,
                                 ),
                               ),
                             ],
@@ -553,8 +555,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               // "More resources" divider
               Row(
                 children: [
-                  Expanded(child: Container(height: 1, color: GQColors.hair)),
-                  const Padding(
+                  Expanded(child: Container(height: 1, color: t.hair)),
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       'MORE RESOURCES',
@@ -563,11 +565,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ),
-                  Expanded(child: Container(height: 1, color: GQColors.hair)),
+                  Expanded(child: Container(height: 1, color: t.hair)),
                 ],
               ),
 
@@ -576,8 +578,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               // Regional resource cards (verbatim labels per spec)
               RegionalResourceCard(
                 icon: Icons.message_rounded,
-                iconBgColor: GQColors.primarySoft,
-                iconColor: GQColors.primary,
+                iconBgColor: t.primarySoft,
+                iconColor: t.primary,
                 title: 'Crisis Text Line',
                 subtitle: 'Text HOME to 741741',
                 onTap: () => launchUri(
@@ -589,8 +591,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 8),
               RegionalResourceCard(
                 icon: Icons.favorite_outlined,
-                iconBgColor: GQColors.primarySoft,
-                iconColor: GQColors.primary,
+                iconBgColor: t.primarySoft,
+                iconColor: t.primary,
                 title: 'NAMI Illinois',
                 subtitle: 'Helpline · 800-950-6264',
                 onTap: () => launchUri(
@@ -623,8 +625,9 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildManagedDeviceBlock() {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
@@ -640,14 +643,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   height: 78,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       // IMG-TINT: second stop pairs primarySoft into a softer periwinkle (agent ruling 2026-05-22 keep raw)
-                      colors: [GQColors.primarySoft, Color(0xFFE0E5FB)],
+                      colors: [t.primarySoft, const Color(0xFFE0E5FB)],
                     ),
                     border: Border.all(
-                      color: GQColors.primary.withAlpha(46),
+                      color: t.primary.withAlpha(46),
                     ),
                   ),
                   child: const Icon(
@@ -661,7 +664,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 20),
 
               // Heading — verbatim from HTML
-              const Text(
+              Text(
                 'This device limits some apps.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -670,11 +673,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.4,
                   height: 1.2,
-                  color: GQColors.ink,
+                  color: t.ink,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Your school or workplace may restrict GentleQuest. Try one of these instead — they work everywhere.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -682,7 +685,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   height: 1.6,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
 
@@ -692,10 +695,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               // that MDM would block)
               UniversalResourceCard(
                 icon: Icons.message_rounded,
-                iconBgColor: GQColors.primarySoft,
-                iconColor: GQColors.primary,
+                iconBgColor: t.primarySoft,
+                iconColor: t.primary,
                 tagText: 'SMS',
-                tagBg: GQColors.primarySoft,
+                tagBg: t.primarySoft,
                 tagColor: GQColors.primaryDk,
                 title: 'Crisis Text Line',
                 subtitle: 'Text HOME to 741741 · works on any phone',
@@ -708,10 +711,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 10),
               UniversalResourceCard(
                 icon: Icons.phone_rounded,
-                iconBgColor: GQColors.accentSoft,
-                iconColor: GQColors.coral,
+                iconBgColor: t.accentSoft,
+                iconColor: t.coral,
                 tagText: 'CALL',
-                tagBg: GQColors.accentSoft,
+                tagBg: t.accentSoft,
                 tagColor: GQColors.coralDk,
                 title: '988 Lifeline',
                 subtitle: 'Dial 988 · works on any phone, 24/7',
@@ -724,11 +727,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               const SizedBox(height: 10),
               UniversalResourceCard(
                 icon: Icons.language_rounded,
-                iconBgColor: GQColors.successSoft,
-                iconColor: GQColors.successInk,
+                iconBgColor: t.successSoft,
+                iconColor: t.successInk,
                 tagText: 'WEB',
-                tagBg: GQColors.successSoft,
-                tagColor: GQColors.successInk,
+                tagBg: t.successSoft,
+                tagColor: t.successInk,
                 title: 'IASP Resources',
                 subtitle: 'Find a local hotline anywhere in the world',
                 onTap: () => launchUri(
@@ -755,11 +758,11 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 11),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: t.surface,
                         borderRadius: BorderRadius.circular(GQRadii.button),
-                        border: Border.all(color: GQColors.hair),
+                        border: Border.all(color: t.hair),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -768,12 +771,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
-                              color: GQColors.ink2,
+                              color: t.ink2,
                             ),
                           ),
                           SizedBox(width: 4),
                           Icon(Icons.chevron_right_rounded,
-                              size: 14, color: GQColors.ink2),
+                              size: 14, color: t.ink2),
                         ],
                       ),
                     ),
@@ -792,8 +795,9 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildNotifyConfirmation() {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Stack(
           children: [
@@ -810,14 +814,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                     height: 88,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [GQColors.primary, GQColors.coral],
+                        colors: [t.primary, t.coral],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: GQColors.primary.withAlpha(115),
+                          color: t.primary.withAlpha(115),
                           blurRadius: 40,
                           offset: const Offset(0, 16),
                         ),
@@ -837,7 +841,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               right: 28,
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     "You're on the list.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -846,26 +850,26 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                       height: 1.15,
-                      color: GQColors.ink,
+                      color: t.ink,
                     ),
                   ),
                   const SizedBox(height: 12),
                   RichText(
                     textAlign: TextAlign.center,
-                    text: const TextSpan(
+                    text: TextSpan(
                       style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 14.5,
                         fontWeight: FontWeight.w500,
                         height: 1.6,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                       children: [
                         TextSpan(text: "Your request opened in your mail app — "),
                         TextSpan(
                           text: 'tap send',
                           style: TextStyle(
-                              fontWeight: FontWeight.w800, color: GQColors.ink),
+                              fontWeight: FontWeight.w800, color: t.ink),
                         ),
                         TextSpan(
                             text:
@@ -887,22 +891,22 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 9),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: t.surface,
                     borderRadius: BorderRadius.circular(GQRadii.button),
-                    border: Border.all(color: GQColors.hair),
+                    border: Border.all(color: t.hair),
                     boxShadow: [
                       BoxShadow(
-                        color: GQColors.ink.withAlpha(26),
+                        color: t.ink.withAlpha(26),
                         blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.check_circle_outline_rounded,
-                          color: GQColors.successInk, size: 13),
+                          color: t.successInk, size: 13),
                       SizedBox(width: 6),
                       Text(
                         'Your email is encrypted at rest',
@@ -910,7 +914,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ],
@@ -959,7 +963,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             ),
 
             // Plain-language opt-out — verbatim from HTML
-            const Positioned(
+            Positioned(
               bottom: 54,
               left: 28,
               right: 28,
@@ -971,7 +975,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                   height: 1.55,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
@@ -986,6 +990,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildAgeGate() {
+    final t = GQTheme.of(context);
     // Region is set after the IP/GPS step in the compliance flow. On the
     // very first launch _storedRegion may be null — in that case use the
     // universal floor (13) since unknown-region falls through to the
@@ -998,7 +1003,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.verified_user_outlined, size: 80, color: GQColors.primary),
+            Icon(Icons.verified_user_outlined, size: 80, color: t.primary),
             const SizedBox(height: 24),
             Text(
               "One quick check",
@@ -1026,7 +1031,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => _handleAgeVerification(false),
-              child: Text("I am under $minAge", style: const TextStyle(fontSize: 16, color: GQColors.ink3)),
+              child: Text("I am under $minAge", style: TextStyle(fontSize: 16, color: t.ink3)),
             ),
           ],
         ),
@@ -1035,6 +1040,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   }
 
   Widget _buildLocationGate() {
+    final t = GQTheme.of(context);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -1042,7 +1048,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.location_on_outlined, size: 80, color: GQColors.coral),
+            Icon(Icons.location_on_outlined, size: 80, color: t.coral),
             const SizedBox(height: 24),
             Text(
               "Regional Verification",
@@ -1056,10 +1062,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               "We perform a one-time check. We do not track you.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: GQColors.ink3),
+              style: TextStyle(fontSize: 14, color: t.ink3),
             ),
             const SizedBox(height: 48),
             ElevatedButton(
@@ -1072,12 +1078,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               child: const Text("Verify Location", style: TextStyle(fontSize: 18)),
             ),
             if (_status == ComplianceStatus.locationServicesDisabled)
-              const Padding(
-                padding: EdgeInsets.only(top: 16.0),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
                 child: Text(
                   "Please enable Location Services in your device settings to proceed.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: GQColors.coral),
+                  style: TextStyle(color: t.coral),
                 ),
               ),
           ],
@@ -1097,14 +1103,15 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   // screen first mount on web). If someone *does* land here, give them a
   // useful action instead of a dead end.
   Widget _buildConversionScreen() {
+    final t = GQTheme.of(context);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.refresh,
-                size: 80, color: GQColors.primary),
+            Icon(Icons.refresh,
+                size: 80, color: t.primary),
             const SizedBox(height: 24),
             Text(
               "Something went sideways",
@@ -1135,12 +1142,13 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
 
   Widget _buildBlockedScreen(String title, String message,
       {bool isRegionBlock = true}) {
+    final t = GQTheme.of(context);
     // Use stored region name; fall back to "your region" — not "your state",
     // since the user might be in the UK / EU / India / etc.
     final String regionName = _storedRegion ?? 'your region';
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
@@ -1150,12 +1158,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               // ── Sunrise gradient header (coral/amber — NOT red) ─────────────
               Container(
                 height: 280,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     // IMG-TINT: gold→coral header gradient (agent ruling 2026-05-22 keep raw — first stop is decorative gold accent)
-                    colors: [Color(0xFFFFD085), GQColors.coral],
+                    colors: [const Color(0xFFFFD085), t.coral],
                   ),
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(32),
@@ -1172,7 +1180,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                           height: 72,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: t.surface.withValues(alpha: 0.25),
                           ),
                           child: const Icon(
                             Icons.wb_sunny_outlined,
@@ -1225,25 +1233,25 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               if (isRegionBlock) ...[
                 Row(
                   children: [
-                    Expanded(child: Container(height: 1, color: GQColors.hair)),
+                    Expanded(child: Container(height: 1, color: t.hair)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         'RIGHT NOW IN ${regionName.toUpperCase()}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.4,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ),
-                    Expanded(child: Container(height: 1, color: GQColors.hair)),
+                    Expanded(child: Container(height: 1, color: t.hair)),
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Center(
+                Center(
                   child: Text(
                     'ALL FREE · 24/7',
                     style: TextStyle(
@@ -1251,7 +1259,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ),
@@ -1270,8 +1278,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 // Crisis Text Line
                 RegionalResourceCard(
                   icon: Icons.message_rounded,
-                  iconBgColor: GQColors.primarySoft,
-                  iconColor: GQColors.primary,
+                  iconBgColor: t.primarySoft,
+                  iconColor: t.primary,
                   title: 'Crisis Text Line',
                   subtitle: 'Text HOME to 741741',
                   onTap: () => launchUri(
@@ -1285,8 +1293,8 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 // NAMI — label uses regionName where available
                 RegionalResourceCard(
                   icon: Icons.favorite_outlined,
-                  iconBgColor: GQColors.primarySoft,
-                  iconColor: GQColors.primary,
+                  iconBgColor: t.primarySoft,
+                  iconColor: t.primary,
                   title: 'NAMI $regionName',
                   subtitle: 'Helpline · 800-950-6264',
                   onTap: () => launchUri(
@@ -1347,10 +1355,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   "Blocked users retain full rights to their data.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: GQColors.ink2),
+                  style: TextStyle(fontSize: 12, color: t.ink2),
                 ),
               ],
 
@@ -1379,13 +1387,14 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
   }
 
   Widget _buildErrorScreen() {
+    final t = GQTheme.of(context);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 60, color: GQColors.amber),
+            Icon(Icons.error_outline, size: 60, color: t.amber),
             const SizedBox(height: 16),
             const Text("Verification Failed", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -1413,10 +1422,10 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               "Alternative verification uses your internet connection instead of GPS.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: GQColors.ink2),
+              style: TextStyle(fontSize: 12, color: t.ink2),
             ),
           ],
         ),
