@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import 'profile_widgets.dart';
 
@@ -28,6 +29,7 @@ class VoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return ProfileCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,9 +40,9 @@ class VoiceCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: GQColors.softBg,
+              color: t.bg,
               borderRadius: BorderRadius.circular(11),
-              border: Border.all(color: GQColors.hair),
+              border: Border.all(color: t.hair),
             ),
             child: Row(
               children: List.generate(tones.length, (i) {
@@ -52,12 +54,12 @@ class VoiceCard extends StatelessWidget {
                       duration: GQDurations.fade,
                       padding: const EdgeInsets.symmetric(vertical: 7),
                       decoration: BoxDecoration(
-                        color: on ? Colors.white : Colors.transparent,
+                        color: on ? t.surface : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: on
                             ? [
                                 BoxShadow(
-                                  color: GQColors.ink.withValues(alpha: 0.08),
+                                  color: t.ink.withValues(alpha: 0.08),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 )
@@ -71,7 +73,7 @@ class VoiceCard extends StatelessWidget {
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
-                          color: on ? GQColors.ink : GQColors.ink2,
+                          color: on ? t.ink : t.ink2,
                         ),
                       ),
                     ),
@@ -107,7 +109,7 @@ class VoiceCard extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: GQColors.ink,
+                                color: t.ink,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -117,20 +119,20 @@ class VoiceCard extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                               ),
                             ),
                           ],
                         ),
                       ),
                       if (i == greetingStyleIndex)
-                        const Icon(Icons.check_rounded,
-                            color: GQColors.primary, size: 18),
+                        Icon(Icons.check_rounded,
+                            color: t.primary, size: 18),
                     ],
                   ),
                 ),
             ],
-            color: Colors.white,
+            color: t.surface,
             elevation: 12,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -140,9 +142,9 @@ class VoiceCard extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: GQColors.softBg,
+                color: t.bg,
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: GQColors.hair),
+                border: Border.all(color: t.hair),
               ),
               child: Row(
                 children: [
@@ -156,7 +158,7 @@ class VoiceCard extends StatelessWidget {
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: GQColors.ink,
+                            color: t.ink,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -166,14 +168,14 @@ class VoiceCard extends StatelessWidget {
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: GQColors.ink2, size: 20),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      color: t.ink2, size: 20),
                 ],
               ),
             ),
@@ -193,7 +195,7 @@ class VoiceCard extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -203,7 +205,7 @@ class VoiceCard extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],

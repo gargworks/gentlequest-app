@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,13 +24,14 @@ class AssessmentNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: GQColors.softBg.withAlpha(217),
-        border: const Border(
-          bottom: BorderSide(color: GQColors.hair),
+        color: t.bg.withAlpha(217),
+        border: Border(
+          bottom: BorderSide(color: t.hair),
         ),
       ),
       child: Row(
@@ -40,11 +42,11 @@ class AssessmentNavBar extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GQTypography.displayFamily,
               fontSize: 14.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               letterSpacing: -0.3,
             ),
           ),
@@ -67,19 +69,20 @@ class NavBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           shape: BoxShape.circle,
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.chevron_left_rounded,
-          color: GQColors.ink,
+          color: t.ink,
           size: 20,
         ),
       ),
@@ -98,6 +101,7 @@ class NavSaveExitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -109,9 +113,9 @@ class NavSaveExitButton extends StatelessWidget {
             fontFamily: GQTypography.bodyFamily,
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: GQColors.primary,
+            color: t.primary,
             decoration: TextDecoration.underline,
-            decorationColor: GQColors.primary,
+            decorationColor: t.primary,
           ),
         ),
       ),
@@ -131,6 +135,7 @@ class _AssessmentProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Row(
       children: List.generate(total, (i) {
         // i < filled-1 → fully filled; i == filled-1 → current; i >= filled → empty
@@ -143,12 +148,12 @@ class _AssessmentProgressBar extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(99),
               color: isFilled
-                  ? GQColors.primary
-                  : GQColors.ink.withAlpha(26), // ~0.10
+                  ? t.primary
+                  : t.ink.withAlpha(26), // ~0.10
               boxShadow: isCurrent
                   ? [
                       BoxShadow(
-                        color: GQColors.primary.withAlpha(90),
+                        color: t.primary.withAlpha(90),
                         blurRadius: 4,
                         spreadRadius: 1,
                       )
@@ -182,6 +187,7 @@ class PillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final isPrimary = style == PillButtonStyle.primary;
     return GestureDetector(
       onTap: onTap,
@@ -190,13 +196,13 @@ class PillButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           decoration: BoxDecoration(
-            color: isPrimary ? GQColors.primary : Colors.white,
+            color: isPrimary ? t.primary : t.surface,
             borderRadius: BorderRadius.circular(GQRadii.button),
-            border: isPrimary ? null : Border.all(color: GQColors.hair),
+            border: isPrimary ? null : Border.all(color: t.hair),
             boxShadow: isPrimary
                 ? [
                     BoxShadow(
-                      color: GQColors.primary.withAlpha(140),
+                      color: t.primary.withAlpha(140),
                       blurRadius: 26,
                       offset: const Offset(0, 12),
                       spreadRadius: -10,
@@ -211,7 +217,9 @@ class PillButton extends StatelessWidget {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
-                color: isPrimary ? Colors.white : GQColors.ink2,
+                // Colors.white is the foreground on the primary FILL — stays
+                // literal, contrast travels with the fill.
+                color: isPrimary ? Colors.white : t.ink2,
               ),
             ),
           ),
@@ -231,17 +239,18 @@ class SaveAndExitLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: const Text(
+      child: Text(
         "Save & exit · we'll keep your spot", // verbatim from HTML
         style: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 11.5,
           fontWeight: FontWeight.w800,
-          color: GQColors.ink2,
+          color: t.ink2,
           decoration: TextDecoration.underline,
-          decorationColor: GQColors.ink2,
+          decorationColor: t.ink2,
           decorationStyle: TextDecorationStyle.solid,
           height: 1.4,
         ),

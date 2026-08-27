@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../navigation/home_tab_deeplink.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -63,6 +64,8 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
   bool _saved = false;
   bool _saveFailed = false;
 
+  // Static const field initializer — no BuildContext reachable at this scope
+  // (slice-7 resource_library precedent), so this stays GQColors.
   static const List<Color> _confettiColors = [
     GQColors.coral,
     GQColors.primary,
@@ -125,19 +128,21 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
   }
 
   Widget _buildSavedState() {
+    final t = GQTheme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: GQSpacing.xl),
-        const Icon(Icons.check_circle_outline_rounded, color: GQColors.primary, size: 48),
+        Icon(Icons.check_circle_outline_rounded, color: t.primary, size: 48),
         const SizedBox(height: GQSpacing.md),
-        Text('Saved.', style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+        Text('Saved.', style: GQTypography.titleSm.copyWith(color: t.ink)),
         const SizedBox(height: GQSpacing.xl),
       ],
     );
   }
 
   Widget _buildMainContent(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,13 +184,13 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
         // Headline + sub — WO-5.2 C3 exact copy.
         Text(
           'Love that. What worked today?',
-          style: GQTypography.titleSm.copyWith(color: GQColors.ink),
+          style: GQTypography.titleSm.copyWith(color: t.ink),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: GQSpacing.xs),
         Text(
           "30 seconds — I'll remember it for next time.",
-          style: GQTypography.body.copyWith(color: GQColors.ink2),
+          style: GQTypography.body.copyWith(color: t.ink2),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: GQSpacing.xl),
@@ -201,19 +206,19 @@ class _GreatReflectionSheetState extends State<_GreatReflectionSheet>
           controller: _thoughtController,
           decoration: InputDecoration(
             hintText: 'good food, walked, slept well, said no…',
-            hintStyle: GQTypography.body.copyWith(color: GQColors.ink3),
+            hintStyle: GQTypography.body.copyWith(color: t.ink3),
             helperText: 'private to you',
-            helperStyle: GQTypography.micro.copyWith(color: GQColors.ink2),
+            helperStyle: GQTypography.micro.copyWith(color: t.ink2),
             filled: true,
-            fillColor: GQColors.surface,
+            fillColor: t.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(GQRadii.card),
-              borderSide: const BorderSide(color: GQColors.hair),
+              borderSide: BorderSide(color: t.hair),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
           maxLines: 1,
-          style: GQTypography.body.copyWith(color: GQColors.ink),
+          style: GQTypography.body.copyWith(color: t.ink),
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _saveThought(),
         ),
@@ -337,6 +342,12 @@ class _NeutralToastOverlayState extends State<_NeutralToastOverlay>
           child: Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(GQRadii.card),
+            // GQColors.ink used as a FILL here (not text), paired with
+            // literal Colors.white/white60 foreground below — same
+            // "fill carries white text, must not shift by mode" reasoning
+            // as the primaryDk/dangerInk CTA-fill exception (GQTheme class
+            // doc). t.ink flips to near-white in dark mode, which would put
+            // white text on a white toast. Left static; judgment call.
             color: GQColors.ink,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -377,6 +388,8 @@ class _NeutralToastOverlayState extends State<_NeutralToastOverlay>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
+                        // primaryDk: no GQTheme slot by design (CTA-fill
+                        // exception, pairs with the literal white text below).
                         color: GQColors.primaryDk,
                         borderRadius: BorderRadius.circular(8),
                       ),

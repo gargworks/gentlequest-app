@@ -10,6 +10,22 @@
 //
 // The card is presented in a modal sheet; the Share button lives OUTSIDE the
 // captured boundary so it never appears in the exported PNG.
+//
+// DARK-MODE SCOPE (slice 8): only the sheet chrome that the user sees live in
+// the app — _ShareableMoodCardSheet (bg/header/close button) and the
+// non-captured part of _ShareableMoodCardBodyState.build (Share button,
+// privacy caption) — reads GQTheme. Everything inside the Screenshot()
+// boundary (_ShareableMoodCard and its descendants _MiniMoodRow,
+// _MiniBarSlot, _BrandedFooter) stays static GQColors on purpose: that
+// subtree is captured to a PNG (screenshot package) and handed to the OS
+// share sheet (share_plus) to leave the app entirely — the recipient views a
+// flat image file with no theme context of their own, so "dark mode" has no
+// meaning for it. Baking the viewing device's current theme into a shared
+// image would also make screenshots inconsistent with each other depending
+// on when/whose device captured them. GQColors.mood* hues were not present
+// in this file to begin with (moods are represented via
+// GQIllustration.shareGradient, not the mood-scale palette) — the static
+// exceptions here are the exported-card colors, not a mood-recognition case.
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -20,6 +36,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../screens/weekly_review_screen.dart' show WeeklyReviewData, DayMoodEntry;
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// UTM-tagged deep link included on the card and in the shared text.
@@ -52,10 +69,11 @@ class _ShareableMoodCardSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final mediaQuery = MediaQuery.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: GQColors.softBg,
+      decoration: BoxDecoration(
+        color: t.bg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(GQRadii.sheet)),
       ),
       padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
@@ -72,20 +90,20 @@ class _ShareableMoodCardSheet extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: GQColors.hair,
+                  color: t.hair,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'SHARE YOUR WEEK',
                     style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -95,11 +113,11 @@ class _ShareableMoodCardSheet extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: t.surface,
                         shape: BoxShape.circle,
-                        border: Border.all(color: GQColors.hair),
+                        border: Border.all(color: t.hair),
                       ),
-                      child: const Icon(Icons.close, size: 14, color: GQColors.ink),
+                      child: Icon(Icons.close, size: 14, color: t.ink),
                     ),
                   ),
                 ],
@@ -166,22 +184,25 @@ class _ShareableMoodCardBodyState extends State<_ShareableMoodCardBody> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Captured region — this is what becomes the PNG.
+        // Captured region — this is what becomes the PNG. Deliberately
+        // static GQColors throughout — see file-top note.
         Screenshot(
           controller: _screenshotController,
           child: _ShareableMoodCard(data: _data),
         ),
         const SizedBox(height: 16),
-        // Share button — OUTSIDE the captured boundary.
+        // Share button — OUTSIDE the captured boundary, so it IS mode-aware.
         GestureDetector(
           onTap: _sharing ? null : _share,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
+              // primaryDk: no GQTheme slot by design (CTA-fill exception).
               color: GQColors.primaryDk,
               borderRadius: BorderRadius.circular(GQRadii.button),
               boxShadow: [
@@ -215,14 +236,14 @@ class _ShareableMoodCardBodyState extends State<_ShareableMoodCardBody> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Your mood details stay private — only this card is shared.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ],
@@ -233,6 +254,13 @@ class _ShareableMoodCardBodyState extends State<_ShareableMoodCardBody> {
 /// The visual card itself. Designed to look good as a standalone PNG:
 /// gradient header, mood emoji + week label, mini mood-shape row, an
 /// encouraging message, and a branded footer with the deep link.
+///
+/// STATIC GQColors — export-only surface, not converted to GQTheme. This
+/// widget (and _MiniMoodRow / _MiniBarSlot / _BrandedFooter below) only ever
+/// renders inside the Screenshot() boundary in _ShareableMoodCardBodyState
+/// above, which captures it to a PNG and hands it to the OS share sheet —
+/// the image leaves the app and is viewed with no theme context of its own.
+/// See the file-top note for the full rationale.
 class _ShareableMoodCard extends StatelessWidget {
   const _ShareableMoodCard({required this.data});
   final WeeklyReviewData data;

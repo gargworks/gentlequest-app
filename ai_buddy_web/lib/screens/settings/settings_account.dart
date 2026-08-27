@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/gq/gq.dart';
 import '../auth/login_screen.dart';
@@ -18,11 +19,12 @@ class AnonymityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: GQColors.primarySoft,
+        color: t.primarySoft,
         border: Border.all(
-            color: GQColors.primary.withValues(alpha: 0.18), width: 1),
+            color: t.primary.withValues(alpha: 0.18), width: 1),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(12),
@@ -32,8 +34,7 @@ class AnonymityBanner extends StatelessWidget {
           Container(
             width: 30,
             height: 30,
-            decoration: const BoxDecoration(
-                color: Colors.white, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: t.surface, shape: BoxShape.circle),
             child: const Icon(Icons.shield_outlined,
                 size: 14, color: GQColors.primaryDk),
           ),
@@ -47,7 +48,7 @@ class AnonymityBanner extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink)),
+                        color: t.ink)),
                 const SizedBox(height: 2),
                 Text(
                     "We're not collecting events while this is on. Your chats still happen — they just don't get logged for analytics.",
@@ -55,7 +56,7 @@ class AnonymityBanner extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         height: 1.45)),
               ],
             ),
@@ -73,12 +74,13 @@ class AnonStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: GQColors.primarySoft,
+        color: t.primarySoft,
         border: Border.all(
-            color: GQColors.primary.withValues(alpha: 0.30), width: 1),
+            color: t.primary.withValues(alpha: 0.30), width: 1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text('ANONYMOUS',
@@ -184,6 +186,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -191,8 +194,8 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
         Container(
           width: 60,
           height: 60,
-          decoration: const BoxDecoration(
-            color: GQColors.dangerSoft,
+          decoration: BoxDecoration(
+            color: t.dangerSoft,
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.warning_amber_outlined,
@@ -202,22 +205,22 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
 
         Text(
           'Delete your account?',
-          style: GQTypography.titleSm.copyWith(color: GQColors.ink),
+          style: GQTypography.titleSm.copyWith(color: t.ink),
         ),
         const SizedBox(height: 8),
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
-            style: GQTypography.body.copyWith(color: GQColors.ink2, height: 1.5),
-            children: const [
-              TextSpan(
+            style: GQTypography.body.copyWith(color: t.ink2, height: 1.5),
+            children: [
+              const TextSpan(
                   text:
                       'This removes all your chats, mood logs, and settings. '),
               TextSpan(
                   text: "We can't get them back.",
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink)),
+                      color: t.ink)),
             ],
           ),
         ),
@@ -238,9 +241,9 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
             decoration: BoxDecoration(
-              color: GQColors.primarySoft,
+              color: t.primarySoft,
               border: Border.all(
-                  color: GQColors.primary.withValues(alpha: 0.20), width: 1),
+                  color: t.primary.withValues(alpha: 0.20), width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -272,7 +275,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
-                color: GQColors.ink2,
+                color: t.ink2,
                 letterSpacing: 0.6),
           ),
         ),
@@ -283,7 +286,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
           decoration: BoxDecoration(
             // IMG-TINT: pink-soft icon-bg tint (agent ruling 2026-05-22 keep raw)
             color: const Color(0xFFFBF1F4),
-            border: Border.all(color: GQColors.coral, width: 1.5),
+            border: Border.all(color: t.coral, width: 1.5),
             borderRadius: BorderRadius.circular(14),
           ),
           child: TextField(
@@ -292,14 +295,14 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: GQColors.ink,
+                color: t.ink,
                 letterSpacing: 1.0),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
               hintText: 'DELETE',
               hintStyle: TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: GQColors.hair,
+                  color: t.hair,
                   letterSpacing: 1.0),
             ),
             autocorrect: false,
@@ -348,7 +351,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
         Text(
           "If you change your mind later, you'll need to sign up again — your data won't be there.",
           textAlign: TextAlign.center,
-          style: GQTypography.caption.copyWith(color: GQColors.ink2, height: 1.4),
+          style: GQTypography.caption.copyWith(color: t.ink2, height: 1.4),
         ),
       ],
     );
