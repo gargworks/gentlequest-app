@@ -1,3 +1,5 @@
+> NOTE (2026-08-27): the Stage-0 effort this guide supported was resolved by docs/gates/ADR-005; kept in place because a backup daemon reads this directory.
+
 # GentleQuest — Creator Email Sending Guide
 # 66 emails ready to send from hello@gentlequest.app
 # Link: https://gentlequest.app/?utm_source=creator_email&utm_medium=organic&utm_campaign=stage0_wedge
