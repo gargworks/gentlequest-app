@@ -81,8 +81,11 @@ full_project.md
 # Local private documents (not committed, accessible to Windsurf)
 .local/
 
-# Archive and debug files
+# Archive and debug files — nested archive/ dirs stay ignored, but the ROOT
+# /archive/ is the tracked consolidation archive (2026-08-27, see archive/README.md):
 archive/
+!/archive/
+!/archive/**
 
 # iOS local overrides (do not commit)
 ai_buddy_web/ios/Config/local-overrides.xcconfig
