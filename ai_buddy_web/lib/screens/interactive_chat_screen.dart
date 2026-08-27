@@ -30,7 +30,6 @@ import '../widgets/exercise_card_inline.dart';
 import '../widgets/sean_ellis_survey_sheet.dart';
 import '../providers/survey_provider.dart';
 import '../widgets/voice_input_bar.dart';
-// import '../widgets/web_mobile_promo_sheet.dart'; // Re-enable in redesign
 import '../widgets/web_mobile_banner.dart';
 // R1D12 — Offline States
 import '../widgets/offline_banner.dart';
@@ -471,9 +470,6 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       // Currently too much friction (2 popups before first chat).
       // TODO: Re-enable as a single inline disclosure in the onboarding redesign.
       // _ensureLegalAck();
-      // On web only: offer the mobile app once per device. Non-blocking.
-      // TODO: Re-enable as a subtle banner, not a blocking popup, in redesign.
-      // WebMobilePromoSheet.maybeShow(context);
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
