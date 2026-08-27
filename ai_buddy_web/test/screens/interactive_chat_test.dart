@@ -8,7 +8,6 @@ import 'package:ai_buddy_web/providers/mood_provider.dart';
 import 'package:ai_buddy_web/providers/assessment_provider.dart';
 import 'package:ai_buddy_web/providers/task_provider.dart';
 import 'package:ai_buddy_web/providers/progress_provider.dart';
-import 'package:ai_buddy_web/providers/quest_provider.dart';
 
 Widget _buildTestApp() {
   return MultiProvider(
@@ -19,7 +18,6 @@ Widget _buildTestApp() {
       ChangeNotifierProvider(create: (_) => AssessmentProvider()),
       ChangeNotifierProvider(create: (_) => TaskProvider()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()),
-      ChangeNotifierProvider(create: (_) => QuestProvider()),
     ],
     child: MaterialApp(
       home: InteractiveChatScreen(),

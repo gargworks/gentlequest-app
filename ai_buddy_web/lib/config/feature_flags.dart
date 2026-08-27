@@ -2,9 +2,12 @@ class FeatureFlags {
   // Gate streaming behind a flag. Toggle to enable/disable.
   static const bool enableStreaming = true;
 
-  // Operation Leopard Seal: Enable the full "Leopard" Quest Engine.
-  // FALSE = "Old Experiment" (Wellness Dashboard) is shown in the Quest Tab.
-  // TRUE  = "New Experiment" (Leopard Gate -> Terminal -> Shell) is shown.
+  // Operation Leopard Seal: gates the "Leopard" Quest Engine experiment.
+  // Both experiments it toggles between (the dhiwise Wellness Dashboard and
+  // the Leopard Gate -> Terminal -> Shell) were archived in the Phase 3
+  // dead-code sweep — see archive/code/ai_buddy_web/lib/features/leopard/
+  // and archive/code/ai_buddy_web/lib/dhiwise/. Left in place (rather than
+  // deleted) since it's a harmless standalone constant with no live reader.
   static const bool enableLeopardMode = false;
 
   // WO-6.3 Part E: route a server-classified RiskLevel.crisis to the
