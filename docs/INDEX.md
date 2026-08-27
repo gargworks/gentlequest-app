@@ -1,58 +1,29 @@
-# 📚 Documentation Index
+# Documentation Index
 
-> Last updated: 2026-01-02
+> Last updated: 2026-08-27
 
-## Core Documentation
+## Live documents
 
-| Document | Purpose |
-|----------|---------|
-| [README.md](../README.md) | Project overview |
-| [API_DOCUMENTATION.md](../API_DOCUMENTATION.md) | API endpoints |
-| [DEPLOYMENT.md](../DEPLOYMENT.md) | Deployment guide |
-| [TESTING_GUIDE.md](../TESTING_GUIDE.md) | Testing procedures |
-
-## Operational
-
-| Document | Purpose |
-|----------|---------|
-| [AGENTS.md](../AGENTS.md) | Agent roster and roles |
-| [RELEASES.md](../RELEASES.md) | Release history |
-| [DEPLOYMENT_PROTOCOL.md](../DEPLOYMENT_PROTOCOL.md) | Deploy procedures |
-| [PRODUCTION_DEPLOYMENT_GUIDE.md](../PRODUCTION_DEPLOYMENT_GUIDE.md) | Production deploy |
-
-## Development
-
-| Document | Purpose |
-|----------|---------|
-| [DEVELOPMENT_RULES.md](../DEVELOPMENT_RULES.md) | Coding standards |
-| [LOCAL_TESTING_CHECKLIST.md](../LOCAL_TESTING_CHECKLIST.md) | Local test steps |
-| [FEATURE_PLANNING_TEMPLATE.md](../FEATURE_PLANNING_TEMPLATE.md) | Feature template |
-
-## Architecture
-
-| Document | Purpose |
-|----------|---------|
-| [SYSTEM_INTEGRATION.md](../.brain/meta/SYSTEM_INTEGRATION.md) | System overview |
-| [SINGLE_CODEBASE_GUIDE.md](../SINGLE_CODEBASE_GUIDE.md) | Codebase structure |
-| [SHARED_HISTORY_PROTOCOL.md](../SHARED_HISTORY_PROTOCOL.md) | Agent memory |
-
-## Brain / Nucleus
-
-| Document | Purpose |
-|----------|---------|
-| [nucleus/README.md](../nucleus/README.md) | Nucleus brain package |
-| [.brain/context.md](../.brain/context.md) | Brain context |
-| [.brain/patterns.md](../.brain/patterns.md) | Agent patterns |
+| Document | What it is |
+|----------|------------|
+| [.goal-capsule.md](../.goal-capsule.md) | Read first after any context reset — the weight behind the work, not just a summary of it. |
+| [docs/ADRS.md](./ADRS.md) | Architecture Decision Records index — canonical list of ADRs and their source files. |
+| [docs/gates/ADR-005-stage0-resolution.md](./gates/ADR-005-stage0-resolution.md) | Stage 0 exit-gate resolution (Aug-8) — retroactively closed FAILED, no freeze imposed. |
+| [docs/gates/ADR-006-stage1-installs-pass.md](./gates/ADR-006-stage1-installs-pass.md) | Stage 1 exit-gate criterion (A), cumulative installs ≥250 — PASSED. |
+| [docs/gates/ADR-007-stage1-retention-instrument.md](./gates/ADR-007-stage1-retention-instrument.md) | Stage 1 criterion (B), native D14 retention instrument — first complete read 2026-10-09. |
+| [docs/strategy/BILLION_DOLLAR_ROADMAP.md](./strategy/BILLION_DOLLAR_ROADMAP.md) | Canonical roadmap cited as gate source by ADR-005/006/007; adoption recorded 2026-07-10; committed to git 2026-08-27. |
+| [docs/STORE_DEPLOYMENT.md](./STORE_DEPLOYMENT.md) | Release credentials and commands — source of truth for App Store + Google Play deploys. |
+| [docs/release/MANUAL_RELEASE_PLAYBOOK.md](./release/MANUAL_RELEASE_PLAYBOOK.md) | The live release path. GitHub Actions has been paused since 2026-08-06, so this is primary, not fallback. |
+| [docs/REVIEW_PACKET_RUMINATION_v1.7.0.md](./REVIEW_PACKET_RUMINATION_v1.7.0.md) | Clinical / legal review packet for the Loop Reset feature — see its 2026-08-27 amendment (gate bypassed, not cleared). |
+| [docs/release_notes_v1.6.md](./release_notes_v1.6.md) | v1.6.0 release notes, Stage 1 submission prep. |
+| [CHANGELOG.md](../CHANGELOG.md) | Full version history. |
 
 ## Archive
 
-Stale documentation moved to [`docs/archive/`](./archive/).
-See [ARCHIVE.md](./ARCHIVE.md) for archive log.
+Superseded, stale, or aspirational documents live in [`archive/`](../archive/ARCHIVE_INDEX.md) — nothing is deleted, it just moves there. See [archive/ARCHIVE_INDEX.md](../archive/ARCHIVE_INDEX.md) for the full tombstone log.
 
----
+## Known-misleading, kept in place (read the banner first)
 
-## Quick Links
-
-- **Run health check:** `python3 scripts/flight_check.py`
-- **Check brain status:** `PYTHONPATH=. python3 nucleus/clients/cli/nucleus_cli.py status`
-- **Master controller:** `python3 scripts/ops/master_controller.py status`
+| Document | Why |
+|----------|-----|
+| [docs/ONE_BUTTON_RELEASE_GUIDE.md](./ONE_BUTTON_RELEASE_GUIDE.md) | Describes an automated GitHub Actions release path that has not run since 2026-08-06 (paused for abuse review). Kept for when Actions returns; a banner at the top says so and points to the manual playbook above. |
