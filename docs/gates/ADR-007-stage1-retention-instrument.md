@@ -140,3 +140,57 @@ that release forward); issue a fresh service-account key; grant it on the new
 property; set `GQ_GA_PROPERTY_ID`. The earliest honest D14 read is 14 days
 after that build reaches users — which is a new window, and a decision for the
 operator rather than something this ADR can assert.
+
+---
+
+## Second amendment — 2026-08-27: the instrument is restored; the window is not
+
+Appended per the same rule as the first amendment: the ratified decisions and
+the first amendment stand as written; this records what changed on 2026-08-27.
+
+### What was restored (all verified by running the instrument, not by claim)
+
+1. GA4 property **551876340** created and linked to Firebase project
+   `gentlequestapp` (315814630048). Account 406219488. Web stream
+   `G-MBBHN4PT39`; native streams for both Android apps and iOS.
+   Data-sharing settings: all optional sharing declined.
+2. Service account `firebase-adminsdk-fbsvc@gentlequestapp.iam.gserviceaccount.com`
+   granted Viewer on the property; fresh key issued; the **Google Analytics
+   Data API had never been enabled on the project** and was enabled — the raw
+   PERMISSION_DENIED named the disabled service, which no amount of granting
+   would have fixed.
+3. Production (Render srv-d2r3i1fdiees73dqtov0) now carries `GQ_GA_PROPERTY_ID`
+   and `GQ_GA_SA_JSON`. The hardcoded default in `metrics/d14_cohort_ga4.py`
+   now names 551876340, with the old 516568186 documented as the
+   wrong-population trap it was.
+4. App builds carrying collection shipped 2026-08-27: **1.7.2+26082702** live
+   on Play production and internal; iOS submitted for App Store review
+   (auto-release). Collection is gated at the SDK level on Anonymity Mode,
+   closing a latent gap where automatic events would have violated the shipped
+   privacy promise.
+5. The instrument's verdict moved from `error/permission_denied` to
+   `insufficient/not_mature` — its first honest verdict since 2026-06-03.
+   Production's next scheduled snapshot (08:00 UTC) will carry it.
+
+### What is NOT restored, and cannot be
+
+The ratified window (2026-08-15 → 2026-09-24) has no native data for its first
+12 days and never will. Telemetry begins at the 1.7.2 install base, 2026-08-27
+onward. Any D14 number computed over the ratified window mixes a dark period
+into the denominator.
+
+### Open governance decision — surfaced, not resolved here
+
+Two live documents disagree about this exact scenario:
+
+- `BILLION_DOLLAR_ROADMAP.md` (entry precondition): a retention pipeline not
+  verified by **2026-08-15** auto-scores clause (B) **FAILED** — no exception.
+- This ADR's first amendment: the honest state is **INSUFFICIENT for
+  structural reasons**, distinct from a measured failure.
+
+The roadmap's own middle-band clause allows ONE automatic 4-week extension to
+**2026-11-05**. Whether to (a) score (B) FAILED per the letter of the roadmap,
+(b) treat it as INSUFFICIENT-structural and restart the window at 2026-08-27
+(making the earliest complete D14 read ~2026-10-10, inside the extension
+window), or (c) something else, is the plan-author's call and needs its own
+ADR. This amendment deliberately does not choose.
