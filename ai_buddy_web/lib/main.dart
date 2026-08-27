@@ -1,14 +1,7 @@
-import 'package:ai_buddy_web/screens/dhiwise_chat_screen.dart';
 import 'package:ai_buddy_web/screens/interactive_chat_screen.dart';
-import 'package:ai_buddy_web/screens/quest_preview_screen.dart';
 import 'package:ai_buddy_web/screens/clinical_assessment_screen.dart';
 import 'package:ai_buddy_web/screens/welcome_screen.dart';
 import 'package:ai_buddy_web/screens/onboarding_vow_screen.dart';
-import 'package:ai_buddy_web/dhiwise/presentation/wellness_dashboard_screen/wellness_dashboard_screen.dart'
-    as dhiwise_wellness;
-import 'dhiwise/core/utils/size_utils.dart' as dhiwise_sizer;
-import 'package:ai_buddy_web/dhiwise/presentation/quest_screen/quest_screen.dart'
-    as dhiwise_quest;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,7 +13,6 @@ import 'providers/mood_provider.dart';
 import 'providers/assessment_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/progress_provider.dart';
-import 'providers/quest_provider.dart';
 import 'providers/companion_provider.dart';
 import 'providers/survey_provider.dart';
 import 'navigation/route_observer.dart';
@@ -279,7 +271,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ProgressProvider()),
-        ChangeNotifierProvider(create: (_) => QuestProvider()..loadQuests()),
         ChangeNotifierProvider(create: (_) => CompanionProvider()),
         ChangeNotifierProvider(create: (_) => SurveyProvider()..load()),
       ],
@@ -333,19 +324,11 @@ class MyApp extends StatelessWidget {
           '/home/quest': (context) => HomeShell(initialTab: AppTab.quest),
           // Legacy landing route redirected to HomeShell Home tab
           '/main': (context) => const HomeShell(),
-          '/dhiwise-chat': (context) => const MentalHealthChatScreen(),
-          '/preview-quest': (context) => const QuestPreviewScreen(),
           '/interactive-chat': (context) => const InteractiveChatScreen(),
           '/privacy': (context) => const LegalScreen(
                 title: 'Privacy Policy',
                 assetPath: 'assets/legal/privacy.md',
               ),
-          // New direct routes for clarity
-          '/wellness-dashboard': (context) => dhiwise_sizer.Sizer(
-                builder: (context, orientation, deviceType) =>
-                    dhiwise_wellness.WellnessDashboardScreen(),
-              ),
-          '/quests-list': (context) => const dhiwise_quest.QuestScreen(),
           '/clinical-assessment': (context) => const ClinicalAssessmentScreen(),
           // Design Authority WO-4 acceptance criterion: debug-only component
           // gallery. Not linked from any in-app navigation — reach via
