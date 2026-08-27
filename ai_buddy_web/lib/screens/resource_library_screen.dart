@@ -6,6 +6,7 @@ import '../navigation/home_tab_deeplink.dart';
 import '../screens/exercise_scaffold_screen.dart';
 import '../screens/rumination_reset_screen.dart';
 import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 import '../widgets/app_bottom_nav.dart' show AppTab;
 import '../widgets/exercise_card_scaffold.dart';
 import '../widgets/gq/gq.dart';
@@ -842,10 +843,10 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                       color: GQColors.warmSoft,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.favorite_rounded,
                       size: 11,
-                      color: GQColors.coralDk,
+                      color: GQTheme.of(context).coralDk,
                     ),
                   ),
                 )

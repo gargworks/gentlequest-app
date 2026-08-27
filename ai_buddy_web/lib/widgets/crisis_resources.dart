@@ -446,8 +446,8 @@ class _AcuteCrisisTakeoverState extends State<AcuteCrisisTakeover> {
                         colors: [t.warmSoft, GQIllustration.warm1],
                       ),
                     ),
-                    child: const Icon(Icons.favorite_rounded,
-                        color: GQColors.coralDk, size: 36),
+                    child: Icon(Icons.favorite_rounded,
+                        color: t.coralDk, size: 36),
                   ),
                   const SizedBox(height: 24),
 

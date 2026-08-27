@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/gq_tokens.dart';
+import '../../theme/gq_theme.dart';
 
 /// surfaces. Keeps P6 (crisis never blocks) consistent across all paths.
 class LifelineCard988 extends StatelessWidget {
@@ -15,6 +16,7 @@ class LifelineCard988 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: '988 Lifeline — Dial 988 — free, confidential, 24/7',
@@ -50,7 +52,7 @@ class LifelineCard988 extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -67,7 +69,7 @@ class LifelineCard988 extends StatelessWidget {
                         ),
                         SizedBox(width: 6),
                         TagPill(label: 'CALL', bg: GQColors.accentSoft,
-                            fg: GQColors.coralDk),
+                            fg: t.coralDk),
                       ],
                     ),
                     SizedBox(height: 2),

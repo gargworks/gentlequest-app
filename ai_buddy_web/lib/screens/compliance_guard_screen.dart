@@ -388,9 +388,9 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                       child: child,
                     );
                   },
-                  child: const Icon(
+                  child: Icon(
                     Icons.favorite_rounded,
-                    color: GQColors.coralDk,
+                    color: t.coralDk,
                     size: 32,
                   ),
                 ),
@@ -715,7 +715,7 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
                 iconColor: t.coral,
                 tagText: 'CALL',
                 tagBg: t.accentSoft,
-                tagColor: GQColors.coralDk,
+                tagColor: t.coralDk,
                 title: '988 Lifeline',
                 subtitle: 'Dial 988 · works on any phone, 24/7',
                 onTap: () => launchUri(

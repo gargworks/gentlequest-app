@@ -27,11 +27,15 @@ import 'gq_tokens.dart';
 /// values in both factories, where a one-character edit would go unnoticed.
 /// Keep reading them from [GQColors] directly at call sites.
 ///
-/// **[GQColors.coralDk] joined this exception list by operator ruling on
-/// 2026-08-27.** It is the "on-light text accent" used on compliance tags and
-/// the crisis-resources icon — the same danger/crisis family as [GQColors.dangerInk],
-/// so it stays byte-identical in both modes rather than getting a dark variant.
-/// Same structural enforcement: no slot here, no way to theme it silently.
+/// **[GQColors.coralDk] was briefly on this exception list (ruling of
+/// 2026-08-27, morning) and was REVERSED the same day on evidence.** The
+/// original ruling assumed it was fill-family like [GQColors.dangerInk]; a
+/// grep showed all six call sites are INK/foreground (crisis heart icons,
+/// tag text, assessment accent) on theme-shifting surfaces — a static ink
+/// fails contrast on dark. It is now the [coralDk] slot: light keeps
+/// #E0494C, dark uses [GQDarkColors.coral] per D3. The reversal is recorded
+/// here deliberately — the wrong ruling and the evidence that undid it are
+/// both part of the record.
 ///
 /// **Mood colours are absent for the same reason.** A mood being a different
 /// colour at night breaks recognition, and [GQMoodScale] already carries
@@ -55,6 +59,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
     required this.primary,
     required this.primarySoft,
     required this.coral,
+    required this.coralDk,
     required this.accentSoft,
     required this.inkOnCoral,
     required this.amber,
@@ -90,6 +95,14 @@ class GQTheme extends ThemeExtension<GQTheme> {
   final Color primarySoft;
 
   final Color coral;
+
+  /// Coral-family INK accent (icons, tag text). Slotted 2026-08-27 by
+  /// operator re-ruling: every call site is foreground on a theme-shifting
+  /// surface, so a static value fails contrast on dark — unlike the
+  /// primaryDk/dangerInk FILLS, whose white-text contrast travels with them.
+  /// Light: GQColors.coralDk (#E0494C). Dark: GQDarkColors.coral (#FF6B6B,
+  /// the D3-ruled on-dark coral ink) — no new hex invented.
+  final Color coralDk;
   final Color accentSoft;
 
   /// Foreground for text/icons sitting on [accentSoft]. Must track its
@@ -126,6 +139,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
     primary: GQColors.primary,
     primarySoft: GQColors.primarySoft,
     coral: GQColors.coral,
+    coralDk: GQColors.coralDk,
     accentSoft: GQColors.accentSoft,
     inkOnCoral: GQColors.inkOnCoral,
     amber: GQColors.amber,
@@ -156,6 +170,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
     primary: GQDarkColors.primary,
     primarySoft: GQDarkColors.softTint(GQDarkColors.primary),
     coral: GQDarkColors.coral,
+    coralDk: GQDarkColors.coral,
     accentSoft: GQDarkColors.softTint(GQDarkColors.coral),
     inkOnCoral: GQDarkColors.ink,
     amber: GQColors.amber,
@@ -186,6 +201,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
     Color? primary,
     Color? primarySoft,
     Color? coral,
+    Color? coralDk,
     Color? accentSoft,
     Color? inkOnCoral,
     Color? amber,
@@ -208,6 +224,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
       primary: primary ?? this.primary,
       primarySoft: primarySoft ?? this.primarySoft,
       coral: coral ?? this.coral,
+      coralDk: coralDk ?? this.coralDk,
       accentSoft: accentSoft ?? this.accentSoft,
       inkOnCoral: inkOnCoral ?? this.inkOnCoral,
       amber: amber ?? this.amber,
@@ -235,6 +252,7 @@ class GQTheme extends ThemeExtension<GQTheme> {
       primary: Color.lerp(primary, other.primary, t)!,
       primarySoft: Color.lerp(primarySoft, other.primarySoft, t)!,
       coral: Color.lerp(coral, other.coral, t)!,
+      coralDk: Color.lerp(coralDk, other.coralDk, t)!,
       accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
       inkOnCoral: Color.lerp(inkOnCoral, other.inkOnCoral, t)!,
       amber: Color.lerp(amber, other.amber, t)!,

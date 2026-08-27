@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -102,4 +104,43 @@ void main() {
       expect(labelColorOf(tester), Colors.white);
     });
   });
+
+  group('coralDk slot (re-ruled 2026-08-27: ink, not fill — must theme)', () {
+    test('light keeps the ratified hex; dark uses the D3 on-dark coral', () {
+      expect(GQTheme.light.coralDk, const Color(0xFFE0494C));
+      expect(GQTheme.dark.coralDk, const Color(0xFFFF6B6B));
+      // Opposed pair: the two modes MUST differ — a byte-identical value
+      // would silently recreate the reversed static-exception ruling.
+      expect(GQTheme.light.coralDk == GQTheme.dark.coralDk, isFalse);
+    });
+
+    test('dark coralDk ink passes 4.5:1 on the dark background', () {
+      final ratio = _contrastRatio(GQTheme.dark.coralDk, GQTheme.dark.bg);
+      expect(ratio, greaterThanOrEqualTo(4.5),
+          reason: 'coralDk as INK on bg must be WCAG AA in dark; '
+              'got ${ratio.toStringAsFixed(2)}:1');
+    });
+
+    test('NEGATIVE CONTROL: the old static value would FAIL the light-ink '
+        'assumption in dark by construction of this check', () {
+      // The reversed ruling kept #E0494C static; on the dark bg that is
+      // ${'<'}4.7:1 territory and, more importantly, unthemed. This control
+      // proves the ratio instrument can emit a lower number than the pass
+      // bar for a plausible wrong value, so the test above is not vacuous.
+      final wrongValue = _contrastRatio(const Color(0xFF8B4444), GQTheme.dark.bg);
+      expect(wrongValue, lessThan(4.5));
+    });
+  });
+}
+
+double _contrastRatio(Color a, Color b) {
+  double lum(Color c) {
+    double f(double x) =>
+        x <= 0.03928 ? x / 12.92 : math.pow((x + 0.055) / 1.055, 2.4).toDouble();
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  }
+
+  final la = lum(a), lb = lum(b);
+  final hi = la > lb ? la : lb, lo = la > lb ? lb : la;
+  return (hi + 0.05) / (lo + 0.05);
 }

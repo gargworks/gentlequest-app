@@ -21,6 +21,7 @@
 
 import 'package:flutter/material.dart';
 import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 import '../widgets/gq/gq.dart';
 import 'clinical_assessment/assessment_flow_screen.dart';
 import 'clinical_assessment/assessment_models.dart';
@@ -133,8 +134,9 @@ class _AssessmentEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPhq9 = scale == AssessmentScale.phq9;
+    final t = GQTheme.of(context);
     final iconTile = isPhq9 ? GQColors.primarySoft : GQColors.moodOkay.withValues(alpha: 0.18);
-    final accentColor = isPhq9 ? GQColors.primaryDk : GQColors.coralDk;
+    final accentColor = isPhq9 ? GQColors.primaryDk : t.coralDk;
     final icon = isPhq9
         ? Icons.sentiment_neutral_rounded
         : Icons.psychology_rounded;
