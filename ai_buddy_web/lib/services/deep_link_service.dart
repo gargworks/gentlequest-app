@@ -100,7 +100,15 @@ class DeepLinkService {
 
   void _handleDeepLink(String link) {
     debugPrint('Deep link received: $link');
-    FirebaseService().logEvent('deep_link_opened', {'url': link});
+    // Strip query parameters before logging — same fix the web cold-start
+    // path already carries above. Auth magic links arrive on THIS path too
+    // (gentlequest://auth/verify?token=...), and logging the raw link put
+    // the auth token into Firebase Analytics (PRIVACY_DISCLOSURE_AUDIT H2,
+    // fixed for web 2026-07, native path missed until 2026-08-27).
+    final uriForLog = Uri.tryParse(link);
+    FirebaseService().logEvent('deep_link_opened', {
+      'url': uriForLog?.replace(queryParameters: {}).toString() ?? 'unparseable',
+    });
 
     final uri = Uri.parse(link);
     final path = uri.path;

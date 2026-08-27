@@ -50,6 +50,20 @@ class FirebaseService {
         debugPrint('[firebase] clear userId on anonymity-on failed: $e');
       }
     }
+    // SDK-level collection switch, not just the wrapper gate. The wrapper's
+    // early-return only suppresses events WE log; once a GA4 property is
+    // linked (2026-08-27), the SDK also emits AUTOMATIC events
+    // (first_open, session_start, user_engagement) that never pass through
+    // logEvent(). The shipped privacy policy promises analytics is
+    // "suppressed entirely" under Anonymity Mode, so the collection switch
+    // itself must follow the toggle or the promise silently breaks.
+    if (_initialized) {
+      try {
+        await _analytics.setAnalyticsCollectionEnabled(!value);
+      } catch (e) {
+        debugPrint('[firebase] setAnalyticsCollectionEnabled failed: $e');
+      }
+    }
   }
 
   Future<void> _loadAnonymityMode() async {
@@ -137,6 +151,18 @@ class FirebaseService {
       // the user's prior choice on cold boot. setUserId on the next event is
       // also gated by this flag (no userId leak post-anonymity-on).
       await _loadAnonymityMode();
+
+      // Align the SDK's own collection switch with the hydrated anonymity
+      // choice on every cold boot. Without this, a user who enabled
+      // Anonymity Mode would still emit the SDK's AUTOMATIC events
+      // (first_open, session_start) — the wrapper gate below never sees
+      // those. Enabled-by-default for everyone else, matching the shipped
+      // opt-out privacy model.
+      try {
+        await _analytics.setAnalyticsCollectionEnabled(!_anonymityOn);
+      } catch (e) {
+        debugPrint('[firebase] setAnalyticsCollectionEnabled at init failed: $e');
+      }
 
       // Log app open
       await logEvent('app_open');

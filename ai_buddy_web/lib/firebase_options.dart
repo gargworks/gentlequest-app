@@ -53,6 +53,11 @@ class DefaultFirebaseOptions {
     projectId: 'gentlequestapp',
     authDomain: 'gentlequestapp.firebaseapp.com',
     storageBucket: 'gentlequestapp.firebasestorage.app',
+    // GA4 web stream for the gentlequestapp property (551876340), linked
+    // 2026-08-27 when Google Analytics was enabled on the Firebase project.
+    // Absent before that because no GA4 property existed at all — see
+    // docs/gates/ADR-007 amendment.
+    measurementId: 'G-MBBHN4PT39',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

@@ -46,7 +46,14 @@ except ImportError:  # pragma: no cover - optional dependency guard
 logger = logging.getLogger("d14_cohort_ga4")
 
 ANALYTICS_READONLY_SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
-DEFAULT_PROPERTY_ID = "516568186"
+# GA4 property for the gentlequestapp Firebase project (315814630048),
+# created + linked 2026-08-27. The previous value, 516568186, belonged to
+# the ABANDONED gentlequest-prod project — its native app data froze at
+# v1.3.1 while the app shipped 1.7.x, so querying it produced
+# plausible-looking numbers about the wrong population. If this default
+# ever goes stale again, prefer deleting it over updating it: an explicit
+# GQ_GA_PROPERTY_ID env var is the honest configuration.
+DEFAULT_PROPERTY_ID = "551876340"
 DEFAULT_MIN_N = 40
 DEFAULT_PASS_THRESHOLD = 0.15
 DEFAULT_KILL_THRESHOLD = 0.07

@@ -13,7 +13,7 @@ Aggregates install counts from three sources:
                          cumulative-install endpoint; the script authenticates
                          and lists apps to validate the key, then reports the
                          install-count gap honestly.
-  3. GA4 web installs  — BetaAnalyticsDataClient against property 516568186.
+  3. GA4 web installs  — BetaAnalyticsDataClient against property 551876340 (gentlequestapp).
                          Counts totalUsers with a first_open / session_start
                          event filter, falling back to totalUsers as a proxy.
 
@@ -47,7 +47,7 @@ ASC_ISSUER_ID = "aa60935b-8c0a-4055-b26f-f44d84c265f7"
 ASC_KEY_GLOBS = ("AuthKey_*.p8", "ApiKey_*.p8")
 ASC_KEY_DIR = Path.home() / "Downloads"
 
-GA4_PROPERTY = "516568186"  # gentlequest-prod GA4 property
+GA4_PROPERTY = "551876340"  # gentlequestapp GA4 property (created 2026-08-27; old 516568186 = abandoned gentlequest-prod)
 
 STAGE1_GATE = 250
 
