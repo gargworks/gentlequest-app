@@ -70,6 +70,14 @@ class _Exercise {
   final String durationLabel; // e.g. "1 min"
   final String categoryLabel; // e.g. "breath"
   final _ExerciseCategory category;
+  // Stays a static Color, not a theme-resolved value: _kExercises below is
+  // a top-level `const` list built from `const _Exercise(...)` constructors,
+  // which cannot call GQTheme.of(context) — there is no BuildContext at
+  // that scope. Converting this field to dark-mode-aware would require
+  // widening it to a semantic token/enum resolved at render time (as
+  // mood_tracker.dart's _moodSelectedBg does for the mood scale), which is
+  // a data-model change beyond this work order's colors-only scope.
+  // Flagged as a structural finding in the WO-8 slice-7 report.
   final Color tileBackground;
   final bool isFavorite;
   final bool isRecent;
@@ -293,8 +301,9 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: const GQHeader(title: 'Library'),
       body: SafeArea(
         child: ListView(
@@ -332,7 +341,7 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
                 children: [
                   Text(
                     'ALL EXERCISES',
-                    style: GQTypography.micro.copyWith(color: GQColors.ink2),
+                    style: GQTypography.micro.copyWith(color: t.ink2),
                   ),
                   const Spacer(),
                   Text(
@@ -341,7 +350,7 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen>
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ],
@@ -409,12 +418,13 @@ class _FeaturedLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
       child: Text(
         // Verbatim from spec
         'RECOMMENDED · BASED ON YOUR LAST 3 DAYS',
-        style: GQTypography.micro.copyWith(color: GQColors.ink2),
+        style: GQTypography.micro.copyWith(color: t.ink2),
       ),
     );
   }
@@ -433,6 +443,7 @@ class _FeaturedExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GQCard(
@@ -444,7 +455,12 @@ class _FeaturedExerciseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(GQRadii.cardLg),
           child: Container(
             // IMG-TINT — featured-card illustration, intentional off-token
-            // (A1): the hero gradient is illustration, not UI chrome.
+            // (A1): the hero gradient is illustration, not UI chrome. Every
+            // Colors.white/black overlay painted onto this art section below
+            // (ring border, breathing-orb radial gradient, the two badge
+            // chips) stays static for the same reason — none of them are
+            // GQColors references, and they're keyed to this fixed-hue
+            // illustration, not the theme.
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -578,15 +594,15 @@ class _FeaturedExerciseCard extends StatelessWidget {
 
                 // Body section
                 Container(
-                  color: Colors.white,
+                  color: t.surface,
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: const [
-                          Text('🌬️', style: TextStyle(fontSize: 18)),
-                          SizedBox(width: 7),
+                        children: [
+                          const Text('🌬️', style: TextStyle(fontSize: 18)),
+                          const SizedBox(width: 7),
                           // Verbatim from spec: "4-7-8 breathing" [with leaf emoji]
                           // Note: HTML uses 🌬️ (wind-face); REVIEW.md says "leaf emoji" —
                           // HTML is authoritative; using 🌬️. [assumed: leaf may be design-doc
@@ -597,20 +613,20 @@ class _FeaturedExerciseCard extends StatelessWidget {
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink,
+                              color: t.ink,
                               letterSpacing: -0.4,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'In for 4, hold for 7, out for 8. Slows your nervous system in a single round.',
                         style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w500,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                           height: 1.45,
                         ),
                       ),
@@ -646,6 +662,7 @@ class _ExerciseGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     if (exercises.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -655,7 +672,7 @@ class _ExerciseGrid extends StatelessWidget {
           style: TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 13,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       );
@@ -746,6 +763,7 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
   @override
   Widget build(BuildContext context) {
     final exercise = widget.exercise;
+    final t = GQTheme.of(context);
     return AnimatedOpacity(
       opacity: _visible ? 1.0 : 0.0,
       duration: _reduceMotion ? Duration.zero : GQDurations.fade,
@@ -768,6 +786,11 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
+                      // exercise.tileBackground stays static — sourced from
+                      // the const _kExercises list (const _Exercise
+                      // constructor), which cannot call GQTheme.of(context).
+                      // Structural constraint, not a style choice; flagged
+                      // in the work-order report.
                       color: exercise.tileBackground,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -781,11 +804,11 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                   // Name
                   Text(
                     exercise.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink,
+                      color: t.ink,
                       height: 1.25,
                       letterSpacing: -0.2,
                     ),
@@ -794,11 +817,11 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                   // Meta
                   Text(
                     '⏱ ${exercise.durationLabel} · ${exercise.categoryLabel}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -839,14 +862,14 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                   child: Container(
                     width: 22,
                     height: 22,
-                    decoration: const BoxDecoration(
-                      color: GQColors.warmSoft,
+                    decoration: BoxDecoration(
+                      color: t.warmSoft,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.favorite_rounded,
                       size: 11,
-                      color: GQTheme.of(context).coralDk,
+                      color: t.coralDk,
                     ),
                   ),
                 )
@@ -858,7 +881,7 @@ class _ExerciseGridItemState extends State<_ExerciseGridItem> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: GQColors.primarySoft,
+                      color: t.primarySoft,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -898,6 +921,7 @@ class _AskAlexFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
       color: const Color(0xFFF4F0FA),
       child: Column(
@@ -905,14 +929,14 @@ class _AskAlexFallback extends StatelessWidget {
         children: [
           // A3: headline + button label + caption are a label and a
           // caption, not competing copy — the screen needs both.
-          const Text(
+          Text(
             'Nothing here fits?',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
             ),
           ),
           const SizedBox(height: GQSpacing.md),
@@ -925,7 +949,7 @@ class _AskAlexFallback extends StatelessWidget {
           Text(
             'Opens a chat with a head start.',
             textAlign: TextAlign.center,
-            style: GQTypography.caption.copyWith(color: GQColors.ink2),
+            style: GQTypography.caption.copyWith(color: t.ink2),
           ),
         ],
       ),

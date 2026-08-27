@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/firebase_service.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import 'profile_prefs_keys.dart';
 import 'profile_widgets.dart';
@@ -169,6 +170,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
   // Render the per-step body. Switch keeps the file scrollable without
   // splintering into 5 tiny widgets — each branch is short.
   Widget _buildStepBody(int idx) {
+    final t = GQTheme.of(context);
     switch (idx) {
       case 0:
         return Column(
@@ -297,36 +299,36 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 minLines: 6,
                 maxLines: 10,
                 onChanged: (v) => _persistString('safety_plan_step4_meaning_v1', v),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: GQColors.ink,
+                  color: t.ink,
                   height: 1.5,
                 ),
                 decoration: InputDecoration(
                   hintText:
                       "Write to a future you who needs to remember. People, projects, small joys — anything.",
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                   filled: true,
-                  fillColor: GQColors.softBg,
+                  fillColor: t.bg,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(11),
-                    borderSide: const BorderSide(color: GQColors.hair),
+                    borderSide: BorderSide(color: t.hair),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(11),
-                    borderSide: const BorderSide(color: GQColors.hair),
+                    borderSide: BorderSide(color: t.hair),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(11),
-                    borderSide: const BorderSide(color: GQColors.primary),
+                    borderSide: BorderSide(color: t.primary),
                   ),
                 ),
               ),
@@ -340,6 +342,7 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final header = _stepHeader(widget.stepIdx);
     final isFinalStep = widget.stepIdx >= 4;
     return Column(
@@ -359,22 +362,22 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 // Step header
                 Text(
                   header.eyebrow,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     letterSpacing: 0.7,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   header.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                     letterSpacing: -0.4,
                     height: 1.2,
                   ),
@@ -382,11 +385,11 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                 const SizedBox(height: 8),
                 Text(
                   header.intro,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     height: 1.5,
                   ),
                 ),
@@ -441,9 +444,9 @@ class _SafetyPlanBuilderStepState extends State<SafetyPlanBuilderStep> {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         decoration: TextDecoration.underline,
-                        decorationColor: GQColors.ink2,
+                        decorationColor: t.ink2,
                       ),
                     ),
                   ),
@@ -489,6 +492,7 @@ class ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return ProfileCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,6 +507,8 @@ class ContactCard extends StatelessWidget {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
+                    // primaryDk stays static per the work order — GQTheme has
+                    // no slot for it (CTA-fill discipline), even used as text here.
                     color: GQColors.primaryDk,
                   ),
                 ),
@@ -535,7 +541,7 @@ class ContactCard extends StatelessWidget {
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                     ),
                     if (favorite) ...[
@@ -546,7 +552,7 @@ class ContactCard extends StatelessWidget {
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ],
@@ -569,37 +575,38 @@ class NoOneSkipBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: GQColors.coral.withValues(alpha: 0.06),
+        color: t.coral.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: GQColors.coral.withValues(alpha: 0.22),
+          color: t.coral.withValues(alpha: 0.22),
           style: BorderStyle.solid,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Don't have anyone right now?",
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               height: 1.3,
             ),
           ),
           const SizedBox(height: 3),
           RichText(
-            text: const TextSpan(
+            text: TextSpan(
               style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink2,
+                color: t.ink2,
                 height: 1.45,
               ),
               children: [
@@ -622,9 +629,9 @@ class NoOneSkipBlock extends StatelessWidget {
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                color: GQColors.ink2,
+                color: t.ink2,
                 decoration: TextDecoration.underline,
-                decorationColor: GQColors.ink2,
+                decorationColor: t.ink2,
               ),
             ),
           ),

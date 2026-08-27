@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/body_double_session.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 /// BodyDoubleStartSheet — Fable #4: Shared Solitude.
@@ -13,11 +14,12 @@ import '../../theme/gq_tokens.dart';
 /// framing with "Sit with company" — a room, not a timer.
 Future<BodyDoubleSessionConfig?> showBodyDoubleStartSheet(
     BuildContext context) {
+  final t = GQTheme.of(context);
   return showModalBottomSheet<BodyDoubleSessionConfig>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: t.surface,
     builder: (ctx) => const _BodyDoubleStartSheetContent(),
   );
 }
@@ -75,6 +77,7 @@ class _BodyDoubleStartSheetContentState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = GQTheme.of(context);
     return SafeArea(
       top: false,
       child: Padding(
@@ -110,7 +113,7 @@ class _BodyDoubleStartSheetContentState
                 'Work next to others, quietly. Nobody sees you. '
                 "Nobody counts you. Quest sits too.",
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: GQColors.ink2),
+                    ?.copyWith(color: t.ink2),
               ),
               const SizedBox(height: 20),
               Wrap(
@@ -122,13 +125,14 @@ class _BodyDoubleStartSheetContentState
                     label: const Text('Just me'),
                     selected: !_wantsLive,
                     onSelected: (_) => setState(() => _wantsLive = false),
-                    selectedColor: GQColors.primarySoft,
+                    selectedColor: t.primarySoft,
                     labelStyle: TextStyle(
-                      color: !_wantsLive ? GQColors.primaryDk : GQColors.ink2,
+                      // primaryDk stays static — no GQTheme slot (CTA-fill discipline).
+                      color: !_wantsLive ? GQColors.primaryDk : t.ink2,
                       fontWeight: FontWeight.w700,
                     ),
                     side: BorderSide(
-                      color: !_wantsLive ? GQColors.primary : GQColors.hair,
+                      color: !_wantsLive ? t.primary : t.hair,
                     ),
                   ),
                   ChoiceChip(
@@ -136,13 +140,13 @@ class _BodyDoubleStartSheetContentState
                     label: const Text('With someone'),
                     selected: _wantsLive,
                     onSelected: (_) => setState(() => _wantsLive = true),
-                    selectedColor: GQColors.primarySoft,
+                    selectedColor: t.primarySoft,
                     labelStyle: TextStyle(
-                      color: _wantsLive ? GQColors.primaryDk : GQColors.ink2,
+                      color: _wantsLive ? GQColors.primaryDk : t.ink2,
                       fontWeight: FontWeight.w700,
                     ),
                     side: BorderSide(
-                      color: _wantsLive ? GQColors.primary : GQColors.hair,
+                      color: _wantsLive ? t.primary : t.hair,
                     ),
                   ),
                 ],
@@ -153,7 +157,7 @@ class _BodyDoubleStartSheetContentState
                   "Live rooms aren't open yet — sitting with Quest for now. "
                   "We'll let you know the moment there's someone else here.",
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: GQColors.ink2, height: 1.4),
+                      ?.copyWith(color: t.ink2, height: 1.4),
                 ),
               ],
               const SizedBox(height: 20),
@@ -170,7 +174,7 @@ class _BodyDoubleStartSheetContentState
                 decoration: InputDecoration(
                   hintText: 'e.g. draft the two emails',
                   filled: true,
-                  fillColor: GQColors.softBg,
+                  fillColor: t.bg,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(GQRadii.card),
                     borderSide: BorderSide.none,
@@ -185,7 +189,7 @@ class _BodyDoubleStartSheetContentState
                 // D3: labelSmall is 11px — below ink3's 14px floor.
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -202,13 +206,13 @@ class _BodyDoubleStartSheetContentState
                     selected: selected,
                     onSelected: (_) =>
                         setState(() => _selectedDurationIndex = i),
-                    selectedColor: GQColors.primarySoft,
+                    selectedColor: t.primarySoft,
                     labelStyle: TextStyle(
-                      color: selected ? GQColors.primaryDk : GQColors.ink2,
+                      color: selected ? GQColors.primaryDk : t.ink2,
                       fontWeight: FontWeight.w700,
                     ),
                     side: BorderSide(
-                      color: selected ? GQColors.primary : GQColors.hair,
+                      color: selected ? t.primary : t.hair,
                     ),
                   );
                 }),
@@ -218,7 +222,7 @@ class _BodyDoubleStartSheetContentState
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: GQColors.softBg,
+                  color: t.bg,
                   borderRadius: BorderRadius.circular(GQRadii.card),
                 ),
                 child: Text(
@@ -226,7 +230,7 @@ class _BodyDoubleStartSheetContentState
                   "long it's been. The room will tell you when your time's "
                   'up — gently.',
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: GQColors.ink2, height: 1.45),
+                      ?.copyWith(color: t.ink2, height: 1.45),
                 ),
               ),
               const SizedBox(height: 24),
@@ -236,6 +240,8 @@ class _BodyDoubleStartSheetContentState
                   key: const Key('body_double_start_button'),
                   onPressed: _sitDown,
                   style: ElevatedButton.styleFrom(
+                    // primaryDk + white stay static — CTA fill, byte-identical
+                    // across modes by design (contrast travels with the fill).
                     backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -252,7 +258,7 @@ class _BodyDoubleStartSheetContentState
                   'Camera off. Mic off. Presence is one bit: here.',
                   // D3: bodySmall is 12px — below ink3's 14px floor.
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     fontStyle: FontStyle.italic,
                   ),
                 ),

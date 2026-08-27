@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/gq/gq.dart';
 
@@ -68,9 +69,10 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: t.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(28),
         ),
@@ -98,7 +100,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
             width: 42,
             height: 4,
             decoration: BoxDecoration(
-              color: GQColors.ink.withAlpha(46),
+              color: t.ink.withAlpha(46),
               borderRadius: BorderRadius.circular(99),
             ),
           ),
@@ -116,18 +118,18 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
             child: Container(
               width: 54,
               height: 54,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   // IMG-TINT: gradient stop paired with accentSoft (agent ruling 2026-05-22 keep raw)
-                  colors: [Color(0xFFFFF1E5), GQColors.accentSoft],
+                  colors: [const Color(0xFFFFF1E5), t.accentSoft],
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.pan_tool_alt_rounded,
-                color: GQColors.coral,
+                color: t.coral,
                 size: 26,
               ),
             ),
@@ -135,27 +137,27 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
           const SizedBox(height: 10),
 
           // "A QUIET PAUSE" eyebrow — verbatim
-          const Text(
+          Text(
             'A QUIET PAUSE',
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink2,
+              color: t.ink2,
               letterSpacing: 0.7,
             ),
           ),
           const SizedBox(height: 4),
 
           // Headline — verbatim from HTML
-          const Text(
+          Text(
             'Thank you for being honest with that one.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: GQTypography.displayFamily,
               fontSize: 21,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
               letterSpacing: -0.5,
               height: 1.25,
             ),
@@ -163,8 +165,8 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
           const SizedBox(height: 8),
 
           // Body — verbatim from HTML
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Text(
               'What you said matters. Before we keep going — are you safe right now?',
               textAlign: TextAlign.center,
@@ -172,7 +174,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: GQColors.ink2,
+                color: t.ink2,
                 height: 1.5,
               ),
             ),
@@ -212,8 +214,8 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
           // Option 3 — Just having a heavy moment (coral)
           _BridgeOptionCard(
             iconEmoji: '🤍',
-            iconBg: GQColors.coral.withAlpha(46),
-            iconColor: GQColors.coral,
+            iconBg: t.coral.withAlpha(46),
+            iconColor: t.coral,
             title: 'Just having a heavy moment', // verbatim from HTML
             subtitle: 'Continue. We\'ll check in tomorrow.',
             style: _BridgeCardStyle.coral,
@@ -231,16 +233,17 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
               decoration: BoxDecoration(
-                color: GQColors.dangerSoft,
+                color: t.dangerSoft,
                 borderRadius: BorderRadius.circular(12),
+                // dangerInk stays static — 988 CTA border, byte-identical by design.
                 border: Border.all(color: GQColors.dangerInk.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.phone_rounded,
-                    color: GQColors.coral,
+                    color: t.coral,
                     size: 16,
                   ),
                   const SizedBox(width: 6),
@@ -250,7 +253,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
                   // the screen edge. A truncated 988 affordance on the Q9
                   // suicidal-ideation path is the worst clipping bug this app
                   // can have, so it wraps instead of overflowing.
-                  const Flexible(
+                  Flexible(
                     child: Text(
                       'Call 988 now · always tap-ready', // verbatim from HTML
                       textAlign: TextAlign.center,
@@ -258,7 +261,7 @@ class _Q9CrisisBridgeSheetState extends State<Q9CrisisBridgeSheet>
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.coral,
+                        color: t.coral,
                       ),
                     ),
                   ),
@@ -311,6 +314,7 @@ class _BridgeOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     Color bgColor;
     Color borderColor;
     Color titleColor;
@@ -318,20 +322,23 @@ class _BridgeOptionCard extends StatelessWidget {
 
     switch (style) {
       case _BridgeCardStyle.green:
+        // GQColors.moodGreat stays static — mood-scale hue, never shifts by mode.
         bgColor = GQColors.moodGreat.withAlpha(26); // rgba(156,196,135,0.10)
         borderColor = GQColors.moodGreat.withAlpha(77); // rgba(156,196,135,0.30)
-        titleColor = GQColors.ink;
-        subtitleColor = GQColors.ink2;
+        titleColor = t.ink;
+        subtitleColor = t.ink2;
       case _BridgeCardStyle.primary:
-        bgColor = GQColors.primary;
-        borderColor = GQColors.primary;
+        bgColor = t.primary;
+        borderColor = t.primary;
+        // White stays literal — painted directly on the primary fill above,
+        // same discipline as the primaryDk CTA (contrast travels with the fill).
         titleColor = Colors.white;
         subtitleColor = Colors.white.withAlpha(217);
       case _BridgeCardStyle.coral:
-        bgColor = GQColors.coral.withAlpha(31); // gradient approx
-        borderColor = GQColors.coral.withAlpha(77);
-        titleColor = GQColors.ink;
-        subtitleColor = GQColors.ink2;
+        bgColor = t.coral.withAlpha(31); // gradient approx
+        borderColor = t.coral.withAlpha(77);
+        titleColor = t.ink;
+        subtitleColor = t.ink2;
     }
 
     return GestureDetector(
