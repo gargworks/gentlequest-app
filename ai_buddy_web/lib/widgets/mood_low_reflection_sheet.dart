@@ -25,13 +25,6 @@ import 'gq/gq.dart';
 /// so the user receives a follow-up "worried check-in" notification.
 /// Default is `null`, in which case the check-in is skipped — useful for
 /// tests and any caller that doesn't have the level handy.
-///
-/// TODO(wiring): callers in `mood_tracker.dart` should pass
-/// `latestMoodLevel: moodLevel` when invoking this. As of 2026-05-21 the
-/// existing call site at `mood_tracker.dart:746` does not pass it; without
-/// the parameter the worried check-in won't schedule. Update that call to
-/// `showMoodLowReflectionSheet(context, latestMoodLevel: moodLevel);` once
-/// the mood_tracker.dart owner approves.
 Future<void> showMoodLowReflectionSheet(
   BuildContext context, {
   int? latestMoodLevel,
