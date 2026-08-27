@@ -47,8 +47,9 @@ class ClinicalAssessmentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: const GQHeader(title: 'Check in'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -62,11 +63,11 @@ class ClinicalAssessmentScreen extends StatelessWidget {
             // non-clinical-cold). Style token swapped to GQType.title per
             // spec; copy left as-is since it already meets the sweep's
             // intent and the spec gave no replacement for this exact text.
-            Text('How are you, really?', style: GQTypography.title.copyWith(color: GQColors.ink)),
+            Text('How are you, really?', style: GQTypography.title.copyWith(color: t.ink)),
             const SizedBox(height: 6),
             Text(
               'These short check-ins use clinical screening tools to give you a signal — not a verdict.',
-              style: GQTypography.body.copyWith(color: GQColors.ink2),
+              style: GQTypography.body.copyWith(color: t.ink2),
             ),
             const SizedBox(height: 24),
 
@@ -135,7 +136,7 @@ class _AssessmentEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPhq9 = scale == AssessmentScale.phq9;
     final t = GQTheme.of(context);
-    final iconTile = isPhq9 ? GQColors.primarySoft : GQColors.moodOkay.withValues(alpha: 0.18);
+    final iconTile = isPhq9 ? t.primarySoft : GQColors.moodOkay.withValues(alpha: 0.18);
     final accentColor = isPhq9 ? GQColors.primaryDk : t.coralDk;
     final icon = isPhq9
         ? Icons.sentiment_neutral_rounded
@@ -157,9 +158,9 @@ class _AssessmentEntryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_warmSubtitle, style: GQTypography.titleSm.copyWith(fontSize: 16, color: GQColors.ink)),
+                Text(_warmSubtitle, style: GQTypography.titleSm.copyWith(fontSize: 16, color: t.ink)),
                 const SizedBox(height: GQSpacing.xs),
-                Text(_clinicalCaption, style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+                Text(_clinicalCaption, style: GQTypography.micro.copyWith(color: t.ink2)),
               ],
             ),
           ),

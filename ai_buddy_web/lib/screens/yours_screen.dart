@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/companion_widget.dart';
 import '../widgets/gq/gq.dart';
@@ -42,9 +43,10 @@ class _YoursScreenState extends State<YoursScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     if (_showBuilder) {
       return Scaffold(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         body: SafetyPlanBuilderStep(
           stepIdx: _builderStep,
           onClose: () => setState(() {
@@ -57,7 +59,7 @@ class _YoursScreenState extends State<YoursScreen> {
       );
     }
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -102,13 +104,14 @@ class _YoursScreenState extends State<YoursScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final t = GQTheme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Yours',
                 style: TextStyle(
@@ -116,10 +119,10 @@ class _YoursScreenState extends State<YoursScreen> {
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.4,
-                  color: GQColors.ink,
+                  color: t.ink,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 'Your space. Private.',
                 style: TextStyle(
@@ -127,7 +130,7 @@ class _YoursScreenState extends State<YoursScreen> {
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   // D3: 14px is text, not decoration — ink3 doesn't qualify.
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ],
@@ -161,6 +164,7 @@ class _YoursRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
       onTap: onTap,
       haptic: false,
@@ -172,25 +176,25 @@ class _YoursRow extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: GQColors.primarySoft,
+                color: t.primarySoft,
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: Icon(icon, color: GQColors.primary, size: 22),
+              child: Icon(icon, color: t.primary, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GQTypography.body.copyWith(fontWeight: FontWeight.w700, color: GQColors.ink)),
+                  Text(title, style: GQTypography.body.copyWith(fontWeight: FontWeight.w700, color: t.ink)),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: GQTypography.caption.copyWith(color: GQColors.ink2)),
+                  Text(subtitle, style: GQTypography.caption.copyWith(color: t.ink2)),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: GQColors.ink3,
+              color: t.ink3,
               size: 24,
             ),
           ],

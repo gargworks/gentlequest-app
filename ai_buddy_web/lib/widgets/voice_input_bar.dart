@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// VoiceInputBar — State D (R1D7 Chat Active States)
@@ -234,6 +235,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final reduceMotion =
         _reduceMotion || MediaQuery.of(context).accessibleNavigation;
 
@@ -253,15 +255,15 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                   label: 'Cancel voice input',
                   child: GestureDetector(
                     onTap: _onCancel,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Text(
                         // Verbatim from HTML
                         'Cancel',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ),
@@ -282,7 +284,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                               width: 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: GQColors.coral
+                                color: t.coral
                                     .withValues(alpha: opacity),
                                 shape: BoxShape.circle,
                               ),
@@ -292,11 +294,11 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                         const SizedBox(width: 6),
                         Text(
                           _formatElapsed(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
-                            fontFeatures: [FontFeature.tabularFigures()],
+                            color: t.ink,
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
                       ],
@@ -313,8 +315,8 @@ class _VoiceInputBarState extends State<VoiceInputBar>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(GQRadii.button),
               // Conic gradient approximated as sweep gradient ring
-              gradient: const SweepGradient(
-                colors: [GQColors.coral, GQColors.primary, GQColors.coral],
+              gradient: SweepGradient(
+                colors: [t.coral, t.primary, t.coral],
                 startAngle: math.pi / 2,
                 endAngle: math.pi * 2.5,
               ),
@@ -322,7 +324,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
             padding: const EdgeInsets.all(2),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: t.surface,
                 borderRadius: BorderRadius.circular(GQRadii.button),
               ),
               padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
@@ -337,10 +339,10 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                       _transcript.isNotEmpty
                           ? _transcript
                           : (_engineReady ? 'Listening…' : 'Starting…'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -412,6 +414,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   Widget _buildMiniWaveform(bool reduceMotion) {
+    final t = GQTheme.of(context);
     // 6 bars for the mini waveform inside the bar
     const miniDelays = [0, 90, 180, 60, 220, 130];
     const miniHeights = [0.60, 0.90, 0.45, 0.75, 0.30, 0.55];
@@ -433,7 +436,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                 width: 3,
                 height: 22 * barH,
                 decoration: BoxDecoration(
-                  color: GQColors.coral,
+                  color: t.coral,
                   borderRadius: BorderRadius.circular(2),
                 ),
               );
@@ -445,6 +448,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   Widget _buildFullWaveform(bool reduceMotion) {
+    final t = GQTheme.of(context);
     return SizedBox(
       height: 28,
       child: AnimatedBuilder(
@@ -462,7 +466,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                 width: 3,
                 height: 28 * barH,
                 decoration: BoxDecoration(
-                  color: GQColors.coral,
+                  color: t.coral,
                   borderRadius: BorderRadius.circular(2),
                 ),
               );
@@ -491,6 +495,7 @@ class VoicePrivacyNudge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
@@ -499,10 +504,10 @@ class VoicePrivacyNudge extends StatelessWidget {
           child: Text(
             // Verbatim from HTML
             'your voice is staying on this device',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink2,
+              color: t.ink2,
               letterSpacing: 0.4,
             ),
           ),

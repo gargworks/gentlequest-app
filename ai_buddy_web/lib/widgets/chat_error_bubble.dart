@@ -1,6 +1,6 @@
 import 'dart:ui' show PointMode;
 import 'package:flutter/material.dart';
-import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 
 /// Connection state for a failed user message in the chat transcript.
 enum ChatErrorState {
@@ -77,6 +77,7 @@ class ChatErrorBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final reduceMotion = MediaQuery.of(context).accessibleNavigation;
     final listWidth = MediaQuery.of(context).size.width;
     final maxBubbleWidth = listWidth * 0.88;
@@ -88,9 +89,9 @@ class ChatErrorBubble extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           decoration: BoxDecoration(
-            color: GQColors.amberSoft,
+            color: t.amberSoft,
             border: Border.all(
-              color: GQColors.amber.withValues(alpha: 0.28),
+              color: t.amber.withValues(alpha: 0.28),
               width: 1,
             ),
             borderRadius: const BorderRadius.only(
@@ -112,7 +113,7 @@ class ChatErrorBubble extends StatelessWidget {
                     height: 17,
                     child: CustomPaint(
                       painter: _AlertIconPainter(
-                        color: GQColors.amber,
+                        color: t.amber,
                         strokeWidth: 1.9,
                       ),
                     ),
@@ -125,12 +126,12 @@ class ChatErrorBubble extends StatelessWidget {
                       children: [
                         Text(
                           _title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
                             height: 1.35,
-                            color: GQColors.inkOnAmber,
+                            color: t.inkOnAmber,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -140,7 +141,7 @@ class ChatErrorBubble extends StatelessWidget {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             height: 1.45,
-                            color: GQColors.inkOnAmber
+                            color: t.inkOnAmber
                                 .withValues(alpha: 0.92),
                           ),
                         ),
@@ -194,6 +195,7 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: label,
@@ -205,7 +207,7 @@ class _PrimaryButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           constraints: const BoxConstraints(minHeight: 44),
           decoration: BoxDecoration(
-            color: GQColors.amber,
+            color: t.amber,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Row(
@@ -216,6 +218,10 @@ class _PrimaryButton extends StatelessWidget {
                 width: 14,
                 height: 14,
                 child: CustomPaint(
+                  // amber is mode-invariant (GQTheme.dark reuses
+                  // GQColors.amber unchanged), so this white icon's
+                  // contrast on the fill never shifts by mode — same
+                  // CTA-fill-foreground discipline as primaryDk/dangerInk.
                   painter: _RefreshIconPainter(color: Colors.white),
                 ),
               ),
@@ -255,6 +261,7 @@ class _SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: label,
@@ -269,7 +276,7 @@ class _SecondaryButton extends StatelessWidget {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: GQColors.amber.withValues(alpha: 0.35),
+              color: t.amber.withValues(alpha: 0.35),
               width: 1.5,
             ),
           ),
@@ -278,10 +285,10 @@ class _SecondaryButton extends StatelessWidget {
               label,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: GQColors.inkOnAmber,
+                color: t.inkOnAmber,
               ),
             ),
           ),

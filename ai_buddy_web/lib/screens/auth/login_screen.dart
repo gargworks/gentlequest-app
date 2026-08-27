@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/firebase_service.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
 
@@ -80,8 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -96,20 +98,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 28),
-              const Icon(
+              Icon(
                 Icons.email_outlined,
                 size: 56,
-                color: GQColors.primary,
+                color: t.primary,
               ),
               const SizedBox(height: 18),
               Text(
                 _sent ? 'Check your inbox' : 'Sync across devices',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GQTypography.displayFamily,
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.ink,
+                  color: t.ink,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -121,9 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? "We sent a one-time link to ${_emailController.text.trim()}. Tap it to finish signing in. The link works once and expires in 15 minutes."
                       : "Add your email and we'll send a one-tap sign-in link. No password. Your history stays private to you.",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     height: 1.5,
                   ),
                 ),
@@ -157,26 +159,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             _errorText = null;
                           });
                         },
-                  child: const Text(
+                  child: Text(
                     'Use a different email',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ),
               ],
               const Spacer(),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   'Anonymous use stays supported — sign-in is optional.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ),
@@ -205,15 +207,16 @@ class _EmailField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: t.surface,
             borderRadius: BorderRadius.circular(GQRadii.card),
             border: Border.all(
-              color: errorText != null ? GQColors.coral : GQColors.hair,
+              color: errorText != null ? t.coral : t.hair,
               width: 1.2,
             ),
           ),
@@ -240,8 +243,8 @@ class _EmailField extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               errorText!,
-              style: const TextStyle(
-                color: GQColors.coral,
+              style: TextStyle(
+                color: t.coral,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -263,7 +266,8 @@ class _PrimaryButton extends StatelessWidget {
     final disabled = onTap == null;
     return Material(
       // D3: primary fails 4.5:1 with white text (3.66:1); primaryDk
-      // passes (5.30:1).
+      // passes (5.30:1). primaryDk: no GQTheme slot by design (CTA-fill
+      // exception); paired Colors.white foreground below stays literal too.
       color: disabled
           ? GQColors.primaryDk.withValues(alpha: 0.4)
           : GQColors.primaryDk,

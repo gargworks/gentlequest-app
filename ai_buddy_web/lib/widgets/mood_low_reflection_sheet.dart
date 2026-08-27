@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../models/interactive_exercise.dart';
 import '../navigation/home_tab_deeplink.dart';
@@ -209,15 +210,16 @@ class _CtaView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       key: const ValueKey('cta'),
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Headline + sub — WO-5.2 C2 exact copy.
-        Text('Logged. Heavy day, hm?', style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+        Text('Logged. Heavy day, hm?', style: GQTypography.titleSm.copyWith(color: t.ink)),
         const SizedBox(height: GQSpacing.xs),
-        Text('Want to do one tiny thing together?', style: GQTypography.body.copyWith(color: GQColors.ink2)),
+        Text('Want to do one tiny thing together?', style: GQTypography.body.copyWith(color: t.ink2)),
         const SizedBox(height: GQSpacing.xl),
 
         // Action 1 — GQButton.primary
@@ -264,14 +266,15 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, color: GQColors.coral, size: 22),
+          Icon(icon, color: t.coral, size: 22),
           const SizedBox(width: GQSpacing.md),
-          Expanded(child: Text(label, style: GQTypography.body.copyWith(color: GQColors.ink))),
-          const Icon(Icons.chevron_right_rounded, color: GQColors.ink3, size: 20),
+          Expanded(child: Text(label, style: GQTypography.body.copyWith(color: t.ink))),
+          Icon(Icons.chevron_right_rounded, color: t.ink3, size: 20),
         ],
       ),
     );
@@ -286,6 +289,7 @@ class _BreathingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       key: const ValueKey('breathing'),
       mainAxisSize: MainAxisSize.min,
@@ -296,10 +300,10 @@ class _BreathingView extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
               onPressed: onDone,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
             Expanded(
-              child: Text('Box Breathing', style: GQTypography.body.copyWith(color: GQColors.ink, fontWeight: FontWeight.w600)),
+              child: Text('Box Breathing', style: GQTypography.body.copyWith(color: t.ink, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -322,6 +326,7 @@ class _JustBreatheView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return AnimatedOpacity(
       key: const ValueKey('justbreathe'),
       opacity: fadingOut ? 0.0 : 1.0,
@@ -333,14 +338,14 @@ class _JustBreatheView extends StatelessWidget {
           children: [
             Icon(
               Icons.favorite_border_rounded,
-              color: GQColors.coral,
+              color: t.coral,
               size: 40,
             ),
             const SizedBox(height: 16),
             Text(
               "Take a slow breath.\nYou don't have to do anything right now.",
               textAlign: TextAlign.center,
-              style: GQTypography.body.copyWith(color: GQColors.ink2, height: 1.5),
+              style: GQTypography.body.copyWith(color: t.ink2, height: 1.5),
             ),
           ],
         ),

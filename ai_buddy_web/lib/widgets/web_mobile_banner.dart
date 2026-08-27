@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 
 /// Non-blocking dismissible banner shown at the top of the chat screen on
 /// web only. Replaces the old blocking [WebMobilePromoSheet] modal popup.
@@ -82,6 +82,7 @@ class _WebMobileBannerState extends State<WebMobileBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final isWeb = widget.isWebOverride ?? kIsWeb;
     if (!isWeb || !_visible) {
       return const SizedBox.shrink();
@@ -92,26 +93,26 @@ class _WebMobileBannerState extends State<WebMobileBanner> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: GQColors.accentSoft,
+          color: t.accentSoft,
           border: Border(
-            bottom: BorderSide(color: GQColors.hair),
+            bottom: BorderSide(color: t.hair),
           ),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.phone_iphone,
               size: 18,
-              color: GQColors.coral,
+              color: t.coral,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text.rich(
                 TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     height: 1.35,
                   ),
                   children: [
@@ -122,14 +123,14 @@ class _WebMobileBannerState extends State<WebMobileBanner> {
                       child: GestureDetector(
                         key: const Key('web_mobile_banner_get_app'),
                         onTap: _openStore,
-                        child: const Text(
+                        child: Text(
                           'Get the app',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.primary,
+                            color: t.primary,
                             decoration: TextDecoration.underline,
-                            decorationColor: GQColors.primary,
+                            decorationColor: t.primary,
                           ),
                         ),
                       ),
@@ -143,12 +144,12 @@ class _WebMobileBannerState extends State<WebMobileBanner> {
               key: const Key('web_mobile_banner_dismiss'),
               behavior: HitTestBehavior.opaque,
               onTap: _dismiss,
-              child: const Padding(
-                padding: EdgeInsets.all(4),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
                 child: Icon(
                   Icons.close,
                   size: 16,
-                  color: GQColors.ink3,
+                  color: t.ink3,
                 ),
               ),
             ),

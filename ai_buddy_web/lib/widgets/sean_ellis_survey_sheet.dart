@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/survey_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/firebase_service.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// Sean-Ellis PMF survey bottom sheet.
@@ -94,11 +95,12 @@ class _SeanEllisSurveySheetState extends State<_SeanEllisSurveySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final textTheme = Theme.of(context).textTheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: GQColors.softBg,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: t.bg,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(GQRadii.sheet),
         ),
       ),
@@ -131,7 +133,7 @@ class _SeanEllisSurveySheetState extends State<_SeanEllisSurveySheet> {
             style: textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               fontFamily: GQTypography.displayFamily,
-              color: GQColors.ink,
+              color: t.ink,
             ),
           ),
           const SizedBox(height: 12),
@@ -141,7 +143,7 @@ class _SeanEllisSurveySheetState extends State<_SeanEllisSurveySheet> {
             'How would you feel if you could no longer use GentleQuest?',
             style: textTheme.bodyLarge?.copyWith(
               fontFamily: GQTypography.bodyFamily,
-              color: GQColors.ink2,
+              color: t.ink2,
               height: 1.4,
             ),
           ),
@@ -165,9 +167,11 @@ class _SeanEllisSurveySheetState extends State<_SeanEllisSurveySheet> {
             child: ElevatedButton(
               onPressed: _canSubmit ? _submit : null,
               style: ElevatedButton.styleFrom(
+                // primaryDk: no GQTheme slot by design (CTA-fill exception);
+                // paired Colors.white foreground below stays literal too.
                 backgroundColor: GQColors.primaryDk,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: GQColors.primary.withValues(alpha: 0.4),
+                disabledBackgroundColor: t.primary.withValues(alpha: 0.4),
                 disabledForegroundColor: Colors.white70,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(GQRadii.button),
@@ -205,8 +209,9 @@ class _OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Material(
-      color: selected ? GQColors.primarySoft : Colors.white,
+      color: selected ? t.primarySoft : t.surface,
       borderRadius: BorderRadius.circular(GQRadii.card),
       child: InkWell(
         onTap: onTap,
@@ -216,7 +221,7 @@ class _OptionTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(GQRadii.card),
             border: Border.all(
-              color: selected ? GQColors.primary : GQColors.hair,
+              color: selected ? t.primary : t.hair,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -226,7 +231,7 @@ class _OptionTile extends StatelessWidget {
                 selected
                     ? Icons.radio_button_checked_rounded
                     : Icons.radio_button_unchecked_rounded,
-                color: selected ? GQColors.primary : GQColors.ink3,
+                color: selected ? t.primary : t.ink3,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -237,7 +242,7 @@ class _OptionTile extends StatelessWidget {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 15,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
               ),

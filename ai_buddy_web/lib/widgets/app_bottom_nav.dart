@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 
 /// App-wide bottom navigation.
 ///
@@ -71,6 +71,7 @@ class AppBottomNav extends StatelessWidget {
       BuildContext context, IconData icon, String label, AppTab tab,
       {required bool activeLabelOnly}) {
     final bool isActive = current == tab;
+    final t = GQTheme.of(context);
     return InkWell(
       onTap: () {
         // Haptic feedback on supported platforms
@@ -91,8 +92,8 @@ class AppBottomNav extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/home', arguments: tab);
       },
       borderRadius: BorderRadius.circular(12),
-      focusColor: GQColors.primary.withValues(alpha: 0.10),
-      hoverColor: GQColors.primary.withValues(alpha: 0.06),
+      focusColor: t.primary.withValues(alpha: 0.10),
+      hoverColor: t.primary.withValues(alpha: 0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
         child: Column(
@@ -102,8 +103,8 @@ class AppBottomNav extends StatelessWidget {
               icon,
               size: 28.0,
               color: isActive
-                  ? GQColors.primary
-                  : GQColors.ink2,
+                  ? t.primary
+                  : t.ink2,
             ),
             const SizedBox(height: 4.0),
             AnimatedOpacity(
@@ -116,7 +117,7 @@ class AppBottomNav extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 12.0,
-                      color: isActive ? GQColors.primary : GQColors.ink2,
+                      color: isActive ? t.primary : t.ink2,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),

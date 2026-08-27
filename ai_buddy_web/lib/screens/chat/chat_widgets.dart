@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/utils/size_utils.dart';
 import '../../theme/gq_tokens.dart';
+import '../../theme/gq_theme.dart';
 
 // Risk pill removed from UI; actionable chips remain.
 
@@ -126,6 +127,7 @@ class CrisisChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final hasName = name.trim().isNotEmpty;
     final hasPhone = phone.trim().isNotEmpty;
     final hasText = textInstr.trim().isNotEmpty;
@@ -171,18 +173,18 @@ class CrisisChip extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 8.h),
             decoration: BoxDecoration(
-              color: GQColors.primarySoft,
+              color: t.primarySoft,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: GQColors.hair),
+              border: Border.all(color: t.hair),
             ),
             child: Center(
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.w500,
-                    color: GQColors.ink),
+                    color: t.ink),
               ),
             ),
           ),
@@ -351,6 +353,8 @@ class _BreathingOrbState extends State<BreathingOrb>
   }
 
   Widget _orbShape(double scale) {
+    // State.context is in scope here even without a build parameter.
+    final t = GQTheme.of(context);
     return Transform.scale(
       scale: scale,
       child: Container(
@@ -358,17 +362,17 @@ class _BreathingOrbState extends State<BreathingOrb>
         height: 48,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: GQColors.accentSoft,
+          color: t.accentSoft,
           border: Border.all(
-            color: GQColors.coral.withValues(alpha: 0.35),
+            color: t.coral.withValues(alpha: 0.35),
             width: 1.5,
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Icon(
             Icons.favorite_rounded,
             size: 22,
-            color: GQColors.coral,
+            color: t.coral,
           ),
         ),
       ),
