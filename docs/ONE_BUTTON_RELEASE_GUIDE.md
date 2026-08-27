@@ -1,5 +1,7 @@
 # 🚀 One-Button Release: Complete Guide
 
+> **⚠️ Not currently live:** GitHub Actions push/PR/cron triggers were paused 2026-08-06 (abuse review) — the automated path this guide describes does not currently run. The live path is [docs/release/MANUAL_RELEASE_PLAYBOOK.md](./release/MANUAL_RELEASE_PLAYBOOK.md). This guide is kept for when Actions returns.
+
 > **Version:** 1.0 | **Last Updated:** January 2, 2026
 
 This document covers the full release workflow from triggering the one-button automation to publishing on app stores.

@@ -1,5 +1,6 @@
 # Manual Release Playbook — GHA-Down Fallback + Edge-Case Nuances
 
+> **Status:** labeled a fallback below, but since 2026-08-06 (GitHub Actions paused for abuse review) this IS the primary/live release path.
 > **Sibling of:** `docs/ONE_BUTTON_RELEASE_GUIDE.md` (happy-path)
 > **Use this when:** GitHub Actions billing is exhausted, Apple has closed an in-review train, screenshots need surgical replacement, or the self-hosted Mac runner is the only working CI surface.
 > **Source events:** 2026-06-02 → 2026-06-03 v1.3.0 → v1.3.1 ship cycle. Every section below was traversed empirically; quirks are noted with the failure mode that exposed them.

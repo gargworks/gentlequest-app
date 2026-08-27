@@ -4,6 +4,8 @@ description: Trigger the One-Button Mobile Release (Android & iOS) via GitHub Ac
 
 # One-Button Mobile Release Protocol
 
+> **⚠️ Not currently live:** GitHub Actions push/PR/cron triggers were paused 2026-08-06 (abuse review) — the automated path this workflow's script triggers does not currently run. The live path is [docs/release/MANUAL_RELEASE_PLAYBOOK.md](../../docs/release/MANUAL_RELEASE_PLAYBOOK.md). This workflow is kept for when Actions returns.
+
 This workflow triggers the automated build and release pipeline for GentleQuest mobile apps.
 It interacts with GitHub Actions to bypass local environment restrictions (signing keys, etc.).
 
