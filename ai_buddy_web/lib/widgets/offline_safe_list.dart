@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 
 /// Cold-start offline body — shown when the device has no connectivity at
 /// launch (State B). Replaces the chat message list.
@@ -31,6 +31,7 @@ class OfflineSafeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
@@ -42,12 +43,12 @@ class OfflineSafeList extends StatelessWidget {
             title: 'Breathe for a minute',
             subtitle: 'A 60-second reset, no connection needed',
             icon: Icons.air,
-            iconTileColor: GQColors.primarySoft,
-            iconColor: GQColors.primary,
-            fillColor: Colors.white,
-            borderColor: GQColors.hair,
-            titleColor: GQColors.ink,
-            subtitleColor: GQColors.ink2,
+            iconTileColor: t.primarySoft,
+            iconColor: t.primary,
+            fillColor: t.surface,
+            borderColor: t.hair,
+            titleColor: t.ink,
+            subtitleColor: t.ink2,
             onTap: onBreathe,
           ),
           const SizedBox(height: 8),
@@ -55,12 +56,12 @@ class OfflineSafeList extends StatelessWidget {
             title: 'Write it down instead',
             subtitle: 'Your words are saved and will send when we\u2019re back',
             icon: Icons.edit_note_rounded,
-            iconTileColor: GQColors.primarySoft,
-            iconColor: GQColors.primary,
-            fillColor: Colors.white,
-            borderColor: GQColors.hair,
-            titleColor: GQColors.ink,
-            subtitleColor: GQColors.ink2,
+            iconTileColor: t.primarySoft,
+            iconColor: t.primary,
+            fillColor: t.surface,
+            borderColor: t.hair,
+            titleColor: t.ink,
+            subtitleColor: t.ink2,
             onTap: onWrite,
           ),
           const SizedBox(height: 8),
@@ -68,12 +69,12 @@ class OfflineSafeList extends StatelessWidget {
             title: 'Crisis resources',
             subtitle: 'Hotlines and text lines, available offline',
             icon: Icons.favorite_rounded,
-            iconTileColor: Colors.white,
-            iconColor: GQColors.coral,
-            fillColor: GQColors.accentSoft,
-            borderColor: GQColors.coral.withValues(alpha: 0.28),
-            titleColor: GQColors.inkOnCoral,
-            subtitleColor: GQColors.inkOnCoral.withValues(alpha: 0.80),
+            iconTileColor: t.surface,
+            iconColor: t.coral,
+            fillColor: t.accentSoft,
+            borderColor: t.coral.withValues(alpha: 0.28),
+            titleColor: t.inkOnCoral,
+            subtitleColor: t.inkOnCoral.withValues(alpha: 0.80),
             onTap: onCrisis,
           ),
         ],
@@ -82,6 +83,7 @@ class OfflineSafeList extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       children: [
         // Muted companion — 96px, radius-26 primarySoft tile.
@@ -89,19 +91,19 @@ class OfflineSafeList extends StatelessWidget {
           width: 96,
           height: 96,
           decoration: BoxDecoration(
-            color: GQColors.primarySoft,
+            color: t.primarySoft,
             borderRadius: BorderRadius.circular(26),
           ),
-          child: const Center(
+          child: Center(
             child: Icon(
               Icons.spa_rounded,
               size: 44,
-              color: GQColors.ink3,
+              color: t.ink3,
             ),
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Alex is out of reach for a moment',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -109,17 +111,17 @@ class OfflineSafeList extends StatelessWidget {
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
             height: 1.2,
-            color: GQColors.ink,
+            color: t.ink,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Not your fault, and nothing you wrote is gone.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ],
@@ -154,6 +156,7 @@ class _OfflineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: onTap != null,
       label: '$title. $subtitle',
@@ -206,12 +209,12 @@ class _OfflineRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 '\u203A',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ],

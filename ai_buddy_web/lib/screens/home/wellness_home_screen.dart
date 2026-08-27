@@ -5,6 +5,7 @@ import '../../models/mood_entry.dart';
 import '../../navigation/home_tab_deeplink.dart';
 import '../../providers/companion_provider.dart';
 import '../../providers/mood_provider.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/exercise_card_scaffold.dart' show ExerciseType;
@@ -89,8 +90,9 @@ class _WellnessHomeScreenState extends State<WellnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       bottomNavigationBar:
           widget.showBottomNav ? const AppBottomNav(current: AppTab.home) : null,
       body: SafeArea(
@@ -134,6 +136,7 @@ class _GreetingZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final now = DateTime.now();
     final weekday = _WellnessHomeScreenState._weekdayNames[now.weekday - 1];
     final month = _WellnessHomeScreenState._monthNames[now.month - 1];
@@ -150,15 +153,15 @@ class _GreetingZone extends StatelessWidget {
                 Text(
                   '$weekday · $month ${now.day}',
                   // D3: ink3 never carries text below 14px; micro is 11px.
-                  style: GQTypography.micro.copyWith(color: GQColors.ink2),
+                  style: GQTypography.micro.copyWith(color: t.ink2),
                 ),
                 const SizedBox(height: GQSpacing.xs),
-                Text(_greeting(now.hour), style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+                Text(_greeting(now.hour), style: GQTypography.titleSm.copyWith(color: t.ink)),
                 if (activeDays > 0) ...[
                   const SizedBox(height: 2),
                   Text(
                     activeDays == 1 ? 'Day 1 of checking in' : 'Day $activeDays of checking in',
-                    style: GQTypography.caption.copyWith(color: GQColors.ink2),
+                    style: GQTypography.caption.copyWith(color: t.ink2),
                   ),
                 ],
               ],
@@ -169,14 +172,17 @@ class _GreetingZone extends StatelessWidget {
             child: Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [GQColors.primary, GQColors.coral],
+                  colors: [t.primary, t.coral],
                 ),
               ),
+              // Colors.white stays static: foreground on a primary/coral
+              // fill gradient — contrast travels with the fill (same rule
+              // as primaryDk/dangerInk CTAs).
               child: const Icon(Icons.person_rounded, size: 18, color: Colors.white),
             ),
           ),
@@ -204,6 +210,7 @@ class _TodaysOneThingZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final today = moodProvider.getMoodEntriesForDate(DateTime.now());
     final state = _stateFor(today);
 
@@ -243,7 +250,7 @@ class _TodaysOneThingZone extends StatelessWidget {
 
     return GQCard(
       large: true,
-      color: GQColors.primarySoft,
+      color: t.primarySoft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -254,9 +261,10 @@ class _TodaysOneThingZone extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: t.surface,
                   borderRadius: BorderRadius.circular(GQRadii.chip),
                 ),
+                // primaryDk stays static — icon-foreground exception (byte-identical by design).
                 child: const Icon(Icons.spa_outlined, color: GQColors.primaryDk, size: 22),
               ),
               const SizedBox(width: GQSpacing.md),
@@ -266,12 +274,13 @@ class _TodaysOneThingZone extends StatelessWidget {
                   children: [
                     Text(
                       eyebrow.toUpperCase(),
+                      // primaryDk stays static — see class-level exception.
                       style: GQTypography.micro.copyWith(color: GQColors.primaryDk),
                     ),
                     const SizedBox(height: GQSpacing.xs),
-                    Text(headline, style: GQTypography.titleSm.copyWith(color: GQColors.ink)),
+                    Text(headline, style: GQTypography.titleSm.copyWith(color: t.ink)),
                     const SizedBox(height: GQSpacing.xs),
-                    Text(body, style: GQTypography.caption.copyWith(color: GQColors.ink2, fontWeight: FontWeight.w500)),
+                    Text(body, style: GQTypography.caption.copyWith(color: t.ink2, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -304,6 +313,7 @@ class _WeekShapeZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final today = DateTime.now();
     final monday = today.subtract(Duration(days: today.weekday - 1));
     final days = List.generate(7, (i) => monday.add(Duration(days: i)));
@@ -316,10 +326,11 @@ class _WeekShapeZone extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('THIS WEEK', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+              Text('THIS WEEK', style: GQTypography.micro.copyWith(color: t.ink2)),
               GestureDetector(
                 onTap: () => Navigator.of(context).push<void>(
                     MaterialPageRoute(builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.stubFull()))),
+                // primaryDk stays static on both text and icon below — see class-level exception.
                 child: Row(
                   children: [
                     Text('TIMELINE', style: GQTypography.micro.copyWith(color: GQColors.primaryDk)),
@@ -335,7 +346,7 @@ class _WeekShapeZone extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: GQSpacing.md),
               child: Text(
                 'No logs yet this week — the shape fills in as you check in.',
-                style: GQTypography.caption.copyWith(color: GQColors.ink2),
+                style: GQTypography.caption.copyWith(color: t.ink2),
               ),
             )
           else
@@ -377,6 +388,7 @@ class _DayBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final scale = entries.isEmpty ? null : scaleFor(entries.last.moodLevel);
     final barHeight = scale == null ? 8.0 : 24.0 + (entries.last.moodLevel * 10.0);
 
@@ -386,8 +398,12 @@ class _DayBar extends StatelessWidget {
         Container(
           height: barHeight,
           decoration: BoxDecoration(
-            color: scale?.color ?? GQColors.hair,
+            // scale?.color is the mood-scale hue (GQMoodScale) — stays static
+            // by design (D2: a mood is never a different colour at night);
+            // only the empty-day fallback (GQColors.hair) is theme-aware.
+            color: scale?.color ?? t.hair,
             borderRadius: BorderRadius.circular(4),
+            // primaryDk stays static — see class-level exception.
             border: isToday ? Border.all(color: GQColors.primaryDk, width: 2) : null,
           ),
         ),
@@ -395,7 +411,8 @@ class _DayBar extends StatelessWidget {
         Text(
           isToday ? 'TODAY' : letter,
           style: GQTypography.micro.copyWith(
-            color: isToday ? GQColors.primaryDk : GQColors.ink2,
+            // primaryDk stays static — see class-level exception.
+            color: isToday ? GQColors.primaryDk : t.ink2,
             fontSize: isToday ? 9 : 10.5,
           ),
         ),
@@ -445,6 +462,7 @@ class _QuickLane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(vertical: GQSpacing.md, horizontal: GQSpacing.xs),
@@ -455,16 +473,17 @@ class _QuickLane extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: GQColors.primarySoft,
+              color: t.primarySoft,
               borderRadius: BorderRadius.circular(GQRadii.chip),
             ),
+            // primaryDk stays static — see class-level exception.
             child: Icon(icon, color: GQColors.primaryDk, size: 20),
           ),
           const SizedBox(height: GQSpacing.xs),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GQTypography.caption.copyWith(color: GQColors.ink, fontWeight: FontWeight.w800),
+            style: GQTypography.caption.copyWith(color: t.ink, fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -479,8 +498,9 @@ class _DailyNudgeZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
-      color: GQColors.surface,
+      color: t.surface,
       onTap: () => Navigator.of(context).push<void>(
           MaterialPageRoute(builder: (_) => const NotificationDetailScreen())),
       child: Row(
@@ -491,13 +511,13 @@ class _DailyNudgeZone extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('A gentle daily nudge?', style: GQTypography.caption.copyWith(color: GQColors.ink, fontWeight: FontWeight.w800)),
+                Text('A gentle daily nudge?', style: GQTypography.caption.copyWith(color: t.ink, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                Text('One soft reminder. Off whenever you want.', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+                Text('One soft reminder. Off whenever you want.', style: GQTypography.micro.copyWith(color: t.ink2)),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: GQColors.ink3),
+          Icon(Icons.chevron_right_rounded, color: t.ink3),
         ],
       ),
     );

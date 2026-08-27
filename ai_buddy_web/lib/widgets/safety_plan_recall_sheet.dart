@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import 'crisis_resources.dart';
 
@@ -125,6 +126,7 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -133,8 +135,8 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
       expand: false,
       builder: (ctx, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: t.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(GQRadii.sheetLg)),
           ),
           padding: EdgeInsets.only(bottom: viewInsets),
@@ -154,7 +156,7 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: GQColors.hair,
+                          color: t.hair,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -162,30 +164,30 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
                     const SizedBox(height: 14),
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Your safety plan',
                             style: TextStyle(
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink,
+                              color: t.ink,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded, color: GQColors.ink2),
+                          icon: Icon(Icons.close_rounded, color: t.ink2),
                           onPressed: () => Navigator.of(context).maybePop(),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       "You wrote this. It's still here.",
                       style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -242,14 +244,14 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                         decoration: BoxDecoration(
-                          color: GQColors.coral.withValues(alpha: 0.08),
+                          color: t.coral.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(GQRadii.button),
-                          border: Border.all(color: GQColors.coral.withValues(alpha: 0.30)),
+                          border: Border.all(color: t.coral.withValues(alpha: 0.30)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.phone_in_talk_outlined, size: 18, color: GQColors.coral),
-                            SizedBox(width: 10),
+                            Icon(Icons.phone_in_talk_outlined, size: 18, color: t.coral),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 'If you need someone right now — crisis lines',
@@ -257,11 +259,11 @@ class _SafetyPlanRecallSheetState extends State<SafetyPlanRecallSheet> {
                                   fontFamily: GQTypography.bodyFamily,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
-                                  color: GQColors.coral,
+                                  color: t.coral,
                                 ),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, color: GQColors.coral),
+                            Icon(Icons.chevron_right_rounded, color: t.coral),
                           ],
                         ),
                       ),
@@ -287,16 +289,17 @@ class _EyebrowLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 2),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
-          color: GQColors.ink2,
+          color: t.ink2,
         ),
       ),
     );
@@ -310,6 +313,7 @@ class _PlanSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -319,9 +323,9 @@ class _PlanSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           margin: const EdgeInsets.only(bottom: 14),
           decoration: BoxDecoration(
-            color: GQColors.softBg,
+            color: t.bg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: GQColors.hair),
+            border: Border.all(color: t.hair),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,11 +334,11 @@ class _PlanSection extends StatelessWidget {
                 if (i > 0) const SizedBox(height: 8),
                 Text(
                   items[i],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: GQColors.ink,
+                    color: t.ink,
                     height: 1.45,
                   ),
                 ),
@@ -360,35 +364,36 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final name = contact.name.isEmpty ? 'Contact' : contact.name;
     final hasPhone = contact.phone.isNotEmpty;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             name,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
             ),
           ),
           if (contact.relation.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               contact.relation,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12,
-                color: GQColors.ink2,
+                color: t.ink2,
               ),
             ),
           ],
@@ -402,8 +407,8 @@ class _ContactCard extends StatelessWidget {
                     icon: const Icon(Icons.phone_rounded, size: 18),
                     label: const Text('Call'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: GQColors.primary,
-                      side: const BorderSide(color: GQColors.primary),
+                      foregroundColor: t.primary,
+                      side: BorderSide(color: t.primary),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -418,8 +423,8 @@ class _ContactCard extends StatelessWidget {
                     icon: const Icon(Icons.sms_outlined, size: 18),
                     label: const Text('Text'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: GQColors.ink2,
-                      side: const BorderSide(color: GQColors.hair),
+                      foregroundColor: t.ink2,
+                      side: BorderSide(color: t.hair),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -431,12 +436,12 @@ class _ContactCard extends StatelessWidget {
             ),
           ] else ...[
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'No phone saved for this contact.',
               style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12,
-                color: GQColors.ink2,
+                color: t.ink2,
                 fontStyle: FontStyle.italic,
               ),
             ),

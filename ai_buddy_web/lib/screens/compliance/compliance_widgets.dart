@@ -25,12 +25,12 @@ class LifelineCard988 extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: t.surface,
             borderRadius: BorderRadius.circular(GQRadii.card),
-            border: Border.all(color: GQColors.hair),
+            border: Border.all(color: t.hair),
             boxShadow: [
               BoxShadow(
-                color: GQColors.ink.withValues(alpha: 0.05),
+                color: t.ink.withValues(alpha: 0.05),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -43,11 +43,11 @@ class LifelineCard988 extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: GQColors.accentSoft,
+                  color: t.accentSoft,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.phone_rounded,
-                  color: GQColors.coral,
+                  color: t.coral,
                   size: 18,
                 ),
               ),
@@ -64,11 +64,11 @@ class LifelineCard988 extends StatelessWidget {
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
+                            color: t.ink,
                           ),
                         ),
                         SizedBox(width: 6),
-                        TagPill(label: 'CALL', bg: GQColors.accentSoft,
+                        TagPill(label: 'CALL', bg: t.accentSoft,
                             fg: t.coralDk),
                       ],
                     ),
@@ -80,14 +80,14 @@ class LifelineCard988 extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         height: 1.4,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink2, size: 16),
+              Icon(Icons.chevron_right_rounded,
+                  color: t.ink2, size: 16),
             ],
           ),
         ),
@@ -148,6 +148,7 @@ class RegionalResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: '$title — $subtitle',
@@ -156,9 +157,9 @@ class RegionalResourceCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: t.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: GQColors.hair),
+            border: Border.all(color: t.hair),
           ),
           child: Row(
             children: [
@@ -178,28 +179,28 @@ class RegionalResourceCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink2, size: 14),
+              Icon(Icons.chevron_right_rounded,
+                  color: t.ink2, size: 14),
             ],
           ),
         ),
@@ -235,6 +236,7 @@ class UniversalResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: '$title — $subtitle',
@@ -243,12 +245,12 @@ class UniversalResourceCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: t.surface,
             borderRadius: BorderRadius.circular(GQRadii.card),
-            border: Border.all(color: GQColors.hair),
+            border: Border.all(color: t.hair),
             boxShadow: [
               BoxShadow(
-                color: GQColors.ink.withAlpha(13),
+                color: t.ink.withAlpha(13),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -274,11 +276,11 @@ class UniversalResourceCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
+                            color: t.ink,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -305,19 +307,19 @@ class UniversalResourceCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         height: 1.4,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GQColors.ink2, size: 16),
+              Icon(Icons.chevron_right_rounded,
+                  color: t.ink2, size: 16),
             ],
           ),
         ),
@@ -350,6 +352,7 @@ class _BlockReasonDisclosureState extends State<BlockReasonDisclosure> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -363,10 +366,10 @@ class _BlockReasonDisclosureState extends State<BlockReasonDisclosure> {
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 13),
               decoration: BoxDecoration(
-                color: Colors.white.withAlpha(140),
+                color: t.surface.withAlpha(140),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: GQColors.hair,
+                    color: t.hair,
                     style: BorderStyle.solid),
               ),
               child: Row(
@@ -374,12 +377,12 @@ class _BlockReasonDisclosureState extends State<BlockReasonDisclosure> {
                   Expanded(
                     child: Text(
                       widget.summaryText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         height: 1.4,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ),
@@ -388,7 +391,7 @@ class _BlockReasonDisclosureState extends State<BlockReasonDisclosure> {
                     _expanded
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     size: 14,
                   ),
                 ],
@@ -403,12 +406,12 @@ class _BlockReasonDisclosureState extends State<BlockReasonDisclosure> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               widget.bodyText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 height: 1.6,
-                color: GQColors.ink2,
+                color: t.ink2,
               ),
             ),
           ),

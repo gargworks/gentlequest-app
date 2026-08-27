@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/api_service.dart';
 import '../services/crisis_keyword_detector.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/crisis_resources.dart';
 import '../widgets/gq/gq.dart';
@@ -202,10 +203,11 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return PopScope(
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         appBar: GQHeader(
           title: 'Loop reset',
           actions: [
@@ -239,6 +241,7 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
     required String body,
     required List<Widget> children,
   }) {
+    final t = GQTheme.of(context);
     return SingleChildScrollView(
       key: key,
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
@@ -246,11 +249,11 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(eyebrow,
-              style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+              style: GQTypography.micro.copyWith(color: t.ink2)),
           const SizedBox(height: GQSpacing.sm),
-          Text(title, style: GQTypography.title.copyWith(color: GQColors.ink)),
+          Text(title, style: GQTypography.title.copyWith(color: t.ink)),
           const SizedBox(height: GQSpacing.sm),
-          Text(body, style: GQTypography.body.copyWith(color: GQColors.ink2)),
+          Text(body, style: GQTypography.body.copyWith(color: t.ink2)),
           const SizedBox(height: GQSpacing.xl),
           ...children,
         ],
@@ -259,6 +262,7 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
   }
 
   Widget _buildNotice() {
+    final t = GQTheme.of(context);
     return _page(
       key: const ValueKey('notice'),
       eyebrow: 'TWO-MINUTE QUICK WIN',
@@ -275,14 +279,14 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
         else ...[
           Text(
             'Intensity right now: ${_intensity!.round()} / 10',
-            style: GQTypography.body.copyWith(color: GQColors.ink),
+            style: GQTypography.body.copyWith(color: t.ink),
           ),
           Slider(
             value: _intensity!,
             min: 0,
             max: 10,
             divisions: 10,
-            activeColor: GQColors.primary,
+            activeColor: t.primary,
             onChanged: (value) => setState(() => _intensity = value),
           ),
         ],
@@ -369,6 +373,7 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
   }
 
   Widget _buildExit() {
+    final t = GQTheme.of(context);
     return _page(
       key: const ValueKey('exit'),
       eyebrow: 'RESET COMPLETE',
@@ -378,7 +383,7 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
         GQCard(
           child: Text(
             'You do not need to feel completely better before you move. The reset worked when it returned you to a concrete next step.',
-            style: GQTypography.body.copyWith(color: GQColors.ink2),
+            style: GQTypography.body.copyWith(color: t.ink2),
           ),
         ),
         const SizedBox(height: GQSpacing.lg),
@@ -391,14 +396,14 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
         else ...[
           Text(
             'Intensity now: ${_afterIntensity!.round()} / 10',
-            style: GQTypography.body.copyWith(color: GQColors.ink),
+            style: GQTypography.body.copyWith(color: t.ink),
           ),
           Slider(
             value: _afterIntensity!,
             min: 0,
             max: 10,
             divisions: 10,
-            activeColor: GQColors.primary,
+            activeColor: t.primary,
             onChanged: (value) => setState(() => _afterIntensity = value),
           ),
         ],
@@ -414,29 +419,30 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
     required String label,
     required int maxLength,
   }) {
+    final t = GQTheme.of(context);
     return TextField(
       key: key,
       controller: controller,
       minLines: 2,
       maxLines: 3,
       maxLength: maxLength,
-      style: GQTypography.body.copyWith(color: GQColors.ink),
+      style: GQTypography.body.copyWith(color: t.ink),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GQTypography.body.copyWith(color: GQColors.ink2),
+        labelStyle: GQTypography.body.copyWith(color: t.ink2),
         filled: true,
-        fillColor: GQColors.surface,
+        fillColor: t.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GQRadii.card),
-          borderSide: const BorderSide(color: GQColors.hair),
+          borderSide: BorderSide(color: t.hair),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GQRadii.card),
-          borderSide: const BorderSide(color: GQColors.hair),
+          borderSide: BorderSide(color: t.hair),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GQRadii.card),
-          borderSide: const BorderSide(color: GQColors.primary, width: 2),
+          borderSide: BorderSide(color: t.primary, width: 2),
         ),
       ),
     );
@@ -448,14 +454,15 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
     String title,
     String body,
   ) {
+    final t = GQTheme.of(context);
     final selected = _resolution == resolution;
     return GQCard(
       onTap: () => _selectResolution(resolution),
-      color: selected ? GQColors.primarySoft : GQColors.surface,
+      color: selected ? t.primarySoft : t.surface,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: GQColors.primary, size: 24),
+          Icon(icon, color: t.primary, size: 24),
           const SizedBox(width: GQSpacing.md),
           Expanded(
             child: Column(
@@ -463,15 +470,15 @@ class _RuminationResetScreenState extends State<RuminationResetScreen> {
               children: [
                 Text(title,
                     style: GQTypography.body.copyWith(
-                        color: GQColors.ink, fontWeight: FontWeight.w700)),
+                        color: t.ink, fontWeight: FontWeight.w700)),
                 const SizedBox(height: GQSpacing.xs),
                 Text(body,
-                    style: GQTypography.caption.copyWith(color: GQColors.ink2)),
+                    style: GQTypography.caption.copyWith(color: t.ink2)),
               ],
             ),
           ),
           if (selected)
-            const Icon(Icons.check_circle_rounded, color: GQColors.primary),
+            Icon(Icons.check_circle_rounded, color: t.primary),
         ],
       ),
     );
