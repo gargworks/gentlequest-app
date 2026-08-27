@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 
 // Shared primitives for the Profile screen family (home, cards, safety-plan
@@ -23,15 +24,16 @@ class ProfileNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
       height: 54 + topPad,
       padding: EdgeInsets.only(
           left: 18, right: 18, top: topPad, bottom: 0),
       decoration: BoxDecoration(
-        color: GQColors.softBg.withValues(alpha: 0.85),
-        border: const Border(
-          bottom: BorderSide(color: GQColors.hair),
+        color: t.bg.withValues(alpha: 0.85),
+        border: Border(
+          bottom: BorderSide(color: t.hair),
         ),
       ),
       child: Row(
@@ -45,11 +47,11 @@ class ProfileNavBar extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GQTypography.bodyFamily,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: GQColors.ink,
+                color: t.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -79,26 +81,27 @@ class BuilderNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
       height: 54 + topPad,
       padding:
           EdgeInsets.only(left: 18, right: 18, top: topPad),
       decoration: BoxDecoration(
-        color: GQColors.softBg.withValues(alpha: 0.85),
-        border: const Border(
-          bottom: BorderSide(color: GQColors.hair),
+        color: t.bg.withValues(alpha: 0.85),
+        border: Border(
+          bottom: BorderSide(color: t.hair),
         ),
       ),
       child: Row(
         children: [
-          const Text(
+          Text(
             'Your safety plan',
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink,
+              color: t.ink,
             ),
           ),
           const Spacer(),
@@ -124,6 +127,7 @@ class StepDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(total, (i) {
@@ -136,8 +140,8 @@ class StepDots extends StatelessWidget {
           height: 7,
           decoration: BoxDecoration(
             color: (isDone || isActive)
-                ? GQColors.primary
-                : GQColors.ink.withValues(alpha: 0.18),
+                ? t.primary
+                : t.ink.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(9999),
           ),
         );
@@ -162,17 +166,18 @@ class IconCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           shape: BoxShape.circle,
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
         ),
-        child: Icon(icon, size: iconSize, color: GQColors.ink),
+        child: Icon(icon, size: iconSize, color: t.ink),
       ),
     );
   }
@@ -184,12 +189,13 @@ class ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: child,
     );
@@ -202,15 +208,16 @@ class SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(left: 6, bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 10.5,
           fontWeight: FontWeight.w800,
-          color: GQColors.ink2,
+          color: t.ink2,
           letterSpacing: 0.7,
         ),
       ),
@@ -224,13 +231,14 @@ class Eyebrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: GQTypography.bodyFamily,
         fontSize: 10.5,
         fontWeight: FontWeight.w800,
-        color: GQColors.ink2,
+        color: t.ink2,
         letterSpacing: 0.7,
       ),
     );
@@ -251,6 +259,7 @@ class AvatarDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -264,7 +273,7 @@ class AvatarDot extends StatelessWidget {
             colors: gradient,
           ),
           border: selected
-              ? Border.all(color: GQColors.primary, width: 2)
+              ? Border.all(color: t.primary, width: 2)
               : null,
         ),
         child: selected
@@ -272,6 +281,9 @@ class AvatarDot extends StatelessWidget {
                 margin: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  // Separator ring against an arbitrary avatar-swatch
+                  // gradient (not a themed surface) — ambiguous fill-vs-
+                  // foreground call, left static per WO-8 discipline.
                   border: Border.all(
                     color: Colors.white,
                     width: 1,
@@ -292,6 +304,7 @@ class GQToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
@@ -301,8 +314,8 @@ class GQToggle extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9999),
           color: value
-              ? GQColors.primary
-              : GQColors.ink3.withValues(alpha: 0.32),
+              ? t.primary
+              : t.ink3.withValues(alpha: 0.32),
         ),
         child: Stack(
           children: [
@@ -313,10 +326,10 @@ class GQToggle extends StatelessWidget {
               child: Container(
                 width: 18,
                 height: 18,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
+                  color: t.surface,
+                  boxShadow: const [
                     BoxShadow(
                       color: Color(0x33000000),
                       blurRadius: 3,
@@ -428,38 +441,39 @@ class ContactTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: GQTypography.bodyFamily,
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: GQColors.ink,
+        color: t.ink,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: GQColors.ink2,
+          color: t.ink2,
         ),
         filled: true,
-        fillColor: GQColors.softBg,
+        fillColor: t.bg,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(11),
-          borderSide: const BorderSide(color: GQColors.hair),
+          borderSide: BorderSide(color: t.hair),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(11),
-          borderSide: const BorderSide(color: GQColors.hair),
+          borderSide: BorderSide(color: t.hair),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(11),
-          borderSide: const BorderSide(color: GQColors.primary),
+          borderSide: BorderSide(color: t.primary),
         ),
       ),
     );
@@ -515,22 +529,23 @@ class OutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9999),
-          color: Colors.white,
-          border: Border.all(color: GQColors.hair),
+          color: t.surface,
+          border: Border.all(color: t.hair),
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 13,
             fontWeight: FontWeight.w800,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ),

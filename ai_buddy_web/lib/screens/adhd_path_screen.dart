@@ -23,6 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/analytics_service.dart' show logAnalyticsEvent;
 import '../services/firebase_service.dart';
 import '../services/low_stim_service.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// Persisted, non-diagnostic "what tends to help" preference flags written
@@ -129,6 +130,7 @@ class _AdhdPathScreenState extends State<AdhdPathScreen> {
     HapticFeedback.selectionClick();
     final ok = await LowStimService.setEnabled(next);
     if (!mounted) return;
+    final t = GQTheme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -141,7 +143,7 @@ class _AdhdPathScreenState extends State<AdhdPathScreen> {
           ),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: ok ? GQColors.ink : null,
+        backgroundColor: ok ? t.ink : null,
         duration: Duration(seconds: ok ? 2 : 3),
       ),
     );
@@ -153,8 +155,9 @@ class _AdhdPathScreenState extends State<AdhdPathScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: AnimatedSwitcher(
           duration: GQDurations.fade,
@@ -236,6 +239,7 @@ class _SkipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Align(
       alignment: Alignment.topRight,
       child: GestureDetector(
@@ -249,7 +253,7 @@ class _SkipButton extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink3,
+              color: t.ink3,
             ),
           ),
         ),
@@ -270,6 +274,7 @@ class _IntroContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       children: [
         _SkipButton(onTap: onSkip),
@@ -283,11 +288,11 @@ class _IntroContent extends StatelessWidget {
                 Container(
                   width: 72,
                   height: 72,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [GQColors.primarySoft, GQColors.accentSoft],
+                      colors: [t.primarySoft, t.accentSoft],
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -305,7 +310,7 @@ class _IntroContent extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     letterSpacing: -0.4,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -318,7 +323,7 @@ class _IntroContent extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -333,7 +338,7 @@ class _IntroContent extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     height: 1.5,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -390,6 +395,7 @@ class _QuestionContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       children: [
         _SkipButton(onTap: onSkip),
@@ -405,7 +411,7 @@ class _QuestionContent extends StatelessWidget {
                   width: 28,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: filled ? GQColors.primary : GQColors.hair,
+                    color: filled ? t.primary : t.hair,
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -427,7 +433,7 @@ class _QuestionContent extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     height: 1.3,
                     letterSpacing: -0.3,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -457,6 +463,7 @@ class _OptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -464,12 +471,12 @@ class _OptionCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: BorderRadius.circular(GQRadii.card),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
           boxShadow: [
             BoxShadow(
-              color: GQColors.ink.withAlpha(8),
+              color: t.ink.withAlpha(8),
               blurRadius: 2,
               offset: const Offset(0, 1),
             ),
@@ -482,7 +489,7 @@ class _OptionCard extends StatelessWidget {
             fontSize: 15,
             fontWeight: FontWeight.w600,
             height: 1.4,
-            color: GQColors.ink,
+            color: t.ink,
           ),
         ),
       ),
@@ -508,6 +515,7 @@ class _SuggestionsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
       child: Column(
@@ -522,7 +530,7 @@ class _SuggestionsContent extends StatelessWidget {
               fontWeight: FontWeight.w800,
               height: 1.2,
               letterSpacing: -0.4,
-              color: GQColors.ink,
+              color: t.ink,
             ),
           ),
           const SizedBox(height: 10),
@@ -534,7 +542,7 @@ class _SuggestionsContent extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w500,
               height: 1.5,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
           const SizedBox(height: 22),
@@ -586,7 +594,7 @@ class _SuggestionsContent extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 height: 1.5,
-                color: GQColors.ink2,
+                color: t.ink2,
               ),
             ),
           ),
@@ -639,15 +647,16 @@ class _SuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.cardLg),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
         boxShadow: [
           BoxShadow(
-            color: GQColors.ink.withAlpha(8),
+            color: t.ink.withAlpha(8),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -659,8 +668,8 @@ class _SuggestionCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
-              color: GQColors.primarySoft,
+            decoration: BoxDecoration(
+              color: t.primarySoft,
               shape: BoxShape.circle,
             ),
             child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
@@ -679,7 +688,7 @@ class _SuggestionCard extends StatelessWidget {
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: GQColors.ink,
+                          color: t.ink,
                         ),
                       ),
                     ),
@@ -688,7 +697,7 @@ class _SuggestionCard extends StatelessWidget {
                           ? Icons.check_circle_rounded
                           : Icons.circle_outlined,
                       size: 18,
-                      color: checked ? GQColors.successInk : GQColors.ink2,
+                      color: checked ? t.successInk : t.ink2,
                     ),
                   ],
                 ),
@@ -700,7 +709,7 @@ class _SuggestionCard extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                     height: 1.45,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],

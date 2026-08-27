@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/gq/gq.dart';
@@ -87,13 +88,14 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final filtered = _filtered;
     final groups = _groupByWeek(filtered);
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
@@ -107,13 +109,13 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
             return const SizedBox.shrink();
           },
         ),
-        title: const Text(
+        title: Text(
           'Journal',
           style: TextStyle(
             fontFamily: GQTypography.displayFamily,
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: GQColors.ink,
+            color: t.ink,
             letterSpacing: -0.3,
           ),
         ),
@@ -128,7 +130,7 @@ class _JournalTimelineViewState extends State<JournalTimelineView> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: GQColors.hair),
+          child: Divider(height: 1, thickness: 1, color: t.hair),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -195,6 +197,7 @@ class _WeeklyReviewEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GQCard(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
@@ -208,11 +211,11 @@ class _WeeklyReviewEntryRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: GQColors.primarySoft,
+              color: t.primarySoft,
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(Icons.insights_outlined,
-                color: GQColors.primary, size: 22),
+            child: Icon(Icons.insights_outlined,
+                color: t.primary, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -221,15 +224,15 @@ class _WeeklyReviewEntryRow extends StatelessWidget {
               children: [
                 Text('Weekly Review',
                     style: GQTypography.body.copyWith(
-                        fontWeight: FontWeight.w700, color: GQColors.ink)),
+                        fontWeight: FontWeight.w700, color: t.ink)),
                 const SizedBox(height: 2),
                 Text('Your week, gently summarized',
-                    style: GQTypography.caption.copyWith(color: GQColors.ink2)),
+                    style: GQTypography.caption.copyWith(color: t.ink2)),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded,
-              color: GQColors.ink3, size: 24),
+          Icon(Icons.chevron_right_rounded,
+              color: t.ink3, size: 24),
         ],
       ),
     );
@@ -281,13 +284,14 @@ class _FilterBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
+          color: active ? t.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
           boxShadow: active
               ? [
@@ -305,7 +309,7 @@ class _FilterBtn extends StatelessWidget {
             fontFamily: GQTypography.bodyFamily,
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
-            color: active ? GQColors.ink : GQColors.ink2,
+            color: active ? t.ink : t.ink2,
           ),
         ),
       ),
@@ -320,6 +324,7 @@ class _TimelineStatStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -340,22 +345,22 @@ class _TimelineStatStrip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
+          Text(
             '·',
             style: TextStyle(
               fontSize: 10,
-              color: GQColors.ink2,
+              color: t.ink2,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
+          Text(
             'last 30 days',
             style: TextStyle(
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
         ],
@@ -371,15 +376,16 @@ class _WeekHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: GQTypography.bodyFamily,
           fontSize: 11,
           fontWeight: FontWeight.w800,
-          color: GQColors.ink2,
+          color: t.ink2,
           letterSpacing: 0.6,
         ),
       ),
@@ -400,6 +406,7 @@ class _JournalEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final dotColor = moodColor(entry.mood);
     final timeStr = formatTime(entry.createdAt);
     final dayStr = formatDay(entry.createdAt);
@@ -411,8 +418,8 @@ class _JournalEntryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: GQColors.hair),
+          color: t.surface,
+          border: Border.all(color: t.hair),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -435,11 +442,11 @@ class _JournalEntryCard extends StatelessWidget {
                 children: [
                   Text(
                     '$dayStr · $timeStr',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -448,10 +455,10 @@ class _JournalEntryCard extends StatelessWidget {
                     entry.body,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.journalSerif,
                       fontSize: 13.5,
-                      color: GQColors.ink,
+                      color: t.ink,
                       height: 1.4,
                       fontWeight: FontWeight.w400,
                     ),
@@ -462,20 +469,20 @@ class _JournalEntryCard extends StatelessWidget {
                       if (entry.tags.isNotEmpty)
                         Text(
                           '· ${entry.tags.length} ${entry.tags.length == 1 ? 'tag' : 'tags'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 10.5,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       const SizedBox(width: 8),
                       Text(
                         '· $wordCount ${wordCount == 1 ? 'word' : 'words'}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10.5,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -491,6 +498,7 @@ class _JournalEntryCard extends StatelessWidget {
   }
 
   void _showContextMenu(BuildContext context) {
+    final t = GQTheme.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -501,10 +509,10 @@ class _JournalEntryCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: GQColors.coral),
-              title: const Text(
+              leading: Icon(Icons.delete_outline, color: t.coral),
+              title: Text(
                 'Delete entry',
-                style: TextStyle(color: GQColors.coral),
+                style: TextStyle(color: t.coral),
               ),
               onTap: () {
                 Navigator.of(context).pop();
@@ -512,7 +520,7 @@ class _JournalEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close, color: GQColors.ink2),
+              leading: Icon(Icons.close, color: t.ink2),
               title: const Text('Cancel'),
               onTap: () => Navigator.of(context).pop(),
             ),
@@ -530,6 +538,7 @@ class _EmptyFilterState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -545,18 +554,18 @@ class _EmptyFilterState extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
                 'No entries with that tag yet.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: GQColors.ink,
+                  color: t.ink,
                   letterSpacing: -0.2,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 'Try writing one.',
                 textAlign: TextAlign.center,
@@ -564,7 +573,7 @@ class _EmptyFilterState extends StatelessWidget {
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ],

@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
 import 'journal_models.dart';
@@ -53,26 +54,27 @@ class JournalEntryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final moodTint = moodColor(entry.mood);
     final moodName = moodLabel(entry.mood);
     final timeStr = formatTime(entry.createdAt);
     final dateStr = formatDateLong(entry.createdAt);
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         leading: AppBackButton(),
         title: Text(
           dateStr,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: GQColors.ink,
+            color: t.ink,
             letterSpacing: -0.3,
           ),
         ),
@@ -83,10 +85,10 @@ class JournalEntryView extends StatelessWidget {
               children: [
                 NavIconButton(
                   onTap: () => _confirmDelete(context),
-                  child: const Icon(
+                  child: Icon(
                     Icons.more_horiz,
                     size: 16,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -95,7 +97,7 @@ class JournalEntryView extends StatelessWidget {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: GQColors.hair),
+          child: Divider(height: 1, thickness: 1, color: t.hair),
         ),
       ),
       body: SingleChildScrollView(
@@ -132,11 +134,11 @@ class JournalEntryView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       timeStr,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                       ),
                     ),
                   ],
@@ -148,11 +150,11 @@ class JournalEntryView extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(22, 8, 22, 16),
               child: Text(
                 entry.body,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GQTypography.journalSerif,
                   fontSize: 17,
                   height: 1.7,
-                  color: GQColors.ink,
+                  color: t.ink,
                   fontWeight: FontWeight.w400,
                   letterSpacing: -0.1,
                 ),
@@ -166,13 +168,13 @@ class JournalEntryView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'DETECTED · ON-DEVICE',
                       style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         letterSpacing: 0.7,
                       ),
                     ),
@@ -182,12 +184,12 @@ class JournalEntryView extends StatelessWidget {
                       runSpacing: 6,
                       children: entry.tags
                           .map(
-                            (t) => Container(
+                            (tag) => Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                border: Border.all(color: GQColors.hair),
+                                color: t.surface,
+                                border: Border.all(color: t.hair),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Row(
@@ -203,12 +205,12 @@ class JournalEntryView extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    t,
-                                    style: const TextStyle(
+                                    tag,
+                                    style: TextStyle(
                                       fontFamily: GQTypography.bodyFamily,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: GQColors.ink2,
+                                      color: t.ink2,
                                     ),
                                   ),
                                 ],
@@ -230,6 +232,7 @@ class JournalEntryView extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
+    final t = GQTheme.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -239,34 +242,34 @@ class JournalEntryView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Text(
                 'Delete this entry?',
                 style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: GQColors.ink,
+                  color: t.ink,
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Text(
                 'This cannot be undone.',
                 style: TextStyle(
                   fontFamily: GQTypography.bodyFamily,
                   fontSize: 13,
-                  color: GQColors.ink2,
+                  color: t.ink2,
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: GQColors.coral),
-              title: const Text(
+              leading: Icon(Icons.delete_outline, color: t.coral),
+              title: Text(
                 'Delete',
-                style: TextStyle(color: GQColors.coral, fontWeight: FontWeight.w700),
+                style: TextStyle(color: t.coral, fontWeight: FontWeight.w700),
               ),
               onTap: () {
                 Navigator.of(context).pop();
@@ -274,7 +277,7 @@ class JournalEntryView extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close, color: GQColors.ink2),
+              leading: Icon(Icons.close, color: t.ink2),
               title: const Text('Cancel'),
               onTap: () => Navigator.of(context).pop(),
             ),
@@ -370,28 +373,29 @@ class _JournalEditorSheetState extends State<JournalEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: t.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         leading: NavIconButton(
           onTap: _save,
-          child: const Icon(
+          child: Icon(
             Icons.arrow_back_ios_new,
             size: 14,
-            color: GQColors.ink,
+            color: t.ink,
           ),
         ),
         title: Text(
           formatDateLong(DateTime.now()),
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: GQTypography.bodyFamily,
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
         actions: [
@@ -410,7 +414,7 @@ class _JournalEditorSheetState extends State<JournalEditorSheet> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: GQColors.hair),
+          child: Divider(height: 1, thickness: 1, color: t.hair),
         ),
       ),
       body: Padding(
@@ -421,20 +425,20 @@ class _JournalEditorSheetState extends State<JournalEditorSheet> {
           maxLines: null,
           keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             height: 1.7,
-            color: GQColors.ink,
+            color: t.ink,
             fontWeight: FontWeight.w400,
             letterSpacing: -0.1,
           ),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: InputBorder.none,
             hintText: 'What\'s on your mind…',
             hintStyle: TextStyle(
               fontSize: 17,
               height: 1.7,
-              color: GQColors.ink3,
+              color: t.ink3,
               fontWeight: FontWeight.w400,
             ),
           ),

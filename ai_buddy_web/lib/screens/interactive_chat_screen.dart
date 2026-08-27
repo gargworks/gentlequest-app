@@ -23,6 +23,7 @@ import '../models/interactive_exercise.dart';
 import '../services/firebase_service.dart';
 import '../widgets/exercises/grounding_exercise_widget.dart';
 import '../widgets/exercises/journal_prompt_card.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/ai_thinking_indicator.dart';
 import '../widgets/inline_crisis_banner.dart';
@@ -243,12 +244,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   Future<void> _showAllCrisisResourcesSheet(
       List<Map<String, dynamic>> numbers) async {
     if (numbers.isEmpty) return;
+    final t = GQTheme.of(context);
     FirebaseService().logCrisisResourceAccess();
     await showModalBottomSheet(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: t.surface,
       builder: (ctx) {
         return SafeArea(
           top: false,
@@ -389,11 +391,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   Future<void> _showHelpSheet() async {
+    final t = GQTheme.of(context);
     await showModalBottomSheet(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: t.surface,
       builder: (ctx) {
         final theme = Theme.of(ctx);
         return SafeArea(
@@ -430,7 +433,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   Text(
                     'If you are in immediate danger, call your local emergency number.',
                     style: theme.textTheme.bodySmall
-                        ?.copyWith(color: GQColors.ink2),
+                        ?.copyWith(color: t.ink2),
                   ),
                   const SizedBox(height: 12),
                   const CrisisResourcesWidget(riskLevel: RiskLevel.high),
@@ -631,6 +634,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     if (bottomInset != _lastBottomInset) {
       _lastBottomInset = bottomInset;
@@ -710,7 +714,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
               children: [
                 // Header
                 Container(
-                  color: Colors.white,
+                  color: t.surface,
                   padding:
                       EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
                   child: SafeArea(
@@ -751,7 +755,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                         .copyWith(
                                       fontSize: 18,
                                       color: isUnreachable
-                                          ? GQColors.ink2
+                                          ? t.ink2
                                           : null,
                                     ),
                                   ),
@@ -775,11 +779,11 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                             key: const Key('body_double_entry_button'),
                             borderRadius: BorderRadius.circular(22),
                             onTap: _startBodyDoubleFlow,
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
                               child: Icon(
                                 Icons.groups_outlined,
-                                color: GQColors.primary,
+                                color: t.primary,
                                 size: 28,
                               ),
                             ),
@@ -816,7 +820,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 // Divider
                 Container(
                   height: 8.h,
-                  color: GQColors.softBg,
+                  color: t.bg,
                 ),
                 // Web-to-phone promo — non-blocking dismissible banner (web
                 // only). Replaces the old WebMobilePromoSheet.maybeShow popup.
@@ -1069,7 +1073,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 //   D (voice)     → VoiceInputBar replaces text input in-place
                 Container(
                   key: _inputBarKey,
-                  color: Colors.white,
+                  color: t.surface,
                   child: SafeArea(
                     top: false,
                     bottom: true,
@@ -1155,7 +1159,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                     Expanded(
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: GQColors.softBg,
+                                          color: t.bg,
                                           borderRadius:
                                               BorderRadius.circular(24.h),
                                         ),
@@ -1167,7 +1171,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                             hintText: hintText,
                                             hintStyle: TextStyle(
                                               fontSize: 16.0,
-                                              color: GQColors.ink3,
+                                              color: t.ink3,
                                             ),
                                             border: InputBorder.none,
                                             contentPadding:
@@ -1176,9 +1180,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                               vertical: 10.h,
                                             ),
                                           ),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 16.0,
-                                            color: GQColors.ink,
+                                            color: t.ink,
                                           ),
                                           // Silent Witness: on-device heavy-
                                           // language detection on every draft
@@ -1212,9 +1216,9 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                             padding: EdgeInsets.all(10.h),
                                             decoration: BoxDecoration(
                                               color: dimInput
-                                                  ? GQColors.primary
+                                                  ? t.primary
                                                       .withValues(alpha: 0.4)
-                                                  : GQColors.primary,
+                                                  : t.primary,
                                               shape: BoxShape.circle,
                                             ),
                                             child: Icon(
@@ -1249,15 +1253,15 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                     label: 'Wellness disclaimer',
                     child: Container(
                       width: double.infinity,
-                      color: Colors.white,
+                      color: t.surface,
                       padding: EdgeInsets.fromLTRB(12.h, 0, 12.h, 6.h),
-                      child: const Text(
+                      child: Text(
                         // Verbatim compliance copy.
                         'Not medical care. For crisis, call local emergency.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11.0,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                           height: 1.3,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1293,6 +1297,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   Widget _buildMessageBubble(Message message, {bool isLast = false}) {
+    final t = GQTheme.of(context);
     // Error bubble — inline alert with retry
     if (message.type == MessageType.error) {
       return _buildErrorBubble(message);
@@ -1355,8 +1360,8 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: message.isUser
-                      ? GQColors.successSoft
-                      : Colors.white,
+                      ? t.successSoft
+                      : t.surface,
                   borderRadius: BorderRadius.circular(16.h),
                   boxShadow: [
                     BoxShadow(
@@ -1376,13 +1381,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                         p: TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.w400,
-                          color: GQColors.ink,
+                          color: t.ink,
                           height: 1.4,
                         ),
                         strong: TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.bold,
-                          color: GQColors.ink,
+                          color: t.ink,
                           height: 1.4,
                         ),
                       ),
@@ -1414,17 +1419,17 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 10.h, vertical: 6.h),
                                   decoration: BoxDecoration(
-                                    color: GQColors.primarySoft,
+                                    color: t.primarySoft,
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                        color: GQColors.hair),
+                                        color: t.hair),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'More…',
                                     style: TextStyle(
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w600,
-                                        color: GQColors.ink),
+                                        color: t.ink),
                                   ),
                                 ),
                               ),
@@ -1438,7 +1443,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                           'These resources are informational and not a substitute for professional care. If you\'re in immediate danger, call your local emergency number.',
                           style: TextStyle(
                             fontSize: 11.0,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                             height: 1.3,
                           ),
                         ),
@@ -1537,6 +1542,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   // Renders time-aware greeting, sub-line, and 3 contextual chips.
   // Disappears after the first user message (controlled by showSuggestions gate in ListView).
   Widget _buildFirstTurnWarmth() {
+    final t = GQTheme.of(context);
     final hour = DateTime.now().hour;
 
     // Time-of-day greeting prefix
@@ -1579,7 +1585,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             margin: EdgeInsets.symmetric(horizontal: 8.h),
             padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 14.h),
             decoration: BoxDecoration(
-              color: GQColors.softBg,
+              color: t.bg,
               borderRadius: BorderRadius.circular(GQRadii.card),
             ),
             child: Column(
@@ -1593,10 +1599,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                 SizedBox(height: 12.h),
                 Text(
                   greeting,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18.0,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.coral,
+                    color: t.coral,
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -1605,7 +1611,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.w400,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -1615,7 +1621,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   style: TextStyle(
                     fontSize: 11.0,
                     fontWeight: FontWeight.w400,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -1650,11 +1656,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   }
 
   Widget _buildChip(String label, VoidCallback onTap) {
+    final t = GQTheme.of(context);
     return Material(
-      color: GQColors.softBg,
+      color: t.bg,
       shape: StadiumBorder(
         side: BorderSide(
-          color: GQColors.hair,
+          color: t.hair,
           width: 1.0,
         ),
       ),
@@ -1668,7 +1675,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
             style: TextStyle(
               fontSize: 13.0,
               fontWeight: FontWeight.w500,
-              color: GQColors.ink2,
+              color: t.ink2,
             ),
           ),
         ),
@@ -1752,6 +1759,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// gap next to the text field so the input bar layout stays clean.
   Widget _buildVoiceMicButton() {
     if (kIsWeb) return const SizedBox.shrink();
+    final t = GQTheme.of(context);
     return Semantics(
       button: true,
       label: 'Start voice input',
@@ -1766,13 +1774,13 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
         child: Container(
           width: 44,
           height: 44,
-          decoration: const BoxDecoration(
-            color: GQColors.primarySoft,
+          decoration: BoxDecoration(
+            color: t.primarySoft,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.mic_rounded,
-            color: GQColors.primary,
+            color: t.primary,
             size: 22,
           ),
         ),
