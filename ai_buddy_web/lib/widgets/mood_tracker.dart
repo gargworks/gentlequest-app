@@ -9,6 +9,7 @@ import '../providers/mood_provider.dart';
 import '../providers/companion_provider.dart';
 import '../models/mood_entry.dart';
 import '../quests/quests_engine.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import 'gq/gq.dart';
 import 'mood_low_reflection_sheet.dart';
@@ -239,6 +240,7 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
   // Design: docs/design/refs/htmls/GentleQuest_Mood_Entry.html
   // Principles: P1 (warmth), P2 (skip anything), P7 (no auto-advance without cancel)
   Widget _buildMoodInput(BuildContext context, MoodProvider moodProvider) {
+    final t = GQTheme.of(context);
     final now = DateTime.now();
     final dayLabel =
         '${DateFormat('EEEE').format(now).toUpperCase()} · ${DateFormat('MMM d').format(now).toUpperCase()}';
@@ -249,9 +251,9 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: BorderRadius.circular(GQRadii.card),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A1F1B3A),
@@ -269,35 +271,35 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
                 children: [
                   Text(
                     dayLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                       letterSpacing: 0.3,
                     ),
                   ),
                   const SizedBox(height: 4),
                   // Verbatim copy from R1D4 spec
-                  const Text(
+                  Text(
                     'How are you, right now?',
                     style: TextStyle(
                       fontFamily: GQTypography.displayFamily,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink,
+                      color: t.ink,
                       letterSpacing: -0.3,
                     ),
                   ),
                   const SizedBox(height: 2),
                   // Verbatim sub from R1D4 spec
-                  const Text(
+                  Text(
                     'Takes 5 seconds. Skip anything you want.',
                     style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: GQColors.ink2,
+                      color: t.ink2,
                     ),
                   ),
                 ],
@@ -309,25 +311,25 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
-                color: GQColors.primarySoft,
+                color: t.primarySoft,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.add_rounded,
-                    color: GQColors.primary,
+                    color: t.primary,
                     size: 18,
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     'Log mood',
                     style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: GQColors.primary,
+                      color: t.primary,
                     ),
                   ),
                 ],
@@ -1070,8 +1072,12 @@ const _kMoodLabels = ['Rough', 'Meh', 'Okay', 'Good', 'Great'];
 const _kMoodEmojis = ['😔', '😕', '😐', '🙂', '😊'];
 
 /// Semantic background colour for each selected mood pill — the canonical
-/// D2 mood-scale tokens (GQMoodScale), not generic accentSoft.
-Color _moodSelectedBg(int moodLevel) {
+/// D2 mood-scale tokens (GQMoodScale), not generic accentSoft. The mood
+/// hues themselves are the static exception (D2: mood color never shifts
+/// by mode); only the unreachable default falls through to a real slot,
+/// so [t] is threaded in rather than read here (this is a free function,
+/// no BuildContext of its own).
+Color _moodSelectedBg(int moodLevel, GQTheme t) {
   // moodLevel is 1-based (1=Rough … 5=Great)
   switch (moodLevel) {
     case 1:
@@ -1085,7 +1091,7 @@ Color _moodSelectedBg(int moodLevel) {
     case 5:
       return GQMoodScale.great.color.withValues(alpha: 0.35);
     default:
-      return GQColors.primarySoft;
+      return t.primarySoft;
   }
 }
 
@@ -1143,6 +1149,7 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final now = DateTime.now();
     // Date header: "TUESDAY · MAY 7" pattern — verbatim from R1D4 spec
     final dateHeader =
@@ -1152,8 +1159,8 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
       // Cancel auto-advance when user taps chip or note zone (P7)
       onTap: () {},
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: t.surface,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(GQRadii.sheet),
             topRight: Radius.circular(GQRadii.sheet),
@@ -1194,36 +1201,36 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                       children: [
                         Text(
                           dateHeader,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                             letterSpacing: 0.3,
                           ),
                         ),
                         const SizedBox(height: 4),
                         // Verbatim headline — R1D4 spec
-                        const Text(
+                        Text(
                           'How are you, right now?',
                           style: TextStyle(
                             fontFamily: GQTypography.displayFamily,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: GQColors.ink,
+                            color: t.ink,
                             letterSpacing: -0.3,
                             height: 1.2,
                           ),
                         ),
                         const SizedBox(height: 4),
                         // Verbatim sub — R1D4 spec
-                        const Text(
+                        Text(
                           'Takes 5 seconds. Skip anything you want.',
                           style: TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                           ),
                         ),
                       ],
@@ -1238,14 +1245,14 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                       width: GQA11y.minTouchTarget,
                       height: GQA11y.minTouchTarget,
                       decoration: BoxDecoration(
-                        color: GQColors.softBg,
+                        color: t.bg,
                         shape: BoxShape.circle,
-                        border: Border.all(color: GQColors.hair),
+                        border: Border.all(color: t.hair),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 16,
-                        color: GQColors.ink3,
+                        color: t.ink3,
                       ),
                     ),
                   ),
@@ -1267,7 +1274,7 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                     emoji: _kMoodEmojis[index],
                     label: _kMoodLabels[index], // D2 canonical labels
                     isSelected: isSelected,
-                    selectedBg: _moodSelectedBg(level),
+                    selectedBg: _moodSelectedBg(level, t),
                     onTap: () => _selectMood(level),
                   );
                 }),
@@ -1282,7 +1289,7 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("WHAT'S TOUCHING IT? · OPTIONAL", style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+                  Text("WHAT'S TOUCHING IT? · OPTIONAL", style: GQTypography.micro.copyWith(color: t.ink2)),
                   const SizedBox(height: GQSpacing.sm),
                   Wrap(
                     spacing: GQSpacing.sm,
@@ -1324,23 +1331,23 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: GQColors.softBg,
+                      color: t.bg,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: GQColors.hair,
+                        color: t.hair,
                         // [assumed] dashed border not directly available in Flutter;
                         // using solid hairline as closest token-compliant approximation
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.edit_note_rounded,
                           size: 16,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Text.rich(
                             TextSpan(
                               text: 'Add a thought ',
@@ -1348,24 +1355,24 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                               ),
                               children: [
                                 TextSpan(
                                   text: '(optional)',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: GQColors.ink2,
+                                    color: t.ink2,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 16,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ],
                     ),
@@ -1377,31 +1384,31 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                   // [assumed] 80 char maxLength from HTML annotation (NoteField(maxLength: 80))
                   maxLength: 80,
                   maxLines: 3,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                   decoration: InputDecoration(
                     hintText: 'anything you want me to remember…',
-                    hintStyle: const TextStyle(
-                      color: GQColors.ink2,
+                    hintStyle: TextStyle(
+                      color: t.ink2,
                       fontFamily: GQTypography.bodyFamily,
                     ),
                     filled: true,
-                    fillColor: GQColors.softBg,
+                    fillColor: t.bg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: GQColors.hair),
+                      borderSide: BorderSide(color: t.hair),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: GQColors.hair),
+                      borderSide: BorderSide(color: t.hair),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                          color: GQColors.primary, width: 1.5),
+                      borderSide: BorderSide(
+                          color: t.primary, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -1524,6 +1531,7 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final double size = widget.isSelected ? 64.0 : 56.0;
     final double emojiSize = widget.isSelected ? 32.0 : 28.0;
     final translateY = widget.isSelected ? -4.0 : 0.0;
@@ -1548,11 +1556,11 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
               height: size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: widget.isSelected ? widget.selectedBg : GQColors.softBg,
+                color: widget.isSelected ? widget.selectedBg : t.bg,
                 border: Border.all(
                   color: widget.isSelected
-                      ? GQColors.primary
-                      : GQColors.hair,
+                      ? t.primary
+                      : t.hair,
                   width: widget.isSelected ? 2.5 : 1.5,
                 ),
               ),
@@ -1572,7 +1580,7 @@ class _MoodEmojiButtonState extends State<_MoodEmojiButton>
               fontSize: widget.isSelected ? 12.0 : 11.0,
               fontWeight:
                   widget.isSelected ? FontWeight.w800 : FontWeight.w700,
-              color: widget.isSelected ? GQColors.primary : GQColors.ink2,
+              color: widget.isSelected ? t.primary : t.ink2,
               letterSpacing: 0.2,
             ),
             child: Text(widget.label),

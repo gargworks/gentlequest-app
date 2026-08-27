@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,23 +23,19 @@ import '../theme/gq_tokens.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Shared amber token ───────────────────────────────────────────────────────
-
-/// Amber tint — soft warm background for offline banners.
-/// Source: GentleQuest_Offline_States.html --gq-amber-soft: #FBF1DC (token: GQColors.amberSoft)
-const _kAmberSoft = GQColors.amberSoft;
+//
+// _kAmberSoft/_kAmberInk/_kCrisisBg/_kCrisisInk were module-level const
+// aliases for GQColors.amberSoft/inkOnAmber/accentSoft/inkOnCoral. All four
+// are theme slots (GQTheme.amberSoft/inkOnAmber/accentSoft/inkOnCoral) — a
+// top-level const can't call GQTheme.of(context), so the aliases are gone
+// and every call site reads t.<slot> directly instead. The two border colors
+// below are literal alpha-blended hex, not token references, so they stay
+// as module consts unchanged.
 
 /// Amber border opacity factor: rgba(200,146,61,0.28)
 const _kAmberBorder = Color(0x47C8923D);
 
-/// Dark amber ink for offline heading text.
-/// Token: GQColors.inkOnAmber (#7A5A20)
-const _kAmberInk = GQColors.inkOnAmber;
-
-/// Crisis line row background: #FFE8E8 (coral-soft)
-/// Source: HTML State B CrisisLineRow — background: #FFE8E8; border: rgba(255,107,107,0.28)
-const _kCrisisBg = GQColors.accentSoft;
 const _kCrisisBorder = Color(0x47FF6B6B);
-const _kCrisisInk = GQColors.inkOnCoral;
 
 // ─── A · OfflineBanner ────────────────────────────────────────────────────────
 
@@ -55,6 +52,7 @@ class OfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       label: 'Offline notice. You\'re offline right now. Call 988 in a crisis.',
       child: Column(
@@ -64,7 +62,7 @@ class OfflineBanner extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
-              color: _kAmberSoft,
+              color: t.amberSoft,
               borderRadius: BorderRadius.circular(GQRadii.card),
               border: Border.all(color: _kAmberBorder),
             ),
@@ -75,18 +73,18 @@ class OfflineBanner extends StatelessWidget {
                 Container(
                   width: 24,
                   height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: t.surface,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.wifi_off_rounded,
                     size: 14,
-                    color: GQColors.amber,
+                    color: t.amber,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -96,17 +94,17 @@ class OfflineBanner extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: _kAmberInk,
+                          color: t.inkOnAmber,
                         ),
                       ),
-                      SizedBox(height: 1),
+                      const SizedBox(height: 1),
                       Text(
                         // Verbatim copy from REVIEW.md R1D12
                         "I'll resend the moment we reconnect.",
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.amber,
+                          color: t.amber,
                         ),
                       ),
                     ],
@@ -208,10 +206,11 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       label: 'Offline. No network connection.',
       child: Container(
-        color: GQColors.softBg,
+        color: t.bg,
         child: SafeArea(
           child: Column(
             children: [
@@ -220,19 +219,19 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 decoration: BoxDecoration(
-                  color: GQColors.softBg,
+                  color: t.bg,
                   border: Border(
-                    bottom: BorderSide(color: GQColors.hair),
+                    bottom: BorderSide(color: t.hair),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'GentleQuest',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink,
+                        color: t.ink,
                       ),
                     ),
                     const Spacer(),
@@ -240,18 +239,18 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _kAmberSoft,
+                        color: t.amberSoft,
                         borderRadius:
                             BorderRadius.circular(GQRadii.button),
                         border: Border.all(color: _kAmberBorder),
                       ),
-                      child: const Text(
+                      child: Text(
                         'OFFLINE',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4,
-                          color: _kAmberInk,
+                          color: t.inkOnAmber,
                         ),
                       ),
                     ),
@@ -266,21 +265,21 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       // Cloud art — animated rings
                       _CloudArt(ringController: _ringController),
                       const SizedBox(height: 14),
-                      const Text(
+                      Text(
                         // Verbatim from HTML State B
                         "We can chat once you're back online.",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: GQColors.ink,
+                          color: t.ink,
                           letterSpacing: -0.4,
                           height: 1.25,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           // Verbatim from HTML State B
                           "In the meantime, here's what works offline:",
@@ -288,7 +287,7 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                             height: 1.5,
                           ),
                         ),
@@ -297,7 +296,7 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       // Offline capabilities list
                       _OfflineCapabilityCard(
                         emoji: '🌿',
-                        emojiBackground: GQColors.primarySoft,
+                        emojiBackground: t.primarySoft,
                         title: 'Log my mood',
                         subtitle:
                             'Saves locally · syncs the moment we reconnect',
@@ -305,13 +304,15 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                       const SizedBox(height: 10),
                       _OfflineCapabilityCard(
                         emoji: '🌬️',
-                        emojiBackground: GQColors.warmSoft,
+                        emojiBackground: t.warmSoft,
                         title: 'Try a breathing exercise',
                         subtitle: 'All exercises run on your phone',
                       ),
                       const SizedBox(height: 10),
                       _OfflineCapabilityCard(
                         icon: Icons.shield_outlined,
+                        // leafInk stays static — mood/nature illustration
+                        // hue, static exception (D2).
                         iconColor: GQColors.leafInk,
                         iconBackground: const Color(0xFFF0F5EC),
                         title: 'Open my safety plan',
@@ -324,8 +325,8 @@ class _OfflineColdStartScreenState extends State<OfflineColdStartScreen>
                         icon: const Icon(Icons.refresh_rounded, size: 14),
                         label: const Text('Check connection'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: GQColors.ink2,
-                          side: BorderSide(color: GQColors.hair),
+                          foregroundColor: t.ink2,
+                          side: BorderSide(color: t.hair),
                           textStyle: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -365,13 +366,14 @@ class ServerErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       label: 'Server error. Couldn\'t reach Alex.',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          // coral tint — GQColors.accentSoft (#FFE8E8) per color discipline
-          color: GQColors.accentSoft,
+          // coral tint — accentSoft slot (#FFE8E8 in light) per color discipline
+          color: t.accentSoft,
           borderRadius: BorderRadius.circular(GQRadii.card),
           border: Border.all(color: _kCrisisBorder),
         ),
@@ -381,25 +383,25 @@ class ServerErrorBanner extends StatelessWidget {
             Container(
               width: 24,
               height: 24,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: t.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.error_outline_rounded,
                 size: 14,
-                color: GQColors.coral,
+                color: t.coral,
               ),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
                 // Verbatim copy from REVIEW.md R1D12
                 "Couldn't reach Alex.",
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w800,
-                  color: GQColors.coral,
+                  color: t.coral,
                 ),
               ),
             ),
@@ -409,17 +411,17 @@ class ServerErrorBanner extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: t.surface,
                   borderRadius: BorderRadius.circular(GQRadii.button),
                   border: Border.all(color: _kCrisisBorder),
                 ),
-                child: const Text(
+                child: Text(
                   // Verbatim copy from REVIEW.md R1D12
                   'Tap to retry',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.coral,
+                    color: t.coral,
                   ),
                 ),
               ),
@@ -487,6 +489,7 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final reduceMotion =
         _reduceMotion || MediaQuery.of(context).accessibleNavigation;
     return Row(
@@ -503,20 +506,20 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: GQColors.ink2.withValues(alpha: opacity),
+                color: t.ink2.withValues(alpha: opacity),
                 shape: BoxShape.circle,
               ),
             );
           },
         ),
         const SizedBox(width: 5),
-        const Text(
+        Text(
           // Verbatim copy from REVIEW.md R1D12
           "Queued · will send when you're back",
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
-            color: GQColors.ink2,
+            color: t.ink2,
           ),
         ),
       ],
@@ -535,6 +538,7 @@ class _QueuedMessageMetaRowState extends State<QueuedMessageMetaRow>
 class _CrisisLineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Semantics(
       label: 'Crisis resource. Call 988 — works without internet.',
       button: true,
@@ -549,7 +553,7 @@ class _CrisisLineRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             // coral-soft — visually distinct from error, per HTML color discipline
-            color: _kCrisisBg,
+            color: t.accentSoft,
             borderRadius: BorderRadius.circular(GQRadii.card),
             border: Border.all(color: _kCrisisBorder),
           ),
@@ -558,8 +562,8 @@ class _CrisisLineRow extends StatelessWidget {
               Container(
                 width: 28,
                 height: 28,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: t.surface,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -568,11 +572,13 @@ class _CrisisLineRow extends StatelessWidget {
                   // WO-3 reconciliation retired coralDkDeep (#B33636 — the
                   // exact red already swept everywhere else); icon sits on
                   // white, not the amber tint, so dangerInk not inkOnAmber.
+                  // dangerInk is a static exception (destructive/crisis fill
+                  // discipline) — stays literal, no theme read needed here.
                   color: GQColors.dangerInk,
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text.rich(
                   // Verbatim copy from HTML State B
                   TextSpan(
@@ -581,7 +587,7 @@ class _CrisisLineRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
-                      color: _kCrisisInk,
+                      color: t.inkOnCoral,
                       height: 1.4,
                     ),
                     children: [
@@ -616,6 +622,7 @@ class _CloudArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return SizedBox(
       width: 160,
       height: 160,
@@ -633,7 +640,7 @@ class _CloudArt extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: GQColors.primary.withValues(alpha: 0.30),
+                    color: t.primary.withValues(alpha: 0.30),
                     width: 1,
                   ),
                 ),
@@ -651,7 +658,7 @@ class _CloudArt extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: GQColors.primary.withValues(alpha: 0.18),
+                    color: t.primary.withValues(alpha: 0.18),
                     width: 1,
                   ),
                 ),
@@ -662,7 +669,7 @@ class _CloudArt extends StatelessWidget {
           Icon(
             Icons.cloud_off_rounded,
             size: 64,
-            color: GQColors.primarySoft,
+            color: t.primarySoft,
           ),
           // Amber diagonal slash overlay
           Positioned(
@@ -672,7 +679,7 @@ class _CloudArt extends StatelessWidget {
               width: 28,
               height: 3,
               decoration: BoxDecoration(
-                color: GQColors.amber,
+                color: t.amber,
                 borderRadius: BorderRadius.circular(2),
               ),
               transform: Matrix4.rotationZ(-0.785), // -45 degrees
@@ -707,12 +714,13 @@ class _OfflineCapabilityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(GQRadii.card),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: Row(
         children: [
@@ -721,13 +729,13 @@ class _OfflineCapabilityCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: emojiBackground ?? iconBackground ?? GQColors.primarySoft,
+              color: emojiBackground ?? iconBackground ?? t.primarySoft,
               borderRadius: BorderRadius.circular(11),
             ),
             child: Center(
               child: emoji != null
                   ? Text(emoji!, style: const TextStyle(fontSize: 18))
-                  : Icon(icon, size: 18, color: iconColor ?? GQColors.primary),
+                  : Icon(icon, size: 18, color: iconColor ?? t.primary),
             ),
           ),
           const SizedBox(width: 12),
@@ -737,25 +745,25 @@ class _OfflineCapabilityCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, size: 18, color: GQColors.ink2),
+          Icon(Icons.chevron_right_rounded, size: 18, color: t.ink2),
         ],
       ),
     );

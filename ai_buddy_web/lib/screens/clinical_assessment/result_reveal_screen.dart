@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/message.dart' show RiskLevel;
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/crisis_resources.dart';
 import '../../widgets/exercise_card_scaffold.dart';
@@ -93,10 +94,11 @@ class ResultRevealScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final scaleLabel = scale == AssessmentScale.phq9 ? 'PHQ-9' : 'GAD-7';
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -104,19 +106,19 @@ class ResultRevealScreen extends StatelessWidget {
             Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              decoration: const BoxDecoration(
-                color: GQColors.softBg,
-                border: Border(bottom: BorderSide(color: GQColors.hair)),
+              decoration: BoxDecoration(
+                color: t.bg,
+                border: Border(bottom: BorderSide(color: t.hair)),
               ),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Your check-in', // verbatim from HTML mockup B header
                     style: TextStyle(
                       fontFamily: GQTypography.displayFamily,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: GQColors.ink,
+                      color: t.ink,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -135,41 +137,41 @@ class ResultRevealScreen extends StatelessWidget {
                     // ── Hero card (result reveal)
                     Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            GQColors.primarySoft,
-                            Color(0xFFF8F1FA),
-                            Color(0xFFFAEEEC),
+                            t.primarySoft,
+                            const Color(0xFFF8F1FA),
+                            const Color(0xFFFAEEEC),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: GQColors.hair),
+                        border: Border.all(color: t.hair),
                       ),
                       padding: const EdgeInsets.all(18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // "A SIGNAL · NOT A LABEL" eyebrow — verbatim
-                          const Text(
+                          Text(
                             'A SIGNAL · NOT A LABEL',
                             style: TextStyle(
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink2,
+                              color: t.ink2,
                               letterSpacing: 0.7,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             _headline,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: GQTypography.displayFamily,
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink,
+                              color: t.ink,
                               letterSpacing: -0.5,
                               height: 1.25,
                             ),
@@ -177,11 +179,11 @@ class ResultRevealScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             _body,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
-                              color: GQColors.ink2,
+                              color: t.ink2,
                               height: 1.5,
                             ),
                           ),
@@ -197,11 +199,11 @@ class ResultRevealScreen extends StatelessWidget {
                           // Score — small metadata (not the hero)
                           Text(
                             'SCORE · $score of ${scale.maxScore} · $scaleLabel',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: GQColors.ink2,
+                              color: t.ink2,
                               letterSpacing: 0.3,
                             ),
                           ),
@@ -212,14 +214,14 @@ class ResultRevealScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // ── "Things that often help" section
-                    const Text(
+                    Text(
                       // verbatim from HTML
                       "THINGS THAT OFTEN HELP, WHEN IT'S LIKE THIS",
                       style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink2,
+                        color: t.ink2,
                         letterSpacing: 0.7,
                       ),
                     ),
@@ -304,7 +306,7 @@ class ResultRevealScreen extends StatelessWidget {
                           context,
                           risk: RiskLevel.medium,
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
@@ -314,16 +316,16 @@ class ResultRevealScreen extends StatelessWidget {
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: GQColors.coral,
+                                color: t.coral,
                                 decoration: TextDecoration.underline,
-                                decorationColor: GQColors.coral,
+                                decorationColor: t.coral,
                                 height: 1.4,
                               ),
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_rounded,
-                              color: GQColors.coral,
+                              color: t.coral,
                               size: 14,
                             ),
                           ],
@@ -341,11 +343,11 @@ class ResultRevealScreen extends StatelessWidget {
                         child: Text(
                           '$scaleLabel is a clinical screening tool, not a diagnostic instrument.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: GQTypography.bodyFamily,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: GQColors.ink2,
+                            color: t.ink2,
                             height: 1.5,
                           ),
                         ),
@@ -374,6 +376,7 @@ class _SeverityBandViz extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return LayoutBuilder(builder: (context, constraints) {
       final markerOffset =
           (position * (constraints.maxWidth - 28)).clamp(0.0, constraints.maxWidth - 28);
@@ -412,14 +415,14 @@ class _SeverityBandViz extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: t.surface,
                   border: Border.all(
                     color: GQColors.primaryDk,
                     width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: GQColors.primary.withAlpha(115),
+                      color: t.primary.withAlpha(115),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                       spreadRadius: -6,
@@ -444,6 +447,7 @@ class _SeverityLabels extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Row(
       children: _labels.map((l) {
         final isCurrent = l == currentLabel;
@@ -456,7 +460,7 @@ class _SeverityLabels extends StatelessWidget {
               fontSize: 9,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: isCurrent ? GQColors.primaryDk : GQColors.ink2,
+              color: isCurrent ? GQColors.primaryDk : t.ink2,
             ),
           ),
         );
@@ -488,6 +492,7 @@ class _ResultActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     Color bgColor;
     Color borderColor;
     Color titleColor;
@@ -495,23 +500,25 @@ class _ResultActionCard extends StatelessWidget {
     Color iconBg;
 
     if (isPrimary) {
-      bgColor = GQColors.primary;
-      borderColor = GQColors.primary;
+      bgColor = t.primary;
+      borderColor = t.primary;
+      // White stays literal — painted directly on the primary fill above,
+      // same discipline as the primaryDk CTA (contrast travels with the fill).
       titleColor = Colors.white;
       subtitleColor = Colors.white.withAlpha(204);
       iconBg = Colors.white.withAlpha(46);
     } else if (isCoral) {
-      bgColor = GQColors.accentSoft;
-      borderColor = GQColors.coral.withAlpha(77);
-      titleColor = GQColors.ink;
-      subtitleColor = GQColors.ink2;
-      iconBg = GQColors.coral.withAlpha(46);
+      bgColor = t.accentSoft;
+      borderColor = t.coral.withAlpha(77);
+      titleColor = t.ink;
+      subtitleColor = t.ink2;
+      iconBg = t.coral.withAlpha(46);
     } else {
-      bgColor = Colors.white;
-      borderColor = GQColors.hair;
-      titleColor = GQColors.ink;
-      subtitleColor = GQColors.ink2;
-      iconBg = GQColors.primarySoft;
+      bgColor = t.surface;
+      borderColor = t.hair;
+      titleColor = t.ink;
+      subtitleColor = t.ink2;
+      iconBg = t.primarySoft;
     }
 
     return GestureDetector(
@@ -567,7 +574,7 @@ class _ResultActionCard extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_rounded,
-              color: isPrimary ? Colors.white : GQColors.ink2,
+              color: isPrimary ? Colors.white : t.ink2,
               size: 16,
             ),
           ],
@@ -593,16 +600,17 @@ class _RemindAgainToggleState extends State<_RemindAgainToggle> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: t.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: GQColors.hair),
+        border: Border.all(color: t.hair),
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -612,18 +620,18 @@ class _RemindAgainToggleState extends State<_RemindAgainToggle> {
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: GQColors.ink,
+                    color: t.ink,
                     letterSpacing: -0.2,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Optional · gentle reminder, no streak math', // verbatim from HTML
                   style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                   ),
                 ),
               ],
@@ -638,8 +646,8 @@ class _RemindAgainToggleState extends State<_RemindAgainToggle> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(99),
                 color: _on
-                    ? GQColors.primary
-                    : GQColors.ink3.withAlpha(82), // ~0.32
+                    ? t.primary
+                    : t.ink3.withAlpha(82), // ~0.32
               ),
               child: Stack(
                 children: [
@@ -650,10 +658,10 @@ class _RemindAgainToggleState extends State<_RemindAgainToggle> {
                     child: Container(
                       width: 18,
                       height: 18,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
+                        color: t.surface,
+                        boxShadow: const [
                           BoxShadow(
                             color: Color(0x33000000),
                             blurRadius: 3,

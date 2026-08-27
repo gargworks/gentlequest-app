@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/notification_service_impl.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/gq/gq.dart';
 import 'settings_widgets.dart';
@@ -58,14 +59,15 @@ class _NotificationDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: GQColors.softBg.withValues(alpha: 0.92),
+        backgroundColor: t.bg.withValues(alpha: 0.92),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 14,
-              color: GQColors.ink),
+          icon: Icon(Icons.arrow_back_ios_new, size: 14,
+              color: t.ink),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -74,7 +76,7 @@ class _NotificationDetailScreenState
               fontFamily: GQTypography.bodyFamily,
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: GQColors.ink),
+              color: t.ink),
         ),
       ),
       body: ListView(
@@ -84,7 +86,7 @@ class _NotificationDetailScreenState
           SettingsCard(
             children: [
               SettingsRow(
-                iconBg: GQColors.primarySoft,
+                iconBg: t.primarySoft,
                 iconWidget: const Icon(Icons.notifications_outlined,
                     size: 14, color: GQColors.primaryDk),
                 title: 'Daily check-in reminder',
@@ -105,9 +107,9 @@ class _NotificationDetailScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
                         decoration: BoxDecoration(
-                          color: GQColors.softBg,
+                          color: t.bg,
                           border: Border.all(
-                              color: GQColors.hair, width: 1),
+                              color: t.hair, width: 1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -123,7 +125,7 @@ class _NotificationDetailScreenState
                                         fontFamily: GQTypography.bodyFamily,
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w800,
-                                        color: GQColors.ink2,
+                                        color: t.ink2,
                                         letterSpacing: 0.7),
                                   ),
                                   const SizedBox(height: 2),
@@ -138,7 +140,7 @@ class _NotificationDetailScreenState
                                                   GQTypography.bodyFamily,
                                               fontSize: 18,
                                               fontWeight: FontWeight.w800,
-                                              color: GQColors.ink,
+                                              color: t.ink,
                                               letterSpacing: -0.5,
                                               height: 1.1),
                                         ),
@@ -152,7 +154,7 @@ class _NotificationDetailScreenState
                                                   GQTypography.bodyFamily,
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
-                                              color: GQColors.ink2),
+                                              color: t.ink2),
                                         ),
                                       ],
                                     ),
@@ -166,9 +168,9 @@ class _NotificationDetailScreenState
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: t.surface,
                                   border: Border.all(
-                                      color: GQColors.hair, width: 1),
+                                      color: t.hair, width: 1),
                                   borderRadius:
                                       BorderRadius.circular(999),
                                 ),
@@ -178,7 +180,7 @@ class _NotificationDetailScreenState
                                             GQTypography.bodyFamily,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
-                                        color: GQColors.ink2)),
+                                        color: t.ink2)),
                               ),
                             ),
                           ],
@@ -191,7 +193,7 @@ class _NotificationDetailScreenState
                               fontFamily: GQTypography.bodyFamily,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: GQColors.ink2,
+                              color: t.ink2,
                               letterSpacing: 0.7)),
                       const SizedBox(height: 6),
                       Row(
@@ -207,12 +209,12 @@ class _NotificationDetailScreenState
                                     horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: active
-                                      ? GQColors.primary
-                                      : Colors.white,
+                                      ? t.primary
+                                      : t.surface,
                                   border: Border.all(
                                       color: active
-                                          ? GQColors.primary
-                                          : GQColors.hair,
+                                          ? t.primary
+                                          : t.hair,
                                       width: 1),
                                   borderRadius:
                                       BorderRadius.circular(999),
@@ -223,9 +225,13 @@ class _NotificationDetailScreenState
                                             GQTypography.bodyFamily,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w800,
+                                        // White stays literal — painted
+                                        // directly on the primary fill above,
+                                        // same fill/foreground discipline as
+                                        // the primaryDk CTA.
                                         color: active
                                             ? Colors.white
-                                            : GQColors.ink2)),
+                                            : t.ink2)),
                               ),
                             ),
                           );
@@ -244,7 +250,7 @@ class _NotificationDetailScreenState
           SettingsCard(
             children: [
               SettingsRow(
-                iconBg: GQColors.warmSoft,
+                iconBg: t.warmSoft,
                 iconWidget:
                     const Text('🌱', style: TextStyle(fontSize: 14)),
                 title: 'Gentle nudge',
@@ -264,7 +270,7 @@ class _NotificationDetailScreenState
           SettingsCard(
             children: [
               SettingsRow(
-                iconBg: GQColors.primarySoft,
+                iconBg: t.primarySoft,
                 iconWidget: const Icon(Icons.favorite_outline,
                     size: 14, color: GQColors.primaryDk),
                 title: 'Worried check-in',
@@ -282,9 +288,9 @@ class _NotificationDetailScreenState
                 child: Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: GQColors.primary.withValues(alpha: 0.06),
+                    color: t.primary.withValues(alpha: 0.06),
                     border: Border.all(
-                        color: GQColors.primary.withValues(alpha: 0.25),
+                        color: t.primary.withValues(alpha: 0.25),
                         width: 1,
                         style: BorderStyle.solid),
                     borderRadius: BorderRadius.circular(10),
@@ -302,18 +308,18 @@ class _NotificationDetailScreenState
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: GQColors.ink2,
+                                color: t.ink2,
                                 height: 1.45),
-                            children: const [
-                              TextSpan(
+                            children: [
+                              const TextSpan(
                                   text:
                                       'Locked on for the next '),
                               TextSpan(
                                   text: '26 days',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w800,
-                                      color: GQColors.ink)),
-                              TextSpan(
+                                      color: t.ink)),
+                              const TextSpan(
                                   text:
                                       ' — last heavy moment was Friday. Resets after 30 quiet days.'),
                             ],
@@ -356,6 +362,7 @@ class _TestNotificationBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Column(
       children: [
         GestureDetector(
@@ -364,22 +371,22 @@ class _TestNotificationBtn extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 13),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: GQColors.hair, width: 1),
+              color: t.surface,
+              border: Border.all(color: t.hair, width: 1),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.notifications_outlined,
-                    size: 13, color: GQColors.ink2),
+                Icon(Icons.notifications_outlined,
+                    size: 13, color: t.ink2),
                 const SizedBox(width: 6),
                 Text('Send a test notification',
                     style: TextStyle(
                         fontFamily: GQTypography.bodyFamily,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: GQColors.ink2)),
+                        color: t.ink2)),
               ],
             ),
           ),
@@ -392,7 +399,7 @@ class _TestNotificationBtn extends StatelessWidget {
               fontFamily: GQTypography.bodyFamily,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: GQColors.ink2),
+              color: t.ink2),
         ),
       ],
     );
