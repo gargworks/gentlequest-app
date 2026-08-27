@@ -2,6 +2,26 @@
 
 All notable changes to GentleQuest (ai-mental-health-assistant) are documented here.
 
+## [1.7.1+26082701] — 2026-08-27
+
+Crisis-screen accessibility fixes. Shipped to Play production and submitted to App Store review 2026-08-27.
+
+### Fixed
+- At ~2x text scale, the 988 crisis-line label could clip at the screen edge and the 988 pill could be pushed below the fold on a non-scrollable sheet. Both fixed, in `q9_crisis_bridge` and `crisis_resources`.
+
+## [1.7.0+26082201] — 2026-08-22
+
+Android-internal only; superseded by 1.7.1 before wide release.
+
+### Added
+- Rumination Loop Reset exercise (Resource Library).
+- Crisis riskSource provenance (server vs keyword) with a feature-flagged full-screen takeover (flag off).
+
+### Changed
+- Reduced-motion honored across 16 animated surfaces (quiet mode).
+- `GQTheme` `ThemeExtension` plumbing; Android page transitions switched to `ZoomPageTransitionsBuilder`.
+- GQ widget layer converted to theme-aware color reads.
+
 ## [1.6.0] — 2026-08-13
 
 Design milestone: the five "Fable-level" features, plus a full design-token cleanup.
