@@ -28,7 +28,6 @@ import 'services/low_stim_service.dart';
 import 'config/profile_config.dart';
 import 'screens/legal/legal_screen.dart';
 import 'theme/gq_theme.dart';
-import 'theme/gq_tokens.dart';
 import 'theme/low_stim_mode.dart';
 import 'widgets/branded_splash.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
@@ -237,9 +236,9 @@ ThemeData _gqThemeData(Brightness brightness) {
   final gq = brightness == Brightness.dark ? GQTheme.dark : GQTheme.light;
   return ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: GQColors.primary,
-      primary: GQColors.primary,
-      secondary: GQColors.coral,
+      seedColor: gq.primary,
+      primary: gq.primary,
+      secondary: gq.coral,
       brightness: brightness,
     ),
     useMaterial3: true,

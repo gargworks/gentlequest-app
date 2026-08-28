@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/message.dart' show RiskLevel;
 import '../../navigation/home_tab_deeplink.dart';
 import '../../providers/assessment_provider.dart';
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_bottom_nav.dart' show AppTab;
 import '../../widgets/crisis_resources.dart';
@@ -147,7 +148,7 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
       enableDrag: false,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: GQColors.ink.withAlpha(82), // ~0.32 per spec
+      barrierColor: GQTheme.of(context).ink.withAlpha(82), // ~0.32 per spec
       builder: (_) => const Q9CrisisBridgeSheet(),
     ).then((action) {
       if (!mounted) return;
@@ -232,12 +233,13 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
       );
     }
 
+    final t = GQTheme.of(context);
     final question = _questions[_qIdx];
     final selected = _responses[_qIdx];
     final progressFilled = _qIdx + 1; // current segment index (1-based filled)
 
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -261,11 +263,11 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
                     Center(
                       child: Text(
                         widget.scale.subtitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -326,7 +328,7 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
 
                     const SizedBox(height: 14),
                     // Privacy note
-                    const Center(
+                    Center(
                       child: Text(
                         'Your answers stay private. We don\'t share results.',
                         textAlign: TextAlign.center,
@@ -334,7 +336,7 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                           height: 1.5,
                         ),
                       ),

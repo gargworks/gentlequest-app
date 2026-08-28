@@ -6,6 +6,12 @@ import 'package:flutter/material.dart';
 import '../../theme/gq_tokens.dart';
 import 'journal_models.dart';
 
+// moodColor is a free function with no BuildContext — structurally can't
+// call GQTheme.of(context) even if it wanted to. All five mood* branches
+// stay static per the global mood invariant (D2: hue is not the a11y
+// channel, shape/dotCount are). The null-mood fallback below borrows ink3
+// as a neutral placeholder in that same static palette, not as themed UI
+// chrome, so it stays paired with the mood branches rather than converting.
 Color moodColor(JournalMood? mood) {
   switch (mood) {
     case JournalMood.great:
@@ -50,6 +56,10 @@ class NavIconButton extends StatelessWidget {
     required this.onTap,
     required this.child,
     this.backgroundColor = Colors.white,
+    // Default parameter values must be compile-time constants, so this
+    // can't read GQTheme.of(context) without widening the field to
+    // Color? and resolving the fallback in build() — out of scope for a
+    // minimal-diff pass; stays static, flagged for a follow-up slice.
     this.borderColor = GQColors.hair,
   });
 

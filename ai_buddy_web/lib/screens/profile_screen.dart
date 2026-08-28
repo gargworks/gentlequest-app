@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../config/profile_config.dart';
 import 'settings_screen.dart';
@@ -69,8 +70,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: _showBuilder
           ? SafetyPlanBuilderStep(
               stepIdx: _builderStep,
@@ -107,6 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                             child: Text(
                               'Settings →',
+                              // primaryDk stays static — theme exception (no dark slot).
                               style: TextStyle(
                                 fontFamily: GQTypography.bodyFamily,
                                 fontSize: 12.5,

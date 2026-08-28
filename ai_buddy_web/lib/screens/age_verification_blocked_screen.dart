@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 
 /// Support email surfaced on the terminal block screen.
@@ -52,8 +53,9 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       // Terminal: no AppBar, no back affordance, no skip.
       body: SafeArea(
         child: Padding(
@@ -69,13 +71,13 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: GQColors.accentSoft,
+                      color: t.accentSoft,
                       borderRadius: BorderRadius.circular(GQRadii.cardLg),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.shield_outlined,
                       size: 64,
-                      color: GQColors.coral,
+                      color: t.coral,
                     ),
                   ),
                 ),
@@ -84,11 +86,11 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                 Text(
                   'Sorry — GentleQuest is for adults',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.displayFamily,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: GQColors.ink,
+                    color: t.ink,
                     height: 1.3,
                   ),
                 ),
@@ -100,10 +102,10 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                   'If you believe this is wrong, please reach out at '
                   '$_kSupportEmail.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GQTypography.bodyFamily,
                     fontSize: 16,
-                    color: GQColors.ink2,
+                    color: t.ink2,
                     height: 1.5,
                   ),
                 ),
@@ -113,6 +115,7 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                   key: const Key('age_blocked_close_button'),
                   onPressed: () => _closeApp(),
                   style: ElevatedButton.styleFrom(
+                    // primaryDk stays static — CTA fill w/ white text (theme exception).
                     backgroundColor: GQColors.primaryDk,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -130,12 +133,12 @@ class AgeVerificationBlockedScreen extends StatelessWidget {
                 TextButton(
                   key: const Key('age_blocked_support_link'),
                   onPressed: () => _openSupportEmail(),
-                  child: const Text(
+                  child: Text(
                     'Contact support',
                     style: TextStyle(
                       fontFamily: GQTypography.bodyFamily,
                       fontSize: 14,
-                      color: GQColors.primary,
+                      color: t.primary,
                       decoration: TextDecoration.underline,
                     ),
                   ),

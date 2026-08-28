@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 import '../widgets/exercise_card_scaffold.dart';
 
 /// ExerciseScaffoldScreen — R1D16 Exercise Cards (standalone fullscreen route)
@@ -46,8 +46,9 @@ class ExerciseScaffoldScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       body: Stack(
         children: [
           // Soft gradient background per HTML: radial gradient #EEF0FE → #F8F7FF → #FBF1F4
@@ -58,8 +59,8 @@ class ExerciseScaffoldScreen extends StatelessWidget {
                   center: const Alignment(0, -0.3),
                   radius: 1.1,
                   colors: [
-                    GQColors.primarySoft, // EEF0FE
-                    GQColors.softBg, // F8F7FF
+                    t.primarySoft, // EEF0FE
+                    t.bg, // F8F7FF
                     const Color(0xFFFBF1F4), // warm tint per HTML
                   ],
                   stops: const [0.0, 0.60, 1.0],

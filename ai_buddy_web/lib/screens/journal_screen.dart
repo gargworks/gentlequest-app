@@ -19,7 +19,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 import 'journal/journal_empty_state.dart';
 import 'journal/journal_entry_view.dart';
 import 'journal/journal_models.dart';
@@ -148,7 +148,7 @@ class _JournalScreenState extends State<JournalScreen> {
     // entries exist on device — a small but jarring blink.
     if (!_loaded) {
       return Scaffold(
-        backgroundColor: GQColors.softBg,
+        backgroundColor: GQTheme.of(context).bg,
         body: const Center(
           child: SizedBox(
             width: 24,

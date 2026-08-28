@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/mood_tracker.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/gq/gq.dart';
 import '../widgets/keyboard_dismissible_scaffold.dart';
@@ -22,17 +23,18 @@ class MoodTrackerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return KeyboardDismissibleScaffold(
       safeTop: false,
       safeBottom: false,
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: const GQHeader(title: "Let's check in"),
       body: Column(
         children: [
           const SizedBox(height: GQSpacing.lg),
           Expanded(
             child: Container(
-              color: GQColors.surface,
+              color: t.surface,
               child: const MoodTrackerWidget(),
             ),
           ),

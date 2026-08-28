@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_export.dart';
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 import './custom_image_view.dart';
 
 /// CustomButton - A flexible button component that supports text, icon, and mixed content
@@ -89,10 +89,11 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final effectiveButtonType = buttonType ?? CustomButtonType.elevated;
-    final effectiveBackgroundColor = backgroundColor ?? GQColors.softBg;
-    final effectiveTextColor = textColor ?? GQColors.ink2;
-    final effectiveBorderColor = borderColor ?? GQColors.hair;
+    final effectiveBackgroundColor = backgroundColor ?? t.bg;
+    final effectiveTextColor = textColor ?? t.ink2;
+    final effectiveBorderColor = borderColor ?? t.hair;
     final effectiveShowBorder = showBorder ?? false;
     final effectivePadding =
         padding ?? EdgeInsets.symmetric(horizontal: 24.h, vertical: 12.h);

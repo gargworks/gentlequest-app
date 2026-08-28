@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/gq/gq.dart';
 
@@ -26,8 +27,9 @@ class _GQComponentGalleryScreenState extends State<GQComponentGalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
-      backgroundColor: GQColors.softBg,
+      backgroundColor: t.bg,
       appBar: GQHeader(title: 'GQ Component Gallery'),
       body: ListView(
         padding: const EdgeInsets.all(GQSpacing.lg),
@@ -93,6 +95,7 @@ class _GQComponentGalleryScreenState extends State<GQComponentGalleryScreen> {
           _SectionLabel('GQEmptyState'),
           GQCard(
             child: GQEmptyState(
+              // primaryDk stays static — theme exception (no dark slot).
               illustration: const Icon(Icons.eco_outlined, size: 48, color: GQColors.primaryDk),
               line: 'No entries yet — your first one is one tap away.',
               actionLabel: 'Add an entry',
@@ -130,7 +133,7 @@ class _GQComponentGalleryScreenState extends State<GQComponentGalleryScreen> {
           if (_lastBannerCategory != null)
             Padding(
               padding: const EdgeInsets.only(top: GQSpacing.xs),
-              child: Text('Last fired: $_lastBannerCategory', style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+              child: Text('Last fired: $_lastBannerCategory', style: GQTypography.micro.copyWith(color: t.ink2)),
             ),
           _SectionLabel('GQSheet'),
           GQButton(
@@ -156,9 +159,10 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: GQSpacing.xl, bottom: GQSpacing.sm),
-      child: Text(text, style: GQTypography.micro.copyWith(color: GQColors.ink2)),
+      child: Text(text, style: GQTypography.micro.copyWith(color: t.ink2)),
     );
   }
 }

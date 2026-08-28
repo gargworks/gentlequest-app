@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 
 /// AIThinkingIndicator — State A (R1D7 Chat Active States)
 ///
@@ -53,6 +53,7 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     final reduceMotion =
         _reduceMotion || MediaQuery.of(context).accessibleNavigation;
 
@@ -62,14 +63,14 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: t.surface,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(18),
             topRight: Radius.circular(18),
             bottomRight: Radius.circular(18),
             bottomLeft: Radius.circular(6),
           ),
-          border: Border.all(color: GQColors.hair),
+          border: Border.all(color: t.hair),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A1F1B3A),
@@ -92,6 +93,7 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
   }
 
   Widget _staticDots() {
+    final t = GQTheme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(3, (i) {
@@ -99,8 +101,8 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
           margin: const EdgeInsets.symmetric(horizontal: 2.5),
           width: 6,
           height: 6,
-          decoration: const BoxDecoration(
-            color: GQColors.primary,
+          decoration: BoxDecoration(
+            color: t.primary,
             shape: BoxShape.circle,
           ),
         );
@@ -109,6 +111,10 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
   }
 
   Widget _waveDots(double t) {
+    // `t` here is the animation progress value (0..1), not the theme — see
+    // the `theme` local below. Named `t` to match the wave-phase math
+    // throughout this method; do not shadow with GQTheme.of under this name.
+    final theme = GQTheme.of(context);
     // Stagger: dot i delays by (i+1)*100ms = phase offset 0.1, 0.2, 0.3
     // Maps HTML: .d1 100ms, .d2 200ms, .d3 300ms
     double dotOpacity(int i) {
@@ -143,7 +149,7 @@ class _AIThinkingIndicatorState extends State<AIThinkingIndicator>
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: GQColors.primary.withValues(alpha: dotOpacity(i)),
+              color: theme.primary.withValues(alpha: dotOpacity(i)),
               shape: BoxShape.circle,
             ),
           ),

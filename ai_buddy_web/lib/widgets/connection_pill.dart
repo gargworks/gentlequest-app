@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'package:ai_buddy_web/theme/gq_theme.dart';
 
 /// A compact pill shown on the right side of the app bar while the
 /// companion is reconnecting.
@@ -21,14 +21,15 @@ class ConnectionPill extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!visible) return const SizedBox.shrink();
 
+    final t = GQTheme.of(context);
     return Container(
       height: 26,
       padding: const EdgeInsets.symmetric(horizontal: 11),
       decoration: BoxDecoration(
-        color: GQColors.amberSoft,
+        color: t.amberSoft,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: GQColors.amber.withValues(alpha: 0.25),
+          color: t.amber.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -38,18 +39,18 @@ class ConnectionPill extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
-              color: GQColors.amber,
+            decoration: BoxDecoration(
+              color: t.amber,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
+          Text(
             'Reconnecting',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: GQColors.inkOnAmber,
+              color: t.inkOnAmber,
             ),
           ),
         ],

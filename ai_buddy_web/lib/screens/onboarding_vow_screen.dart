@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/companion.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 import '../widgets/companion_painter.dart';
 import 'welcome_screen.dart';
@@ -201,6 +202,7 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -234,13 +236,13 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
                             horizontal: 8, vertical: 4),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Skip',
                         style: TextStyle(
                           fontFamily: GQTypography.bodyFamily,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: GQColors.ink2,
+                          color: t.ink2,
                         ),
                       ),
                     ),
@@ -278,6 +280,7 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
                           ? ElevatedButton(
                               onPressed: _onBegin,
                               style: ElevatedButton.styleFrom(
+                                // primaryDk stays static — CTA fill w/ white text (theme exception).
                                 backgroundColor: GQColors.primaryDk,
                                 foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
@@ -362,7 +365,7 @@ class _VowLine extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildRichLine(line, isActive),
+                  _buildRichLine(context, line, isActive),
                   if (showSeed) ...[
                     const SizedBox(height: 16),
                     ScaleTransition(
@@ -384,8 +387,9 @@ class _VowLine extends StatelessWidget {
   }
 
   /// Builds the vow line, with '988' in coral w800 if present.
-  Widget _buildRichLine(String line, bool isActive) {
-    final color = isActive ? GQColors.ink : GQColors.ink3;
+  Widget _buildRichLine(BuildContext context, String line, bool isActive) {
+    final t = GQTheme.of(context);
+    final color = isActive ? t.ink : t.ink3;
     final weight = isActive ? FontWeight.w700 : FontWeight.w600;
     final style = TextStyle(
       fontFamily: GQTypography.displayFamily,
@@ -407,7 +411,7 @@ class _VowLine extends StatelessWidget {
             TextSpan(
               text: '988',
               style: style.copyWith(
-                color: GQColors.coral,
+                color: t.coral,
                 fontWeight: FontWeight.w800,
               ),
             ),

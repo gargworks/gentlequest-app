@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
 /// InlineCrisisBanner — State B (R1D7 Chat Active States)
@@ -56,10 +57,11 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
 
   @override
   Widget build(BuildContext context) {
+    final t = GQTheme.of(context);
     // Coral banner: rgba(255,107,107,0.14) → rgba(255,107,107,0.08)
     // Border: rgba(255,107,107,0.35)
-    // Body text: GQColors.inkOnCoral (#7A2424) — deep coral ink
-    const bodyInk = GQColors.inkOnCoral;
+    // Body text: t.inkOnCoral (#7A2424 light) — deep coral ink
+    final bodyInk = t.inkOnCoral;
     const bannerBg1 = Color(0x24FF6B6B); // ~0.14 opacity
     const bannerBg2 = Color(0x14FF6B6B); // ~0.08 opacity
     const bannerBorder = Color(0x59FF6B6B); // ~0.35 opacity
@@ -103,16 +105,16 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.favorite_rounded,
-                          color: GQColors.coral,
+                          color: t.coral,
                           size: 14,
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -164,7 +166,7 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                                   BorderRadius.circular(GQRadii.button),
                               border: Border.all(color: bannerBorder),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
                                 "Thanks, I have support",
                                 style: TextStyle(
@@ -191,6 +193,9 @@ class _InlineCrisisBannerState extends State<InlineCrisisBanner>
                             decoration: BoxDecoration(
                               // D3: coral fails 4.5:1 with white text
                               // (2.77:1); dangerInk passes (4.75:1).
+                              // dangerInk stays static — theme exception,
+                              // byte-identical light/dark (contrast-critical
+                              // CTA fill).
                               color: GQColors.dangerInk,
                               borderRadius:
                                   BorderRadius.circular(GQRadii.button),

@@ -135,6 +135,9 @@ class _SafetyPlanFilledState extends State<_SafetyPlanFilled> {
         ),
         boxShadow: [
           BoxShadow(
+            // Glow paired 1:1 with the static safetyGrad* gradient above —
+            // illustration-adjacent (same discipline as slice-9's breathing-
+            // orb radial-gradient precedent), stays static.
             color: GQColors.primary.withValues(alpha: 0.55),
             blurRadius: 44,
             offset: const Offset(0, 22),
@@ -507,6 +510,10 @@ class _ContactRow extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
+                // _ContactRow renders only atop the static safetyGrad* card
+                // (Colors.white text/avatar + GQIllustration ink throughout
+                // this widget) — coral here stays static for the same reason
+                // SafetyPill/SafetyButton do (slice-5 precedent).
                 color: contact.isCrisis ? GQColors.coral : Colors.white,
                 borderRadius: BorderRadius.circular(9999),
               ),

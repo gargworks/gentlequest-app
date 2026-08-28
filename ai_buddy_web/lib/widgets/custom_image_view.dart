@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../core/app_export.dart';
-import '../theme/gq_tokens.dart';
+import '../theme/gq_theme.dart';
 
 extension ImageTypeExtension on String {
   ImageType get imageType {
@@ -158,8 +158,8 @@ class CustomImageView extends StatelessWidget {
             height: 30,
             width: 30,
             child: LinearProgressIndicator(
-              color: GQColors.hair,
-              backgroundColor: GQColors.softBg,
+              color: GQTheme.of(context).hair,
+              backgroundColor: GQTheme.of(context).bg,
             ),
           ),
           errorWidget: (context, url, error) => Image.asset(
