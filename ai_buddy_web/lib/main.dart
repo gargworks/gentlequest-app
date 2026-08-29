@@ -125,17 +125,45 @@ void _handleNotificationPayload(String? rawPayload) {
   }
 }
 
+/// 2026-08-29: App Store rejection (Guideline 2.1(a), submission
+/// 334bc18b-119e-4d60-a198-3df295e5e358) — "blank screen upon launch,
+/// unable to bypass" on iPhone 17 Pro Max / iPad Air 11-inch (M3), iOS
+/// 26.6.1. Root cause: every boot-time init call below runs sequentially
+/// awaited, before runApp(), each only try/catch-wrapped — which does
+/// nothing against a call that never resolves. A single hung Future (most
+/// likely FirebaseService().initialize(), which does real GA4 network
+/// calls for the first time in this exact release per ADR-007's
+/// restoration) blocks runApp() forever with no exception and no crash
+/// log, matching Apple's screenshots exactly: solid black, unrecoverable.
+/// Fix: race every one of these against a bounded timeout so a hang
+/// degrades to "that subsystem didn't finish in time" instead of "the
+/// app never renders a frame." Applies to the whole class of pre-runApp
+/// awaits, not just the one suspected culprit.
+Future<void> _bootStep(
+  String label,
+  Future<void> Function() work, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  try {
+    await work().timeout(timeout);
+  } on TimeoutException {
+    debugPrint('[boot] $label timed out after ${timeout.inSeconds}s — '
+        'continuing without it so the app can still render.');
+  } catch (e) {
+    debugPrint('[boot] $label error: $e');
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (handles analytics & crashlytics)
-  // Wrapped in try-catch for resilience - app should still run if Firebase fails
-  try {
+  // Initialize Firebase (handles analytics & crashlytics). Timeout-guarded
+  // (see _bootStep doc above) — app must still render if Firebase hangs,
+  // not just if it throws.
+  await _bootStep('Firebase init', () async {
     await FirebaseService().setFirebaseOptions();
     await FirebaseService().initialize();
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e');
-  }
+  });
 
   const dsn = String.fromEnvironment('SENTRY_DSN_FRONTEND', defaultValue: '');
   const env = String.fromEnvironment('SENTRY_ENV', defaultValue: 'local');
@@ -153,16 +181,14 @@ Future<void> main() async {
     debugPrint('[sentry] WARNING: DSN is a placeholder. Crashes are NOT being '
         'reported. Set SENTRY_DSN_FRONTEND to a real DSN in .env.');
   } else if (dsn.isNotEmpty) {
-    try {
+    await _bootStep('Sentry init', () async {
       await sentry.Sentry.init((options) {
         options.dsn = dsn;
         options.environment = env;
         options.release = version;
         options.tracesSampleRate = traces;
       });
-    } catch (e) {
-      debugPrint('Sentry initialization error: $e');
-    }
+    });
   }
 
   // Set tap handler for notification deep-linking
@@ -173,58 +199,35 @@ Future<void> main() async {
   // Initialize app rating service (mobile only - no-op on web)
   // Wrapped in try-catch for resilience
   if (!kIsWeb) {
-    try {
-      await AppRatingService().incrementSessionCount();
-    } catch (e) {
-      debugPrint('AppRatingService initialization error: $e');
-    }
+    await _bootStep(
+        'AppRatingService init', () => AppRatingService().incrementSessionCount());
   }
 
   // Hydrate cached auth identity from SharedPreferences before any UI
   // mounts so the Settings/Profile screens know who's signed in without
   // a network round-trip flicker.
-  try {
-    await AuthService.instance.hydrate();
-  } catch (e) {
-    debugPrint('AuthService hydrate error: $e');
-  }
+  await _bootStep('AuthService hydrate', () => AuthService.instance.hydrate());
 
   // Migrate legacy onboarding pref keys onto canonical scheduler keys +
   // re-arm notification schedulers from persisted opt-in state. Without
   // this, users who toggled ON in a prior session can have a phantom
   // toggle (pref says enabled, no schedule actually pending). See
   // .brain/audits/2026-05-24_gq_v1.3.0_honesty_audit.md §1+§2.
-  try {
-    await PrefMigrator.run();
-  } catch (e) {
-    debugPrint('PrefMigrator error: $e');
-  }
+  await _bootStep('PrefMigrator', () => PrefMigrator.run());
 
   // Hydrate ProfileConfig (nickname / pronoun / avatar / tone) from the
   // profile_*_v1 SharedPreferences keys. Previously these were written by
   // profile_screen but never read into the static globals chat reads, so
   // setting nickname/avatar/tone did nothing downstream. See audit §3–§6.
-  try {
-    await ProfileConfig.hydrateFromPrefs();
-  } catch (e) {
-    debugPrint('ProfileConfig hydrate error: $e');
-  }
+  await _bootStep('ProfileConfig hydrate', () => ProfileConfig.hydrateFromPrefs());
 
   // Initialize deep link handling (app links / universal links)
-  try {
-    await DeepLinkService().initialize();
-  } catch (e) {
-    debugPrint('DeepLinkService initialization error: $e');
-  }
+  await _bootStep('DeepLinkService init', () => DeepLinkService().initialize());
 
   // Hydrate low-stim "quiet mode" (v1.5.0 ADHD update, ADR-006) from
   // SharedPreferences before first paint so the app-wide filter in
   // LowStimOverlay is correct from frame one, not just after Settings loads.
-  try {
-    await LowStimService.hydrate();
-  } catch (e) {
-    debugPrint('LowStimService hydrate error: $e');
-  }
+  await _bootStep('LowStimService hydrate', () => LowStimService.hydrate());
 
   runApp(const MyApp());
 }

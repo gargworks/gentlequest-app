@@ -130,6 +130,36 @@ void main() {
       final wrongValue = _contrastRatio(const Color(0xFF8B4444), GQTheme.dark.bg);
       expect(wrongValue, lessThan(4.5));
     });
+
+    test('dark coralDk ink passes 4.5:1 IN SITU on the pill backing it '
+        'actually sits on, not just bare bg', () {
+      // WO-9 v2 flagged this: testing coralDk-as-pill-text against bare
+      // #1E1B2E passes a combination that could fail in situ, because the
+      // pill itself has a tinted backing (softTint(coral) — a 14% alpha
+      // wash of coral over the surface behind it), which sits BETWEEN the
+      // text and the true background. Compositing that wash in is the
+      // harder, correct test.
+      final pillBacking = Color.alphaBlend(
+        GQTheme.dark.coral.withValues(alpha: 0.14),
+        GQTheme.dark.surface,
+      );
+      final ratio = _contrastRatio(GQTheme.dark.coralDk, pillBacking);
+      expect(ratio, greaterThanOrEqualTo(4.5),
+          reason: 'coralDk pill text vs its own tinted pill backing must '
+              'be WCAG AA in dark; got ${ratio.toStringAsFixed(2)}:1 '
+              '(pill backing resolved to $pillBacking)');
+    });
+
+    test('the 36px crisis heart icon (crisis_resources.dart) holds the '
+        '4.5:1 TEXT floor, not just the 3.0:1 icon floor', () {
+      // WO-9 v2's explicit ruling: hold this one icon to the stricter
+      // text floor since at 36px on the crisis surface it functions as a
+      // primary signal, not decoration.
+      final ratio = _contrastRatio(GQTheme.dark.coralDk, GQTheme.dark.bg);
+      expect(ratio, greaterThanOrEqualTo(4.5),
+          reason: 'crisis heart (coralDk) must clear the 4.5:1 text floor '
+              'in dark, not just 3.0:1; got ${ratio.toStringAsFixed(2)}:1');
+    });
   });
 }
 
