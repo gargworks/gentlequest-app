@@ -145,13 +145,17 @@ class DeepLinkService {
         _navigateTo(AppRoutes.home, queryParams);
         break;
       case '/crisis':
-        // AppRoutes.crisisResources ('/crisis') is not registered in
-        // main.dart's routes table and there is no onUnknownRoute handler —
-        // navigating there would crash. Normalize to home until a real
-        // crisis deep-link destination exists; which screen that should be
-        // is a clinical routing decision, not a code one — tracked in repo
-        // issues.
-        _navigateTo(AppRoutes.home, queryParams);
+        // AppRoutes.crisisResources ('/crisis') is now registered in
+        // main.dart -> ResourceLibraryScreen (2026-08-28, closing repo
+        // issue #7). Routing decision: always show real crisis resources
+        // rather than land on the generic home tab, regardless of how
+        // stale the link is (an old push notification, a bookmarked
+        // resource) — the cost of over-showing crisis resources to someone
+        // who no longer needs them is near zero; the cost of under-showing
+        // them to someone who does is not. No compliance/age-gate check
+        // here: crisis resources are the one surface that should never be
+        // gated behind onboarding.
+        _navigateTo(AppRoutes.crisisResources, queryParams);
         break;
       case '/assessment':
         if (queryParams.containsKey('id')) {
@@ -227,9 +231,9 @@ class DeepLinkService {
       // Navigate to mood tracker with pre-filled mood
       _navigateTo(AppRoutes.moodTracker, {'preset': content});
     } else if (type == 'crisis') {
-      // Same unregistered-route crash risk as the '/crisis' deep-link case
-      // above — normalize to home; tracked in repo issues.
-      _navigateTo(AppRoutes.home, {});
+      // Same fix as the '/crisis' deep-link case above (2026-08-28,
+      // issue #7) — route to real crisis resources, not home.
+      _navigateTo(AppRoutes.crisisResources, {});
     }
 
     FirebaseService().logEvent('content_shared', {

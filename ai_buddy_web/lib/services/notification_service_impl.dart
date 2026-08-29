@@ -549,8 +549,19 @@ class NotificationService {
   ///   language; opt-in only; max once per crisis event; never marketing."
   ///   (GentleQuest_Push_Notifications.html — Critical alert entitlement side rail.)
   ///   APNs/entitlement setup is an operator/Lokesh task — flagged as GQ-FOLLOW-UP-002.
+  // 2026-08-28: default delay changed 5min -> 24h to resolve the conflict
+  // between this default and q9_crisis_bridge.dart's own "24h flag" language
+  // (see the SharedPreferences 'follow_up_24h_pending' stamp in
+  // assessment_flow_screen.dart, which this call now actually fires
+  // alongside). 24h was not invented here — it is the number the live
+  // assessment flow already independently committed to; this just makes
+  // the two agree. Copy/styling (persistent, alarm-category, "Are you safe
+  // right now?") intentionally left untouched: the file-level rule above
+  // ("DO NOT PARAPHRASE... traced back to the HTML source") governs that,
+  // and it is a real open question flagged in
+  // docs/CLINICAL_REVIEW_BRIEF_2026-08.md rather than resolved here.
   static Future<void> scheduleCrisisFollowup({
-    Duration delay = const Duration(minutes: 5),
+    Duration delay = const Duration(hours: 24),
   }) async {
     if (kIsWeb) return;
     await _ensureInited();

@@ -48,7 +48,7 @@ class NotificationService {
 
   /// No-op on web. See notification_service_impl.dart for full implementation.
   static Future<void> scheduleCrisisFollowup({
-    Duration delay = const Duration(minutes: 5),
+    Duration delay = const Duration(hours: 24),
   }) async {
     // no-op on web
   }

@@ -10,6 +10,7 @@ import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_bottom_nav.dart' show AppTab;
 import '../../widgets/crisis_resources.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/gq/gq.dart';
 import 'assessment_models.dart';
 import 'assessment_question_card.dart';
@@ -178,6 +179,14 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
                 debugPrint('[follow-up] 24h flag queued @ $ts');
               }
             });
+            // 2026-08-28: actually deliver the 24h follow-up the block
+            // above only ever queued intent for. scheduleCrisisFollowup()
+            // has existed, complete and untouched, in
+            // notification_service_impl since R1D18 — this was the
+            // missing call site (repo issue #6). No-ops on web and
+            // silently no-ops without notification permission granted,
+            // same as every other scheduled category in this app.
+            NotificationService.scheduleCrisisFollowup();
           }
         case BridgeAction.talkNow:
           // Hand off to existing CrisisInterventionSheet (R1D9)

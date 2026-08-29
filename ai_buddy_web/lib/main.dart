@@ -27,6 +27,7 @@ import 'services/pref_migrator.dart';
 import 'services/low_stim_service.dart';
 import 'config/profile_config.dart';
 import 'screens/legal/legal_screen.dart';
+import 'screens/resource_library_screen.dart';
 import 'theme/gq_theme.dart';
 import 'theme/low_stim_mode.dart';
 import 'widgets/branded_splash.dart';
@@ -329,6 +330,13 @@ class MyApp extends StatelessWidget {
                 assetPath: 'assets/legal/privacy.md',
               ),
           '/clinical-assessment': (context) => const ClinicalAssessmentScreen(),
+          // Registered 2026-08-28 so the crisis deep link (see
+          // deep_link_service.dart '/crisis' case) has a real destination
+          // instead of the home-tab stopgap. Named route because
+          // ResourceLibraryScreen was previously only reachable via an
+          // in-app MaterialPageRoute push (Home/Resources tabs), never
+          // through Navigator.pushNamed.
+          '/crisis': (context) => const ResourceLibraryScreen(),
           // Design Authority WO-4 acceptance criterion: debug-only component
           // gallery. Not linked from any in-app navigation — reach via
           // Navigator.pushNamed(context, '/debug/gq-gallery').

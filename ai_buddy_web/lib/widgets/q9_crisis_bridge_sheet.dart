@@ -4,6 +4,18 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
 
+/// DEAD CODE as of 2026-08-28: nothing in lib/ instantiates this class or
+/// calls [Q9CrisisBridgeSheet.show]. The live PHQ-9 crisis bridge is
+/// `lib/screens/clinical_assessment/q9_crisis_bridge.dart` (same class
+/// name, different file, imported by assessment_flow_screen.dart), which
+/// has its own [BridgeAction] enum with the same three outcomes under
+/// different names (imSafe/talkNow/heavy vs keepGoing/talkNow/heavyMoment).
+/// Repo issue #6 originally cited this file's TODO comment below, but the
+/// gap it described (crisis follow-up notification never called) lived in
+/// the OTHER file's caller — fixed there 2026-08-28. Left in place rather
+/// than deleted (not this session's call to make); flagged so nobody edits
+/// this file expecting it to affect what users see.
+///
 /// Outcomes of the Q9 crisis-bridge sheet.
 ///
 /// Q9 of PHQ-9 ("thoughts that you would be better off dead, or of
