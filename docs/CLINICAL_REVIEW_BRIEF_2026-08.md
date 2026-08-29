@@ -1,12 +1,17 @@
 # Clinical Review Brief — GentleQuest, 2026-08
 
-**Purpose:** one packet consolidating three outstanding clinical/legal decisions
-so a single reviewer session can clear all of them, rather than three separate
-threads. Nothing here is new engineering — it assembles what already shipped
-or already exists in code, and names the specific decisions a clinician (and,
-where marked, legal/compliance) needs to make. Engineering on any of these
-three items is deliberately parked until decisions land — see Arc C in the
-active plan.
+**Purpose:** one packet consolidating three outstanding clinical/legal decisions.
+Originally scoped to wait for a licensed clinical/legal reviewer. On
+2026-08-28/29 the operator explicitly instructed engineering to make these
+calls directly ("make clinical and legal calls as well ... I am not going to
+get human") rather than continue waiting. What follows is the record of what
+was and was not decided under that instruction — see the **Operator-directed
+decisions** section below, added 2026-08-29, for exactly what changed, on
+what evidence, and what is explicitly still open. Nothing in that section is
+a licensed clinical or legal opinion; it is engineering judgment informed by
+published, cited sources, executed on direct operator instruction. The
+original three items are preserved below unchanged as the historical record
+of what this packet originally asked a reviewer to decide.
 
 **Status of the underlying app:** v1.7.2 is live in Play production (Android)
 and in App Store review (iOS, auto-release on approval). All three items below
@@ -173,3 +178,128 @@ Item 1's Loop Reset clearance), then engineering picks it up on the next
 train per the standing Arc C plan — opposed-pair tests (fires when it
 should, never when it shouldn't, including Anonymity Mode ON and
 notification-permission-off paths) before any of this ships.
+
+---
+
+## Operator-directed decisions — 2026-08-29
+
+Executed on explicit operator instruction to decide directly rather than
+wait for a licensed reviewer. Sourced where a source was found; flagged as
+ungrounded where none was. Not a substitute for licensed clinical or legal
+review — the operator has been told this and chose to proceed anyway,
+consistent with the same authority already exercised for the 1.7.1 bypass
+recorded in `REVIEW_PACKET_RUMINATION_v1.7.0.md`.
+
+### Item 1 — Loop Reset: informationally cleared
+
+Checked against the FDA's public general-wellness boundary (FDA guidance on
+general wellness / low-risk devices, and third-party summaries of the
+2026-01 update): the disqualifying line is a product that claims to
+"diagnose, treat, cure, or prevent a disease." Loop Reset's existing copy
+already avoids this — "not a treatment or diagnosis," "user expected to
+discuss the protocol with a licensed clinician," no efficacy claims
+displayed in-app. This is an **informational read of public criteria, not
+formal legal counsel** — the operator should still get real legal review
+before any claims expand beyond the current copy. No code change; closing
+this item's engineering side as reviewed-against-public-criteria.
+
+### Item 2 — Crisis follow-up notification: real bug found and fixed; copy/styling left open
+
+**Correction to the original issue #6 finding:** the TODO it cited
+(`lib/widgets/q9_crisis_bridge_sheet.dart`) is in a class that turned out to
+be **dead code** — nothing in the app instantiates it. A second, live class
+with the same name in a different file
+(`lib/screens/clinical_assessment/q9_crisis_bridge.dart`, imported by
+`assessment_flow_screen.dart`) is what users actually see. Its "heavy
+moment" outcome was queuing a local timestamp
+(`follow_up_24h_pending`) that nothing ever read — a second, independent
+dead end, not the one issue #6 named. Both were real: the notification
+mechanism existed and was never called; the call site that should have
+called it was queuing intent to a list nobody consumed.
+
+**Fixed (2026-08-29):** `assessment_flow_screen.dart`'s `heavy` case now
+calls `NotificationService.scheduleCrisisFollowup()` for real, alongside
+the existing (harmless, kept) local timestamp stamp. The 5-min-vs-24h
+conflict is resolved to **24 hours** — not a new number invented for this
+decision, but the number the live code's own `follow_up_24h_pending`
+naming had already independently committed to elsewhere in the same file.
+The evidence surveyed (SAMHSA/Zero Suicide "Caring Contacts" model,
+Motto & Bostrom) supports *some* follow-up existing after a risk
+disclosure, but its cadence in the published evidence base is much longer
+and gentler than either 5 minutes or a single day (an initial published
+schedule: 3 contacts in week 1, tapering over 12 months) — 24h is a
+reasonable single first touch, not a claim that it matches the full
+evidence-based cadence.
+
+**Left deliberately untouched — copy and delivery styling.** The current
+copy ("Are you safe right now?") and delivery (`Importance.max`,
+`AndroidNotificationCategory.alarm`, `ongoing: true`/`autoCancel: false` —
+persists until tapped) predate this session and are governed by an
+explicit in-file rule: `notification_service_impl.dart` states *"DO NOT
+PARAPHRASE. Any copy change must be traced back to the [HTML] source"* —
+a real design-governance artifact (`GentleQuest_Push_Notifications.html`)
+that was not available in this checkout to trace against. Two things are
+flagged as evidence the current copy may be wrong, without being resolved
+here:
+1. The live crisis-bridge sheet's own file states a design principle,
+   "P10 reflection-over-interrogation" (found in the sibling/dead file's
+   header, describing the same UX). "Are you safe right now?" is a direct
+   question demanding an answer — an interrogation. The app's own
+   `worriedCheckin` category (a comparable low-mood follow-up, already
+   shipped) uses a **non-demand** tone instead: *"Just checking in" /
+   "Yesterday felt heavy. Here when you're ready — no need to explain."*
+2. The evidence-based Caring Contacts model is explicitly built around
+   **non-demand** messages — brief, supportive, and not requiring a
+   response. A persistent, alarm-category, un-dismissible notification
+   asking a direct safety question is a materially different design than
+   what the cited evidence supports.
+No escalation exists today if the notification goes unanswered (there
+never was any — this was not removed, it was simply never built), and none
+was added. The app does not act on anyone's behalf without their own
+input anywhere else in this codebase; extending that pattern here rather
+than inventing an escalation path is the conservative default, not a
+gap.
+
+**Genuinely unresolved, flagged rather than guessed at:** every published
+follow-up protocol found (988 Lifeline crisis-center follow-up, Caring
+Contacts) assumes a **human** sender on the other end. No published
+guidance was found for what a fully automated, unattended app should do —
+this app has no human reading responses to `scheduleCrisisFollowup()`. The
+honest answer is that gap wasn't closed by research; it was closed by
+scope (don't build automated escalation) rather than by finding an answer
+that doesn't exist in the literature surveyed.
+
+**Still open, needs a real decision (design or clinical, not just legal):**
+whether to change `_crisisFollowupTitle`/`_crisisFollowupBody` and the
+Android/iOS delivery styling to match the non-demand pattern above. This
+is the single highest-stakes remaining item in this entire brief and the
+one place this session deliberately declined to act unilaterally against
+an explicit in-repo "trace to source" governance rule.
+
+### Item 3 — Crisis deep link: routed to real crisis resources
+
+**Decided and shipped (2026-08-29):** both crisis deep-link paths
+(`gentlequest://crisis` and the `type: 'crisis'` share-content path) now
+route to `ResourceLibraryScreen` (newly registered as the named route
+`/crisis` in `main.dart`) instead of Home. Reasoning: asymmetric risk —
+the cost of showing crisis resources to someone whose old link is stale is
+near zero; the cost of landing someone mid-crisis on a generic home screen
+is not. No compliance/age-gate check added in front of it: crisis
+resources should not be the one surface gated behind onboarding. This
+resolves issue #7's core question (which surface) with the least-invasive
+option already built into the app, not a new screen. The two secondary
+questions in the original item 3 (behavior for an incomplete-compliance
+user; whether staleness should matter) were answered implicitly by "always
+show it, never gate it" rather than decided as separate branches — flagged
+here in case that blanket answer is wrong for a case not considered.
+
+### What is NOT resolved by this section
+The Item 2 copy/styling question above. The App Review justification
+comment in `notification_service_impl.dart` promises "opt-in only" for the
+crisis-follow-up category specifically, distinct from ordinary OS
+notification permission — no dedicated in-app consent flow for this
+category exists (it relies on the same general OS notification permission
+every other category uses); this session did not build one, and whether
+that's sufficient is unaddressed. Item 1's claims-boundary read is
+informational, not legal sign-off. None of this replaces getting a
+licensed reviewer when the operator is in a position to.
