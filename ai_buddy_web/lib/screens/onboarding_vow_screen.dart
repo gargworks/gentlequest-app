@@ -35,10 +35,25 @@ const List<String> _kVowLines = [
 ];
 
 /// Cue times (seconds) for each line + the Begin button, at full speed.
-const List<double> _kCueTimes = [1.2, 5.6, 8.5, 11.4, 14.6, 16.6];
+///
+/// 2026-08-30: scaled by 0.42 from the original [1.2, 5.6, 8.5, 11.4, 14.6,
+/// 16.6] (relative rhythm between lines preserved exactly, only the
+/// absolute pace compressed). The original took 16.6s — 8.3s even with
+/// _reducedMotion halving it — before the Begin button became visible or
+/// tappable, with the only interim escape a small "Skip" link in the top
+/// corner. That is what got the app rejected twice by App Store review
+/// (Guideline 2.1(a), "blank screen on launch, unable to proceed",
+/// submissions 334bc18b.../5adb20e9..., both on a genuinely fresh install
+/// — reproduced locally end-to-end: erase simulator, install, launch,
+/// screenshot at 4s shows only the first line + Skip, nothing else). This
+/// is a real product-pacing tradeoff, not a mechanical bug fix — the
+/// contemplative reveal was a deliberate choice — but 16.6s of a mostly
+/// blank screen on every single fresh install, reviewer or real user, is
+/// not a viable default either. ~7s preserves a felt staggered reveal.
+const List<double> _kCueTimes = [0.50, 2.35, 3.57, 4.79, 6.13, 6.97];
 
-/// The seed companion arrives at 3.4s.
-const double _kSeedArriveTime = 3.4;
+/// The seed companion arrives at 1.43s (scaled with the cue times above).
+const double _kSeedArriveTime = 1.43;
 
 class OnboardingVowScreen extends StatefulWidget {
   const OnboardingVowScreen({super.key});
