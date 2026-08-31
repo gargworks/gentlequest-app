@@ -536,6 +536,27 @@ def funnel_metrics():
         return jsonify({"error": "Failed to compute funnel metrics"}), 500
 
 
+@analytics_bp.route("/api/metrics/onboarding_funnel", methods=["GET"])
+def onboarding_funnel_metrics():
+    """GA4-sourced install -> compliance -> first-chat funnel, native only.
+
+    2026-08-31: the backend's own analytics_events table (compliance_passed,
+    first_chat_message) is gated behind the dead `analytics_consent` opt-in
+    (see lib/services/analytics_service.dart) and is not a representative
+    signal of real usage. This route reads GA4 directly instead, which is
+    gated only by the shipped Anonymity Mode opt-out. See
+    metrics/onboarding_funnel_ga4.py for the full rationale.
+    """
+    try:
+        from metrics.onboarding_funnel_ga4 import collect_onboarding_funnel
+
+        days = request.args.get("days", type=int) or 7
+        result = collect_onboarding_funnel(days=days)
+        status_code = 200 if result.get("status") == "ok" else 502
+        return jsonify(result), status_code
+    except Exception as e:
+        current_app.logger.error(f"Onboarding funnel error: {e}")
+        return jsonify({"status": "error", "reason": "unexpected_error"}), 500
 
 
 @analytics_bp.route("/api/feedback", methods=["POST"])

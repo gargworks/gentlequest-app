@@ -287,7 +287,21 @@
         <!-- Funnel -->
         <div class="section">
             <h2>Funnel (last 90 days)</h2>
+            <p style="font-size:12px;color:#a66;margin:0 0 8px;">
+                ⚠️ "App opens" and "First chat sent" below read the backend's own
+                analytics_events table, which is gated behind a dead consent flag
+                with no UI path that ever sets it (analytics_service.dart) — these
+                two numbers are known unrepresentative. See the GA4-sourced
+                onboarding funnel below for the trustworthy read on real usage.
+            </p>
             <div class="funnel-stages" id="funnel"></div>
+        </div>
+
+        <!-- Onboarding funnel (GA4, real signal) -->
+        <div class="section">
+            <h2>Onboarding funnel — GA4, native only <span class="filter-badge" id="ga4-window"></span></h2>
+            <div id="ga4-funnel-error" style="display:none;color:#a66;font-size:13px;"></div>
+            <div class="funnel-stages" id="ga4-funnel"></div>
         </div>
 
         <!-- Key stats + 7-day trend -->
@@ -332,23 +346,62 @@
         const API = window.location.origin;
 
         async function fetchAll() {
-            const [funnelR, historyR, overviewR, trueR, recentR] = await Promise.all([
+            const [funnelR, historyR, overviewR, trueR, recentR, ga4FunnelR] = await Promise.all([
                 fetch(`${API}/api/metrics/funnel`),
                 fetch(`${API}/api/metrics/funnel/history?limit=30`),
                 fetch(`${API}/api/analytics/overview?days=30`),
                 fetch(`${API}/api/metrics/true`),
                 fetch(`${API}/api/analytics/recent?limit=15`),
+                fetch(`${API}/api/metrics/onboarding_funnel?days=7`),
             ]);
             const funnel = await funnelR.json();
             const history = await historyR.json();
             const overview = await overviewR.json();
             const trueMetrics = await trueR.json();
             const recent = await recentR.json();
-            return { funnel, history, overview, trueMetrics, recent };
+            const ga4Funnel = await ga4FunnelR.json();
+            return { funnel, history, overview, trueMetrics, recent, ga4Funnel };
+        }
+
+        function renderGa4Funnel(ga4Funnel) {
+            const errEl = document.getElementById('ga4-funnel-error');
+            const stagesEl = document.getElementById('ga4-funnel');
+            const windowEl = document.getElementById('ga4-window');
+            if (ga4Funnel.status !== 'ok') {
+                errEl.style.display = 'block';
+                errEl.textContent = `GA4 funnel unavailable: ${ga4Funnel.reason || 'unknown error'}`;
+                stagesEl.innerHTML = '';
+                windowEl.textContent = '';
+                return;
+            }
+            errEl.style.display = 'none';
+            windowEl.textContent = `${ga4Funnel.window.start} to ${ga4Funnel.window.end}`;
+            const maxVal = Math.max(...ga4Funnel.stages.map(s => s.native), 1);
+            const labels = {
+                install: 'Installs (first_open)',
+                compliance_started: 'Compliance started',
+                compliance_result: 'Compliance completed',
+                first_chat_message: 'First chat sent',
+            };
+            stagesEl.innerHTML = ga4Funnel.stages.map((s, i) => {
+                const pct = s.native / maxVal * 100;
+                const conv = s.conversion_from_previous_stage !== null
+                    ? `${(s.conversion_from_previous_stage * 100).toFixed(0)}% of previous`
+                    : '';
+                return `
+                <div class="stage">
+                    <div class="stage-number">${i + 1}</div>
+                    <div class="stage-name">${labels[s.stage] || s.stage}<span class="stage-detail">iOS ${s.ios} · Android ${s.android} ${conv}</span>
+                        <div class="stage-bar" style="width:${pct}%;"></div>
+                    </div>
+                    <div class="stage-value">${s.native}</div>
+                </div>`;
+            }).join('');
         }
 
         function render(data) {
-            const { funnel, history, overview, trueMetrics, recent } = data;
+            const { funnel, history, overview, trueMetrics, recent, ga4Funnel } = data;
+            renderGa4Funnel(ga4Funnel);
 
             // Subtitle
             document.getElementById('subtitle').textContent =
