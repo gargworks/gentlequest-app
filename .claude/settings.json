@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.goal-capsule/gate.py\" mark",
+            "command": "sh -c 'G=\"${CLAUDE_PROJECT_DIR:-/Users/lokeshgarg/gq-wo}/.goal-capsule/gate.py\"; if [ ! -f \"$G\" ]; then echo \"goal-capsule gate BLOCKED: gate script not found at $G \"\"(CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}). This is NOT a gate verdict - the gate never ran.\" >&2; exit 2; fi; exec python3 \"$G\" mark'",
             "timeout": 10
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.goal-capsule/gate.py\" check",
+            "command": "sh -c 'G=\"${CLAUDE_PROJECT_DIR:-/Users/lokeshgarg/gq-wo}/.goal-capsule/gate.py\"; if [ ! -f \"$G\" ]; then echo \"goal-capsule gate BLOCKED: gate script not found at $G \"\"(CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}). This is NOT a gate verdict - the gate never ran.\" >&2; exit 2; fi; exec python3 \"$G\" check'",
             "timeout": 10
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.receipts/receipt_gate.py\"",
+            "command": "python3 /Users/lokeshgarg/gq-wo/.receipts/receipt_gate.py",
             "timeout": 20
           }
         ]
