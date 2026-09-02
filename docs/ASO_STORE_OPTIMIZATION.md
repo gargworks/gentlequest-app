@@ -313,3 +313,44 @@ demonstrably producing installs.
 Applying this needs Play Console access (or the API enabled + the service
 account granted). Store copy is outward-facing and is an operator decision
 regardless.
+
+### CORRECTION — 2026-09-02, authoritative read via Play Developer API
+
+The audit immediately above was inferred from the **public** Play page and was
+too generous. A working credential was subsequently found
+(`play-store-upload@gentlequest-prod`, key
+`~/Downloads/gentlequest-prod-d698b1aa74fb.json`) — the two 403s recorded above
+were both wrong service accounts, not a genuine access wall. The API read is
+authoritative and the gap is **much larger** than "ADHD is missing":
+
+| Field | LIVE (authoritative) | This doc specifies |
+|---|---|---|
+| Title | `GentleQuest: AI Mood Tracker` (28/30) | `GentleQuest: Mood Tracker` |
+| Short description | `Body doubling & mood check-in. No streaks, no guilt. Gentle self-care.` (70/80) | `ADHD-friendly mood tracker. No streaks, no guilt. Just check in with yourself.` (78/80) |
+| Full description | **573 chars, contains no "ADHD"** | ~4000-char version above |
+
+**The listing is not a lightly-drifted version of this doc — it is different
+copy.** The live short description leads on *body doubling*, a feature, where
+this doc leads on *ADHD*, an identity. And the full description uses **573 of
+4000 characters — 14% of the available indexable surface.** The other 86% is
+simply unused.
+
+My earlier public-page inference matched "No streaks, no guilt" and read
+"mood check-in" as the doc's "check in with yourself". Close enough to mislead
+me into reporting a narrow keyword gap when the real finding is that the
+documented listing was never applied at all. **A near-match on two phrases is
+not evidence that the surrounding copy matches** — that is the same
+wrong-object error this session has now hit repeatedly.
+
+### Revised recommendation
+
+1. **Full description is the biggest lever and the least controversial** —
+   3400+ unused characters on the single surface that demonstrably drives
+   installs. Applying the version already written above costs nothing but a
+   paste.
+2. **Short description** — restore the ADHD lead (78/80).
+3. **Title** — still an operator decision; `AI` vs `ADHD` cannot both fit.
+
+Access is no longer a blocker: the credential above can read and write
+listings. Applying it remains an operator call because store copy is
+outward-facing and the title is a positioning choice.
