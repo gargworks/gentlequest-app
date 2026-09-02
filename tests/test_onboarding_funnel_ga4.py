@@ -69,10 +69,18 @@ class TestFetchEventCounts:
 
 class TestCollectOnboardingFunnel:
     def test_full_funnel_conversion_math(self):
+        # Stage chain as of 2026-09-02: the activation cliff between
+        # compliance_result and first_chat_message_sent was split into three
+        # sub-steps (chat_tab_viewed -> chat_composer_focused ->
+        # chat_send_attempted) so the "land on Talk" fix can be measured.
+        # home_tab_viewed fires but is deliberately NOT in this chain.
         counts = {
             "first_open": {"iOS": 18, "Android": 14, "Web": 500},
             "compliance_check_started": {"iOS": 13, "Android": 5},
             "compliance_result": {"iOS": 9, "Android": 3},
+            "chat_tab_viewed": {"iOS": 6, "Android": 2},
+            "chat_composer_focused": {"iOS": 4, "Android": 2},
+            "chat_send_attempted": {"iOS": 1, "Android": 3},
             "first_chat_message_sent": {"iOS": 0, "Android": 3},
         }
         with patch.object(funnel_mod, "build_ga4_client", return_value=Mock()), \
@@ -93,12 +101,36 @@ class TestCollectOnboardingFunnel:
         assert stages["compliance_result"]["native"] == 12  # 9 + 3
         assert stages["compliance_result"]["conversion_from_previous_stage"] == pytest.approx(12 / 18, abs=1e-4)
 
+        # The three new sub-steps, each measured against the one before it.
+        assert stages["chat_tab_viewed"]["native"] == 8  # 6 + 2
+        assert stages["chat_tab_viewed"]["conversion_from_previous_stage"] == pytest.approx(8 / 12, abs=1e-4)
+
+        assert stages["chat_composer_focused"]["native"] == 6  # 4 + 2
+        assert stages["chat_composer_focused"]["conversion_from_previous_stage"] == pytest.approx(6 / 8, abs=1e-4)
+
+        assert stages["chat_send_attempted"]["native"] == 4  # 1 + 3
+        assert stages["chat_send_attempted"]["conversion_from_previous_stage"] == pytest.approx(4 / 6, abs=1e-4)
+
+        # first_chat_message now measures against send_attempted, which isolates
+        # send FAILURE (4 attempted, 3 succeeded) as its own visible sub-step.
         assert stages["first_chat_message"]["native"] == 3  # 0 + 3
         assert stages["first_chat_message"]["ios"] == 0
         assert stages["first_chat_message"]["android"] == 3
-        assert stages["first_chat_message"]["conversion_from_previous_stage"] == pytest.approx(3 / 12, abs=1e-4)
+        assert stages["first_chat_message"]["conversion_from_previous_stage"] == pytest.approx(3 / 4, abs=1e-4)
 
+        # Overall is still install -> first chat, unaffected by the new middle.
         assert result["overall_install_to_chat_conversion"] == pytest.approx(3 / 32, abs=1e-4)
+
+    def test_home_tab_viewed_is_not_a_funnel_stage(self):
+        """home_tab_viewed must stay OUT of the sequential chain.
+
+        First-run users land on Talk and skip Home entirely (2026-09-02), so as
+        a stage it would read ~0 and zero out every downstream conversion. This
+        is a deliberate design constraint, not an omission — assert it, so a
+        future well-meaning edit that "completes" the funnel gets caught.
+        """
+        assert "home_tab_viewed" not in [key for key, _ in funnel_mod.FUNNEL_STAGES]
+        assert "home_tab_viewed" not in [event for _, event in funnel_mod.FUNNEL_STAGES]
 
     def test_zero_installs_does_not_divide_by_zero(self):
         counts = {

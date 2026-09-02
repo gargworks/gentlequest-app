@@ -134,6 +134,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   /// A takeover may only follow a live exchange, never a scroll-back.
   String? _crisisTakeoverShownForMessageId;
   bool _userSentThisSession = false;
+  bool _composerWasFocused = false;
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
@@ -476,6 +477,12 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     });
     _inputFocus.addListener(() {
       if (!mounted) return;
+      if (_inputFocus.hasFocus && !_composerWasFocused) {
+        _composerWasFocused = true;
+        FirebaseService().logEvent('chat_composer_focused');
+      } else if (!_inputFocus.hasFocus) {
+        _composerWasFocused = false;
+      }
       setState(() {});
     });
     // Listen for tab reselect events
@@ -489,6 +496,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
     // Crisis Re-Entry Surface: load last crisis timestamp and decide
     // whether to show the aged re-entry surface + softer keyword threshold.
     _loadCrisisReentryState();
+    FirebaseService().logEvent('chat_tab_viewed');
   }
 
   /// Loads the last crisis timestamp from SharedPreferences and arms the
@@ -560,6 +568,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
+    FirebaseService().logEvent('chat_send_attempted');
     HapticFeedback.mediumImpact();
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);

@@ -49,7 +49,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this); // Compliance Watcher
     _current = _normalize(widget.initialTab);
-    _onDeepLinkTab(); // Process any pre-set deep-link tab value on startup
+    // Only let a deep link override the route-supplied initialTab if one was
+    // ACTUALLY requested. Until 2026-09-02 this called _onDeepLinkTab()
+    // unconditionally, and the bus's default value made "nothing requested"
+    // look like a real request — so initialTab was silently discarded on
+    // every mount, in both directions. See home_tab_deeplink.dart.
+    if (homeTabDeepLink.hasRequest) {
+      _onDeepLinkTab(); // Process a genuinely pre-set deep-link tab on startup
+    }
     // Listen for deep-link tab change requests
     homeTabDeepLink.addListener(_onDeepLinkTab);
   }

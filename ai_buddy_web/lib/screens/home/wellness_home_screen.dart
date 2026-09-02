@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/mood_entry.dart';
+import '../../services/firebase_service.dart';
 import '../../navigation/home_tab_deeplink.dart';
 import '../../providers/companion_provider.dart';
 import '../../providers/mood_provider.dart';
@@ -69,6 +70,7 @@ class _WellnessHomeScreenState extends State<WellnessHomeScreen> {
   @override
   void initState() {
     super.initState();
+    FirebaseService().logEvent('home_tab_viewed');
     widget.reselect?.addListener(_onReselect);
   }
 

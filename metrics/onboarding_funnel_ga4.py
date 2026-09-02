@@ -62,6 +62,15 @@ FUNNEL_STAGES: List[Tuple[str, str]] = [
     ("install", "first_open"),
     ("compliance_started", "compliance_check_started"),
     ("compliance_result", "compliance_result"),
+    # NOTE: home_tab_viewed is deliberately NOT a stage in this chain. Since
+    # 2026-09-02 first-run users land on the Talk tab and skip Home entirely,
+    # so as a sequential stage it would read ~0 and make every downstream
+    # conversion meaningless. The event still fires (wellness_home_screen.dart
+    # initState) and is worth reading on its own for returning-user behaviour —
+    # it is just not a step on the activation path any more.
+    ("chat_tab_viewed", "chat_tab_viewed"),
+    ("chat_composer_focused", "chat_composer_focused"),
+    ("chat_send_attempted", "chat_send_attempted"),
     ("first_chat_message", "first_chat_message_sent"),
 ]
 
