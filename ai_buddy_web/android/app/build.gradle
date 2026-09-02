@@ -62,7 +62,20 @@ android {
     defaultConfig {
         applicationId appId
         minSdkVersion 24
-        targetSdkVersion 35
+        // Bumped 35 -> 36 on 2026-09-02 because Play REJECTED the upload of
+        // versionCode 26090202 at commit time with:
+        //   403 "Target SDK of artifact is too low: 26090202."
+        // The bundle uploaded fine and the internal track was set; only the
+        // commit failed, so nothing was published. This is a hard gate — no
+        // build ships at all until targetSdk is 36.
+        //
+        // compileSdkVersion was already 36, so this compiles unchanged. But it
+        // is NOT a no-op at runtime: targeting Android 16 opts into its
+        // behaviour changes, most visibly ENFORCED EDGE-TO-EDGE display, plus
+        // stricter background/foreground-service rules. For this app the
+        // notification scheduling paths and any screen relying on system insets
+        // deserve an on-device look before this reaches production.
+        targetSdkVersion 36
         
         // Dynamic versioning with early validation
         println "GRADLE_BUILD: VERSION_CODE override = ${ciVersionCode}"
