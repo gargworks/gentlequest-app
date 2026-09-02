@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
+    show kIsWeb, kDebugMode, defaultTargetPlatform, TargetPlatform, debugPrint;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -565,6 +565,36 @@ class NotificationService {
   }) async {
     if (kIsWeb) return;
     await _ensureInited();
+
+    // 2026-09-02: ASK for notification permission before scheduling.
+    //
+    // This is the only scheduled category in the app that is not reached
+    // through a Settings toggle, and the toggles are the only place that ever
+    // called requestPermissions(). So on a fresh install a user could signal
+    // "this is heavy — check on me later" in the Q9 crisis bridge, and we
+    // would schedule a follow-up the OS then silently discarded, because
+    // nobody had ever asked them for permission. Highest-acuity moment in the
+    // product, guaranteed to deliver nothing.
+    //
+    // The call site's comment claimed this no-op'd "same as every other
+    // scheduled category in this app" — that reasoning was wrong, and is what
+    // let it ship: every other category asks first, via its toggle.
+    //
+    // Asking here is also the best-earned prompt in the app: the user has just
+    // explicitly requested to be checked on. Fixed at the service level rather
+    // than the one call site, so any future caller inherits it.
+    final granted = await requestPermissions();
+    if (!granted) {
+      // Deliberately not silent-by-omission: the in-app crisis re-entry
+      // surface (kLastCrisisTimestampKey, 72h window) remains the fallback for
+      // a user who declines. Do not schedule what cannot be delivered.
+      if (kDebugMode) {
+        debugPrint('[NotificationService] crisis follow-up NOT scheduled — '
+            'notification permission denied; in-app re-entry surface is the '
+            'only remaining path for this user.');
+      }
+      return;
+    }
 
     // Cancel any previous pending crisis follow-up to avoid duplicates
     await _plugin.cancel(_crisisFollowupId);

@@ -183,9 +183,17 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
             // above only ever queued intent for. scheduleCrisisFollowup()
             // has existed, complete and untouched, in
             // notification_service_impl since R1D18 — this was the
-            // missing call site (repo issue #6). No-ops on web and
-            // silently no-ops without notification permission granted,
-            // same as every other scheduled category in this app.
+            // missing call site (repo issue #6). No-ops on web.
+            //
+            // CORRECTED 2026-09-02: this comment used to say it "silently
+            // no-ops without notification permission granted, same as every
+            // other scheduled category in this app." That was FALSE and it is
+            // what let a real defect ship. Every other scheduled category is
+            // reached via a Settings toggle that awaits requestPermissions()
+            // and reverts on denial; this path is the only one that never
+            // asked. On a fresh install the follow-up was scheduled and then
+            // silently discarded by the OS. scheduleCrisisFollowup() now
+            // requests permission itself before scheduling.
             NotificationService.scheduleCrisisFollowup();
           }
         case BridgeAction.talkNow:
