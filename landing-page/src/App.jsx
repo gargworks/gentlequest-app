@@ -10,8 +10,38 @@ import {
 } from 'lucide-react';
 import { createElement, useEffect, useRef, useState } from 'react';
 
-const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
-const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
+// Store links are ATTRIBUTION-TAGGED. Measured 2026-09-02 via
+// metrics/channel_installs_ga4.py: 100% of the last 30 days' installs landed in
+// GA4's "(direct) / (none)" bucket — no install was credited to this landing
+// page or any other channel. Untagged store links are a sufficient explanation
+// for that on their own, so tagging them is what makes the question answerable.
+//
+// ANDROID: Play passes the `referrer` value through to the installed app via the
+// Install Referrer API, and the Firebase/GA4 SDK reads it automatically — so
+// utm_* params inside `referrer` become the install's acquisition source in GA4
+// with no app-side code. The value must be URL-encoded ONCE as a whole
+// (utm_source%3D... %26 ...), which is why this is built with URLSearchParams
+// rather than hand-spliced.
+//
+// IOS IS NOT SYMMETRIC — do not expect this to show up in GA4. Apple does not
+// pass web referrers to the app. iOS campaign attribution uses App Store
+// Connect's own `ct` (campaign token) parameter and is reported in App Store
+// Connect Analytics, a SEPARATE surface from GA4. The `ct` below therefore makes
+// iOS installs attributable in ASC, NOT in metrics/channel_installs_ga4.py. Any
+// future claim that "iOS attribution is broken" should check ASC first rather
+// than concluding it from a GA4 report that structurally cannot see it.
+const ANDROID_REFERRER = new URLSearchParams({
+  utm_source: 'gentlequest_landing',
+  utm_medium: 'web',
+  utm_campaign: 'organic_landing',
+}).toString();
+
+const IOS_APP_URL =
+  'https://apps.apple.com/app/gentlequest/id6756537464' +
+  '?ct=gentlequest_landing&mt=8';
+const ANDROID_APP_URL =
+  'https://play.google.com/store/apps/details?id=app.gentlequest.www' +
+  `&referrer=${encodeURIComponent(ANDROID_REFERRER)}`;
 const WEB_APP_URL = 'https://app.gentlequest.app';
 const NEWSLETTER_API = 'https://app.gentlequest.app/api/newsletter/subscribe';
 const BACKEND_URL = 'https://app.gentlequest.app';
