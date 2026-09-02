@@ -59,6 +59,12 @@ const String _kNotifWorriedCheckInKey = 'notif_worried_checkin_v1';
 //     cleared when toggling ON.
 //   • Notification time/day prefs: stored locally only; push-token server sync
 //     is a follow-up.
+//   • Share usage analytics: WIRED — _toggleAnalyticsConsent calls
+//     ApiService.setAnalyticsConsent(value), persisting the analytics_consent
+//     SharedPreferences flag that logAnalyticsEvent (backend
+//     /api/analytics/log) requires in addition to Anonymity mode being off.
+//     Off by default; hidden in the Anonymity-ON view (View B) so that
+//     view's "nothing leaves this device" promise stays unconditional.
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -74,8 +80,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Anonymity mode (View B): when on, analytics events are suppressed.
   bool _anonymityOn = false;
 
-  // Analytics consent (pre-existing flag; anonymity overrides it when on).
-  // ignore: unused_field
+  // Analytics consent: separate, narrower opt-IN gate on top of Anonymity
+  // mode. Anonymity mode governs the Firebase/GA4 SDK (opt-out, fires by
+  // default); this flag governs the backend's own /api/analytics/log
+  // event stream (opt-in, off by default) — see analytics_service.dart's
+  // _isAnalyticsEnabled(). Was a dead SharedPreferences flag with no UI
+  // path ever setting it true; this screen is that UI.
   bool _analyticsEnabled = false;
 
   // Notification toggles — hydrated from SharedPreferences in
@@ -320,6 +330,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Consent UI for the /api/analytics/log opt-in (analytics_consent).
+  /// Off by default; persisted via ApiService.setAnalyticsConsent. Even
+  /// when on, Anonymity mode still wins (see analytics_service.dart), and
+  /// this row is hidden entirely in the Anonymity-ON view below so the
+  /// "nothing leaves this device" promise there stays unconditional.
+  Future<void> _toggleAnalyticsConsent(bool value) async {
+    setState(() => _analyticsEnabled = value);
+    await _api.setAnalyticsConsent(value);
+    if (!mounted) return;
+    GQBanner.show(
+      context,
+      message: value
+          ? 'Sharing basic usage events. Never message content.'
+          : 'Usage sharing is off.',
+      category: value ? GQBannerCategory.success : GQBannerCategory.info,
+    );
+    await logAnalyticsEvent('analytics_consent_toggled', metadata: {
+      'value': value ? 'on' : 'off',
+      'screen': 'settings',
+    });
+  }
+
   Future<void> _toggleAnonymity(bool value) async {
     setState(() => _anonymityOn = value);
     // Persist + apply across analytics surfaces. setAnonymityMode writes the
@@ -493,6 +525,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: _anonymityOn,
                 locked: false,
                 onChanged: _toggleAnonymity,
+              ),
+            ),
+            SettingsRow(
+              iconBg: t.primarySoft,
+              iconWidget: const Icon(Icons.insights_outlined,
+                  size: 14, color: GQColors.primaryDk),
+              title: 'Share usage analytics',
+              subtitle:
+                  'Anonymous app-usage events only — never message content. Off by default.',
+              trailing: SettingsToggle(
+                value: _analyticsEnabled,
+                locked: false,
+                onChanged: _toggleAnalyticsConsent,
               ),
             ),
             SettingsRow(

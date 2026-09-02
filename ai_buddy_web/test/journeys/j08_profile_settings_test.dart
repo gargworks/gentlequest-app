@@ -57,6 +57,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
+      // The "Share usage analytics" row (analytics_consent UI) pushed this
+      // section below the default 800x600 test surface's cache extent.
+      await tester.scrollUntilVisible(find.text('NOTIFICATIONS'), 100.0);
       expect(find.text('NOTIFICATIONS'), findsOneWidget);
     });
 
@@ -131,6 +134,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
+      await tester.scrollUntilVisible(find.text('Daily check-in reminder'), 100.0);
       expect(find.text('Daily check-in reminder'), findsOneWidget);
     });
 
@@ -140,6 +144,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
+      await tester.scrollUntilVisible(find.text('Daily check-in reminder'), 100.0);
       await tester.tap(find.text('Daily check-in reminder'));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
@@ -152,6 +157,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
+      await tester.scrollUntilVisible(find.text('Gentle nudge'), 100.0);
       expect(find.text('Gentle nudge'), findsOneWidget);
     });
 
