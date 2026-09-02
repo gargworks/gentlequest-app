@@ -9,6 +9,7 @@ import 'package:ai_buddy_web/screens/legal/legal_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
 import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'package:ai_buddy_web/widgets/app_bottom_nav.dart' show AppTab;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // R1D1 — Onboarding redesign
@@ -193,7 +194,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         navigator.pushReplacement(
           MaterialPageRoute(
             builder: (_) => AdhdPathScreen(
-              onFinished: () => navigator.pushReplacementNamed('/main'),
+              // First run only (this branch is the never-seen-ADHD-path case):
+              // land on Talk, not Home. See the 2026-09-02 activation finding —
+              // Home carries no composer and 9 of 12 post-onboarding users
+              // never reached the chat. The returning-user branch above keeps
+              // its existing Home landing.
+              onFinished: () => navigator
+                  .pushReplacementNamed('/main', arguments: AppTab.talk),
             ),
           ),
         );

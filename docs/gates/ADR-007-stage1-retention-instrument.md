@@ -194,3 +194,19 @@ The roadmap's own middle-band clause allows ONE automatic 4-week extension to
 (making the earliest complete D14 read ~2026-10-10, inside the extension
 window), or (c) something else, is the plan-author's call and needs its own
 ADR. This amendment deliberately does not choose.
+
+---
+
+## Pointer — 2026-09-02: the open decision above has been taken up
+
+Appended per the same append-only rule. Nothing above is altered.
+
+`ADR-008-stage1-criterion-b-window-restart.md` rules on the open governance
+decision recorded in the section above. It chooses **(b)**: criterion (B) is
+scored INSUFFICIENT-structural, the acquisition window restarts at **2026-08-27**
+(new window 2026-08-27 → 2026-10-22), and the roadmap's single 4-week extension
+to **2026-11-05** is invoked.
+
+ADR-008 is **PROPOSED, not ratified** as of this pointer. Until the operator
+ratifies it, the window ratified in this document (2026-08-15 → 2026-09-24)
+remains the one of record, and the disagreement noted above remains live.

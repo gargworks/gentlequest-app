@@ -18,6 +18,7 @@ import 'package:ai_buddy_web/services/crisis_keyword_detector.dart';
 import 'package:ai_buddy_web/services/mdm_detection_service.dart';
 import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
+import 'package:ai_buddy_web/widgets/app_bottom_nav.dart' show AppTab;
 import 'compliance/compliance_widgets.dart';
 
 // No re-exports: every symbol extracted to compliance/compliance_widgets.dart
@@ -140,8 +141,12 @@ class _ComplianceGuardScreenState extends State<ComplianceGuardScreen>
     if (!mounted) return;
 
     if (status == ComplianceStatus.allowed) {
-      // Navigate to Home/Main
-      Navigator.of(context).pushReplacementNamed('/main');
+      // Land on the Talk tab, not Home. Home has no composer — the chat is one
+      // small quick-lane tile among several (wellness_home_screen.dart:434-436)
+      // and the bottom-nav Talk tab. Measured 2026-09-02: of 12 users who
+      // cleared compliance, only 3 ever sent a first message.
+      Navigator.of(context)
+          .pushReplacementNamed('/main', arguments: AppTab.talk);
     } else {
       // Pre-fetch stored region so _buildBlockedScreen can template it
       final region = await _complianceService.getStoredRegion();

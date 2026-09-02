@@ -325,8 +325,15 @@ class MyApp extends StatelessWidget {
           },
           // Legacy route name; HomeShell normalizes the retired Quest tab to Home.
           '/home/quest': (context) => HomeShell(initialTab: AppTab.quest),
-          // Legacy landing route redirected to HomeShell Home tab
-          '/main': (context) => const HomeShell(),
+          // Landing route. Defaults to the Home tab, but accepts an AppTab
+          // argument so the onboarding paths can land a first-time user
+          // directly on Talk — see the 2026-09-02 activation finding: users who
+          // finished onboarding landed on Home (no composer) and 9 of 12 never
+          // reached the chat at all.
+          '/main': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments;
+            return HomeShell(initialTab: args is AppTab ? args : AppTab.home);
+          },
           '/interactive-chat': (context) => const InteractiveChatScreen(),
           '/privacy': (context) => const LegalScreen(
                 title: 'Privacy Policy',
