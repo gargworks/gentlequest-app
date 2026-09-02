@@ -235,3 +235,81 @@ Mood Tracker, Mental Health, ADHD, Anxiety, Self-Care
 - [x] Fix iOS display name (was "Flutter App", now "GentleQuest")
 - [x] Fix Android app label (was "flutter_app", now "GentleQuest")
 - [ ] Rebuild and recompile for store submission
+
+---
+
+## LIVE-vs-DOC AUDIT — 2026-09-02 (proposal, NOT yet applied)
+
+Appended, not rewritten. Everything above stands as the ratified strategy; this
+records what is actually live and what it would take to close the gap.
+
+### Method + its limits
+
+The Play Developer API could not be used: `gentlequestapp-sa.json` (project
+315814630048) returns 403 `SERVICE_DISABLED` — the Google Play Android
+Developer API has never been enabled on that project — and the
+`gentlequest-prod` service account returns a *different* 403, "caller does not
+have permission" (not granted on this app in Play Console). Two unrelated
+causes behind the same status code.
+
+So this audit read the **public** Play listing instead. That is a real
+limitation: Play lazy-loads the full description, so absence of a string in the
+fetched HTML is **strong evidence, not proof**. Verify by eye before acting.
+
+### What is live
+
+| Field | Live | This doc recommends |
+|---|---|---|
+| Title | `GentleQuest: AI Mood Tracker` (28/30) | `GentleQuest: Mood Tracker` (25/30) |
+| "No streaks" / "no guilt" / "check in with yourself" | present | ✅ applied |
+| **"ADHD"** | **not found** | `ADHD-friendly mood tracker...` |
+
+The short-description phrases either side of `ADHD-friendly` are live while
+`ADHD-friendly` itself is not — which is why this is read as "the ADHD prefix
+was dropped" rather than "the fetch was truncated".
+
+### The gap that matters
+
+**`ADHD` is missing from the live listing.** By this doc's own research it is
+volume 49 / difficulty 32 — the strongest *low-competition, high-intent* term
+available, unlike `anxiety` (816) or `mental health` (2052) which are correctly
+parked in the keyword field. It is also the most honest keyword the product
+has: there is a dedicated ADHD onboarding path, low-stim quiet mode, and
+executive-dysfunction framing throughout.
+
+### Proposed, ready to paste
+
+Short description (80 char limit) — restores the doc's own line:
+
+```
+ADHD-friendly mood tracker. No streaks, no guilt. Just check in with yourself.
+```
+*(78/80)*
+
+Title — **an operator decision, not a mechanical fix.** A 30-char title cannot
+hold both `AI` and `ADHD`:
+
+| Option | Len | Trade |
+|---|---|---|
+| `GentleQuest: AI Mood Tracker` (keep live) | 28 | Keeps current positioning; forfeits the ADHD keyword in-title |
+| `GentleQuest: ADHD Mood Tracker` | 30 | Adds the vol-49 term; drops `AI`, which appears nowhere in the keyword research |
+| `GentleQuest: Mood Tracker` (this doc) | 25 | Neither; leaves 5 chars unused |
+
+Recommendation: **`GentleQuest: ADHD Mood Tracker`**, on the grounds that `AI`
+is a category descriptor users rarely search for in wellness, while `ADHD` is a
+high-intent identity term this product genuinely serves. But `AI` may be
+deliberate current positioning, so this is flagged rather than assumed.
+
+### Why this is worth doing now
+
+Measured 2026-09-02 (`metrics/channel_installs_ga4.py`, live, 30d): **100% of
+installs are `(direct) / (none)`** — every install came from someone finding the
+app in-store, not from any referred channel. Store-listing text is therefore
+not one lever among several; on current evidence it is the *only* one
+demonstrably producing installs.
+
+### Blocked on
+
+Applying this needs Play Console access (or the API enabled + the service
+account granted). Store copy is outward-facing and is an operator decision
+regardless.
