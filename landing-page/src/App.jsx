@@ -8,12 +8,46 @@ import {
   ExternalLink,
   ArrowRight,
 } from 'lucide-react';
-import { createElement, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 
 const IOS_APP_URL = 'https://apps.apple.com/app/gentlequest/id6756537464';
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=app.gentlequest.www';
 const WEB_APP_URL = 'https://app.gentlequest.app';
 const NEWSLETTER_API = 'https://app.gentlequest.app/api/newsletter/subscribe';
+const BACKEND_URL = 'https://app.gentlequest.app';
+
+function sendBlogEvent(eventType, metadata) {
+  metadata = metadata || {};
+  if (typeof window.gtag === 'function') {
+    try {
+      window.gtag('event', eventType, metadata);
+    } catch (e) {
+      console.warn('[GentleQuest] gtag event failed:', e);
+    }
+  }
+  try {
+    fetch(`${BACKEND_URL}/api/analytics/log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Analytics-Consent': 'true' },
+      body: JSON.stringify({ event_type: eventType, metadata }),
+    }).catch((e) => console.warn('[GentleQuest] analytics beacon failed:', e));
+  } catch (e) {
+    console.warn('[GentleQuest] analytics beacon failed:', e);
+  }
+}
+
+(function () {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    window.__gqUtm = {
+      utm_source: params.get('utm_source') || null,
+      utm_medium: params.get('utm_medium') || null,
+      utm_campaign: params.get('utm_campaign') || null,
+    };
+  } catch {
+    window.__gqUtm = { utm_source: null, utm_medium: null, utm_campaign: null };
+  }
+})();
 
 function AppleGlyph() {
   return (
@@ -68,6 +102,46 @@ function App() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    const ctaEl = ctaRef.current;
+    if (!ctaEl) return;
+
+    let impressionFired = false;
+    function fireImpression() {
+      if (impressionFired) return;
+      impressionFired = true;
+      const firstLink = ctaEl.querySelector('a');
+      try {
+        sendBlogEvent('cta_impression', {
+          cta_id: 'hero_cta',
+          landing_path: window.location.pathname,
+          target_url: firstLink ? firstLink.href : WEB_APP_URL,
+        });
+      } catch (e) {
+        console.warn('[GentleQuest] hero cta_impression failed:', e);
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              fireImpression();
+              observer.disconnect();
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+      observer.observe(ctaEl);
+      return () => observer.disconnect();
+    } else {
+      fireImpression();
+    }
+  }, []);
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
@@ -90,7 +164,7 @@ function App() {
       } else {
         setNewsletterStatus('error');
       }
-    } catch (err) {
+    } catch {
       setNewsletterStatus('error');
     }
   };
@@ -146,14 +220,26 @@ function App() {
             GentleQuest is a wellness companion for heavy moments. Not therapy. Not medical care. A
             space to log how you're feeling and find resources that match where you are.
           </p>
-          <div className="gq-hero-cta" id="download">
+          <div className="gq-hero-cta" id="download" ref={ctaRef}>
             <a
               className="gq-appstore-badge"
               href={IOS_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Download on the App Store"
-              onClick={() => { if (typeof window.gtag !== 'undefined') { window.gtag('event', 'ios_download_click', { event_category: 'app_download', event_label: 'hero iOS' }); } }}
+              onClick={() => {
+                if (typeof window.gtag !== 'undefined') {
+                  window.gtag('event', 'ios_download_click', { event_category: 'app_download', event_label: 'hero iOS' });
+                }
+                sendBlogEvent('cta_click', Object.assign(
+                  {
+                    cta_id: 'hero_cta',
+                    landing_path: window.location.pathname,
+                    target_url: IOS_APP_URL,
+                  },
+                  window.__gqUtm || {}
+                ));
+              }}
             >
               <AppleGlyph />
               <div>
@@ -167,7 +253,19 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Get it on Google Play"
-              onClick={() => { if (typeof window.gtag !== 'undefined') { window.gtag('event', 'android_download_click', { event_category: 'app_download', event_label: 'hero Android' }); } }}
+              onClick={() => {
+                if (typeof window.gtag !== 'undefined') {
+                  window.gtag('event', 'android_download_click', { event_category: 'app_download', event_label: 'hero Android' });
+                }
+                sendBlogEvent('cta_click', Object.assign(
+                  {
+                    cta_id: 'hero_cta',
+                    landing_path: window.location.pathname,
+                    target_url: ANDROID_APP_URL,
+                  },
+                  window.__gqUtm || {}
+                ));
+              }}
             >
               <PlayGlyph />
               <div>
@@ -175,13 +273,26 @@ function App() {
                 <div className="gq-store-line2">Google&nbsp;Play</div>
               </div>
             </a>
-            <a className="gq-web-cta" href={WEB_APP_URL}>
+            <a
+              className="gq-web-cta"
+              href={WEB_APP_URL}
+              onClick={() => {
+                sendBlogEvent('cta_click', Object.assign(
+                  {
+                    cta_id: 'hero_cta',
+                    landing_path: window.location.pathname,
+                    target_url: WEB_APP_URL,
+                  },
+                  window.__gqUtm || {}
+                ));
+              }}
+            >
               <ExternalLink size={14} />
               <span>Or check in on the web — 5 seconds</span>
             </a>
           </div>
           <div className="gq-hero-meta" style={{ marginTop: 16 }}>
-            Free · iOS · Android · v1.6.0
+            Free · iOS · Android · v1.7.2
           </div>
         </div>
 
