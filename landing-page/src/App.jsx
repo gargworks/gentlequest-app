@@ -114,11 +114,19 @@ function App() {
       impressionFired = true;
       const firstLink = ctaEl.querySelector('a');
       try {
-        sendBlogEvent('cta_impression', {
-          cta_id: 'hero_cta',
-          landing_path: window.location.pathname,
-          target_url: firstLink ? firstLink.href : WEB_APP_URL,
-        });
+        // UTMs must ride the impression too, not just the click. All three
+        // cta_click handlers already Object.assign(window.__gqUtm); without
+        // the same here, impressions carry no channel tag and per-channel CTR
+        // is unanswerable — you can count clicks per source but never the
+        // denominator they came from.
+        sendBlogEvent('cta_impression', Object.assign(
+          {
+            cta_id: 'hero_cta',
+            landing_path: window.location.pathname,
+            target_url: firstLink ? firstLink.href : WEB_APP_URL,
+          },
+          window.__gqUtm || {},
+        ));
       } catch (e) {
         console.warn('[GentleQuest] hero cta_impression failed:', e);
       }
