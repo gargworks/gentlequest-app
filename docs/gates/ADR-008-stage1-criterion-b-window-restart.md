@@ -84,18 +84,33 @@ because the stale version briefly informed this ADR's reasoning.)*
   `zonedSchedule` call sites use `AndroidScheduleMode.inexactAllowWhileIdle`,
   deliberately avoiding the exact-alarm Play-policy review. The AlarmManager
   path is intact.
-- **Still broken, and this is the live blocker:** `POST_NOTIFICATIONS` is
-  declared and *is* requested at runtime — but **only from Settings**
-  (`settings_screen.dart:211,260,297`), the notification detail screen
-  (`notification_detail_screen.dart:49`), and the mood tracker
-  (`mood_tracker.dart:810`). **None of these is on the first-run path.** With
-  `targetSdkVersion 35`, a fresh-install user who never opens Settings is never
-  asked for the permission, so every scheduled notification is silently
-  suppressed by the OS. Working receivers behind an ungranted permission
-  deliver exactly as many notifications as no receivers at all.
+- **Also correct by design, contrary to a second claim I made here:** the three
+  toggle-driven categories (daily reminder, gentle nudge, worried check-in)
+  default OFF, schedule nothing until an explicit opt-in, and each toggle
+  awaits `requestPermissions()` and **reverts the pref on denial**
+  (`settings_screen.dart:211-221,260-265,297-302`). The permission is requested
+  exactly when it is first needed. Nothing is "silently suppressed" — most
+  categories are simply never scheduled, which is the intended behaviour.
+- **One real defect existed and is now fixed** (`c9f48350`):
+  `scheduleCrisisFollowup` — the only category not behind a toggle — scheduled
+  with no permission request at all, so a user picking "heavy" in the Q9 crisis
+  bridge received a follow-up the OS silently discarded. It now asks first, at
+  the service level, with an opposed-pair test and a verified positive control.
 
-If the first-run permission prompt is not added, the extension is likely to
-produce a genuine, measured FAIL rather than a pass.
+*(Second correction to this section, and worth recording as such: this ADR has
+now carried two different wrong claims about notifications — first "wholly
+dead", then "every scheduled notification suppressed". Both were mine, both
+were refuted by dispatching a lane specifically to attack them. The section
+survived only because it was checked twice before ratification. Treat any
+remaining confident claim in this ADR accordingly.)*
+
+**Revised risk.** Notifications are NOT the blocker this ADR originally named.
+The honest residual risk is narrower and less tractable: almost nobody opts in,
+because the toggles default off and live in Settings. Whether that suppresses
+D14 enough to fail the gate is unknown, and should be settled by the funnel
+instrumentation shipped in `78d0d757` rather than by another guess. The
+extension is still only worth invoking if real activation/retention work ships
+inside it.
 
 That is the correct outcome if it happens — a real number, honestly obtained.
 But it means the extension is only worth invoking if the retention work
