@@ -306,7 +306,19 @@ class NotificationService {
     if (kIsWeb) return false;
     await _ensureInited();
 
+    // `granted` starts true so the two platform branches can compose with &&,
+    // but true-by-default is NOT a safe answer for a permission gate: if no
+    // platform implementation resolves, nothing ever asked the OS anything.
+    // `asked` records whether a branch actually got an answer, so this returns
+    // false (fail CLOSED) rather than claiming permission nobody granted.
+    //
+    // Do NOT "simplify" this by initialising `granted = false` — both branches
+    // below are `granted = granted && ...`, so a false seed makes the result
+    // permanently false and silently disables every notification in the app,
+    // including the crisis follow-up. That exact one-character change was
+    // proposed as a hardening on 2026-09-02 and would have been a regression.
     bool granted = true;
+    bool asked = false;
 
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
@@ -318,6 +330,7 @@ class NotificationService {
           badge: true,
           sound: true,
         );
+        asked = true;
         granted = granted && (ok ?? false);
       }
     }
@@ -327,12 +340,15 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidImpl != null) {
         final ok = await androidImpl.requestNotificationsPermission();
+        asked = true;
         granted = granted && (ok ?? false);
       }
     }
 
-    debugPrint('NotificationService: requestPermissions → $granted');
-    return granted;
+    final result = asked && granted;
+    debugPrint(
+        'NotificationService: requestPermissions → $result (asked=$asked)');
+    return result;
   }
 
   // ── Ergonomic helpers (cancel + test) ───────────────────────────────────

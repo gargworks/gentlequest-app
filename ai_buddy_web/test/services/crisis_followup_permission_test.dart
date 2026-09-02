@@ -111,4 +111,31 @@ void main() {
           'Methods called: ${calls.map((c) => c.method).toList()}',
     );
   });
+
+  test(
+      'requestPermissions FAILS CLOSED when no platform implementation answers',
+      () async {
+    // Added 2026-09-02 after a positive control showed the two tests above pass
+    // whether or not the fail-closed guard exists — i.e. the guard was
+    // completely untested.
+    //
+    // requestPermissions() seeds `granted = true` so the iOS and Android
+    // branches can compose with &&. On a platform where NEITHER branch runs,
+    // that seed would be returned as-is: "permission granted" from a call that
+    // never asked anything. The `asked` flag exists to prevent exactly that.
+    // Nothing may be scheduled off an answer nobody gave — least of all a
+    // crisis follow-up.
+    installMock(granted: true);
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+
+    final granted = await NotificationService.requestPermissions();
+
+    expect(
+      granted,
+      isFalse,
+      reason: 'No platform branch ran, so nothing was ever asked. '
+          'requestPermissions() must fail CLOSED rather than return its '
+          'true-seed as if permission had been granted.',
+    );
+  });
 }

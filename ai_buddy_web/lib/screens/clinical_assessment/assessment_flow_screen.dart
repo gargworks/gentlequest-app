@@ -194,7 +194,19 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
             // asked. On a fresh install the follow-up was scheduled and then
             // silently discarded by the OS. scheduleCrisisFollowup() now
             // requests permission itself before scheduling.
-            NotificationService.scheduleCrisisFollowup();
+            // Deliberately NOT awaited: scheduleCrisisFollowup() now calls
+            // requestPermissions(), which puts up a system permission dialog.
+            // Awaiting here would hold this branch open behind that dialog.
+            //
+            // But fire-and-forget on a self-harm-adjacent path must not also
+            // mean fail-silent — an unhandled async error here would vanish
+            // completely. Log it instead, so a failure to arm the follow-up is
+            // at least visible in diagnostics rather than indistinguishable
+            // from success. The in-app crisis re-entry surface
+            // (kLastCrisisTimestampKey, 72h) remains the real fallback.
+            NotificationService.scheduleCrisisFollowup().catchError((Object e) {
+              debugPrint('[follow-up] crisis follow-up FAILED to schedule: $e');
+            });
           }
         case BridgeAction.talkNow:
           // Hand off to existing CrisisInterventionSheet (R1D9)
