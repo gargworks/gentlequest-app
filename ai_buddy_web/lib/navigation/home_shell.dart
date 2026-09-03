@@ -56,6 +56,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     // every mount, in both directions. See home_tab_deeplink.dart.
     if (homeTabDeepLink.hasRequest) {
       _onDeepLinkTab(); // Process a genuinely pre-set deep-link tab on startup
+      // Consume it. A request is an event, not standing state: leaving it set
+      // meant the last tab ever requested kept overriding initialTab on every
+      // LATER mount of this shell. See home_tab_deeplink.consume().
+      homeTabDeepLink.consume();
     }
     // Listen for deep-link tab change requests
     homeTabDeepLink.addListener(_onDeepLinkTab);

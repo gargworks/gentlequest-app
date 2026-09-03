@@ -145,4 +145,52 @@ void main() {
             'launch and chat_tab_viewed has silently become a launch counter — '
             'the funnel step is then meaningless.');
   });
+
+  testWidgets(
+      'a consumed deep link does not override initialTab on a LATER mount',
+      (tester) async {
+    // Regression for the 2026-09-03 audit finding — the second half of the
+    // 78d0d757 bug. `_requested` used to be write-once-and-sticky: nothing
+    // cleared it in production, so the last tab ever requested kept winning
+    // over the route argument on every subsequent mount.
+    //
+    // Real sequence this reproduces: the user taps a quest notification
+    // (main.dart:87 -> request(AppTab.home)), the shell mounts on Home, and
+    // then later the compliance gate clears and routes /main with AppTab.talk.
+    // Before the fix, the stale Home request overrode it and the user landed
+    // on Home.
+    final navKey = GlobalKey<NavigatorState>();
+
+    // Mount 1: a genuine deep-link request to Home is made and honoured.
+    homeTabDeepLink.request(AppTab.home);
+    await navigateToMain(tester, navKey, arguments: AppTab.talk);
+    expect(find.byType(WellnessHomeScreen), findsOneWidget,
+        reason: 'The live deep-link request must win on the mount that '
+            'receives it — that is the whole point of the bus.');
+
+    // Mount 2: no new request. The route argument must now be obeyed.
+    final navKey2 = GlobalKey<NavigatorState>();
+    await navigateToMain(tester, navKey2, arguments: AppTab.talk);
+
+    expect(find.byType(InteractiveChatScreen), findsOneWidget,
+        reason: 'The Home request was already consumed by the first mount. '
+            'If this fails, a stale request is still overriding initialTab '
+            'and the route argument is being silently discarded.');
+    final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+    expect(stack.index, 1); // AppTab.talk
+  });
+
+  testWidgets(
+      'OPPOSED CONTROL: a fresh request still overrides initialTab',
+      (tester) async {
+    // Without this, consume() could be "fixed" by ignoring deep links
+    // entirely and the test above would still pass.
+    final navKey = GlobalKey<NavigatorState>();
+    homeTabDeepLink.request(AppTab.talk);
+    await navigateToMain(tester, navKey); // no argument -> would be Home
+
+    expect(find.byType(InteractiveChatScreen), findsOneWidget,
+        reason: 'A live request must still beat the default. If this fails, '
+            'deep links are dead and the bus does nothing at all.');
+  });
 }

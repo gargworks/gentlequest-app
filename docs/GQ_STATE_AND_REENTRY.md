@@ -28,6 +28,8 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 | Backend (Render) | live at `f88c36a9`; **auto-deploy is OFF**, deploy manually via API |
 | Committed but NOT in any build | weekly-review personalization, consent opt-out fix, lazy-tab test |
 | iOS | NOT built this cycle. Needs disk headroom (an archive wants several GB) |
+| Deep-link stickiness | **FIXED 2026-09-03.** `homeTabDeepLink._requested` was never cleared in production, so the last tab ever requested kept overriding `HomeShell.initialTab` on every later mount. Added `consume()`. 7 nav tests + positive control. |
+| Notification permission drift | **FIXED 2026-09-03.** Permission was only checked when a toggle was flipped ON; revoking it in OS settings left the toggles showing "on" while the OS dropped every notification. Added non-prompting `hasPermission()` + one-directional reconcile on Settings entry. 4 tests + positive control. |
 | Crisis fallback (assessment path) | **FIXED 2026-09-03.** The Q9 bridge now writes `kLastCrisisTimestampKey`, so the in-app re-entry surface actually arms. Before, only the CHAT crisis path wrote it — a user who disclosed via Q9 and denied notification permission got neither push nor surface, while two comments claimed the surface covered them. 3 tests + positive control. |
 | targetSdk 36 risk | **LOWER than first reported.** Edge-to-edge keys off targetSdk >=35 and the app was already at 35 (incl. production 26083001), so 35->36 introduces essentially no new exposure. Notifications unaffected (inexact alarms, no FGS). Composer and bottom nav are inset-aware (SafeArea + viewInsets). Ordinary release QA still applies. |
 | ADR-008 (D14 window restart) | **PROPOSED, unratified** — operator decision, kill-clause relevant |

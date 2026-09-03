@@ -64,6 +64,29 @@ class HomeTabDeepLink extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Marks the current request as handled, returning the bus to "nothing
+  /// requested".
+  ///
+  /// Added 2026-09-03. Without this, `_requested` was write-once-and-STICKY:
+  /// nothing cleared it in production, so the LAST request ever made kept
+  /// overriding `HomeShell.initialTab` on every subsequent mount. Concretely:
+  /// tap a quest notification (main.dart:87 requests Home), then later clear
+  /// the compliance gate, which routes `/main` with `AppTab.talk` — the stale
+  /// Home request wins and the user lands on Home.
+  ///
+  /// That is the SAME failure as the 2026-09-02 bug this class was rewritten
+  /// to fix — a deep-link value outliving its request and silently defeating
+  /// initialTab. The rewrite fixed the "never requested" case and left the
+  /// "already consumed" case, because I only tested a first mount. A request
+  /// is an EVENT; the old code and my fix both stored it as STATE.
+  ///
+  /// Only the mount-time consumer calls this. The live listener must NOT:
+  /// while a shell is mounted, `value` is read synchronously inside the
+  /// notification and consuming there would race nothing but buys nothing.
+  void consume() {
+    _requested = null;
+  }
+
   /// Test-only: return the bus to its pristine "nothing requested" state.
   /// The bus is a process-wide singleton, so a request made by one test
   /// otherwise leaks into every test that mounts `HomeShell` afterwards.

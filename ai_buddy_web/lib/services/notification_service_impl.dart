@@ -351,6 +351,50 @@ class NotificationService {
     return result;
   }
 
+  /// Queries whether the OS currently allows notifications, WITHOUT prompting.
+  ///
+  /// Returns null when the answer is unknown (web, no platform implementation,
+  /// or the platform channel threw). Callers must treat null as "don't know"
+  /// and leave the user's settings alone — never as "denied". Guessing denied
+  /// would silently switch off reminders a user did grant.
+  ///
+  /// Added 2026-09-03. Permission was only ever checked at the moment a toggle
+  /// was flipped ON. If the user later revoked notifications in OS settings,
+  /// the stored pref kept saying "on" and Settings kept displaying "on" while
+  /// the OS dropped every scheduled notification. In a mental-health app that
+  /// is the worst kind of wrong: someone believes they will be checked on,
+  /// and nothing is coming.
+  static Future<bool?> hasPermission() async {
+    if (kIsWeb) return null;
+    try {
+      await _ensureInited();
+
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        final iosImpl = _plugin.resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+        if (iosImpl == null) return null;
+        final opts = await iosImpl.checkPermissions();
+        if (opts == null) return null;
+        // Alerts are what every category in this app relies on; badge/sound
+        // alone would not surface a reminder.
+        return opts.isAlertEnabled;
+      }
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        if (androidImpl == null) return null;
+        return await androidImpl.areNotificationsEnabled();
+      }
+
+      return null;
+    } catch (e) {
+      if (kDebugMode) debugPrint('NotificationService.hasPermission failed: $e');
+      return null;
+    }
+  }
+
   // ── Ergonomic helpers (cancel + test) ───────────────────────────────────
 
   /// Cancel any pending daily check-in notification.

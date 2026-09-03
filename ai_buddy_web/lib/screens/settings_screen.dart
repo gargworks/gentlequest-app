@@ -197,6 +197,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // even if the app was killed before — the scheduler keeps this in an
     // in-memory flag for now (no background scheduler yet).
     NotificationService.setStreakNudgeEnabled(_gentleNudgeOn);
+
+    await _reconcileWithOsPermission(prefs);
+  }
+
+  /// Turns every notification toggle back OFF if the OS permission has been
+  /// revoked since the user opted in.
+  ///
+  /// Added 2026-09-03. Permission was only checked at the instant a toggle was
+  /// flipped ON. Revoke notifications in OS settings afterwards and the stored
+  /// pref still said "on", so this screen kept showing "Daily check-in: on"
+  /// while the OS silently dropped every scheduled notification. A user could
+  /// believe a check-in was coming when nothing was.
+  ///
+  /// Deliberately one-directional: a revoked permission switches toggles off,
+  /// but a granted permission never switches anything on. Permission means the
+  /// user COULD be notified, not that they asked to be — re-enabling would
+  /// invent an opt-in they never gave.
+  ///
+  /// `hasPermission()` returns null for "unknown" (web, no platform impl, a
+  /// channel error). Unknown must change nothing. Treating it as denied would
+  /// silently switch off reminders a user did grant, which is the same class
+  /// of harm in the other direction.
+  Future<void> _reconcileWithOsPermission(SharedPreferences prefs) async {
+    if (!_dailyReminderOn && !_gentleNudgeOn && !_worriedCheckInOn) return;
+
+    final allowed = await NotificationService.hasPermission();
+    if (allowed != false) return; // null (unknown) or true -> leave alone
+    if (!mounted) return;
+
+    await prefs.setBool(_kNotifDailyReminderKey, false);
+    await prefs.setBool(_kNotifGentleNudgeKey, false);
+    await prefs.setBool(_kNotifWorriedCheckInKey, false);
+    NotificationService.setStreakNudgeEnabled(false);
+    if (!mounted) return;
+    setState(() {
+      _dailyReminderOn = false;
+      _gentleNudgeOn = false;
+      _worriedCheckInOn = false;
+    });
+    if (kDebugMode) {
+      debugPrint('[notif] OS permission revoked — reminder toggles reset');
+    }
   }
 
   Future<void> _onDailyReminderChanged(bool v) async {

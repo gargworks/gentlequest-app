@@ -99,4 +99,7 @@ class NotificationService {
   static Future<bool> requestPermissions() async {
     return false;
   }
+  /// Web has no OS notification permission in this app's model; the answer
+  /// is genuinely unknown rather than denied.
+  static Future<bool?> hasPermission() async => null;
 }
