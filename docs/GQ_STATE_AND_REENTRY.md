@@ -31,6 +31,7 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 | Android build | **1.7.3+26090301 LIVE on internal** 2026-09-03, verified via Play API (`internal: completed [26090301]`). Production untouched at `26083001`. Carries the welcome-screen instrumentation. Release script now exists: `scripts/play_upload_internal.py` (internal-only by construction). |
 | Backend | **DEPLOYED 2026-09-03**, `de786fac`, dep-dacjalbm8hqs73b4s0eg, live. Smoke-verified in the wild: 3 events one session id -> `landing_sessions: 1`; a bot-UA event declaring `_ua_class:human` was REJECTED; `unclassified_sessions: 8` + `insufficient_data: true`. NOTE: Render says `autoDeploy: yes` but had not deployed since 2026-09-02 — the GitLab webhook is not firing. Deploy manually until that is fixed. |
 | **Activation cliff — RELOCATED 2026-09-03** | The cliff is NOT at chat. Re-measured with `totalUsers` (was `eventCount`): 34 installs → 35 session_start → **9 compliance_check_started (26%)** → 8 → 3 first chat. `checkCompliance()` only runs AFTER the user taps "I am 18 or older", so the funnel began at the survivors of an UNMEASURED gate. ~74% never clear the welcome screen. Cause UNKNOWN — do not guess. `welcome_screen_viewed` + `welcome_age_confirmed` now instrument it; they read 0 until the next build ships. |
+| **Landing page — NOT DEPLOYED** | **Discovered 2026-09-03.** gentlequest.app is served by **Cloudflare Pages** (project `gentlequest-www`, via `wrangler pages deploy`), NOT by Render. The Render `gentlequest-landing` service is vestigial: it points at github.com/eidetic-works (auth-dead) and last deployed **2026-08-04**. The live bundle still carries the OLD GA4 id `G-Z4Z92EJ3DV`, has no store links, no `cta_impression`, no `analytics/log`, no `X-Session-ID`. So EVERY landing change from 2026-09-02/03 is dead code in production: GA4 repoint (5b47762f), UTM tagging (1a91b985, f88c36a9), keepalive (8c848369), session id. Needs a manual wrangler deploy — operator decision, not taken. |
 | Deploy smoke | **FIXED 2026-09-03.** The smoke printed "the forged bot was not counted" while asserting only `landing_sessions >= 1` — if the bot HAD been counted the number would just be bigger and it still printed success. Now asserts the DELTA is exactly +1, which tests grouping and bot-rejection in one number. |
 | Bot laundering | **FIXED 2026-09-03 (second pass).** A bot could count as human by sending a bot-UA event then a browser-UA event on the SAME session id: `session_meta.update()` was last-write-wins and the events query has no `order_by`. Now fail-closed — one bot event condemns the session. Also removed a no-op guard whose comment falsely claimed session-shape rules applied, and `insufficient_data` now covers an empty window. Found by a lane auditing the FIRST pass. |
 | Landing funnel | **FIXED, NEEDS DEPLOY.** `landing_sessions` counted events (no `X-Session-ID` → new uuid4 per request). Landing page now sends a per-tab UUID. Bot filter was dead by construction: the reader took the UA from metadata, which the log endpoint's allowlist always stripped, so it substituted a hardcoded Chrome UA. Now classified server-side at write time; pre-fix events report as `unclassified_sessions` + `insufficient_data` rather than a quiet zero. |
@@ -82,6 +83,18 @@ finished and decisions that have since been made; it was stale enough to
 mislead a cold session.
 
 ### Blocked on the operator (I cannot do these)
+
+0. **Deploy the landing page, or decide not to.** All landing-page work from
+   2026-09-02/03 is UNDEPLOYED (see STATUS). It publishes to Cloudflare Pages
+   by hand: `scripts/deploy_blog.sh` (project `gentlequest-www`). This is a
+   public, user-facing production deploy, so it was not taken unilaterally.
+   Until it ships:
+   - landing web analytics still flow to the OLD GA4 property, so any web
+     number read against 551876340 is measuring a page that never reports to it;
+   - `landing_sessions` STILL counts events, because the page does not send
+     `X-Session-ID` — the backend half is live and correct, the sender is not.
+   The backend smoke proves the SERVER groups sessions. It does not prove the
+   real page does, because the real page cannot yet.
 
 1. **ASC `pt` token — iOS installs are unattributed.** The store link carries
    `ct` but Apple requires BOTH `pt` (provider token) and `ct`. `pt` comes from
