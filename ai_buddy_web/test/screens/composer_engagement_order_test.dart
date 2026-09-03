@@ -107,10 +107,33 @@ void main() {
 
   test('DRIFT GUARD: the chip logs engagement BEFORE calling _sendMessage', () {
     final src = File('lib/screens/interactive_chat_screen.dart').readAsStringSync();
-    final engage = src.indexOf('_logComposerEngagedOnce();\n                          _sendMessage();');
-    expect(engage, greaterThan(-1),
+    // Whitespace-insensitive on purpose. The first version of this guard
+    // matched a literal string carrying 26 hardcoded spaces of indentation, so
+    // a dartfmt reflow or extracting the callback would have failed it for a
+    // reason that has nothing to do with the invariant. A guard that cries
+    // wolf on formatting gets deleted by the next person, and then the real
+    // invariant is unguarded.
+    final chipOrder = RegExp(
+      r'_logComposerEngagedOnce\(\);\s*_sendMessage\(\);',
+    );
+    expect(chipOrder.hasMatch(src), isTrue,
         reason: 'The starter chip no longer logs engagement immediately '
             'before the send. Either the order flipped back or the call was '
             'dropped — both restore the inverted-order bug this fixed.');
+  });
+
+  test('DRIFT GUARD: the focus listener still logs engagement', () {
+    // Added after an audit caught the asymmetry: the guards above cover the
+    // helper and the CHIP path, so deleting the call from the focus listener
+    // left every test green while typing into the composer stopped counting.
+    // Two paths reach this stage; both need a guard.
+    final src = File('lib/screens/interactive_chat_screen.dart').readAsStringSync();
+    final listenerCall = RegExp(
+      r'_composerWasFocused\s*=\s*true;\s*_logComposerEngagedOnce\(\);',
+    );
+    expect(listenerCall.hasMatch(src), isTrue,
+        reason: 'The focus listener no longer logs engagement. Users who type '
+            'rather than tap a starter chip would stop being counted, and the '
+            'stage would silently under-report.');
   });
 }

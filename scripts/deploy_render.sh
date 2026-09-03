@@ -59,7 +59,15 @@ done
 echo "==> smoke: health"
 curl -fsS -o /dev/null -w "    health %{http_code}\n" "$BASE/api/health"
 
-echo "==> smoke: session grouping (3 events, one session id -> must be 1 session)"
+# Read the counter BEFORE the smoke, so the assertion can be about the DELTA.
+# An absolute check cannot tell a rejected bot from a counted one.
+read_landing() {
+  curl -fsS "$BASE/api/metrics/funnel?days=1" \
+    | python3 -c "import json,sys;print(json.load(sys.stdin)['counts']['landing_sessions'])"
+}
+BEFORE=$(read_landing)
+
+echo "==> smoke: session grouping (3 events, one session id -> must add exactly 1)"
 SID=$(python3 -c "import uuid;print(uuid.uuid4())")
 UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 for _ in 1 2 3; do
@@ -76,14 +84,33 @@ curl -fsS -o /dev/null -X POST "$BASE/api/analytics/log" \
   -H "User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1)" \
   -d '{"event_type":"cta_impression","metadata":{"cta_id":"deploy_smoke","_ua_class":"human"}}'
 
-curl -fsS "$BASE/api/metrics/funnel?days=1" | python3 -c "
-import json,sys
-d=json.load(sys.stdin); c=d['counts']
-print('    landing_sessions      ', c['landing_sessions'])
-print('    unclassified_sessions ', c['unclassified_sessions'])
-print('    insufficient_data     ', d['insufficient_data'])
-if c['landing_sessions'] < 1:
-    sys.exit('SMOKE FAILED: the 3 grouped events produced no counted session.')
-print('    OK — grouping works and the forged bot was not counted.')
-"
+AFTER=$(read_landing)
+DELTA=$(( AFTER - BEFORE ))
+echo "    landing_sessions ${BEFORE} -> ${AFTER} (delta ${DELTA})"
+
+# The delta is the whole test, and it is two assertions in one number.
+#
+# Corrected 2026-09-03 after a cross-vendor audit: this block used to assert
+# only `landing_sessions >= 1` and then print "the forged bot was not counted".
+# That sentence was never checked. If the bot HAD been counted the number would
+# simply have been larger and the script would still have printed it and exited
+# 0 — a guard whose message claimed more than its assertion, which is the exact
+# defect the deploy it guards was written to fix.
+#
+#   delta 1 -> the 3 human events grouped into ONE session, and the bot was
+#              rejected. Both properties, one number.
+#   delta 0 -> session grouping is broken (or the events never landed).
+#   delta 2 -> the forged bot was counted as human. THIS is the regression the
+#              bot filter exists to prevent.
+if [ "$DELTA" -ne 1 ]; then
+  echo "SMOKE FAILED: expected exactly +1 landing session, got ${DELTA}." >&2
+  if [ "$DELTA" -ge 2 ]; then
+    echo "  A delta of 2+ means the forged bot was counted as human." >&2
+  else
+    echo "  A delta of 0 means the 3 events did not group into a session." >&2
+  fi
+  exit 1
+fi
+echo "    OK — 3 events grouped into 1 session AND the forged bot was rejected."
+
 echo "==> done: ${SHA:0:8} live and smoke-verified"

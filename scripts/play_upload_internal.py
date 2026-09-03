@@ -50,6 +50,8 @@ def main() -> int:
     )
     svc = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
 
+    edit_id = None
+    committed = False
     try:
         edit = svc.edits().insert(body={}, packageName=args.package).execute()
         edit_id = edit["id"]
@@ -86,10 +88,25 @@ def main() -> int:
 
         # The gate that actually publishes. targetSdk failures surface HERE.
         svc.edits().commit(editId=edit_id, packageName=args.package).execute()
+        committed = True
         print(f"COMMITTED: {version_code} live on '{TRACK}'")
         return 0
 
-    except HttpError as e:
+    except Exception as e:
+        # Deliberately broader than HttpError.
+        #
+        # 2026-09-03, after an audit: this caught only HttpError, so a
+        # RefreshError from an expired or revoked service account — a very
+        # likely real failure — escaped as a raw traceback and skipped the 403
+        # guidance below, which is the one part of this script that saves time.
+        if not isinstance(e, HttpError):
+            print(f"Upload failed: {type(e).__name__}: {e}", file=sys.stderr)
+            print(
+                "  If this is an auth error (RefreshError/invalid_grant), the "
+                "service account key is expired, revoked, or the wrong file.",
+                file=sys.stderr,
+            )
+            return 1
         detail = e.content.decode() if isinstance(e.content, bytes) else str(e.content)
         print(f"Play API error {e.resp.status}: {detail}", file=sys.stderr)
         if e.resp.status == 403:
@@ -104,6 +121,19 @@ def main() -> int:
                 file=sys.stderr,
             )
         return 1
+    finally:
+        # Abandon a half-built edit rather than leaving it open.
+        #
+        # Play edits expire on their own in about an hour, so this is hygiene
+        # rather than a bug fix — but an abandoned edit is confusing state for
+        # whoever debugs the next failure, and deleting it costs one call.
+        # Never let cleanup mask the real error: swallow anything this raises.
+        if edit_id is not None and not committed:
+            try:
+                svc.edits().delete(editId=edit_id, packageName=args.package).execute()
+                print(f"cleaned up uncommitted edit {edit_id}", file=sys.stderr)
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
