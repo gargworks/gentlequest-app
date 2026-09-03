@@ -67,13 +67,24 @@ unknown, not just its cause.
 
 ## OPEN QUEUE (ordered by leverage)
 
-1. **Finish the shipped-code audit.** 18 candidates. **6 resolved** (3 real -> fixed,
-   3 refuted), **2 partially-confirmed** (recorded below, no action), **10 UNVERIFIED**.
+1. **Finish the shipped-code audit.** 18 candidates. **13 resolved** (7 real -> fixed,
+   3 refuted, 3 partially-confirmed with no action), **5 UNVERIFIED**.
    Resume the workflow when Claude session limit allows:
    `Workflow({scriptPath: <workflows/scripts/audit-gq-shipped-today-*.js>, resumeFromRunId: "wf_36e2bf2b-b69"})`
    — or keep verifying via glm-5-2 lanes, which do NOT consume the Claude limit.
 
-   RESOLVED: consent opt-out could never be logged (real, fixed d402426f);
+   RESOLVED (later round, 2026-09-03): analytics toggle copy read broader than it acts
+   — it gates only the backend stream, never GA4 (real, copy fixed + pinned 896169c1);
+   iOS link has ct but no pt so ASC cannot attribute, and my own commit claimed it could
+   (real, RETRACTED 8c848369 — iOS installs are unattributed on BOTH surfaces);
+   cta_click beacon lost on same-tab nav, web CTA only (real, keepalive added 8c848369);
+   landing beacon sends no X-Session-ID so every event mints a session — this is why
+   206/265 "sessions" were landing-only; `landing_sessions` is an EVENT count (real,
+   NOT fixed, needs a decision); cta_impression can never be bot-filtered because the
+   funnel falls back to a hardcoded human UA (real, NOT fixed); composer-focus reset is
+   RELIABLE but fires once per focus/blur cycle, so the stage inflates (partially).
+
+   RESOLVED (first round): consent opt-out could never be logged (real, fixed d402426f);
    unknown GA4 platforms inflated native total (real, fixed 27d2f4c7);
    compliance_result cardinality mismatch (real, recorded — see the warning above);
    chat_tab_viewed "is a launch counter" (REFUTED — tabs build lazily, pinned by test);
