@@ -16,6 +16,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../models/mood_entry.dart';
 import 'weekly_letter_screen.dart';
 
 // ─── Data models ─────────────────────────────────────────────────────────────
@@ -64,6 +65,105 @@ class WeeklyReviewData {
   final List<String> nextWeekChips;
   final String? heavyEventDay; // e.g. "Wednesday" — used in heavy greeting
 
+  /// Builds weekly review data from the user's ACTUAL mood entries for the
+  /// current week (Monday–Sunday). No fabricated text: days with no entry
+  /// stay unlogged (moodIndex null), standoutQuote is sourced from a real
+  /// user note (or null), and no invented assertions are emitted.
+  factory WeeklyReviewData.fromMoodEntries(List<MoodEntry> entries) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+
+    // Filter to this week's entries (local time).
+    final weekEntries = entries.where((e) {
+      final d = e.timestamp.toLocal();
+      final day = DateTime(d.year, d.month, d.day);
+      return !day.isBefore(monday) && !day.isAfter(sunday);
+    }).toList();
+
+    final logCount = weekEntries.length;
+
+    // Empty week → degrade to the kind empty-week path (days: []).
+    if (logCount == 0) {
+      return WeeklyReviewData(
+        state: WeekState.light,
+        weekLabel: _weekLabel(monday, sunday),
+        logCount: 0,
+        days: const [],
+      );
+    }
+
+    // Build 7 day slots (Mon–Sun) from real entries.
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final days = <DayMoodEntry>[];
+    for (var i = 0; i < 7; i++) {
+      final date = monday.add(Duration(days: i));
+      final dayEntries = entries.where((e) {
+        final d = e.timestamp.toLocal();
+        return d.year == date.year &&
+            d.month == date.month &&
+            d.day == date.day;
+      }).toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      final isToday = date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day;
+      if (dayEntries.isEmpty) {
+        days.add(DayMoodEntry(label: dayLabels[i], isToday: isToday));
+      } else {
+        final last = dayEntries.last;
+        days.add(DayMoodEntry(
+          label: dayLabels[i],
+          moodIndex: last.moodLevel - 1, // 1-5 → 0-4
+          isToday: isToday,
+        ));
+      }
+    }
+
+    // Standout quote: the most recent entry with a non-empty note.
+    // Real user text only; degrades to null when absent.
+    String? standoutQuote;
+    String? standoutAttribution;
+    final withNotes = weekEntries
+        .where((e) => e.note != null && e.note!.trim().isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    if (withNotes.isNotEmpty) {
+      final e = withNotes.last;
+      standoutQuote = '"${e.note!.trim()}"';
+      const wdNames = [
+        '', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
+        'FRIDAY', 'SATURDAY', 'SUNDAY'
+      ];
+      standoutAttribution = '— YOU, ${wdNames[e.timestamp.toLocal().weekday]}';
+    }
+
+    final state = logCount >= 4 ? WeekState.full : WeekState.light;
+
+    return WeeklyReviewData(
+      state: state,
+      weekLabel: _weekLabel(monday, sunday),
+      logCount: logCount,
+      days: days,
+      standoutQuote: standoutQuote,
+      standoutAttribution: standoutAttribution,
+    );
+  }
+
+  static String _weekLabel(DateTime monday, DateTime sunday) {
+    const months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    if (monday.month == sunday.month) {
+      return 'Week of ${months[monday.month]} ${monday.day} – ${sunday.day}';
+    }
+    return 'Week of ${months[monday.month]} ${monday.day} – '
+        '${months[sunday.month]} ${sunday.day}';
+  }
+
+  @visibleForTesting
   static WeeklyReviewData stubFull() => const WeeklyReviewData(
         state: WeekState.full,
         weekLabel: 'Week of Mar 18 – 24',

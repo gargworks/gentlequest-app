@@ -147,7 +147,6 @@ class _LetterBody extends StatelessWidget {
         for (var i = 0; i < paragraphs.length; i++) ...[
           _Paragraph(
             spans: paragraphs[i].spans,
-            highlightSentence: paragraphs[i].highlightSentence,
           ),
           if (i < paragraphs.length - 1) const SizedBox(height: 12),
         ],
@@ -156,13 +155,10 @@ class _LetterBody extends StatelessWidget {
   }
 }
 
-/// One paragraph of the letter. [spans] is the rich-text content;
-/// [highlightSentence] (if non-null) is the sentence that gets the
-/// primary-soft underline-background highlight (one per letter).
+/// One paragraph of the letter. [spans] is the rich-text content.
 class _Paragraph extends StatelessWidget {
-  const _Paragraph({required this.spans, this.highlightSentence});
+  const _Paragraph({required this.spans});
   final List<InlineSpan> spans;
-  final String? highlightSentence;
 
   @override
   Widget build(BuildContext context) {
@@ -181,28 +177,10 @@ class _Paragraph extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
 
-    final List<InlineSpan> built;
-    if (highlightSentence == null || highlightSentence!.isEmpty) {
-      built = spans;
-    } else {
-      // Apply primary-soft underline background to the highlight sentence
-      // (the "anyway" that gets the visual emphasis).
-      final bgPaint = Paint()..color = GQColors.primarySoft;
-      built = spans.map((s) {
-        if (s is TextSpan && (s.text ?? '') == highlightSentence) {
-          return TextSpan(
-            text: s.text,
-            style: (s.style ?? const TextStyle()).copyWith(background: bgPaint),
-          );
-        }
-        return s;
-      }).toList();
-    }
-
     return RichText(
       text: TextSpan(
         style: baseStyle,
-        children: built.map((s) {
+        children: spans.map((s) {
           if (s is TextSpan && s.style?.fontWeight == FontWeight.w600) {
             return TextSpan(text: s.text, style: boldStyle);
           }
@@ -402,9 +380,8 @@ class _LetterButton extends StatelessWidget {
 /// A single paragraph of the letter, with rich-text spans and an optional
 /// highlight sentence (the "anyway" that gets the underline background).
 class _LetterParagraph {
-  const _LetterParagraph(this.spans, {this.highlightSentence});
+  const _LetterParagraph(this.spans);
   final List<InlineSpan> spans;
-  final String? highlightSentence;
 }
 
 /// Compiles [WeeklyReviewData] into letter paragraphs following the voice rules.
@@ -508,40 +485,22 @@ class _LetterComposer {
   }
 
   // ── Adversity + small act + consequence ──
+  // OMITTED: the previous implementation invented "You walked at lunch
+  // anyway. That mattered." regardless of the user's actual data. The
+  // data model carries no real "anyway" act, so this paragraph is never
+  // emitted. Do not reinvent a replacement sentence — putting words in
+  // the user's mouth is the worst defect in a mental-health app.
   _LetterParagraph? _adversityParagraph(List<bool> usedCount) {
-    // Find a low day (moodIndex <= 1) followed by a day with an annotation.
-    for (var i = 0; i < data.days.length - 1; i++) {
-      final cur = data.days[i];
-      final next = data.days[i + 1];
-      if (cur.moodIndex != null &&
-          cur.moodIndex! <= 1 &&
-          next.annotation != null &&
-          next.annotation!.isNotEmpty) {
-        final sentence =
-            "You walked at lunch anyway. That mattered.";
-        return _LetterParagraph(
-          [TextSpan(text: sentence)],
-          highlightSentence: sentence,
-        );
-      }
-    }
     return null;
   }
 
   // ── Trigger chip frequency ──
+  // OMITTED: the previous implementation hardcoded "Work pressed on you
+  // …" — a trigger the user may never have tagged. The data model carries
+  // no real recurring-trigger label, so this paragraph is never emitted.
+  // Do not reinvent a replacement sentence.
   _LetterParagraph? _triggerParagraph(List<bool> usedCount) {
-    // The spec example: "Work pressed on you four days out of seven. It
-    // didn't win all four." We derive a count from annotations on low days.
-    final lowAnnotated = data.days
-        .where((d) => d.moodIndex != null && d.moodIndex! <= 1 && d.annotation != null)
-        .length;
-    if (lowAnnotated == 0) return null;
-
-    final countWord = _spell(lowAnnotated);
-    final text =
-        'Work pressed on you $countWord ${lowAnnotated == 1 ? 'day' : 'days'} out of seven. It didn\'t win ${lowAnnotated == 1 ? 'that day' : 'all $countWord'}.';
-    if (!usedCount[0]) usedCount[0] = true;
-    return _LetterParagraph([TextSpan(text: text)]);
+    return null;
   }
 
   // ── Standout quote (bold, mid-letter) ──

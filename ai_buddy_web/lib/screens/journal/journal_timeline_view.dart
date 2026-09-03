@@ -2,7 +2,9 @@
 // Split from journal_screen.dart (R1D14).
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/mood_provider.dart';
 import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_back_button.dart';
@@ -201,7 +203,11 @@ class _WeeklyReviewEntryRow extends StatelessWidget {
     return GQCard(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.stubFull()),
+          builder: (_) => WeeklyReviewScreen(
+            data: WeeklyReviewData.fromMoodEntries(
+              Provider.of<MoodProvider>(context, listen: false).moodEntries,
+            ),
+          ),
         ),
       ),
       haptic: false,

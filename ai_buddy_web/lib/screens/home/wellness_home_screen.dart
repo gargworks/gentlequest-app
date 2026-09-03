@@ -331,7 +331,7 @@ class _WeekShapeZone extends StatelessWidget {
               Text('THIS WEEK', style: GQTypography.micro.copyWith(color: t.ink2)),
               GestureDetector(
                 onTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute(builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.stubFull()))),
+                    MaterialPageRoute(builder: (_) => WeeklyReviewScreen(data: WeeklyReviewData.fromMoodEntries(moodProvider.moodEntries)))),
                 // primaryDk stays static on both text and icon below — see class-level exception.
                 child: Row(
                   children: [
