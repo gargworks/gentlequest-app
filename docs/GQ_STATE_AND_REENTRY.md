@@ -86,12 +86,13 @@ mislead a cold session.
    generating a campaign link in App Store Connect and cannot be fabricated.
    Until then iOS attribution is dead on both surfaces (`landing-page/src/App.jsx`).
 
-2. **GitLab -> Render webhook does not exist.** Confirmed 2026-09-03 via the
-   GitLab API: the project has ZERO webhooks. Render reports `autoDeploy: yes`,
-   which is why the setting looks healthy — nothing is listening to tell it a
-   push happened. Every deploy must be triggered by hand (see below) until a
-   hook is added. Creating a webhook is a persistent config change on the repo,
-   so it needs an explicit go-ahead.
+2. ~~GitLab -> Render webhook~~ **FIXED 2026-09-03.** The project had ZERO
+   webhooks; Render's `autoDeploy: yes` looked healthy because the setting was
+   real and only the delivery mechanism was missing. GitLab hook `88208404` now
+   posts to the Render deploy hook on push, filtered to `main`, SSL verify on.
+   PROVEN, not assumed: a test push event produced a Render deploy with
+   `trigger: deploy_hook` (not `api`), which reached `live`. Pushes to main
+   deploy themselves again.
 
 ### Waiting on data (do not act before it reads)
 
@@ -132,10 +133,14 @@ mislead a cold session.
 
 ### Standing operating notes
 
-- **Deploy the backend by hand** until the webhook exists:
-  `POST https://api.render.com/v1/services/srv-d2r3i1fdiees73dqtov0/deploys`
-  with `{"commitId": "<sha>"}` and the key from `~/.render/cli.yaml`.
-  Then SMOKE IT — `live` status is not evidence the change works.
+- **Backend deploys are automatic again** (hook 88208404). To deploy a
+  specific commit, or to deploy AND smoke it in one step:
+  `scripts/deploy_render.sh [sha]` — waits for `live`, then exercises the real
+  endpoints (session grouping, forged-bot rejection). `live` is not evidence
+  the change works; the script refuses to call it done on status alone.
+  It also warns when the Render CLI token is near expiry — that token is a
+  SESSION token, not a long-lived key, and its first symptom on expiry is a 401
+  during an urgent deploy. Expires 2026-09-05; run `render login` to refresh.
 - **Ship Android** with `scripts/play_upload_internal.py` (internal-only by
   construction; promotion stays a Console action).
 - **Check `df -h /` before any build.** 66 test files "failed to load" earlier
