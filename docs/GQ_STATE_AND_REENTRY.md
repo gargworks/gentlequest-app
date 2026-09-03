@@ -1,6 +1,8 @@
 # GentleQuest — live state + re-entry contract
 
 Single source of truth for a cold session. Read this FIRST, then act.
+The reasoning behind the plan (why each workstream exists, what was tried and retracted)
+lives in `docs/plan/GQ_5WEEK_PLAN.md`.
 Update the STATUS table and OPEN QUEUE in the same commit as any work you ship.
 
 Last updated: 2026-09-03
