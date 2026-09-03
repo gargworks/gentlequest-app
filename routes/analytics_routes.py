@@ -33,6 +33,27 @@ def _load_blocklist():
         return set()
 
 
+def _classify_user_agent(raw_ua: str) -> str:
+    """Classify a User-Agent as "human", "bot", or "unknown".
+
+    Deliberately fails to "bot" rather than "human" on anything suspicious:
+    an over-counted funnel is the failure mode this whole change exists to fix.
+    "unknown" is reserved for a genuinely absent UA, so a reader can tell
+    "we looked and it was not a browser" apart from "we never looked".
+    """
+    if not raw_ua:
+        return "unknown"
+    try:
+        from scripts.analytics_dashboard import is_qualified_human
+
+        # Duration/pageview rules need session context this endpoint does not
+        # have; pass values that exempt those rules so this call decides on the
+        # UA alone. The session-shape rules still run later, at read time.
+        return "human" if is_qualified_human({}, raw_ua, 60.0, 5) else "bot"
+    except Exception:  # pragma: no cover - never break logging over this
+        return "unknown"
+
+
 @analytics_bp.route("/api/analytics/log", methods=["POST"])
 @limiter.limit("120 per minute")
 def log_analytics_event():
@@ -77,6 +98,24 @@ def log_analytics_event():
                     if isinstance(v, str) and len(v) > 200:
                         v = v[:200]
                     metadata[k] = v
+
+        # Classify the REAL User-Agent, server-side, at write time.
+        #
+        # 2026-09-03. The funnel's bot filter was dead by construction. It read
+        # the UA from event metadata (analytics_routes.py:443) — but this
+        # endpoint's `allowed_keys` above has never included user_agent/ua, so
+        # the writer strips exactly the key the reader looks for. The UA was
+        # therefore ALWAYS absent, and the reader substituted DEFAULT_UA, a
+        # hardcoded desktop-Chrome string. is_qualified_human() rejects a
+        # missing UA correctly; it never got the chance, because every session
+        # was handed the same synthetic human.
+        #
+        # We store a CLASSIFICATION, not the UA itself: the raw string is a
+        # fingerprinting surface and this endpoint promises to hold no PII. The
+        # underscore prefix marks it server-set — it is written AFTER the
+        # allowlist filter above, so a client cannot forge it.
+        raw_ua = request.headers.get("User-Agent") or ""
+        metadata["_ua_class"] = _classify_user_agent(raw_ua)
 
         session_id = _get_or_create_session()
         req_id = getattr(g, "request_id", None)
@@ -407,6 +446,10 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
         session_events_map[sid].append(event)
 
     landing_sessions = 0
+    # Sessions we could not classify because they predate the 2026-09-03
+    # server-side UA classification. Reported, never folded into the counts:
+    # "we don't know" is a third answer, not a quiet zero.
+    unclassified_sessions = 0
     cta_clicks = 0
     web_app_opens = 0
     compliance_passed = 0
@@ -467,9 +510,31 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
             duration_sec = 0.0
 
         pageviews = len(events)
-        ua_to_check = user_agent if user_agent else DEFAULT_UA
 
-        if not is_qualified_human(session_meta, ua_to_check, duration_sec, pageviews):
+        # Use the server-set classification, never a synthetic default.
+        #
+        # 2026-09-03. This used to be `user_agent if user_agent else
+        # DEFAULT_UA`, where DEFAULT_UA is a real desktop-Chrome string. Since
+        # the log endpoint stripped user_agent from metadata, the fallback was
+        # not a fallback — it was the ONLY path, and it handed a working bot
+        # filter the same hardcoded human for every session. The filter could
+        # not reject anything on UA grounds.
+        #
+        # Events written before that fix carry no classification. We do not
+        # know whether they were human, and pretending either way is the
+        # mistake this is correcting — so they are counted separately as
+        # UNCLASSIFIED rather than silently included or silently dropped.
+        ua_class = session_meta.get("_ua_class")
+        if ua_class is None:
+            unclassified_sessions += 1
+            continue
+        if ua_class != "human":
+            continue
+
+        # Session-shape rules (duration, pageviews) still apply on top of the
+        # UA verdict; the write-time call deliberately exempted them because it
+        # had no session context.
+        if not is_qualified_human(session_meta, user_agent or DEFAULT_UA, duration_sec, pageviews):
             continue
 
         if has_landing:
@@ -506,10 +571,15 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
             "web_app_opens": web_app_opens,
             "compliance_passed": compliance_passed,
             "first_value_actions": first_value_actions,
-            "returning_users": returning_users
+            "returning_users": returning_users,
+            "unclassified_sessions": unclassified_sessions
         },
         "cta_ctr": cta_ctr,
-        "first_value_conversion": first_value_conversion
+        "first_value_conversion": first_value_conversion,
+        # True when unclassified sessions outnumber the ones we could verify.
+        # The counts above are then a floor, not a measurement, and must not be
+        # quoted as a funnel result.
+        "insufficient_data": unclassified_sessions > landing_sessions
     }
 
 

@@ -7,6 +7,7 @@ import 'package:ai_buddy_web/screens/auth/login_screen.dart';
 import 'package:ai_buddy_web/screens/compliance_guard_screen.dart';
 import 'package:ai_buddy_web/screens/legal/legal_screen.dart';
 import 'package:ai_buddy_web/services/compliance_service.dart';
+import 'package:ai_buddy_web/services/firebase_service.dart';
 import 'package:ai_buddy_web/theme/gq_theme.dart';
 import 'package:ai_buddy_web/theme/gq_tokens.dart';
 import 'package:ai_buddy_web/widgets/app_bottom_nav.dart' show AppTab;
@@ -88,6 +89,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   void initState() {
     super.initState();
 
+    // 2026-09-03: the first screen had NO instrumentation at all, and that is
+    // why the real activation cliff stayed invisible for so long.
+    //
+    // The funnel began at compliance_check_started, which fires inside
+    // checkCompliance() — and on this screen checkCompliance() only runs AFTER
+    // the user taps "I am 18 or older" (_confirmAdult). So every user who saw
+    // this screen and left was outside the funnel entirely, and the ratio we
+    // were reading started from the survivors.
+    //
+    // Measured 2026-09-03 (GA4 551876340, 30d, totalUsers): 34 first_open,
+    // 35 session_start, but only 9 compliance_check_started. People install,
+    // they open the app — and roughly three quarters never get past this
+    // screen. That is a far bigger wound than the chat cliff we were chasing,
+    // and it sits one tap from the install.
+    //
+    // These two events make the gap measurable. They do not explain it: the
+    // cause is unknown and must not be guessed. See docs/GQ_STATE_AND_REENTRY.
+    FirebaseService().logEvent('welcome_screen_viewed');
+
     // Breathe — 5.6s loop per design spec.
     _breatheCtrl = AnimationController(
       vsync: this,
@@ -159,6 +179,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Future<void> _confirmAdult() async {
+    // The exact tap the 74% never make. Paired with welcome_screen_viewed
+    // above, this turns the biggest unmeasured drop in the product into a
+    // funnel step.
+    FirebaseService().logEvent('welcome_age_confirmed');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(WelcomeScreen._kSeenKey, true);
     // Persist age verification so ComplianceGuardScreen doesn't ask again.

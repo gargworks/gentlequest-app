@@ -103,7 +103,7 @@ class TestFunnelEndpoint:
                     session_id="s1",
                     event_type="cta_impression",
                     timestamp=now,
-                    event_metadata={"landing_path": "/"},
+                    event_metadata={"landing_path": "/", "_ua_class": "human"},
                 )
             )
             db.session.add(
@@ -111,7 +111,7 @@ class TestFunnelEndpoint:
                     session_id="s1",
                     event_type="cta_click",
                     timestamp=now + timedelta(seconds=5),
-                    event_metadata={"cta_id": "hero"},
+                    event_metadata={"cta_id": "hero", "_ua_class": "human"},
                 )
             )
             db.session.add(
@@ -119,7 +119,7 @@ class TestFunnelEndpoint:
                     session_id="s1",
                     event_type="web_app_open_from_cta",
                     timestamp=now + timedelta(seconds=10),
-                    event_metadata={"source_cta": "hero"},
+                    event_metadata={"source_cta": "hero", "_ua_class": "human"},
                 )
             )
             db.session.add(
@@ -127,7 +127,7 @@ class TestFunnelEndpoint:
                     session_id="s1",
                     event_type="compliance_passed",
                     timestamp=now + timedelta(seconds=15),
-                    event_metadata={},
+                    event_metadata={"_ua_class": "human"},
                 )
             )
             db.session.add(
@@ -135,7 +135,7 @@ class TestFunnelEndpoint:
                     session_id="s1",
                     event_type="first_chat_message",
                     timestamp=now + timedelta(seconds=20),
-                    event_metadata={},
+                    event_metadata={"_ua_class": "human"},
                 )
             )
 
@@ -145,7 +145,7 @@ class TestFunnelEndpoint:
                     session_id="s2",
                     event_type="cta_impression",
                     timestamp=now,
-                    event_metadata={"user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1)"},
+                    event_metadata={"_ua_class": "bot"},
                 )
             )
             db.session.add(
@@ -153,7 +153,7 @@ class TestFunnelEndpoint:
                     session_id="s2",
                     event_type="cta_click",
                     timestamp=now + timedelta(seconds=1),
-                    event_metadata={"user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1)"},
+                    event_metadata={"_ua_class": "bot"},
                 )
             )
 
@@ -183,7 +183,7 @@ class TestFunnelEndpoint:
                     session_id="s_ret",
                     event_type="cta_impression",
                     timestamp=now,
-                    event_metadata={},
+                    event_metadata={"_ua_class": "human"},
                 )
             )
             db.session.add(
@@ -191,7 +191,7 @@ class TestFunnelEndpoint:
                     session_id="s_ret",
                     event_type="first_chat_message",
                     timestamp=now + timedelta(hours=25),
-                    event_metadata={},
+                    event_metadata={"_ua_class": "human"},
                 )
             )
             db.session.commit()
@@ -269,3 +269,108 @@ class TestFunnelHistoryEndpoint:
         data = resp.get_json()
         assert data["freshness"]["status"] == "ok"
         assert data["freshness"]["retention_gate_status"] == "error"
+
+
+class TestUaClassification:
+    """The 2026-09-03 fix: the funnel's bot filter was dead by construction.
+
+    The reader took the UA from event metadata, but /api/analytics/log strips
+    user_agent from metadata via its allowlist — so the UA was ALWAYS absent
+    and the reader substituted DEFAULT_UA, a hardcoded desktop-Chrome string.
+    A working filter, handed the same synthetic human for every session.
+
+    Note the old test above passed only because it wrote user_agent straight
+    into the model, a door production does not have. It proved the filter
+    worked on inputs production could never produce.
+    """
+
+    def test_real_ua_is_classified_server_side(self, client, app):
+        """A browser UA on the request is recorded as human — the writer's job."""
+        resp = client.post(
+            "/api/analytics/log",
+            json={"event_type": "cta_impression", "metadata": {"cta_id": "hero"}},
+            headers={
+                "X-Analytics-Consent": "true",
+                "User-Agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/126.0.0.0 Safari/537.36"
+                ),
+            },
+        )
+        assert resp.status_code == 201
+        with app.app_context():
+            from models import AnalyticsEvent
+
+            ev = AnalyticsEvent.query.filter_by(event_type="cta_impression").first()
+            assert ev is not None
+            assert ev.event_metadata.get("_ua_class") == "human"
+
+    def test_bot_ua_is_classified_as_bot(self, client, app):
+        """The opposed half. Without this, "human" could be a constant."""
+        resp = client.post(
+            "/api/analytics/log",
+            json={"event_type": "cta_impression", "metadata": {"cta_id": "hero"}},
+            headers={
+                "X-Analytics-Consent": "true",
+                "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; "
+                              "+http://www.google.com/bot.html)",
+            },
+        )
+        assert resp.status_code == 201
+        with app.app_context():
+            from models import AnalyticsEvent
+
+            ev = AnalyticsEvent.query.filter_by(event_type="cta_impression").first()
+            assert ev.event_metadata.get("_ua_class") == "bot"
+
+    def test_client_cannot_forge_the_classification(self, client, app):
+        """A crawler declaring itself human must not be believed.
+
+        _ua_class is set AFTER the metadata allowlist, so a client-supplied
+        value is discarded. If this ever fails, the filter is worthless: any
+        bot bypasses it by sending one extra JSON key.
+        """
+        resp = client.post(
+            "/api/analytics/log",
+            json={
+                "event_type": "cta_impression",
+                "metadata": {"cta_id": "hero", "_ua_class": "human"},
+            },
+            headers={
+                "X-Analytics-Consent": "true",
+                "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)",
+            },
+        )
+        assert resp.status_code == 201
+        with app.app_context():
+            from models import AnalyticsEvent
+
+            ev = AnalyticsEvent.query.filter_by(event_type="cta_impression").first()
+            assert ev.event_metadata.get("_ua_class") == "bot"
+
+    def test_legacy_sessions_are_unclassified_not_counted(self, client, app):
+        """Pre-fix events are reported as UNKNOWN, never as a quiet zero.
+
+        We genuinely do not know whether those sessions were human. Folding
+        them into either bucket would repeat the mistake being corrected, so
+        they surface as unclassified_sessions + insufficient_data.
+        """
+        with app.app_context():
+            from models import UserSession
+
+            sid = "legacy-session-no-ua-class"
+            db.session.add(UserSession(id=sid))
+            db.session.add(
+                AnalyticsEvent(
+                    session_id=sid,
+                    event_type="cta_impression",
+                    event_metadata={"landing_path": "/"},  # no _ua_class
+                )
+            )
+            db.session.commit()
+
+        data = client.get("/api/metrics/funnel").get_json()
+        assert data["counts"]["landing_sessions"] == 0
+        assert data["counts"]["unclassified_sessions"] == 1
+        assert data["insufficient_data"] is True

@@ -60,6 +60,22 @@ NATIVE_PLATFORMS = {"iOS", "Android"}
 # without compliance_check_started in edge cases -- rare, not modeled here).
 FUNNEL_STAGES: List[Tuple[str, str]] = [
     ("install", "first_open"),
+    # 2026-09-03: these two stages were MISSING, and their absence hid the
+    # largest drop in the product.
+    #
+    # The chain used to jump straight from first_open to
+    # compliance_check_started. But compliance_check_started fires inside
+    # checkCompliance(), and on the welcome screen that only runs AFTER the
+    # user taps "I am 18 or older" (welcome_screen.dart:_confirmAdult). So the
+    # funnel silently began at the survivors of an unmeasured gate.
+    #
+    # First live read (30d to 2026-09-03, totalUsers): 34 first_open,
+    # 35 session_start, 9 compliance_check_started. Users install and open the
+    # app; roughly three quarters never clear the welcome screen. Both events
+    # below ship in the build AFTER 20d3a5f8, so they read 0 until that build
+    # reaches users — a 0 here means "not deployed yet", not "nobody did it".
+    ("welcome_viewed", "welcome_screen_viewed"),
+    ("age_confirmed", "welcome_age_confirmed"),
     ("compliance_started", "compliance_check_started"),
     ("compliance_result", "compliance_result"),
     # NOTE: home_tab_viewed is deliberately NOT a stage in this chain. Since
@@ -92,7 +108,7 @@ def _fetch_event_counts(
     start: date,
     end: date,
 ) -> Dict[str, Dict[str, int]]:
-    """Return {eventName: {platform: eventCount}} for the funnel's event set."""
+    """Return {eventName: {platform: userCount}} for the funnel's event set."""
     if RunReportRequest is None:
         raise GateError("google_analytics_unavailable")
 
@@ -102,7 +118,20 @@ def _fetch_event_counts(
     request = RunReportRequest(
         property=f"properties/{property_id}",
         dimensions=[Dimension(name="eventName"), Dimension(name="platform")],
-        metrics=[Metric(name="eventCount")],
+        # totalUsers, NOT eventCount.
+        #
+        # Corrected 2026-09-03. Every stage used to report eventCount, but the
+        # stages are not comparable that way: compliance_result fires on every
+        # app resume with no dedupe, while first_chat_message_sent is guarded
+        # by a once-per-install SharedPreferences flag
+        # (chat_provider.dart:333-359). Dividing one by the other divided an
+        # event count by a user count, and the resulting "12 -> 3 activation
+        # cliff" was partly an artifact of that mismatch, not user behaviour.
+        #
+        # totalUsers counts each user once per stage regardless of how many
+        # times they fired the event, which is the only unit in which a funnel
+        # ratio means anything.
+        metrics=[Metric(name="totalUsers")],
         date_ranges=[DateRange(start_date=start.isoformat(), end_date=end.isoformat())],
         limit=100_000,
     )
@@ -132,7 +161,7 @@ def _fetch_event_counts(
     for row in response.rows:
         event_name = row.dimension_values[0].value
         platform = _canonical_platform(row.dimension_values[1].value)
-        event_count = int(row.metric_values[0].value)
+        event_count = int(row.metric_values[0].value)  # users, per the metric above
         if event_name not in wanted_events:
             continue
         counts[event_name][platform] = counts[event_name].get(platform, 0) + event_count
@@ -167,6 +196,7 @@ def collect_onboarding_funnel(
 
     stages = []
     native_prev_total: Optional[int] = None
+    install_total: Optional[int] = None
     for stage_key, event_name in FUNNEL_STAGES:
         by_platform = counts.get(event_name, {})
         native_total = sum(v for k, v in by_platform.items() if k in NATIVE_PLATFORMS)
@@ -176,6 +206,24 @@ def collect_onboarding_funnel(
             if native_prev_total and native_prev_total > 0
             else None
         )
+        # Also measure against install, not only against the previous stage.
+        #
+        # Added 2026-09-03. A stage-to-stage chain is only as good as its
+        # weakest link: one stage reading 0 -- because its event ships in a
+        # build that has not reached users yet -- blanks the conversion for
+        # every stage after it, and the whole funnel goes dark for a reason
+        # that has nothing to do with users. That is exactly the state this
+        # funnel is in right now, with four newly-added events at 0.
+        #
+        # Conversion-from-install survives a dead stage in the middle, so the
+        # numbers that ARE real stay readable.
+        conv_from_install = (
+            round(native_total / install_total, 4)
+            if install_total and install_total > 0
+            else None
+        )
+        if install_total is None:
+            install_total = native_total
         stages.append(
             {
                 "stage": stage_key,
@@ -185,6 +233,7 @@ def collect_onboarding_funnel(
                 "android": by_platform.get("Android", 0),
                 "web_excluded": web_total,
                 "conversion_from_previous_stage": conv_from_prev,
+                "conversion_from_install": conv_from_install,
             }
         )
         native_prev_total = native_total
@@ -210,10 +259,14 @@ def _render_human(result: Dict[str, Any]) -> None:
         return
     w = result["window"]
     print(f"Onboarding funnel — {w['start']} to {w['end']} ({w['days']}d), native only")
-    print(f"{'stage':<22} {'event':<26} {'native':>7} {'iOS':>5} {'Android':>8} {'conv%':>7}")
+    print(f"{'stage':<22} {'event':<26} {'native':>7} {'iOS':>5} {'Android':>8} {'conv%':>7} {'ofInst':>7}")
     for s in result["stages"]:
         conv = f"{s['conversion_from_previous_stage']*100:.0f}%" if s["conversion_from_previous_stage"] is not None else "-"
-        print(f"{s['stage']:<22} {s['event_name']:<26} {s['native']:>7} {s['ios']:>5} {s['android']:>8} {conv:>7}")
+        # A stage whose event has not shipped yet reads 0; say so, rather than
+        # letting a reader take it for "nobody did this".
+        inst = f"{s['conversion_from_install']*100:.0f}%" if s.get("conversion_from_install") is not None else "-"
+        flag = "  (event not deployed?)" if s["native"] == 0 else ""
+        print(f"{s['stage']:<22} {s['event_name']:<26} {s['native']:>7} {s['ios']:>5} {s['android']:>8} {conv:>7} {inst:>7}{flag}")
     if result.get("overall_install_to_chat_conversion") is not None:
         print(f"\nOverall install -> first chat: {result['overall_install_to_chat_conversion']*100:.1f}%")
 

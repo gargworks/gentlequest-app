@@ -57,6 +57,44 @@ const WEB_APP_URL = 'https://app.gentlequest.app';
 const NEWSLETTER_API = 'https://app.gentlequest.app/api/newsletter/subscribe';
 const BACKEND_URL = 'https://app.gentlequest.app';
 
+// One stable session id per browser tab, so the backend groups a visitor's
+// events into ONE session instead of inventing a new one per event.
+//
+// 2026-09-03. Without X-Session-ID, helpers/session_helpers._get_or_create_session
+// mints a fresh uuid4 on every request and writes a new UserSession row. So
+// `landing_sessions` was never a count of visitors — it was a count of events,
+// and that is why it tracked the event total almost exactly (206 vs 265).
+// Every per-session rate built on it (cta_ctr, first_value_conversion) had the
+// wrong denominator.
+//
+// sessionStorage, not localStorage: a session should end when the tab does.
+// The backend validates this as a UUID and silently replaces anything else,
+// so the format is not optional.
+function getSessionId() {
+  try {
+    const KEY = 'gq_session_id';
+    let sid = window.sessionStorage.getItem(KEY);
+    if (!sid) {
+      sid =
+        window.crypto && typeof window.crypto.randomUUID === 'function'
+          ? window.crypto.randomUUID()
+          : // Fallback for older browsers. Not cryptographically strong, but
+            // this is a grouping key, not a secret.
+            'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+              const r = (Math.random() * 16) | 0;
+              const v = c === 'x' ? r : (r & 0x3) | 0x8;
+              return v.toString(16);
+            });
+      window.sessionStorage.setItem(KEY, sid);
+    }
+    return sid;
+  } catch (e) {
+    // Private mode / storage disabled. Returning null means this visit falls
+    // back to the old per-event behaviour rather than breaking the beacon.
+    return null;
+  }
+}
+
 function sendBlogEvent(eventType, metadata) {
   metadata = metadata || {};
   if (typeof window.gtag === 'function') {
@@ -66,6 +104,7 @@ function sendBlogEvent(eventType, metadata) {
       console.warn('[GentleQuest] gtag event failed:', e);
     }
   }
+  const sessionId = getSessionId();
   try {
     fetch(`${BACKEND_URL}/api/analytics/log`, {
       method: 'POST',
@@ -74,7 +113,10 @@ function sendBlogEvent(eventType, metadata) {
       // so without this the cta_click beacon is cancelled mid-flight and web
       // click-through is silently understated.
       keepalive: true,
-      headers: { 'Content-Type': 'application/json', 'X-Analytics-Consent': 'true' },
+      headers: Object.assign(
+        { 'Content-Type': 'application/json', 'X-Analytics-Consent': 'true' },
+        sessionId ? { 'X-Session-ID': sessionId } : {},
+      ),
       body: JSON.stringify({ event_type: eventType, metadata }),
     }).catch((e) => console.warn('[GentleQuest] analytics beacon failed:', e));
   } catch (e) {

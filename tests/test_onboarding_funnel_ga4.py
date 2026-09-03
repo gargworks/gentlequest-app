@@ -96,7 +96,12 @@ class TestCollectOnboardingFunnel:
         assert stages["install"]["conversion_from_previous_stage"] is None
 
         assert stages["compliance_started"]["native"] == 18  # 13 + 5
-        assert stages["compliance_started"]["conversion_from_previous_stage"] == pytest.approx(18 / 32, abs=1e-4)
+        # The welcome_viewed / age_confirmed stages sit between install and
+        # compliance_started and are absent from this fixture, so the
+        # stage-to-stage number is legitimately None. conversion_from_install
+        # exists precisely so a gap like this does not blind the chain.
+        assert stages["compliance_started"]["conversion_from_previous_stage"] is None
+        assert stages["compliance_started"]["conversion_from_install"] == pytest.approx(18 / 32, abs=1e-4)
 
         assert stages["compliance_result"]["native"] == 12  # 9 + 3
         assert stages["compliance_result"]["conversion_from_previous_stage"] == pytest.approx(12 / 18, abs=1e-4)
