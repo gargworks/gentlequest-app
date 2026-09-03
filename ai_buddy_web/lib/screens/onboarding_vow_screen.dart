@@ -16,6 +16,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/firebase_service.dart';
+
 import '../models/companion.dart';
 import '../theme/gq_theme.dart';
 import '../theme/gq_tokens.dart';
@@ -102,9 +104,23 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
     }
   }
 
+  /// When this screen mounted — so Begin/Skip can report how long the user
+  /// waited. The Begin button is invisible until the last cue (16.6s at full
+  /// speed), and that number is exactly what the funnel needs to test.
+  late final DateTime _mountedAt;
+
   @override
   void initState() {
     super.initState();
+    _mountedAt = DateTime.now();
+    // 2026-09-03: this is the TRUE first screen, and until now it was the one
+    // screen with no instrumentation at all. Found by driving a fresh install
+    // on an emulator and watching which screen came up first — it was not the
+    // welcome screen the funnel treated as the start. welcome_screen_viewed
+    // therefore counts the survivors of THIS screen, and the ~74%-never-clear
+    // finding may sit partly here. Measured, not guessed: Begin and Skip below
+    // carry elapsed_ms.
+    FirebaseService().logEvent('vow_screen_viewed');
     _reducedMotion =
         WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
                 .reduceMotion ||
@@ -191,11 +207,22 @@ class _OnboardingVowScreenState extends State<OnboardingVowScreen>
   }
 
   void _skip() {
+    FirebaseService().logEvent('vow_skipped', {
+      'elapsed_ms': DateTime.now().difference(_mountedAt).inMilliseconds,
+      'reduced_motion': _reducedMotion,
+    });
     _master.stop();
     _revealAll();
   }
 
   Future<void> _onBegin() async {
+    // elapsed_ms is the load-bearing field: Begin cannot be tapped before the
+    // last cue, so a distribution clustered at ~16s says users waited it out;
+    // a heavy Skip count with small elapsed_ms says they would not.
+    FirebaseService().logEvent('vow_begin_tapped', {
+      'elapsed_ms': DateTime.now().difference(_mountedAt).inMilliseconds,
+      'reduced_motion': _reducedMotion,
+    });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kOnboardingVowSeenKey, true);
     if (!mounted) return;

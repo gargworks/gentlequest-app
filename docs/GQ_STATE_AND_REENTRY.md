@@ -123,7 +123,24 @@ mislead a cold session.
    an artifact of the gate we just instrumented. **Do not propose a fix before
    it reads.** This plan has been wrong twice from exactly that impatience.
 
-   Status of those events: **INSTRUMENTED, not VERIFIED.** Both call sites and
+   **VERIFIED ON DEVICE 2026-09-03.** Fresh install on the Pixel_7 emulator,
+   driven by adb, `debug.firebase.analytics.app` set: GA4 realtime showed
+   `welcome_screen_viewed 2, welcome_age_confirmed 2, compliance_check_started
+   2, chat_tab_viewed 1`. The whole first-run chain reports.
+
+   Gotcha that cost 20 minutes: Android BATCHES custom events (auto events like
+   first_open upload immediately, custom ones queue up to ~1h). Without
+   `adb shell setprop debug.firebase.analytics.app app.gentlequest.www` the
+   custom events look absent and it reads exactly like a dead instrument.
+
+   **NEW: the vow screen is the TRUE first screen** ("This is your companion /
+   Begin"), and it had zero instrumentation. Its Begin button is hidden until
+   ~16.6s (halved under reduced motion) with only a small Skip link before
+   that. Now instrumented: `vow_screen_viewed`, `vow_begin_tapped`,
+   `vow_skipped`, the latter two carrying `elapsed_ms` + `reduced_motion`.
+   NOT claimed as the cause of the ~74% — measured next build.
+
+   Previous status of the welcome events: **INSTRUMENTED, not VERIFIED.** Both call sites and
    both funnel stages are guarded by tests with positive controls
    (`test/screens/welcome_instrumentation_test.dart`), and the names are legal
    GA4 identifiers. But no test can prove DELIVERY: `logEvent` returns early

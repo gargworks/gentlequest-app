@@ -74,6 +74,12 @@ FUNNEL_STAGES: List[Tuple[str, str]] = [
     # app; roughly three quarters never clear the welcome screen. Both events
     # below ship in the build AFTER 20d3a5f8, so they read 0 until that build
     # reaches users — a 0 here means "not deployed yet", not "nobody did it".
+    # 2026-09-03, later: the vow screen is the TRUE first screen; welcome is
+    # the second. Found by driving a fresh install on an emulator. Its Begin
+    # button is hidden until ~16.6s; vow_begin_tapped/vow_skipped carry
+    # elapsed_ms so that wait can be measured instead of guessed at.
+    ("vow_viewed", "vow_screen_viewed"),
+    ("vow_cleared", "vow_begin_tapped"),
     ("welcome_viewed", "welcome_screen_viewed"),
     ("age_confirmed", "welcome_age_confirmed"),
     ("compliance_started", "compliance_check_started"),
