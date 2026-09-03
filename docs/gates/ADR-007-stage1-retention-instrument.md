@@ -210,3 +210,20 @@ to **2026-11-05** is invoked.
 ADR-008 is **PROPOSED, not ratified** as of this pointer. Until the operator
 ratifies it, the window ratified in this document (2026-08-15 → 2026-09-24)
 remains the one of record, and the disagreement noted above remains live.
+
+---
+
+## Amendment 3 (2026-09-03) — the open question in Amendment 2 is now CLOSED
+
+Amendment 2 left the criterion-(B) scoring choice explicitly to the plan author
+(`:182-196`). That question is resolved: **ADR-008 was RATIFIED 2026-09-03**,
+scoring criterion (B) INSUFFICIENT-structural and restarting the acquisition
+window at 2026-08-27 (ratified window 2026-08-27 → 2026-10-22, single 4-week
+extension to 2026-11-05). Data source remains GA4 property **551876340**.
+
+Also recorded here because it changes how this instrument's own numbers must be
+read: `metrics/onboarding_funnel_ga4.py` reported `eventCount` until today.
+`compliance_result` fires per app-resume with no dedupe while
+`first_chat_message_sent` is once-per-install, so any ratio between them mixed
+units. It now reports `totalUsers`. Any funnel figure quoted from before
+2026-09-03 should be re-derived, not trusted.

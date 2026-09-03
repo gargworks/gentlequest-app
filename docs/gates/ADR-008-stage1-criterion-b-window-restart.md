@@ -1,6 +1,7 @@
 # ADR-008 — Stage-1 criterion (B): INSUFFICIENT-structural, window restarts 2026-08-27
 
-**Status:** PROPOSED — requires operator ratification before it governs.
+**Status:** **RATIFIED 2026-09-03** by the operator ("do as recommended on
+decisions"). It governs from today. Amend by appending — never by rewriting.
 **Date:** 2026-09-02
 **Decides:** the question ADR-007's second amendment deliberately left open
 (`ADR-007-stage1-retention-instrument.md:182-196`).
@@ -144,6 +145,61 @@ which is the precise failure this ADR exists to prevent.
 
 ## Operator ratification
 
-This ADR is PROPOSED. It has kill-clause implications and changes a ratified
-gate date, so it does not take effect until the operator ratifies it. Amend by
+RATIFIED 2026-09-03. The ruling in "Decision" now governs: criterion (B) is
+scored INSUFFICIENT-structural, the acquisition window is 2026-08-27 →
+2026-10-22, and the single 4-week extension to 2026-11-05 is invoked. Amend by
 appending — never by rewriting.
+
+---
+
+## Amendment 1 (2026-09-03) — the residual risk named above is the WRONG one
+
+Ratified with this correction attached, because the risk section it carries is
+now known to be aimed at the smaller problem.
+
+That section concluded: "almost nobody opts in, because the toggles default off
+and live in Settings … the extension is only worth invoking if real
+activation/retention work ships inside it." The reasoning stands. The target
+does not.
+
+Re-measuring the funnel today with `totalUsers` (it had been reporting
+`eventCount`, which divided an event count by a user count) and adding the two
+stages that were missing entirely gives, GA4 551876340, 30d:
+
+```
+first_open                 34
+session_start              35     <- installs DO open the app
+compliance_check_started    9     <- 26%
+compliance_result           8
+first_chat_message_sent     3
+```
+
+`compliance_check_started` fires inside `checkCompliance()`, which on the
+welcome screen runs only AFTER the user taps "I am 18 or older"
+(`welcome_screen.dart:_confirmAdult`). The welcome screen itself had no
+instrumentation at all. So the funnel silently began at the survivors of an
+unmeasured gate, and roughly **three quarters of installs never clear the first
+screen**.
+
+**Why this matters to THIS gate.** D14 is measured over installs. If ~74% never
+get past the welcome screen, the retention denominator is dominated by people
+who never reached the product — and no notification or activation work inside
+the extension window can move them, because they never arrive. The extension
+was justified on the belief that re-engagement was the lever. On today's
+numbers the first-screen gate is a larger one, and it is upstream of everything
+this ADR reasoned about.
+
+**What does NOT change:** the ruling itself. An instrument that never ran is
+still not a measurement that came back negative, and that argument is
+independent of where the cliff sits. The window restart stands.
+
+**What DOES change:** what has to ship inside the window for the extension to
+be worth anything. Not primarily notification opt-in — the welcome-screen gate.
+
+**What is NOT yet known, and must not be guessed:** why they leave. Nothing in
+this amendment names a cause. `welcome_screen_viewed` and
+`welcome_age_confirmed` (commit 515a6a9d) make the gap measurable and read 0
+until that build reaches users. This ADR has already carried two confident,
+wrong claims about notifications, both mine, both caught only because a lane was
+sent to attack them. A third confident guess about a cliff discovered hours ago
+would be the same mistake in a new place.
