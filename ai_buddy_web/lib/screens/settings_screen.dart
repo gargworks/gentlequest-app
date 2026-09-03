@@ -553,9 +553,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconBg: t.primarySoft,
               iconWidget: const Icon(Icons.insights_outlined,
                   size: 14, color: GQColors.primaryDk),
-              title: 'Share usage analytics',
+              title: 'Share extra usage data',
+              // COPY MUST MATCH SCOPE. This toggle writes analytics_consent,
+              // which gates ONLY the backend /api/analytics/log stream
+              // (analytics_service.dart _isAnalyticsEnabled). It does NOT gate
+              // Firebase/GA4 — that path checks anonymity mode alone
+              // (firebase_service.dart:177), which is the shipped, disclosed
+              // opt-out model.
+              //
+              // The previous copy read 'Share usage analytics / Anonymous
+              // app-usage events only'. A user turning that OFF would
+              // reasonably believe usage analytics had stopped; tab views,
+              // composer focus and send attempts kept flowing to GA4. In a
+              // mental-health app a consent control that reads broader than it
+              // acts is a real harm, so the copy now names its actual scope and
+              // points at Anonymity mode as the total control.
               subtitle:
-                  'Anonymous app-usage events only — never message content. Off by default.',
+                  'Sends extra usage events straight to us. Never message '
+                  'content. Basic analytics still run unless Anonymity mode '
+                  'is on.',
               trailing: SettingsToggle(
                 value: _analyticsEnabled,
                 locked: false,

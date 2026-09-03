@@ -295,5 +295,37 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+        'analytics toggle copy names its real scope, not all analytics',
+        (tester) async {
+      // This toggle writes analytics_consent, which gates ONLY the backend
+      // /api/analytics/log stream. Firebase/GA4 is gated by anonymity mode
+      // alone (firebase_service.dart:177), so events keep flowing there while
+      // this is off. Earlier copy read "Share usage analytics / Anonymous
+      // app-usage events only" — which a user would reasonably take as
+      // covering everything. A consent control that reads broader than it acts
+      // is a real harm in a mental-health app, and it is one careless copy
+      // edit away from becoming untrue again. Hence pinned.
+      await tester.pumpWidget(buildSettings());
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+          find.text('Share extra usage data'), 100.0);
+      expect(find.text('Share extra usage data'), findsOneWidget);
+
+      final subtitle = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data ?? '')
+          .firstWhere((d) => d.contains('extra usage events'),
+              orElse: () => '');
+      expect(subtitle, isNotEmpty,
+          reason: 'the analytics toggle needs a scope-bounded subtitle');
+      expect(subtitle.contains('Anonymity mode'), isTrue,
+          reason: 'copy must point at Anonymity mode as the total control, '
+              'because this toggle does NOT stop Firebase/GA4 collection');
+    });
+
   });
 }
