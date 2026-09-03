@@ -203,6 +203,7 @@ def collect_channel_installs(
                 "ios": 0,
                 "android": 0,
                 "web_excluded": 0,
+                "unknown_platform": 0,
             },
         )
         if platform in NATIVE_PLATFORMS:
@@ -214,9 +215,18 @@ def collect_channel_installs(
         elif platform == "Web":
             rec["web_excluded"] += count
         else:
-            # Unknown platform (e.g. Smart TV) — count toward native as a
-            # conservative default but do not blend into iOS/Android sub-totals.
-            rec["native"] += count
+            # Unknown platform (e.g. Smart TV, or a platform GA4 adds later).
+            #
+            # It is NOT counted as native. Folding it into `native` was the
+            # original behaviour and it was wrong: it broke this module's own
+            # documented invariant that native == ios + android, and it
+            # silently inflated the exact population ADR-007 ratifies for the
+            # D14 gate. "Conservative" in a gate metric means refusing to
+            # assert membership you cannot evidence, not rounding up.
+            #
+            # Counted separately so it is VISIBLE rather than dropped — a
+            # silent discard would be the other way to be wrong here.
+            rec["unknown_platform"] += count
 
     # Sort channels by native install count descending. Web-only channels
     # (native == 0) sort to the bottom by their web count so they remain
@@ -229,6 +239,7 @@ def collect_channel_installs(
 
     native_total = sum(c["native"] for c in channels)
     web_total = sum(c["web_excluded"] for c in channels)
+    unknown_total = sum(c["unknown_platform"] for c in channels)
 
     return {
         "status": "ok",
@@ -238,7 +249,11 @@ def collect_channel_installs(
         "install_event": INSTALL_EVENT,
         "channel_dimension": CHANNEL_DIMENSION,
         "channels": channels,
-        "total": {"native": native_total, "web_excluded": web_total},
+        "total": {
+            "native": native_total,
+            "web_excluded": web_total,
+            "unknown_platform": unknown_total,
+        },
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 

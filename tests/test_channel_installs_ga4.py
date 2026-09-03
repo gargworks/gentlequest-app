@@ -200,3 +200,34 @@ class TestMainCli:
         with patch.object(channel_mod, "collect_channel_installs", return_value=err_result):
             exit_code = channel_mod.main(["--json"])
         assert exit_code == 1
+
+class TestUnknownPlatformDoesNotInflateNative:
+    """An unknown GA4 platform must NOT be counted as native.
+
+    Folding it into `native` was the original behaviour. It broke the module's
+    own invariant (native == ios + android) and silently inflated the exact
+    population ADR-007 ratifies for the D14 gate. Reported separately so it is
+    visible rather than silently discarded.
+    """
+
+    def test_unknown_platform_excluded_from_native_and_surfaced(self):
+        # _fetch_channel_installs returns (channel, platform, count) tuples.
+        counts = [
+            ("(direct) / (none)", "iOS", 10),
+            ("(direct) / (none)", "Android", 5),
+            ("(direct) / (none)", "Smart TV", 7),
+            ("(direct) / (none)", "Web", 3),
+        ]
+        with patch.object(channel_mod, "build_ga4_client", return_value=Mock()), \
+             patch.object(channel_mod, "_fetch_channel_installs", return_value=counts):
+            result = channel_mod.collect_channel_installs(days=7)
+
+        assert result["status"] == "ok"
+        row = result["channels"][0]
+        # THE INVARIANT: native is exactly iOS + Android, nothing else.
+        assert row["native"] == 15, "Smart TV must not be counted as native"
+        assert row["native"] == row["ios"] + row["android"]
+        assert row["web_excluded"] == 3
+        assert row["unknown_platform"] == 7, "unknown platform must be visible, not dropped"
+        assert result["total"]["native"] == 15
+        assert result["total"]["unknown_platform"] == 7
