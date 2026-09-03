@@ -67,14 +67,34 @@ unknown, not just its cause.
 
 ## OPEN QUEUE (ordered by leverage)
 
-1. **Finish the shipped-code audit.** 18 candidates found; 1 refuted with reasoning,
-   2 hand-verified (1 real -> fixed, 1 refuted), **15 UNVERIFIED**. Resume:
+1. **Finish the shipped-code audit.** 18 candidates. **6 resolved** (3 real -> fixed,
+   3 refuted), **2 partially-confirmed** (recorded below, no action), **10 UNVERIFIED**.
+   Resume the workflow when Claude session limit allows:
    `Workflow({scriptPath: <workflows/scripts/audit-gq-shipped-today-*.js>, resumeFromRunId: "wf_36e2bf2b-b69"})`
-   Known-unverified candidates worth checking first: starter chips auto-send (breaks the
-   composer_focused ⊃ send_attempted assumption); three new events null the downstream
-   conversion for the existing installed base; unknown GA4 platform values fold into the
-   native total; `compliance_result` re-fires on app resume (denominator wrong);
-   iOS link has `ct` but no `pt` so ASC cannot attribute.
+   — or keep verifying via glm-5-2 lanes, which do NOT consume the Claude limit.
+
+   RESOLVED: consent opt-out could never be logged (real, fixed d402426f);
+   unknown GA4 platforms inflated native total (real, fixed 27d2f4c7);
+   compliance_result cardinality mismatch (real, recorded — see the warning above);
+   chat_tab_viewed "is a launch counter" (REFUTED — tabs build lazily, pinned by test);
+   landing-page consent header "introduced by this diff" (REFUTED — inherited from an
+   ancestor commit); onboarding_funnel unknown-platform inflation (REFUTED — that module
+   filters correctly, though it drops unknowns silently, which is worth a look).
+
+   PARTIALLY-CONFIRMED, no action taken:
+   - Starter chips auto-send without focusing first (`interactive_chat_screen.dart:1652`),
+     so `chat_send_attempted` fires BEFORE `chat_composer_focused`. A post-frame
+     `requestFocus` backfills the focus event, so counts mostly hold — but the ORDER is
+     inverted, which breaks any sequence-based funnel reading.
+   - New events read 0 for the current production installed base (they ship only in
+     26090203, internal track), so per-stage conversions between compliance_result and
+     first_chat_message show "0%" then blanks until the build reaches production.
+     `overall_install_to_chat_conversion` is computed install->chat directly and is
+     UNAFFECTED — read that field, not the per-stage bars, in the meantime.
+   - channel_installs issues one unpaginated GA4 request (limit 100k, no row_count check).
+     Moot today (1 channel row); structurally a silent-truncation risk if the dimension
+     ever goes high-cardinality. onboarding_funnel copied the same pattern.
+
 2. **Activation cliff cause.** Still unknown. Instrumentation is shipped but needs users on
    `26090203`. Hypothesis workflow: `resumeFromRunId: "wf_07ec29c2-186"`. DO NOT guess a
    cause — four guesses have already been wrong.
