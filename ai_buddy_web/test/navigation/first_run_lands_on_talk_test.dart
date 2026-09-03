@@ -118,4 +118,31 @@ void main() {
     final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
     expect(stack.index, 0); // AppTab.home
   });
+
+  testWidgets(
+      'tab screens are built LAZILY — chat_tab_viewed is not a launch counter',
+      (tester) async {
+    // Load-bearing for the activation funnel. HomeShell renders its four tabs
+    // inside an IndexedStack (home_shell.dart:318), and IndexedStack builds ALL
+    // children eagerly — which would make chat_tab_viewed (fired in
+    // InteractiveChatScreen.initState) count app launches rather than visits to
+    // the Talk tab, quietly destroying the funnel step it exists to measure.
+    //
+    // It does NOT, because each tab is wrapped in its own Navigator whose route
+    // is inserted lazily through an Overlay, so the screen widget is not built
+    // until its tab is selected. That is a subtle, easily-broken guarantee
+    // sitting between two widgets that say nothing about each other — so it is
+    // pinned here. An audit lane flagged this exact behaviour as a defect on
+    // 2026-09-03; it was refuted by this probe, not by argument.
+    final navKey = GlobalKey<NavigatorState>();
+    await navigateToMain(tester, navKey); // no argument -> Home tab
+
+    expect(find.byType(WellnessHomeScreen), findsOneWidget,
+        reason: 'Home tab is the default landing tab.');
+    expect(find.byType(InteractiveChatScreen), findsNothing,
+        reason: 'The chat screen must NOT be built while the user is on Home. '
+            'If this fails, InteractiveChatScreen.initState is running at app '
+            'launch and chat_tab_viewed has silently become a launch counter — '
+            'the funnel step is then meaningless.');
+  });
 }
