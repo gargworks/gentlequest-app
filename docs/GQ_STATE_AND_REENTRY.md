@@ -36,9 +36,34 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 ```
 GA4 property 551876340, native only (iOS+Android), 7d:
   first_open 22 -> compliance_check_started 16 -> compliance_result 12
-  -> first_chat_message_sent 3          <-- 9 of 12 vanish here, cause UNKNOWN
+  -> first_chat_message_sent 3
 Channel attribution, 30d: 100% of installs are "(direct) / (none)"
 ```
+
+### ⚠️ THE 12 -> 3 CLIFF IS NOT A CLEAN NUMBER (verified 2026-09-03)
+
+**The funnel divides an EVENT count by a USER count.** Do not act on 25% as if it
+were a user conversion rate.
+
+- `compliance_result` has **no dedupe guard** — 9 emitters in
+  `compliance_service.dart`, none gated. `HomeShell.didChangeAppLifecycleState`
+  calls `checkCompliance()` on **every app resume** (`home_shell.dart:86-96`), and
+  the cached-allow path every returning user hits fires it unconditionally
+  (`compliance_service.dart:488-492`). One user who opens the app 4 times
+  contributes 4.
+- `first_chat_message_sent` is once-per-install, guarded by
+  `first_chat_message_logged_v1` (`chat_provider.dart:116`).
+
+So "12" is resumes-and-checks, "3" is distinct humans. If 3 users each resumed 4
+times, that is 12 -> 3 and a **100%** conversion, not 25%. The true cliff is
+somewhere between 0% and 75% loss and **cannot be read off this funnel at all**.
+
+`compliance_check_started` (16) is unguarded too — same problem.
+
+**Before any activation work:** re-measure with a user-scoped metric (GA4
+`totalUsers`/`activeUsers` per event rather than `eventCount`), or add a
+once-per-install guard to the compliance events. Until then the cliff's SIZE is
+unknown, not just its cause.
 
 ## OPEN QUEUE (ordered by leverage)
 
