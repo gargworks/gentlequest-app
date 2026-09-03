@@ -104,6 +104,21 @@ mislead a cold session.
    an artifact of the gate we just instrumented. **Do not propose a fix before
    it reads.** This plan has been wrong twice from exactly that impatience.
 
+   Status of those events: **INSTRUMENTED, not VERIFIED.** Both call sites and
+   both funnel stages are guarded by tests with positive controls
+   (`test/screens/welcome_instrumentation_test.dart`), and the names are legal
+   GA4 identifiers. But no test can prove DELIVERY: `logEvent` returns early
+   when Firebase is uninitialised, which is always true under `flutter test`.
+   Only the live funnel reading non-zero proves the pipe works end to end.
+
+   Do NOT read a 0 as "nobody did it" until it has read non-zero at least once.
+
+   Emulator note: verifying on-device was attempted and abandoned. A cold boot
+   grew `~/.android/avd/Pixel_7.avd/userdata-qemu.img.qcow2` to 10.3 GB and
+   filled the disk mid-build — the shell stopped working entirely until the
+   emulator was killed. That file is reclaimable. The device path costs more
+   than it proves here; live data settles it within a day.
+
 ### Done, recorded so nobody redoes them
 
 - Shipped-code audit: **18/18 resolved.** 11 real bugs fixed, 3 refuted, 4
