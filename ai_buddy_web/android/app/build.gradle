@@ -69,12 +69,27 @@ android {
         // commit failed, so nothing was published. This is a hard gate — no
         // build ships at all until targetSdk is 36.
         //
-        // compileSdkVersion was already 36, so this compiles unchanged. But it
-        // is NOT a no-op at runtime: targeting Android 16 opts into its
-        // behaviour changes, most visibly ENFORCED EDGE-TO-EDGE display, plus
-        // stricter background/foreground-service rules. For this app the
-        // notification scheduling paths and any screen relying on system insets
-        // deserve an on-device look before this reaches production.
+        // compileSdkVersion was already 36, so this compiles unchanged.
+        //
+        // SCOPE CORRECTED 2026-09-03. An earlier version of this comment warned
+        // that the bump newly opts the app into ENFORCED EDGE-TO-EDGE. That was
+        // overstated: edge-to-edge enforcement keys off targetSdk >= 35, and
+        // this app was ALREADY at 35 — including the build live in production
+        // (26083001, d4022917). So edge-to-edge has been in force for real
+        // users for some time; 35 -> 36 does not introduce it.
+        //
+        // What 36 actually removes is the legacy opt-out attribute
+        // (android:windowOptOutEdgeToEdge), which this app never declared. Net
+        // new edge-to-edge exposure from this bump: essentially none.
+        //
+        // Notifications are also unaffected: every zonedSchedule call site uses
+        // AndroidScheduleMode.inexactAllowWhileIdle and no exact-alarm
+        // permission is declared, which is precisely the configuration API 36's
+        // alarm restrictions leave alone. There are no foreground services, and
+        // both notification receivers already declare android:exported.
+        //
+        // Still worth an on-device look — but as ordinary release QA, not as
+        // fallout from this line.
         targetSdkVersion 36
         
         // Dynamic versioning with early validation
