@@ -122,6 +122,24 @@ mislead a cold session.
    emulator was killed. That file is reclaimable. The device path costs more
    than it proves here; live data settles it within a day.
 
+### Known-open, deliberately not fixed (owner: next session)
+
+4. **The composer tests are logic MIRRORS, not widget tests.**
+   `composer_engagement_order_test.dart` reimplements the screen's latch logic
+   locally and asserts on the copy; only the two drift guards touch the real
+   source. A regression inside the real `_logComposerEngagedOnce` that leaves
+   the call sites present would pass every test in the file. The proper fix is
+   a widget test with a seam to inject `FirebaseService` (it is a singleton
+   today, so this is real work, not a rename). Recorded rather than half-done.
+
+5. **The linux-desktop bot rule is dead in both paths.**
+   `is_qualified_human`'s third rule needs a real UA, and both callers supply
+   something else: the write path passes constants that exempt it, the read
+   path passes `DEFAULT_UA` (a Mac string). A headless Linux agent is not
+   caught by it. This PREDATES 2026-09-03 and is left alone deliberately —
+   fixing a filter blind, with no measurement of what it would start excluding,
+   is how the last three bugs in this area were created.
+
 ### Done, recorded so nobody redoes them
 
 - Shipped-code audit: **18/18 resolved.** 11 real bugs fixed, 3 refuted, 4
@@ -130,8 +148,19 @@ mislead a cold session.
 - All four open decisions closed: funnel metric (eventCount -> totalUsers),
   landing session id, bot filter (was dead by construction), ADR-008 ratified
   with a corrected-risk amendment.
-- Composer engagement ordering + inflation fixed 2026-09-03 (the last
-  outstanding audit finding).
+- Composer engagement ordering + inflation fixed 2026-09-03.
+- **SECOND-PASS audit of that same day's work (lanes pointed at MY fixes)** —
+  five more real defects, all now fixed: bot laundering via last-write-wins
+  session metadata; a no-op guard whose comment claimed protection it never
+  gave; `insufficient_data` False on an empty window; a deploy smoke that
+  printed "the forged bot was not counted" while never checking it; drift
+  guards covering only one of the two call sites.
+
+  **The lesson, which is the point of keeping this entry:** the first pass was
+  declared complete and clean. Auditing the FIXES found as many real bugs as
+  auditing the original code, and three of them were the SAME defect — a check
+  aimed at the wrong object — reintroduced inside the fix for it. When this
+  area is touched again, audit the repair, not just the code it repaired.
 
 ### Standing operating notes
 
