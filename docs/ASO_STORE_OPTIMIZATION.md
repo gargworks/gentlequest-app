@@ -354,3 +354,101 @@ wrong-object error this session has now hit repeatedly.
 Access is no longer a blocker: the credential above can read and write
 listings. Applying it remains an operator call because store copy is
 outward-facing and the title is a positioning choice.
+
+---
+
+## VERIFIED REPLACEMENT COPY — 2026-09-03
+
+**Read this before pasting anything from earlier in this document.**
+
+The ~4000-char full description drafted higher up **must not be applied as written.**
+A cross-vendor lane (devin/glm-5-2) checked every claim in it against the shipped
+code and found several that are **false**. An earlier note in this file recommended
+applying that draft as costing "nothing but a paste" — that advice was wrong and is
+retracted here. Shipping it would have put false privacy claims in a mental-health
+store listing: a Play policy risk and a trust breach.
+
+### Claims CUT from the old draft, and why
+
+| Old claim | Why it was cut |
+|---|---|
+| "No analytics SDKs tracking your taps" | **FALSE.** `FirebaseService().logEvent(...)` is called throughout — `wellness_home_screen.dart:73`, `crisis_resources.dart:45,59`, `adhd_path_screen.dart:70,79,107`. Firebase Analytics *is* an analytics SDK, and there is a second backend `/api/analytics/log` stream. Honest framing: analytics are opt-out-able via Anonymity mode and opt-in for the backend stream — not absent. |
+| "Your data stays on your device" | **FALSE.** There is a backend (`ApiService`), Firebase, server-side chat history (`interactive_chat_screen.dart:130-136`), and auth session validation against `/api/auth/me` (`settings_screen.dart:147-161`). Data syncs. |
+| "Curated helplines for 11+ countries" | **Unverifiable.** Only US numbers exist in `crisis_resources.dart` — 988 (`:173-191`) and Crisis Text Line 741741 (`:256-278`). No country list found. |
+| "Private and **encrypted**" (journal) | Encryption not verifiable from source. Softened to "private". |
+| "Delete permanently" | The delete sheet exists (`settings_screen.dart:464-475`) but the file header states the backend `DELETE /api/user` is **not implemented** (`:48-53`). |
+| "streaks trigger cortisol (fear of loss), not dopamine (motivation)" | A physiological/clinical mechanism claim, inappropriate in a mental-health listing. Replaced with behavioural framing. |
+| "Available 24/7, no waiting room" | Implies an uptime guarantee for a backend-dependent feature. Softened to "any time". |
+| "No push notifications begging for attention" | The app *does* have three notification categories (`settings_screen.dart:31-33`); they are simply **off by default** (`:93-96`), which is the real differentiator. |
+| "No selling data" | A policy claim not confirmable from source. "No ad networks" is kept (verifiable from absent ad SDKs). |
+
+### What the app DOES credibly support
+
+ADHD-forward positioning is **not a stretch** — it is load-bearing in the code:
+dedicated non-diagnostic ADHD onboarding path (`adhd_path_screen.dart:58,78-85,332-334`),
+body doubling built explicitly for ADHD task-initiation
+(`interactive_chat_screen.dart:51-77`), low-stim quiet mode
+(`settings_screen.dart:102-105,374-396`), and executive-dysfunction / RSD framing in the
+home screen's own design doc (`wellness_home_screen.dart:29-35`). Reminders genuinely
+default OFF (`settings_screen.dart:93-96,192-194`).
+
+### Ready to paste — full description, 3091 chars (limit 4000)
+
+```
+GentleQuest is a mood-first wellness companion built for ADHD and anxious brains. No streaks. No guilt. No productivity pressure — just a quiet place to check in with yourself, any time of day.
+
+★ WHY GENTLEQUEST IS DIFFERENT
+
+Most wellness apps reward streaks and push notifications, then guilt you when you miss a day. For ADHD and anxiety, that pattern tends to backfire — the fear of breaking a streak becomes one more thing to dread, and the app you downloaded for relief starts feeling like another obligation.
+
+GentleQuest does the opposite:
+• No streaks — we count total active days instead, so you can never lose progress
+• No guilt — missing a day resets nothing. You're never starting over
+• Mood first — check in with how you feel before anything else
+• Quiet by default — reminders are off until you choose to turn them on
+• Built for overwhelm — one-tap check-in, no long forms, no 10-question surveys
+
+★ KEY FEATURES
+
+• Mood Check-In — Log how you feel in one tap. See the shape of your week without judgment.
+• AI Wellness Chat — Talk through what's on your mind with an empathetic companion, any time. No waiting room, no scheduling.
+• Body Doubling — A focus session where Alex sits with you while you work: a timer plus gentle check-ins, right inside chat. No camera, no small talk. Built for the ADHD brain that starts easier with company.
+• Breathing & Grounding — 4-7-8 breathing, box breathing, and 5-4-3-2-1 grounding exercises for when overwhelm hits.
+• Journal — Quick thoughts, no pressure. Keep a private note alongside your mood.
+• Total Active Days — A guilt-free alternative to streaks. Every check-in counts. Missing a day never resets your count.
+• Low-Stim Quiet Mode — A calmer color and motion theme, applied app-wide. Made for overstimulated days.
+• Anonymity Mode — Flip it on and nothing leaves your device. Analytics stop, syncing pauses.
+• Crisis Resources — 988 and the Crisis Text Line (741741) are always one tap away. GentleQuest is not a crisis service, but it won't look away either.
+
+★ BUILT FOR NEURODIVERGENT BRAINS
+
+A short, optional onboarding path asks two questions about how your brain handles task initiation and focus — not a test, not a diagnosis — then suggests features that tend to help: body doubling, quiet mode, gentle quests. You can skip it entirely.
+
+Every design choice considers how ADHD brains actually work:
+• Task initiation is hard → one-tap check-in
+• Streaks cause anxiety → total active days (never break a streak)
+• Overstimulation is real → calm, minimal interface, low-stim mode
+• Executive dysfunction → everything reachable in 1-2 taps
+• Rejection sensitive dysphoria → no judgmental language, no "you failed"
+
+★ PRIVACY
+
+Anonymity mode stops analytics and syncing. Usage analytics sharing is a separate, off-by-default opt-in — never message content. No ad networks.
+
+★ FREE
+
+GentleQuest is free. Every feature, no paywall.
+
+Download GentleQuest — not toward productivity, but toward feeling a little more okay.
+```
+
+### First 250 chars (what most users see before "read more")
+
+The hook paragraph is 196 chars and lands `ADHD`, `anxiety`, `mood`, `no streaks`,
+`no guilt` and the anti-productivity positioning before truncation.
+
+### Status
+
+**Not applied.** Store copy is outward-facing and needs an operator decision. Access is
+available (`play-store-upload@gentlequest-prod`), so this can be applied on request.
+The title decision (`AI` vs `ADHD` — both cannot fit in 30 chars) remains open.
