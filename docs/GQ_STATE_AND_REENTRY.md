@@ -154,10 +154,15 @@ mislead a cold session.
    difference: move the logEvent into a never-invoked closure and the widget
    test FAILS while the source-grep test PASSES.
 
-   STILL OPEN: `composer_engagement_order_test.dart` is still a mirror. The
-   seam now makes a real widget test possible, but `InteractiveChatScreen`
-   needs a provider/network stack to pump — do that next, then delete the
-   mirror.
+   DONE 2026-09-03: `composer_engagement_widget_test.dart` pumps the REAL
+   `InteractiveChatScreen` (ChatProvider + CompanionProvider + SurveyProvider,
+   bounded pumps — `pumpAndSettle` times out on its animations) and covers
+   order, once-only, and the chip path. The mirror is deleted; only its three
+   source drift guards survive.
+
+   Measured, not assumed: with the emitted event name changed to a typo — which
+   silently kills the funnel stage — the mirror passed 7/7 while the widget
+   test failed. That is why the mirror went.
 
 5. **The linux-desktop bot rule is dead in both paths.**
    `is_qualified_human`'s third rule needs a real UA, and both callers supply
