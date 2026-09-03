@@ -476,12 +476,26 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
         has_compliance_passed = False
         has_first_value = False
 
+        # Every _ua_class seen in this session, NOT just the last one.
+        #
+        # 2026-09-03, second pass. session_meta.update(meta) is last-write-wins
+        # and `query.all()` has no order_by, so the surviving verdict was
+        # whichever event the DB happened to return last. A bot could launder
+        # itself in two requests: one with a bot UA, then one with a browser UA
+        # on the SAME X-Session-ID. The second overwrote the first and the
+        # session counted as human. _ua_class is server-set so it cannot be
+        # forged directly — but the bot controls its own User-Agent header,
+        # which was enough. The session-id header added earlier today made this
+        # easier, not harder: the client picks the id.
+        ua_classes = set()
         for e in events:
             if e.timestamp:
                 timestamps.append(e.timestamp)
             meta = e.event_metadata or {}
             if isinstance(meta, dict):
                 session_meta.update(meta)
+                if "_ua_class" in meta:
+                    ua_classes.add(meta.get("_ua_class"))
                 if not user_agent:
                     user_agent = meta.get("user_agent") or meta.get("ua") or meta.get("user_agent_string")
 
@@ -524,18 +538,28 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
         # know whether they were human, and pretending either way is the
         # mistake this is correcting — so they are counted separately as
         # UNCLASSIFIED rather than silently included or silently dropped.
-        ua_class = session_meta.get("_ua_class")
-        if ua_class is None:
+        # Fail closed: ONE bot event condemns the whole session, whatever else
+        # it contains. Order cannot matter if any bot verdict is decisive.
+        if "bot" in ua_classes:
+            continue
+        if "human" not in ua_classes:
+            # Nothing classified this session — pre-fix events only. Unknown,
+            # and unknown is reported, never guessed either way.
             unclassified_sessions += 1
             continue
-        if ua_class != "human":
-            continue
 
-        # Session-shape rules (duration, pageviews) still apply on top of the
-        # UA verdict; the write-time call deliberately exempted them because it
-        # had no session context.
-        if not is_qualified_human(session_meta, user_agent or DEFAULT_UA, duration_sec, pageviews):
-            continue
+        # NOTE: there is deliberately no second is_qualified_human() call here.
+        # There WAS one, added this morning, with a comment claiming
+        # "session-shape rules still apply on top". That comment was false and I
+        # wrote it. The call passed `user_agent or DEFAULT_UA`, and user_agent
+        # is always None (the log endpoint's allowlist strips it), so it ran
+        # against a hardcoded Mac Chrome string that satisfies all three rules
+        # unconditionally. It could never reject anything.
+        #
+        # A no-op guard is worse than no guard: it reads as defence in depth.
+        # This is the same defect I had just finished fixing one function
+        # away — a real check pointed at the wrong object — reintroduced in the
+        # fix itself. The UA verdict above is the gate.
 
         if has_landing:
             landing_sessions += 1
@@ -576,10 +600,19 @@ def compute_funnel_metrics(start_dt=None, end_dt=None):
         },
         "cta_ctr": cta_ctr,
         "first_value_conversion": first_value_conversion,
-        # True when unclassified sessions outnumber the ones we could verify.
-        # The counts above are then a floor, not a measurement, and must not be
-        # quoted as a funnel result.
-        "insufficient_data": unclassified_sessions > landing_sessions
+        # True when the numbers must not be quoted as a funnel result.
+        #
+        # Two ways that happens, and the second was missing until 2026-09-03:
+        #   - unclassified sessions outnumber the verified ones, so the counts
+        #     are a floor rather than a measurement; or
+        #   - there is nothing here at all. A window with no qualifying session
+        #     used to report insufficient_data: False alongside
+        #     landing_sessions: 0, which reads as "we measured zero humans"
+        #     when the truth is "we measured nothing". That is the exact
+        #     CLAIMED/PROVEN/INSUFFICIENT collapse this flag exists to prevent.
+        "insufficient_data": (
+            unclassified_sessions > landing_sessions or landing_sessions == 0
+        )
     }
 
 

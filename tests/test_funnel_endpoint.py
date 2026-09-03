@@ -374,3 +374,82 @@ class TestUaClassification:
         assert data["counts"]["landing_sessions"] == 0
         assert data["counts"]["unclassified_sessions"] == 1
         assert data["insufficient_data"] is True
+
+
+class TestUaLaunderingAndSufficiency:
+    """Second-pass fixes, 2026-09-03, found by a cross-vendor audit of the
+    FIRST pass — i.e. of the code that was itself written to fix this area.
+    """
+
+    def test_a_bot_cannot_launder_itself_with_a_second_human_event(self, client, app):
+        """One bot event condemns the session, whatever arrives after it.
+
+        The hole: session_meta.update(meta) was last-write-wins and the events
+        query has no order_by, so the surviving verdict was whichever row the
+        DB returned last. A bot sends one request with a bot UA and a second
+        with a browser UA on the SAME session id — the second overwrote the
+        first and the session counted as human. _ua_class is server-set and
+        cannot be forged, but the bot picks its own User-Agent, which was
+        enough.
+        """
+        with app.app_context():
+            from models import AnalyticsEvent, UserSession, db
+
+            sid = "launder-attempt-session"
+            db.session.add(UserSession(id=sid))
+            # Order matters to the bug, so assert on the dangerous order:
+            # bot FIRST, human SECOND (the overwrite direction).
+            db.session.add(
+                AnalyticsEvent(
+                    session_id=sid,
+                    event_type="cta_impression",
+                    event_metadata={"cta_id": "hero", "_ua_class": "bot"},
+                )
+            )
+            db.session.add(
+                AnalyticsEvent(
+                    session_id=sid,
+                    event_type="cta_click",
+                    event_metadata={"cta_id": "hero", "_ua_class": "human"},
+                )
+            )
+            db.session.commit()
+
+        data = client.get("/api/metrics/funnel").get_json()
+        assert data["counts"]["landing_sessions"] == 0, (
+            "A session containing ANY bot event must not count, regardless of "
+            "what else it contains or what order the DB returns."
+        )
+        assert data["counts"]["cta_clicks"] == 0
+
+    def test_a_clean_human_session_still_counts(self, client, app):
+        """Opposed control. Without it, 'fail closed' could mean 'count nothing'."""
+        with app.app_context():
+            from models import AnalyticsEvent, UserSession, db
+
+            sid = "clean-human-session"
+            db.session.add(UserSession(id=sid))
+            for etype in ("cta_impression", "cta_click"):
+                db.session.add(
+                    AnalyticsEvent(
+                        session_id=sid,
+                        event_type=etype,
+                        event_metadata={"cta_id": "hero", "_ua_class": "human"},
+                    )
+                )
+            db.session.commit()
+
+        data = client.get("/api/metrics/funnel").get_json()
+        assert data["counts"]["landing_sessions"] == 1
+        assert data["counts"]["cta_clicks"] == 1
+
+    def test_empty_window_is_insufficient_not_a_measured_zero(self, client, app):
+        """No data must not read as 'we measured zero humans'.
+
+        insufficient_data was `unclassified > landing`, so an empty window gave
+        0 > 0 = False and reported landing_sessions: 0 as a finding. That is
+        the CLAIMED/PROVEN/INSUFFICIENT collapse the flag exists to prevent.
+        """
+        data = client.get("/api/metrics/funnel?days=1").get_json()
+        assert data["counts"]["landing_sessions"] == 0
+        assert data["insufficient_data"] is True
