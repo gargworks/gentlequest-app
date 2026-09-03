@@ -140,13 +140,24 @@ mislead a cold session.
 
 ### Known-open, deliberately not fixed (owner: next session)
 
-4. **The composer tests are logic MIRRORS, not widget tests.**
-   `composer_engagement_order_test.dart` reimplements the screen's latch logic
-   locally and asserts on the copy; only the two drift guards touch the real
-   source. A regression inside the real `_logComposerEngagedOnce` that leaves
-   the call sites present would pass every test in the file. The proper fix is
-   a widget test with a seam to inject `FirebaseService` (it is a singleton
-   today, so this is real work, not a rename). Recorded rather than half-done.
+4. **Analytics are now testable for real — SEAM LANDED 2026-09-03.**
+   `FirebaseService` implements a narrow `AnalyticsSink`, with a
+   `@visibleForTesting static sinkOverride`. Zero call-site changes across 64
+   sites. Install `RecordingAnalyticsSink` (test/helpers/) in setUp, null it in
+   tearDown.
+
+   Anonymity is checked BEFORE the seam on purpose: a privacy promise must not
+   have an observability hole, and that ordering is pinned by a test.
+
+   `welcome_screen_analytics_test.dart` is the first test that proves an event
+   FIRES at runtime rather than that a string exists in the source. Measured
+   difference: move the logEvent into a never-invoked closure and the widget
+   test FAILS while the source-grep test PASSES.
+
+   STILL OPEN: `composer_engagement_order_test.dart` is still a mirror. The
+   seam now makes a real widget test possible, but `InteractiveChatScreen`
+   needs a provider/network stack to pump — do that next, then delete the
+   mirror.
 
 5. **The linux-desktop bot rule is dead in both paths.**
    `is_qualified_human`'s third rule needs a real UA, and both callers supply

@@ -12,10 +12,36 @@ const String kAnonymityModeKey = 'anonymity_mode_v1';
 
 late final FirebaseOptions firebaseOptions;
 
-class FirebaseService {
+/// The narrow slice of analytics a test needs to observe.
+///
+/// Added 2026-09-03. `FirebaseService` is a process-wide singleton reached as
+/// `FirebaseService().logEvent(...)` from 64 call sites, and `logEvent`
+/// early-returns when `!_initialized` — which is always true under
+/// `flutter test`, because Firebase never boots there. The consequence was
+/// that NO test could observe whether an analytics event actually fired, so
+/// the analytics tests were logic mirrors plus source greps, and a regression
+/// in the real code path could pass them.
+///
+/// Deliberately narrow: only `logEvent`. Every richer wrapper on
+/// FirebaseService (logMoodEntry, logChatMessage, logExerciseCompleted,
+/// logCrisisResourceAccess) funnels through `logEvent` with the real GA4 event
+/// name, so observing that one method observes all of them — and observes them
+/// under the name GA4 actually receives, which is the name that matters.
+abstract interface class AnalyticsSink {
+  Future<void> logEvent(String name, [Map<String, dynamic>? parameters]);
+}
+
+class FirebaseService implements AnalyticsSink {
   static final FirebaseService _instance = FirebaseService._internal();
   factory FirebaseService() => _instance;
   FirebaseService._internal();
+
+  /// Test-only: when set, `logEvent` delegates here instead of Firebase.
+  ///
+  /// Tests MUST null this in tearDown — it is static, so a leak would make one
+  /// test's sink observe another test's events.
+  @visibleForTesting
+  static AnalyticsSink? sinkOverride;
 
   late FirebaseAnalytics _analytics;
   FirebaseCrashlytics? _crashlytics; // Nullable - not available on web
@@ -173,8 +199,31 @@ class FirebaseService {
   }
 
   // Analytics Events
+  @override
   Future<void> logEvent(String name, [Map<String, dynamic>? parameters]) async {
-    if (!_initialized || _anonymityOn) return;
+    // Order here is load-bearing, and it is NOT the order the seam was
+    // originally scoped with.
+    //
+    // Anonymity is checked FIRST, before the test seam. Anonymity mode is a
+    // privacy promise to the user, not a delivery detail: when it is on,
+    // nothing observes events — not Firebase, and not a sink. Putting the
+    // override above this check would have meant an override could see events
+    // the user asked nobody to see, and would have made "anonymity suppresses
+    // analytics" untestable through the seam meant to test analytics.
+    //
+    // The _initialized check stays BELOW the seam, because that flag is the
+    // only reason tests cannot observe anything: it is false under
+    // `flutter test` and there is no safe way to force it true (the real
+    // `_analytics` field is `late` and would throw).
+    if (_anonymityOn) return;
+
+    final sink = sinkOverride;
+    if (sink != null) {
+      await sink.logEvent(name, parameters);
+      return;
+    }
+
+    if (!_initialized) return;
 
     try {
       Map<String, Object>? typedParams;
