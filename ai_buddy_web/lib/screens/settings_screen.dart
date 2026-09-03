@@ -337,7 +337,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// "nothing leaves this device" promise there stays unconditional.
   Future<void> _toggleAnalyticsConsent(bool value) async {
     setState(() => _analyticsEnabled = value);
-    await _api.setAnalyticsConsent(value);
+
+    // ORDER IS LOAD-BEARING. logAnalyticsEvent() is itself gated on
+    // analytics_consent (analytics_service.dart _isAnalyticsEnabled), so
+    // writing the new value BEFORE logging silently destroyed the opt-OUT
+    // signal: persist(false) -> log('off') -> gate now reads false -> event
+    // dropped. Only opt-INs were ever recorded, so the event implied 100%
+    // opt-in and 0% opt-out. A consent metric that structurally cannot observe
+    // withdrawal is worse than no metric.
+    //
+    // Each transition is therefore logged under the consent state that
+    // legitimately permits it: an opt-in after consent is granted, an opt-out
+    // while consent is still in force. Nothing is ever transmitted after the
+    // user has withdrawn.
+    if (value) {
+      await _api.setAnalyticsConsent(true);
+      await logAnalyticsEvent('analytics_consent_toggled', metadata: {
+        'value': 'on',
+        'screen': 'settings',
+      });
+    } else {
+      await logAnalyticsEvent('analytics_consent_toggled', metadata: {
+        'value': 'off',
+        'screen': 'settings',
+      });
+      await _api.setAnalyticsConsent(false);
+    }
+
     if (!mounted) return;
     GQBanner.show(
       context,
@@ -346,10 +372,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : 'Usage sharing is off.',
       category: value ? GQBannerCategory.success : GQBannerCategory.info,
     );
-    await logAnalyticsEvent('analytics_consent_toggled', metadata: {
-      'value': value ? 'on' : 'off',
-      'screen': 'settings',
-    });
   }
 
   Future<void> _toggleAnonymity(bool value) async {
